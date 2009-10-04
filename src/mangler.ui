@@ -375,7 +375,7 @@
                               </packing>
                             </child>
                             <child>
-                              <object class="GtkLabel" id="label11">
+                              <object class="GtkLabel" id="label25">
                                 <property name="visible">True</property>
                                 <property name="xalign">0.05000000074505806</property>
                                 <property name="label" translatable="yes">&lt;span color="darkgreen"&gt;No&lt;/span&gt;</property>
@@ -590,7 +590,7 @@
           </packing>
         </child>
         <child>
-          <object class="GtkVBox" id="vbox8">
+          <object class="GtkVBox" id="vbox29">
             <property name="visible">True</property>
             <property name="orientation">vertical</property>
             <property name="spacing">5</property>
@@ -646,7 +646,7 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkLabel" id="label2">
+                      <object class="GtkLabel" id="label5">
                         <property name="visible">True</property>
                         <property name="xalign">1</property>
                         <property name="label" translatable="yes">Port:</property>
@@ -658,7 +658,7 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkLabel" id="label3">
+                      <object class="GtkLabel" id="label4">
                         <property name="visible">True</property>
                         <property name="xalign">1</property>
                         <property name="label" translatable="yes">Username:</property>
@@ -670,7 +670,7 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkLabel" id="label4">
+                      <object class="GtkLabel" id="label6">
                         <property name="visible">True</property>
                         <property name="xalign">1</property>
                         <property name="label" translatable="yes">Password:</property>
@@ -682,7 +682,7 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkLabel" id="label5">
+                      <object class="GtkLabel" id="label22">
                         <property name="visible">True</property>
                         <property name="xalign">1</property>
                         <property name="label" translatable="yes">Phonetic:</property>
@@ -694,7 +694,7 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkLabel" id="label9">
+                      <object class="GtkLabel" id="label23">
                         <property name="visible">True</property>
                         <property name="xalign">1</property>
                         <property name="label" translatable="yes">Comment:</property>
@@ -793,7 +793,7 @@
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkVBox" id="vbox7">
+                  <object class="GtkVBox" id="vbox3">
                     <property name="visible">True</property>
                     <property name="orientation">vertical</property>
                     <child>
@@ -806,7 +806,7 @@
                             <property name="visible">True</property>
                             <property name="left_padding">12</property>
                             <child>
-                              <object class="GtkVBox" id="vbox6">
+                              <object class="GtkVBox" id="vbox2">
                                 <property name="visible">True</property>
                                 <property name="orientation">vertical</property>
                                 <child>
@@ -866,7 +866,7 @@
                           </object>
                         </child>
                         <child type="label">
-                          <object class="GtkLabel" id="label10">
+                          <object class="GtkLabel" id="label24">
                             <property name="visible">True</property>
                             <property name="label" translatable="yes">&lt;b&gt;Server Options&lt;/b&gt;</property>
                             <property name="use_markup">True</property>
@@ -918,7 +918,7 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkAlignment" id="alignment1">
+                      <object class="GtkAlignment" id="alignment5">
                         <property name="visible">True</property>
                         <child>
                           <placeholder/>
