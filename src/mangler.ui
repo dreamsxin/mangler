@@ -503,6 +503,7 @@
     </child>
   </object>
   <object class="GtkWindow" id="settingsWindow">
+    <property name="title" translatable="yes">Mangler Settings</property>
     <property name="transient_for">manglerWindow</property>
     <child>
       <object class="GtkHBox" id="hbox7">
@@ -964,7 +965,7 @@
 
 Mangler is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public License along with Spux.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</property>
+You should have received a copy of the GNU General Public License along with Mangler.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</property>
     <property name="authors">Eric Kilfoil
 Daniel Sloof
 
@@ -975,7 +976,7 @@ Specifically:
 - Michael Sierks
 - Cris Favero
 </property>
-    <property name="documenters"></property>
+    <property name="documenters">Documentation?  What documentation?</property>
     <property name="wrap_license">True</property>
     <child internal-child="vbox">
       <object class="GtkVBox" id="dialog-vbox6">
@@ -1001,7 +1002,7 @@ Specifically:
   </object>
   <object class="GtkMessageDialog" id="disconnectedDialog">
     <property name="border_width">5</property>
-    <property name="title" translatable="yes">Spux Disconnected</property>
+    <property name="title" translatable="yes">Mangler Disconnected</property>
     <property name="resizable">False</property>
     <property name="modal">True</property>
     <property name="window_position">center-on-parent</property>
