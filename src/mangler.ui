@@ -508,7 +508,7 @@
       <object class="GtkHBox" id="hbox7">
         <property name="visible">True</property>
         <child>
-          <object class="GtkVBox" id="vbox1">
+          <object class="GtkVBox" id="vbox101">
             <property name="visible">True</property>
             <property name="orientation">vertical</property>
             <property name="spacing">5</property>
@@ -793,7 +793,7 @@
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkVBox" id="vbox3">
+                  <object class="GtkVBox" id="vbox103">
                     <property name="visible">True</property>
                     <property name="orientation">vertical</property>
                     <child>
@@ -806,7 +806,7 @@
                             <property name="visible">True</property>
                             <property name="left_padding">12</property>
                             <child>
-                              <object class="GtkVBox" id="vbox2">
+                              <object class="GtkVBox" id="vbox102">
                                 <property name="visible">True</property>
                                 <property name="orientation">vertical</property>
                                 <child>
