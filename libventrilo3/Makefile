@@ -38,7 +38,7 @@ all-dmalloc-32:
 	gcc -m32 -Wall -g -DDMALLOC -DDMALLOC_FUNC_CHECK -o lv3_test lv3_test.c -L/usr/lib32 -Wl,-R/usr/lib32 -L. -lventrilo3  -ldmalloc
 
 clean:
-	rm tags
-	rm *.o
-	rm *.a
-	rm lv3_test
+	rm -f tags
+	rm -f *.o
+	rm -f *.a
+	rm -f lv3_test

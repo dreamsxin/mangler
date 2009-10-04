@@ -3,6 +3,7 @@
  */
 
 #include <gtkmm.h>
+#include <iostream>
 #include "mangler.h"
 #include "manglerui.h"
 #include "mangler-icons.h"
@@ -28,9 +29,14 @@ Mangler::Mangler() {/*{{{*/
     icons.insert(std::make_pair("user_xmit_muted",           Gdk::Pixbuf::create_from_inline(-1, user_xmit_muted          )));
     icons.insert(std::make_pair("user_xmit",                 Gdk::Pixbuf::create_from_inline(-1, user_xmit                )));
 
-    //builder = Gtk::Builder::create_from_file("mangler.ui");
-    builder = Gtk::Builder::create_from_string(ManglerUI);
-    builder->get_widget("manglerWindow", manglerWindow);
+    try {
+        builder = Gtk::Builder::create_from_file("mangler.ui");
+        //builder = Gtk::Builder::create_from_string(ManglerUI);
+        builder->get_widget("manglerWindow", manglerWindow);
+    } catch(const Glib::Error& e) {
+        std::cerr << e.what() << std::endl;
+        exit(0);
+    }
 
     // Quick Connect Button
     builder->get_widget("quickConnectButton", button);
