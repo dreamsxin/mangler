@@ -101,6 +101,8 @@ void Mangler::quickConnectButton_clicked_cb(void) {/*{{{*/
 }/*}}}*/
 void Mangler::serverConfigButton_clicked_cb(void) {/*{{{*/
     fprintf(stderr, "server button clicked\n");
+    builder->get_widget("settingsWindow", window);
+    window->show();
 }/*}}}*/
 void Mangler::connectButton_clicked_cb(void) {/*{{{*/
     fprintf(stderr, "connect button clicked\n");
