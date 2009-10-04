@@ -1,19 +1,19 @@
 
 all: lv3_test
 
-lv3_test: libventrilo3.a
+lv3_test: libventrilo3.a ventrilo3.h
 	gcc -pthread -Wall -g -o lv3_test lv3_test.c -L. -lventrilo3 `pkg-config --libs libpulse-simple` -lspeex
 
-libventrilo3.o: libventrilo3.c
+libventrilo3.o: libventrilo3.c ventrilo3.h libventrilo3.h
 	gcc -pthread -Wall -g -c -o libventrilo3.o libventrilo3.c
 
-ventrilo3_handshake.o: ventrilo3_handshake.c
+ventrilo3_handshake.o: ventrilo3_handshake.c ventrilo_algo.h ventrilo3.h
 	gcc -pthread -Wall -g -c -o ventrilo3_handshake.o ventrilo3_handshake.c
 
-libventrilo3_message.o: libventrilo3_message.c
+libventrilo3_message.o: libventrilo3_message.c libventrilo3_message.h ventrilo3.h
 	gcc -pthread -Wall -g -c -o libventrilo3_message.o libventrilo3_message.c
 
-libventrilo3.a: libventrilo3.o ventrilo3_handshake.o libventrilo3_message.o
+libventrilo3.a: libventrilo3.o ventrilo3_handshake.o libventrilo3_message.o ventrilo3.h
 	ar rvs libventrilo3.a libventrilo3.o ventrilo3_handshake.o libventrilo3_message.o
 
 all32:
