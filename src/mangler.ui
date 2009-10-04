@@ -743,6 +743,7 @@
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="max_length">16</property>
+                        <property name="visibility">False</property>
                         <property name="invisible_char">&#x25CF;</property>
                         <property name="activates_default">True</property>
                         <property name="invisible_char_set">True</property>
@@ -964,7 +965,16 @@
 Mangler is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License along with Spux.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</property>
-    <property name="authors">Eric Kilfoil</property>
+    <property name="authors">Eric Kilfoil
+Daniel Sloof
+
+Everyone from Spux, without which this
+would not have been possible.
+
+Specifically:
+- Michael Sierks
+- Cris Favero
+</property>
     <property name="documenters"></property>
     <property name="wrap_license">True</property>
     <child internal-child="vbox">

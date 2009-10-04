@@ -16,7 +16,7 @@ extern "C" {
 class Mangler
 {
     public:
-        Mangler();
+        Mangler(struct _cli_options *options);
         void initialize(void);
         Gtk::Window  *manglerWindow;
         Glib::RefPtr<Gtk::Builder>          builder;
@@ -51,6 +51,12 @@ class Mangler
 
         void disconnect(void);
 };
+
+struct _cli_options {
+    bool uifromfile;
+    std::string uifilename;
+};
+
 
 extern Mangler *mangler;
 

@@ -12,7 +12,7 @@ using namespace std;
 
 Mangler *mangler;
 
-Mangler::Mangler() {/*{{{*/
+Mangler::Mangler(struct _cli_options *options) {/*{{{*/
     // load all of our icons
     icons.insert(std::make_pair("mangler_headset_blue",         Gdk::Pixbuf::create_from_inline(-1, mangler_headset_blue)));
     icons.insert(std::make_pair("mangler_headset_blue_red",     Gdk::Pixbuf::create_from_inline(-1, mangler_headset_blue_red    )));
@@ -30,8 +30,11 @@ Mangler::Mangler() {/*{{{*/
     icons.insert(std::make_pair("user_xmit",                 Gdk::Pixbuf::create_from_inline(-1, user_xmit                )));
 
     try {
-        builder = Gtk::Builder::create_from_file("mangler.ui");
-        //builder = Gtk::Builder::create_from_string(ManglerUI);
+        if (options->uifromfile) {
+            builder = Gtk::Builder::create_from_file(options->uifilename);
+        } else {
+            builder = Gtk::Builder::create_from_string(ManglerUI);
+        }
         builder->get_widget("manglerWindow", manglerWindow);
     } catch(const Glib::Error& e) {
         std::cerr << e.what() << std::endl;
@@ -185,13 +188,23 @@ int
 main (int argc, char *argv[])
 {
     Gtk::Main kit(argc, argv);
+    struct _cli_options options;
 
+    // TODO: use getopt()
+    if (argc > 1) {
+        options.uifilename = argv[1];
+        options.uifromfile = true;
+        fprintf(stderr, "using ui file: %s\n", options.uifilename.c_str());
+    } else {
+        fprintf(stderr, "using internal ui\n");
+        options.uifromfile = false;
+    }
     Glib::thread_init();
     if(!Glib::thread_supported()) {
         fprintf(stderr, "error: could not intialize Mangler: thread initialization failed\n");
         exit(0);
     }
-    mangler = new Mangler();
+    mangler = new Mangler(&options);
     Gtk::Main::run(*mangler->manglerWindow);
 }
 

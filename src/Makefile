@@ -1,13 +1,13 @@
 
 all: mangler
 
-mangler.o: manglerui.h mangler.cpp
+mangler.o: manglerui.h mangler.cpp mangler.h
 	g++ -Wall -I. -I../icons -I../libventrilo3 -g -c -o mangler.o mangler.cpp `pkg-config --cflags gtkmm-2.4`
 	
-channeltree.o: channeltree.cpp
+channeltree.o: channeltree.cpp mangler.h channeltree.h
 	g++ -Wall -I. -I../libventrilo3 -g -c -o channeltree.o channeltree.cpp `pkg-config --cflags gtkmm-2.4`
 	
-manglernetwork.o: manglernetwork.cpp
+manglernetwork.o: manglernetwork.cpp mangler.h manglernetwork.h
 	g++ -Wall -I. -I../libventrilo3 -g -c -o manglernetwork.o manglernetwork.cpp `pkg-config --cflags gtkmm-2.4`
 
 manglerui.h: mangler.ui
@@ -15,7 +15,7 @@ manglerui.h: mangler.ui
 	cat mangler.ui  | sed 's/"/\\"/g' | sed 's/^/"/' | sed 's/$$/\\n"/' >> manglerui.h
 	echo ";" >> manglerui.h
 
-mangler: mangler.o channeltree.o manglernetwork.o
+mangler: mangler.o channeltree.o manglernetwork.o mangler.h
 	g++ -Wall -L../libventrilo3/ -g -o mangler mangler.o channeltree.o manglernetwork.o -export-dynamic -lventrilo3 `pkg-config --libs gtkmm-2.4` `pkg-config --libs gthread-2.0` -lspeex
 
 clean:
