@@ -47,18 +47,18 @@
  */
 enum _v3_events
 {
-        USER_LOGIN,
-        USER_LOGOUT,
-        USER_TALK_START,
-        USER_TALK_END,
-        USER_PAGED,
-        USER_CHAN_MOVE,
-        LUSER_FORCE_CHAN_MOVE,
-        CHAN_ADDED,
-        CHAN_REMOVED,
-        CHAN_MODIFIED,
-        RECV_AUDIO,
-        RECV_PING_RESP
+    USER_LOGIN,
+    USER_LOGOUT,
+    USER_TALK_START,
+    USER_TALK_END,
+    USER_PAGED,
+    USER_CHAN_MOVE,
+    LUSER_FORCE_CHAN_MOVE,
+    CHAN_ADDED,
+    CHAN_REMOVED,
+    CHAN_MODIFIED,
+    RECV_AUDIO,
+    RECV_PING_RESP
 }
 v3_events;
 
@@ -114,6 +114,54 @@ char *_v3_errors[] = {
     "You are temporarily banned. ",
     "You are on the banned list.",
     "Guest accounts are not allowed to join the specified channel."
+};
+
+char* _v3_page_errors[] = {
+    "User does not exist.",
+    "User is not accepting pages.",
+    "Users current channel does not allow for paging.",
+    "Insufficient access rights."
+};
+
+char* _v3_move_errors[] = {
+    "Admin rights",
+    "Invalid source object",
+    "Invalid target object",
+    "Not support in given mode",
+    "Target channel is full",
+    "Target channel does not allow phantoms, or source does not have proper access rights"
+};
+
+/*
+ * These should be accessed through m->bitmask_id - 8.
+ */
+char* _v3_bitmasks[] = {
+    "255.0.0.0",
+    "255.0.0.0",
+    "255.128.0.0",
+    "255.192.0.0",
+    "255.224.0.0",
+    "255.240.0.0",
+    "255.248.0.0",
+    "255.252.0.0",
+    "255.254.0.0",
+    "255.255.0.0",
+    "255.255.128.0",
+    "255.255.192.0",
+    "255.255.224.0",
+    "255.255.240.0",
+    "255.255.248.0",
+    "255.255.252.0",
+    "255.255.254.0",
+    "255.255.255.0",
+    "255.255.255.128",
+    "255.255.255.192",
+    "255.255.255.224",
+    "255.255.255.240",
+    "255.255.255.248",
+    "255.255.255.252",
+    "255.255.255.254",
+    "255.255.255.255"
 };
 
 /*
