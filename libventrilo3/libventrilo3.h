@@ -42,26 +42,6 @@
 #include <errno.h>
 #include <pthread.h>
 
-/*
-   Define event types to be used by the caller's event handler
- */
-enum _v3_events
-{
-    USER_LOGIN,
-    USER_LOGOUT,
-    USER_TALK_START,
-    USER_TALK_END,
-    USER_PAGED,
-    USER_CHAN_MOVE,
-    LUSER_FORCE_CHAN_MOVE,
-    CHAN_ADDED,
-    CHAN_REMOVED,
-    CHAN_MODIFIED,
-    RECV_AUDIO,
-    RECV_PING_RESP
-}
-v3_events;
-
 char *_v3_errors[] = {
     "Success",
     "Operation can not be performed on your self",
