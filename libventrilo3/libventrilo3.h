@@ -307,6 +307,11 @@ pthread_mutex_t         *sendq_mutex = NULL;
 
 pthread_mutex_t         *soundq_mutex = NULL;
 
+pthread_mutex_t         *eventq_mutex = NULL;
+pthread_cond_t          *eventq_cond = NULL;
+
+v3_event                *_v3_eventq = NULL;
+
 uint32_t                _v3_soundq_length = 0;
 uint16_t                *_v3_soundq       = NULL;
 
@@ -329,7 +334,7 @@ void                    ventrilo3_algo_scramble(ventrilo_key_ctx *ctx, uint8_t *
  *  Internal functions
  */
 void                    _v3_debug(uint32_t level, const char *format, ...);
-char *                  _v3_status(const char *format, ...);
+char *                  _v3_status(uint8_t percent, const char *format, ...);
 
 int                     _v3_login_connect(struct in_addr *srvip, uint16_t srvport);
 int                     _v3_server_auth(struct in_addr *srvip, uint16_t srvport);
@@ -358,5 +363,7 @@ void                    _v3_lock_recvq(void);
 void                    _v3_unlock_recvq(void);
 void                    _v3_lock_sendq(void);
 void                    _v3_unlock_sendq(void);
+int                     v3_queue_event(v3_event *ev);
+v3_event                *_v3_get_last_event(int *len);
 
 #endif // _VENTRILO3_H

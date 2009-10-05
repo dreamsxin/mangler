@@ -111,14 +111,16 @@ ManglerChannelTree::getChannel(uint16_t id, Gtk::TreeModel::Children children) {
     return *iter;
 }/*}}}*/
 
-void
+bool
 ManglerChannelTree::expand_all(void) {/*{{{*/
     channelView->expand_all();
     channelView->show_all();
+    return false;
 }/*}}}*/
 
-void
+bool
 ManglerChannelTree::collapse_all(void) {/*{{{*/
     channelView->collapse_all();
+    return false;
 }/*}}}*/
 

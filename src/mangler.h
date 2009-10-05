@@ -22,15 +22,18 @@ class Mangler
         Glib::RefPtr<Gtk::Builder>          builder;
         Gtk::Button                         *button;
         Gtk::Dialog                         *dialog;
-        Gtk::MessageDialog                  *mdialog;
+        Gtk::MessageDialog                  *msgdialog;
         Gtk::Window                         *window;
+        Gtk::ProgressBar                    *progressbar;
+        Gtk::Statusbar                      *statusbar;
         std::map<std::string, Glib::RefPtr<Gdk::Pixbuf> >  icons;
         Glib::RefPtr<Gtk::StatusIcon>       statusIcon;
-        ManglerChannelTree                     *channelTree;
-        ManglerNetwork                         *network;
-
+        ManglerChannelTree                  *channelTree;
+        ManglerNetwork                      *network;
 
         Glib::Thread                        *networkThread;
+        Glib::Thread                        *audioInputThread;
+        Glib::Thread                        *audioOutputThread;
 
         
     protected:
@@ -44,12 +47,11 @@ class Mangler
         void aboutButton_clicked_cb(void);
         void xmitButton_pressed_cb(void);
         void xmitButton_released_cb(void);
+        bool statusUpdate(void);
 
         // quick connect signal handlers
         void qcConnectButton_clicked_cb(void);
         void qcCancelButton_clicked_cb(void);
-
-        void disconnect(void);
 };
 
 struct _cli_options {
@@ -57,6 +59,14 @@ struct _cli_options {
     std::string uifilename;
 };
 
+class ManglerError
+{
+    public:
+        uint32_t        code;
+        std::string     message;
+        std::string     module;
+        ManglerError(uint32_t code, std::string message, std::string module = "");
+};
 
 extern Mangler *mangler;
 

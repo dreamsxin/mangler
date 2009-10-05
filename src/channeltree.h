@@ -47,8 +47,8 @@ class ManglerChannelTree/*{{{*/
         void addChannel(uint16_t id, uint16_t parent_id, std::string name, std::string comment = "", std::string phonetic = "");
         void addUser(uint16_t id, uint16_t channel, std::string name, std::string comment = "", std::string phonetic = "", std::string url = "", std::string integration_text = "");
         Gtk::TreeModel::Row getChannel(uint16_t id, Gtk::TreeModel::Children children);
-        void expand_all(void);
-        void collapse_all(void);
+        bool expand_all(void);
+        bool collapse_all(void);
 };/*}}}*/
 
 #endif

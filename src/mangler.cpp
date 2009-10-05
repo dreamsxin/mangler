@@ -85,7 +85,7 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
     channelTree = new ManglerChannelTree(builder);
 
     // Create Network Communication Object
-    network = new ManglerNetwork();
+    network = new ManglerNetwork(builder);
 
     // Statusbar Icon
     statusIcon = Gtk::StatusIcon::create(icons["mangler_headset_blue"]);
@@ -108,8 +108,14 @@ void Mangler::serverConfigButton_clicked_cb(void) {/*{{{*/
     window->show();
 }/*}}}*/
 void Mangler::connectButton_clicked_cb(void) {/*{{{*/
-    fprintf(stderr, "connect button clicked\n");
-    Glib::Thread::create(sigc::mem_fun(this->network, &ManglerNetwork::connect), FALSE);
+    builder->get_widget("connectButton", button);
+    if (button->get_label() == "gtk-connect") {
+        Glib::Thread::create(sigc::mem_fun(this->network, &ManglerNetwork::connect), FALSE);
+        Glib::signal_timeout().connect( sigc::mem_fun(*this, &Mangler::statusUpdate), 50 );
+    } else {
+        v3_logout();
+        button->set_label("gtk-connect");
+    }
     return;
 }/*}}}*/
 void Mangler::commentButton_clicked_cb(void) {/*{{{*/
@@ -175,10 +181,38 @@ void Mangler::qcCancelButton_clicked_cb(void) {/*{{{*/
     fprintf(stderr, "qc cancel button clicked\n");
 }/*}}}*/
 
-void Mangler::disconnect(void) {/*{{{*/
-    v3_logout();
-}/*}}}*/
+bool
+Mangler::statusUpdate() {
+    v3_event *ev;
 
+    while ((ev = v3_get_event(V3_NONBLOCK)) != NULL) {
+        switch (ev->type) {
+            case V3_EVENT_STATUS:
+                builder->get_widget("progressbar", progressbar);
+                builder->get_widget("statusbar", statusbar);
+                progressbar->set_fraction(ev->status.percent/(float)100);
+                if (ev->status.percent == 100) {
+                    progressbar->set_text("");
+                } else {
+                    progressbar->set_text("Logging in...");
+                }
+                statusbar->pop();
+                statusbar->push(ev->status.message);
+                fprintf(stderr, "got event type %d: %d %s\n", ev->type, ev->status.percent, ev->status.message);
+                break;
+            default:
+                fprintf(stderr, "got unknown event type %d\n", ev->type);
+        }
+    }
+    return true;
+}
+
+
+ManglerError::ManglerError(uint32_t code, std::string message, std::string module) {
+    this->code = code;
+    this->message = message;
+    this->module = module;
+}
 
 int
 main (int argc, char *argv[])
@@ -192,7 +226,6 @@ main (int argc, char *argv[])
         options.uifromfile = true;
         fprintf(stderr, "using ui file: %s\n", options.uifilename.c_str());
     } else {
-        fprintf(stderr, "using internal ui\n");
         options.uifromfile = false;
     }
     Glib::thread_init();
@@ -200,7 +233,10 @@ main (int argc, char *argv[])
         fprintf(stderr, "error: could not intialize Mangler: thread initialization failed\n");
         exit(0);
     }
+    gdk_threads_init();
     mangler = new Mangler(&options);
+    gdk_threads_enter();
     Gtk::Main::run(*mangler->manglerWindow);
+    gdk_threads_leave();
 }
 

@@ -89,7 +89,7 @@ int main(int argc, char *argv[]) {
     signal (SIGINT, ctrl_c);
     username = strdup(getenv("USER"));
     //if (! v3_login("evolve.typefrag.com:54174", username, "password", "phonetic")) {
-    if (! v3_login("localhost:3784", username, "spux", "phonetic")) {
+    if (! v3_login("localhost:3784", username, "test", "phonetic")) {
     //if (! v3_login("tungsten.typefrag.com:29549", username, "mangler", "phonetic")) {
         printf("ERROR: %s\n", _v3_error(NULL));
         return 0;

@@ -8,9 +8,12 @@
 class ManglerNetwork
 {
     public:
-        ManglerNetwork();
+        ManglerNetwork(Glib::RefPtr<Gtk::Builder> builder);
         void connect(void);
         void disconnect(void);
+        Gtk::Button *button;
+        Gtk::MessageDialog *msgdialog;
+        Glib::RefPtr<Gtk::Builder> builder;
 };
 
 #endif

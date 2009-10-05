@@ -133,8 +133,9 @@ _v3_error(const char *format, ...) {/*{{{*/
 }/*}}}*/
 
 char *
-_v3_status(const char *format, ...) {/*{{{*/
+_v3_status(uint8_t percent, const char *format, ...) {/*{{{*/
     va_list args;
+    v3_event *ev;
 
     if (format == NULL) {
         return _v3_status_text;
@@ -142,6 +143,11 @@ _v3_status(const char *format, ...) {/*{{{*/
     va_start(args, format);
     vsnprintf(_v3_status_text, sizeof(_v3_status_text), format, args);
     va_end(args);
+    ev = malloc(sizeof(v3_event));
+    ev->type = V3_EVENT_STATUS;
+    ev->status.percent = percent;
+    strncpy(ev->status.message, _v3_status_text, 256);
+    v3_queue_event(ev);
     _v3_debug(V3_DEBUG_STATUS, _v3_status_text);
     return _v3_status_text;
 }/*}}}*/
@@ -620,6 +626,9 @@ v3_message_waiting(int block) {/*{{{*/
     while ((ret = select(_v3_sockd+1, &rset, NULL, NULL, &tv)) >= 0) {
         _v3_next_timestamp(&tv, &v3_server.last_timestamp);
         _v3_debug(V3_DEBUG_INFO, "outbound timestamp pending in %d.%d seconds", tv.tv_sec, tv.tv_usec);
+        if (!_v3_is_connected()) {
+            return false;
+        }
         if (ret == 0) {
             _v3_net_message *m;
             FD_ZERO(&rset);
@@ -1618,7 +1627,7 @@ v3_login(char *server, char *username, char *password, char *phonetic) {/*{{{*/
         int res;
         int herr;
 
-        _v3_status("Looking up hostname for %s", srvname);
+        _v3_status(5, "Looking up hostname for %s", srvname);
         hstbuflen = 1024;
         tmphstbuf = malloc (hstbuflen);
 
@@ -1648,8 +1657,9 @@ v3_login(char *server, char *username, char *password, char *phonetic) {/*{{{*/
     /*
        Call home and verify the server's license
      */
+    _v3_status(10, "Checking server license.");
     if (! _v3_server_auth(&srvip, (uint16_t) v3_server.port)) {
-        _v3_status("Not connected.");
+        _v3_status(0, "Not connected.");
         return false;
     }
 
@@ -1657,10 +1667,10 @@ v3_login(char *server, char *username, char *password, char *phonetic) {/*{{{*/
        Create a TCP connection to the server
      */
     if (!_v3_login_connect(&srvip, (uint16_t) v3_server.port)) {
-        _v3_status("Not connected.");
+        _v3_status(0, "Not connected.");
         return false;
     }
-    _v3_status("Connected to %s... exchanging encryption keys", inet_ntoa(srvip));
+    _v3_status(20, "Connected to %s... exchanging encryption keys", inet_ntoa(srvip));
     gettimeofday(&v3_server.last_timestamp, NULL);
     /*
        At this point, we have a TCP connection to the server.  It's time to
@@ -1691,6 +1701,7 @@ v3_login(char *server, char *username, char *password, char *phonetic) {/*{{{*/
      * password, phonetic, etc.  Process all responses up to (and including)
      * 0x34, which is the key scramble
      */
+    _v3_status(30, "Connected to %s... logging in", inet_ntoa(srvip));
     msg = _v3_put_0x48();
     _v3_send(msg);
     _v3_destroy_packet(msg);
@@ -1700,6 +1711,23 @@ v3_login(char *server, char *username, char *password, char *phonetic) {/*{{{*/
             return false;
         }
         type = msg->type;
+        switch (type) {
+            case 0x4a:
+                _v3_status(40, "Receiving User Permissions.");
+                break;
+            case 0x5d:
+                _v3_status(50, "Receiving User List.");
+                break;
+            case 0x60:
+                _v3_status(60, "Receiving Channel List.");
+                break;
+            case 0x46:
+                _v3_status(70, "Receiving User Settings.");
+                break;
+            case 0x50:
+                _v3_status(80, "Receiving MOTD.");
+                break;
+        }
         switch (_v3_process_message(msg)) {
             case V3_MALFORMED:
                 _v3_debug(V3_DEBUG_INTERNAL, "received malformed packet");
@@ -1711,7 +1739,9 @@ v3_login(char *server, char *username, char *password, char *phonetic) {/*{{{*/
                 _v3_debug(V3_DEBUG_INTERNAL, "packet processed");
                 break;
         }
-        if (type == 0x59) {
+        // 0x59 is a error message that will be received if you are banned
+        // 0x06 is a specific authentication error message
+        if (type == 0x59 || type == 0x06) {
             return false;
         }
     } while (type != 0x34);
@@ -1724,10 +1754,12 @@ v3_login(char *server, char *username, char *password, char *phonetic) {/*{{{*/
     if (v3_is_loggedin()) {
         _v3_net_message *response;
 
+        _v3_status(90, "Scraming Encryption Table.");
         response = _v3_put_0x5c(0);
         _v3_send(response);
         _v3_destroy_packet(response);
 
+        _v3_status(95, "Sending User Settings.");
         response = _v3_put_0x46(V3_USER_ACCEPT_PAGES, v3_luser.accept_pages);
         _v3_send(response);
         _v3_destroy_packet(response);
@@ -1744,6 +1776,7 @@ v3_login(char *server, char *username, char *password, char *phonetic) {/*{{{*/
         _v3_send(response);
         _v3_destroy_packet(response);
 
+        _v3_status(100, "Login Complete.");
         return true;
     }
     return false;
@@ -1966,8 +1999,91 @@ v3_get_soundq_length(void) {/*{{{*/
     _v3_unlock_soundq();
     _v3_func_leave("v3_get_soundq_length");
     return length;
-
 }/*}}}*/
+
+int
+v3_queue_event(v3_event *ev) {
+    v3_event *last;
+    int len = 0;
+
+    _v3_func_enter("v3_queue_event");
+    if (eventq_mutex == NULL) {
+        pthread_mutexattr_t mta;
+        pthread_mutexattr_init(&mta);
+        pthread_mutexattr_settype(&mta, PTHREAD_MUTEX_ERRORCHECK);
+
+        _v3_debug(V3_DEBUG_MUTEX, "initializing _v3_eventq mutex");
+        eventq_mutex = malloc(sizeof(pthread_mutex_t));
+        eventq_cond = malloc(sizeof(pthread_cond_t));
+        pthread_mutex_init(eventq_mutex, &mta);
+        pthread_cond_init(eventq_cond, (pthread_condattr_t *) &mta);
+    }
+    pthread_mutex_lock(eventq_mutex);
+    ev->next = NULL;
+    ev->timestamp = time(NULL);
+    // if this returns null, there's no events in the queue
+    if ((last = _v3_get_last_event(&len)) == NULL) {
+        _v3_eventq = ev;
+        pthread_cond_signal(eventq_cond);
+        pthread_mutex_unlock(eventq_mutex);
+        _v3_func_leave("v3_queue_event");
+        return true;
+    }
+    // otherwise, tack it on to the end
+    last->next = ev;
+    pthread_mutex_unlock(eventq_mutex);
+    _v3_debug(V3_DEBUG_INFO, "queued event type %d.  now have %d events in queue", ev->type, len);
+    _v3_func_leave("v3_queue_event");
+    return true;
+}
+
+v3_event *
+v3_get_event(int block) {
+    v3_event *ev;
+
+    _v3_func_enter("v3_get_event");
+    if (eventq_mutex == NULL) {
+        pthread_mutexattr_t mta;
+        pthread_mutexattr_init(&mta);
+        pthread_mutexattr_settype(&mta, PTHREAD_MUTEX_ERRORCHECK);
+
+        _v3_debug(V3_DEBUG_MUTEX, "initializing _v3_eventq mutex");
+        eventq_mutex = malloc(sizeof(pthread_mutex_t));
+        eventq_cond = malloc(sizeof(pthread_cond_t));
+        pthread_mutex_init(eventq_mutex, &mta);
+        pthread_cond_init(eventq_cond, (pthread_condattr_t *) &mta);
+    }
+    // if we're not blocking and ev is NULL, just return NULL;
+    if (block == V3_NONBLOCK && _v3_eventq == NULL) {
+        _v3_debug(V3_DEBUG_MUTEX, "nonblocking and no events waiting");
+        _v3_func_leave("v3_get_event");
+        return NULL;
+    }
+    pthread_mutex_lock(eventq_mutex);
+    if (_v3_eventq == NULL) {
+        _v3_debug(V3_DEBUG_MUTEX, "waiting for an event...");
+        pthread_cond_wait(eventq_cond, eventq_mutex);
+    }
+    ev = _v3_eventq;
+    _v3_eventq = ev->next;
+    pthread_mutex_unlock(eventq_mutex);
+    _v3_func_leave("v3_get_event");
+    return ev;
+}
+
+v3_event *
+_v3_get_last_event(int *len) {
+    v3_event *ev;
+    int ctr;
+    if (_v3_eventq == NULL) {
+        return NULL;
+    }
+    for (ctr = 0, ev = _v3_eventq; ev->next != NULL; ctr++, ev = ev->next);
+    if (len != NULL) {
+        *len = ctr;
+    }
+    return ev;
+}
 
 /*
    struct  v3_channel **v3_channel_list(void);
