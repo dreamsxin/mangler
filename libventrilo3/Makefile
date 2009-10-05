@@ -1,7 +1,7 @@
 
 all: lv3_test
 
-lv3_test: libventrilo3.a ventrilo3.h
+lv3_test: libventrilo3.a lv3_test.c ventrilo3.h
 	gcc -pthread -Wall -g -o lv3_test lv3_test.c -L. -lventrilo3 `pkg-config --libs libpulse-simple` -lspeex
 
 libventrilo3.o: libventrilo3.c ventrilo3.h libventrilo3.h

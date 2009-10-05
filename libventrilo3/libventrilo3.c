@@ -1108,11 +1108,11 @@ _v3_lock_soundq(void) {/*{{{*/
         pthread_mutexattr_init(&mta);
         pthread_mutexattr_settype(&mta, PTHREAD_MUTEX_ERRORCHECK);
 
-        _v3_debug(V3_DEBUG_MUTEX, "initializing soundq mutex");
+        _v3_debug(V3_DEBUG_MUTEX, "initializing _v3_soundq mutex");
         soundq_mutex = malloc(sizeof(pthread_mutex_t));
         pthread_mutex_init(soundq_mutex, &mta);
     }
-    _v3_debug(V3_DEBUG_MUTEX, "locking soundq");
+    _v3_debug(V3_DEBUG_MUTEX, "locking _v3_soundq");
     pthread_mutex_lock(soundq_mutex);
 }/*}}}*/
 
@@ -1124,11 +1124,11 @@ _v3_unlock_soundq(void) {/*{{{*/
         pthread_mutexattr_init(&mta);
         pthread_mutexattr_settype(&mta, PTHREAD_MUTEX_ERRORCHECK);
 
-        _v3_debug(V3_DEBUG_MUTEX, "initializing soundq mutex");
+        _v3_debug(V3_DEBUG_MUTEX, "initializing _v3_soundq mutex");
         soundq_mutex = malloc(sizeof(pthread_mutex_t));
         pthread_mutex_init(soundq_mutex, &mta);
     }
-    _v3_debug(V3_DEBUG_MUTEX, "unlocking soundq");
+    _v3_debug(V3_DEBUG_MUTEX, "unlocking _v3_soundq");
     pthread_mutex_unlock(soundq_mutex);
 }/*}}}*/
 
@@ -1345,18 +1345,18 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                                 // also should be checking the value of
                                 // framesize so we don't alloc a bazillion
                                 // bytes of memory
-                                _v3_debug(V3_DEBUG_MEMORY, "reallocating soundq from %d to %d bytes", soundq_length, soundq_length + speex->frame_size*2);
-                                soundq = realloc(soundq, (soundq_length + speex->frame_size) * sizeof(uint16_t));
+                                _v3_debug(V3_DEBUG_MEMORY, "reallocating _v3_soundq from %d to %d bytes", _v3_soundq_length, _v3_soundq_length + speex->frame_size*2);
+                                _v3_soundq = realloc(_v3_soundq, (_v3_soundq_length + speex->frame_size) * sizeof(uint16_t));
                                 if (! (f = fopen("pcmoutput", "a"))) {
                                     exit(0);
                                 }
                                 for (i = 0; i < speex->frame_size; i++) {
-                                    soundq[soundq_length+i] = output[i];
-                                    fwrite(&soundq[soundq_length+i], 2, 1, f);
+                                    _v3_soundq[_v3_soundq_length+i] = output[i];
+                                    fwrite(&_v3_soundq[_v3_soundq_length+i], 2, 1, f);
                                 }
                                 fclose(f);
-                                soundq_length += speex->frame_size;
-                                _v3_debug(V3_DEBUG_INFO, "sound queue is now %d bytes", soundq_length);
+                                _v3_soundq_length += speex->frame_size;
+                                _v3_debug(V3_DEBUG_INFO, "sound queue is now %d bytes", _v3_soundq_length);
                             }
                             _v3_unlock_soundq();
                         }
@@ -1938,6 +1938,35 @@ v3_free_channel(v3_channel *channel) {/*{{{*/
     free(channel->phonetic);
     free(channel->comment);
     free(channel);
+}/*}}}*/
+
+uint16_t *
+v3_get_soundq(uint32_t *len) {/*{{{*/
+    uint16_t *soundq;
+
+    _v3_func_enter("v3_get_soundq");
+    _v3_lock_soundq();
+    soundq = malloc(_v3_soundq_length);
+    memcpy(soundq, _v3_soundq, _v3_soundq_length);
+    *len = _v3_soundq_length;
+    _v3_soundq_length = 0;
+    _v3_unlock_soundq();
+    _v3_func_leave("v3_get_soundq");
+    return soundq;
+
+}/*}}}*/
+
+uint32_t
+v3_get_soundq_length(void) {/*{{{*/
+    uint32_t length;
+
+    _v3_func_enter("v3_get_soundq_length");
+    _v3_lock_soundq();
+    length = _v3_soundq_length;
+    _v3_unlock_soundq();
+    _v3_func_leave("v3_get_soundq_length");
+    return length;
+
 }/*}}}*/
 
 /*

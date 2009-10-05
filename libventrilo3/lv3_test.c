@@ -89,7 +89,7 @@ int main(int argc, char *argv[]) {
     signal (SIGINT, ctrl_c);
     username = strdup(getenv("USER"));
     //if (! v3_login("evolve.typefrag.com:54174", username, "password", "phonetic")) {
-    if (! v3_login("localhost:3784", username, "mangler", "phonetic")) {
+    if (! v3_login("localhost:3784", username, "spux", "phonetic")) {
     //if (! v3_login("tungsten.typefrag.com:29549", username, "mangler", "phonetic")) {
         printf("ERROR: %s\n", _v3_error(NULL));
         return 0;
@@ -130,27 +130,19 @@ int main(int argc, char *argv[]) {
                 _v3_debug(V3_DEBUG_INFO, "packet processed");
                 break;
         }
-        _v3_lock_soundq();
-        if (soundq_length > 0) {
-            int l = soundq_length;
+        if (v3_get_soundq_length() > 0) {
             uint16_t *buf;
-
+            uint32_t len;
             _v3_debug(V3_DEBUG_INFO, "outputting sound");
-            buf = malloc(l);
-            memcpy(buf, soundq, l);
-            soundq_length = 0;
-            _v3_unlock_soundq();
-            _v3_debug(V3_DEBUG_INFO, "writing %d bytes to PA", l);
-            if ((ret = pa_simple_write(PAs, buf, (size_t) l, &PAerror)) < 0) {
+            buf = v3_get_soundq(&len);
+            _v3_debug(V3_DEBUG_INFO, "writing %d bytes to PA", len);
+            if ((ret = pa_simple_write(PAs, buf, (size_t) len, &PAerror)) < 0) {
                 fprintf(stderr, __FILE__": pa_simple_write() failed: %s\n", pa_strerror(PAerror));
                 exit(0);
             }
             _v3_debug(V3_DEBUG_INFO, "write complete with ret %d",ret);
             free(buf);
-        } else {
-            _v3_unlock_soundq();
         }
-        _v3_unlock_soundq();
     } while (_v3_is_connected());
     return 0;
 }

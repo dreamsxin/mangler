@@ -109,11 +109,7 @@ void Mangler::serverConfigButton_clicked_cb(void) {/*{{{*/
 }/*}}}*/
 void Mangler::connectButton_clicked_cb(void) {/*{{{*/
     fprintf(stderr, "connect button clicked\n");
-    //try {
-        Glib::Thread::create(sigc::mem_fun(this->network, &ManglerNetwork::connect), FALSE);
-    //} catch (const Glib::Thread::Error& e) {
-     //   fprintf(stderr, "thread error: %s\n", (char *)e->error);
-    //}
+    Glib::Thread::create(sigc::mem_fun(this->network, &ManglerNetwork::connect), FALSE);
     return;
 }/*}}}*/
 void Mangler::commentButton_clicked_cb(void) {/*{{{*/

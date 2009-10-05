@@ -279,8 +279,8 @@ pthread_mutex_t         *sendq_mutex = NULL;
 
 pthread_mutex_t         *soundq_mutex = NULL;
 
-uint32_t                soundq_length = 0;
-uint16_t                *soundq       = NULL;
+uint32_t                _v3_soundq_length = 0;
+uint16_t                *_v3_soundq       = NULL;
 
 /*
  * Functions in ventrilo3_algo.c

@@ -317,8 +317,9 @@ int         v3_debuglevel(uint32_t level);
 int         v3_is_loggedin(void);
 uint16_t    v3_get_user_id(void);
 int         v3_set_text(char *comment, char *url, char *integration_text, uint8_t silent);
-
 int         v3_message_waiting(int block);
+uint16_t    *v3_get_soundq(uint32_t *len);
+uint32_t    v3_get_soundq_length(void);
 
 // User list functions
 int         v3_user_count(void);
@@ -331,8 +332,8 @@ void        v3_free_channel(v3_channel *channel);
 v3_channel  *v3_get_channel(uint16_t id);
 
 // Message queues
-extern uint32_t                soundq_length;
-extern uint16_t                *soundq;
+extern uint32_t                _v3_soundq_length;
+extern uint16_t                *_v3_soundq;
 
 
 
