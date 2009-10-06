@@ -201,7 +201,7 @@
                     </child>
                     <child>
                       <object class="GtkButton" id="commentButton">
-                        <property name="label" translatable="yes">C_omment</property>
+                        <property name="label" translatable="yes">Comment</property>
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
@@ -438,6 +438,9 @@
                               <object class="GtkTreeView" id="channelView">
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
+                                <property name="headers_visible">False</property>
+                                <property name="headers_clickable">False</property>
+                                <property name="enable_tree_lines">True</property>
                               </object>
                             </child>
                           </object>

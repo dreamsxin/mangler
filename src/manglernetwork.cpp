@@ -11,9 +11,8 @@ ManglerNetwork::ManglerNetwork(        Glib::RefPtr<Gtk::Builder>          build
 
 void
 ManglerNetwork::connect(void) {/*{{{*/
-    v3_debuglevel(V3_DEBUG_ALL ^ (V3_DEBUG_PACKET|V3_DEBUG_PACKET_ENCRYPTED));
-    std::string server = "localhost:3784";
-    //std::string server = "evolve.typefrag.com:54174";
+    //v3_debuglevel(V3_DEBUG_ALL ^ (V3_DEBUG_PACKET|V3_DEBUG_PACKET_ENCRYPTED));
+    /std::string server = "localhost:3784";
     //std::string server = "tungsten.typefrag.com:29549";
     if (! v3_login((char *)server.c_str(), (char *)"eric", (char *)"test", (char *)"")) {
         gdk_threads_enter();
@@ -27,26 +26,6 @@ ManglerNetwork::connect(void) {/*{{{*/
         gdk_threads_leave();
         return;
     }
-    //v3_user *user = v3_get_user(0);
-    //mangler->channelTree->addChannel(user->id, 0, user->name, user->comment);
-    for (int ctr = 0; ctr < 0xff; ctr++) {
-        if (v3_channel *c = v3_get_channel(ctr)) {
-            gdk_threads_enter();
-            mangler->channelTree->addChannel(c->id, c->parent, c->name, c->comment, c->phonetic);
-            gdk_threads_leave();
-            v3_free_channel(c);
-        }
-    }
-    /*
-    for (int ctr = 1; ctr < 0xff; ctr++) {
-        if (v3_user *u = v3_get_user(ctr)) {
-            gdk_threads_enter();
-            mangler->channelTree->addUser(u->id, u->channel, u->name, u->comment, u->phonetic, u->url, u->integration_text);
-            gdk_threads_leave();
-            v3_free_user(u);
-        }
-    }
-    */
     Glib::Thread::create(sigc::mem_fun(mangler->audio, &ManglerAudio::startOutputStream), FALSE);
     gdk_threads_enter();
     //mangler->channelTree->expand_all();

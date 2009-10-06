@@ -22,15 +22,13 @@ class channelModelColumns : public Gtk::TreeModelColumnRecord/*{{{*/
 
         Gtk::TreeModelColumn<Glib::ustring> displayName;
         Gtk::TreeModelColumn<bool>          isUser;
-        Gtk::TreeModelColumn<int>           id;
-        Gtk::TreeModelColumn<int>           parent_id;
+        Gtk::TreeModelColumn<uint32_t>      id;
+        Gtk::TreeModelColumn<uint32_t>      parent_id;
         Gtk::TreeModelColumn<Glib::ustring> name;
         Gtk::TreeModelColumn<Glib::ustring> comment;
         Gtk::TreeModelColumn<Glib::ustring> phonetic;
         Gtk::TreeModelColumn<Glib::ustring> url;
         Gtk::TreeModelColumn<Glib::ustring> integration_text;
-
-        void updateChannelList(void);
 };/*}}}*/
 class ManglerChannelTree/*{{{*/
 {
@@ -40,16 +38,19 @@ class ManglerChannelTree/*{{{*/
         Glib::RefPtr<Gtk::TreeStore>        channelStore;
         Gtk::TreeModel::iterator            channelIter;
         Gtk::TreeModel::Row                 channelRow;
+        Gtk::TreeViewColumn                 *column;
+        Gtk::CellRendererText               *renderer;
+        void renderCellData(Gtk::CellRenderer *cell, const Gtk::TreeModel::iterator& iter);
 
     public:
         ManglerChannelTree(Glib::RefPtr<Gtk::Builder> builder);
         Gtk::TreeView                       *channelView;
-        void addChannel(uint16_t id, uint16_t parent_id, std::string name, std::string comment = "", std::string phonetic = "");
-        void addUser(uint16_t id, uint16_t channel, std::string name, std::string comment = "", std::string phonetic = "", std::string url = "", std::string integration_text = "");
-        void getUser(uint16_t id, uint16_t channel, std::string name, std::string comment = "", std::string phonetic = "", std::string url = "", std::string integration_text = "");
-        void removeUser(uint16_t id);
-        Gtk::TreeModel::Row getChannel(uint16_t id, Gtk::TreeModel::Children children);
-        Gtk::TreeModel::Row getUser(uint16_t id, Gtk::TreeModel::Children children);
+        void addChannel(uint32_t id, uint32_t parent_id, std::string name, std::string comment = "", std::string phonetic = "");
+        void addUser(uint32_t id, uint32_t channel, std::string name, std::string comment = "", std::string phonetic = "", std::string url = "", std::string integration_text = "");
+        void updateLobby(std::string name, std::string comment = "", std::string phonetic = "");
+        void removeUser(uint32_t id);
+        Gtk::TreeModel::Row getChannel(uint32_t id, Gtk::TreeModel::Children children);
+        Gtk::TreeModel::Row getUser(uint32_t id, Gtk::TreeModel::Children children);
         bool expand_all(void);
         bool collapse_all(void);
 };/*}}}*/

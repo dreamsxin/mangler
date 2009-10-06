@@ -112,6 +112,7 @@ void Mangler::serverConfigButton_clicked_cb(void) {/*{{{*/
 }/*}}}*/
 void Mangler::connectButton_clicked_cb(void) {/*{{{*/
     builder->get_widget("connectButton", button);
+    channelTree->updateLobby("Connecting...");
     if (button->get_label() == "gtk-connect") {
         Glib::Thread::create(sigc::mem_fun(this->network, &ManglerNetwork::connect), FALSE);
         Glib::signal_timeout().connect( sigc::mem_fun(*this, &Mangler::getNetworkEvent), 50 );
@@ -221,7 +222,9 @@ Mangler::getNetworkEvent() {/*{{{*/
             case V3_EVENT_USER_LOGIN:
                 u = v3_get_user(ev->user.id);
                 fprintf(stderr, "adding user id %d: %s\n", ev->user.id, u->name);
-                channelTree->addUser(u->id, u->channel, u->name, u->comment, u->phonetic, u->url, u->integration_text);
+                channelTree->addUser((uint32_t)u->id, (uint32_t)u->channel, u->name, u->comment, u->phonetic, u->url, u->integration_text);
+                // TODO: why can't we free the user... there is most likely a bug here -- possible mem leak
+                //v3_free_user(u);
                 break;
             case V3_EVENT_USER_LOGOUT:
                 // can't get any user info... it's already gone by this point
@@ -231,9 +234,25 @@ Mangler::getNetworkEvent() {/*{{{*/
             case V3_EVENT_LOGIN_COMPLETE:
                 channelTree->expand_all();
                 break;
+            case V3_EVENT_USER_CHAN_MOVE:
+                u = v3_get_user(ev->user.id);
+                fprintf(stderr, "moving user id %d to channel id %d\n", ev->user.id, ev->channel.id);
+                channelTree->removeUser((uint32_t)ev->user.id);
+                channelTree->addUser((uint32_t)u->id, (uint32_t)ev->channel.id, u->name, u->comment, u->phonetic, u->url, u->integration_text);
+                // TODO: why can't we free the user... there is most likely a bug here -- possible mem leak
+                //v3_free_user(u);
+                break;
+            case V3_EVENT_CHAN_ADDED:
+                c = v3_get_channel(ev->channel.id);
+                fprintf(stderr, "adding channel id %d: %s\n", ev->channel.id, c->name);
+                channelTree->addChannel((uint32_t)c->id, (uint32_t)c->parent, c->name, c->comment, c->phonetic);
+                // TODO: why can't we free the user... there is most likely a bug here -- possible mem leak
+                //v3_free_channel(c);
+                break;
             default:
                 fprintf(stderr, "******************************************************** got unknown event type %d\n", ev->type);
         }
+        channelTree->expand_all();
         free(ev);
     }
     return true;

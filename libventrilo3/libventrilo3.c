@@ -1394,9 +1394,15 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                 return V3_MALFORMED;
             } else {
                 _v3_msg_0x53 *m = (_v3_msg_0x53 *)msg->contents;
+                v3_event *ev;
                 _v3_lock_recvq();
                 // queue the channel change notification
                 _v3_debug(V3_DEBUG_INFO, "user %d moved to channel %d", m->user_id, m->channel_id);
+                ev = malloc(sizeof(v3_event));
+                ev->type = V3_EVENT_USER_CHAN_MOVE;
+                ev->user.id = m->user_id;
+                ev->channel.id = m->channel_id;
+                v3_queue_event(ev);
                 _v3_unlock_recvq();
             }
             _v3_destroy_packet(msg);
@@ -1573,7 +1579,13 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                 _v3_debug(V3_DEBUG_INFO, "adding %d channels from channel list",  m->channel_count);
                 cl = calloc(m->channel_count, sizeof(v3_channel));
                 for (ctr = 0; ctr < m->channel_count; ctr++) {
+                    v3_event *ev;
                     _v3_update_channel(&m->channel_list[ctr]);
+                    ev = malloc(sizeof(v3_event));
+                    ev->type = V3_EVENT_CHAN_ADDED;
+                    ev->channel.id = m->channel_list[ctr].id;
+                    _v3_debug(V3_DEBUG_INFO, "queuing event type %d for user %d", ev->type, ev->user.id);
+                    v3_queue_event(ev);
                 }
                 free(cl);
                 _v3_unlock_channellist();
@@ -1991,6 +2003,7 @@ v3_get_channel(uint16_t id) {/*{{{*/
         if (c->id == id) {
             _v3_copy_channel(ret_channel, c);
             _v3_unlock_channellist();
+            _v3_func_leave("v3_get_channel");
             return ret_channel;
         }
     }

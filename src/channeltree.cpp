@@ -18,19 +18,69 @@ ManglerChannelTree::ManglerChannelTree(Glib::RefPtr<Gtk::Builder> builder)/*{{{*
     builder->get_widget("channelView", channelView);
     channelView->set_model(channelStore);
     //channelView->append_column("ID", channelRecord.id);
-    channelView->append_column("Name", channelRecord.displayName);
+    int colnum = channelView->append_column("Name", channelRecord.displayName) - 1;
+    channelStore->set_sort_column(channelRecord.displayName, Gtk::SORT_ASCENDING);
+    channelView->get_column(colnum)->set_cell_data_func(
+                *channelView->get_column_cell_renderer(colnum),
+                sigc::mem_fun(*this, &ManglerChannelTree::renderCellData)
+                );
 }/*}}}*/
 
+/*
+ *  The GTK cell renederer for the channel tree view
+ *  
+ *  This function sets the colors, weight, etc for each row in the tree
+ */
 void
-ManglerChannelTree::addUser(uint16_t id, uint16_t parent_id, std::string name, std::string comment, std::string phonetic, std::string url, std::string integration_text) {/*{{{*/
+ManglerChannelTree::renderCellData(Gtk::CellRenderer *cell, const Gtk::TreeModel::iterator& iter) {/*{{{*/
+    Gtk::CellRendererText *crt = dynamic_cast<Gtk::CellRendererText*>(cell);
+    if(iter) {
+        Gtk::TreeModel::Row row = *iter;
+        Glib::ustring value = row[channelRecord.displayName];
+        bool isUser = row[channelRecord.isUser];
+        if (!isUser) {
+            crt->property_scale() = 1;
+            crt->property_style() = Pango::STYLE_NORMAL;
+            crt->property_weight() = 600;
+            //crt->property_cell_background() = "#dfdfdf";
+        } else if (isUser) {
+            crt->property_scale() = 1;
+            crt->property_style() = Pango::STYLE_NORMAL;
+            crt->property_weight() = 400;
+            //crt->property_cell_background() = "#ffffff";
+        }
+        crt->property_text() = value;
+    }
+}/*}}}*/
+
+/*
+ * Add a user to the channel tree
+ *
+ * id                       user's ventrilo id
+ * parent_id                the channel id of the channel the user is in
+ * name                     the user name
+ * comment = ""
+ * phonetic = ""
+ * url = ""
+ * integration_text = ""     
+ *
+ * this calculates the display name automatically
+ */
+void
+ManglerChannelTree::addUser(uint32_t id, uint32_t parent_id, std::string name, std::string comment, std::string phonetic, std::string url, std::string integration_text) {/*{{{*/
     std::string displayName = "";
     Gtk::TreeModel::Row parent;
     gsize tmp;
 
+    if (id == 0) {
+        updateLobby(name, comment, phonetic);
+        return;
+    }
     if (! (parent = getChannel(parent_id, channelStore->children())) && id > 0) {
         fprintf(stderr, "orphaned user: id %d: %s is supposed to be in channel %d\n", id, name.c_str(), parent_id);
         return;
     }
+    
     displayName = name;
     if (! comment.empty()) {
         displayName = displayName + " (" + (url.empty() ? "" : "U: ") + comment + ")";
@@ -45,7 +95,7 @@ ManglerChannelTree::addUser(uint16_t id, uint16_t parent_id, std::string name, s
     }
     channelRow                                  = *channelIter;
     channelRow[channelRecord.displayName]       = g_locale_to_utf8(displayName.c_str(), -1, NULL, &tmp, NULL);
-    channelRow[channelRecord.isUser]            = false;
+    channelRow[channelRecord.isUser]            = id == 0 ? false : true;
     channelRow[channelRecord.id]                = id;
     channelRow[channelRecord.parent_id]         = parent_id;
     channelRow[channelRecord.name]              = name;
@@ -55,20 +105,29 @@ ManglerChannelTree::addUser(uint16_t id, uint16_t parent_id, std::string name, s
     channelRow[channelRecord.integration_text]  = integration_text;
 }/*}}}*/
 
+/*
+ * Add a channel to the channel tree
+ *
+ * id                       user's ventrilo id
+ * parent_id                the channel id of the channel the user is in
+ * name                     the user name
+ * comment = ""
+ * phonetic = ""
+ */
 void
-ManglerChannelTree::addChannel(uint16_t id, uint16_t parent_id, std::string name, std::string comment, std::string phonetic) {/*{{{*/
+ManglerChannelTree::addChannel(uint32_t id, uint32_t parent_id, std::string name, std::string comment, std::string phonetic) {/*{{{*/
     std::string displayName = "";
     Gtk::TreeModel::Row parent;
     gsize tmp;
 
     if (! (parent = getChannel(parent_id, channelStore->children())) && id > 0) {
         fprintf(stderr, "orphaned channel: id %d: %s is supposed to be a child of %d\n", id, name.c_str(), parent_id);
-        return;
     }
     displayName = name;
     if (! comment.empty()) {
         displayName = displayName + " (" + comment + ")";
     }
+    //displayName = "<span weight=\"bold\">" + displayName + "</span>";
     if (parent) {
         channelIter                                 = channelStore->append(parent.children());
     } else {
@@ -86,25 +145,31 @@ ManglerChannelTree::addChannel(uint16_t id, uint16_t parent_id, std::string name
     channelRow[channelRecord.integration_text]  = "";
 }/*}}}*/
 
+/*
+ * Remove a user from the channel tree
+ *
+ * id                       user's ventrilo id
+ */
 void
-ManglerChannelTree::removeUser(uint16_t id) {/*{{{*/
+ManglerChannelTree::removeUser(uint32_t id) {/*{{{*/
     std::string displayName = "";
     Gtk::TreeModel::Row user;
 
-    if (! (user = getChannel(id, channelStore->children())) && id > 0) {
+    if (! (user = getUser(id, channelStore->children())) && id > 0) {
         fprintf(stderr, "could not find user id %d to delete\n", id);
         return;
     }
     channelStore->erase(user);
 }/*}}}*/
 
+// Recursively search the channel store for a specific channel id and returns the row
 Gtk::TreeModel::Row
-ManglerChannelTree::getChannel(uint16_t id, Gtk::TreeModel::Children children) {/*{{{*/
+ManglerChannelTree::getChannel(uint32_t id, Gtk::TreeModel::Children children) {/*{{{*/
     Gtk::TreeModel::Children::iterator iter = children.begin();
-    //std::cerr << "looking for id : " << id  << endl;
+    //std::cerr << "looking for channel id : " << id  << endl;
     while (iter != children.end()) {
         Gtk::TreeModel::Row row = *iter;
-        int rowId = row[channelRecord.id];
+        uint32_t rowId = row[channelRecord.id];
         bool isUser = row[channelRecord.isUser];
         //std::cerr << "iterating: " << rowId << " | isUser: " << isUser << " | name: " << row[channelRecord.name] << endl;
         if (rowId == id && isUser == false) {
@@ -123,13 +188,14 @@ ManglerChannelTree::getChannel(uint16_t id, Gtk::TreeModel::Children children) {
     return *iter;
 }/*}}}*/
 
+// Recursively search the channel store for a specific user id and returns the row
 Gtk::TreeModel::Row
-ManglerChannelTree::getUser(uint16_t id, Gtk::TreeModel::Children children) {/*{{{*/
+ManglerChannelTree::getUser(uint32_t id, Gtk::TreeModel::Children children) {/*{{{*/
     Gtk::TreeModel::Children::iterator iter = children.begin();
-    //std::cerr << "looking for id : " << id  << endl;
+    //std::cerr << "looking for user id : " << id  << endl;
     while (iter != children.end()) {
         Gtk::TreeModel::Row row = *iter;
-        int rowId = row[channelRecord.id];
+        uint32_t rowId = row[channelRecord.id];
         bool isUser = row[channelRecord.isUser];
         //std::cerr << "iterating: " << rowId << " | isUser: " << isUser << " | name: " << row[channelRecord.name] << endl;
         if (rowId == id && isUser == true) {
@@ -138,7 +204,7 @@ ManglerChannelTree::getUser(uint16_t id, Gtk::TreeModel::Children children) {/*{
         }
         if (row.children().size()) {
             //std::cerr << "looking through children" << endl;
-            if (row = getChannel(id, row->children())) {
+            if (row = getUser(id, row->children())) {
                 //std::cerr << "found it in a child" << endl;
                 return row;
             }
@@ -146,6 +212,31 @@ ManglerChannelTree::getUser(uint16_t id, Gtk::TreeModel::Children children) {/*{
         iter++;
     }
     return *iter;
+}/*}}}*/
+
+void
+ManglerChannelTree::updateLobby(std::string name, std::string comment, std::string phonetic) {/*{{{*/
+    std::string displayName = "";
+    Gtk::TreeModel::Row lobby;
+    gsize tmp;
+
+    if (! (lobby = getChannel(0, channelStore->children()))) {
+        channelIter                                 = channelStore->append();
+        lobby                                       = *channelIter;
+    }
+    displayName = name;
+    if (! comment.empty()) {
+        displayName = displayName + " (" + comment + ")";
+    }
+    lobby[channelRecord.displayName]       = g_locale_to_utf8(displayName.c_str(), -1, NULL, &tmp, NULL);
+    lobby[channelRecord.isUser]            = false;
+    lobby[channelRecord.id]                = 0;
+    lobby[channelRecord.parent_id]         = 0;
+    lobby[channelRecord.name]              = name;
+    lobby[channelRecord.comment]           = comment;
+    lobby[channelRecord.phonetic]          = phonetic;
+    lobby[channelRecord.url]               = "";
+    lobby[channelRecord.integration_text]  = "";
 }/*}}}*/
 
 bool
