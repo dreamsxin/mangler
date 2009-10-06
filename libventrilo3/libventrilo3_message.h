@@ -89,8 +89,7 @@ typedef struct _v3_net_message_0x37 {/*{{{*/
 } _v3_msg_0x37;
 int _v3_get_0x37(_v3_net_message *msg);
 _v3_net_message *_v3_put_0x37(int sequence);/*}}}*/
-
-typedef struct _v3_net_message_0x3b {
+typedef struct _v3_net_message_0x3b {/*{{{*/
     /*
      * Message Type 0x3B is used to move a user from one channel to another.
      * Error codes can be found in _v3_move_errors.
@@ -99,9 +98,8 @@ typedef struct _v3_net_message_0x3b {
     uint16_t user_id;	// 4
     uint16_t channel_id;// 6
     uint32_t error_id;	// 8
-} _v3_msg_0x3b;
-
-typedef struct _v3_net_message_0x42 {
+} _v3_msg_0x3b;/*}}}*/
+typedef struct _v3_net_message_0x42 {/*{{{*/
     /*
      * Message Type 0x42 is used for both rcon and global chat.
      * In case of subtypes 2 and 3, a VentriloNetString is appended to the end of this packet.
@@ -110,8 +108,7 @@ typedef struct _v3_net_message_0x42 {
     uint16_t user_id;	// 4
     uint32_t subtype;	// 6
     uint16_t unknown;	// 10
-} _v3_msg_0x42;
-
+} _v3_msg_0x42;/*}}}*/
 typedef struct _v3_net_message_0x46 {/*{{{*/
     /*
      * libventrilo3: 10:17:47:         PACKET: message type: 0x46 (70)
@@ -434,8 +431,7 @@ typedef struct _v3_net_message_0x60 {/*{{{*/
 } _v3_msg_0x60;
 int _v3_get_0x60(_v3_net_message *msg);
 int _v3_destroy_0x60(_v3_net_message *msg);/*}}}*/
-
-typedef struct _v3_net_message_0x61 {
+typedef struct _v3_net_message_0x61 {/*{{{*/
     /*
      * Message Type 0x61 is used for adding, removing, and listing user bans.
      * Bitmasks can be found in _v3_bitmasks.
@@ -449,9 +445,8 @@ typedef struct _v3_net_message_0x61 {
     uint8_t  banned_user[32];   // 20
     uint8_t  banned_by[32];	// 52
     uint8_t  ban_msg[128];	// 84
-} _v3_msg_0x61;
-
-typedef struct _v3_net_message_0x62 {
+} _v3_msg_0x61;/*}}}*/
+typedef struct _v3_net_message_0x62 {/*{{{*/
     /*
      * Message Type 0x62 is used for sending and receiving pages.
      * Errors can be found in _v3_page_errors.
@@ -460,8 +455,7 @@ typedef struct _v3_net_message_0x62 {
     uint16_t from;		// 4
     uint16_t to;		// 6
     uint32_t error_id;		// 8
-} _v3_msg_0x62;
-
+} _v3_msg_0x62;/*}}}*/
 
 
 char *   _v3_get_msg_string(void *offset, uint16_t *len);

@@ -306,6 +306,7 @@ pthread_mutex_t         *recvq_mutex = NULL;
 pthread_mutex_t         *sendq_mutex = NULL;
 
 pthread_mutex_t         *soundq_mutex = NULL;
+pthread_cond_t          *soundq_cond = NULL;
 
 pthread_mutex_t         *eventq_mutex = NULL;
 pthread_cond_t          *eventq_cond = NULL;

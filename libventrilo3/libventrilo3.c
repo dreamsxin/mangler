@@ -1119,7 +1119,9 @@ _v3_lock_soundq(void) {/*{{{*/
 
         _v3_debug(V3_DEBUG_MUTEX, "initializing _v3_soundq mutex");
         soundq_mutex = malloc(sizeof(pthread_mutex_t));
+        soundq_cond = malloc(sizeof(pthread_cond_t));
         pthread_mutex_init(soundq_mutex, &mta);
+        pthread_cond_init(soundq_cond, (pthread_condattr_t *) &mta);
     }
     _v3_debug(V3_DEBUG_MUTEX, "locking _v3_soundq");
     pthread_mutex_lock(soundq_mutex);
@@ -1365,8 +1367,9 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                                 }
                                 fclose(f);
                                 _v3_soundq_length += speex->frame_size;
-                                _v3_debug(V3_DEBUG_INFO, "sound queue is now %d bytes", _v3_soundq_length);
+                                _v3_debug(V3_DEBUG_INFO, "sound queue is now %d samples (%d bytes)", _v3_soundq_length, _v3_soundq_length*2);
                             }
+                            pthread_cond_signal(soundq_cond);
                             _v3_unlock_soundq();
                         }
                         break;
@@ -1973,15 +1976,17 @@ v3_free_channel(v3_channel *channel) {/*{{{*/
     free(channel);
 }/*}}}*/
 
+// these functions return the number of BYTES, *NOT* the number of SAMPLES
 uint16_t *
 v3_get_soundq(uint32_t *len) {/*{{{*/
     uint16_t *soundq;
 
     _v3_func_enter("v3_get_soundq");
     _v3_lock_soundq();
-    soundq = malloc(_v3_soundq_length);
-    memcpy(soundq, _v3_soundq, _v3_soundq_length);
-    *len = _v3_soundq_length;
+    pthread_cond_wait(soundq_cond, soundq_mutex);
+    soundq = malloc(_v3_soundq_length*sizeof(uint16_t));
+    memcpy(soundq, _v3_soundq, _v3_soundq_length*sizeof(uint16_t));
+    *len = _v3_soundq_length*sizeof(uint16_t);
     _v3_soundq_length = 0;
     _v3_unlock_soundq();
     _v3_func_leave("v3_get_soundq");
@@ -1995,14 +2000,14 @@ v3_get_soundq_length(void) {/*{{{*/
 
     _v3_func_enter("v3_get_soundq_length");
     _v3_lock_soundq();
-    length = _v3_soundq_length;
+    length = _v3_soundq_length*2;
     _v3_unlock_soundq();
     _v3_func_leave("v3_get_soundq_length");
     return length;
 }/*}}}*/
 
 int
-v3_queue_event(v3_event *ev) {
+v3_queue_event(v3_event *ev) {/*{{{*/
     v3_event *last;
     int len = 0;
 
@@ -2035,13 +2040,12 @@ v3_queue_event(v3_event *ev) {
     _v3_debug(V3_DEBUG_INFO, "queued event type %d.  now have %d events in queue", ev->type, len);
     _v3_func_leave("v3_queue_event");
     return true;
-}
+}/*}}}*/
 
 v3_event *
-v3_get_event(int block) {
+v3_get_event(int block) {/*{{{*/
     v3_event *ev;
 
-    _v3_func_enter("v3_get_event");
     if (eventq_mutex == NULL) {
         pthread_mutexattr_t mta;
         pthread_mutexattr_init(&mta);
@@ -2056,7 +2060,6 @@ v3_get_event(int block) {
     // if we're not blocking and ev is NULL, just return NULL;
     if (block == V3_NONBLOCK && _v3_eventq == NULL) {
         _v3_debug(V3_DEBUG_MUTEX, "nonblocking and no events waiting");
-        _v3_func_leave("v3_get_event");
         return NULL;
     }
     pthread_mutex_lock(eventq_mutex);
@@ -2067,12 +2070,11 @@ v3_get_event(int block) {
     ev = _v3_eventq;
     _v3_eventq = ev->next;
     pthread_mutex_unlock(eventq_mutex);
-    _v3_func_leave("v3_get_event");
     return ev;
-}
+}/*}}}*/
 
 v3_event *
-_v3_get_last_event(int *len) {
+_v3_get_last_event(int *len) {/*{{{*/
     v3_event *ev;
     int ctr;
     if (_v3_eventq == NULL) {
@@ -2083,7 +2085,7 @@ _v3_get_last_event(int *len) {
         *len = ctr;
     }
     return ev;
-}
+}/*}}}*/
 
 /*
    struct  v3_channel **v3_channel_list(void);

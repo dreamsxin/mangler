@@ -5,6 +5,7 @@
 #include <gtkmm.h>
 #include "channeltree.h"
 #include "manglernetwork.h"
+#include "mangleraudio.h"
 
 extern "C" {
 #include <ventrilo3.h>
@@ -30,6 +31,7 @@ class Mangler
         Glib::RefPtr<Gtk::StatusIcon>       statusIcon;
         ManglerChannelTree                  *channelTree;
         ManglerNetwork                      *network;
+        ManglerAudio                        *audio;
 
         Glib::Thread                        *networkThread;
         Glib::Thread                        *audioInputThread;
@@ -47,7 +49,7 @@ class Mangler
         void aboutButton_clicked_cb(void);
         void xmitButton_pressed_cb(void);
         void xmitButton_released_cb(void);
-        bool statusUpdate(void);
+        bool getNetworkEvent(void);
 
         // quick connect signal handlers
         void qcConnectButton_clicked_cb(void);

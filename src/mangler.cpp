@@ -87,6 +87,9 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
     // Create Network Communication Object
     network = new ManglerNetwork(builder);
 
+    // Create audio object
+    audio = new ManglerAudio();
+
     // Statusbar Icon
     statusIcon = Gtk::StatusIcon::create(icons["mangler_headset_blue"]);
 }/*}}}*/
@@ -111,7 +114,8 @@ void Mangler::connectButton_clicked_cb(void) {/*{{{*/
     builder->get_widget("connectButton", button);
     if (button->get_label() == "gtk-connect") {
         Glib::Thread::create(sigc::mem_fun(this->network, &ManglerNetwork::connect), FALSE);
-        Glib::signal_timeout().connect( sigc::mem_fun(*this, &Mangler::statusUpdate), 50 );
+        Glib::Thread::create(sigc::mem_fun(this->audio, &ManglerAudio::startOutputStream), FALSE);
+        Glib::signal_timeout().connect( sigc::mem_fun(*this, &Mangler::getNetworkEvent), 50 );
     } else {
         v3_logout();
         button->set_label("gtk-connect");
@@ -182,7 +186,7 @@ void Mangler::qcCancelButton_clicked_cb(void) {/*{{{*/
 }/*}}}*/
 
 bool
-Mangler::statusUpdate() {
+Mangler::getNetworkEvent() {/*{{{*/
     v3_event *ev;
 
     while ((ev = v3_get_event(V3_NONBLOCK)) != NULL) {
@@ -205,7 +209,7 @@ Mangler::statusUpdate() {
         }
     }
     return true;
-}
+}/*}}}*/
 
 
 ManglerError::ManglerError(uint32_t code, std::string message, std::string module) {

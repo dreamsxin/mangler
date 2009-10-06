@@ -11,10 +11,9 @@ ManglerNetwork::ManglerNetwork(        Glib::RefPtr<Gtk::Builder>          build
 
 void
 ManglerNetwork::connect(void) {/*{{{*/
-    v3_debuglevel(V3_DEBUG_ALL);
-    Gtk::ProgressBar *pb;
-    //if (! v3_login((char *)"localhost:3784", (char *)"eric", (char *)"test", (char *)"")) {
-    if (! v3_login((char *)"evolve.typefrag.com:54174", (char *)"eric", (char *)"mangler", (char *)"")) {
+    v3_debuglevel(V3_DEBUG_INFO);
+    if (! v3_login((char *)"localhost:3784", (char *)"eric", (char *)"test", (char *)"")) {
+    //if (! v3_login((char *)"evolve.typefrag.com:54174", (char *)"eric", (char *)"mangler", (char *)"")) {
     //if (! v3_login((char *)"tungsten.typefrag.com:29549", (char *)"eric", (char *)"mangler", (char *)"")) {
         gdk_threads_enter();
         builder->get_widget("disconnectedDialog", msgdialog);
