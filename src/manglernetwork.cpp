@@ -27,8 +27,8 @@ ManglerNetwork::connect(void) {/*{{{*/
         gdk_threads_leave();
         return;
     }
-    v3_user *user = v3_get_user(0);
-    mangler->channelTree->addChannel(user->id, 0, user->name, user->comment);
+    //v3_user *user = v3_get_user(0);
+    //mangler->channelTree->addChannel(user->id, 0, user->name, user->comment);
     for (int ctr = 0; ctr < 0xff; ctr++) {
         if (v3_channel *c = v3_get_channel(ctr)) {
             gdk_threads_enter();
@@ -49,7 +49,7 @@ ManglerNetwork::connect(void) {/*{{{*/
     */
     Glib::Thread::create(sigc::mem_fun(mangler->audio, &ManglerAudio::startOutputStream), FALSE);
     gdk_threads_enter();
-    mangler->channelTree->expand_all();
+    //mangler->channelTree->expand_all();
     builder->get_widget("connectButton", button);
     button->set_label("gtk-disconnect");
     builder->get_widget("serverTabLabel", label);

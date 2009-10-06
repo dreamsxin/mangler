@@ -1805,6 +1805,12 @@ v3_login(char *server, char *username, char *password, char *phonetic) {/*{{{*/
         _v3_destroy_packet(response);
 
         _v3_status(100, "Login Complete.");
+        {
+            v3_event *ev;
+            ev = malloc(sizeof(v3_event));
+            ev->type = V3_EVENT_LOGIN_COMPLETE;
+            v3_queue_event(ev);
+        }
         return true;
     }
     return false;

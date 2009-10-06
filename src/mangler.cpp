@@ -228,6 +228,9 @@ Mangler::getNetworkEvent() {/*{{{*/
                 fprintf(stderr, "removing user id %d\n", ev->user.id);
                 channelTree->removeUser(ev->user.id);
                 break;
+            case V3_EVENT_LOGIN_COMPLETE:
+                channelTree->expand_all();
+                break;
             default:
                 fprintf(stderr, "******************************************************** got unknown event type %d\n", ev->type);
         }
