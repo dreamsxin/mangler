@@ -11,10 +11,11 @@ ManglerNetwork::ManglerNetwork(        Glib::RefPtr<Gtk::Builder>          build
 
 void
 ManglerNetwork::connect(void) {/*{{{*/
-    v3_debuglevel(V3_DEBUG_INFO);
-    if (! v3_login((char *)"localhost:3784", (char *)"eric", (char *)"test", (char *)"")) {
-    //if (! v3_login((char *)"evolve.typefrag.com:54174", (char *)"eric", (char *)"mangler", (char *)"")) {
-    //if (! v3_login((char *)"tungsten.typefrag.com:29549", (char *)"eric", (char *)"mangler", (char *)"")) {
+    v3_debuglevel(V3_DEBUG_ALL ^ (V3_DEBUG_PACKET|V3_DEBUG_PACKET_ENCRYPTED));
+    std::string server = "localhost:3784";
+    //std::string server = "evolve.typefrag.com:54174";
+    //std::string server = "tungsten.typefrag.com:29549";
+    if (! v3_login((char *)server.c_str(), (char *)"eric", (char *)"test", (char *)"")) {
         gdk_threads_enter();
         builder->get_widget("disconnectedDialog", msgdialog);
         msgdialog->set_message(_v3_error(NULL));
@@ -36,6 +37,7 @@ ManglerNetwork::connect(void) {/*{{{*/
             v3_free_channel(c);
         }
     }
+    /*
     for (int ctr = 1; ctr < 0xff; ctr++) {
         if (v3_user *u = v3_get_user(ctr)) {
             gdk_threads_enter();
@@ -44,10 +46,14 @@ ManglerNetwork::connect(void) {/*{{{*/
             v3_free_user(u);
         }
     }
+    */
+    Glib::Thread::create(sigc::mem_fun(mangler->audio, &ManglerAudio::startOutputStream), FALSE);
     gdk_threads_enter();
     mangler->channelTree->expand_all();
     builder->get_widget("connectButton", button);
     button->set_label("gtk-disconnect");
+    builder->get_widget("serverTabLabel", label);
+    label->set_label(server);
     gdk_threads_leave();
     do {
         _v3_net_message *msg;

@@ -114,7 +114,6 @@ void Mangler::connectButton_clicked_cb(void) {/*{{{*/
     builder->get_widget("connectButton", button);
     if (button->get_label() == "gtk-connect") {
         Glib::Thread::create(sigc::mem_fun(this->network, &ManglerNetwork::connect), FALSE);
-        Glib::Thread::create(sigc::mem_fun(this->audio, &ManglerAudio::startOutputStream), FALSE);
         Glib::signal_timeout().connect( sigc::mem_fun(*this, &Mangler::getNetworkEvent), 50 );
     } else {
         v3_logout();
@@ -190,7 +189,22 @@ Mangler::getNetworkEvent() {/*{{{*/
     v3_event *ev;
 
     while ((ev = v3_get_event(V3_NONBLOCK)) != NULL) {
+        v3_user *u;
+        v3_channel *c;
         switch (ev->type) {
+            case V3_EVENT_PING:
+                char buf[16];
+                builder->get_widget("pingLabel", label);
+                if (ev->ping != 65535) {
+                    snprintf(buf, 16, "%d", ev->ping);
+                    label->set_text(buf);
+                } else {
+                    label->set_text("checking...");
+                }
+                builder->get_widget("userCountLabel", label);
+                snprintf(buf, 16, "%d/%d", v3_user_count(), v3_get_max_clients());
+                label->set_text(buf);
+                break;
             case V3_EVENT_STATUS:
                 builder->get_widget("progressbar", progressbar);
                 builder->get_widget("statusbar", statusbar);
@@ -204,9 +218,20 @@ Mangler::getNetworkEvent() {/*{{{*/
                 statusbar->push(ev->status.message);
                 fprintf(stderr, "got event type %d: %d %s\n", ev->type, ev->status.percent, ev->status.message);
                 break;
+            case V3_EVENT_USER_LOGIN:
+                u = v3_get_user(ev->user.id);
+                fprintf(stderr, "adding user id %d: %s\n", ev->user.id, u->name);
+                channelTree->addUser(u->id, u->channel, u->name, u->comment, u->phonetic, u->url, u->integration_text);
+                break;
+            case V3_EVENT_USER_LOGOUT:
+                // can't get any user info... it's already gone by this point
+                fprintf(stderr, "removing user id %d\n", ev->user.id);
+                channelTree->removeUser(ev->user.id);
+                break;
             default:
-                fprintf(stderr, "got unknown event type %d\n", ev->type);
+                fprintf(stderr, "******************************************************** got unknown event type %d\n", ev->type);
         }
+        free(ev);
     }
     return true;
 }/*}}}*/

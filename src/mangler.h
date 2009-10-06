@@ -27,6 +27,7 @@ class Mangler
         Gtk::Window                         *window;
         Gtk::ProgressBar                    *progressbar;
         Gtk::Statusbar                      *statusbar;
+        Gtk::Label                          *label;
         std::map<std::string, Glib::RefPtr<Gdk::Pixbuf> >  icons;
         Glib::RefPtr<Gtk::StatusIcon>       statusIcon;
         ManglerChannelTree                  *channelTree;

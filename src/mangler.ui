@@ -322,9 +322,11 @@
                         <child>
                           <object class="GtkHBox" id="hbox4">
                             <property name="visible">True</property>
+                            <property name="homogeneous">True</property>
                             <child>
                               <object class="GtkLabel" id="label1">
                                 <property name="visible">True</property>
+                                <property name="xalign">0.94999998807907104</property>
                                 <property name="label" translatable="yes">Ping:</property>
                               </object>
                               <packing>
@@ -346,6 +348,7 @@
                             <child>
                               <object class="GtkLabel" id="label3">
                                 <property name="visible">True</property>
+                                <property name="xalign">0.94999998807907104</property>
                                 <property name="label" translatable="yes">Users:</property>
                               </object>
                               <packing>
@@ -367,6 +370,7 @@
                             <child>
                               <object class="GtkLabel" id="label2">
                                 <property name="visible">True</property>
+                                <property name="xalign">0.94999998807907104</property>
                                 <property name="label" translatable="yes">Recording:</property>
                               </object>
                               <packing>

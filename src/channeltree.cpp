@@ -86,6 +86,18 @@ ManglerChannelTree::addChannel(uint16_t id, uint16_t parent_id, std::string name
     channelRow[channelRecord.integration_text]  = "";
 }/*}}}*/
 
+void
+ManglerChannelTree::removeUser(uint16_t id) {/*{{{*/
+    std::string displayName = "";
+    Gtk::TreeModel::Row user;
+
+    if (! (user = getChannel(id, channelStore->children())) && id > 0) {
+        fprintf(stderr, "could not find user id %d to delete\n", id);
+        return;
+    }
+    channelStore->erase(user);
+}/*}}}*/
+
 Gtk::TreeModel::Row
 ManglerChannelTree::getChannel(uint16_t id, Gtk::TreeModel::Children children) {/*{{{*/
     Gtk::TreeModel::Children::iterator iter = children.begin();
@@ -96,6 +108,31 @@ ManglerChannelTree::getChannel(uint16_t id, Gtk::TreeModel::Children children) {
         bool isUser = row[channelRecord.isUser];
         //std::cerr << "iterating: " << rowId << " | isUser: " << isUser << " | name: " << row[channelRecord.name] << endl;
         if (rowId == id && isUser == false) {
+            //std::cerr << "found it" << endl;
+            return row;
+        }
+        if (row.children().size()) {
+            //std::cerr << "looking through children" << endl;
+            if (row = getChannel(id, row->children())) {
+                //std::cerr << "found it in a child" << endl;
+                return row;
+            }
+        }
+        iter++;
+    }
+    return *iter;
+}/*}}}*/
+
+Gtk::TreeModel::Row
+ManglerChannelTree::getUser(uint16_t id, Gtk::TreeModel::Children children) {/*{{{*/
+    Gtk::TreeModel::Children::iterator iter = children.begin();
+    //std::cerr << "looking for id : " << id  << endl;
+    while (iter != children.end()) {
+        Gtk::TreeModel::Row row = *iter;
+        int rowId = row[channelRecord.id];
+        bool isUser = row[channelRecord.isUser];
+        //std::cerr << "iterating: " << rowId << " | isUser: " << isUser << " | name: " << row[channelRecord.name] << endl;
+        if (rowId == id && isUser == true) {
             //std::cerr << "found it" << endl;
             return row;
         }

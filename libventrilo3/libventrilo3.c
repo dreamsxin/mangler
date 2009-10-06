@@ -1178,7 +1178,12 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                 _v3_func_leave("_v3_process_message");
                 return V3_MALFORMED;
             } else {
+                v3_event *ev;
                 _v3_msg_0x37 *m = msg->contents;
+                ev = malloc(sizeof(v3_event));
+                ev->type = V3_EVENT_PING;
+                ev->ping = m->ping;
+                v3_queue_event(ev);
                 _v3_net_message *response;
                 v3_luser.id = m->user_id;
                 v3_luser.ping = m->ping;
@@ -1472,55 +1477,75 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
 
                 ul = calloc(m->user_count, sizeof(v3_user));
                 switch (m->subtype) {
-                    case 0x00:
+                    case V3_REMOVE_USER:
                         _v3_debug(V3_DEBUG_INFO, "removing %d users from user list",  m->user_count);
                         for (ctr = 0; ctr < m->user_count; ctr++) {
+                            v3_event *ev;
+                            ev = malloc(sizeof(v3_event));
+                            ev->type = V3_EVENT_USER_LOGOUT;
+                            ev->user.id = m->user_list[ctr].id;
+                            _v3_debug(V3_DEBUG_INFO, "queuing event type %d for user %d", ev->type, ev->user.id);
                             _v3_remove_user(m->user_list[ctr].id);
+                            v3_queue_event(ev);
                         }
                         break;
-                    case 0x01:
-                    case 0x02:
-                        _v3_debug(V3_DEBUG_INFO, "adding/updating %d users on user list",  m->user_count);
+                    case V3_MODIFY_USER:
+                    case V3_ADD_USER:
+                        _v3_debug(V3_DEBUG_INFO, "adding %d users on user list",  m->user_count);
                         for (ctr = 0; ctr < m->user_count; ctr++) {
+                            v3_event *ev;
                             _v3_update_user(&m->user_list[ctr]);
+                            ev = malloc(sizeof(v3_event));
+                            ev->type = V3_ADD_USER ? V3_EVENT_USER_LOGIN : V3_EVENT_USER_MODIFY;
+                            ev->user.id = m->user_list[ctr].id;
+                            _v3_debug(V3_DEBUG_INFO, "queuing event type %d for user %d", ev->type, ev->user.id);
+                            v3_queue_event(ev);
                         }
                         break;
-                    case 0x04:
+                    case V3_USER_LIST:
                         // <strke>user 1 is always ourself in this subtype</strike>
                         // TODO: this is a bad assumption... the userlist can span multiple 0x5d packets
-                        v3_luser.id = m->user_list[1].id;
-                        if (v3_luser.name) {
-                            free(v3_luser.name);
+                        if (!v3_user_count()) {
+                            v3_luser.id = m->user_list[1].id;
+                            if (v3_luser.name) {
+                                free(v3_luser.name);
+                            }
+                            v3_luser.name = strdup(m->user_list[1].name);
+                            if (v3_luser.phonetic) {
+                                free(v3_luser.phonetic);
+                            }
+                            v3_luser.phonetic = strdup(m->user_list[1].phonetic);
+                            if (v3_luser.comment) {
+                                free(v3_luser.comment);
+                            }
+                            v3_luser.comment = strdup(m->user_list[1].comment);
+                            if (v3_luser.integration_text) {
+                                free(v3_luser.integration_text);
+                            }
+                            v3_luser.integration_text = strdup(m->user_list[1].integration_text);
+                            if (v3_luser.url) {
+                                free(v3_luser.url);
+                            }
+                            v3_luser.url = strdup(m->user_list[1].url);
+                            _v3_debug(V3_DEBUG_INTERNAL, "found myself: id: %d | chan: %d | name: %s | phonetic: %s | comment: %s | int: %s | url: %s",
+                                    m->user_list[1].id,
+                                    m->user_list[1].channel,
+                                    m->user_list[1].name,
+                                    m->user_list[1].phonetic,
+                                    m->user_list[1].comment,
+                                    m->user_list[1].integration_text,
+                                    m->user_list[1].url
+                                    );
                         }
-                        v3_luser.name = strdup(m->user_list[1].name);
-                        if (v3_luser.phonetic) {
-                            free(v3_luser.phonetic);
-                        }
-                        v3_luser.phonetic = strdup(m->user_list[1].phonetic);
-                        if (v3_luser.comment) {
-                            free(v3_luser.comment);
-                        }
-                        v3_luser.comment = strdup(m->user_list[1].comment);
-                        if (v3_luser.integration_text) {
-                            free(v3_luser.integration_text);
-                        }
-                        v3_luser.integration_text = strdup(m->user_list[1].integration_text);
-                        if (v3_luser.url) {
-                            free(v3_luser.url);
-                        }
-                        v3_luser.url = strdup(m->user_list[1].url);
-                        _v3_debug(V3_DEBUG_INTERNAL, "found myself: id: %d | chan: %d | name: %s | phonetic: %s | comment: %s | int: %s | url: %s",
-                                m->user_list[1].id,
-                                m->user_list[1].channel,
-                                m->user_list[1].name,
-                                m->user_list[1].phonetic,
-                                m->user_list[1].comment,
-                                m->user_list[1].integration_text,
-                                m->user_list[1].url
-                                );
                         _v3_debug(V3_DEBUG_INFO, "adding %d users to user list",  m->user_count);
                         for (ctr = 0; ctr < m->user_count; ctr++) {
+                            v3_event *ev;
                             _v3_update_user(&m->user_list[ctr]);
+                            ev = malloc(sizeof(v3_event));
+                            ev->type = V3_EVENT_USER_LOGIN;
+                            ev->user.id = m->user_list[ctr].id;
+                            _v3_debug(V3_DEBUG_INFO, "queuing event type %d for user %d", ev->type, ev->user.id);
+                            v3_queue_event(ev);
                         }
                         break;
                 }
@@ -1918,7 +1943,7 @@ v3_user_count(void) {/*{{{*/
     _v3_lock_userlist();
     for (c = v3_user_list; c != NULL; c = c->next, ctr++);
     _v3_unlock_userlist();
-    return ctr;
+    return ctr-1;
 
 }/*}}}*/
 
@@ -2059,7 +2084,6 @@ v3_get_event(int block) {/*{{{*/
     }
     // if we're not blocking and ev is NULL, just return NULL;
     if (block == V3_NONBLOCK && _v3_eventq == NULL) {
-        _v3_debug(V3_DEBUG_MUTEX, "nonblocking and no events waiting");
         return NULL;
     }
     pthread_mutex_lock(eventq_mutex);
@@ -2086,6 +2110,12 @@ _v3_get_last_event(int *len) {/*{{{*/
     }
     return ev;
 }/*}}}*/
+
+int
+v3_get_max_clients(void) {
+    // - 1 for the lobby user
+    return v3_server.max_clients;
+}
 
 /*
    struct  v3_channel **v3_channel_list(void);

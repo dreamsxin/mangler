@@ -157,8 +157,10 @@ struct _v3_permissions {/*{{{*/
 enum _v3_events
 {
     V3_EVENT_STATUS,
+    V3_EVENT_PING,
     V3_EVENT_USER_LOGIN,
     V3_EVENT_USER_LOGOUT,
+    V3_EVENT_USER_MODIFY,
     V3_EVENT_USER_TALK_START,
     V3_EVENT_USER_TALK_END,
     V3_EVENT_USER_PAGED,
@@ -168,7 +170,6 @@ enum _v3_events
     V3_EVENT_CHAN_REMOVED,
     V3_EVENT_CHAN_MODIFIED,
     V3_EVENT_RECV_AUDIO,
-    V3_EVENT_RECV_PING_RESP
 };
 
 typedef struct _v3_event v3_event;
@@ -179,6 +180,14 @@ struct _v3_event {
         uint8_t percent;
         char message[256];
     } status;
+    uint16_t ping;
+    struct {
+        uint16_t id;
+    } user;
+    struct {
+        uint16_t id;
+    } channel;
+
     v3_event *next;
 };
 
@@ -352,6 +361,7 @@ int         v3_message_waiting(int block);
 uint16_t    *v3_get_soundq(uint32_t *len);
 uint32_t    v3_get_soundq_length(void);
 v3_event    *v3_get_event(int block);
+int         v3_get_max_clients(void);
 
 // User list functions
 int         v3_user_count(void);
