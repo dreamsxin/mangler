@@ -152,6 +152,7 @@
           <object class="GtkHBox" id="hbox1">
             <property name="visible">True</property>
             <child>
+
               <object class="GtkVBox" id="vbox2">
                 <property name="visible">True</property>
                 <property name="orientation">vertical</property>
