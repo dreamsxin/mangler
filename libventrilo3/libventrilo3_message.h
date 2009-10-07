@@ -60,18 +60,26 @@ typedef struct _v3_net_message_0x00 {/*{{{*/
      *  key exchange.  The client sends 64 bytes of random data to the server.
      */
     uint16_t type;
-
-    char version[6];
-
-    uint16_t unknown_1;
-    uint16_t unknown_2;
-    uint16_t unknown_3;
-    uint16_t unknown_4;
-    uint16_t unknown_5;
-
+    char version[16];
     char salt1[32];
     char salt2[32];
 } _v3_msg_0x00;/*}}}*/
+
+typedef struct _v3_net_message_0x06 {
+    /*
+     * Message Type 0x06 is used for many purposes, mostly during authing. 
+     * Includes but not limited to: auth failure, encryption key exchange, server disabled messages.
+     */
+    uint32_t type;        	  // 0
+    uint16_t unknown_1;     	  // 4
+    uint16_t error_id;  	  // 6
+    uint32_t subtype;   	  // 8
+    
+    uint8_t  unknown_2;		  // 12 - variable length starts here
+    uint8_t* encryption_key;
+} _v3_msg_0x06;
+int _v3_get_0x06(_v3_net_message *msg);
+
 typedef struct _v3_net_message_0x37 {/*{{{*/
     /*
      *  Message Type 0x37 is a ping to/from the server

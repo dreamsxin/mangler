@@ -176,6 +176,29 @@ _v3_put_msg_user(void *buffer, v3_user *user) {/*{{{*/
  * _v3_destroy_* functions will free any memory allocated for a specific packet
  * type.  The message structure itself is *NOT* freed
  */
+int
+_v3_get_0x06(_v3_net_message *msg) {
+    _v3_msg_0x06 *m;
+
+    _v3_func_enter("_v3_get_0x06");
+    m = malloc(sizeof(_v3_msg_0x06));
+    memcpy(m, msg->data, 12);
+    if(m->subtype & 4) {
+	/*
+	 * TODO: 
+	 * This will leak memory. 
+	 * BE SURE to free when we start calling ventrilo_read_keys from process_message.
+	 */
+	m->encryption_key = malloc(msg->len - 12);
+	memcpy(m->encryption_key, msg->data + 12, msg->len - 12);
+    } else {
+	m->unknown_2 = msg->data[12];
+    }
+    msg->contents = m;
+    _v3_func_enter("_v3_get_0x06");
+    return true;
+}
+
 // Message 0x37 (55) | PING /*{{{*/
 int
 _v3_get_0x37(_v3_net_message *msg) {/*{{{*/

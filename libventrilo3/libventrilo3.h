@@ -96,14 +96,14 @@ char *_v3_errors[] = {
     "Guest accounts are not allowed to join the specified channel."
 };
 
-char* _v3_page_errors[] = {
+char *_v3_page_errors[] = {
     "User does not exist.",
     "User is not accepting pages.",
     "Users current channel does not allow for paging.",
     "Insufficient access rights."
 };
 
-char* _v3_move_errors[] = {
+char *_v3_move_errors[] = {
     "Admin rights",
     "Invalid source object",
     "Invalid target object",
@@ -112,10 +112,22 @@ char* _v3_move_errors[] = {
     "Target channel does not allow phantoms, or source does not have proper access rights"
 };
 
+char *_v3_server_disabled_errors[] = {
+    "This server has not been authenticated yet. Please try connecting again in a few minutes.",
+    "This server has not been configured properly. Please contact your hosting company.",
+    "This server has been remotely disabled.",
+    "This server has been disabled by order of the Department of Homeland Security.",
+    "This server has been disabled by order of the Federal Bureau of Investigation.",
+    "This server has been disabled by order of the United States Government.",
+    "This server has been disabled by order of the United States Secret Service.",
+    "This server has been disabled by order of the goverment in which the server is hosted.",
+    "This server has been disabled by order of the United States Military."
+};
+
 /*
  * These should be accessed through m->bitmask_id - 8.
  */
-char* _v3_bitmasks[] = {
+char *_v3_bitmasks[] = {
     "255.0.0.0",
     "255.0.0.0",
     "255.128.0.0",
