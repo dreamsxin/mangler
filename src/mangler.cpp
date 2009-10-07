@@ -125,7 +125,7 @@ void Mangler::connectButton_clicked_cb(void) {/*{{{*/
     builder->get_widget("connectButton", button);
     channelTree->updateLobby("Connecting...");
     if (button->get_label() == "gtk-connect") {
-        Glib::Thread::create(sigc::mem_fun(this->network, &ManglerNetwork::connect), FALSE);
+        Glib::Thread::create(sigc::bind(sigc::mem_fun(this->network, &ManglerNetwork::connect), "localhost", "3784", "username", "password"), FALSE);
         Glib::signal_timeout().connect( sigc::mem_fun(*this, &Mangler::getNetworkEvent), 50 );
     } else {
         v3_logout();
@@ -160,8 +160,6 @@ void Mangler::xmitButton_released_cb(void) {/*{{{*/
 void Mangler::qcConnectButton_clicked_cb(void) {/*{{{*/
     fprintf(stderr, "qc connect button clicked\n");
     Gtk::Entry *textbox;
-    Gtk::MessageDialog *dialog;
-    int ctr;
 
     builder->get_widget("qcServerName", textbox);
     std::string server = textbox->get_text();
@@ -172,27 +170,8 @@ void Mangler::qcConnectButton_clicked_cb(void) {/*{{{*/
     builder->get_widget("qcPassword", textbox);
     std::string password = textbox->get_text();
     fprintf(stderr, "connecting to: %s:%s\n", server.c_str(), port.c_str());
-    v3_debuglevel(V3_DEBUG_ALL);
-    std::string connectserver = server + ":" + port;
-    if (! v3_login((char *)connectserver.c_str(), (char *)username.c_str(), (char *)password.c_str(), (char *)"")) {
-        builder->get_widget("disconnectedDialog", dialog);
-        dialog->set_message(_v3_error(NULL));
-        v3_logout();
-        dialog->run();
-        dialog->hide();
-        return;
-    }
-    v3_debuglevel(V3_DEBUG_NONE);
-
-    v3_user *user = v3_get_user(0);
-    channelTree->addChannel(user->id, 0, user->name, user->comment);
-    for (ctr = 0; ctr < 0xff; ctr++) {
-        if (v3_channel *c = v3_get_channel(ctr)) {
-            channelTree->addChannel(c->id, c->parent, c->name, c->comment);
-            v3_free_channel(c);
-        }
-    }
-    channelTree->expand_all();
+    Glib::Thread::create(sigc::bind(sigc::mem_fun(this->network, &ManglerNetwork::connect), server, port, username, password), FALSE);
+    Glib::signal_timeout().connect( sigc::mem_fun(*this, &Mangler::getNetworkEvent), 50 );
 }/*}}}*/
 void Mangler::qcCancelButton_clicked_cb(void) {/*{{{*/
     fprintf(stderr, "qc cancel button clicked\n");
@@ -237,8 +216,7 @@ Mangler::getNetworkEvent() {/*{{{*/
                 u = v3_get_user(ev->user.id);
                 fprintf(stderr, "adding user id %d: %s\n", ev->user.id, u->name);
                 channelTree->addUser((uint32_t)u->id, (uint32_t)u->channel, u->name, u->comment, u->phonetic, u->url, u->integration_text);
-                // TODO: why can't we free the user... there is most likely a bug here -- possible mem leak
-                //v3_free_user(u);
+                v3_free_user(u);
                 break;
             case V3_EVENT_CHAN_REMOVE:
                 // can't get any channel info... it's already gone by this point
@@ -258,15 +236,13 @@ Mangler::getNetworkEvent() {/*{{{*/
                 fprintf(stderr, "moving user id %d to channel id %d\n", ev->user.id, ev->channel.id);
                 channelTree->removeUser((uint32_t)ev->user.id);
                 channelTree->addUser((uint32_t)u->id, (uint32_t)ev->channel.id, u->name, u->comment, u->phonetic, u->url, u->integration_text);
-                // TODO: why can't we free the user... there is most likely a bug here -- possible mem leak
-                //v3_free_user(u);
+                v3_free_user(u);
                 break;
             case V3_EVENT_CHAN_ADD:
                 c = v3_get_channel(ev->channel.id);
                 fprintf(stderr, "adding channel id %d: %s\n", ev->channel.id, c->name);
                 channelTree->addChannel((uint32_t)c->id, (uint32_t)c->parent, c->name, c->comment, c->phonetic);
-                // TODO: why can't we free the user... there is most likely a bug here -- possible mem leak
-                //v3_free_channel(c);
+                v3_free_channel(c);
                 break;
             case V3_EVENT_ERROR_MSG:
                 builder->get_widget("errorDialog", msgdialog);

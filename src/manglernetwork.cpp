@@ -10,11 +10,11 @@ ManglerNetwork::ManglerNetwork(        Glib::RefPtr<Gtk::Builder>          build
 }
 
 void
-ManglerNetwork::connect(void) {/*{{{*/
+ManglerNetwork::connect(std::string hostname, std::string port, std::string username, std::string password) {/*{{{*/
     v3_debuglevel(V3_DEBUG_ALL ^ (V3_DEBUG_PACKET|V3_DEBUG_PACKET_ENCRYPTED));
-    std::string server = "localhost:3784"; std::string password = "test";
+    std::string server = hostname + ":" + port;
     //std::string server = "tungsten.typefrag.com:29549"; std::string password = "";
-    if (! v3_login((char *)server.c_str(), (char *)"eric", (char *)password.c_str(), (char *)"")) {
+    if (! v3_login((char *)server.c_str(), (char *)username.c_str(), (char *)password.c_str(), (char *)"")) {
         return;
     }
     Glib::Thread::create(sigc::mem_fun(mangler->audio, &ManglerAudio::startOutputStream), FALSE);

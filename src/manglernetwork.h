@@ -9,7 +9,7 @@ class ManglerNetwork
 {
     public:
         ManglerNetwork(Glib::RefPtr<Gtk::Builder> builder);
-        void connect(void);
+        void connect(std::string hostname, std::string port, std::string username, std::string password);
         void disconnect(void);
         Gtk::Button *button;
         Gtk::Label *label;
