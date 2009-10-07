@@ -19,9 +19,6 @@ ManglerChannelTree::ManglerChannelTree(Glib::RefPtr<Gtk::Builder> builder)/*{{{*
     builder->get_widget("channelView", channelView);
     channelView->set_model(channelStore);
     //channelView->append_column("ID", channelRecord.id);
-    colnum = channelView->append_column("Icon", channelRecord.icon) - 1;
-    //channelView->get_column_cell_renderer(colnum)->set_fixed_size(10, -1);
-
     colnum = channelView->append_column("Name", channelRecord.displayName) - 1;
     // TODO: Write a sort routine to make sure users are always immediately
     // below the channel, otherwise users get sorted within the subchannels
@@ -30,6 +27,7 @@ ManglerChannelTree::ManglerChannelTree(Glib::RefPtr<Gtk::Builder> builder)/*{{{*
                 *channelView->get_column_cell_renderer(colnum),
                 sigc::mem_fun(*this, &ManglerChannelTree::renderCellData)
                 );
+    colnum = channelView->append_column("Icon", channelRecord.icon) - 1;
 }/*}}}*/
 
 /*

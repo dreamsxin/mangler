@@ -41,7 +41,8 @@ class ManglerChannelTree/*{{{*/
         Gtk::TreeModel::iterator            channelIter;
         Gtk::TreeModel::Row                 channelRow;
         Gtk::TreeViewColumn                 *column;
-        Gtk::CellRendererText               *renderer;
+        Gtk::CellRendererPixbuf             *pixrenderer;
+        Gtk::CellRendererText               *textrenderer;
         void renderCellData(Gtk::CellRenderer *cell, const Gtk::TreeModel::iterator& iter);
 
     public:

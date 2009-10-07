@@ -267,9 +267,11 @@ Mangler::getNetworkEvent() {/*{{{*/
                 break;
             case V3_EVENT_ERROR_MSG:
                 builder->get_widget("errorDialog", msgdialog);
+                gdk_threads_enter();
                 msgdialog->set_message(ev->error.message);
                 msgdialog->run();
                 msgdialog->hide();
+                gdk_threads_leave();
                 break;
             default:
                 fprintf(stderr, "******************************************************** got unknown event type %d\n", ev->type);
