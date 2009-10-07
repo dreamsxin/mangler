@@ -165,6 +165,7 @@ enum _v3_events
     V3_EVENT_CHAN_ADD,
     V3_EVENT_CHAN_MODIFY,
     V3_EVENT_CHAN_REMOVE,
+    V3_EVENT_ERROR_MSG,
 
 
     V3_EVENT_USER_MODIFY,
@@ -185,6 +186,11 @@ struct _v3_event {
         uint8_t percent;
         char message[256];
     } status;
+    struct {
+        uint16_t code;
+        uint8_t  disconnected;
+        char message[512];
+    } error;
     uint16_t ping;
     struct {
         uint16_t id;

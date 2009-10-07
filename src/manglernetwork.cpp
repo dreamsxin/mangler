@@ -1,6 +1,6 @@
 /*
-    * vim: softtabstop=4 shiftwidth=4 cindent foldmethod=marker expandtab
-     */
+ * vim: softtabstop=4 shiftwidth=4 cindent foldmethod=marker expandtab
+ */
 
 #include "mangler.h"
 #include "manglernetwork.h"
@@ -12,9 +12,10 @@ ManglerNetwork::ManglerNetwork(        Glib::RefPtr<Gtk::Builder>          build
 void
 ManglerNetwork::connect(void) {/*{{{*/
     //v3_debuglevel(V3_DEBUG_ALL ^ (V3_DEBUG_PACKET|V3_DEBUG_PACKET_ENCRYPTED));
-    /std::string server = "localhost:3784";
+    std::string server = "localhost:3784";
     //std::string server = "tungsten.typefrag.com:29549";
     if (! v3_login((char *)server.c_str(), (char *)"eric", (char *)"test", (char *)"")) {
+        /*
         gdk_threads_enter();
         builder->get_widget("disconnectedDialog", msgdialog);
         msgdialog->set_message(_v3_error(NULL));
@@ -24,6 +25,7 @@ ManglerNetwork::connect(void) {/*{{{*/
         gdk_threads_enter();
         msgdialog->hide();
         gdk_threads_leave();
+        */
         return;
     }
     Glib::Thread::create(sigc::mem_fun(mangler->audio, &ManglerAudio::startOutputStream), FALSE);

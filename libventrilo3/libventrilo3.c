@@ -1332,14 +1332,16 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                         break;
                     case V3_MODIFY_CHANNEL:
                     case V3_ADD_CHANNEL:
-                        _v3_debug(V3_DEBUG_INFO, "adding channel %d to list",  m->channel->id);
-                        v3_event *ev;
-                        _v3_update_channel(m->channel);
-                        ev = malloc(sizeof(v3_event));
-                        ev->type = (m->subtype == V3_MODIFY_CHANNEL) ? V3_EVENT_CHAN_MODIFY : V3_EVENT_CHAN_ADD;
-                        ev->channel.id = m->channel->id;
-                        _v3_debug(V3_DEBUG_INFO, "queuing event type %d for channel %d", ev->type, ev->channel.id);
-                        v3_queue_event(ev);
+                        {
+                            _v3_debug(V3_DEBUG_INFO, "adding channel %d to list",  m->channel->id);
+                            v3_event *ev;
+                            _v3_update_channel(m->channel);
+                            ev = malloc(sizeof(v3_event));
+                            ev->type = (m->subtype == V3_MODIFY_CHANNEL) ? V3_EVENT_CHAN_MODIFY : V3_EVENT_CHAN_ADD;
+                            ev->channel.id = m->channel->id;
+                            _v3_debug(V3_DEBUG_INFO, "queuing event type %d for channel %d", ev->type, ev->channel.id);
+                            v3_queue_event(ev);
+                        }
                         break;
                 }
                 _v3_unlock_channellist();
@@ -1497,6 +1499,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                 _v3_func_leave("_v3_process_message");
                 return V3_MALFORMED;
             } else {
+                v3_event *ev;
                 char buf[1024];
                 _v3_msg_0x59 *m = msg->contents;
                 snprintf(buf, 1024, "%s%s", _v3_errors[m->error], m->message);
@@ -1509,6 +1512,11 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                     _v3_debug(V3_DEBUG_INTERNAL, "disconnecting from server");
                     _v3_close_connection();
                 }
+                ev = malloc(sizeof(v3_event));
+                ev->type = V3_EVENT_ERROR_MSG;
+                ev->error.disconnected = m->close_connection;
+                strncpy(ev->error.message, buf, 512);
+                v3_queue_event(ev);
                 _v3_error(buf);
             }
             _v3_destroy_packet(msg);

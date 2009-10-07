@@ -22,12 +22,23 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
     icons.insert(std::make_pair("mangler_headset_grey_red",     Gdk::Pixbuf::create_from_inline(-1, mangler_headset_grey_red    )));
     icons.insert(std::make_pair("mangler_headset_red",          Gdk::Pixbuf::create_from_inline(-1, mangler_headset_red         )));
     icons.insert(std::make_pair("mangler_headset_red_red",      Gdk::Pixbuf::create_from_inline(-1, mangler_headset_red_red     )));
-    icons.insert(std::make_pair("user_silent_muted",         Gdk::Pixbuf::create_from_inline(-1, user_silent_muted        )));
-    icons.insert(std::make_pair("user_silent",               Gdk::Pixbuf::create_from_inline(-1, user_silent              )));
-    icons.insert(std::make_pair("user_xmit_elsewhere_muted", Gdk::Pixbuf::create_from_inline(-1, user_xmit_elsewhere_muted)));
-    icons.insert(std::make_pair("user_xmit_elsewhere",       Gdk::Pixbuf::create_from_inline(-1, user_xmit_elsewhere      )));
-    icons.insert(std::make_pair("user_xmit_muted",           Gdk::Pixbuf::create_from_inline(-1, user_xmit_muted          )));
-    icons.insert(std::make_pair("user_xmit",                 Gdk::Pixbuf::create_from_inline(-1, user_xmit                )));
+    icons.insert(std::make_pair("user_silent_muted",            Gdk::Pixbuf::create_from_inline(-1, user_silent_muted           )));
+    icons.insert(std::make_pair("user_silent",                  Gdk::Pixbuf::create_from_inline(-1, user_silent                 )));
+    icons.insert(std::make_pair("user_xmit_elsewhere_muted",    Gdk::Pixbuf::create_from_inline(-1, user_xmit_elsewhere_muted   )));
+    icons.insert(std::make_pair("user_xmit_elsewhere",          Gdk::Pixbuf::create_from_inline(-1, user_xmit_elsewhere         )));
+    icons.insert(std::make_pair("user_xmit_muted",              Gdk::Pixbuf::create_from_inline(-1, user_xmit_muted             )));
+    icons.insert(std::make_pair("user_xmit",                    Gdk::Pixbuf::create_from_inline(-1, user_xmit                   )));
+
+    icons.insert(std::make_pair("black_circle",                 Gdk::Pixbuf::create_from_inline(-1, black_circle                )));
+    icons.insert(std::make_pair("blue_circle",                  Gdk::Pixbuf::create_from_inline(-1, blue_circle                 )));
+    icons.insert(std::make_pair("blue_circle_small",            Gdk::Pixbuf::create_from_inline(-1, blue_circle_small           )));
+    icons.insert(std::make_pair("cyan_circle",                  Gdk::Pixbuf::create_from_inline(-1, cyan_circle                 )));
+    icons.insert(std::make_pair("green_circle",                 Gdk::Pixbuf::create_from_inline(-1, green_circle                )));
+    icons.insert(std::make_pair("grey_circle",                  Gdk::Pixbuf::create_from_inline(-1, grey_circle                 )));
+    icons.insert(std::make_pair("purple_circle",                Gdk::Pixbuf::create_from_inline(-1, purple_circle               )));
+    icons.insert(std::make_pair("red_circle",                   Gdk::Pixbuf::create_from_inline(-1, red_circle                  )));
+    icons.insert(std::make_pair("yellow_circle",                Gdk::Pixbuf::create_from_inline(-1, yellow_circle               )));
+
 
     try {
         if (options->uifromfile) {
@@ -91,7 +102,7 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
     audio = new ManglerAudio();
 
     // Statusbar Icon
-    statusIcon = Gtk::StatusIcon::create(icons["mangler_headset_blue"]);
+    statusIcon = Gtk::StatusIcon::create(icons["blue_circle"]);
 }/*}}}*/
 
 /*
@@ -226,6 +237,11 @@ Mangler::getNetworkEvent() {/*{{{*/
                 // TODO: why can't we free the user... there is most likely a bug here -- possible mem leak
                 //v3_free_user(u);
                 break;
+            case V3_EVENT_CHAN_REMOVE:
+                // can't get any channel info... it's already gone by this point
+                fprintf(stderr, "removing channel id %d\n", ev->channel.id);
+                channelTree->removeChannel(ev->channel.id);
+                break;
             case V3_EVENT_USER_LOGOUT:
                 // can't get any user info... it's already gone by this point
                 fprintf(stderr, "removing user id %d\n", ev->user.id);
@@ -242,12 +258,18 @@ Mangler::getNetworkEvent() {/*{{{*/
                 // TODO: why can't we free the user... there is most likely a bug here -- possible mem leak
                 //v3_free_user(u);
                 break;
-            case V3_EVENT_CHAN_ADDED:
+            case V3_EVENT_CHAN_ADD:
                 c = v3_get_channel(ev->channel.id);
                 fprintf(stderr, "adding channel id %d: %s\n", ev->channel.id, c->name);
                 channelTree->addChannel((uint32_t)c->id, (uint32_t)c->parent, c->name, c->comment, c->phonetic);
                 // TODO: why can't we free the user... there is most likely a bug here -- possible mem leak
                 //v3_free_channel(c);
+                break;
+            case V3_EVENT_ERROR_MSG:
+                builder->get_widget("errorDialog", msgdialog);
+                msgdialog->set_message(ev->error.message);
+                msgdialog->run();
+                msgdialog->hide();
                 break;
             default:
                 fprintf(stderr, "******************************************************** got unknown event type %d\n", ev->type);

@@ -10,6 +10,7 @@ class channelModelColumns : public Gtk::TreeModelColumnRecord/*{{{*/
     public:
         channelModelColumns() {
             add(displayName);
+            add(icon);
             add(isUser);
             add(id);
             add(parent_id);
@@ -21,6 +22,7 @@ class channelModelColumns : public Gtk::TreeModelColumnRecord/*{{{*/
         }
 
         Gtk::TreeModelColumn<Glib::ustring> displayName;
+        Gtk::TreeModelColumn<Glib::RefPtr<Gdk::Pixbuf> > icon;
         Gtk::TreeModelColumn<bool>          isUser;
         Gtk::TreeModelColumn<uint32_t>      id;
         Gtk::TreeModelColumn<uint32_t>      parent_id;
@@ -49,6 +51,7 @@ class ManglerChannelTree/*{{{*/
         void addUser(uint32_t id, uint32_t channel, std::string name, std::string comment = "", std::string phonetic = "", std::string url = "", std::string integration_text = "");
         void updateLobby(std::string name, std::string comment = "", std::string phonetic = "");
         void removeUser(uint32_t id);
+        void removeChannel(uint32_t id);
         Gtk::TreeModel::Row getChannel(uint32_t id, Gtk::TreeModel::Children children);
         Gtk::TreeModel::Row getUser(uint32_t id, Gtk::TreeModel::Children children);
         bool expand_all(void);

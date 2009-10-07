@@ -440,6 +440,7 @@
                                 <property name="can_focus">True</property>
                                 <property name="headers_visible">False</property>
                                 <property name="headers_clickable">False</property>
+                                <property name="enable_grid_lines">both</property>
                                 <property name="enable_tree_lines">True</property>
                               </object>
                             </child>
@@ -894,7 +895,7 @@
                         <child>
                           <object class="GtkButton" id="settingsServerSaveButton">
                             <property name="label" translatable="yes">Save</property>
-                            <property name="width_request">75</property>
+                            <property name="width_request">100</property>
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="can_default">True</property>
@@ -911,7 +912,7 @@
                         <child>
                           <object class="GtkButton" id="settingsServerClearButton">
                             <property name="label" translatable="yes">Clear</property>
-                            <property name="width_request">75</property>
+                            <property name="width_request">100</property>
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">True</property>
@@ -925,6 +926,8 @@
                         </child>
                       </object>
                       <packing>
+                        <property name="expand">False</property>
+                        <property name="fill">False</property>
                         <property name="position">1</property>
                       </packing>
                     </child>
@@ -1009,9 +1012,9 @@ Specifically:
       </object>
     </child>
   </object>
-  <object class="GtkMessageDialog" id="disconnectedDialog">
+  <object class="GtkMessageDialog" id="errorDialog">
     <property name="border_width">5</property>
-    <property name="title" translatable="yes">Mangler Disconnected</property>
+    <property name="title" translatable="yes">Server Error Message</property>
     <property name="resizable">False</property>
     <property name="modal">True</property>
     <property name="window_position">center-on-parent</property>

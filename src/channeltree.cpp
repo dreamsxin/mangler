@@ -10,6 +10,7 @@ using namespace std;
 
 ManglerChannelTree::ManglerChannelTree(Glib::RefPtr<Gtk::Builder> builder)/*{{{*/
 {
+    int colnum;
     this->builder = builder;
     // Create the Channel Store
     channelStore = Gtk::TreeStore::create(channelRecord);
@@ -18,8 +19,13 @@ ManglerChannelTree::ManglerChannelTree(Glib::RefPtr<Gtk::Builder> builder)/*{{{*
     builder->get_widget("channelView", channelView);
     channelView->set_model(channelStore);
     //channelView->append_column("ID", channelRecord.id);
-    int colnum = channelView->append_column("Name", channelRecord.displayName) - 1;
-    channelStore->set_sort_column(channelRecord.displayName, Gtk::SORT_ASCENDING);
+    colnum = channelView->append_column("Icon", channelRecord.icon) - 1;
+    //channelView->get_column_cell_renderer(colnum)->set_fixed_size(10, -1);
+
+    colnum = channelView->append_column("Name", channelRecord.displayName) - 1;
+    // TODO: Write a sort routine to make sure users are always immediately
+    // below the channel, otherwise users get sorted within the subchannels
+    //channelStore->set_sort_column(channelRecord.displayName, Gtk::SORT_ASCENDING);
     channelView->get_column(colnum)->set_cell_data_func(
                 *channelView->get_column_cell_renderer(colnum),
                 sigc::mem_fun(*this, &ManglerChannelTree::renderCellData)
@@ -95,6 +101,7 @@ ManglerChannelTree::addUser(uint32_t id, uint32_t parent_id, std::string name, s
     }
     channelRow                                  = *channelIter;
     channelRow[channelRecord.displayName]       = g_locale_to_utf8(displayName.c_str(), -1, NULL, &tmp, NULL);
+    channelRow[channelRecord.icon]              = mangler->icons["blue_circle"]->scale_simple(9, 9, Gdk::INTERP_BILINEAR);
     channelRow[channelRecord.isUser]            = id == 0 ? false : true;
     channelRow[channelRecord.id]                = id;
     channelRow[channelRecord.parent_id]         = parent_id;
@@ -135,6 +142,7 @@ ManglerChannelTree::addChannel(uint32_t id, uint32_t parent_id, std::string name
     }
     channelRow                                  = *channelIter;
     channelRow[channelRecord.displayName]       = g_locale_to_utf8(displayName.c_str(), -1, NULL, &tmp, NULL);
+    channelRow[channelRecord.icon]              = mangler->icons["black_circle"]->scale_simple(9, 9, Gdk::INTERP_BILINEAR);;
     channelRow[channelRecord.isUser]            = false;
     channelRow[channelRecord.id]                = id;
     channelRow[channelRecord.parent_id]         = parent_id;
@@ -160,6 +168,22 @@ ManglerChannelTree::removeUser(uint32_t id) {/*{{{*/
         return;
     }
     channelStore->erase(user);
+}/*}}}*/
+
+/*
+ * Remove a channel from the channel tree
+ *
+ * id                       channel's ventrilo id
+ */
+void
+ManglerChannelTree::removeChannel(uint32_t id) {/*{{{*/
+    Gtk::TreeModel::Row channel;
+
+    if (! (channel = getChannel(id, channelStore->children())) && id > 0) {
+        fprintf(stderr, "could not find channel id %d to delete\n", id);
+        return;
+    }
+    channelStore->erase(channel);
 }/*}}}*/
 
 // Recursively search the channel store for a specific channel id and returns the row
