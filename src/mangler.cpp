@@ -118,7 +118,7 @@ void Mangler::quickConnectButton_clicked_cb(void) {/*{{{*/
 }/*}}}*/
 void Mangler::serverConfigButton_clicked_cb(void) {/*{{{*/
     fprintf(stderr, "server button clicked\n");
-    builder->get_widget("settingsWindow", window);
+    builder->get_widget("serverListWindow", window);
     window->show();
 }/*}}}*/
 void Mangler::connectButton_clicked_cb(void) {/*{{{*/
@@ -141,6 +141,8 @@ void Mangler::chatButton_clicked_cb(void) {/*{{{*/
 }/*}}}*/
 void Mangler::settingsButton_clicked_cb(void) {/*{{{*/
     fprintf(stderr, "settings button clicked\n");
+    builder->get_widget("settingsWindow", window);
+    window->show();
 }/*}}}*/
 void Mangler::aboutButton_clicked_cb(void) {/*{{{*/
     builder->get_widget("aboutWindow", dialog);
@@ -203,6 +205,7 @@ Mangler::getNetworkEvent() {/*{{{*/
     while ((ev = v3_get_event(V3_NONBLOCK)) != NULL) {
         v3_user *u;
         v3_channel *c;
+        gdk_threads_enter();
         switch (ev->type) {
             case V3_EVENT_PING:
                 char buf[16];
@@ -267,16 +270,15 @@ Mangler::getNetworkEvent() {/*{{{*/
                 break;
             case V3_EVENT_ERROR_MSG:
                 builder->get_widget("errorDialog", msgdialog);
-                gdk_threads_enter();
                 msgdialog->set_message(ev->error.message);
                 msgdialog->run();
                 msgdialog->hide();
-                gdk_threads_leave();
                 break;
             default:
                 fprintf(stderr, "******************************************************** got unknown event type %d\n", ev->type);
         }
         channelTree->expand_all();
+        gdk_threads_leave();
         free(ev);
     }
     return true;

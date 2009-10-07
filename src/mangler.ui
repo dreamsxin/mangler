@@ -511,8 +511,8 @@
       </object>
     </child>
   </object>
-  <object class="GtkWindow" id="settingsWindow">
-    <property name="title" translatable="yes">Mangler Settings</property>
+  <object class="GtkWindow" id="serverListWindow">
+    <property name="title" translatable="yes">Mangler Server List</property>
     <property name="transient_for">manglerWindow</property>
     <child>
       <object class="GtkHBox" id="hbox7">
@@ -523,7 +523,7 @@
             <property name="orientation">vertical</property>
             <property name="spacing">5</property>
             <child>
-              <object class="GtkButton" id="settingsAddButton">
+              <object class="GtkButton" id="serverListAddButton">
                 <property name="label" translatable="yes">_Add Server</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
@@ -538,7 +538,7 @@
               </packing>
             </child>
             <child>
-              <object class="GtkButton" id="settingsDeleteButton">
+              <object class="GtkButton" id="serverListDeleteButton">
                 <property name="label" translatable="yes">_Delete Server</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
@@ -553,7 +553,7 @@
               </packing>
             </child>
             <child>
-              <object class="GtkButton" id="settingsSetDefaultButton">
+              <object class="GtkButton" id="serverListSetDefaultButton">
                 <property name="label" translatable="yes">_Set as Default</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
@@ -579,7 +579,7 @@
               </packing>
             </child>
             <child>
-              <object class="GtkButton" id="settingsCloseButton">
+              <object class="GtkButton" id="serverListCloseButton">
                 <property name="label" translatable="yes">_Close</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
@@ -613,7 +613,7 @@
                 <property name="vscrollbar_policy">automatic</property>
                 <property name="shadow_type">in</property>
                 <child>
-                  <object class="GtkTreeView" id="settingsServerListTreeView">
+                  <object class="GtkTreeView" id="serverListTreeView">
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
                   </object>
@@ -643,7 +643,7 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkEntry" id="settingsServerNameEntry">
+                      <object class="GtkEntry" id="serverListServerNameEntry">
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="invisible_char">&#x25CF;</property>
@@ -716,7 +716,7 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkEntry" id="settingsPortEntry">
+                      <object class="GtkEntry" id="serverListPortEntry">
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="max_length">5</property>
@@ -733,7 +733,7 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkEntry" id="settingsUsernameEntry">
+                      <object class="GtkEntry" id="serverListUsernameEntry">
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="max_length">31</property>
@@ -749,7 +749,7 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkEntry" id="settingsPasswordEntry">
+                      <object class="GtkEntry" id="serverListPasswordEntry">
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="max_length">16</property>
@@ -767,7 +767,7 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkEntry" id="settingsPhoneticEntry">
+                      <object class="GtkEntry" id="serverListPhoneticEntry">
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="max_length">31</property>
@@ -783,7 +783,7 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkEntry" id="settingsCommentEntry">
+                      <object class="GtkEntry" id="serverListCommentEntry">
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="max_length">127</property>
@@ -821,7 +821,7 @@
                                 <property name="visible">True</property>
                                 <property name="orientation">vertical</property>
                                 <child>
-                                  <object class="GtkCheckButton" id="settingsPageCheckButton">
+                                  <object class="GtkCheckButton" id="serverListPageCheckButton">
                                     <property name="label" translatable="yes">Accept Page Requests</property>
                                     <property name="visible">True</property>
                                     <property name="can_focus">True</property>
@@ -834,7 +834,7 @@
                                   </packing>
                                 </child>
                                 <child>
-                                  <object class="GtkCheckButton" id="settingsUtUCheckButton">
+                                  <object class="GtkCheckButton" id="serverListUtUCheckButton">
                                     <property name="label" translatable="yes">Accept User to User Transmissions</property>
                                     <property name="visible">True</property>
                                     <property name="can_focus">True</property>
@@ -847,7 +847,7 @@
                                   </packing>
                                 </child>
                                 <child>
-                                  <object class="GtkCheckButton" id="settingsPrivateChatCheckButton">
+                                  <object class="GtkCheckButton" id="serverListPrivateChatCheckButton">
                                     <property name="label" translatable="yes">Accept Private Chat Requests</property>
                                     <property name="visible">True</property>
                                     <property name="can_focus">True</property>
@@ -860,7 +860,7 @@
                                   </packing>
                                 </child>
                                 <child>
-                                  <object class="GtkCheckButton" id="settingsRecordCheckButton">
+                                  <object class="GtkCheckButton" id="serverListRecordCheckButton">
                                     <property name="label" translatable="yes">Allow Users To Record Your Conversations</property>
                                     <property name="visible">True</property>
                                     <property name="can_focus">True</property>
@@ -892,7 +892,7 @@
                       <object class="GtkHBox" id="hbox5">
                         <property name="visible">True</property>
                         <child>
-                          <object class="GtkButton" id="settingsServerSaveButton">
+                          <object class="GtkButton" id="serverListServerSaveButton">
                             <property name="label" translatable="yes">Save</property>
                             <property name="width_request">100</property>
                             <property name="visible">True</property>
@@ -909,7 +909,7 @@
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkButton" id="settingsServerClearButton">
+                          <object class="GtkButton" id="serverListServerClearButton">
                             <property name="label" translatable="yes">Clear</property>
                             <property name="width_request">100</property>
                             <property name="visible">True</property>
@@ -1239,5 +1239,341 @@ Specifically:
       <action-widget response="0">qcConnectButton</action-widget>
       <action-widget response="0">qcCancelButton</action-widget>
     </action-widgets>
+  </object>
+  <object class="GtkWindow" id="settingsWindow">
+    <property name="title" translatable="yes">Settings</property>
+    <property name="resizable">False</property>
+    <property name="transient_for">manglerWindow</property>
+    <child>
+      <object class="GtkVBox" id="vbox1">
+        <property name="visible">True</property>
+        <property name="orientation">vertical</property>
+        <child>
+          <object class="GtkNotebook" id="settingsNotebook">
+            <property name="visible">True</property>
+            <property name="can_focus">True</property>
+            <child>
+              <object class="GtkAlignment" id="alignment1">
+                <property name="visible">True</property>
+                <child>
+                  <placeholder/>
+                </child>
+              </object>
+            </child>
+            <child type="tab">
+              <object class="GtkLabel" id="settingsPageGeneralLabel">
+                <property name="visible">True</property>
+                <property name="label" translatable="yes">General</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkAlignment" id="alignment2">
+                <property name="visible">True</property>
+                <child>
+                  <placeholder/>
+                </child>
+              </object>
+              <packing>
+                <property name="position">1</property>
+              </packing>
+            </child>
+            <child type="tab">
+              <object class="GtkLabel" id="settingsPageAudioLabel">
+                <property name="visible">True</property>
+                <property name="label" translatable="yes">Audio</property>
+              </object>
+              <packing>
+                <property name="position">1</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkVBox" id="vbox2">
+                <property name="visible">True</property>
+                <property name="orientation">vertical</property>
+                <child>
+                  <object class="GtkFrame" id="frame1">
+                    <property name="visible">True</property>
+                    <property name="label_xalign">0</property>
+                    <child>
+                      <object class="GtkTable" id="table1">
+                        <property name="visible">True</property>
+                        <property name="n_rows">6</property>
+                        <property name="n_columns">2</property>
+                        <child>
+                          <object class="GtkCheckButton" id="debugStatus">
+                            <property name="label" translatable="yes">Network Status Events</property>
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <property name="receives_default">False</property>
+                            <property name="draw_indicator">True</property>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="GtkCheckButton" id="debugStatus1">
+                            <property name="label" translatable="yes">Error Messages</property>
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <property name="receives_default">False</property>
+                            <property name="draw_indicator">True</property>
+                          </object>
+                          <packing>
+                            <property name="top_attach">1</property>
+                            <property name="bottom_attach">2</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkCheckButton" id="debugStatus2">
+                            <property name="label" translatable="yes">Packet Dumps</property>
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <property name="receives_default">False</property>
+                            <property name="draw_indicator">True</property>
+                          </object>
+                          <packing>
+                            <property name="top_attach">4</property>
+                            <property name="bottom_attach">5</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkCheckButton" id="debugStatus3">
+                            <property name="label" translatable="yes">Internal Network Info</property>
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <property name="receives_default">False</property>
+                            <property name="draw_indicator">True</property>
+                          </object>
+                          <packing>
+                            <property name="top_attach">3</property>
+                            <property name="bottom_attach">4</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkCheckButton" id="debugStatus4">
+                            <property name="label" translatable="yes">Stack Info</property>
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <property name="receives_default">False</property>
+                            <property name="draw_indicator">True</property>
+                          </object>
+                          <packing>
+                            <property name="top_attach">2</property>
+                            <property name="bottom_attach">3</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkCheckButton" id="debugStatus6">
+                            <property name="label" translatable="yes">Packet Parsing</property>
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <property name="receives_default">False</property>
+                            <property name="draw_indicator">True</property>
+                          </object>
+                          <packing>
+                            <property name="top_attach">5</property>
+                            <property name="bottom_attach">6</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkCheckButton" id="debugStatus8">
+                            <property name="label" translatable="yes">Socket Messages</property>
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <property name="receives_default">False</property>
+                            <property name="draw_indicator">True</property>
+                          </object>
+                          <packing>
+                            <property name="left_attach">1</property>
+                            <property name="right_attach">2</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkCheckButton" id="debugStatus9">
+                            <property name="label" translatable="yes">General Notices</property>
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <property name="receives_default">False</property>
+                            <property name="draw_indicator">True</property>
+                          </object>
+                          <packing>
+                            <property name="left_attach">1</property>
+                            <property name="right_attach">2</property>
+                            <property name="top_attach">1</property>
+                            <property name="bottom_attach">2</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkCheckButton" id="debugStatus10">
+                            <property name="label" translatable="yes">General Info</property>
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <property name="receives_default">False</property>
+                            <property name="draw_indicator">True</property>
+                          </object>
+                          <packing>
+                            <property name="left_attach">1</property>
+                            <property name="right_attach">2</property>
+                            <property name="top_attach">2</property>
+                            <property name="bottom_attach">3</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkCheckButton" id="debugStatus11">
+                            <property name="label" translatable="yes">Mutex Info</property>
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <property name="receives_default">False</property>
+                            <property name="draw_indicator">True</property>
+                          </object>
+                          <packing>
+                            <property name="left_attach">1</property>
+                            <property name="right_attach">2</property>
+                            <property name="top_attach">3</property>
+                            <property name="bottom_attach">4</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkCheckButton" id="debugStatus12">
+                            <property name="label" translatable="yes">Memory Allocation</property>
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <property name="receives_default">False</property>
+                            <property name="draw_indicator">True</property>
+                          </object>
+                          <packing>
+                            <property name="left_attach">1</property>
+                            <property name="right_attach">2</property>
+                            <property name="top_attach">4</property>
+                            <property name="bottom_attach">5</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkCheckButton" id="debugStatus5">
+                            <property name="label" translatable="yes">Encrypted Packet Dumps</property>
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <property name="receives_default">False</property>
+                            <property name="draw_indicator">True</property>
+                          </object>
+                          <packing>
+                            <property name="left_attach">1</property>
+                            <property name="right_attach">2</property>
+                            <property name="top_attach">5</property>
+                            <property name="bottom_attach">6</property>
+                          </packing>
+                        </child>
+                      </object>
+                    </child>
+                    <child type="label">
+                      <object class="GtkLabel" id="label1">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">&lt;b&gt;Enable Debug Output&lt;/b&gt;</property>
+                        <property name="use_markup">True</property>
+                      </object>
+                    </child>
+                  </object>
+                  <packing>
+                    <property name="position">0</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkAlignment" id="alignment4">
+                    <property name="visible">True</property>
+                    <child>
+                      <placeholder/>
+                    </child>
+                  </object>
+                  <packing>
+                    <property name="position">1</property>
+                  </packing>
+                </child>
+              </object>
+              <packing>
+                <property name="position">2</property>
+              </packing>
+            </child>
+            <child type="tab">
+              <object class="GtkLabel" id="settingsPageDebugLabel">
+                <property name="visible">True</property>
+                <property name="label" translatable="yes">Debug</property>
+              </object>
+              <packing>
+                <property name="position">2</property>
+              </packing>
+            </child>
+          </object>
+          <packing>
+            <property name="position">0</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkHBox" id="hbox1">
+            <property name="visible">True</property>
+            <child>
+              <object class="GtkAlignment" id="alignment3">
+                <property name="visible">True</property>
+                <child>
+                  <placeholder/>
+                </child>
+              </object>
+              <packing>
+                <property name="position">0</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkHButtonBox" id="hbuttonbox1">
+                <property name="visible">True</property>
+                <child>
+                  <object class="GtkButton" id="button1">
+                    <property name="label" translatable="yes">Cancel</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">False</property>
+                    <property name="position">0</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton" id="button2">
+                    <property name="label" translatable="yes">Apply</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">False</property>
+                    <property name="position">1</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton" id="button3">
+                    <property name="label" translatable="yes">OK</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">False</property>
+                    <property name="position">2</property>
+                  </packing>
+                </child>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="position">1</property>
+              </packing>
+            </child>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="position">1</property>
+          </packing>
+        </child>
+      </object>
+    </child>
   </object>
 </interface>
