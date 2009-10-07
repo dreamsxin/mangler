@@ -1189,51 +1189,58 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
 		_v3_destroy_packet(msg);
 		_v3_func_leave("_v3_process_message");
 		return V3_MALFORMED;
-	    }
-	    _v3_msg_0x06 *m = msg->contents;
-	    // This lock will only be needed when we start calling ventrilo_read_keys() from here.
-	    _v3_lock_server();
-	    if(m->subtype & 0x01) {
-		_v3_debug(V3_DEBUG_INTERNAL, "FIXME: Server requested client to drop connection.");
-	    }
-	    if(m->subtype & 0x02) {
-		_v3_debug(V3_DEBUG_INTERNAL, "FIXME: Authenticated as administrator.");
-	    }
-	    if(m->subtype & 0x04) {
-		/*
-		 * TODO: 
-		 * We should pass m->encryption_key to ventrilo_read_keys() and respond with our own key.
-		 * For now, this is done using the _v3_server_key_exchange() function.
-		 */
-		_v3_debug(V3_DEBUG_INTERNAL, "FIXME: ventrilo_read_keys() should be called from 0x06 processing.");
-		/*
-		if (ventrilo_read_keys(&v3_server.client_key, &v3_server.server_key, m->encryption_key, m->len - 12) < 0) {
-		    _v3_error("could not parse keys from the server");
-		}*/
-	    }
-	    if(m->subtype & 0x10) {
-		_v3_debug(V3_DEBUG_INTERNAL, "FIXME: Unknown subtype, please report a packetdump.");
-	    }
-	    if(m->subtype & 0x20) {
-		_v3_debug(V3_DEBUG_INTERNAL, "FIXME: Unknown subtype, please report a packetdump.");
-	    }
-	    if(m->subtype & 0x40) {
-		/*
-		 * AUTHENTICATION FAILED, ALERT USER
-		 */
-	    }
-	    if(m->subtype & 0x100) {
-		_v3_debug(V3_DEBUG_INTERNAL, "FIXME: Unknown subtype, please report a packetdump.");
-	    }
-	    if(m->subtype & 0x200) {
-		_v3_debug(V3_DEBUG_INTERNAL, "FIXME: Server has been disabled: %s", _v3_server_disabled_errors[m->error_id-1]);
-	    }
-	    if(m->subtype & 0x400) {
-		_v3_debug(V3_DEBUG_INTERNAL, "FIXME: Unknown subtype, please report a packetdump.");
-	    }
-	    _v3_destroy_packet(msg);
-	    _v3_func_leave("_v3_process_message");
-	    _v3_unlock_server();
+            } else {
+                _v3_msg_0x06 *m = msg->contents;
+                v3_event *ev = malloc(sizeof(v3_event));
+                ev->type = V3_EVENT_ERROR_MSG;
+                char buf[512] = "";
+
+                // This lock will only be needed when we start calling ventrilo_read_keys() from here.
+                _v3_lock_server();
+                if(m->subtype & 0x01) {
+                    ev->error.disconnected = true;
+                    strncat(buf, "You have been disconnected from the server.\n", 512);
+                    v3_logout();
+                }
+                if(m->subtype & 0x02) {
+                    _v3_debug(V3_DEBUG_INTERNAL, "FIXME: Authenticated as administrator.");
+                }
+                if(m->subtype & 0x04) {
+                    /*
+                     * TODO: 
+                     * We should pass m->encryption_key to ventrilo_read_keys() and respond with our own key.
+                     * For now, this is done using the _v3_server_key_exchange() function.
+                     */
+                    _v3_debug(V3_DEBUG_INTERNAL, "FIXME: ventrilo_read_keys() should be called from 0x06 processing.");
+                    /*
+                       if (ventrilo_read_keys(&v3_server.client_key, &v3_server.server_key, m->encryption_key, m->len - 12) < 0) {
+                       _v3_error("could not parse keys from the server");
+                       }*/
+                }
+                if(m->subtype & 0x10) {
+                    _v3_debug(V3_DEBUG_INTERNAL, "FIXME: Unknown subtype, please report a packetdump.");
+                }
+                if(m->subtype & 0x20) {
+                    _v3_debug(V3_DEBUG_INTERNAL, "FIXME: Unknown subtype, please report a packetdump.");
+                }
+                if(m->subtype & 0x40) {
+                    strncat(buf, "The supplied password is incorrect.\n", 512);
+                }
+                if(m->subtype & 0x100) {
+                    _v3_debug(V3_DEBUG_INTERNAL, "FIXME: Unknown subtype, please report a packetdump.");
+                }
+                if(m->subtype & 0x200) {
+                    _v3_debug(V3_DEBUG_INTERNAL, "FIXME: Server has been disabled: %s", _v3_server_disabled_errors[m->error_id-1]);
+                }
+                if(m->subtype & 0x400) {
+                    _v3_debug(V3_DEBUG_INTERNAL, "FIXME: Unknown subtype, please report a packetdump.");
+                }
+                strncpy(ev->error.message, buf, 512);
+                v3_queue_event(ev);
+                _v3_destroy_packet(msg);
+                _v3_func_leave("_v3_process_message");
+                _v3_unlock_server();
+            }
 	return V3_OK;
         case 0x34:/*{{{*/
             _v3_lock_server();
