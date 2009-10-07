@@ -164,6 +164,8 @@ typedef struct _v3_net_message_0x49 {/*{{{*/
     uint16_t user_id;                 // 4
     uint16_t subtype;                 // 6
     uint8_t  hash_password[32];       // 8 - 39
+
+    v3_channel *channel;
 } _v3_msg_0x49;
 int _v3_get_0x49(_v3_net_message *msg);
 _v3_net_message *_v3_put_0x49(uint16_t subtype, uint16_t user_id, char *channel_password, _v3_msg_channel *channel);/*}}}*/

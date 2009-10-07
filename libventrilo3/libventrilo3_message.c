@@ -345,17 +345,17 @@ _v3_put_0x49(uint16_t subtype, uint16_t user_id, char *channel_password, _v3_msg
 
             // this is a standard channel packet minus the pointer bytes for
             // the name, comment, and phonetic
-            msg->len = sizeof(_v3_msg_0x49)+sizeof(_v3_msg_channel) - sizeof(void *) * 4;
+            msg->len = sizeof(_v3_msg_0x49)-sizeof(void *)+sizeof(_v3_msg_channel) - sizeof(void *) * 4;
             _v3_debug(V3_DEBUG_PACKET_PARSE, "allocating %d bytes", msg->len);
-            msgdata = malloc(sizeof(_v3_msg_0x49)+sizeof(_v3_msg_channel));
-            memset(msgdata, 0, sizeof(_v3_msg_0x49)+sizeof(_v3_msg_channel));
+            msgdata = malloc(sizeof(_v3_msg_0x49)-sizeof(void *)+sizeof(_v3_msg_channel));
+            memset(msgdata, 0, sizeof(_v3_msg_0x49)-sizeof(void *)+sizeof(_v3_msg_channel));
             msgdata->type = msg->type;
             msgdata->subtype = V3_CHANGE_CHANNEL;
             msgdata->user_id = user_id;
             if (channel_password != NULL && strlen(channel_password) != 0) {
                 _v3_hash_password((uint8_t *)channel_password, (uint8_t *)msgdata->hash_password);
             }
-            offset = (void*)((char *)msgdata + sizeof(_v3_msg_0x49));
+            offset = (void*)((char *)msgdata + sizeof(_v3_msg_0x49)-sizeof(void *));
             memcpy(offset, channel, sizeof(_v3_msg_channel));
             msg->data = (char *)msgdata;
             _v3_func_leave("_v3_put_0x49");
@@ -367,6 +367,39 @@ _v3_put_0x49(uint16_t subtype, uint16_t user_id, char *channel_password, _v3_msg
     }
     return NULL;
 }/*}}}*/
+
+int
+_v3_get_0x49(_v3_net_message *msg) {
+    /*
+     * PACKET: message type: 0x49 (73)
+     * PACKET: data length : 98
+     * PACKET:     49 00 00 00 00 00 01 00 00 00 00 00 00 00 00 00      I...............
+     * PACKET:     00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00      ................
+     * PACKET:     00 00 00 00 00 00 00 00 16 00 02 00 00 00 00 00      ................
+     * PACKET:     01 00 01 00 01 00 01 00 01 00 01 00 00 00 00 00      ................
+     * PACKET:     00 00 00 00 01 00 00 00 01 00 00 00 00 00 00 00      ................
+     * PACKET:     00 00 00 00 00 00 00 00 00 04 74 65 73 74 00 00      ..........test..
+     * PACKET:     00 00                                                ..
+     */
+    _v3_msg_0x49 *m;
+
+    _v3_func_enter("_v3_get_0x49");
+    m = malloc(sizeof(_v3_msg_0x49));
+    memcpy(m, msg->data, sizeof(_v3_msg_0x49) - sizeof(void *));
+    m->channel = malloc(sizeof(v3_channel));
+    _v3_get_msg_channel(msg->data+sizeof(_v3_msg_0x49) - sizeof(void *), m->channel);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "got channel: id: %d | parent: %d | name: %s | phonetic: %s | comment: %s",
+            m->channel->id,
+            m->channel->parent,
+            m->channel->name,
+            m->channel->phonetic,
+            m->channel->comment
+            );
+    msg->contents = m;
+    _v3_func_leave("_v3_get_0x49");
+    return true;
+}
+
 /*}}}*/
 // Message 0x4a (74) | USER PERMISSIONS /*{{{*/
 int

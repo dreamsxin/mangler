@@ -732,8 +732,7 @@ _v3_update_channel(v3_channel *channel) {/*{{{*/
             }
             last = c;
         }
-        last->next = malloc(sizeof(v3_channel));
-        c = last->next;
+        c = last->next = malloc(sizeof(v3_channel));
         memset(c, 0, sizeof(v3_channel));
         memcpy(c, channel, sizeof(v3_channel));
         c->name           = strdup(channel->name);
@@ -745,40 +744,6 @@ _v3_update_channel(v3_channel *channel) {/*{{{*/
     _v3_unlock_channellist();
     _v3_func_leave("_v3_update_channel");
     return true;
-}/*}}}*/
-
-void
-_v3_print_channel_list(void) {/*{{{*/
-    v3_channel *c;
-    int ctr=0;
-
-    for (c = v3_channel_list; c != NULL; c = c->next) {
-        _v3_debug(V3_DEBUG_INFO, "=====[ channel %d ]====================================================================", ctr++);
-        _v3_debug(V3_DEBUG_INFO, "channel id      : %d", c->id);
-        _v3_debug(V3_DEBUG_INFO, "channel name    : %s", c->name);
-        _v3_debug(V3_DEBUG_INFO, "channel comment : %s", c->comment);
-        _v3_debug(V3_DEBUG_INFO, "channel phonetic: %s", c->phonetic);
-    }
-}/*}}}*/
-
-void
-_v3_destroy_channellist(void) {/*{{{*/
-    v3_channel *c, *next;
-
-    _v3_func_enter("_v3_destroy_channel");
-    _v3_lock_channellist();
-    c = v3_channel_list;
-    while (c != NULL) {
-        free(c->name);
-        free(c->comment);
-        free(c->phonetic);
-        next = c->next;
-        free(c);
-        c = next;
-    }
-    v3_channel_list = NULL;
-    _v3_unlock_channellist();
-    _v3_func_leave("_v3_destroy_channel");
 }/*}}}*/
 
 int
@@ -834,6 +799,41 @@ _v3_update_user(v3_user *user) {/*{{{*/
     return true;
 }/*}}}*/
 
+void
+_v3_print_channel_list(void) {/*{{{*/
+    v3_channel *c;
+    int ctr=0;
+
+    for (c = v3_channel_list; c != NULL; c = c->next) {
+        _v3_debug(V3_DEBUG_INFO, "=====[ channel %d ]====================================================================", ctr++);
+        _v3_debug(V3_DEBUG_INFO, "channel id      : %d", c->id);
+        _v3_debug(V3_DEBUG_INFO, "channel name    : %s", c->name);
+        _v3_debug(V3_DEBUG_INFO, "channel comment : %s", c->comment);
+        _v3_debug(V3_DEBUG_INFO, "channel phonetic: %s", c->phonetic);
+    }
+}/*}}}*/
+
+void
+_v3_destroy_channellist(void) {/*{{{*/
+    v3_channel *c, *next;
+
+    _v3_func_enter("_v3_destroy_channel");
+    _v3_lock_channellist();
+    c = v3_channel_list;
+    while (c != NULL) {
+        free(c->name);
+        free(c->comment);
+        free(c->phonetic);
+        next = c->next;
+        free(c);
+        c = next;
+    }
+    v3_channel_list = NULL;
+    _v3_unlock_channellist();
+    _v3_func_leave("_v3_destroy_channel");
+}/*}}}*/
+
+
 int
 _v3_remove_user(uint16_t id) {/*{{{*/
     v3_user *u, *last;
@@ -854,6 +854,29 @@ _v3_remove_user(uint16_t id) {/*{{{*/
     }
     _v3_func_leave("_v3_remove_user");
     _v3_unlock_userlist();
+    return false;
+}/*}}}*/
+
+int
+_v3_remove_channel(uint16_t id) {/*{{{*/
+    v3_channel *c, *last;
+
+    _v3_lock_channellist();
+    _v3_func_enter("_v3_remove_channel");
+    last = v3_channel_list;
+    for (c = v3_channel_list; c != NULL; c = c->next) {
+        if (c->id == id) {
+            last->next = c->next;
+            _v3_debug(V3_DEBUG_INFO, "removed channel %s",  c->name);
+            v3_free_channel(c);
+            _v3_func_leave("_v3_remove_channel");
+            _v3_unlock_channellist();
+            return true;
+        }
+        last = c;
+    }
+    _v3_func_leave("_v3_remove_channel");
+    _v3_unlock_channellist();
     return false;
 }/*}}}*/
 
@@ -1285,6 +1308,46 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
             _v3_destroy_packet(msg);
             _v3_func_leave("_v3_process_message");
             return V3_OK;/*}}}*/
+        case 0x49:/*{{{*/
+            if (!_v3_get_0x49(msg)) {
+                _v3_destroy_packet(msg);
+                _v3_func_leave("_v3_process_message");
+                return V3_MALFORMED;
+            } else {
+                _v3_msg_0x49 *m = msg->contents;
+
+                _v3_lock_channellist();
+                switch (m->subtype) {
+                    case V3_REMOVE_CHANNEL:
+                        {
+                            _v3_debug(V3_DEBUG_INFO, "removing channel %d from list",  m->channel->id);
+                            v3_event *ev;
+                            ev = malloc(sizeof(v3_event));
+                            ev->type = V3_EVENT_CHAN_REMOVE;
+                            ev->channel.id = m->channel->id;
+                            _v3_debug(V3_DEBUG_INFO, "queuing event type %d for channel %d", ev->type, ev->channel.id);
+                            _v3_remove_channel(m->channel->id);
+                            v3_queue_event(ev);
+                        }
+                        break;
+                    case V3_MODIFY_CHANNEL:
+                    case V3_ADD_CHANNEL:
+                        _v3_debug(V3_DEBUG_INFO, "adding channel %d to list",  m->channel->id);
+                        v3_event *ev;
+                        _v3_update_channel(m->channel);
+                        ev = malloc(sizeof(v3_event));
+                        ev->type = (m->subtype == V3_MODIFY_CHANNEL) ? V3_EVENT_CHAN_MODIFY : V3_EVENT_CHAN_ADD;
+                        ev->channel.id = m->channel->id;
+                        _v3_debug(V3_DEBUG_INFO, "queuing event type %d for channel %d", ev->type, ev->channel.id);
+                        v3_queue_event(ev);
+                        break;
+                }
+                _v3_unlock_channellist();
+            }
+            // TODO: _v3_destroy_0x49(msg);
+            _v3_destroy_packet(msg);
+            _v3_func_leave("_v3_process_message");
+            return V3_OK;/*}}}*/
         case 0x50:/*{{{*/
             if (!_v3_get_0x50(msg)) {
                 _v3_destroy_packet(msg);
@@ -1582,9 +1645,9 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                     v3_event *ev;
                     _v3_update_channel(&m->channel_list[ctr]);
                     ev = malloc(sizeof(v3_event));
-                    ev->type = V3_EVENT_CHAN_ADDED;
+                    ev->type = V3_EVENT_CHAN_ADD;
                     ev->channel.id = m->channel_list[ctr].id;
-                    _v3_debug(V3_DEBUG_INFO, "queuing event type %d for user %d", ev->type, ev->user.id);
+                    _v3_debug(V3_DEBUG_INFO, "queuing event type %d for channel %d", ev->type, ev->channel.id);
                     v3_queue_event(ev);
                 }
                 free(cl);
