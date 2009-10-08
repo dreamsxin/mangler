@@ -54,7 +54,7 @@ class channelModelColumns : public Gtk::TreeModelColumnRecord/*{{{*/
         Gtk::TreeModelColumn<Glib::ustring> url;
         Gtk::TreeModelColumn<Glib::ustring> integration_text;
 };/*}}}*/
-class ManglerChannelTree/*{{{*/
+class ManglerChannelTree
 {
     private:
         Glib::RefPtr<Gtk::Builder>          builder;
@@ -75,10 +75,11 @@ class ManglerChannelTree/*{{{*/
         void updateLobby(std::string name, std::string comment = "", std::string phonetic = "");
         void removeUser(uint32_t id);
         void removeChannel(uint32_t id);
+        void userIsTalking(uint16_t id, bool isTalking);
         Gtk::TreeModel::Row getChannel(uint32_t id, Gtk::TreeModel::Children children);
         Gtk::TreeModel::Row getUser(uint32_t id, Gtk::TreeModel::Children children);
         bool expand_all(void);
         bool collapse_all(void);
-};/*}}}*/
+};
 
 #endif

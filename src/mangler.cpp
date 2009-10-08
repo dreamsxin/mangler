@@ -278,6 +278,12 @@ Mangler::getNetworkEvent() {/*{{{*/
                 msgdialog->run();
                 msgdialog->hide();
                 break;
+            case V3_EVENT_USER_TALK_START:
+                channelTree->userIsTalking(ev->user.id, true);
+                break;
+            case V3_EVENT_USER_TALK_END:
+                channelTree->userIsTalking(ev->user.id, false);
+                break;
             default:
                 fprintf(stderr, "******************************************************** got unknown event type %d\n", ev->type);
         }

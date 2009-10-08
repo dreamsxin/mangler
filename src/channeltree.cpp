@@ -283,6 +283,17 @@ ManglerChannelTree::updateLobby(std::string name, std::string comment, std::stri
     lobby[channelRecord.integration_text]  = "";
 }/*}}}*/
 
+void
+ManglerChannelTree::userIsTalking(uint16_t id, bool isTalking) {
+    Gtk::TreeModel::Row user = getUser(id, channelStore->children());
+    if (isTalking) {
+        channelRow[channelRecord.icon]              = mangler->icons["green_circle"]->scale_simple(9, 9, Gdk::INTERP_BILINEAR);
+    } else {
+        channelRow[channelRecord.icon]              = mangler->icons["blue_circle"]->scale_simple(9, 9, Gdk::INTERP_BILINEAR);
+    }
+}
+
+
 bool
 ManglerChannelTree::expand_all(void) {/*{{{*/
     channelView->expand_all();

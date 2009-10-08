@@ -1184,7 +1184,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
     _v3_func_enter("_v3_process_message");
     _v3_debug(V3_DEBUG_INTERNAL, "beginning packet processing on msg type '0x%02X' (%d)", msg->type, (uint16_t)msg->type);
     switch (msg->type) {
-	case 0x06:
+	case 0x06:/*{{{*/
 	    if(!_v3_get_0x06(msg)) {
 		_v3_destroy_packet(msg);
 		_v3_func_leave("_v3_process_message");
@@ -1192,12 +1192,13 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
             } else {
                 _v3_msg_0x06 *m = msg->contents;
                 v3_event *ev = malloc(sizeof(v3_event));
-                ev->type = V3_EVENT_ERROR_MSG;
                 char buf[512] = "";
+                int error = false;
 
                 // This lock will only be needed when we start calling ventrilo_read_keys() from here.
                 _v3_lock_server();
                 if(m->subtype & 0x01) {
+                    error = true;
                     ev->error.disconnected = true;
                     strncat(buf, "You have been disconnected from the server.\n", 512);
                     v3_logout();
@@ -1224,6 +1225,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                     _v3_debug(V3_DEBUG_INTERNAL, "FIXME: Unknown subtype, please report a packetdump.");
                 }
                 if(m->subtype & 0x40) {
+                    error = true;
                     strncat(buf, "The supplied password is incorrect.\n", 512);
                 }
                 if(m->subtype & 0x100) {
@@ -1235,13 +1237,20 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                 if(m->subtype & 0x400) {
                     _v3_debug(V3_DEBUG_INTERNAL, "FIXME: Unknown subtype, please report a packetdump.");
                 }
-                strncpy(ev->error.message, buf, 512);
-                v3_queue_event(ev);
+                if (error) {
+                    ev->type = V3_EVENT_ERROR_MSG;
+                    strncpy(ev->error.message, buf, 512);
+                    v3_queue_event(ev);
+                } else {
+                    // it's an informational message free it for now, may want
+                    // to queue it as something else later
+                    free(ev);
+                }
                 _v3_destroy_packet(msg);
                 _v3_func_leave("_v3_process_message");
                 _v3_unlock_server();
             }
-	return V3_OK;
+	return V3_OK;/*}}}*/
         case 0x34:/*{{{*/
             _v3_lock_server();
             _v3_debug(V3_DEBUG_INTERNAL, "scrambling client encryption keys");
@@ -1458,6 +1467,24 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                 _v3_msg_0x52_speex  *speex;
                 _v3_lock_recvq();
                 switch (m->subtype) {
+                    case 0x00:
+                        {
+                            v3_event *ev;
+                            ev = malloc(sizeof(v3_event));
+                            ev->type = V3_EVENT_USER_TALK_START;
+                            ev->user.id = m->user_id;
+                            v3_queue_event(ev);
+                        }
+                        break;
+                    case 0x02:
+                        {
+                            v3_event *ev;
+                            ev = malloc(sizeof(v3_event));
+                            ev->type = V3_EVENT_USER_TALK_END;
+                            ev->user.id = m->user_id;
+                            v3_queue_event(ev);
+                        }
+                        break;
                     case 0x01:
                         {
                             float output[1280];

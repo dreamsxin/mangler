@@ -176,8 +176,11 @@ _v3_put_msg_user(void *buffer, v3_user *user) {/*{{{*/
  * _v3_destroy_* functions will free any memory allocated for a specific packet
  * type.  The message structure itself is *NOT* freed
  */
+
+
+// Message 0x06 (6)  | AUTHENTICATION/LOGIN ERROR /*{{{*/
 int
-_v3_get_0x06(_v3_net_message *msg) {
+_v3_get_0x06(_v3_net_message *msg) {/*{{{*/
     _v3_msg_0x06 *m;
 
     _v3_func_enter("_v3_get_0x06");
@@ -197,8 +200,9 @@ _v3_get_0x06(_v3_net_message *msg) {
     msg->contents = m;
     _v3_func_enter("_v3_get_0x06");
     return true;
-}
+}/*}}}*/
 
+/*}}}*/
 // Message 0x37 (55) | PING /*{{{*/
 int
 _v3_get_0x37(_v3_net_message *msg) {/*{{{*/
