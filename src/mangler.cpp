@@ -36,21 +36,6 @@ Mangler *mangler;
 
 Mangler::Mangler(struct _cli_options *options) {/*{{{*/
     // load all of our icons
-    icons.insert(std::make_pair("mangler_headset_blue",         Gdk::Pixbuf::create_from_inline(-1, mangler_headset_blue)));
-    icons.insert(std::make_pair("mangler_headset_blue_red",     Gdk::Pixbuf::create_from_inline(-1, mangler_headset_blue_red    )));
-    icons.insert(std::make_pair("mangler_headset_green",        Gdk::Pixbuf::create_from_inline(-1, mangler_headset_green       )));
-    icons.insert(std::make_pair("mangler_headset_green_red",    Gdk::Pixbuf::create_from_inline(-1, mangler_headset_green_red   )));
-    icons.insert(std::make_pair("mangler_headset_grey",         Gdk::Pixbuf::create_from_inline(-1, mangler_headset_grey        )));
-    icons.insert(std::make_pair("mangler_headset_grey_red",     Gdk::Pixbuf::create_from_inline(-1, mangler_headset_grey_red    )));
-    icons.insert(std::make_pair("mangler_headset_red",          Gdk::Pixbuf::create_from_inline(-1, mangler_headset_red         )));
-    icons.insert(std::make_pair("mangler_headset_red_red",      Gdk::Pixbuf::create_from_inline(-1, mangler_headset_red_red     )));
-    icons.insert(std::make_pair("user_silent_muted",            Gdk::Pixbuf::create_from_inline(-1, user_silent_muted           )));
-    icons.insert(std::make_pair("user_silent",                  Gdk::Pixbuf::create_from_inline(-1, user_silent                 )));
-    icons.insert(std::make_pair("user_xmit_elsewhere_muted",    Gdk::Pixbuf::create_from_inline(-1, user_xmit_elsewhere_muted   )));
-    icons.insert(std::make_pair("user_xmit_elsewhere",          Gdk::Pixbuf::create_from_inline(-1, user_xmit_elsewhere         )));
-    icons.insert(std::make_pair("user_xmit_muted",              Gdk::Pixbuf::create_from_inline(-1, user_xmit_muted             )));
-    icons.insert(std::make_pair("user_xmit",                    Gdk::Pixbuf::create_from_inline(-1, user_xmit                   )));
-
     icons.insert(std::make_pair("black_circle",                 Gdk::Pixbuf::create_from_inline(-1, black_circle                )));
     icons.insert(std::make_pair("blue_circle",                  Gdk::Pixbuf::create_from_inline(-1, blue_circle                 )));
     icons.insert(std::make_pair("blue_circle_small",            Gdk::Pixbuf::create_from_inline(-1, blue_circle_small           )));
