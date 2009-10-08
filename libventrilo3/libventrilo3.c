@@ -38,6 +38,8 @@
 #include <errno.h>
 #include <unistd.h>
 #include <speex/speex.h>
+#include <gsm.h>
+
 
 // TODO: check how portable this is... (known good: ubuntu, arch)
 #define __USE_UNIX98
@@ -153,7 +155,8 @@ _v3_status(uint8_t percent, const char *format, ...) {/*{{{*/
 }/*}}}*/
 
 void
-_v3_net_message_dump_raw(char *data, int len) {/*{{{*/ int ctr, ctr2;
+_v3_net_message_dump_raw(char *data, int len) {/*{{{*/
+    int ctr, ctr2;
     char buf[256], buf2[4];
 
     for (ctr = 0; ctr < len; ctr+=16) {
@@ -166,6 +169,43 @@ _v3_net_message_dump_raw(char *data, int len) {/*{{{*/ int ctr, ctr2;
             _v3_debug(V3_DEBUG_PACKET_ENCRYPTED, "PACKET:     %s", buf);
         } else {
             _v3_debug(V3_DEBUG_PACKET_ENCRYPTED, "PACKET:     %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X",
+                    (uint8_t)data[ctr],
+                    (uint8_t)data[ctr+1],
+                    (uint8_t)data[ctr+2],
+                    (uint8_t)data[ctr+3],
+                    (uint8_t)data[ctr+4],
+                    (uint8_t)data[ctr+5],
+                    (uint8_t)data[ctr+6],
+                    (uint8_t)data[ctr+7],
+                    (uint8_t)data[ctr+8],
+                    (uint8_t)data[ctr+9],
+                    (uint8_t)data[ctr+10],
+                    (uint8_t)data[ctr+11],
+                    (uint8_t)data[ctr+12],
+                    (uint8_t)data[ctr+13],
+                    (uint8_t)data[ctr+14],
+                    (uint8_t)data[ctr+15]
+                    );
+        }
+    }
+    return;
+}/*}}}*/
+
+void
+_v3_hexdump(char *data, int len) {/*{{{*/
+    int ctr, ctr2;
+    char buf[256], buf2[4];
+
+    for (ctr = 0; ctr < len; ctr+=16) {
+        if (ctr+16 > len) {
+            buf[0] = 0;
+            for (ctr2 = ctr; ctr2 < len; ctr2++) {
+                snprintf(buf2, 4, "%02X ", (uint8_t)data[ctr2]);
+                strncat(buf, buf2, 256);
+            }
+            _v3_debug(V3_DEBUG_INFO, "%s", buf);
+        } else {
+            _v3_debug(V3_DEBUG_INFO, "%02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X",
                     (uint8_t)data[ctr],
                     (uint8_t)data[ctr+1],
                     (uint8_t)data[ctr+2],
@@ -1463,8 +1503,8 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                 return V3_MALFORMED;
             } else {
                 _v3_msg_0x52        *m = (_v3_msg_0x52 *)msg->contents;
-                //_v3_msg_0x52_gsm    *gsm;
-                _v3_msg_0x52_speex  *speex;
+                _v3_msg_0x52_gsm    *gsm_packet;
+                _v3_msg_0x52_speex  *speex_packet;
                 _v3_lock_recvq();
                 switch (m->subtype) {
                     case 0x00:
@@ -1486,46 +1526,82 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                         }
                         break;
                     case 0x01:
-                        {
-                            float output[1280];
-                            char  cbits[200];
-                            void *state;
-                            SpeexBits bits;
-                            int enc_frame_size;
-                            int ctr;
-                            register int i;
+                        {   
+                            _v3_msg_0x52_0x01 *msub = (_v3_msg_0x52_0x01 *)msg->contents;
+                            v3_event *ev = malloc(sizeof(v3_event));
+                            memset(ev, 0, sizeof(v3_event));
+                            // TODO: it's too messy to have this here.  Write a function that decodes
+                            if (msub->codec == 0) {                 // GSM {{{
+                                gsm_packet = (_v3_msg_0x52_gsm *)m;
+                                gsm handle;
+                                uint8_t buf[65];
+                                int16_t sample[320];
+                                int ctr;
+                                int one = 1; // used for codec settings
 
-                            speex = (_v3_msg_0x52_speex *)m;
-                            enc_frame_size = speex->length / speex->audio_count - 2;
-                            state = speex_decoder_init(&speex_uwb_mode);
-                            speex_bits_init(&bits);
-                            _v3_lock_soundq();
-                            for (ctr = 0; ctr < speex->audio_count; ctr++) {
-                                FILE *f;
-                                memcpy(cbits, speex->frames[ctr] + 2, enc_frame_size);
-                                speex_bits_read_from(&bits, cbits, enc_frame_size);
-                                speex_decode(state, &bits, output);
+                                if (!(handle = gsm_create())) {
+                                    _v3_error("couldn't create gsm handle");
+                                    _v3_destroy_0x52(msg);
+                                    _v3_destroy_packet(msg);
+                                    _v3_func_leave("_v3_process_message");
+                                    return V3_MALFORMED; // it's not really a malformed packet...
+                                }
+                                gsm_option(handle, GSM_OPT_WAV49, &one);
+                                for (ctr = 0; ctr < gsm_packet->length / 65; ctr++) {
+                                    memcpy(buf, gsm_packet->frames[ctr], 65);
+                                    if (gsm_decode(handle, buf, sample) || gsm_decode(handle, buf+33, sample+160)) {
+                                        _v3_debug(V3_DEBUG_INFO, "failed to decode gsm frame %d", ctr);
+                                        continue;
+                                    }
+                                    _v3_debug(V3_DEBUG_INFO, "copying 640 bytes of frame %d from %lu to %lu", ctr, sample, &ev->pcm.sample[ctr*320]);
+                                    memcpy(&ev->pcm.sample[ctr*320], sample, 640);
+                                }
+                                ev->type = V3_EVENT_PLAY_AUDIO;
+                                ev->user.id = m->user_id;
+                                ev->pcm.rate = 8000;
+                                ev->pcm.length = gsm_packet->length/65*640;
+                                _v3_debug(V3_DEBUG_EVENT, "queueing msg");
+                                v3_queue_event(ev);
+                                /*}}}*/
+                            } else if (msub->codec == 3) {          // SPEEX/*{{{*/
+                                // TODO: rewrite this to use the event queue
+                                float output[1280];
+                                char  cbits[200];
+                                void *state;
+                                SpeexBits bits;
+                                int enc_frame_size;
+                                int ctr;
+                                register int i;
 
-                                // TODO: oh yes, this is horrible -- should be
-                                // allocating in 10k chunks or something... we
-                                // also should be checking the value of
-                                // framesize so we don't alloc a bazillion
-                                // bytes of memory
-                                _v3_debug(V3_DEBUG_MEMORY, "reallocating _v3_soundq from %d to %d bytes", _v3_soundq_length, _v3_soundq_length + speex->frame_size*2);
-                                _v3_soundq = realloc(_v3_soundq, (_v3_soundq_length + speex->frame_size) * sizeof(uint16_t));
-                                if (! (f = fopen("pcmoutput", "a"))) {
-                                    exit(0);
+                                speex_packet = (_v3_msg_0x52_speex *)m;
+                                enc_frame_size = speex_packet->length / speex_packet->audio_count - 2;
+                                state = speex_decoder_init(&speex_uwb_mode);
+                                speex_bits_init(&bits);
+                                _v3_lock_soundq();
+                                for (ctr = 0; ctr < speex_packet->audio_count; ctr++) {
+                                    FILE *f;
+                                    memcpy(cbits, speex_packet->frames[ctr] + 2, enc_frame_size);
+                                    speex_bits_read_from(&bits, cbits, enc_frame_size);
+                                    speex_decode(state, &bits, output);
+
+                                    // TODO: oh yes, this is horrible -- should be
+                                    // allocating in 10k chunks or something... we
+                                    // also should be checking the value of
+                                    // framesize so we don't alloc a bazillion
+                                    // bytes of memory
+                                    _v3_debug(V3_DEBUG_MEMORY, "reallocating _v3_soundq from %d to %d bytes", _v3_soundq_length, _v3_soundq_length + speex_packet->frame_size*2);
+                                    _v3_soundq = realloc(_v3_soundq, (_v3_soundq_length + speex_packet->frame_size) * sizeof(int16_t));
+                                    for (i = 0; i < speex_packet->frame_size; i++) {
+                                        _v3_soundq[_v3_soundq_length+i] = output[i];
+                                        fwrite(&_v3_soundq[_v3_soundq_length+i], 2, 1, f);
+                                    }
+                                    fclose(f);
+                                    _v3_soundq_length += speex_packet->frame_size;
+                                    _v3_debug(V3_DEBUG_INFO, "sound queue is now %d samples (%d bytes)", _v3_soundq_length, _v3_soundq_length*2);
                                 }
-                                for (i = 0; i < speex->frame_size; i++) {
-                                    _v3_soundq[_v3_soundq_length+i] = output[i];
-                                    fwrite(&_v3_soundq[_v3_soundq_length+i], 2, 1, f);
-                                }
-                                fclose(f);
-                                _v3_soundq_length += speex->frame_size;
-                                _v3_debug(V3_DEBUG_INFO, "sound queue is now %d samples (%d bytes)", _v3_soundq_length, _v3_soundq_length*2);
-                            }
-                            pthread_cond_signal(soundq_cond);
-                            _v3_unlock_soundq();
+                                pthread_cond_signal(soundq_cond);
+                                _v3_unlock_soundq();
+                            }/*}}}*/
                         }
                         break;
                 }
@@ -2231,13 +2307,14 @@ v3_queue_event(v3_event *ev) {/*{{{*/
         _v3_eventq = ev;
         pthread_cond_signal(eventq_cond);
         pthread_mutex_unlock(eventq_mutex);
+        _v3_debug(V3_DEBUG_EVENT, "queued event type %d.  now have 1 event in queue");
         _v3_func_leave("v3_queue_event");
         return true;
     }
     // otherwise, tack it on to the end
     last->next = ev;
     pthread_mutex_unlock(eventq_mutex);
-    _v3_debug(V3_DEBUG_INFO, "queued event type %d.  now have %d events in queue", ev->type, len);
+    _v3_debug(V3_DEBUG_EVENT, "queued event type %d.  now have %d events in queue", ev->type, len);
     _v3_func_leave("v3_queue_event");
     return true;
 }/*}}}*/
@@ -2284,6 +2361,20 @@ _v3_get_last_event(int *len) {/*{{{*/
         *len = ctr;
     }
     return ev;
+}/*}}}*/
+
+void
+v3_clear_events(void) {/*{{{*/
+    v3_event *ev;
+    if (_v3_eventq == NULL) {
+        return;
+    }
+    while (_v3_eventq != NULL) {
+        ev = _v3_eventq->next;
+        free(_v3_eventq);
+        _v3_eventq = ev;
+    }
+    return;
 }/*}}}*/
 
 int

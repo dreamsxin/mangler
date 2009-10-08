@@ -43,16 +43,16 @@ class channelModelColumns : public Gtk::TreeModelColumnRecord/*{{{*/
             add(integration_text);
         }
 
-        Gtk::TreeModelColumn<Glib::ustring> displayName;
-        Gtk::TreeModelColumn<Glib::RefPtr<Gdk::Pixbuf> > icon;
-        Gtk::TreeModelColumn<bool>          isUser;
-        Gtk::TreeModelColumn<uint32_t>      id;
-        Gtk::TreeModelColumn<uint32_t>      parent_id;
-        Gtk::TreeModelColumn<Glib::ustring> name;
-        Gtk::TreeModelColumn<Glib::ustring> comment;
-        Gtk::TreeModelColumn<Glib::ustring> phonetic;
-        Gtk::TreeModelColumn<Glib::ustring> url;
-        Gtk::TreeModelColumn<Glib::ustring> integration_text;
+        Gtk::TreeModelColumn<Glib::ustring>                 displayName;
+        Gtk::TreeModelColumn<Glib::RefPtr<Gdk::Pixbuf> >    icon;
+        Gtk::TreeModelColumn<bool>                          isUser;
+        Gtk::TreeModelColumn<uint32_t>                      id;
+        Gtk::TreeModelColumn<uint32_t>                      parent_id;
+        Gtk::TreeModelColumn<Glib::ustring>                 name;
+        Gtk::TreeModelColumn<Glib::ustring>                 comment;
+        Gtk::TreeModelColumn<Glib::ustring>                 phonetic;
+        Gtk::TreeModelColumn<Glib::ustring>                 url;
+        Gtk::TreeModelColumn<Glib::ustring>                 integration_text;
 };/*}}}*/
 class ManglerChannelTree
 {

@@ -547,15 +547,13 @@ _v3_get_0x52(_v3_net_message *msg) {/*{{{*/
                         if (msub->codec_format > 3) {
                             // this should always be less than 3, otherwise, bail out
                             free(msub);
-                            _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown gsm codec format %02X", msub->codec_format);
+                            _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown gsm codec format 0x%02X", msub->codec_format);
                             _v3_func_leave("_v3_get_0x52 (0x01 gsm)");
                             return false;
                         } else {
                             _v3_msg_0x52_gsm *gsm = (_v3_msg_0x52_gsm *) msub;
                             gsm = realloc(msub, sizeof(_v3_msg_0x52_gsm));
                             memcpy(gsm, msg->data, sizeof(_v3_msg_0x52_gsm));
-                            gsm->sound_speed = gsm->sound_speed;
-
 
                             _v3_debug(V3_DEBUG_PACKET_PARSE, "gsm length          : %d (%d frames)", gsm->length, gsm->length/65);
                             _v3_debug(V3_DEBUG_PACKET_PARSE, "gsm sound speed     : %d (or %d)", gsm->sound_speed, htons(gsm->sound_speed));

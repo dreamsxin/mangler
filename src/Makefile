@@ -22,7 +22,7 @@ manglerui.h: mangler.ui
 	echo ";" >> manglerui.h
 
 mangler: mangler.o channeltree.o manglernetwork.o mangleraudio.o manglersettings.o mangler.h ../libventrilo3/libventrilo.a
-	g++ -Wall -L../libventrilo3/ -g -o mangler mangler.o channeltree.o manglernetwork.o mangleraudio.o manglersettings.o -export-dynamic -lventrilo3 `pkg-config --libs gtkmm-2.4` `pkg-config --libs gthread-2.0` -lspeex `pkg-config --libs libpulse-simple`
+	g++ -Wall -L../libventrilo3/ -g -o mangler mangler.o channeltree.o manglernetwork.o mangleraudio.o manglersettings.o -export-dynamic -lventrilo3 `pkg-config --libs gtkmm-2.4` `pkg-config --libs gthread-2.0` `pkg-config --libs libpulse-simple` -lgsm -lspeex
 
 ../libventrilo3/libventrilo.a:
 	cd ../libventrilo3/ && make

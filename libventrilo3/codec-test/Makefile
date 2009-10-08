@@ -6,4 +6,6 @@ all:
 	gcc -o speexenc -g speexenc.c -lspeex
 	gcc -o gsmenc -g gsmenc.c -lgsm
 	gcc -o gsmdec -g gsmdec.c -lgsm
+	gcc -o gsmdec -g gsmdec.c -lgsm
+	gcc -o gsm-reader -g gsm-reader.c -lgsm
 

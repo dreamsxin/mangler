@@ -136,7 +136,6 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
  * Signal handler callbacks
  */
 void Mangler::quickConnectButton_clicked_cb(void) {/*{{{*/
-    fprintf(stderr, "quick connect button clicked\n");
     Gtk::Dialog *dialog;
     builder->get_widget("quickConnectDialog", dialog);
     dialog->run();
@@ -144,7 +143,6 @@ void Mangler::quickConnectButton_clicked_cb(void) {/*{{{*/
 
 }/*}}}*/
 void Mangler::serverConfigButton_clicked_cb(void) {/*{{{*/
-    fprintf(stderr, "server button clicked\n");
     builder->get_widget("serverListWindow", window);
     window->show();
 }/*}}}*/
@@ -167,9 +165,7 @@ void Mangler::chatButton_clicked_cb(void) {/*{{{*/
     fprintf(stderr, "chat button clicked\n");
 }/*}}}*/
 void Mangler::settingsButton_clicked_cb(void) {/*{{{*/
-    fprintf(stderr, "settings button clicked\n");
-    builder->get_widget("settingsWindow", window);
-    window->show();
+    settings->settingsWindow->show();
 }/*}}}*/
 void Mangler::aboutButton_clicked_cb(void) {/*{{{*/
     builder->get_widget("aboutWindow", dialog);
@@ -185,7 +181,6 @@ void Mangler::xmitButton_released_cb(void) {/*{{{*/
 
 // Quick Connect callbacks
 void Mangler::qcConnectButton_clicked_cb(void) {/*{{{*/
-    fprintf(stderr, "qc connect button clicked\n");
     Gtk::Entry *textbox;
 
     channelTree->updateLobby("Connecting...");
@@ -202,7 +197,6 @@ void Mangler::qcConnectButton_clicked_cb(void) {/*{{{*/
     Glib::signal_timeout().connect( sigc::mem_fun(*this, &Mangler::getNetworkEvent), 50 );
 }/*}}}*/
 void Mangler::qcCancelButton_clicked_cb(void) {/*{{{*/
-    fprintf(stderr, "qc cancel button clicked\n");
 }/*}}}*/
 
 bool

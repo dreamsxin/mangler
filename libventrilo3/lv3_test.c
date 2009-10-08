@@ -54,30 +54,32 @@ int main(int argc, char *argv[]) {
     char *username;
     int ctr = 1;
     int c, ret;
+    v3_event *ev;
 
     // pulse
     static const pa_sample_spec PAss = {
         .format = PA_SAMPLE_S16LE,
-        .rate = 32000,
+        .rate = 8000,
         .channels = 1
     };
     pa_simple *PAs = NULL;
     int PAerror;
 
     v3_debuglevel(
-            V3_DEBUG_NONE|
-            V3_DEBUG_STATUS|
-            V3_DEBUG_ERROR|
+            //V3_DEBUG_NONE|
+            //V3_DEBUG_STATUS|
+            //V3_DEBUG_ERROR|
             V3_DEBUG_STACK|
-            V3_DEBUG_INTERNAL|
+            //V3_DEBUG_INTERNAL|
             V3_DEBUG_PACKET|
             V3_DEBUG_PACKET_PARSE|
             //V3_DEBUG_PACKET_ENCRYPTED|
-            V3_DEBUG_MEMORY|
-            V3_DEBUG_SOCKET|
-            V3_DEBUG_NOTICE|
+            //V3_DEBUG_MEMORY|
+            //V3_DEBUG_SOCKET|
+            //V3_DEBUG_NOTICE|
             V3_DEBUG_INFO|
-            V3_DEBUG_MUTEX
+            V3_DEBUG_MUTEX|
+            V3_DEBUG_EVENT
             );
 
 
@@ -109,6 +111,7 @@ int main(int argc, char *argv[]) {
     }
     free(username);
     c = ctr = 0;
+    v3_clear_events();
     do {
         ctr++;
         if (ctr > 20) {
@@ -130,18 +133,18 @@ int main(int argc, char *argv[]) {
                 _v3_debug(V3_DEBUG_INFO, "packet processed");
                 break;
         }
-        if (v3_get_soundq_length() > 0) {
-            uint16_t *buf;
-            uint32_t len;
-            _v3_debug(V3_DEBUG_INFO, "outputting sound");
-            buf = v3_get_soundq(&len);
-            _v3_debug(V3_DEBUG_INFO, "writing %d bytes to PA", len);
-            if ((ret = pa_simple_write(PAs, buf, (size_t) len, &PAerror)) < 0) {
-                fprintf(stderr, __FILE__": pa_simple_write() failed: %s\n", pa_strerror(PAerror));
-                exit(0);
+        if ((ev = v3_get_event(V3_NONBLOCK))) {
+            _v3_debug(V3_DEBUG_INFO, "got new event type %d", ev->type);
+            if (ev->type == V3_EVENT_PLAY_AUDIO) {
+                _v3_debug(V3_DEBUG_INFO, "outputting sound");
+                _v3_debug(V3_DEBUG_INFO, "writing %d bytes to PA", ev->pcm.length);
+                if ((ret = pa_simple_write(PAs, ev->pcm.sample, (size_t) ev->pcm.length, &PAerror)) < 0) {
+                    fprintf(stderr, __FILE__": pa_simple_write() failed: %s\n", pa_strerror(PAerror));
+                    exit(0);
+                }
+                _v3_debug(V3_DEBUG_INFO, "write complete with ret %d",ret);
             }
-            _v3_debug(V3_DEBUG_INFO, "write complete with ret %d",ret);
-            free(buf);
+            free(ev);
         }
     } while (_v3_is_connected());
     return 0;

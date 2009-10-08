@@ -74,6 +74,7 @@
 #define V3_DEBUG_NOTICE             1 << 10
 #define V3_DEBUG_INFO               1 << 11
 #define V3_DEBUG_MUTEX              1 << 12
+#define V3_DEBUG_EVENT              1 << 13
 #define V3_DEBUG_ALL                65535
 
 typedef struct __v3_net_message {/*{{{*/
@@ -168,6 +169,7 @@ enum _v3_events
     V3_EVENT_ERROR_MSG,
     V3_EVENT_USER_TALK_START,
     V3_EVENT_USER_TALK_END,
+    V3_EVENT_PLAY_AUDIO,
 
     // not implemented
     V3_EVENT_USER_MODIFY,
@@ -198,6 +200,11 @@ struct _v3_event {
     struct {
         uint16_t id;
     } channel;
+    struct {
+        uint32_t length;
+        uint32_t rate;
+        uint16_t sample[32768];
+    } pcm;
 
     v3_event *next;
 };
@@ -373,6 +380,7 @@ uint16_t    *v3_get_soundq(uint32_t *len);
 uint32_t    v3_get_soundq_length(void);
 v3_event    *v3_get_event(int block);
 int         v3_get_max_clients(void);
+void        v3_clear_events(void);
 
 // User list functions
 int         v3_user_count(void);
