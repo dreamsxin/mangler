@@ -3,9 +3,11 @@
  */
 
 #include <gtkmm.h>
+#include <iostream>
 #include "channeltree.h"
 #include "manglernetwork.h"
 #include "mangleraudio.h"
+#include "manglersettings.h"
 
 extern "C" {
 #include <ventrilo3.h>
@@ -28,11 +30,13 @@ class Mangler
         Gtk::ProgressBar                    *progressbar;
         Gtk::Statusbar                      *statusbar;
         Gtk::Label                          *label;
+        Gtk::Entry                          *entry;
         std::map<std::string, Glib::RefPtr<Gdk::Pixbuf> >  icons;
         Glib::RefPtr<Gtk::StatusIcon>       statusIcon;
         ManglerChannelTree                  *channelTree;
         ManglerNetwork                      *network;
         ManglerAudio                        *audio;
+        ManglerSettings                     *settings;
 
         Glib::Thread                        *networkThread;
         Glib::Thread                        *audioInputThread;

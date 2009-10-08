@@ -152,7 +152,6 @@
           <object class="GtkHBox" id="hbox1">
             <property name="visible">True</property>
             <child>
-
               <object class="GtkVBox" id="vbox2">
                 <property name="visible">True</property>
                 <property name="orientation">vertical</property>
@@ -286,7 +285,7 @@
                 </child>
                 <child>
                   <object class="GtkButton" id="xmitButton">
-                    <property name="label" translatable="yes">_Xmit</property>
+                    <property name="label" translatable="yes">Transmit</property>
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
                     <property name="receives_default">True</property>
@@ -1242,6 +1241,7 @@ Specifically:
     </action-widgets>
   </object>
   <object class="GtkWindow" id="settingsWindow">
+    <property name="width_request">600</property>
     <property name="title" translatable="yes">Settings</property>
     <property name="resizable">False</property>
     <property name="transient_for">manglerWindow</property>
@@ -1257,7 +1257,58 @@ Specifically:
               <object class="GtkAlignment" id="alignment101">
                 <property name="visible">True</property>
                 <child>
-                  <placeholder/>
+                  <object class="GtkVBox" id="settingsvbox1">
+                    <property name="visible">True</property>
+                    <property name="orientation">vertical</property>
+                    <child>
+                      <object class="GtkHBox" id="settingshbox1">
+                        <property name="visible">True</property>
+                        <child>
+                          <object class="GtkLabel" id="settingslabel1">
+                            <property name="visible">True</property>
+                            <property name="label" translatable="yes">Push To Talk Key:</property>
+                          </object>
+                          <packing>
+                            <property name="expand">False</property>
+                            <property name="position">0</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkLabel" id="settingsPTTKeyLabel">
+                            <property name="visible">True</property>
+                            <property name="label" translatable="yes">&lt;span weight="light"&gt;&amp;lt;press the set button to define a hokey&amp;gt;&lt;/span&gt;</property>
+                            <property name="use_markup">True</property>
+                          </object>
+                          <packing>
+                            <property name="position">1</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkButton" id="settingsPTTKeyButton">
+                            <property name="label" translatable="yes">Set</property>
+                            <property name="width_request">75</property>
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <property name="receives_default">True</property>
+                          </object>
+                          <packing>
+                            <property name="expand">False</property>
+                            <property name="position">2</property>
+                          </packing>
+                        </child>
+                      </object>
+                      <packing>
+                        <property name="expand">False</property>
+                        <property name="position">0</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <placeholder/>
+                    </child>
+                    <child>
+                      <placeholder/>
+                    </child>
+                  </object>
                 </child>
               </object>
             </child>
@@ -1266,6 +1317,9 @@ Specifically:
                 <property name="visible">True</property>
                 <property name="label" translatable="yes">General</property>
               </object>
+              <packing>
+                <property name="tab_fill">False</property>
+              </packing>
             </child>
             <child>
               <object class="GtkAlignment" id="alignment102">
@@ -1285,6 +1339,7 @@ Specifically:
               </object>
               <packing>
                 <property name="position">1</property>
+                <property name="tab_fill">False</property>
               </packing>
             </child>
             <child>
@@ -1473,6 +1528,7 @@ Specifically:
                     </child>
                   </object>
                   <packing>
+                    <property name="expand">False</property>
                     <property name="position">0</property>
                   </packing>
                 </child>
@@ -1499,6 +1555,7 @@ Specifically:
               </object>
               <packing>
                 <property name="position">2</property>
+                <property name="tab_fill">False</property>
               </packing>
             </child>
           </object>
@@ -1524,7 +1581,7 @@ Specifically:
               <object class="GtkHButtonBox" id="hbuttonbox1">
                 <property name="visible">True</property>
                 <child>
-                  <object class="GtkButton" id="button1">
+                  <object class="GtkButton" id="settingsCancelButton">
                     <property name="label" translatable="yes">Cancel</property>
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
@@ -1537,7 +1594,7 @@ Specifically:
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkButton" id="button2">
+                  <object class="GtkButton" id="settingsApplyButton">
                     <property name="label" translatable="yes">Apply</property>
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
@@ -1550,7 +1607,7 @@ Specifically:
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkButton" id="button3">
+                  <object class="GtkButton" id="settingsOkButton">
                     <property name="label" translatable="yes">OK</property>
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>

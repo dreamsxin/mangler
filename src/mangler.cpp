@@ -92,6 +92,8 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
     builder->get_widget("qcCancelButton", button);
     button->signal_clicked().connect(sigc::mem_fun(this, &Mangler::qcCancelButton_clicked_cb));
 
+
+
     // Create Channel Tree
     channelTree = new ManglerChannelTree(builder);
 
@@ -100,6 +102,9 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
 
     // Create audio object
     audio = new ManglerAudio();
+
+    // Create settings object
+    settings = new ManglerSettings(builder);
 
     // Statusbar Icon
     statusIcon = Gtk::StatusIcon::create(icons["blue_circle"]);
@@ -161,6 +166,7 @@ void Mangler::qcConnectButton_clicked_cb(void) {/*{{{*/
     fprintf(stderr, "qc connect button clicked\n");
     Gtk::Entry *textbox;
 
+    channelTree->updateLobby("Connecting...");
     builder->get_widget("qcServerName", textbox);
     std::string server = textbox->get_text();
     builder->get_widget("qcPort", textbox);
