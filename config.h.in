@@ -15,6 +15,9 @@
 /* Define to 1 if you have the `gettimeofday' function. */
 #undef HAVE_GETTIMEOFDAY
 
+/* Define to 1 if you have the <gtkmm.h> header file. */
+#undef HAVE_GTKMM_H
+
 /* Define to 1 if you have the `inet_ntoa' function. */
 #undef HAVE_INET_NTOA
 
@@ -45,6 +48,15 @@
 
 /* Define if you have POSIX threads libraries and header files. */
 #undef HAVE_PTHREAD
+
+/* Define to 1 if you have the <pulse/error.h> header file. */
+#undef HAVE_PULSE_ERROR_H
+
+/* Define to 1 if you have the <pulse/gccmacro.h> header file. */
+#undef HAVE_PULSE_GCCMACRO_H
+
+/* Define to 1 if you have the <pulse/pulse-simple.h> header file. */
+#undef HAVE_PULSE_PULSE_SIMPLE_H
 
 /* Define to 1 if your system has a GNU libc compatible `realloc' function,
    and to 0 otherwise. */

@@ -48,6 +48,8 @@ AC_CHECK_HEADER([gsm.h], [], [
 	echo "       missing a libgsm development package?"
 	exit -1
 	])
+AC_CHECK_HEADERS([pulse/pulse-simple.h pulse/error.h pulse/gccmacro.h])
+AC_CHECK_HEADERS([gtkmm.h])
 
 GTKMM_CFLAGS=`pkg-config --cflags gtkmm-2.4`
 GTKMM_LIBS=`pkg-config --libs gtkmm-2.4`
