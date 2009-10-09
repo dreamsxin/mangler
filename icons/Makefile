@@ -10,7 +10,7 @@ mangler-icons.h: black_circle.png blue_circle.png cyan_circle.png green_circle.p
 	gdk-pixbuf-csource --raw --build-list $$list > mangler-icons.h
 
 clean:
-	rm mangler-icons.h
+	rm -f mangler-icons.h
 
 distclean:
-	rm mangler-icons.h
+	rm -f mangler-icons.h

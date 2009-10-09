@@ -1,14 +1,15 @@
 
 ACLOCAL_AMFLAGS = -I m4
 
-manglerui.h: mangler.ui
+manglerui:
 	echo -n "char ManglerUI[] = " > manglerui.h
 	cat mangler.ui  | sed 's/"/\\"/g' | sed 's/^/"/' | sed 's/$$/\\n"/' >> manglerui.h
 	echo ";" >> manglerui.h
 
+
 bin_PROGRAMS = mangler
 
-mangler_SOURCES = mangler.cpp channeltree.cpp  mangleraudio.cpp  manglernetwork.cpp  manglerserverlist.cpp  manglersettings.cpp manglerui.h
+mangler_SOURCES = manglerui.h mangler.cpp channeltree.cpp  mangleraudio.cpp  manglernetwork.cpp  manglerserverlist.cpp  manglersettings.cpp
 
 mangler_LDADD = @top_srcdir@/libventrilo3/libventrilo3.la $(GTKMM_LIBS) $(GTHREAD_LIBS) $(PULSEAUDIO_LIBS)
 
