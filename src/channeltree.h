@@ -26,6 +26,7 @@
 
 #ifndef _CHANNELTREE_H
 #define _CHANNELTREE_H
+#include <sys/types.h>
 
 class channelModelColumns : public Gtk::TreeModelColumnRecord/*{{{*/
 {
