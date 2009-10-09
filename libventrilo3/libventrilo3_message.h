@@ -59,7 +59,7 @@ typedef struct _v3_net_message_0x00 {/*{{{*/
      *  Message Type 0x00 is only used during the login phase as a part of the
      *  key exchange.  The client sends 64 bytes of random data to the server.
      */
-    uint16_t type;
+    uint32_t type;
     char version[16];
     char salt1[32];
     char salt2[32];
