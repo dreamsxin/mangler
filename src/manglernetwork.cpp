@@ -45,7 +45,6 @@ ManglerNetwork::connect(std::string hostname, std::string port, std::string user
         gdk_threads_leave();
         return;
     }
-    Glib::Thread::create(sigc::mem_fun(mangler->audio, &ManglerAudio::startOutputStream), FALSE);
     gdk_threads_enter();
     //mangler->channelTree->expand_all();
     builder->get_widget("connectButton", button);

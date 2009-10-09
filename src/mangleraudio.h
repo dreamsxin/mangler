@@ -31,8 +31,6 @@ class ManglerAudio
 {
     public:
         ManglerAudio();
-        void startOutputStream();
-        void startInputStream();
 };
 
 #endif
