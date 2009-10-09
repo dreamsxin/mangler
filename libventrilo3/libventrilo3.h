@@ -317,16 +317,10 @@ pthread_mutex_t         *luser_mutex = NULL;
 pthread_mutex_t         *recvq_mutex = NULL;
 pthread_mutex_t         *sendq_mutex = NULL;
 
-pthread_mutex_t         *soundq_mutex = NULL;
-pthread_cond_t          *soundq_cond = NULL;
-
 pthread_mutex_t         *eventq_mutex = NULL;
 pthread_cond_t          *eventq_cond = NULL;
 
 v3_event                *_v3_eventq = NULL;
-
-uint32_t                _v3_soundq_length = 0;
-uint16_t                *_v3_soundq       = NULL;
 
 /*
  * Functions in ventrilo3_algo.c

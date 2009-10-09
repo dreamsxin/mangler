@@ -1172,40 +1172,6 @@ _v3_unlock_server(void) {/*{{{*/
     pthread_mutex_unlock(server_mutex);
 }/*}}}*/
 
-void
-_v3_lock_soundq(void) {/*{{{*/
-    // TODO: PTHREAD: check if threads are enabled, possibly use semaphores as a compile time option
-    if (soundq_mutex == NULL) {
-        pthread_mutexattr_t mta;
-        pthread_mutexattr_init(&mta);
-        pthread_mutexattr_settype(&mta, PTHREAD_MUTEX_ERRORCHECK);
-
-        _v3_debug(V3_DEBUG_MUTEX, "initializing _v3_soundq mutex");
-        soundq_mutex = malloc(sizeof(pthread_mutex_t));
-        soundq_cond = malloc(sizeof(pthread_cond_t));
-        pthread_mutex_init(soundq_mutex, &mta);
-        pthread_cond_init(soundq_cond, (pthread_condattr_t *) &mta);
-    }
-    _v3_debug(V3_DEBUG_MUTEX, "locking _v3_soundq");
-    pthread_mutex_lock(soundq_mutex);
-}/*}}}*/
-
-void
-_v3_unlock_soundq(void) {/*{{{*/
-    // TODO: PTHREAD: check if threads are enabled, possibly use semaphores as a compile time option
-    if (soundq_mutex == NULL) {
-        pthread_mutexattr_t mta;
-        pthread_mutexattr_init(&mta);
-        pthread_mutexattr_settype(&mta, PTHREAD_MUTEX_ERRORCHECK);
-
-        _v3_debug(V3_DEBUG_MUTEX, "initializing _v3_soundq mutex");
-        soundq_mutex = malloc(sizeof(pthread_mutex_t));
-        pthread_mutex_init(soundq_mutex, &mta);
-    }
-    _v3_debug(V3_DEBUG_MUTEX, "unlocking _v3_soundq");
-    pthread_mutex_unlock(soundq_mutex);
-}/*}}}*/
-
 /*
  *  Pretty much all packet processing happens in this function.
  *
@@ -1506,30 +1472,27 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                 _v3_msg_0x52_gsm    *gsm_packet;
                 _v3_msg_0x52_speex  *speex_packet;
                 _v3_lock_recvq();
+
+                v3_event *ev = malloc(sizeof(v3_event));
+                ev = malloc(sizeof(v3_event));
+                memset(ev, 0, sizeof(v3_event));
+
                 switch (m->subtype) {
                     case 0x00:
                         {
-                            v3_event *ev;
-                            ev = malloc(sizeof(v3_event));
                             ev->type = V3_EVENT_USER_TALK_START;
                             ev->user.id = m->user_id;
-                            v3_queue_event(ev);
                         }
                         break;
                     case 0x02:
                         {
-                            v3_event *ev;
-                            ev = malloc(sizeof(v3_event));
                             ev->type = V3_EVENT_USER_TALK_END;
                             ev->user.id = m->user_id;
-                            v3_queue_event(ev);
                         }
                         break;
                     case 0x01:
                         {   
                             _v3_msg_0x52_0x01 *msub = (_v3_msg_0x52_0x01 *)msg->contents;
-                            v3_event *ev = malloc(sizeof(v3_event));
-                            memset(ev, 0, sizeof(v3_event));
                             // TODO: it's too messy to have this here.  Write a function that decodes
                             if (msub->codec == 0) {                 // GSM {{{
                                 gsm_packet = (_v3_msg_0x52_gsm *)m;
@@ -1561,10 +1524,8 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                                 ev->pcm.rate = 8000;
                                 ev->pcm.length = gsm_packet->length/65*640;
                                 _v3_debug(V3_DEBUG_EVENT, "queueing msg");
-                                v3_queue_event(ev);
                                 /*}}}*/
                             } else if (msub->codec == 3) {          // SPEEX/*{{{*/
-                                // TODO: rewrite this to use the event queue
                                 float output[1280];
                                 char  cbits[200];
                                 void *state;
@@ -1577,32 +1538,19 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                                 enc_frame_size = speex_packet->length / speex_packet->audio_count - 2;
                                 state = speex_decoder_init(&speex_uwb_mode);
                                 speex_bits_init(&bits);
-                                _v3_lock_soundq();
                                 for (ctr = 0; ctr < speex_packet->audio_count; ctr++) {
-                                    FILE *f;
                                     memcpy(cbits, speex_packet->frames[ctr] + 2, enc_frame_size);
                                     speex_bits_read_from(&bits, cbits, enc_frame_size);
                                     speex_decode(state, &bits, output);
 
-                                    // TODO: oh yes, this is horrible -- should be
-                                    // allocating in 10k chunks or something... we
-                                    // also should be checking the value of
-                                    // framesize so we don't alloc a bazillion
-                                    // bytes of memory
-                                    _v3_debug(V3_DEBUG_MEMORY, "reallocating _v3_soundq from %d to %d bytes", _v3_soundq_length, _v3_soundq_length + speex_packet->frame_size*2);
-                                    _v3_soundq = realloc(_v3_soundq, (_v3_soundq_length + speex_packet->frame_size) * sizeof(int16_t));
                                     for (i = 0; i < speex_packet->frame_size; i++) {
-                                        _v3_soundq[_v3_soundq_length+i] = output[i];
-                                        fwrite(&_v3_soundq[_v3_soundq_length+i], 2, 1, f);
+                                        ev->pcm.sample[ev->pcm.length+i] = output[i];
                                     }
-                                    fclose(f);
-                                    _v3_soundq_length += speex_packet->frame_size;
-                                    _v3_debug(V3_DEBUG_INFO, "sound queue is now %d samples (%d bytes)", _v3_soundq_length, _v3_soundq_length*2);
+                                    ev->pcm.length += speex_packet->frame_size;
                                 }
-                                pthread_cond_signal(soundq_cond);
-                                _v3_unlock_soundq();
                             }/*}}}*/
                         }
+                        v3_queue_event(ev);
                         break;
                 }
                 // queue the sound message in the recv queue
@@ -2250,36 +2198,6 @@ v3_free_channel(v3_channel *channel) {/*{{{*/
     free(channel->phonetic);
     free(channel->comment);
     free(channel);
-}/*}}}*/
-
-// these functions return the number of BYTES, *NOT* the number of SAMPLES
-uint16_t *
-v3_get_soundq(uint32_t *len) {/*{{{*/
-    uint16_t *soundq;
-
-    _v3_func_enter("v3_get_soundq");
-    _v3_lock_soundq();
-    pthread_cond_wait(soundq_cond, soundq_mutex);
-    soundq = malloc(_v3_soundq_length*sizeof(uint16_t));
-    memcpy(soundq, _v3_soundq, _v3_soundq_length*sizeof(uint16_t));
-    *len = _v3_soundq_length*sizeof(uint16_t);
-    _v3_soundq_length = 0;
-    _v3_unlock_soundq();
-    _v3_func_leave("v3_get_soundq");
-    return soundq;
-
-}/*}}}*/
-
-uint32_t
-v3_get_soundq_length(void) {/*{{{*/
-    uint32_t length;
-
-    _v3_func_enter("v3_get_soundq_length");
-    _v3_lock_soundq();
-    length = _v3_soundq_length*2;
-    _v3_unlock_soundq();
-    _v3_func_leave("v3_get_soundq_length");
-    return length;
 }/*}}}*/
 
 int

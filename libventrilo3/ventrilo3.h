@@ -392,11 +392,6 @@ int         v3_channel_count(void);
 void        v3_free_channel(v3_channel *channel);
 v3_channel  *v3_get_channel(uint16_t id);
 
-// Message queues
-extern uint32_t                _v3_soundq_length;
-extern uint16_t                *_v3_soundq;
-
-
 
 #endif // _VENTRILO3_H
 
