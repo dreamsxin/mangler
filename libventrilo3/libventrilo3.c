@@ -367,31 +367,28 @@ _v3_server_key_exchange(void) {/*{{{*/
     // Build a net message of type zero with random data
     memset(&msg0, 0, sizeof(_v3_msg_0x00));
     strncpy(msg0.version, "3.0.0", 16);
+    
     for(ctr = 0; ctr < 31; ctr++) {
         buf[ctr] = rand() % 93 + 33;
     }
     buf[ctr] = '\0';
     memcpy(msg0.salt1, buf, 32);
+    
     for(ctr = 0; ctr < 31; ctr++) {
         buf[ctr] = rand() % 93 + 33;
     }
     buf[ctr] = '\0';
     memcpy(msg0.salt2, buf, 32);
+    
     msg.type = 0x00;
     msg.len  = sizeof(_v3_msg_0x00);
-    msg.data = (char *)&msg0;
-
-    // turn the msg structure into something that can be encrypted
-    msgdata = malloc(msg.len+2);
-    memset(msgdata, 0, msg.len+2);
-    memcpy(msgdata, &msg.type, 2);
-    memcpy(msgdata+2, msg.data, msg.len);
+    msg.data = &msg0;
+    
     _v3_net_message_dump(&msg);
 
     // Encrypt the message and send it to the server
-    ventrilo_first_enc((uint8_t *)msgdata, msg.len+2);
-    _v3_send_enc_msg(msgdata, msg.len+2);
-    free(msgdata);
+    ventrilo_first_enc((uint8_t *)msg.data, msg.len);
+    _v3_send_enc_msg(msg.data, msg.len);
 
     msgdata = malloc(0xffff);
     len = _v3_recv_enc_msg(msgdata);
