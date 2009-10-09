@@ -322,6 +322,47 @@ pthread_cond_t          *eventq_cond = NULL;
 
 v3_event                *_v3_eventq = NULL;
 
+_v3_codecs v3_codecs[] = {
+    { 0, 0, 8000, "GSM 6.10 8kHz" },
+    { 0, 1, 11000, "GSM 6.10 11kHz" },
+    { 0, 2, 22000, "GSM 6.10 22kHz" },
+    { 0, 3, 44000, "GSM 6.10 44kHz" },
+    { 3, 0, 8000, "Speex 8kHz Quality 0" },
+    { 3, 1, 8000, "Speex 8kHz Quality 1" },
+    { 3, 2, 8000, "Speex 8kHz Quality 2" },
+    { 3, 3, 8000, "Speex 8kHz Quality 3" },
+    { 3, 4, 8000, "Speex 8kHz Quality 4" },
+    { 3, 5, 8000, "Speex 8kHz Quality 5" },
+    { 3, 6, 8000, "Speex 8kHz Quality 6" },
+    { 3, 7, 8000, "Speex 8kHz Quality 7" },
+    { 3, 8, 8000, "Speex 8kHz Quality 8" },
+    { 3, 9, 8000, "Speex 8kHz Quality 9" },
+    { 3, 10, 8000, "Speex 8kHz Quality 10" },
+    { 3, 11, 16000, "Speex 16kHz Quality 0" },
+    { 3, 12, 16000, "Speex 16kHz Quality 1" },
+    { 3, 13, 16000, "Speex 16kHz Quality 2" },
+    { 3, 14, 16000, "Speex 16kHz Quality 3" },
+    { 3, 15, 16000, "Speex 16kHz Quality 4" },
+    { 3, 16, 16000, "Speex 16kHz Quality 5" },
+    { 3, 17, 16000, "Speex 16kHz Quality 6" },
+    { 3, 18, 16000, "Speex 16kHz Quality 7" },
+    { 3, 19, 16000, "Speex 16kHz Quality 8" },
+    { 3, 20, 16000, "Speex 16kHz Quality 9" },
+    { 3, 21, 16000, "Speex 16kHz Quality 10" },
+    { 3, 22, 32000, "Speex 32kHz Quality 0" },
+    { 3, 23, 32000, "Speex 32kHz Quality 1" },
+    { 3, 24, 32000, "Speex 32kHz Quality 2" },
+    { 3, 25, 32000, "Speex 32kHz Quality 3" },
+    { 3, 26, 32000, "Speex 32kHz Quality 4" },
+    { 3, 27, 32000, "Speex 32kHz Quality 5" },
+    { 3, 28, 32000, "Speex 32kHz Quality 6" },
+    { 3, 29, 32000, "Speex 32kHz Quality 7" },
+    { 3, 30, 32000, "Speex 32kHz Quality 8" },
+    { 3, 31, 32000, "Speex 32kHz Quality 9" },
+    { 3, 32, 32000, "Speex 32kHz Quality 10" },
+    { -1, -1, -1, "" },
+};
+
 /*
  * Functions in ventrilo3_algo.c
  */

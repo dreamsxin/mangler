@@ -57,9 +57,9 @@ int main(int argc, char *argv[]) {
     v3_event *ev;
 
     // pulse
-    static const pa_sample_spec PAss = {
+    pa_sample_spec PAss = {
         .format = PA_SAMPLE_S16LE,
-        .rate = 8000,
+        .rate = 0,
         .channels = 1
     };
     pa_simple *PAs = NULL;
@@ -83,11 +83,6 @@ int main(int argc, char *argv[]) {
             );
 
 
-    _v3_debug(V3_DEBUG_INFO, "opening output stream....");
-    if (!(PAs = pa_simple_new(NULL, argv[0], PA_STREAM_PLAYBACK, NULL, "playback", &PAss, NULL, NULL, &PAerror))) {
-        fprintf(stderr, __FILE__": pa_simple_new() failed: %s\n", pa_strerror(PAerror));
-        exit(0);
-    }
     signal (SIGINT, ctrl_c);
     username = strdup(getenv("USER"));
     //if (! v3_login("evolve.typefrag.com:54174", username, "password", "phonetic")) {
@@ -136,6 +131,17 @@ int main(int argc, char *argv[]) {
         if ((ev = v3_get_event(V3_NONBLOCK))) {
             _v3_debug(V3_DEBUG_INFO, "got new event type %d", ev->type);
             if (ev->type == V3_EVENT_PLAY_AUDIO) {
+                if (ev->pcm.rate != PAss.rate) {
+                    _v3_debug(V3_DEBUG_INFO, "reopening output stream at rate %d....", ev->pcm.rate);
+                    PAss.rate = ev->pcm.rate;
+                    if (PAs != NULL) {
+                        pa_simple_free(PAs);
+                    }
+                    if (!(PAs = pa_simple_new(NULL, argv[0], PA_STREAM_PLAYBACK, NULL, "playback", &PAss, NULL, NULL, &PAerror))) {
+                        fprintf(stderr, __FILE__": pa_simple_new() failed: %s\n", pa_strerror(PAerror));
+                        exit(0);
+                    }
+                }
                 _v3_debug(V3_DEBUG_INFO, "outputting sound");
                 _v3_debug(V3_DEBUG_INFO, "writing %d bytes to PA", ev->pcm.length);
                 if ((ret = pa_simple_write(PAs, ev->pcm.sample, (size_t) ev->pcm.length, &PAerror)) < 0) {

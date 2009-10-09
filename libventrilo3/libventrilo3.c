@@ -1493,6 +1493,10 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                     case 0x01:
                         {   
                             _v3_msg_0x52_0x01 *msub = (_v3_msg_0x52_0x01 *)msg->contents;
+                            ev->type = V3_EVENT_PLAY_AUDIO;
+                            ev->user.id = m->user_id;
+                            ev->pcm.rate = v3_get_codec_rate(msub->codec, msub->codec_format);
+
                             // TODO: it's too messy to have this here.  Write a function that decodes
                             if (msub->codec == 0) {                 // GSM {{{
                                 gsm_packet = (_v3_msg_0x52_gsm *)m;
@@ -1519,9 +1523,6 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                                     _v3_debug(V3_DEBUG_INFO, "copying 640 bytes of frame %d from %lu to %lu", ctr, sample, &ev->pcm.sample[ctr*320]);
                                     memcpy(&ev->pcm.sample[ctr*320], sample, 640);
                                 }
-                                ev->type = V3_EVENT_PLAY_AUDIO;
-                                ev->user.id = m->user_id;
-                                ev->pcm.rate = 8000;
                                 ev->pcm.length = gsm_packet->length/65*640;
                                 _v3_debug(V3_DEBUG_EVENT, "queueing msg");
                                 /*}}}*/
@@ -2296,10 +2297,33 @@ v3_clear_events(void) {/*{{{*/
 }/*}}}*/
 
 int
-v3_get_max_clients(void) {
+v3_get_max_clients(void) {/*{{{*/
     // - 1 for the lobby user
     return v3_server.max_clients;
-}
+}/*}}}*/
+
+uint32_t
+v3_get_codec_rate(uint16_t codec, uint16_t format) {/*{{{*/
+    int ctr;
+
+    for (ctr = 0; v3_codecs[ctr].codec != -1; ctr++) {
+        if (v3_codecs[ctr].codec == codec && v3_codecs[ctr].format == format) {
+            return v3_codecs[ctr].rate;
+        }
+    }
+}/*}}}*/
+
+const char *
+v3_get_codec_name(uint16_t codec, uint16_t format) {/*{{{*/
+    int ctr;
+
+    for (ctr = 0; v3_codecs[ctr].codec != -1; ctr++) {
+        if (v3_codecs[ctr].codec == codec && v3_codecs[ctr].format == format) {
+            return v3_codecs[ctr].name;
+        }
+    }
+}/*}}}*/
+
 
 /*
    struct  v3_channel **v3_channel_list(void);

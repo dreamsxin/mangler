@@ -307,6 +307,13 @@ typedef struct {
 #endif
 } ventrilo_key_ctx;
 
+typedef struct __v3_codec {
+    uint8_t codec;
+    uint8_t format;
+    uint32_t rate;
+    char name[128];
+} _v3_codecs;
+extern _v3_codecs v3_codecs[];
 
 typedef struct __v3_server {
     uint32_t ip;                      // The server's IP address
@@ -381,6 +388,7 @@ uint32_t    v3_get_soundq_length(void);
 v3_event    *v3_get_event(int block);
 int         v3_get_max_clients(void);
 void        v3_clear_events(void);
+uint32_t    v3_get_codec_rate(uint16_t codec, uint16_t format);
 
 // User list functions
 int         v3_user_count(void);
