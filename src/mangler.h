@@ -25,6 +25,7 @@
  */
 
 #include <gtkmm.h>
+#include <sys/types.h>
 #include <iostream>
 #include "channeltree.h"
 #include "manglernetwork.h"
