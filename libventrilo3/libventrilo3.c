@@ -1482,6 +1482,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                         {
                             ev->type = V3_EVENT_USER_TALK_START;
                             ev->user.id = m->user_id;
+                            ev->pcm.rate = v3_get_codec_rate(m->codec, m->codec_format);
                         }
                         break;
                     case 0x02:
@@ -1551,9 +1552,9 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                                 }
                             }/*}}}*/
                         }
-                        v3_queue_event(ev);
                         break;
                 }
+                v3_queue_event(ev);
                 // queue the sound message in the recv queue
                 //_v3_msg_0x52 *m = msg->contents;
                 _v3_unlock_recvq();

@@ -32,7 +32,6 @@ using namespace std;
 
 ManglerChannelTree::ManglerChannelTree(Glib::RefPtr<Gtk::Builder> builder)/*{{{*/
 {
-    int colnum;
     this->builder = builder;
     // Create the Channel Store
     channelStore = Gtk::TreeStore::create(channelRecord);
@@ -45,7 +44,7 @@ ManglerChannelTree::ManglerChannelTree(Glib::RefPtr<Gtk::Builder> builder)/*{{{*
     pColumn->pack_start(channelRecord.icon, false);
     pColumn->pack_start(channelRecord.displayName);
     channelView->append_column(*pColumn);
-    //colnum = channelView->append_column("Name", channelRecord.displayName) - 1;
+    //int colnum = channelView->append_column("Name", channelRecord.displayName) - 1;
     // TODO: Write a sort routine to make sure users are always immediately
     // below the channel, otherwise users get sorted within the subchannels
     //channelStore->set_sort_column(channelRecord.displayName, Gtk::SORT_ASCENDING);

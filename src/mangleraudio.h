@@ -27,10 +27,26 @@
 #ifndef _MANGLERAUDIO_H
 #define _MANGLERAUDIO_H
 
+#include <pulse/simple.h>
+#include <pulse/error.h>
+#include <pulse/gccmacro.h>
+
+
 class ManglerAudio
 {
     public:
         ManglerAudio();
+        void            openStream(uint16_t userid, uint32_t rate);
+        void            closeStream(uint16_t userid);
+        void            queue(uint16_t userid, uint32_t length, uint8_t *sample);
+        void            play(uint16_t userid);
+
+        std::map< uint16_t, GAsyncQueue* >  pcm_queue;
+        std::map< uint16_t, pa_sample_spec* >  pulse_samplespec;
+        std::map< uint16_t, pa_simple* >  pulse_stream;
+        std::map< uint16_t, bool >  pulse_stop;
+
+        int             error;
 };
 
 #endif

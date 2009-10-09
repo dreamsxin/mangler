@@ -526,7 +526,7 @@ _v3_get_0x52(_v3_net_message *msg) {/*{{{*/
 
     _v3_func_enter("_v3_get_0x52");
     m = malloc(sizeof(_v3_msg_0x52));
-    memcpy(m, msg->data, 8);
+    memcpy(m, msg->data, 12);
     _v3_debug(V3_DEBUG_PACKET_PARSE, "subtype;      : %d", m->subtype);
     _v3_debug(V3_DEBUG_PACKET_PARSE, "user_id;      : %d", m->user_id);
     switch (m->subtype) {

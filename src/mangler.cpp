@@ -259,9 +259,14 @@ Mangler::getNetworkEvent() {/*{{{*/
                 break;
             case V3_EVENT_USER_TALK_START:
                 channelTree->userIsTalking(ev->user.id, true);
+                audio->openStream(ev->user.id, ev->pcm.rate);
                 break;
             case V3_EVENT_USER_TALK_END:
                 channelTree->userIsTalking(ev->user.id, false);
+                audio->closeStream(ev->user.id);
+                break;
+            case V3_EVENT_PLAY_AUDIO:
+                audio->queue(ev->user.id, ev->pcm.length, (uint8_t *)ev->pcm.sample);
                 break;
             default:
                 fprintf(stderr, "******************************************************** got unknown event type %d\n", ev->type);

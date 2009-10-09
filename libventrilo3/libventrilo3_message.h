@@ -313,10 +313,16 @@ typedef struct _v3_net_message_0x52 {/*{{{*/
      *      libventrilo3: 18:18:32:     PACKET:     82 02 60 DB B6 6D 1C 57 06 60 E4 48 92 E3 D8 03      ..`..m.W.`.H....
      *      libventrilo3: 18:18:32:     PACKET:     80 63 C9 8D E4 66 4C 60 DB 38 72 1B A7 82 15 5D      .c...fL`.8r....]
      *
+     * start message (0x00):
+     *      libventrilo3: 19:42:16:                 PACKET:     52 00 00 00 00 00 05 00 03 00 20 00 00 00 00 00      R...............
+     *      libventrilo3: 19:42:16:                 PACKET:     00 00 00 00 00 00 00 00 00 01 00 02 00 01 00 00      ................
+
      */
     uint32_t type;                    // 0
     uint16_t subtype;                 // 4
     uint16_t user_id;                 // 6
+    uint16_t codec;                   // 8
+    uint16_t codec_format;            // 10
 } _v3_msg_0x52;
 int _v3_get_0x52(_v3_net_message *msg);
 int _v3_destroy_0x52(_v3_net_message *msg);/*}}}*/
