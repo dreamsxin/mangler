@@ -75,9 +75,9 @@ _v3_debug(uint32_t level, const char *format, ...) {/*{{{*/
     va_end(args);
 
     for (ctr = 0; ctr < stack_level * 4; ctr++) {
-        strncat(buf, " ", 1024);
+        strncat(buf, " ", 1023);
     }
-    strncat(buf, str, 1024);
+    strncat(buf, str, 1023);
     t = time(NULL);
     tmp = localtime(&t);
     if (tmp == NULL) {
@@ -164,7 +164,7 @@ _v3_net_message_dump_raw(char *data, int len) {/*{{{*/
             buf[0] = 0;
             for (ctr2 = ctr; ctr2 < len; ctr2++) {
                 snprintf(buf2, 4, "%02X ", (uint8_t)data[ctr2]);
-                strncat(buf, buf2, 256);
+                strncat(buf, buf2, 255);
             }
             _v3_debug(V3_DEBUG_PACKET_ENCRYPTED, "PACKET:     %s", buf);
         } else {
@@ -201,7 +201,7 @@ _v3_hexdump(char *data, int len) {/*{{{*/
             buf[0] = 0;
             for (ctr2 = ctr; ctr2 < len; ctr2++) {
                 snprintf(buf2, 4, "%02X ", (uint8_t)data[ctr2]);
-                strncat(buf, buf2, 256);
+                strncat(buf, buf2, 255);
             }
             _v3_debug(V3_DEBUG_INFO, "%s", buf);
         } else {
@@ -240,18 +240,18 @@ _v3_net_message_dump(_v3_net_message *msg) {/*{{{*/
             buf[0] = 0;
             for (ctr2 = ctr; ctr2 < msg->len; ctr2++) {
                 snprintf(buf2, 4, "%02X ", (uint8_t)msg->data[ctr2]);
-                strncat(buf, buf2, 256);
+                strncat(buf, buf2, 255);
             }
             for ( ; ctr2 % 16 ; ctr2++) {
                 snprintf(buf2, 4, "   ");
-                strncat(buf, buf2, 256);
+                strncat(buf, buf2, 255);
             }
             buf[strlen(buf)-1] = '\0';
             snprintf(buf2, 8, "      ");
-            strncat(buf, buf2, 256);
+            strncat(buf, buf2, 255);
             for (ctr2 = ctr; ctr2 < msg->len; ctr2++) {
                 snprintf(buf2, 8, "%c", (uint8_t)msg->data[ctr2]    > 32 && (uint8_t)msg->data[ctr2]    < 127 ? (uint8_t)msg->data[ctr2]     : '.');
-                strncat(buf, buf2, 256);
+                strncat(buf, buf2, 255);
             }
             _v3_debug(V3_DEBUG_PACKET, "PACKET:     %s", buf);
         } else {
@@ -1206,7 +1206,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                 if(m->subtype & 0x01) {
                     error = true;
                     ev->error.disconnected = true;
-                    strncat(buf, "You have been disconnected from the server.\n", 512);
+                    strncat(buf, "You have been disconnected from the server.\n", 511);
                     v3_logout();
                 }
                 if(m->subtype & 0x02) {
@@ -1232,7 +1232,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                 }
                 if(m->subtype & 0x40) {
                     error = true;
-                    strncat(buf, "The supplied password is incorrect.\n", 512);
+                    strncat(buf, "The supplied password is incorrect.\n", 511);
                 }
                 if(m->subtype & 0x100) {
                     _v3_debug(V3_DEBUG_INTERNAL, "FIXME: Unknown subtype, please report a packetdump.");
@@ -1618,7 +1618,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                     if (m->minutes_banned) {
                         char buf2[1024];
                         snprintf(buf2, 1024, " You can connect again in %d minutes", m->minutes_banned);
-                        strncat(buf, buf2, 1024);
+                        strncat(buf, buf2, 1023);
                     }
                     _v3_debug(V3_DEBUG_INTERNAL, "disconnecting from server");
                     _v3_close_connection();

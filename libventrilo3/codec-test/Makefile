@@ -7,5 +7,12 @@ all:
 	gcc -o gsmenc -g gsmenc.c -lgsm
 	gcc -o gsmdec -g gsmdec.c -lgsm
 	gcc -o gsmdec -g gsmdec.c -lgsm
-	gcc -o gsm-reader -g gsm-reader.c -lgsm
 
+clean:
+	rm -f pacat
+	rm -f parec
+	rm -f speexdec
+	rm -f speexenc
+	rm -f gsmenc
+	rm -f gsmdec
+	rm -f gsmdec

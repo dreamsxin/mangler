@@ -11,3 +11,6 @@ mangler-icons.h: black_circle.png blue_circle.png cyan_circle.png green_circle.p
 
 clean:
 	rm mangler-icons.h
+
+distclean:
+	rm mangler-icons.h
