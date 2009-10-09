@@ -1,8 +1,8 @@
 /*
- * $LastChangedDate: 2009-09-26 11:59:20 -0700 (Sat, 26 Sep 2009) $
- * $Revision: 475 $
- * $LastChangedBy: ekilfoil $
- * $URL: http://svn.manglerproject.net/svn/mangler/trunk/libventrilo3/ventrilo_algo.h $
+ * $LastChangedDate$
+ * $Revision$
+ * $LastChangedBy$
+ * $URL$
  *
  * All indents are spaces and indent width is 4.
  *

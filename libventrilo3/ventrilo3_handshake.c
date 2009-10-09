@@ -1,10 +1,10 @@
 /*
  * vim: softtabstop=4 shiftwidth=4 cindent foldmethod=marker expandtab
  *
- * $LastChangedDate: 2009-09-26 11:59:20 -0700 (Sat, 26 Sep 2009) $
- * $Revision: 475 $
- * $LastChangedBy: ekilfoil $
- * $URL: http://svn.manglerproject.net/svn/mangler/trunk/libventrilo3/ventrilo3_handshake.c $
+ * $LastChangedDate$
+ * $Revision$
+ * $LastChangedBy$
+ * $URL$
  */
 
 /*

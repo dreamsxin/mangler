@@ -1,10 +1,10 @@
 /*
  * vim: softtabstop=4 shiftwidth=4 cindent foldmethod=marker expandtab
  *
- * $LastChangedDate: 2009-09-30 12:58:47 -0700 (Wed, 30 Sep 2009) $
- * $Revision: 495 $
- * $LastChangedBy: ekilfoil $
- * $URL: http://svn.manglerproject.net/svn/mangler/trunk/libventrilo3/lv3_test.c $
+ * $LastChangedDate$
+ * $Revision$
+ * $LastChangedBy$
+ * $URL$
  *
  * Copyright 2009 Eric Kilfoil 
  *
