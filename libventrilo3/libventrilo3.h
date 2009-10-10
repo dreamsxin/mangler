@@ -156,15 +156,14 @@ char *_v3_bitmasks[] = {
     "255.255.255.255"
 };
 
-/*
-   Define the bit values for the various user permissions. These permissions
-   are stored in a 64 bit int.  Bit zero is not used and should bet set to
-   off if the structure has been initialized.
- */
-
 #define V3_OK        0
 #define V3_MALFORMED 1
 #define V3_NOTIMPL   2
+
+#define V3_NOT_WAITING 0
+#define V3_EVENT_WAITING 1
+#define V3_MSG_WAITING 2
+#define V3_BOTH_WAITING 3
 
 /*
    This structure defines the bit number of each permission setting, the
@@ -294,7 +293,7 @@ uint32_t _v3_hash_table[] =
  * Global Variables
  */
 
-_v3_server  v3_server  = { 0, 0, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, -1, { "", 0, 0 }, { "", 0, 0 }, NULL, NULL };
+_v3_server  v3_server  = { 0, 0, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, -1, { 0, 0 }, NULL, { "", 0, 0 }, { "", 0, 0 }, NULL, NULL };
 _v3_luser   v3_luser   = { -1, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, 0, {  } };
 
 v3_channel              *v3_channel_list = NULL;
@@ -321,7 +320,7 @@ pthread_cond_t          *eventq_cond = NULL;
 
 v3_event                *_v3_eventq = NULL;
 
-_v3_codecs v3_codecs[] = {
+v3_codec v3_codecs[] = {
     { 0, 0, 8000, "GSM 6.10 8kHz" },
     { 0, 1, 11000, "GSM 6.10 11kHz" },
     { 0, 2, 22000, "GSM 6.10 22kHz" },

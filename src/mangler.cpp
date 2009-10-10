@@ -151,8 +151,15 @@ void Mangler::connectButton_clicked_cb(void) {/*{{{*/
         Glib::Thread::create(sigc::bind(sigc::mem_fun(this->network, &ManglerNetwork::connect), "localhost", "3784", "username", "password"), FALSE);
         Glib::signal_timeout().connect( sigc::mem_fun(*this, &Mangler::getNetworkEvent), 50 );
     } else {
-        v3_logout();
+        channelTree->clear();
         button->set_label("gtk-connect");
+        builder->get_widget("progressbar", progressbar);
+        builder->get_widget("statusbar", statusbar);
+        progressbar->set_text("");
+        progressbar->set_fraction(0);
+        statusbar->pop();
+        statusbar->push("Not connected");
+        v3_logout();
     }
     return;
 }/*}}}*/

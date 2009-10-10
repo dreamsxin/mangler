@@ -541,44 +541,58 @@ _v3_net_message *
 _v3_recv(int block) {/*{{{*/
     _v3_net_message *msg;
     char msgdata[0xffff];
+    int waiting;
 
     _v3_func_enter("_v3_recv");
     if (! _v3_is_connected()) {
         _v3_func_leave("_v3_recv");
         return NULL;
     }
-    if (v3_message_waiting(block)) {
-        msg = malloc(sizeof(_v3_net_message));
-        memset(msg, 0, sizeof(_v3_net_message));
-        msg->len = 0;
-        msg->type = -1;
-        msg->data = NULL;
-        msg->next = NULL;
-        if ((msg->len = _v3_recv_enc_msg(msgdata)) <= 0) {
-            if (msg->len == 0) {
-                _v3_debug(V3_DEBUG_SOCKET, "server closed connection");
-            } else {
-                _v3_debug(V3_DEBUG_SOCKET, "receive failed");
+    if ((waiting = v3_message_waiting(block)) != 0) {
+        if (waiting == V3_BOTH_WAITING || waiting == V3_EVENT_WAITING) {
+            // receiving an event from the event pipe
+            v3_event ev;
+            fread(&ev, sizeof(v3_event), 1, v3_server.evstream);
+            switch (ev.type) {
+                default:
+                    _v3_debug(V3_DEBUG_EVENT, "received unknown event type %d from queue", ev.type);
+                    break;
+            }
+        }
+        if (waiting == V3_BOTH_WAITING || waiting == V3_MSG_WAITING) {
+            // receiving a message from the network
+            msg = malloc(sizeof(_v3_net_message));
+            memset(msg, 0, sizeof(_v3_net_message));
+            msg->len = 0;
+            msg->type = -1;
+            msg->data = NULL;
+            msg->next = NULL;
+            if ((msg->len = _v3_recv_enc_msg(msgdata)) <= 0) {
+                if (msg->len == 0) {
+                    _v3_debug(V3_DEBUG_SOCKET, "server closed connection");
+                } else {
+                    _v3_debug(V3_DEBUG_SOCKET, "receive failed");
+                    free(msg);
+                    _v3_func_leave("_v3_recv");
+                    return NULL;
+                }
                 free(msg);
                 _v3_func_leave("_v3_recv");
                 return NULL;
+            } else {
+                _v3_debug(V3_DEBUG_SOCKET, "received %d bytes", msg->len);
             }
-            free(msg);
+            ventrilo_dec(&v3_server.server_key, (uint8_t *)msgdata, msg->len);
+            _v3_debug(V3_DEBUG_INTERNAL, "decryption complete");
+            memcpy(&msg->type, msgdata, 2);
+            msg->data = malloc(msg->len);
+            memcpy(msg->data, msgdata, msg->len);
+            _v3_debug(V3_DEBUG_PACKET, "======= received TCP packet =====================================");
+            _v3_net_message_dump(msg);
+            block = V3_NONBLOCK;
             _v3_func_leave("_v3_recv");
-            return NULL;
-        } else {
-            _v3_debug(V3_DEBUG_SOCKET, "received %d bytes", msg->len);
+            return msg;
         }
-        ventrilo_dec(&v3_server.server_key, (uint8_t *)msgdata, msg->len);
-        _v3_debug(V3_DEBUG_INTERNAL, "decryption complete");
-        memcpy(&msg->type, msgdata, 2);
-        msg->data = malloc(msg->len);
-        memcpy(msg->data, msgdata, msg->len);
-        _v3_debug(V3_DEBUG_PACKET, "======= received TCP packet =====================================");
-        _v3_net_message_dump(msg);
-        block = V3_NONBLOCK;
-        _v3_func_leave("_v3_recv");
-        return msg;
     } else {
         _v3_func_leave("nothing waiting and non-blocking requested");
         _v3_func_leave("_v3_recv");
@@ -655,6 +669,7 @@ v3_message_waiting(int block) {/*{{{*/
     }
     FD_ZERO(&rset);
     FD_SET(_v3_sockd, &rset);
+    FD_SET(v3_server.evpipe[0], &rset);
 
     /*
      * Every 10 seconds, the client sends a timestamp message to the server.  I
@@ -665,7 +680,7 @@ v3_message_waiting(int block) {/*{{{*/
     _v3_next_timestamp(&tv, &v3_server.last_timestamp);
     _v3_debug(V3_DEBUG_INFO, "outbound timestamp pending in %d.%d seconds", tv.tv_sec, tv.tv_usec);
 
-    while ((ret = select(_v3_sockd+1, &rset, NULL, NULL, &tv)) >= 0) {
+    while ((ret = select(_v3_sockd > v3_server.evpipe[0] ? _v3_sockd+1 : v3_server.evpipe[0]+1, &rset, NULL, NULL, &tv)) >= 0) {
         _v3_next_timestamp(&tv, &v3_server.last_timestamp);
         _v3_debug(V3_DEBUG_INFO, "outbound timestamp pending in %d.%d seconds", tv.tv_sec, tv.tv_usec);
         if (!_v3_is_connected()) {
@@ -683,10 +698,18 @@ v3_message_waiting(int block) {/*{{{*/
             _v3_next_timestamp(&tv, &v3_server.last_timestamp);
             continue;
         }
-        if (FD_ISSET(_v3_sockd, &rset)) {
+        if (FD_ISSET(v3_server.evpipe[0], &rset) && FD_ISSET(_v3_sockd, &rset)) {
+            _v3_debug(V3_DEBUG_SOCKET, "incoming event and outgoing msg waiting to be processed");
+            _v3_func_leave("v3_message_waiting");
+            return V3_BOTH_WAITING;
+        } else if (FD_ISSET(v3_server.evpipe[0], &rset)) {
+            _v3_debug(V3_DEBUG_SOCKET, "incoming event waiting to be processed");
+            _v3_func_leave("v3_message_waiting");
+            return V3_EVENT_WAITING;
+        } else if (FD_ISSET(_v3_sockd, &rset)) {
             _v3_debug(V3_DEBUG_SOCKET, "incoming data waiting to be received");
             _v3_func_leave("v3_message_waiting");
-            return true;
+            return V3_MSG_WAITING;
         } else {
             _v3_debug(V3_DEBUG_SOCKET, "no data waiting to be received");
             _v3_func_leave("v3_message_waiting");
@@ -1961,6 +1984,14 @@ v3_login(char *server, char *username, char *password, char *phonetic) {/*{{{*/
         _v3_send(response);
         _v3_destroy_packet(response);
 
+        // create our event pipe to listen on
+        _v3_status(97, "Creating Event Queue.");
+        if (pipe(v3_server.evpipe)) {
+            _v3_error("could not create outbound event queue");
+            return false;
+        }
+        v3_server.evstream = fdopen(v3_server.evpipe[0], "r");
+
         _v3_status(100, "Login Complete.");
         {
             v3_event *ev;
@@ -1968,6 +1999,7 @@ v3_login(char *server, char *username, char *password, char *phonetic) {/*{{{*/
             ev->type = V3_EVENT_LOGIN_COMPLETE;
             v3_queue_event(ev);
         }
+
         return true;
     }
     return false;
@@ -1990,6 +2022,8 @@ v3_logout(void) {/*{{{*/
     */
     _v3_destroy_channellist();
     _v3_destroy_userlist();
+    close(v3_server.evpipe[0]);
+    close(v3_server.evpipe[1]);
     _v3_func_leave("v3_logout");
     return true;
 }/*}}}*/
@@ -2276,13 +2310,13 @@ v3_get_codec_rate(uint16_t codec, uint16_t format) {/*{{{*/
     }
 }/*}}}*/
 
-const char *
+const v3_codec*
 v3_get_codec_name(uint16_t codec, uint16_t format) {/*{{{*/
     int ctr;
 
     for (ctr = 0; v3_codecs[ctr].codec != -1; ctr++) {
         if (v3_codecs[ctr].codec == codec && v3_codecs[ctr].format == format) {
-            return v3_codecs[ctr].name;
+            return &v3_codecs[ctr];
         }
     }
 }/*}}}*/

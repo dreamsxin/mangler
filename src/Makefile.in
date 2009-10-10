@@ -50,7 +50,8 @@ binPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
 PROGRAMS = $(bin_PROGRAMS)
 am_mangler_OBJECTS = mangler.$(OBJEXT) channeltree.$(OBJEXT) \
 	mangleraudio.$(OBJEXT) manglernetwork.$(OBJEXT) \
-	manglerserverlist.$(OBJEXT) manglersettings.$(OBJEXT)
+	manglerserverlist.$(OBJEXT) manglersettings.$(OBJEXT) \
+	manglerconfig.$(OBJEXT)
 mangler_OBJECTS = $(am_mangler_OBJECTS)
 am__DEPENDENCIES_1 =
 mangler_DEPENDENCIES = @top_srcdir@/libventrilo3/libventrilo3.la \
@@ -213,7 +214,7 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 ACLOCAL_AMFLAGS = -I m4
-mangler_SOURCES = manglerui.h mangler.cpp channeltree.cpp  mangleraudio.cpp  manglernetwork.cpp  manglerserverlist.cpp  manglersettings.cpp
+mangler_SOURCES = manglerui.h mangler.cpp channeltree.cpp  mangleraudio.cpp  manglernetwork.cpp  manglerserverlist.cpp  manglersettings.cpp manglerconfig.cpp
 mangler_LDADD = @top_srcdir@/libventrilo3/libventrilo3.la $(GTKMM_LIBS) $(GTHREAD_LIBS) $(PULSEAUDIO_LIBS)
 INCLUDES = -I@top_srcdir@/libventrilo3/ -I@top_srcdir@/icons/ $(GTKMM_CFLAGS) $(GTHREAD_CFLAGS) $(PULSEAUDIO_CFLAGS)
 all: all-am
@@ -290,6 +291,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/channeltree.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mangler.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mangleraudio.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/manglerconfig.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/manglernetwork.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/manglerserverlist.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/manglersettings.Po@am__quote@

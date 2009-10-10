@@ -533,7 +533,7 @@ uninstall-am: uninstall-binPROGRAMS uninstall-libLTLIBRARIES
 
 
 dev:
-	gcc -o lv3_test -I../ -pthread libventrilo3.c libventrilo3_message.c  ventrilo3_handshake.c -lpulse-simple -lpulse -lspeex -lgsm
+	gcc -o lv3_test -I../ -pthread lv3_test.c libventrilo3.c libventrilo3_message.c  ventrilo3_handshake.c -lpulse-simple -lpulse -lspeex -lgsm
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

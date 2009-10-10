@@ -162,6 +162,7 @@ enum _v3_events
     V3_EVENT_USER_LOGIN,
     V3_EVENT_USER_LOGOUT,
     V3_EVENT_LOGIN_COMPLETE,
+    V3_EVENT_LOGIN_FAIL,
     V3_EVENT_USER_CHAN_MOVE,
     V3_EVENT_CHAN_ADD,
     V3_EVENT_CHAN_MODIFY,
@@ -312,8 +313,8 @@ typedef struct __v3_codec {
     uint8_t format;
     uint32_t rate;
     char name[128];
-} _v3_codecs;
-extern _v3_codecs v3_codecs[];
+} v3_codec;
+extern v3_codec v3_codecs[];
 
 typedef struct __v3_server {
     uint32_t ip;                      // The server's IP address
@@ -328,6 +329,8 @@ typedef struct __v3_server {
     char *motd;                       // Message of the day
     char *guest_motd;                 // Guest message of the day
     int auth_server_index;            // The array index of the authentication server
+    int evpipe[2];                    // This is a pipe that libventrilo3 listens on for outbound events
+    FILE *evstream;                   // The stream for the event queue pipe
     ventrilo_key_ctx server_key;      // The key used for decrypting messages from the server
     ventrilo_key_ctx client_key;      // The key used for encrypting messages to the server
     _v3_net_message *_queue;          // This queue (linked list) is used internally
@@ -389,6 +392,7 @@ v3_event    *v3_get_event(int block);
 int         v3_get_max_clients(void);
 void        v3_clear_events(void);
 uint32_t    v3_get_codec_rate(uint16_t codec, uint16_t format);
+const v3_codec *v3_get_codec_name(uint16_t codec, uint16_t format);
 
 // User list functions
 int         v3_user_count(void);

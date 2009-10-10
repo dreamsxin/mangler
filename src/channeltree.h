@@ -81,6 +81,7 @@ class ManglerChannelTree
         Gtk::TreeModel::Row getUser(uint32_t id, Gtk::TreeModel::Children children);
         bool expand_all(void);
         bool collapse_all(void);
+        void clear(void);
 };
 
 #endif
