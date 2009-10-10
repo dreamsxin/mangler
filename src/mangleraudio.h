@@ -59,7 +59,6 @@ class ManglerAudio
         GAsyncQueue*    pcm_queue;
         pa_sample_spec  pulse_samplespec;
         pa_simple       *pulse_stream;
-        bool            pulse_stop;
         ManglerPCM      *pcmdata;
 
         uint16_t        userid;
