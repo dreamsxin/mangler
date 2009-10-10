@@ -387,7 +387,7 @@ _v3_server_key_exchange(void) {/*{{{*/
     
     msg.type = 0x00;
     msg.len  = sizeof(_v3_msg_0x00);
-    msg.data = &msg0;
+    msg.data = (char *)&msg0;
     
     _v3_net_message_dump(&msg);
 
@@ -1047,38 +1047,6 @@ _v3_unlock_channellist(void) {/*{{{*/
 }/*}}}*/
 
 void
-_v3_lock_recvq(void) {/*{{{*/
-    // TODO: PTHREAD: check if threads are enabled, possibly use semaphores as a compile time option
-    if (recvq_mutex == NULL) {
-        pthread_mutexattr_t mta;
-        pthread_mutexattr_init(&mta);
-        pthread_mutexattr_settype(&mta, PTHREAD_MUTEX_ERRORCHECK);
-
-        _v3_debug(V3_DEBUG_MUTEX, "initializing recvq mutex");
-        recvq_mutex = malloc(sizeof(pthread_mutex_t));
-        pthread_mutex_init(recvq_mutex, &mta);
-    }
-    _v3_debug(V3_DEBUG_MUTEX, "locking recvq");
-    pthread_mutex_lock(recvq_mutex);
-}/*}}}*/
-
-void
-_v3_unlock_recvq(void) {/*{{{*/
-    // TODO: PTHREAD: check if threads are enabled, possibly use semaphores as a compile time option
-    if (recvq_mutex == NULL) {
-        pthread_mutexattr_t mta;
-        pthread_mutexattr_init(&mta);
-        pthread_mutexattr_settype(&mta, PTHREAD_MUTEX_ERRORCHECK);
-
-        _v3_debug(V3_DEBUG_MUTEX, "initializing recvq mutex");
-        recvq_mutex = malloc(sizeof(pthread_mutex_t));
-        pthread_mutex_init(recvq_mutex, &mta);
-    }
-    _v3_debug(V3_DEBUG_MUTEX, "unlocking recvq");
-    pthread_mutex_unlock(recvq_mutex);
-}/*}}}*/
-
-void
 _v3_lock_sendq(void) {/*{{{*/
     // TODO: PTHREAD: check if threads are enabled, possibly use semaphores as a compile time option
     if (sendq_mutex == NULL) {
@@ -1473,7 +1441,6 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                 _v3_msg_0x52        *m = (_v3_msg_0x52 *)msg->contents;
                 _v3_msg_0x52_gsm    *gsm_packet;
                 _v3_msg_0x52_speex  *speex_packet;
-                _v3_lock_recvq();
 
                 v3_event *ev = malloc(sizeof(v3_event));
                 ev = malloc(sizeof(v3_event));
@@ -1505,7 +1472,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                                 gsm_packet = (_v3_msg_0x52_gsm *)m;
                                 gsm handle;
                                 uint8_t buf[65];
-                                int16_t sample[320];
+                                int8_t sample[640];
                                 int ctr;
                                 int one = 1; // used for codec settings
 
@@ -1516,18 +1483,19 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                                     _v3_func_leave("_v3_process_message");
                                     return V3_MALFORMED; // it's not really a malformed packet...
                                 }
+                                memset(sample, 0, 640);
                                 gsm_option(handle, GSM_OPT_WAV49, &one);
                                 for (ctr = 0; ctr < gsm_packet->length / 65; ctr++) {
                                     memcpy(buf, gsm_packet->frames[ctr], 65);
-                                    if (gsm_decode(handle, buf, sample) || gsm_decode(handle, buf+33, sample+160)) {
+                                    if (gsm_decode(handle, buf, (int16_t *)sample) || gsm_decode(handle, buf+33, ((int16_t *)sample)+160)) {
                                         _v3_debug(V3_DEBUG_INFO, "failed to decode gsm frame %d", ctr);
                                         continue;
                                     }
-                                    _v3_debug(V3_DEBUG_INFO, "copying 640 bytes of frame %d from %lu to %lu", ctr, sample, &ev->pcm.sample[ctr*320]);
-                                    memcpy(&ev->pcm.sample[ctr*320], sample, 640);
+                                    _v3_debug(V3_DEBUG_INFO, "copying 640 bytes of frame %d from %lu to %lu", ctr, sample, ev->pcm.sample+(ctr*640));
+                                    memcpy(ev->pcm.sample+(ctr*640), sample, 640);
                                 }
                                 ev->pcm.length = gsm_packet->length/65*640;
-                                _v3_debug(V3_DEBUG_EVENT, "queueing msg");
+                                _v3_debug(V3_DEBUG_EVENT, "queueing pcm msg length %d", ev->pcm.length);
                                 /*}}}*/
                             } else if (msub->codec == 3) {          // SPEEX/*{{{*/
                                 float output[1280];
@@ -1537,6 +1505,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                                 int enc_frame_size;
                                 int ctr;
                                 register int i;
+                                int tmp;
 
                                 speex_packet = (_v3_msg_0x52_speex *)m;
                                 enc_frame_size = speex_packet->length / speex_packet->audio_count - 2;
@@ -1545,22 +1514,16 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                                 for (ctr = 0; ctr < speex_packet->audio_count; ctr++) {
                                     memcpy(cbits, speex_packet->frames[ctr] + 2, enc_frame_size);
                                     speex_bits_read_from(&bits, cbits, enc_frame_size);
-                                    speex_decode(state, &bits, output);
-
-                                    for (i = 0; i < speex_packet->frame_size; i++) {
-                                        ev->pcm.sample[ev->pcm.length+i] = output[i];
-                                    }
-                                    ev->pcm.length += speex_packet->frame_size;
+                                    speex_decode_int(state, &bits, ((int16_t *)ev->pcm.sample)+ctr*speex_packet->frame_size);
                                 }
-                                ev->pcm.length *= 2;
+                                ev->pcm.length  = speex_packet->audio_count * speex_packet->frame_size * sizeof(int16_t);
+                                fwrite(ev->pcm.sample, ev->pcm.length, 1, f);
+                                _v3_debug(V3_DEBUG_EVENT, "queueing pcm msg length %d", ev->pcm.length);
                             }/*}}}*/
                         }
                         break;
                 }
                 v3_queue_event(ev);
-                // queue the sound message in the recv queue
-                //_v3_msg_0x52 *m = msg->contents;
-                _v3_unlock_recvq();
             }
             _v3_destroy_0x52(msg);
             _v3_destroy_packet(msg);
@@ -1574,7 +1537,6 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
             } else {
                 _v3_msg_0x53 *m = (_v3_msg_0x53 *)msg->contents;
                 v3_event *ev;
-                _v3_lock_recvq();
                 // queue the channel change notification
                 _v3_debug(V3_DEBUG_INFO, "user %d moved to channel %d", m->user_id, m->channel_id);
                 ev = malloc(sizeof(v3_event));
@@ -1582,7 +1544,6 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                 ev->user.id = m->user_id;
                 ev->channel.id = m->channel_id;
                 v3_queue_event(ev);
-                _v3_unlock_recvq();
             }
             _v3_destroy_packet(msg);
             _v3_func_leave("_v3_process_message");
@@ -2026,7 +1987,6 @@ v3_logout(void) {/*{{{*/
     free(channellist_mutex);
     free(server_mutex);
     free(luser_mutex);
-    free(recvq_mutex);
     free(sendq_mutex);
     */
     _v3_destroy_channellist();

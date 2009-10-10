@@ -1,5 +1,6 @@
 #include <speex/speex.h>
 #include <stdio.h>
+#include <arpa/inet.h>
 
 /*The frame size in hardcoded for this sample code but it doesn't have to be*/
 #define FRAME_SIZE 640
@@ -11,7 +12,7 @@ int main(int argc, char **argv)
    /*Speex handle samples as float, so we need an array of floats*/
    float output[FRAME_SIZE];
    char cbits[200];
-   int nbBytes;
+   short nbBytes;
    /*Holds the state of the decoder*/
    void *state;
    /*Holds bits so they can be read and written to by the Speex routines*/
@@ -31,7 +32,9 @@ int main(int argc, char **argv)
    {
       /*Read the size encoded by sampleenc, this part will likely be 
         different in your application*/
-      fread(&nbBytes, sizeof(int), 1, stdin);
+      fread(&nbBytes, sizeof(short), 1, stdin);
+      nbBytes = ntohs(nbBytes);
+	
       fprintf (stderr, "nbBytes: %d\n", nbBytes);
       if (feof(stdin))
          break;

@@ -203,7 +203,7 @@ struct _v3_event {
     struct {
         uint32_t length;
         uint32_t rate;
-        uint16_t sample[32768];
+        uint8_t  sample[32768];
     } pcm;
 
     v3_event *next;

@@ -314,7 +314,6 @@ pthread_mutex_t         *userlist_mutex = NULL;
 pthread_mutex_t         *channellist_mutex = NULL;
 pthread_mutex_t         *server_mutex = NULL;
 pthread_mutex_t         *luser_mutex = NULL;
-pthread_mutex_t         *recvq_mutex = NULL;
 pthread_mutex_t         *sendq_mutex = NULL;
 
 pthread_mutex_t         *eventq_mutex = NULL;
@@ -407,8 +406,6 @@ void                    _v3_lock_channellist(void);
 void                    _v3_unlock_channellist(void);
 void                    _v3_lock_luser(void);
 void                    _v3_unlock_luser(void);
-void                    _v3_lock_recvq(void);
-void                    _v3_unlock_recvq(void);
 void                    _v3_lock_sendq(void);
 void                    _v3_unlock_sendq(void);
 int                     v3_queue_event(v3_event *ev);

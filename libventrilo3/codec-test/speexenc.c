@@ -1,5 +1,6 @@
 #include <speex/speex.h>
 #include <stdio.h>
+#include <arpa/inet.h>
 
 /*The frame size in hardcoded for this sample code but it doesn't have to be*/
 #define FRAME_SIZE 640
@@ -9,7 +10,7 @@ int main(int argc, char **argv)
    short in[FRAME_SIZE];
    float input[FRAME_SIZE];
    char cbits[200];
-   int nbBytes;
+   short nbBytes;
    /*Holds the state of the encoder*/
    void *state;
    /*Holds bits so they can be read and written to by the Speex routines*/
@@ -45,7 +46,8 @@ int main(int argc, char **argv)
 
       /*Write the size of the frame first. This is what sampledec expects but
        it's likely to be different in your own application*/
-      fwrite(&nbBytes, sizeof(int), 1, stdout);
+      nbBytes = htons(nbBytes);
+      fwrite(&nbBytes, sizeof(short), 1, stdout);
       /*Write the compressed data*/
       fwrite(cbits, 1, nbBytes, stdout);
       
