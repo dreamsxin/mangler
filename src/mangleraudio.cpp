@@ -47,7 +47,7 @@ ManglerAudio::~ManglerAudio() {
     pcmdata = new ManglerPCM(0, NULL);
     g_async_queue_push(pcm_queue, pcmdata);
     while (playing) {
-        sleep(1);
+        usleep(20);
     }
 }
 

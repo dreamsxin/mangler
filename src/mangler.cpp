@@ -107,8 +107,9 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
     // Create Network Communication Object
     network = new ManglerNetwork(builder);
 
-    // Create settings object
+    // Create settings object and load the configuration file
     settings = new ManglerSettings(builder);
+    settings->config.load();
 
     // Statusbar Icon
     statusIcon = Gtk::StatusIcon::create(icons["blue_circle"]);
@@ -119,7 +120,22 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
  */
 void Mangler::quickConnectButton_clicked_cb(void) {/*{{{*/
     Gtk::Dialog *dialog;
+    Gtk::Entry *textbox;
+
     builder->get_widget("quickConnectDialog", dialog);
+
+    builder->get_widget("qcServerName", textbox);
+    textbox->set_text(settings->config.qc_lastserver.name);
+
+    builder->get_widget("qcPort", textbox);
+    textbox->set_text(settings->config.qc_lastserver.port);
+
+    builder->get_widget("qcUsername", textbox);
+    textbox->set_text(settings->config.qc_lastserver.username);
+
+    builder->get_widget("qcPassword", textbox);
+    textbox->set_text(settings->config.qc_lastserver.password);
+
     dialog->run();
     dialog->hide();
 
@@ -175,6 +191,11 @@ void Mangler::qcConnectButton_clicked_cb(void) {/*{{{*/
     builder->get_widget("qcPassword", textbox);
     std::string password = textbox->get_text();
     fprintf(stderr, "connecting to: %s:%s\n", server.c_str(), port.c_str());
+    settings->config.qc_lastserver.name = server;
+    settings->config.qc_lastserver.port = port;
+    settings->config.qc_lastserver.username = username;
+    settings->config.qc_lastserver.password = password;
+    settings->config.save();
     Glib::Thread::create(sigc::bind(sigc::mem_fun(this->network, &ManglerNetwork::connect), server, port, username, password), FALSE);
     Glib::signal_timeout().connect( sigc::mem_fun(*this, &Mangler::getNetworkEvent), 50 );
 }/*}}}*/
