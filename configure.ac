@@ -43,10 +43,12 @@ AC_CHECK_HEADER([speex/speex.h], [], [
 	echo "       missing a libspeex development package?"
 	exit -1
 	])
-AC_CHECK_HEADER([gsm.h], [], [
-	echo "error: found gsm libraries, but headers are missing or corrupt. are you"
-	echo "       missing a libgsm development package?"
-	exit -1
+AC_CHECK_HEADER([gsm.h], [AC_DEFINE(HAVE_GSM_H, 1, [location of gsm.h])], [
+	AC_CHECK_HEADER([gsm/gsm.h], [], [
+		echo "error: found gsm libraries, but headers are missing or corrupt. are you"
+		echo "       missing a libgsm development package?"
+		exit -1
+		])
 	])
 AC_CHECK_HEADERS([pulse/pulse-simple.h pulse/error.h pulse/gccmacro.h])
 AC_CHECK_HEADERS([gtkmm.h])

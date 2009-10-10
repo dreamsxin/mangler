@@ -24,6 +24,7 @@
  * along with Mangler.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "config.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -38,7 +39,11 @@
 #include <errno.h>
 #include <unistd.h>
 #include <speex/speex.h>
+#ifdef HAVE_GSM_H
 #include <gsm.h>
+#else
+#include <gsm/gsm.h>
+#endif
 
 
 // TODO: check how portable this is... (known good: ubuntu, arch)
