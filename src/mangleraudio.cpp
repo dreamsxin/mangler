@@ -35,7 +35,6 @@ ManglerAudio::ManglerAudio(uint16_t userid, uint32_t rate) {
     pulse_samplespec.rate = rate;
     pulse_samplespec.channels = 1;
     this->userid = userid;
-    fprintf(stderr, "opening audio stream for user %d @ %dHz\n", userid, rate);
     if (!(pulse_stream = pa_simple_new(NULL, "mangler", PA_STREAM_PLAYBACK, NULL, "playback", &pulse_samplespec, NULL, NULL, &error))) {
         fprintf(stderr, __FILE__": pa_simple_new() failed: %s\n", pa_strerror(error));
         return;
@@ -45,14 +44,15 @@ ManglerAudio::ManglerAudio(uint16_t userid, uint32_t rate) {
 }
 
 ManglerAudio::~ManglerAudio() {
-    fprintf(stderr, "closing audio stream for user %d\n", userid);
     pcmdata = new ManglerPCM(0, NULL);
     g_async_queue_push(pcm_queue, pcmdata);
+    while (playing) {
+        sleep(1);
+    }
 }
 
 void
 ManglerAudio::queue(uint32_t length, uint8_t *sample) {
-    fprintf(stderr, "queueing pcm data for userid %d (length %d)\n", userid, length);
     pcmdata = new ManglerPCM(length, sample);
     g_async_queue_push(pcm_queue, pcmdata);
 }
@@ -62,21 +62,22 @@ ManglerAudio::play(void) {
     int ret, error;
 
     for (;;) {
+        playing = true;
         pcmdata = (ManglerPCM *)g_async_queue_pop(pcm_queue);
         if (pcmdata->length == 0) {
             break;
         }
-        fprintf(stderr, "playing %d bytes to audio stream for user %d\n", pcmdata->length, userid);
         if ((ret = pa_simple_write(pulse_stream, pcmdata->sample, pcmdata->length, &error)) < 0) {
             fprintf(stderr, __FILE__": pa_simple_write() failed: %s\n", pa_strerror(error));
             g_async_queue_unref(pcm_queue);
             pa_simple_free(pulse_stream);
+            playing = false;
             Glib::Thread::Exit();
         }
-        fprintf(stderr, "done writing audio....\n");
     }
-    fprintf(stderr, "exiting stream thread for %d\n", userid);
+    g_async_queue_push(pcm_queue, pcmdata);
     pa_simple_free(pulse_stream);
+    playing = false;
     Glib::Thread::Exit();
 }
 

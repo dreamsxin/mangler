@@ -63,6 +63,7 @@ class ManglerAudio
 
         uint16_t        userid;
         int             error;
+        bool            playing;
 };
 
 

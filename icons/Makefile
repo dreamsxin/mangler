@@ -14,3 +14,5 @@ clean:
 
 distclean:
 	rm -f mangler-icons.h
+
+install:

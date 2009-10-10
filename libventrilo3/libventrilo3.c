@@ -1517,7 +1517,6 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                                     speex_decode_int(state, &bits, ((int16_t *)ev->pcm.sample)+ctr*speex_packet->frame_size);
                                 }
                                 ev->pcm.length  = speex_packet->audio_count * speex_packet->frame_size * sizeof(int16_t);
-                                fwrite(ev->pcm.sample, ev->pcm.length, 1, f);
                                 _v3_debug(V3_DEBUG_EVENT, "queueing pcm msg length %d", ev->pcm.length);
                             }/*}}}*/
                         }
