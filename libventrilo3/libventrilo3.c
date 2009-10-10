@@ -1552,6 +1552,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                                     }
                                     ev->pcm.length += speex_packet->frame_size;
                                 }
+                                ev->pcm.length *= 2;
                             }/*}}}*/
                         }
                         break;
