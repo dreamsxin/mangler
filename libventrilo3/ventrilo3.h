@@ -157,6 +157,7 @@ struct _v3_permissions {/*{{{*/
  */
 enum _v3_events
 {
+    // inbound or outbound event types
     V3_EVENT_STATUS,
     V3_EVENT_PING,
     V3_EVENT_USER_LOGIN,
@@ -171,6 +172,9 @@ enum _v3_events
     V3_EVENT_USER_TALK_START,
     V3_EVENT_USER_TALK_END,
     V3_EVENT_PLAY_AUDIO,
+
+    // outbound specific event types
+    V3_EVENT_CHANGE_CHANNEL,
 
     // not implemented
     V3_EVENT_USER_MODIFY,
@@ -195,6 +199,7 @@ struct _v3_event {
         char message[512];
     } error;
     uint16_t ping;
+    char password[32];
     struct {
         uint16_t id;
     } user;
@@ -206,7 +211,6 @@ struct _v3_event {
         uint32_t rate;
         uint8_t  sample[32768];
     } pcm;
-
     v3_event *next;
 };
 
@@ -330,7 +334,8 @@ typedef struct __v3_server {
     char *guest_motd;                 // Guest message of the day
     int auth_server_index;            // The array index of the authentication server
     int evpipe[2];                    // This is a pipe that libventrilo3 listens on for outbound events
-    FILE *evstream;                   // The stream for the event queue pipe
+    FILE *evinstream;                 // The inbound stream for the event queue pipe
+    FILE *evoutstream;                // The outbound stream for the event queue pipe
     ventrilo_key_ctx server_key;      // The key used for decrypting messages from the server
     ventrilo_key_ctx client_key;      // The key used for encrypting messages to the server
     _v3_net_message *_queue;          // This queue (linked list) is used internally
@@ -380,7 +385,7 @@ void    _v3_print_channel_list(void);   // testing function -- will be deleted
  */
 int         v3_login(char *server, char *username, char *password, char *phonetic);
 int         v3_logout(void);
-int         v3_change_channel(uint16_t channel_id, char *password);
+void        v3_change_channel(uint16_t channel_id, char *password);
 int         v3_debuglevel(uint32_t level);
 int         v3_is_loggedin(void);
 uint16_t    v3_get_user_id(void);

@@ -109,8 +109,9 @@ int main(int argc, char *argv[]) {
     v3_clear_events();
     do {
         ctr++;
-        if (ctr > 20) {
+        if (ctr == 20) {
             // should be after login
+            v3_change_channel(2, NULL);
         }
         if ((msg = _v3_recv(V3_BLOCK)) == NULL) {
             printf("recv() failed: %s\n", _v3_error(NULL));

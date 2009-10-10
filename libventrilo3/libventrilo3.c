@@ -548,19 +548,28 @@ _v3_recv(int block) {/*{{{*/
         _v3_func_leave("_v3_recv");
         return NULL;
     }
-    if ((waiting = v3_message_waiting(block)) != 0) {
+    while ((waiting = v3_message_waiting(block)) != 0) {
+        _v3_debug(V3_DEBUG_EVENT, "message waiting: %d", waiting);
         if (waiting == V3_BOTH_WAITING || waiting == V3_EVENT_WAITING) {
             // receiving an event from the event pipe
             v3_event ev;
-            fread(&ev, sizeof(v3_event), 1, v3_server.evstream);
-            switch (ev.type) {
-                default:
-                    _v3_debug(V3_DEBUG_EVENT, "received unknown event type %d from queue", ev.type);
-                    break;
+            _v3_debug(V3_DEBUG_EVENT, "event waiting to processed and sent outbound");
+            if (fread(&ev, sizeof(ev), 1, v3_server.evinstream) != 1) {
+                _v3_error("failed to receive from outbound pipe");
+            } else {
+                switch (ev.type) {
+                    default:
+                        _v3_debug(V3_DEBUG_EVENT, "received unknown event type %d from queue", ev.type);
+                        break;
+                }
+            }
+            if (waiting != V3_BOTH_WAITING) {
+                continue;
             }
         }
         if (waiting == V3_BOTH_WAITING || waiting == V3_MSG_WAITING) {
             // receiving a message from the network
+            _v3_debug(V3_DEBUG_EVENT, "msg waiting to recv inbound");
             msg = malloc(sizeof(_v3_net_message));
             memset(msg, 0, sizeof(_v3_net_message));
             msg->len = 0;
@@ -593,11 +602,10 @@ _v3_recv(int block) {/*{{{*/
             _v3_func_leave("_v3_recv");
             return msg;
         }
-    } else {
-        _v3_func_leave("nothing waiting and non-blocking requested");
-        _v3_func_leave("_v3_recv");
-        return NULL;
     }
+    _v3_func_leave("nothing waiting and non-blocking requested");
+    _v3_func_leave("_v3_recv");
+    return NULL;
 }/*}}}*/
 
 int
@@ -1521,14 +1529,11 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                                 _v3_debug(V3_DEBUG_EVENT, "queueing pcm msg length %d", ev->pcm.length);
                                 /*}}}*/
                             } else if (msub->codec == 3) {          // SPEEX/*{{{*/
-                                float output[1280];
                                 char  cbits[200];
                                 void *state;
                                 SpeexBits bits;
                                 int enc_frame_size;
                                 int ctr;
-                                register int i;
-                                int tmp;
 
                                 speex_packet = (_v3_msg_0x52_speex *)m;
                                 enc_frame_size = speex_packet->length / speex_packet->audio_count - 2;
@@ -1990,7 +1995,8 @@ v3_login(char *server, char *username, char *password, char *phonetic) {/*{{{*/
             _v3_error("could not create outbound event queue");
             return false;
         }
-        v3_server.evstream = fdopen(v3_server.evpipe[0], "r");
+        v3_server.evinstream = fdopen(v3_server.evpipe[0], "r");
+        v3_server.evoutstream = fdopen(v3_server.evpipe[1], "w");
 
         _v3_status(100, "Login Complete.");
         {
@@ -2066,12 +2072,34 @@ v3_queue_size() {/*{{{*/
     return ctr;
 }/*}}}*/
 
-int
+void
 v3_change_channel(uint16_t channel_id, char *password) {/*{{{*/
-    _v3_net_message *msg;
-    v3_channel channel;
+    v3_event ev;
 
     _v3_func_enter("v3_change_channel");
+    memset(&ev, 0, sizeof(v3_event));
+    ev.type = V3_EVENT_CHANGE_CHANNEL;
+    /*
+    if (password == NULL) {
+        strncpy(ev.password, "", 31);
+    } else {
+        strncpy(ev.password, password, 31);
+    }
+    */
+    ev.channel.id = channel_id;
+    ev.user.id = v3_get_user_id();
+    _v3_lock_sendq();
+    _v3_debug(V3_DEBUG_EVENT, "sending %lu bytes to event pipe", sizeof(v3_event));
+    if (fwrite(&ev, sizeof(struct _v3_event), 1, v3_server.evoutstream) != 1) {
+        _v3_error("could not write to event pipe");
+    }
+    fflush(v3_server.evoutstream);
+    _v3_unlock_sendq();
+    _v3_func_leave("v3_change_channel");
+    return;
+    /*
+    _v3_net_message *msg;
+    v3_channel channel;
     memset(&channel, 0, sizeof(_v3_msg_channel));
     channel.id = channel_id;
     _v3_debug(V3_DEBUG_INFO, "changing to channel id %d", channel_id);
@@ -2085,6 +2113,7 @@ v3_change_channel(uint16_t channel_id, char *password) {/*{{{*/
         _v3_destroy_packet(msg);
         return false;
     }
+    */
 }/*}}}*/
 
 int

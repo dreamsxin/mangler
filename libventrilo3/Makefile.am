@@ -12,5 +12,5 @@ lv3_test_SOURCES = lv3_test.c
 lv3_test_LDADD = libventrilo3.la
 
 dev:
-	gcc -o lv3_test -I../ -pthread lv3_test.c libventrilo3.c libventrilo3_message.c  ventrilo3_handshake.c -lpulse-simple -lpulse -lspeex -lgsm
+	gcc -Wall -g -o lv3_test -I../ -pthread lv3_test.c libventrilo3.c libventrilo3_message.c  ventrilo3_handshake.c -lpulse-simple -lpulse -lspeex -lgsm
 
