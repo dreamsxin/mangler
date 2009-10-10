@@ -179,8 +179,6 @@ void ManglerSettings::settingsPTTMouseButton_clicked_cb(void) {/*{{{*/
     // at this point, we need to grab the mouse and wait for a mouse button event
 }/*}}}*/
 
-
-
 bool
 ManglerSettings::settingsPTTKeyDetect(void) {/*{{{*/
     char        pressed_keys[32];

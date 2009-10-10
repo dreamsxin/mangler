@@ -59,7 +59,7 @@ class Mangler
         Glib::RefPtr<Gtk::StatusIcon>       statusIcon;
         ManglerChannelTree                  *channelTree;
         ManglerNetwork                      *network;
-        ManglerAudio                        *audio;
+        std::map<uint16_t, ManglerAudio* > audio;
         ManglerSettings                     *settings;
 
         Glib::Thread                        *networkThread;

@@ -107,9 +107,6 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
     // Create Network Communication Object
     network = new ManglerNetwork(builder);
 
-    // Create audio object
-    audio = new ManglerAudio();
-
     // Create settings object
     settings = new ManglerSettings(builder);
 
@@ -259,14 +256,14 @@ Mangler::getNetworkEvent() {/*{{{*/
                 break;
             case V3_EVENT_USER_TALK_START:
                 channelTree->userIsTalking(ev->user.id, true);
-                audio->openStream(ev->user.id, ev->pcm.rate);
+                audio[ev->user.id] = new ManglerAudio(ev->user.id, ev->pcm.rate);
                 break;
             case V3_EVENT_USER_TALK_END:
                 channelTree->userIsTalking(ev->user.id, false);
-                audio->closeStream(ev->user.id);
+                audio.erase(ev->user.id);
                 break;
             case V3_EVENT_PLAY_AUDIO:
-                audio->queue(ev->user.id, ev->pcm.length, (uint8_t *)ev->pcm.sample);
+                audio[ev->user.id]->queue(ev->pcm.length, (uint8_t *)ev->pcm.sample);
                 break;
             default:
                 fprintf(stderr, "******************************************************** got unknown event type %d\n", ev->type);

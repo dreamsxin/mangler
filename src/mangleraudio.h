@@ -30,23 +30,41 @@
 #include <pulse/simple.h>
 #include <pulse/error.h>
 #include <pulse/gccmacro.h>
+#include <stdlib.h>
+#include <string.h>
 
 
+class ManglerPCM
+{
+    public:
+        ManglerPCM(uint32_t length, uint8_t *sample) {
+            this->length = length;
+            this->sample = (uint8_t *)malloc(length); // I'm a C programmer... sue me
+            memcpy(this->sample, sample, length);
+        }
+        ~ManglerPCM() {
+            free(this->sample);
+        }
+        uint32_t            length;
+        uint8_t             *sample;
+};
 class ManglerAudio
 {
     public:
-        ManglerAudio();
-        void            openStream(uint16_t userid, uint32_t rate);
-        void            closeStream(uint16_t userid);
-        void            queue(uint16_t userid, uint32_t length, uint8_t *sample);
-        void            play(uint16_t userid);
+        ManglerAudio(uint16_t userid, uint32_t rate);
+        ~ManglerAudio();
+        void            queue(uint32_t length, uint8_t *sample);
+        void            play(void);
 
-        std::map< uint16_t, GAsyncQueue* >  pcm_queue;
-        std::map< uint16_t, pa_sample_spec* >  pulse_samplespec;
-        std::map< uint16_t, pa_simple* >  pulse_stream;
-        std::map< uint16_t, bool >  pulse_stop;
+        GAsyncQueue*    pcm_queue;
+        pa_sample_spec  pulse_samplespec;
+        pa_simple       *pulse_stream;
+        bool            pulse_stop;
+        ManglerPCM      *pcmdata;
 
+        uint16_t        userid;
         int             error;
 };
+
 
 #endif
