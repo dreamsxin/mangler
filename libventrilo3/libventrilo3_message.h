@@ -29,7 +29,6 @@
 #include <stdlib.h>
 #include "ventrilo3.h"
 
-
 /*
  * This file contains structures for each message type received by the Ventrilo3
  * protocol.  Each type is broken up into subtypes where applicable.  For
@@ -52,140 +51,118 @@
  * appropriately.
  *
  * For questions or comments, join irc://irc.freenode.net channel #mangler
+ * 
+ * Better documentation on these messages can be found at our wiki:
+ * http://www.mangler.org/trac/wiki/ProtocolDocumentation
  */
 
-typedef struct _v3_net_message_0x00 {/*{{{*/
-    /*
-     *  Message Type 0x00 is only used during the login phase as a part of the
-     *  key exchange.  The client sends 64 bytes of random data to the server.
-     */
+typedef struct _v3_net_message_0x00 {
     uint32_t type;
     char version[16];
     char salt1[32];
     char salt2[32];
-} _v3_msg_0x00;/*}}}*/
+} _v3_msg_0x00;
 
 typedef struct _v3_net_message_0x06 {
-    /*
-     * Message Type 0x06 is used for many purposes, mostly during authing. 
-     * Includes but not limited to: auth failure, encryption key exchange, server disabled messages.
-     */
-    uint32_t type;        	  // 0
-    uint16_t unknown_1;     	  // 4
-    uint16_t error_id;  	  // 6
-    uint32_t subtype;   	  // 8
+    uint32_t type;		// 0
+    uint16_t unknown_1;		// 4
+    uint16_t error_id;		// 6
+    uint32_t subtype;		// 8
     
-    uint8_t  unknown_2;		  // 12 - variable length starts here
+    uint8_t  unknown_2;		// 12 - variable length starts here
     uint8_t* encryption_key;
 } _v3_msg_0x06;
 int _v3_get_0x06(_v3_net_message *msg);
 
-typedef struct _v3_net_message_0x37 {/*{{{*/
-    /*
-     *  Message Type 0x37 is a ping to/from the server
-     *  libventrilo3: 02:06:58:         ======= received TCP packet =====================================
-     *  libventrilo3: 02:06:58:         PACKET: message type: 0x37 (55)
-     *  libventrilo3: 02:06:58:         PACKET: data length : 12
-     *  libventrilo3: 02:06:58:         PACKET:     37 00 00 00 9C 03 C0 44 FF FF 00 00                  7......D....
-     */
-    uint32_t type;        // 0
-    uint16_t user_id;     // 4
-    uint16_t sequence;    // 6
-    uint16_t ping;        // 8
-    uint16_t unknown_2;   // 10
-
+typedef struct _v3_net_message_0x37 {
+    uint32_t type;		// 0
+    uint16_t user_id;		// 4
+    uint16_t sequence;		// 6
+    uint16_t ping;		// 8
+    uint16_t inactivity;	// 10
 } _v3_msg_0x37;
 int _v3_get_0x37(_v3_net_message *msg);
-_v3_net_message *_v3_put_0x37(int sequence);/*}}}*/
-typedef struct _v3_net_message_0x3b {/*{{{*/
-    /*
-     * Message Type 0x3B is used to move a user from one channel to another.
-     * Error codes can be found in _v3_move_errors.
-     */
-    uint32_t type;	// 0
-    uint16_t user_id;	// 4
-    uint16_t channel_id;// 6
-    uint32_t error_id;	// 8
-} _v3_msg_0x3b;/*}}}*/
-typedef struct _v3_net_message_0x42 {/*{{{*/
-    /*
-     * Message Type 0x42 is used for both rcon and global chat.
-     * In case of subtypes 2 and 3, a VentriloNetString is appended to the end of this packet.
-     */
-    uint32_t type;	// 0
-    uint16_t user_id;	// 4
-    uint32_t subtype;	// 6
-    uint16_t unknown;	// 10
-} _v3_msg_0x42;/*}}}*/
-typedef struct _v3_net_message_0x46 {/*{{{*/
-    /*
-     * libventrilo3: 10:17:47:         PACKET: message type: 0x46 (70)
-     * libventrilo3: 10:17:47:         PACKET: data length : 12
-     * libventrilo3: 10:17:47:         PACKET:     46 00 00 00 18 00 01 00 01 00 00 00                  F...........
-     */
-    uint32_t type;        // 0
-    uint16_t user_id;     // 4
-    uint16_t setting;     // 6
-    uint16_t value;       // 8
-    uint16_t unknown_1;   // 10
+_v3_net_message *_v3_put_0x37(int sequence);
+
+typedef struct _v3_net_message_0x3a {
+    uint32_t type;		// 0
+    uint32_t empty;		// 4
+    uint16_t msglen;		// 6
+    
+    char *   msg;		// 8 - variable length starts here
+} _v3_msg_0x3a;
+
+typedef struct _v3_net_message_0x3b {
+    uint32_t type;		// 0
+    uint16_t user_id;		// 4
+    uint16_t channel_id;	// 6
+    uint32_t error_id;		// 8
+} _v3_msg_0x3b;
+
+typedef struct _v3_net_message_0x3f {
+    uint32_t type;		// 0
+    uint32_t empty;		// 4
+    uint16_t pathlen;		// 6
+    
+    char *   filepath;		// 8 - variable length starts here
+} _v3_msg_0x3f;
+
+typedef struct _v3_net_message_0x42 {
+    uint32_t type;		// 0
+    uint16_t user_id;		// 4
+    uint32_t subtype;		// 6
+    uint16_t unknown;		// 10
+} _v3_msg_0x42;
+
+typedef struct _v3_net_message_0x46 {
+    uint32_t type;		// 0
+    uint16_t user_id;		// 4
+    uint16_t setting;		// 6
+    uint16_t value;		// 8
+    uint16_t unknown_1;		// 10
 } _v3_msg_0x46;
 int _v3_get_0x46(_v3_net_message *msg);
-_v3_net_message *_v3_put_0x46(uint16_t setting, uint16_t value);/*}}}*/
-typedef struct _v3_net_message_0x4b {/*{{{*/
-    uint32_t type;        // 0
-    uint32_t timestamp;   // 4
-    uint32_t unknown_1;   // 8
-} _v3_msg_0x4b;
-_v3_net_message *_v3_put_0x4b(void);/*}}}*/
-typedef struct _v3_net_message_0x48 {/*{{{*/
-    /*
-     *  Message Type 0x48 is the the client sending login information to the
-     *  server such as username, password, phonetic, etc.
-     */
-    uint32_t type;
-    uint32_t subtype;
-    uint32_t unknown_1;
-    uint32_t server_ip;
-    uint16_t portmask;
-    uint16_t show_login_name;
-    uint16_t unknown_2;
-    uint16_t auth_server_index;
-    char     handshake[16];
-    char     client_version[16];
-    uint8_t  unknown_3[48];
-    char     proto_version[16];
-    char     password_hash[32];
-    char     username[32];
-    char     phonetic[32];
-    char     os[64];
+_v3_net_message *_v3_put_0x46(uint16_t setting, uint16_t value);
+
+typedef struct _v3_net_message_0x48 {
+    uint32_t type;		// 0
+    uint32_t subtype;		// 4
+    uint32_t unknown_1;		// 8
+    uint32_t server_ip;		// 12
+    uint16_t portmask;		// 16
+    uint16_t show_login_name;	// 18
+    uint16_t unknown_2;		// 20
+    uint16_t auth_server_index;	// 22
+    char     handshake[16];	// 24
+    char     client_version[16];// 40
+    uint8_t  unknown_3[48];	// 56
+    char     proto_version[16];	// 104
+    char     password_hash[32];	// 120
+    char     username[32];	// 152
+    char     phonetic[32];	// 184
+    char     os[64];		// 216
 } _v3_msg_0x48;
 int _v3_get_0x48(_v3_net_message *msg);
-_v3_net_message *_v3_put_0x48(void);/*}}}*/
-typedef struct _v3_net_message_0x49 {/*{{{*/
-    /*
-     *  Message Type 0x49 is a channel message notification.  When received
-     *  from the server, this means a channel has been added (0x01), removed (0x02), or
-     *  modified (0x05).  When sent from the client, this is a channel
-     *  change message (0x03)
-     */
-    uint32_t type;                    // 0
-    uint16_t user_id;                 // 4
-    uint16_t subtype;                 // 6
-    uint8_t  hash_password[32];       // 8 - 39
+_v3_net_message *_v3_put_0x48(void);
 
-    v3_channel *channel;
+typedef struct _v3_net_message_0x49 {
+    uint32_t type;		// 0
+    uint16_t user_id;		// 4
+    uint16_t subtype;		// 6
+    uint8_t  hash_password[32];	// 8
+
+    v3_channel *channel;	// 40 - variable lenghth starts here
 } _v3_msg_0x49;
 int _v3_get_0x49(_v3_net_message *msg);
-_v3_net_message *_v3_put_0x49(uint16_t subtype, uint16_t user_id, char *channel_password, _v3_msg_channel *channel);/*}}}*/
-typedef struct _v3_net_message_0x4a {/*{{{*/
-    uint32_t type;                    // 0
-    uint32_t subtype;                 // 4
-    uint8_t unknown_1[16];            // 8
-    uint8_t hash_password[32];        // 24
+_v3_net_message *_v3_put_0x49(uint16_t subtype, uint16_t user_id, char *channel_password, _v3_msg_channel *channel);
 
-    uint8_t unknown_2[4];             // 56
-
-    uint8_t lock_acct;                // 60
+typedef struct _v3_net_message_0x4a {
+    uint32_t type;		// 0
+    uint32_t subtype;		// 4
+    uint8_t unknown_1[16];	// 8
+    uint8_t hash_password[32];	// 24
+    uint32_t unknown_2;		// 56
+    uint8_t lock_acct;		// 60
     uint8_t dfl_chan;
     uint8_t dupe_ip;
     uint8_t switch_chan;
@@ -250,208 +227,139 @@ typedef struct _v3_net_message_0x4a {/*{{{*/
     uint8_t see_user_comment;
     uint8_t unknown_perm_15;
 } _v3_msg_0x4a;
-int _v3_get_0x4a(_v3_net_message *msg);/*}}}*/
-typedef struct _v3_net_message_0x50 {/*{{{*/
-    uint32_t type;              // 0
-    uint32_t timestamp;         // 4
-    uint16_t guest_motd_flag;   // 8
-    uint16_t message_num;       // 10
-    uint16_t message_id;        // 12
-    uint16_t message_size;      // 14
-    uint8_t  message[256];      // 16
+int _v3_get_0x4a(_v3_net_message *msg);
+
+typedef struct _v3_net_message_0x4b {
+    uint32_t type;		// 0
+    uint32_t timestamp;		// 4
+    uint32_t empty;		// 8
+} _v3_msg_0x4b;
+_v3_net_message *_v3_put_0x4b(void);
+
+typedef struct _v3_net_message_0x50 {
+    uint32_t type;		// 0
+    uint32_t timestamp;		// 4
+    uint16_t guest_motd_flag;	// 8
+    uint16_t message_num;	// 10
+    uint16_t message_id;	// 12
+    uint16_t message_size;	// 14
+    uint8_t  message[256];	// 16
 } _v3_msg_0x50;
-int _v3_get_0x50(_v3_net_message *msg);/*}}}*/
-typedef struct _v3_net_message_0x52_gsm {/*{{{*/
-    uint32_t type;                    // 0
-    uint16_t subtype;                 // 4
-    uint16_t user_id;                 // 6
-    uint16_t codec;                   // 8
-    uint16_t codec_format;            // 10
-    uint16_t unknown_1[2];            // 12
-    uint16_t length;                  // 16
-    uint16_t unknown_2;               // 18
-    uint16_t sound_speed;             // 20
-    uint16_t unknown_3[3];            // 22
+int _v3_get_0x50(_v3_net_message *msg);
 
-    uint8_t  **frames;                // 28 to whatever
-} _v3_msg_0x52_gsm;/*}}}*/
-typedef struct _v3_net_message_0x52_speex {/*{{{*/
-    uint32_t type;                    // 0
-    uint16_t subtype;                 // 4
-    uint16_t user_id;                 // 6
-    uint16_t codec;                   // 8
-    uint16_t codec_format;            // 10
-    uint16_t unknown_1[2];            // 12
-    uint16_t length;                  // 16
-    uint16_t unknown_2;               // 18
-    uint16_t sound_speed;             // 20
-    uint16_t unknown_3[3];            // 22
+typedef struct _v3_net_message_0x52_gsm {
+    uint32_t type;		// 0
+    uint16_t subtype;		// 4
+    uint16_t user_id;		// 6
+    uint16_t codec;		// 8
+    uint16_t codec_format;	// 10
+    uint32_t unknown_1;		// 12
+    uint32_t length;		// 16
+    uint16_t sound_speed;	// 20
+    uint16_t unknown_2[3];	// 22
 
-    uint16_t audio_count;             // 28
-    uint16_t frame_size;              // 30
-    uint8_t  **frames;                // 32 to whatever
-} _v3_msg_0x52_speex;/*}}}*/
-typedef struct _v3_net_message_0x52 {/*{{{*/
-    /*
-     * speex:
-     *      libventrilo3: 12:32:52:         ======= received TCP packet =====================================
-     *      libventrilo3: 12:32:52:         PACKET: message type: 0x52 (82)
-     *      libventrilo3: 12:32:52:         PACKET: data length : 704
-     *      libventrilo3: 12:32:52:         PACKET:     52 00 00 00 01 00 FD 02 03 00 20 00 02 00 00 00      R...............
-     *      libventrilo3: 12:32:52:         PACKET:     A4 02 00 00 80 20 00 00 00 00 00 00 00 06 02 80      ................
-     *      libventrilo3: 12:32:52:         PACKET:     00 6E 3B 91 BC 7D A9 56 67 37 39 69 A4 D0 77 54      .n;..}.Vg79i..wT
-     *      libventrilo3: 12:32:52:         PACKET:     5C 94 03 BA 69 1F 83 83 B0 32 C8 DE 7D E0 EE FD      \...i....2..}...
-     *      libventrilo3: 12:32:52:         PACKET:     75 AF A0 9A A1 AA 36 C5 72 53 22 0C 58 23 42 A5      u.....6.rS".X#B.
-     *      libventrilo3: 12:32:52:         PACKET:     7C 86 66 CD 9A 31 65 6C 80 D8 8F AD 1B A3 EF CC      |.f..1el........
-     *
-     *  gsm:
-     *      libventrilo3: 18:18:32:     ======= received TCP packet =====================================
-     *      libventrilo3: 18:18:32:     PACKET: message type: 0x52 (82)
-     *      libventrilo3: 18:18:32:     PACKET: data length : 353
-     *      libventrilo3: 18:18:32:     PACKET:     52 00 00 00 01 00 04 00 00 00 01 00 02 00 00 00      R...............
-     *      libventrilo3: 18:18:32:     PACKET:     45 01 00 00 38 0D 00 00 00 00 00 00 26 F7 8E C5      E...8.......&...
-     *      libventrilo3: 18:18:32:     PACKET:     82 02 60 DB B6 6D 1C 57 06 60 E4 48 92 E3 D8 03      ..`..m.W.`.H....
-     *      libventrilo3: 18:18:32:     PACKET:     80 63 C9 8D E4 66 4C 60 DB 38 72 1B A7 82 15 5D      .c...fL`.8r....]
-     *
-     * start message (0x00):
-     *      libventrilo3: 19:42:16:                 PACKET:     52 00 00 00 00 00 05 00 03 00 20 00 00 00 00 00      R...............
-     *      libventrilo3: 19:42:16:                 PACKET:     00 00 00 00 00 00 00 00 00 01 00 02 00 01 00 00      ................
-
-     */
-    uint32_t type;                    // 0
-    uint16_t subtype;                 // 4
-    uint16_t user_id;                 // 6
-    uint16_t codec;                   // 8
-    uint16_t codec_format;            // 10
+    uint8_t  **frames;		// 28 - variable length starts here
+} _v3_msg_0x52_gsm;
+typedef struct _v3_net_message_0x52_0x01 {
+    uint16_t type;		// 0
+    uint16_t empty;		// 2
+    uint16_t subtype;		// 4
+    uint16_t user_id;		// 6
+    uint16_t codec;		// 8
+    uint16_t codec_format;	// 10
+    uint32_t unknown_1;		// 12
+    uint32_t length;		// 16
+    uint16_t sound_speed;	// 20
+    uint16_t unknown_2[3];	// 22
+} _v3_msg_0x52_0x01;
+typedef struct _v3_net_message_0x52_speex {
+    uint32_t type;		// 0
+    uint16_t subtype;		// 4
+    uint16_t user_id;		// 6
+    uint16_t codec;		// 8
+    uint16_t codec_format;	// 10
+    uint32_t unknown_1;		// 12
+    uint32_t length;		// 16
+    uint16_t sound_speed;	// 20
+    uint16_t unknown_2[3];	// 22
+    uint16_t audio_count;	// 28
+    uint16_t frame_size;	// 30
+    uint8_t  **frames;		// 32 - variabe length starts here
+} _v3_msg_0x52_speex;
+typedef struct _v3_net_message_0x52 {
+    uint32_t type;		// 0
+    uint16_t subtype;		// 4
+    uint16_t user_id;		// 6
+    uint16_t codec;		// 8
+    uint16_t codec_format;	// 10
 } _v3_msg_0x52;
 int _v3_get_0x52(_v3_net_message *msg);
-int _v3_destroy_0x52(_v3_net_message *msg);/*}}}*/
-typedef struct _v3_net_message_0x52_0x01 {/*{{{*/
-    uint16_t type;                    // 0
-    uint16_t empty;                   // 2
-    uint16_t subtype;                 // 4
-    uint16_t user_id;                 // 6
-    uint16_t codec;                   // 8
-    uint16_t codec_format;            // 10
-    uint16_t unknown_1[2];            // 12
-    uint16_t length;                  // 16
-    uint16_t unknown_2;               // 18
-    uint16_t sound_speed;             // 20
-    uint16_t unknown_3[3];            // 22
-} _v3_msg_0x52_0x01;/*}}}*/
-typedef struct _v3_net_message_0x53 {/*{{{*/
-    /*
-     *  Message Type 0x53 is a channel change notification
-     * libventrilo3: 14:20:30:         ======= received TCP packet =====================================
-     * libventrilo3: 14:20:30:         PACKET: message type: 0x53 (83)
-     * libventrilo3: 14:20:30:         PACKET: data length : 8
-     * libventrilo3: 14:20:30:         PACKET:     53 00 00 00 16 00 0D 00                              S.......
-     */
-    uint32_t type;
-    uint16_t user_id;
-    uint16_t channel_id;
+int _v3_destroy_0x52(_v3_net_message *msg);
+
+typedef struct _v3_net_message_0x53 {
+    uint32_t type;		// 0
+    uint16_t user_id;		// 2
+    uint16_t channel_id;	// 4
 } _v3_msg_0x53;
-int _v3_get_0x53(_v3_net_message *msg);/*}}}*/
-typedef struct _v3_net_message_0x57 {/*{{{*/
-    /*
-     *  Message Type 0x57 holds information about the server.  The server sends
-     *  this message during the login phase.
-     */
-    uint32_t type;			// 0
-    uint32_t unknown_1;			// 4
-    uint16_t port;			// 8
-    uint16_t max_clients;		// 10
-    uint16_t connected_clients;		// 12
-    uint8_t  unknown_2[14];		// 14
-    char     name[32];			// 28
-    char     version[16];		// 60
-    uint8_t  unknown_3[32];		// 76
+int _v3_get_0x53(_v3_net_message *msg);
+
+typedef struct _v3_net_message_0x57 {
+    uint32_t type;		// 0
+    uint32_t unknown_1;		// 4
+    uint16_t port;		// 8
+    uint16_t max_clients;	// 10
+    uint16_t connected_clients;	// 12
+    uint8_t  unknown_2[14];	// 14
+    char     name[32];		// 28
+    char     version[16];	// 60
+    uint8_t  unknown_3[32];	// 76
 
 } _v3_msg_0x57;
-int _v3_get_0x57(_v3_net_message *msg);/*}}}*/
-typedef struct _v3_net_message_0x59 {/*{{{*/
-    /*
-     *  Note: this structure is out of alignment on 64bit machines
-     *
-     *  Message Type 0x59 is a server error message
-     *  libventrilo3: 09:25:28:         PACKET:     59 00 00 00 25 00 00 00 00 00 01 00 00 00 00 00      Y...%...........
-     *  libventrilo3: 09:25:28:         PACKET:     00 00 00 00 00 04 61 73 64 66                        ......asdf
-     */
-    uint32_t type;               // 0
-    uint16_t error;              // 4
-    uint16_t minutes_banned;     // 6
-    uint16_t log_error;          // 8
-    uint16_t close_connection;   // 10
-    uint16_t unknown_[4];        // 12
-    char *   message;            // 20
+int _v3_get_0x57(_v3_net_message *msg);
+
+typedef struct _v3_net_message_0x59 {
+    uint32_t type;		// 0
+    uint16_t error;		// 4
+    uint16_t minutes_banned;	// 6
+    uint16_t log_error;		// 8
+    uint16_t close_connection; 	// 10
+    uint16_t unknown_[4];	// 12
+    char *   message;		// 20
 
 } __attribute__ ((packed)) _v3_msg_0x59;
-int _v3_get_0x59(_v3_net_message *msg);/*}}}*/
-typedef struct _v3_net_message_0x5c {/*{{{*/
-    uint32_t type;
-    uint16_t subtype;
-    uint16_t sum_1;
-    uint32_t sum_2;
+int _v3_get_0x59(_v3_net_message *msg);
+
+typedef struct _v3_net_message_0x5c {
+    uint32_t type;		// 0
+    uint16_t subtype;		// 4
+    uint16_t sum_1;		// 6
+    uint32_t sum_2;		// 8
 } _v3_msg_0x5c;
 int _v3_get_0x5c(_v3_net_message *msg);
 _v3_net_message *_v3_put_0x5c(uint8_t subtype);
 uint32_t _v3_msg5c_scramble(uint8_t* in);
-uint32_t _v3_msg5c_gensum(uint32_t seed, uint32_t iterations);/*}}}*/
-typedef struct _v3_net_message_0x5d {/*{{{*/
-    /*
-       User list update
+uint32_t _v3_msg5c_gensum(uint32_t seed, uint32_t iterations);
 
-       libventrilo3: 19:23:53:     ======= received TCP packet =====================================
-       libventrilo3: 19:23:53:     PACKET: message type: 0x5D (93)
-       libventrilo3: 19:23:53:     PACKET: data length : 72
-       libventrilo3: 19:23:53:     PACKET:     5D 00 00 00 04 00 02 00 00 00 00 00 02 00 00 00      ]...............
-       libventrilo3: 19:23:53:     PACKET:     00 08 53 65 72 76 65 72 20 31 00 08 53 65 72 76      ..Server.1..Serv
-       libventrilo3: 19:23:53:     PACKET:     65 72 20 31 00 00 00 00 00 00 16 00 00 00 01 04      er.1............
-       libventrilo3: 19:23:53:     PACKET:     00 00 00 04 65 72 69 63 00 08 70 68 6F 6E 65 74      ....eric..phonet
-       libventrilo3: 19:23:53:     PACKET:     69 63 00 00 00 00 00 00                              ic......
-     */
-    uint32_t type;                    // 0
-    uint16_t subtype;                 // 4
-    uint16_t user_count;              // 6
-    _v3_msg_user *lobby;              // 8 - variable length starts here
+typedef struct _v3_net_message_0x5d {
+    uint32_t type;		// 0
+    uint16_t subtype;		// 4
+    uint16_t user_count;	// 6
+    _v3_msg_user *lobby;	// 8 - variable length starts here
     _v3_msg_user *user_list;
 } _v3_msg_0x5d;
 _v3_net_message *_v3_put_0x5d(uint16_t subtype, uint16_t count, v3_user *user);
 int _v3_get_0x5d(_v3_net_message *msg);
-int _v3_destroy_0x5d(_v3_net_message *msg);/*}}}*/
-typedef struct _v3_net_message_0x60 {/*{{{*/
-    /*
-     * Channel list update
-     *
-     * libventrilo3: 19:38:52:     ======= received TCP packet =====================================
-     * libventrilo3: 19:38:52:     PACKET: message type: 0x60 (96)
-     * libventrilo3: 19:38:52:     PACKET: data length : 216
-     * libventrilo3: 19:38:52:     PACKET:     60 00 00 00 03 00 00 00 01 00 00 00 00 01 00 00      `...............
-     * libventrilo3: 19:38:52:     PACKET:     01 00 01 00 01 00 01 00 01 00 01 00 00 00 00 00      ................
-     * libventrilo3: 19:38:52:     PACKET:     00 00 00 00 01 00 00 00 01 00 00 00 00 00 00 00      ................
-     * libventrilo3: 19:38:52:     PACKET:     FF FF FF FF 00 00 00 00 00 0C 74 65 73 74 5F 63      ..........test_c
-     * libventrilo3: 19:38:52:     PACKET:     68 61 6E 6E 65 6C 00 0D 74 65 73 74 5F 70 68 6F      hannel..test_pho
-     * libventrilo3: 19:38:52:     PACKET:     6E 65 74 69 63 00 0C 74 65 73 74 5F 63 6F 6D 6D      netic..test_comm
-     * libventrilo3: 19:38:52:     PACKET:     65 6E 74 0E 00 01 00 00 00 00 00 01 00 01 00 01      ent.............
-     * libventrilo3: 19:38:52:     PACKET:     00 01 00 01 00 01 00 00 00 00 00 00 00 00 00 01      ................
-     * libventrilo3: 19:38:52:     PACKET:     00 00 00 01 00 00 00 00 00 00 00 FF FF FF FF 00      ................
-     * libventrilo3: 19:38:52:     PACKET:     00 00 00 00 05 74 65 73 74 32 00 00 00 00 0F 00      .....test2......
-     * libventrilo3: 19:38:52:     PACKET:     0E 00 00 00 00 00 01 00 01 00 01 00 01 00 01 00      ................
-     * libventrilo3: 19:38:52:     PACKET:     01 00 00 00 00 00 00 00 00 00 01 00 00 00 01 00      ................
-     * libventrilo3: 19:38:52:     PACKET:     00 00 00 00 00 00 FF FF FF FF 00 00 00 00 00 04      ................
-     * libventrilo3: 19:38:52:     PACKET:     74 65 73 74 00 00 00 00                              test....
-     */
-    uint32_t type;                    	// 0
-    uint32_t channel_count;		// 4
-    _v3_msg_channel *channel_list;
+int _v3_destroy_0x5d(_v3_net_message *msg);
+
+typedef struct _v3_net_message_0x60 {
+    uint32_t type;		// 0
+    uint32_t channel_count;	// 4
+    _v3_msg_channel *channel_list; // 8 - variable length stats here
 } _v3_msg_0x60;
 int _v3_get_0x60(_v3_net_message *msg);
-int _v3_destroy_0x60(_v3_net_message *msg);/*}}}*/
-typedef struct _v3_net_message_0x61 {/*{{{*/
-    /*
-     * Message Type 0x61 is used for adding, removing, and listing user bans.
-     * Bitmasks can be found in _v3_bitmasks.
-     */
+int _v3_destroy_0x60(_v3_net_message *msg);
+
+typedef struct _v3_net_message_0x61 {
     uint32_t type;        	// 0
     uint32_t subtype;     	// 4
     uint32_t bitmask_id;  	// 8
@@ -461,17 +369,14 @@ typedef struct _v3_net_message_0x61 {/*{{{*/
     uint8_t  banned_user[32];   // 20
     uint8_t  banned_by[32];	// 52
     uint8_t  ban_msg[128];	// 84
-} _v3_msg_0x61;/*}}}*/
-typedef struct _v3_net_message_0x62 {/*{{{*/
-    /*
-     * Message Type 0x62 is used for sending and receiving pages.
-     * Errors can be found in _v3_page_errors.
-     */
+} _v3_msg_0x61;
+
+typedef struct _v3_net_message_0x62 {
     uint32_t type;		// 0
     uint16_t from;		// 4
     uint16_t to;		// 6
     uint32_t error_id;		// 8
-} _v3_msg_0x62;/*}}}*/
+} _v3_msg_0x62;
 
 
 char *   _v3_get_msg_string(void *offset, uint16_t *len);
