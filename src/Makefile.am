@@ -16,4 +16,4 @@ mangler_LDADD = @top_srcdir@/libventrilo3/libventrilo3.la $(gtkmm_LIBS) $(gthrea
 INCLUDES = -I@top_srcdir@/libventrilo3/ -I@top_srcdir@/icons/ $(gtkmm_CFLAGS) $(gthread_CFLAGS) $(pulse_CFLAGS) $(speex_CFLAGS)
 
 dev:
-	gcc -o mangler -I../ -I../libventrilo3/ -I../icons/ -L../libventrilo3/.libs/libventrilo3.a -pthread *.cpp -lpulse-simple -lpulse -lspeex -lgsm `pkg-config --cflags --libs gtkmm-2.4` -lventrilo3
+	gcc -o mangler -I../ -I../libventrilo3/ -I../icons/ -L../libventrilo3/.libs/libventrilo3.a -pthread *.cpp -lpulse-simple -lpulse -lspeex -lgsm `pkg-config --cflags --libs gthread-2.0` `pkg-config --cflags --libs gtkmm-2.4` -lventrilo3

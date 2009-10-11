@@ -36,10 +36,7 @@ bin_PROGRAMS = mangler$(EXEEXT)
 subdir = src
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/m4/libtool.m4 \
-	$(top_srcdir)/m4/ltoptions.m4 $(top_srcdir)/m4/ltsugar.m4 \
-	$(top_srcdir)/m4/ltversion.m4 $(top_srcdir)/m4/lt~obsolete.m4 \
-	$(top_srcdir)/configure.ac
+am__aclocal_m4_deps = $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(install_sh) -d
@@ -511,7 +508,7 @@ manglerui:
 	echo ";" >> manglerui.h
 
 dev:
-	gcc -o mangler -I../ -I../libventrilo3/ -I../icons/ -L../libventrilo3/.libs/libventrilo3.a -pthread *.cpp -lpulse-simple -lpulse -lspeex -lgsm `pkg-config --cflags --libs gtkmm-2.4` -lventrilo3
+	gcc -o mangler -I../ -I../libventrilo3/ -I../icons/ -L../libventrilo3/.libs/libventrilo3.a -pthread *.cpp -lpulse-simple -lpulse -lspeex -lgsm `pkg-config --cflags --libs gthread-2.0` `pkg-config --cflags --libs gtkmm-2.4` -lventrilo3
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:
