@@ -2250,7 +2250,7 @@ v3_queue_event(v3_event *ev) {/*{{{*/
         _v3_eventq = ev;
         pthread_cond_signal(eventq_cond);
         pthread_mutex_unlock(eventq_mutex);
-        _v3_debug(V3_DEBUG_EVENT, "queued event type %d.  now have 1 event in queue");
+        _v3_debug(V3_DEBUG_EVENT, "queued event type %d.  now have 1 event in queue", ev->type);
         _v3_func_leave("v3_queue_event");
         return true;
     }
