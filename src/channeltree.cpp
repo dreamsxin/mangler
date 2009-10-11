@@ -130,7 +130,8 @@ ManglerChannelTree::addUser(uint32_t id, uint32_t parent_id, std::string name, s
         channelIter                                 = channelStore->prepend();
     }
     channelRow                                  = *channelIter;
-    channelRow[channelRecord.displayName]       = g_locale_to_utf8(displayName.c_str(), -1, NULL, &tmp, NULL);
+    //channelRow[channelRecord.displayName]       = g_locale_to_utf8(displayName.c_str(), -1, NULL, &tmp, NULL);
+    channelRow[channelRecord.displayName]       = displayName.c_str();
     channelRow[channelRecord.icon]              = mangler->icons["blue_circle"]->scale_simple(9, 9, Gdk::INTERP_BILINEAR);
     channelRow[channelRecord.isUser]            = id == 0 ? false : true;
     channelRow[channelRecord.id]                = id;
@@ -171,7 +172,8 @@ ManglerChannelTree::addChannel(uint32_t id, uint32_t parent_id, std::string name
         channelIter                                 = channelStore->append();
     }
     channelRow                                  = *channelIter;
-    channelRow[channelRecord.displayName]       = g_locale_to_utf8(displayName.c_str(), -1, NULL, &tmp, NULL);
+    //channelRow[channelRecord.displayName]       = g_locale_to_utf8(displayName.c_str(), -1, NULL, &tmp, NULL);
+    channelRow[channelRecord.displayName]       = displayName.c_str();
     channelRow[channelRecord.icon]              = mangler->icons["black_circle"]->scale_simple(9, 9, Gdk::INTERP_BILINEAR);;
     channelRow[channelRecord.isUser]            = false;
     channelRow[channelRecord.id]                = id;
@@ -282,7 +284,8 @@ ManglerChannelTree::updateLobby(std::string name, std::string comment, std::stri
     if (! comment.empty()) {
         displayName = displayName + " (" + comment + ")";
     }
-    lobby[channelRecord.displayName]       = g_locale_to_utf8(displayName.c_str(), -1, NULL, &tmp, NULL);
+    //lobby[channelRecord.displayName]       = g_locale_to_utf8(displayName.c_str(), -1, NULL, &tmp, NULL);
+    lobby[channelRecord.displayName]       = Glib::locale_to_utf8(displayName.c_str());
     lobby[channelRecord.isUser]            = false;
     lobby[channelRecord.id]                = 0;
     lobby[channelRecord.parent_id]         = 0;
@@ -297,9 +300,9 @@ void
 ManglerChannelTree::userIsTalking(uint16_t id, bool isTalking) {/*{{{*/
     Gtk::TreeModel::Row user = getUser(id, channelStore->children());
     if (isTalking) {
-        channelRow[channelRecord.icon]              = mangler->icons["green_circle"]->scale_simple(9, 9, Gdk::INTERP_BILINEAR);
+        user[channelRecord.icon]              = mangler->icons["green_circle"]->scale_simple(9, 9, Gdk::INTERP_BILINEAR);
     } else {
-        channelRow[channelRecord.icon]              = mangler->icons["blue_circle"]->scale_simple(9, 9, Gdk::INTERP_BILINEAR);
+        user[channelRecord.icon]              = mangler->icons["blue_circle"]->scale_simple(9, 9, Gdk::INTERP_BILINEAR);
     }
 }/*}}}*/
 
