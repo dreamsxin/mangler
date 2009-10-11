@@ -64,9 +64,15 @@ class Mangler
         std::map<uint32_t, ManglerAudio* >  audio;
         ManglerSettings                     *settings;
 
+        // These are used by the password entry dialog
+        Gtk::Dialog                         *passwordDialog;
+        Gtk::Entry                          *passwordEntry;
+        std::string                         password;
+        bool                                passwordStatus;
+
         Glib::Thread                        *networkThread;
-        Glib::Thread                        *audioInputThread;
-        Glib::Thread                        *audioOutputThread;
+
+        std::string getPasswordEntry(std::string title = "Password", std::string prompt = "Password");
 
         
     protected:
@@ -85,6 +91,10 @@ class Mangler
         // quick connect signal handlers
         void qcConnectButton_clicked_cb(void);
         void qcCancelButton_clicked_cb(void);
+
+        // password dialog signal handlers
+        void passwordDialogOkButton_clicked_cb(void);
+        void passwordDialogCancelButton_clicked_cb(void);
 };
 
 struct _cli_options {

@@ -101,7 +101,13 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
     builder->get_widget("qcCancelButton", button);
     button->signal_clicked().connect(sigc::mem_fun(this, &Mangler::qcCancelButton_clicked_cb));
 
-
+    // Set up our generic password dialog box
+    builder->get_widget("passwordDialog", passwordDialog);
+    builder->get_widget("passwordEntry", passwordEntry);
+    builder->get_widget("passwordOkButton", button);
+    button->signal_clicked().connect(sigc::mem_fun(this, &Mangler::passwordDialogOkButton_clicked_cb));
+    builder->get_widget("passwordCancelButton", button);
+    button->signal_clicked().connect(sigc::mem_fun(this, &Mangler::passwordDialogCancelButton_clicked_cb));
 
     // Create Channel Tree
     channelTree = new ManglerChannelTree(builder);
@@ -318,6 +324,26 @@ Mangler::getNetworkEvent() {/*{{{*/
     }
     return true;
 }/*}}}*/
+
+std::string
+Mangler::getPasswordEntry(std::string title, std::string prompt) {
+    password = "";
+    passwordDialog->set_title(title);
+    passwordDialog->run();
+    passwordDialog->hide();
+    return(password);
+}
+
+void
+Mangler::passwordDialogOkButton_clicked_cb(void) {
+    password = passwordEntry->get_text();
+}
+
+void
+Mangler::passwordDialogCancelButton_clicked_cb(void) {
+    password = "";
+}
+
 
 
 ManglerError::ManglerError(uint32_t code, std::string message, std::string module) {

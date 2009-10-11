@@ -326,12 +326,21 @@ ManglerChannelTree::clear(void) {/*{{{*/
 
 void
 ManglerChannelTree::channelView_row_activated_cb(const Gtk::TreeModel::Path& path, Gtk::TreeViewColumn* column) {
+    v3_channel *channel;
+    Gtk::Dialog *dialog;
+    std::string password;
+
     Gtk::TreeModel::iterator iter = channelStore->get_iter(path);
     Gtk::TreeModel::Row row = *iter;
     int id = row[channelRecord.id];
+    channel = v3_get_channel(id);
+    if (channel->protect_mode == 1) {  // Channel is password protected
+        password = mangler->getPasswordEntry("Channel Password");
+    }
+    v3_free_channel(channel);
     bool isUser = row[channelRecord.isUser];
     if (! isUser) {
-        v3_change_channel(id, (char *)"");
+        v3_change_channel(id, (char *)password.c_str());
     }
 }
 
