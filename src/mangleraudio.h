@@ -61,7 +61,7 @@ class ManglerAudio
         void            play(void);
 
         GAsyncQueue*    pcm_queue;
-#ifdef HAVE_PUSE
+#ifdef HAVE_PULSE
         pa_sample_spec  pulse_samplespec;
         pa_simple       *pulse_stream;
 #endif

@@ -24,6 +24,7 @@
  * along with Mangler.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "config.h"
 #include <gtkmm.h>
 #include <sys/types.h>
 #include <stdint.h>
