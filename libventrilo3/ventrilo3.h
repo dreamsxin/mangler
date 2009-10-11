@@ -209,9 +209,9 @@ struct _v3_event {
         char name[32];
         char password[32];
         char phonetic[32];
-        char comment[127];
-        char url[127];
-        char integration_text[127];
+        char comment[128];
+        char url[128];
+        char integration_text[128];
     } text;
     uint32_t flags;
     struct {
