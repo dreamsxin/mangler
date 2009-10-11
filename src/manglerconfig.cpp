@@ -87,16 +87,19 @@ std::string ManglerConfig::get(std::string cfgname) {/*{{{*/
         try {
             f >> cfgline;
         } catch (std::ifstream::failure e) {
+            f.close();
             mutex.unlock();
             return "";
         }
         std::string name = cfgline.substr(0, cfgline.find("="));
         if (name == cfgname) {
             std::string value = cfgline.substr(cfgline.find("=")+1);
+            f.close();
             mutex.unlock();
             return value;
         }
     }
+    f.close();
     mutex.unlock();
     return "";
 }/*}}}*/
