@@ -82,6 +82,8 @@ class ManglerChannelTree
         bool expand_all(void);
         bool collapse_all(void);
         void clear(void);
+
+        void channelView_row_activated_cb(const Gtk::TreeModel::Path& path, Gtk::TreeViewColumn* column);
 };
 
 #endif

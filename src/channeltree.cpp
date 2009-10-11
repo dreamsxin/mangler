@@ -39,11 +39,17 @@ ManglerChannelTree::ManglerChannelTree(Glib::RefPtr<Gtk::Builder> builder)/*{{{*
     // Create the Channel View
     builder->get_widget("channelView", channelView);
     channelView->set_model(channelStore);
+
     //channelView->append_column("ID", channelRecord.id);
     Gtk::TreeView::Column* pColumn = Gtk::manage( new Gtk::TreeView::Column("Symbol") );
     pColumn->pack_start(channelRecord.icon, false);
     pColumn->pack_start(channelRecord.displayName);
     channelView->append_column(*pColumn);
+
+    // connect our callbacks for clicking on rows
+    channelView->signal_row_activated().connect(sigc::mem_fun(this, &ManglerChannelTree::channelView_row_activated_cb));
+
+
     //int colnum = channelView->append_column("Name", channelRecord.displayName) - 1;
     // TODO: Write a sort routine to make sure users are always immediately
     // below the channel, otherwise users get sorted within the subchannels
@@ -314,3 +320,15 @@ void
 ManglerChannelTree::clear(void) {/*{{{*/
     channelStore->clear();
 }/*}}}*/
+
+void
+ManglerChannelTree::channelView_row_activated_cb(const Gtk::TreeModel::Path& path, Gtk::TreeViewColumn* column) {
+    Gtk::TreeModel::iterator iter = channelStore->get_iter(path);
+    Gtk::TreeModel::Row row = *iter;
+    int id = row[channelRecord.id];
+    bool isUser = row[channelRecord.isUser];
+    if (! isUser) {
+        v3_change_channel(id, (char *)"");
+    }
+}
+

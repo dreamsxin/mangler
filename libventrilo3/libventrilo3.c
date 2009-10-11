@@ -558,6 +558,22 @@ _v3_recv(int block) {/*{{{*/
                 _v3_error("failed to receive from outbound pipe");
             } else {
                 switch (ev.type) {
+                    case V3_EVENT_CHANGE_CHANNEL:
+                        {
+                            _v3_net_message *msg;
+                            v3_channel channel;
+                            memset(&channel, 0, sizeof(_v3_msg_channel));
+                            channel.id = ev.channel.id;
+                            _v3_debug(V3_DEBUG_INFO, "changing to channel id %d", channel.id);
+                            msg = _v3_put_0x49(V3_CHANGE_CHANNEL, v3_get_user_id(), ev.password, &channel);
+                            if (_v3_send(msg)) {
+                                _v3_destroy_packet(msg);
+                            } else {
+                                _v3_debug(V3_DEBUG_SOCKET, "failed to send channel change message");
+                                _v3_destroy_packet(msg);
+                            }
+                        }
+                        break;
                     default:
                         _v3_debug(V3_DEBUG_EVENT, "received unknown event type %d from queue", ev.type);
                         break;
@@ -1684,7 +1700,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                     case V3_USER_LIST:
                         // <strke>user 1 is always ourself in this subtype</strike>
                         // TODO: this is a bad assumption... the userlist can span multiple 0x5d packets
-                        if (!v3_user_count()) {
+                        if (v3_luser.id == -1) {
                             v3_luser.id = m->user_list[1].id;
                             if (v3_luser.name) {
                                 free(v3_luser.name);
@@ -2028,6 +2044,7 @@ v3_logout(void) {/*{{{*/
     */
     _v3_destroy_channellist();
     _v3_destroy_userlist();
+    v3_luser.id = -1;
     close(v3_server.evpipe[0]);
     close(v3_server.evpipe[1]);
     _v3_func_leave("v3_logout");
@@ -2079,13 +2096,11 @@ v3_change_channel(uint16_t channel_id, char *password) {/*{{{*/
     _v3_func_enter("v3_change_channel");
     memset(&ev, 0, sizeof(v3_event));
     ev.type = V3_EVENT_CHANGE_CHANNEL;
-    /*
     if (password == NULL) {
         strncpy(ev.password, "", 31);
     } else {
         strncpy(ev.password, password, 31);
     }
-    */
     ev.channel.id = channel_id;
     ev.user.id = v3_get_user_id();
     _v3_lock_sendq();
@@ -2097,23 +2112,6 @@ v3_change_channel(uint16_t channel_id, char *password) {/*{{{*/
     _v3_unlock_sendq();
     _v3_func_leave("v3_change_channel");
     return;
-    /*
-    _v3_net_message *msg;
-    v3_channel channel;
-    memset(&channel, 0, sizeof(_v3_msg_channel));
-    channel.id = channel_id;
-    _v3_debug(V3_DEBUG_INFO, "changing to channel id %d", channel_id);
-    msg = _v3_put_0x49(V3_CHANGE_CHANNEL, v3_get_user_id(), password, &channel);
-    if (_v3_send(msg)) {
-        _v3_destroy_packet(msg);
-        _v3_func_leave("v3_change_channel");
-        return true;
-    } else {
-        _v3_func_leave("v3_change_channel");
-        _v3_destroy_packet(msg);
-        return false;
-    }
-    */
 }/*}}}*/
 
 int
