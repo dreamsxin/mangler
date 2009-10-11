@@ -788,12 +788,14 @@ ac_includes_default="\
 
 ac_subst_vars='LTLIBOBJS
 LIBOBJS
-PULSEAUDIOMM_LIBS
-PULSEAUDIOMM_CFLAGS
-GTHREADMM_LIBS
-GTHREADMM_CFLAGS
-GTKMM_LIBS
-GTKMM_CFLAGS
+gthread_LIBS
+gthread_CFLAGS
+pulse_LIBS
+pulse_CFLAGS
+gtkmm_LIBS
+gtkmm_CFLAGS
+speex_LIBS
+speex_CFLAGS
 GLIB_MKENUMS
 GOBJECT_QUERY
 GLIB_GENMARSHAL
@@ -940,7 +942,15 @@ CC
 CFLAGS
 CPP
 CXXCPP
-PKG_CONFIG'
+PKG_CONFIG
+speex_CFLAGS
+speex_LIBS
+gtkmm_CFLAGS
+gtkmm_LIBS
+pulse_CFLAGS
+pulse_LIBS
+gthread_CFLAGS
+gthread_LIBS'
 
 
 # Initialize some variables set by options.
@@ -1600,6 +1610,19 @@ Some influential environment variables:
   CPP         C preprocessor
   CXXCPP      C++ preprocessor
   PKG_CONFIG  path to pkg-config utility
+  speex_CFLAGS
+              C compiler flags for speex, overriding pkg-config
+  speex_LIBS  linker flags for speex, overriding pkg-config
+  gtkmm_CFLAGS
+              C compiler flags for gtkmm, overriding pkg-config
+  gtkmm_LIBS  linker flags for gtkmm, overriding pkg-config
+  pulse_CFLAGS
+              C compiler flags for pulse, overriding pkg-config
+  pulse_LIBS  linker flags for pulse, overriding pkg-config
+  gthread_CFLAGS
+              C compiler flags for gthread, overriding pkg-config
+  gthread_LIBS
+              linker flags for gthread, overriding pkg-config
 
 Use these variables to override the choices made by `configure' or to help
 it to find libraries and programs with nonstandard names/locations.
@@ -5286,13 +5309,13 @@ if test "${lt_cv_nm_interface+set}" = set; then
 else
   lt_cv_nm_interface="BSD nm"
   echo "int some_variable = 0;" > conftest.$ac_ext
-  (eval echo "\"\$as_me:5289: $ac_compile\"" >&5)
+  (eval echo "\"\$as_me:5312: $ac_compile\"" >&5)
   (eval "$ac_compile" 2>conftest.err)
   cat conftest.err >&5
-  (eval echo "\"\$as_me:5292: $NM \\\"conftest.$ac_objext\\\"\"" >&5)
+  (eval echo "\"\$as_me:5315: $NM \\\"conftest.$ac_objext\\\"\"" >&5)
   (eval "$NM \"conftest.$ac_objext\"" 2>conftest.err > conftest.out)
   cat conftest.err >&5
-  (eval echo "\"\$as_me:5295: output\"" >&5)
+  (eval echo "\"\$as_me:5318: output\"" >&5)
   cat conftest.out >&5
   if $GREP 'External.*some_variable' conftest.out > /dev/null; then
     lt_cv_nm_interface="MS dumpbin"
@@ -6487,7 +6510,7 @@ ia64-*-hpux*)
   ;;
 *-*-irix6*)
   # Find out which ABI we are using.
-  echo '#line 6490 "configure"' > conftest.$ac_ext
+  echo '#line 6513 "configure"' > conftest.$ac_ext
   if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -8827,11 +8850,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:8830: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:8853: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:8834: \$? = $ac_status" >&5
+   echo "$as_me:8857: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -9166,11 +9189,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:9169: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:9192: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:9173: \$? = $ac_status" >&5
+   echo "$as_me:9196: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -9271,11 +9294,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:9274: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:9297: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:9278: \$? = $ac_status" >&5
+   echo "$as_me:9301: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -9326,11 +9349,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:9329: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:9352: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:9333: \$? = $ac_status" >&5
+   echo "$as_me:9356: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -12139,7 +12162,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<_LT_EOF
-#line 12142 "configure"
+#line 12165 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -12235,7 +12258,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<_LT_EOF
-#line 12238 "configure"
+#line 12261 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -14255,11 +14278,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:14258: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:14281: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:14262: \$? = $ac_status" >&5
+   echo "$as_me:14285: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -14354,11 +14377,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:14357: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:14380: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:14361: \$? = $ac_status" >&5
+   echo "$as_me:14384: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -14406,11 +14429,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:14409: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:14432: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:14413: \$? = $ac_status" >&5
+   echo "$as_me:14436: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -16258,173 +16281,6 @@ rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
   rm -f conf.glibtest
 
 
-# Checks for libraries.
-
-{ $as_echo "$as_me:$LINENO: checking for speex_encoder_init in -lspeex" >&5
-$as_echo_n "checking for speex_encoder_init in -lspeex... " >&6; }
-if test "${ac_cv_lib_speex_speex_encoder_init+set}" = set; then
-  $as_echo_n "(cached) " >&6
-else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lspeex  $LIBS"
-cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char speex_encoder_init ();
-int
-main ()
-{
-return speex_encoder_init ();
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext conftest$ac_exeext
-if { (ac_try="$ac_link"
-case "(($ac_try" in
-  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
-  *) ac_try_echo=$ac_try;;
-esac
-eval ac_try_echo="\"\$as_me:$LINENO: $ac_try_echo\""
-$as_echo "$ac_try_echo") >&5
-  (eval "$ac_link") 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  $as_echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } && {
-	 test -z "$ac_c_werror_flag" ||
-	 test ! -s conftest.err
-       } && test -s conftest$ac_exeext && {
-	 test "$cross_compiling" = yes ||
-	 $as_test_x conftest$ac_exeext
-       }; then
-  ac_cv_lib_speex_speex_encoder_init=yes
-else
-  $as_echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-	ac_cv_lib_speex_speex_encoder_init=no
-fi
-
-rm -rf conftest.dSYM
-rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
-      conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ $as_echo "$as_me:$LINENO: result: $ac_cv_lib_speex_speex_encoder_init" >&5
-$as_echo "$ac_cv_lib_speex_speex_encoder_init" >&6; }
-if test "x$ac_cv_lib_speex_speex_encoder_init" = x""yes; then
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_LIBSPEEX 1
-_ACEOF
-
-  LIBS="-lspeex $LIBS"
-
-else
-
-	echo "error: cannot find libspeex: Is it installed? Also make sure you have the"
-	echo "       libspeex development packages installed"
-	exit -1
-
-fi
-
-
-{ $as_echo "$as_me:$LINENO: checking for gsm_create in -lgsm" >&5
-$as_echo_n "checking for gsm_create in -lgsm... " >&6; }
-if test "${ac_cv_lib_gsm_gsm_create+set}" = set; then
-  $as_echo_n "(cached) " >&6
-else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lgsm  $LIBS"
-cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char gsm_create ();
-int
-main ()
-{
-return gsm_create ();
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext conftest$ac_exeext
-if { (ac_try="$ac_link"
-case "(($ac_try" in
-  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
-  *) ac_try_echo=$ac_try;;
-esac
-eval ac_try_echo="\"\$as_me:$LINENO: $ac_try_echo\""
-$as_echo "$ac_try_echo") >&5
-  (eval "$ac_link") 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  $as_echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } && {
-	 test -z "$ac_c_werror_flag" ||
-	 test ! -s conftest.err
-       } && test -s conftest$ac_exeext && {
-	 test "$cross_compiling" = yes ||
-	 $as_test_x conftest$ac_exeext
-       }; then
-  ac_cv_lib_gsm_gsm_create=yes
-else
-  $as_echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-	ac_cv_lib_gsm_gsm_create=no
-fi
-
-rm -rf conftest.dSYM
-rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
-      conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ $as_echo "$as_me:$LINENO: result: $ac_cv_lib_gsm_gsm_create" >&5
-$as_echo "$ac_cv_lib_gsm_gsm_create" >&6; }
-if test "x$ac_cv_lib_gsm_gsm_create" = x""yes; then
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_LIBGSM 1
-_ACEOF
-
-  LIBS="-lgsm $LIBS"
-
-else
-
-	echo "error: cannot find libgsm: Is it installed? Also make sure you have the"
-	echo "       libgsm development packages installed"
-	exit -1
-
-fi
-
-
-
-# Checks for header files.
-
 
 
 
@@ -16584,36 +16440,46 @@ fi
 
 done
 
-if test "${ac_cv_header_speex_speex_h+set}" = set; then
-  { $as_echo "$as_me:$LINENO: checking for speex/speex.h" >&5
-$as_echo_n "checking for speex/speex.h... " >&6; }
-if test "${ac_cv_header_speex_speex_h+set}" = set; then
+
+
+{ $as_echo "$as_me:$LINENO: checking for gsm_create in -lgsm" >&5
+$as_echo_n "checking for gsm_create in -lgsm... " >&6; }
+if test "${ac_cv_lib_gsm_gsm_create+set}" = set; then
   $as_echo_n "(cached) " >&6
-fi
-{ $as_echo "$as_me:$LINENO: result: $ac_cv_header_speex_speex_h" >&5
-$as_echo "$ac_cv_header_speex_speex_h" >&6; }
 else
-  # Is the header compilable?
-{ $as_echo "$as_me:$LINENO: checking speex/speex.h usability" >&5
-$as_echo_n "checking speex/speex.h usability... " >&6; }
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lgsm  $LIBS"
 cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
 cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
-$ac_includes_default
-#include <speex/speex.h>
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char gsm_create ();
+int
+main ()
+{
+return gsm_create ();
+  ;
+  return 0;
+}
 _ACEOF
-rm -f conftest.$ac_objext
-if { (ac_try="$ac_compile"
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (ac_try="$ac_link"
 case "(($ac_try" in
   *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
   *) ac_try_echo=$ac_try;;
 esac
 eval ac_try_echo="\"\$as_me:$LINENO: $ac_try_echo\""
 $as_echo "$ac_try_echo") >&5
-  (eval "$ac_compile") 2>conftest.er1
+  (eval "$ac_link") 2>conftest.er1
   ac_status=$?
   grep -v '^ *+' conftest.er1 >conftest.err
   rm -f conftest.er1
@@ -16622,110 +16488,39 @@ $as_echo "$ac_try_echo") >&5
   (exit $ac_status); } && {
 	 test -z "$ac_c_werror_flag" ||
 	 test ! -s conftest.err
-       } && test -s conftest.$ac_objext; then
-  ac_header_compiler=yes
-else
-  $as_echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-	ac_header_compiler=no
-fi
-
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-{ $as_echo "$as_me:$LINENO: result: $ac_header_compiler" >&5
-$as_echo "$ac_header_compiler" >&6; }
-
-# Is the header present?
-{ $as_echo "$as_me:$LINENO: checking speex/speex.h presence" >&5
-$as_echo_n "checking speex/speex.h presence... " >&6; }
-cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-#include <speex/speex.h>
-_ACEOF
-if { (ac_try="$ac_cpp conftest.$ac_ext"
-case "(($ac_try" in
-  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
-  *) ac_try_echo=$ac_try;;
-esac
-eval ac_try_echo="\"\$as_me:$LINENO: $ac_try_echo\""
-$as_echo "$ac_try_echo") >&5
-  (eval "$ac_cpp conftest.$ac_ext") 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  $as_echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } >/dev/null && {
-	 test -z "$ac_c_preproc_warn_flag$ac_c_werror_flag" ||
-	 test ! -s conftest.err
+       } && test -s conftest$ac_exeext && {
+	 test "$cross_compiling" = yes ||
+	 $as_test_x conftest$ac_exeext
        }; then
-  ac_header_preproc=yes
+  ac_cv_lib_gsm_gsm_create=yes
 else
   $as_echo "$as_me: failed program was:" >&5
 sed 's/^/| /' conftest.$ac_ext >&5
 
-  ac_header_preproc=no
+	ac_cv_lib_gsm_gsm_create=no
 fi
 
-rm -f conftest.err conftest.$ac_ext
-{ $as_echo "$as_me:$LINENO: result: $ac_header_preproc" >&5
-$as_echo "$ac_header_preproc" >&6; }
-
-# So?  What about this header?
-case $ac_header_compiler:$ac_header_preproc:$ac_c_preproc_warn_flag in
-  yes:no: )
-    { $as_echo "$as_me:$LINENO: WARNING: speex/speex.h: accepted by the compiler, rejected by the preprocessor!" >&5
-$as_echo "$as_me: WARNING: speex/speex.h: accepted by the compiler, rejected by the preprocessor!" >&2;}
-    { $as_echo "$as_me:$LINENO: WARNING: speex/speex.h: proceeding with the compiler's result" >&5
-$as_echo "$as_me: WARNING: speex/speex.h: proceeding with the compiler's result" >&2;}
-    ac_header_preproc=yes
-    ;;
-  no:yes:* )
-    { $as_echo "$as_me:$LINENO: WARNING: speex/speex.h: present but cannot be compiled" >&5
-$as_echo "$as_me: WARNING: speex/speex.h: present but cannot be compiled" >&2;}
-    { $as_echo "$as_me:$LINENO: WARNING: speex/speex.h:     check for missing prerequisite headers?" >&5
-$as_echo "$as_me: WARNING: speex/speex.h:     check for missing prerequisite headers?" >&2;}
-    { $as_echo "$as_me:$LINENO: WARNING: speex/speex.h: see the Autoconf documentation" >&5
-$as_echo "$as_me: WARNING: speex/speex.h: see the Autoconf documentation" >&2;}
-    { $as_echo "$as_me:$LINENO: WARNING: speex/speex.h:     section \"Present But Cannot Be Compiled\"" >&5
-$as_echo "$as_me: WARNING: speex/speex.h:     section \"Present But Cannot Be Compiled\"" >&2;}
-    { $as_echo "$as_me:$LINENO: WARNING: speex/speex.h: proceeding with the preprocessor's result" >&5
-$as_echo "$as_me: WARNING: speex/speex.h: proceeding with the preprocessor's result" >&2;}
-    { $as_echo "$as_me:$LINENO: WARNING: speex/speex.h: in the future, the compiler will take precedence" >&5
-$as_echo "$as_me: WARNING: speex/speex.h: in the future, the compiler will take precedence" >&2;}
-    ( cat <<\_ASBOX
-## ----------------------------- ##
-## Report this to eric@ypass.net ##
-## ----------------------------- ##
-_ASBOX
-     ) | sed "s/^/$as_me: WARNING:     /" >&2
-    ;;
-esac
-{ $as_echo "$as_me:$LINENO: checking for speex/speex.h" >&5
-$as_echo_n "checking for speex/speex.h... " >&6; }
-if test "${ac_cv_header_speex_speex_h+set}" = set; then
-  $as_echo_n "(cached) " >&6
-else
-  ac_cv_header_speex_speex_h=$ac_header_preproc
+rm -rf conftest.dSYM
+rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
+      conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
 fi
-{ $as_echo "$as_me:$LINENO: result: $ac_cv_header_speex_speex_h" >&5
-$as_echo "$ac_cv_header_speex_speex_h" >&6; }
+{ $as_echo "$as_me:$LINENO: result: $ac_cv_lib_gsm_gsm_create" >&5
+$as_echo "$ac_cv_lib_gsm_gsm_create" >&6; }
+if test "x$ac_cv_lib_gsm_gsm_create" = x""yes; then
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBGSM 1
+_ACEOF
 
-fi
-if test "x$ac_cv_header_speex_speex_h" = x""yes; then
-  :
+  LIBS="-lgsm $LIBS"
+
 else
 
-	echo "error: found speex libraries, but headers are missing or corrupt. are you"
-	echo "       missing a libspeex development package?"
+	echo "error: cannot find libgsm: Is it installed? Also make sure you have the"
+	echo "       libgsm development packages installed"
 	exit -1
 
 fi
-
 
 if test "${ac_cv_header_gsm_h+set}" = set; then
   { $as_echo "$as_me:$LINENO: checking for gsm.h" >&5
@@ -17016,329 +16811,432 @@ fi
 
 
 
+# Checks for header files.
 
-for ac_header in pulse/pulse-simple.h pulse/error.h pulse/gccmacro.h
-do
-as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
-if { as_var=$as_ac_Header; eval "test \"\${$as_var+set}\" = set"; }; then
-  { $as_echo "$as_me:$LINENO: checking for $ac_header" >&5
-$as_echo_n "checking for $ac_header... " >&6; }
-if { as_var=$as_ac_Header; eval "test \"\${$as_var+set}\" = set"; }; then
-  $as_echo_n "(cached) " >&6
-fi
-ac_res=`eval 'as_val=${'$as_ac_Header'}
-		 $as_echo "$as_val"'`
-	       { $as_echo "$as_me:$LINENO: result: $ac_res" >&5
-$as_echo "$ac_res" >&6; }
-else
-  # Is the header compilable?
-{ $as_echo "$as_me:$LINENO: checking $ac_header usability" >&5
-$as_echo_n "checking $ac_header usability... " >&6; }
-cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-$ac_includes_default
-#include <$ac_header>
-_ACEOF
-rm -f conftest.$ac_objext
-if { (ac_try="$ac_compile"
-case "(($ac_try" in
-  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
-  *) ac_try_echo=$ac_try;;
-esac
-eval ac_try_echo="\"\$as_me:$LINENO: $ac_try_echo\""
-$as_echo "$ac_try_echo") >&5
-  (eval "$ac_compile") 2>conftest.er1
+pkg_failed=no
+{ $as_echo "$as_me:$LINENO: checking for speex" >&5
+$as_echo_n "checking for speex... " >&6; }
+
+if test -n "$PKG_CONFIG"; then
+    if test -n "$speex_CFLAGS"; then
+        pkg_cv_speex_CFLAGS="$speex_CFLAGS"
+    else
+        if test -n "$PKG_CONFIG" && \
+    { ($as_echo "$as_me:$LINENO: \$PKG_CONFIG --exists --print-errors \"speex >= 1.2\"") >&5
+  ($PKG_CONFIG --exists --print-errors "speex >= 1.2") 2>&5
   ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
   $as_echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } && {
-	 test -z "$ac_c_werror_flag" ||
-	 test ! -s conftest.err
-       } && test -s conftest.$ac_objext; then
-  ac_header_compiler=yes
+  (exit $ac_status); }; then
+  pkg_cv_speex_CFLAGS=`$PKG_CONFIG --cflags "speex >= 1.2" 2>/dev/null`
 else
-  $as_echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-	ac_header_compiler=no
+  pkg_failed=yes
 fi
-
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-{ $as_echo "$as_me:$LINENO: result: $ac_header_compiler" >&5
-$as_echo "$ac_header_compiler" >&6; }
-
-# Is the header present?
-{ $as_echo "$as_me:$LINENO: checking $ac_header presence" >&5
-$as_echo_n "checking $ac_header presence... " >&6; }
-cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-#include <$ac_header>
-_ACEOF
-if { (ac_try="$ac_cpp conftest.$ac_ext"
-case "(($ac_try" in
-  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
-  *) ac_try_echo=$ac_try;;
-esac
-eval ac_try_echo="\"\$as_me:$LINENO: $ac_try_echo\""
-$as_echo "$ac_try_echo") >&5
-  (eval "$ac_cpp conftest.$ac_ext") 2>conftest.er1
+    fi
+else
+	pkg_failed=untried
+fi
+if test -n "$PKG_CONFIG"; then
+    if test -n "$speex_LIBS"; then
+        pkg_cv_speex_LIBS="$speex_LIBS"
+    else
+        if test -n "$PKG_CONFIG" && \
+    { ($as_echo "$as_me:$LINENO: \$PKG_CONFIG --exists --print-errors \"speex >= 1.2\"") >&5
+  ($PKG_CONFIG --exists --print-errors "speex >= 1.2") 2>&5
   ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
   $as_echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } >/dev/null && {
-	 test -z "$ac_c_preproc_warn_flag$ac_c_werror_flag" ||
-	 test ! -s conftest.err
-       }; then
-  ac_header_preproc=yes
+  (exit $ac_status); }; then
+  pkg_cv_speex_LIBS=`$PKG_CONFIG --libs "speex >= 1.2" 2>/dev/null`
 else
-  $as_echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-  ac_header_preproc=no
+  pkg_failed=yes
 fi
-
-rm -f conftest.err conftest.$ac_ext
-{ $as_echo "$as_me:$LINENO: result: $ac_header_preproc" >&5
-$as_echo "$ac_header_preproc" >&6; }
-
-# So?  What about this header?
-case $ac_header_compiler:$ac_header_preproc:$ac_c_preproc_warn_flag in
-  yes:no: )
-    { $as_echo "$as_me:$LINENO: WARNING: $ac_header: accepted by the compiler, rejected by the preprocessor!" >&5
-$as_echo "$as_me: WARNING: $ac_header: accepted by the compiler, rejected by the preprocessor!" >&2;}
-    { $as_echo "$as_me:$LINENO: WARNING: $ac_header: proceeding with the compiler's result" >&5
-$as_echo "$as_me: WARNING: $ac_header: proceeding with the compiler's result" >&2;}
-    ac_header_preproc=yes
-    ;;
-  no:yes:* )
-    { $as_echo "$as_me:$LINENO: WARNING: $ac_header: present but cannot be compiled" >&5
-$as_echo "$as_me: WARNING: $ac_header: present but cannot be compiled" >&2;}
-    { $as_echo "$as_me:$LINENO: WARNING: $ac_header:     check for missing prerequisite headers?" >&5
-$as_echo "$as_me: WARNING: $ac_header:     check for missing prerequisite headers?" >&2;}
-    { $as_echo "$as_me:$LINENO: WARNING: $ac_header: see the Autoconf documentation" >&5
-$as_echo "$as_me: WARNING: $ac_header: see the Autoconf documentation" >&2;}
-    { $as_echo "$as_me:$LINENO: WARNING: $ac_header:     section \"Present But Cannot Be Compiled\"" >&5
-$as_echo "$as_me: WARNING: $ac_header:     section \"Present But Cannot Be Compiled\"" >&2;}
-    { $as_echo "$as_me:$LINENO: WARNING: $ac_header: proceeding with the preprocessor's result" >&5
-$as_echo "$as_me: WARNING: $ac_header: proceeding with the preprocessor's result" >&2;}
-    { $as_echo "$as_me:$LINENO: WARNING: $ac_header: in the future, the compiler will take precedence" >&5
-$as_echo "$as_me: WARNING: $ac_header: in the future, the compiler will take precedence" >&2;}
-    ( cat <<\_ASBOX
-## ----------------------------- ##
-## Report this to eric@ypass.net ##
-## ----------------------------- ##
-_ASBOX
-     ) | sed "s/^/$as_me: WARNING:     /" >&2
-    ;;
-esac
-{ $as_echo "$as_me:$LINENO: checking for $ac_header" >&5
-$as_echo_n "checking for $ac_header... " >&6; }
-if { as_var=$as_ac_Header; eval "test \"\${$as_var+set}\" = set"; }; then
-  $as_echo_n "(cached) " >&6
+    fi
 else
-  eval "$as_ac_Header=\$ac_header_preproc"
-fi
-ac_res=`eval 'as_val=${'$as_ac_Header'}
-		 $as_echo "$as_val"'`
-	       { $as_echo "$as_me:$LINENO: result: $ac_res" >&5
-$as_echo "$ac_res" >&6; }
-
-fi
-as_val=`eval 'as_val=${'$as_ac_Header'}
-		 $as_echo "$as_val"'`
-   if test "x$as_val" = x""yes; then
-  cat >>confdefs.h <<_ACEOF
-#define `$as_echo "HAVE_$ac_header" | $as_tr_cpp` 1
-_ACEOF
-
+	pkg_failed=untried
 fi
 
-done
 
 
-for ac_header in gtkmm.h
-do
-as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
-if { as_var=$as_ac_Header; eval "test \"\${$as_var+set}\" = set"; }; then
-  { $as_echo "$as_me:$LINENO: checking for $ac_header" >&5
-$as_echo_n "checking for $ac_header... " >&6; }
-if { as_var=$as_ac_Header; eval "test \"\${$as_var+set}\" = set"; }; then
-  $as_echo_n "(cached) " >&6
-fi
-ac_res=`eval 'as_val=${'$as_ac_Header'}
-		 $as_echo "$as_val"'`
-	       { $as_echo "$as_me:$LINENO: result: $ac_res" >&5
-$as_echo "$ac_res" >&6; }
+if test $pkg_failed = yes; then
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
 else
-  # Is the header compilable?
-{ $as_echo "$as_me:$LINENO: checking $ac_header usability" >&5
-$as_echo_n "checking $ac_header usability... " >&6; }
-cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-$ac_includes_default
-#include <$ac_header>
-_ACEOF
-rm -f conftest.$ac_objext
-if { (ac_try="$ac_compile"
-case "(($ac_try" in
-  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
-  *) ac_try_echo=$ac_try;;
-esac
-eval ac_try_echo="\"\$as_me:$LINENO: $ac_try_echo\""
-$as_echo "$ac_try_echo") >&5
-  (eval "$ac_compile") 2>conftest.er1
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        speex_PKG_ERRORS=`$PKG_CONFIG --short-errors --errors-to-stdout --print-errors "speex >= 1.2"`
+        else
+	        speex_PKG_ERRORS=`$PKG_CONFIG --errors-to-stdout --print-errors "speex >= 1.2"`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$speex_PKG_ERRORS" >&5
+
+	{ { $as_echo "$as_me:$LINENO: error: Package requirements (speex >= 1.2) were not met:
+
+$speex_PKG_ERRORS
+
+Consider adjusting the PKG_CONFIG_PATH environment variable if you
+installed software in a non-standard prefix.
+
+Alternatively, you may set the environment variables speex_CFLAGS
+and speex_LIBS to avoid the need to call pkg-config.
+See the pkg-config man page for more details.
+" >&5
+$as_echo "$as_me: error: Package requirements (speex >= 1.2) were not met:
+
+$speex_PKG_ERRORS
+
+Consider adjusting the PKG_CONFIG_PATH environment variable if you
+installed software in a non-standard prefix.
+
+Alternatively, you may set the environment variables speex_CFLAGS
+and speex_LIBS to avoid the need to call pkg-config.
+See the pkg-config man page for more details.
+" >&2;}
+   { (exit 1); exit 1; }; }
+elif test $pkg_failed = untried; then
+	{ { $as_echo "$as_me:$LINENO: error: in \`$ac_pwd':" >&5
+$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
+{ { $as_echo "$as_me:$LINENO: error: The pkg-config script could not be found or is too old.  Make sure it
+is in your PATH or set the PKG_CONFIG environment variable to the full
+path to pkg-config.
+
+Alternatively, you may set the environment variables speex_CFLAGS
+and speex_LIBS to avoid the need to call pkg-config.
+See the pkg-config man page for more details.
+
+To get pkg-config, see <http://pkg-config.freedesktop.org/>.
+See \`config.log' for more details." >&5
+$as_echo "$as_me: error: The pkg-config script could not be found or is too old.  Make sure it
+is in your PATH or set the PKG_CONFIG environment variable to the full
+path to pkg-config.
+
+Alternatively, you may set the environment variables speex_CFLAGS
+and speex_LIBS to avoid the need to call pkg-config.
+See the pkg-config man page for more details.
+
+To get pkg-config, see <http://pkg-config.freedesktop.org/>.
+See \`config.log' for more details." >&2;}
+   { (exit 1); exit 1; }; }; }
+else
+	speex_CFLAGS=$pkg_cv_speex_CFLAGS
+	speex_LIBS=$pkg_cv_speex_LIBS
+        { $as_echo "$as_me:$LINENO: result: yes" >&5
+$as_echo "yes" >&6; }
+	:
+fi
+
+
+
+
+pkg_failed=no
+{ $as_echo "$as_me:$LINENO: checking for gtkmm" >&5
+$as_echo_n "checking for gtkmm... " >&6; }
+
+if test -n "$PKG_CONFIG"; then
+    if test -n "$gtkmm_CFLAGS"; then
+        pkg_cv_gtkmm_CFLAGS="$gtkmm_CFLAGS"
+    else
+        if test -n "$PKG_CONFIG" && \
+    { ($as_echo "$as_me:$LINENO: \$PKG_CONFIG --exists --print-errors \"gtkmm-2.4 >= 1.3.3\"") >&5
+  ($PKG_CONFIG --exists --print-errors "gtkmm-2.4 >= 1.3.3") 2>&5
   ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
   $as_echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } && {
-	 test -z "$ac_c_werror_flag" ||
-	 test ! -s conftest.err
-       } && test -s conftest.$ac_objext; then
-  ac_header_compiler=yes
+  (exit $ac_status); }; then
+  pkg_cv_gtkmm_CFLAGS=`$PKG_CONFIG --cflags "gtkmm-2.4 >= 1.3.3" 2>/dev/null`
 else
-  $as_echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-	ac_header_compiler=no
+  pkg_failed=yes
 fi
-
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-{ $as_echo "$as_me:$LINENO: result: $ac_header_compiler" >&5
-$as_echo "$ac_header_compiler" >&6; }
-
-# Is the header present?
-{ $as_echo "$as_me:$LINENO: checking $ac_header presence" >&5
-$as_echo_n "checking $ac_header presence... " >&6; }
-cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-#include <$ac_header>
-_ACEOF
-if { (ac_try="$ac_cpp conftest.$ac_ext"
-case "(($ac_try" in
-  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
-  *) ac_try_echo=$ac_try;;
-esac
-eval ac_try_echo="\"\$as_me:$LINENO: $ac_try_echo\""
-$as_echo "$ac_try_echo") >&5
-  (eval "$ac_cpp conftest.$ac_ext") 2>conftest.er1
+    fi
+else
+	pkg_failed=untried
+fi
+if test -n "$PKG_CONFIG"; then
+    if test -n "$gtkmm_LIBS"; then
+        pkg_cv_gtkmm_LIBS="$gtkmm_LIBS"
+    else
+        if test -n "$PKG_CONFIG" && \
+    { ($as_echo "$as_me:$LINENO: \$PKG_CONFIG --exists --print-errors \"gtkmm-2.4 >= 1.3.3\"") >&5
+  ($PKG_CONFIG --exists --print-errors "gtkmm-2.4 >= 1.3.3") 2>&5
   ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
   $as_echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } >/dev/null && {
-	 test -z "$ac_c_preproc_warn_flag$ac_c_werror_flag" ||
-	 test ! -s conftest.err
-       }; then
-  ac_header_preproc=yes
+  (exit $ac_status); }; then
+  pkg_cv_gtkmm_LIBS=`$PKG_CONFIG --libs "gtkmm-2.4 >= 1.3.3" 2>/dev/null`
 else
-  $as_echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-  ac_header_preproc=no
+  pkg_failed=yes
 fi
-
-rm -f conftest.err conftest.$ac_ext
-{ $as_echo "$as_me:$LINENO: result: $ac_header_preproc" >&5
-$as_echo "$ac_header_preproc" >&6; }
-
-# So?  What about this header?
-case $ac_header_compiler:$ac_header_preproc:$ac_c_preproc_warn_flag in
-  yes:no: )
-    { $as_echo "$as_me:$LINENO: WARNING: $ac_header: accepted by the compiler, rejected by the preprocessor!" >&5
-$as_echo "$as_me: WARNING: $ac_header: accepted by the compiler, rejected by the preprocessor!" >&2;}
-    { $as_echo "$as_me:$LINENO: WARNING: $ac_header: proceeding with the compiler's result" >&5
-$as_echo "$as_me: WARNING: $ac_header: proceeding with the compiler's result" >&2;}
-    ac_header_preproc=yes
-    ;;
-  no:yes:* )
-    { $as_echo "$as_me:$LINENO: WARNING: $ac_header: present but cannot be compiled" >&5
-$as_echo "$as_me: WARNING: $ac_header: present but cannot be compiled" >&2;}
-    { $as_echo "$as_me:$LINENO: WARNING: $ac_header:     check for missing prerequisite headers?" >&5
-$as_echo "$as_me: WARNING: $ac_header:     check for missing prerequisite headers?" >&2;}
-    { $as_echo "$as_me:$LINENO: WARNING: $ac_header: see the Autoconf documentation" >&5
-$as_echo "$as_me: WARNING: $ac_header: see the Autoconf documentation" >&2;}
-    { $as_echo "$as_me:$LINENO: WARNING: $ac_header:     section \"Present But Cannot Be Compiled\"" >&5
-$as_echo "$as_me: WARNING: $ac_header:     section \"Present But Cannot Be Compiled\"" >&2;}
-    { $as_echo "$as_me:$LINENO: WARNING: $ac_header: proceeding with the preprocessor's result" >&5
-$as_echo "$as_me: WARNING: $ac_header: proceeding with the preprocessor's result" >&2;}
-    { $as_echo "$as_me:$LINENO: WARNING: $ac_header: in the future, the compiler will take precedence" >&5
-$as_echo "$as_me: WARNING: $ac_header: in the future, the compiler will take precedence" >&2;}
-    ( cat <<\_ASBOX
-## ----------------------------- ##
-## Report this to eric@ypass.net ##
-## ----------------------------- ##
-_ASBOX
-     ) | sed "s/^/$as_me: WARNING:     /" >&2
-    ;;
-esac
-{ $as_echo "$as_me:$LINENO: checking for $ac_header" >&5
-$as_echo_n "checking for $ac_header... " >&6; }
-if { as_var=$as_ac_Header; eval "test \"\${$as_var+set}\" = set"; }; then
-  $as_echo_n "(cached) " >&6
+    fi
 else
-  eval "$as_ac_Header=\$ac_header_preproc"
+	pkg_failed=untried
 fi
-ac_res=`eval 'as_val=${'$as_ac_Header'}
-		 $as_echo "$as_val"'`
-	       { $as_echo "$as_me:$LINENO: result: $ac_res" >&5
-$as_echo "$ac_res" >&6; }
 
+
+
+if test $pkg_failed = yes; then
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
 fi
-as_val=`eval 'as_val=${'$as_ac_Header'}
-		 $as_echo "$as_val"'`
-   if test "x$as_val" = x""yes; then
-  cat >>confdefs.h <<_ACEOF
-#define `$as_echo "HAVE_$ac_header" | $as_tr_cpp` 1
+        if test $_pkg_short_errors_supported = yes; then
+	        gtkmm_PKG_ERRORS=`$PKG_CONFIG --short-errors --errors-to-stdout --print-errors "gtkmm-2.4 >= 1.3.3"`
+        else
+	        gtkmm_PKG_ERRORS=`$PKG_CONFIG --errors-to-stdout --print-errors "gtkmm-2.4 >= 1.3.3"`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$gtkmm_PKG_ERRORS" >&5
+
+	{ { $as_echo "$as_me:$LINENO: error: Package requirements (gtkmm-2.4 >= 1.3.3) were not met:
+
+$gtkmm_PKG_ERRORS
+
+Consider adjusting the PKG_CONFIG_PATH environment variable if you
+installed software in a non-standard prefix.
+
+Alternatively, you may set the environment variables gtkmm_CFLAGS
+and gtkmm_LIBS to avoid the need to call pkg-config.
+See the pkg-config man page for more details.
+" >&5
+$as_echo "$as_me: error: Package requirements (gtkmm-2.4 >= 1.3.3) were not met:
+
+$gtkmm_PKG_ERRORS
+
+Consider adjusting the PKG_CONFIG_PATH environment variable if you
+installed software in a non-standard prefix.
+
+Alternatively, you may set the environment variables gtkmm_CFLAGS
+and gtkmm_LIBS to avoid the need to call pkg-config.
+See the pkg-config man page for more details.
+" >&2;}
+   { (exit 1); exit 1; }; }
+elif test $pkg_failed = untried; then
+	{ { $as_echo "$as_me:$LINENO: error: in \`$ac_pwd':" >&5
+$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
+{ { $as_echo "$as_me:$LINENO: error: The pkg-config script could not be found or is too old.  Make sure it
+is in your PATH or set the PKG_CONFIG environment variable to the full
+path to pkg-config.
+
+Alternatively, you may set the environment variables gtkmm_CFLAGS
+and gtkmm_LIBS to avoid the need to call pkg-config.
+See the pkg-config man page for more details.
+
+To get pkg-config, see <http://pkg-config.freedesktop.org/>.
+See \`config.log' for more details." >&5
+$as_echo "$as_me: error: The pkg-config script could not be found or is too old.  Make sure it
+is in your PATH or set the PKG_CONFIG environment variable to the full
+path to pkg-config.
+
+Alternatively, you may set the environment variables gtkmm_CFLAGS
+and gtkmm_LIBS to avoid the need to call pkg-config.
+See the pkg-config man page for more details.
+
+To get pkg-config, see <http://pkg-config.freedesktop.org/>.
+See \`config.log' for more details." >&2;}
+   { (exit 1); exit 1; }; }; }
+else
+	gtkmm_CFLAGS=$pkg_cv_gtkmm_CFLAGS
+	gtkmm_LIBS=$pkg_cv_gtkmm_LIBS
+        { $as_echo "$as_me:$LINENO: result: yes" >&5
+$as_echo "yes" >&6; }
+	:
+fi
+
+
+
+
+pkg_failed=no
+{ $as_echo "$as_me:$LINENO: checking for pulse" >&5
+$as_echo_n "checking for pulse... " >&6; }
+
+if test -n "$PKG_CONFIG"; then
+    if test -n "$pulse_CFLAGS"; then
+        pkg_cv_pulse_CFLAGS="$pulse_CFLAGS"
+    else
+        if test -n "$PKG_CONFIG" && \
+    { ($as_echo "$as_me:$LINENO: \$PKG_CONFIG --exists --print-errors \"libpulse-simple >= 0.9.14\"") >&5
+  ($PKG_CONFIG --exists --print-errors "libpulse-simple >= 0.9.14") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; then
+  pkg_cv_pulse_CFLAGS=`$PKG_CONFIG --cflags "libpulse-simple >= 0.9.14" 2>/dev/null`
+else
+  pkg_failed=yes
+fi
+    fi
+else
+	pkg_failed=untried
+fi
+if test -n "$PKG_CONFIG"; then
+    if test -n "$pulse_LIBS"; then
+        pkg_cv_pulse_LIBS="$pulse_LIBS"
+    else
+        if test -n "$PKG_CONFIG" && \
+    { ($as_echo "$as_me:$LINENO: \$PKG_CONFIG --exists --print-errors \"libpulse-simple >= 0.9.14\"") >&5
+  ($PKG_CONFIG --exists --print-errors "libpulse-simple >= 0.9.14") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; then
+  pkg_cv_pulse_LIBS=`$PKG_CONFIG --libs "libpulse-simple >= 0.9.14" 2>/dev/null`
+else
+  pkg_failed=yes
+fi
+    fi
+else
+	pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        pulse_PKG_ERRORS=`$PKG_CONFIG --short-errors --errors-to-stdout --print-errors "libpulse-simple >= 0.9.14"`
+        else
+	        pulse_PKG_ERRORS=`$PKG_CONFIG --errors-to-stdout --print-errors "libpulse-simple >= 0.9.14"`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$pulse_PKG_ERRORS" >&5
+
+	{ $as_echo "$as_me:$LINENO: result: no" >&5
+$as_echo "no" >&6; }
+                echo "compiling without pulse.  you will not have sound support"
+elif test $pkg_failed = untried; then
+	echo "compiling without pulse.  you will not have sound support"
+else
+	pulse_CFLAGS=$pkg_cv_pulse_CFLAGS
+	pulse_LIBS=$pkg_cv_pulse_LIBS
+        { $as_echo "$as_me:$LINENO: result: yes" >&5
+$as_echo "yes" >&6; }
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_PULSE 1
 _ACEOF
 
 fi
 
-done
 
 
-GTKMM_CFLAGS=`pkg-config --cflags gtkmm-2.4`
-GTKMM_LIBS=`pkg-config --libs gtkmm-2.4`
+
+pkg_failed=no
+{ $as_echo "$as_me:$LINENO: checking for gthread" >&5
+$as_echo_n "checking for gthread... " >&6; }
+
+if test -n "$PKG_CONFIG"; then
+    if test -n "$gthread_CFLAGS"; then
+        pkg_cv_gthread_CFLAGS="$gthread_CFLAGS"
+    else
+        if test -n "$PKG_CONFIG" && \
+    { ($as_echo "$as_me:$LINENO: \$PKG_CONFIG --exists --print-errors \"gthread-2.0 >= 2.20.1\"") >&5
+  ($PKG_CONFIG --exists --print-errors "gthread-2.0 >= 2.20.1") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; then
+  pkg_cv_gthread_CFLAGS=`$PKG_CONFIG --cflags "gthread-2.0 >= 2.20.1" 2>/dev/null`
+else
+  pkg_failed=yes
+fi
+    fi
+else
+	pkg_failed=untried
+fi
+if test -n "$PKG_CONFIG"; then
+    if test -n "$gthread_LIBS"; then
+        pkg_cv_gthread_LIBS="$gthread_LIBS"
+    else
+        if test -n "$PKG_CONFIG" && \
+    { ($as_echo "$as_me:$LINENO: \$PKG_CONFIG --exists --print-errors \"gthread-2.0 >= 2.20.1\"") >&5
+  ($PKG_CONFIG --exists --print-errors "gthread-2.0 >= 2.20.1") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; then
+  pkg_cv_gthread_LIBS=`$PKG_CONFIG --libs "gthread-2.0 >= 2.20.1" 2>/dev/null`
+else
+  pkg_failed=yes
+fi
+    fi
+else
+	pkg_failed=untried
+fi
 
 
-LIBS="$LIBS $GTKMM_LIBS"
-CFLAGS="$LIBS $GTKMM_CFLAGS"
 
-GTHREAD_CFLAGS=`pkg-config --cflags gthread-2.0`
-GTHREAD_LIBS=`pkg-config --libs gthread-2.0`
+if test $pkg_failed = yes; then
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        gthread_PKG_ERRORS=`$PKG_CONFIG --short-errors --errors-to-stdout --print-errors "gthread-2.0 >= 2.20.1"`
+        else
+	        gthread_PKG_ERRORS=`$PKG_CONFIG --errors-to-stdout --print-errors "gthread-2.0 >= 2.20.1"`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$gthread_PKG_ERRORS" >&5
+
+	{ { $as_echo "$as_me:$LINENO: error: Package requirements (gthread-2.0 >= 2.20.1) were not met:
+
+$gthread_PKG_ERRORS
+
+Consider adjusting the PKG_CONFIG_PATH environment variable if you
+installed software in a non-standard prefix.
+
+Alternatively, you may set the environment variables gthread_CFLAGS
+and gthread_LIBS to avoid the need to call pkg-config.
+See the pkg-config man page for more details.
+" >&5
+$as_echo "$as_me: error: Package requirements (gthread-2.0 >= 2.20.1) were not met:
+
+$gthread_PKG_ERRORS
+
+Consider adjusting the PKG_CONFIG_PATH environment variable if you
+installed software in a non-standard prefix.
+
+Alternatively, you may set the environment variables gthread_CFLAGS
+and gthread_LIBS to avoid the need to call pkg-config.
+See the pkg-config man page for more details.
+" >&2;}
+   { (exit 1); exit 1; }; }
+elif test $pkg_failed = untried; then
+	{ { $as_echo "$as_me:$LINENO: error: in \`$ac_pwd':" >&5
+$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
+{ { $as_echo "$as_me:$LINENO: error: The pkg-config script could not be found or is too old.  Make sure it
+is in your PATH or set the PKG_CONFIG environment variable to the full
+path to pkg-config.
+
+Alternatively, you may set the environment variables gthread_CFLAGS
+and gthread_LIBS to avoid the need to call pkg-config.
+See the pkg-config man page for more details.
+
+To get pkg-config, see <http://pkg-config.freedesktop.org/>.
+See \`config.log' for more details." >&5
+$as_echo "$as_me: error: The pkg-config script could not be found or is too old.  Make sure it
+is in your PATH or set the PKG_CONFIG environment variable to the full
+path to pkg-config.
+
+Alternatively, you may set the environment variables gthread_CFLAGS
+and gthread_LIBS to avoid the need to call pkg-config.
+See the pkg-config man page for more details.
+
+To get pkg-config, see <http://pkg-config.freedesktop.org/>.
+See \`config.log' for more details." >&2;}
+   { (exit 1); exit 1; }; }; }
+else
+	gthread_CFLAGS=$pkg_cv_gthread_CFLAGS
+	gthread_LIBS=$pkg_cv_gthread_LIBS
+        { $as_echo "$as_me:$LINENO: result: yes" >&5
+$as_echo "yes" >&6; }
+	:
+fi
 
 
-LIBS="$LIBS $GTHREAD_LIBS"
-CFLAGS="$LIBS $GTHREAD_CFLAGS"
-
-PULSEAUDIO_CFLAGS=`pkg-config --cflags libpulse-simple`
-PULSEAUDIO_LIBS=`pkg-config --libs libpulse-simple`
-
-
-LIBS="$LIBS $PULSEAUDIO_LIBS"
-CFLAGS="$LIBS $PULSEAUDIO_CFLAGS"
 
 # Checks for typedefs, structures, and compiler characteristics.
 { $as_echo "$as_me:$LINENO: checking for stdbool.h that conforms to C99" >&5

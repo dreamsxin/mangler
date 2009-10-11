@@ -11,9 +11,9 @@ bin_PROGRAMS = mangler
 
 mangler_SOURCES = manglerui.h mangler.cpp channeltree.cpp  mangleraudio.cpp  manglernetwork.cpp  manglerserverlist.cpp  manglersettings.cpp manglerconfig.cpp
 
-mangler_LDADD = @top_srcdir@/libventrilo3/libventrilo3.la $(GTKMM_LIBS) $(GTHREAD_LIBS) $(PULSEAUDIO_LIBS)
+mangler_LDADD = @top_srcdir@/libventrilo3/libventrilo3.la $(gtkmm_LIBS) $(gthread_LIBS) $(pulse_LIBS) $(speex_LIBS)
 
-INCLUDES = -I@top_srcdir@/libventrilo3/ -I@top_srcdir@/icons/ $(GTKMM_CFLAGS) $(GTHREAD_CFLAGS) $(PULSEAUDIO_CFLAGS)
+INCLUDES = -I@top_srcdir@/libventrilo3/ -I@top_srcdir@/icons/ $(gtkmm_CFLAGS) $(gthread_CFLAGS) $(pulse_CFLAGS) $(speex_CFLAGS)
 
 dev:
 	gcc -o mangler -I../ -I../libventrilo3/ -I../icons/ -L../libventrilo3/.libs/libventrilo3.a -pthread *.cpp -lpulse-simple -lpulse -lspeex -lgsm `pkg-config --cflags --libs gtkmm-2.4` -lventrilo3

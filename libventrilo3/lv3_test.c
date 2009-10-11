@@ -24,12 +24,15 @@
  * along with Mangler.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "config.h"
 #include <stdio.h>
 #include <unistd.h>
 #include <signal.h>
+#ifdef HAVE_PULSE
 #include <pulse/simple.h>
 #include <pulse/error.h>
 #include <pulse/gccmacro.h>
+#endif
 #include <speex/speex.h>
 #include "ventrilo3.h"
 
@@ -56,6 +59,7 @@ int main(int argc, char *argv[]) {
     int c, ret;
     v3_event *ev;
 
+#ifdef HAVE_PULSE
     // pulse
     pa_sample_spec PAss = {
         .format = PA_SAMPLE_S16LE,
@@ -64,6 +68,7 @@ int main(int argc, char *argv[]) {
     };
     pa_simple *PAs = NULL;
     int PAerror;
+#endif
 
     v3_debuglevel(
             //V3_DEBUG_NONE|
@@ -131,6 +136,7 @@ int main(int argc, char *argv[]) {
         }
         if ((ev = v3_get_event(V3_NONBLOCK))) {
             _v3_debug(V3_DEBUG_INFO, "got new event type %d", ev->type);
+#ifdef HAVE_PULSE
             if (ev->type == V3_EVENT_PLAY_AUDIO) {
                 if (ev->pcm.rate != PAss.rate) {
                     _v3_debug(V3_DEBUG_INFO, "reopening output stream at rate %d....", ev->pcm.rate);
@@ -151,6 +157,7 @@ int main(int argc, char *argv[]) {
                 }
                 _v3_debug(V3_DEBUG_INFO, "write complete with ret %d",ret);
             }
+#endif
             free(ev);
         }
     } while (_v3_is_connected());

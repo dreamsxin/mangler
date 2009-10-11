@@ -22,25 +22,11 @@ AC_PROG_LIBTOOL
 
 ACX_PTHREAD()
 AM_PATH_GLIB_2_0([], [], [], [gthread])
+AC_CHECK_HEADERS([arpa/inet.h fcntl.h netdb.h netinet/in.h stdint.h stdlib.h string.h sys/socket.h sys/time.h unistd.h])
 
-# Checks for libraries.
-AC_CHECK_LIB([speex], [speex_encoder_init], [], [
-	echo "error: cannot find libspeex: Is it installed? Also make sure you have the"
-	echo "       libspeex development packages installed"
-	exit -1
-	])
 AC_CHECK_LIB([gsm], [gsm_create], [], [
 	echo "error: cannot find libgsm: Is it installed? Also make sure you have the"
 	echo "       libgsm development packages installed"
-	exit -1
-	])
-
-
-# Checks for header files.
-AC_CHECK_HEADERS([arpa/inet.h fcntl.h netdb.h netinet/in.h stdint.h stdlib.h string.h sys/socket.h sys/time.h unistd.h])
-AC_CHECK_HEADER([speex/speex.h], [], [
-	echo "error: found speex libraries, but headers are missing or corrupt. are you"
-	echo "       missing a libspeex development package?"
 	exit -1
 	])
 AC_CHECK_HEADER([gsm.h], [AC_DEFINE(HAVE_GSM_H, 1, [location of gsm.h])], [
@@ -50,29 +36,24 @@ AC_CHECK_HEADER([gsm.h], [AC_DEFINE(HAVE_GSM_H, 1, [location of gsm.h])], [
 		exit -1
 		])
 	])
-AC_CHECK_HEADERS([pulse/pulse-simple.h pulse/error.h pulse/gccmacro.h])
-AC_CHECK_HEADERS([gtkmm.h])
 
-GTKMM_CFLAGS=`pkg-config --cflags gtkmm-2.4`
-GTKMM_LIBS=`pkg-config --libs gtkmm-2.4`
-AC_SUBST(GTKMM_CFLAGS)
-AC_SUBST(GTKMM_LIBS)
-LIBS="$LIBS $GTKMM_LIBS"
-CFLAGS="$LIBS $GTKMM_CFLAGS"
 
-GTHREAD_CFLAGS=`pkg-config --cflags gthread-2.0`
-GTHREAD_LIBS=`pkg-config --libs gthread-2.0`
-AC_SUBST(GTHREADMM_CFLAGS)
-AC_SUBST(GTHREADMM_LIBS)
-LIBS="$LIBS $GTHREAD_LIBS"
-CFLAGS="$LIBS $GTHREAD_CFLAGS"
+# Checks for header files.
+PKG_CHECK_MODULES(speex, speex >= 1.2)
+AC_SUBST(speex_CFLAGS)
+AC_SUBST(speex_LIBS)
 
-PULSEAUDIO_CFLAGS=`pkg-config --cflags libpulse-simple`
-PULSEAUDIO_LIBS=`pkg-config --libs libpulse-simple`
-AC_SUBST(PULSEAUDIOMM_CFLAGS)
-AC_SUBST(PULSEAUDIOMM_LIBS)
-LIBS="$LIBS $PULSEAUDIO_LIBS"
-CFLAGS="$LIBS $PULSEAUDIO_CFLAGS"
+PKG_CHECK_MODULES(gtkmm, gtkmm-2.4 >= 1.3.3)
+AC_SUBST(gtkmm_CFLAGS)
+AC_SUBST(gtkmm_LIBS)
+
+PKG_CHECK_MODULES(pulse, libpulse-simple >= 0.9.14, [AC_DEFINE(HAVE_PULSE, 1, [have pulse audio])], [echo "compiling without pulse.  you will not have sound support"])
+AC_SUBST(pulse_CFLAGS)
+AC_SUBST(pulse_LIBS)
+
+PKG_CHECK_MODULES(gthread, gthread-2.0 >= 2.20.1)
+AC_SUBST(gthread_CFLAGS)
+AC_SUBST(gthread_LIBS)
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_HEADER_STDBOOL

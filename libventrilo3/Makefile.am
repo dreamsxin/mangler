@@ -9,7 +9,10 @@ libventrilo3_la_SOURCES = libventrilo3.c  libventrilo3_message.c  ventrilo3_hand
 
 lv3_test_SOURCES = lv3_test.c
 
-lv3_test_LDADD = libventrilo3.la
+INCLUDES=$(gtkmm_CFLAGS) $(gthread_CFLAGS) $(pulse_CFLAGS) $(speex_CFLAGS)
+
+lv3_test_LDADD = libventrilo3.la $(gtkmm_LIBS) $(gthread_LIBS) $(pulse_LIBS) $(speex_LIBS)
+
 
 dev:
 	gcc -Wall -g -o lv3_test -I../ -pthread lv3_test.c libventrilo3.c libventrilo3_message.c  ventrilo3_handshake.c -lpulse-simple -lpulse -lspeex -lgsm

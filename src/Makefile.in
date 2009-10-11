@@ -55,7 +55,8 @@ am_mangler_OBJECTS = mangler.$(OBJEXT) channeltree.$(OBJEXT) \
 mangler_OBJECTS = $(am_mangler_OBJECTS)
 am__DEPENDENCIES_1 =
 mangler_DEPENDENCIES = @top_srcdir@/libventrilo3/libventrilo3.la \
-	$(am__DEPENDENCIES_1)
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
@@ -115,10 +116,6 @@ GLIB_LIBS = @GLIB_LIBS@
 GLIB_MKENUMS = @GLIB_MKENUMS@
 GOBJECT_QUERY = @GOBJECT_QUERY@
 GREP = @GREP@
-GTHREADMM_CFLAGS = @GTHREADMM_CFLAGS@
-GTHREADMM_LIBS = @GTHREADMM_LIBS@
-GTKMM_CFLAGS = @GTKMM_CFLAGS@
-GTKMM_LIBS = @GTKMM_LIBS@
 INSTALL = @INSTALL@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
@@ -151,8 +148,6 @@ PKG_CONFIG = @PKG_CONFIG@
 PTHREAD_CC = @PTHREAD_CC@
 PTHREAD_CFLAGS = @PTHREAD_CFLAGS@
 PTHREAD_LIBS = @PTHREAD_LIBS@
-PULSEAUDIOMM_CFLAGS = @PULSEAUDIOMM_CFLAGS@
-PULSEAUDIOMM_LIBS = @PULSEAUDIOMM_LIBS@
 RANLIB = @RANLIB@
 SED = @SED@
 SET_MAKE = @SET_MAKE@
@@ -184,6 +179,10 @@ datarootdir = @datarootdir@
 docdir = @docdir@
 dvidir = @dvidir@
 exec_prefix = @exec_prefix@
+gthread_CFLAGS = @gthread_CFLAGS@
+gthread_LIBS = @gthread_LIBS@
+gtkmm_CFLAGS = @gtkmm_CFLAGS@
+gtkmm_LIBS = @gtkmm_LIBS@
 host = @host@
 host_alias = @host_alias@
 host_cpu = @host_cpu@
@@ -205,8 +204,12 @@ pdfdir = @pdfdir@
 prefix = @prefix@
 program_transform_name = @program_transform_name@
 psdir = @psdir@
+pulse_CFLAGS = @pulse_CFLAGS@
+pulse_LIBS = @pulse_LIBS@
 sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
+speex_CFLAGS = @speex_CFLAGS@
+speex_LIBS = @speex_LIBS@
 srcdir = @srcdir@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
@@ -215,8 +218,8 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 ACLOCAL_AMFLAGS = -I m4
 mangler_SOURCES = manglerui.h mangler.cpp channeltree.cpp  mangleraudio.cpp  manglernetwork.cpp  manglerserverlist.cpp  manglersettings.cpp manglerconfig.cpp
-mangler_LDADD = @top_srcdir@/libventrilo3/libventrilo3.la $(GTKMM_LIBS) $(GTHREAD_LIBS) $(PULSEAUDIO_LIBS)
-INCLUDES = -I@top_srcdir@/libventrilo3/ -I@top_srcdir@/icons/ $(GTKMM_CFLAGS) $(GTHREAD_CFLAGS) $(PULSEAUDIO_CFLAGS)
+mangler_LDADD = @top_srcdir@/libventrilo3/libventrilo3.la $(gtkmm_LIBS) $(gthread_LIBS) $(pulse_LIBS) $(speex_LIBS)
+INCLUDES = -I@top_srcdir@/libventrilo3/ -I@top_srcdir@/icons/ $(gtkmm_CFLAGS) $(gthread_CFLAGS) $(pulse_CFLAGS) $(speex_CFLAGS)
 all: all-am
 
 .SUFFIXES:

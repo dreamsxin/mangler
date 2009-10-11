@@ -763,7 +763,7 @@ _v3_put_0x5c(uint8_t subtype) {/*{{{*/
         case 3:
             {
                 uint8_t out[9];
-                snprintf((char *)out, 9, "%08X", (uint32_t)rand());
+                snprintf((char *)out, 8, "%08X", (uint32_t)rand());
                 mc->sum_2 = _v3_msg5c_scramble(out);
             }
             break;
@@ -773,7 +773,7 @@ _v3_put_0x5c(uint8_t subtype) {/*{{{*/
         case 5:
             {
                 uint8_t out[9];
-                snprintf((char *)out, 9, "%08x", (uint32_t)rand());
+                snprintf((char *)out, 8, "%08x", (uint32_t)rand());
                 mc->sum_2 = _v3_msg5c_scramble(out);
             }
             break;
@@ -783,7 +783,7 @@ _v3_put_0x5c(uint8_t subtype) {/*{{{*/
         case 7:
             {
                 uint8_t out[8];
-                snprintf((char *)out, 9, "%08X", (uint32_t)rand());
+                snprintf((char *)out, 8, "%08X", (uint32_t)rand());
                 mc->sum_2 = _v3_msg5c_scramble(out);
             }
             break;

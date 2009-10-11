@@ -27,9 +27,13 @@
 #ifndef _MANGLERAUDIO_H
 #define _MANGLERAUDIO_H
 
+#include "config.h"
+
+#ifdef HAVE_PULSE
 #include <pulse/simple.h>
 #include <pulse/error.h>
 #include <pulse/gccmacro.h>
+#endif
 #include <stdlib.h>
 #include <string.h>
 
@@ -57,8 +61,10 @@ class ManglerAudio
         void            play(void);
 
         GAsyncQueue*    pcm_queue;
+#ifdef HAVE_PUSE
         pa_sample_spec  pulse_samplespec;
         pa_simple       *pulse_stream;
+#endif
         ManglerPCM      *pcmdata;
 
         uint16_t        userid;

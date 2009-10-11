@@ -26,11 +26,9 @@
 
 #include "mangler.h"
 #include "mangleraudio.h"
-#include <pulse/simple.h>
-#include <pulse/error.h>
-#include <pulse/gccmacro.h>
 
 ManglerAudio::ManglerAudio(uint16_t userid, uint32_t rate) {
+#ifdef HAVE_PULSE
     pulse_samplespec.format = PA_SAMPLE_S16LE;
     pulse_samplespec.rate = rate;
     pulse_samplespec.channels = 1;
@@ -39,6 +37,7 @@ ManglerAudio::ManglerAudio(uint16_t userid, uint32_t rate) {
         fprintf(stderr, __FILE__": pa_simple_new() failed: %s\n", pa_strerror(error));
         return;
     }
+#endif
     pcm_queue = g_async_queue_new();
     Glib::Thread::create(sigc::mem_fun(*this, &ManglerAudio::play), FALSE);
 }
@@ -68,6 +67,7 @@ ManglerAudio::play(void) {
         if (pcmdata->length == 0) {
             break;
         }
+#ifdef HAVE_PULSE
         if ((ret = pa_simple_write(pulse_stream, pcmdata->sample, pcmdata->length, &error)) < 0) {
             fprintf(stderr, __FILE__": pa_simple_write() failed: %s\n", pa_strerror(error));
             g_async_queue_unref(pcm_queue);
@@ -75,9 +75,12 @@ ManglerAudio::play(void) {
             playing = false;
             Glib::Thread::Exit();
         }
+#endif
     }
     g_async_queue_push(pcm_queue, pcmdata);
+#ifdef HAVE_PULSE
     pa_simple_free(pulse_stream);
+#endif
     playing = false;
     Glib::Thread::Exit();
 }
