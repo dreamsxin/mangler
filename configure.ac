@@ -21,6 +21,9 @@ AC_PROG_MKDIR_P
 AC_PROG_LIBTOOL
 
 ACX_PTHREAD()
+LIBS="$PTHREAD_LIBS $LIBS"
+CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
+CC="$PTHREAD_CC"
 AM_PATH_GLIB_2_0([], [], [], [gthread])
 AC_CHECK_HEADERS([arpa/inet.h fcntl.h netdb.h netinet/in.h stdint.h stdlib.h string.h sys/socket.h sys/time.h unistd.h])
 

@@ -277,6 +277,10 @@ Mangler::getNetworkEvent() {/*{{{*/
                 break;
             case V3_EVENT_USER_CHAN_MOVE:
                 u = v3_get_user(ev->user.id);
+                if (! u) {
+                    fprintf(stderr, "failed to retreive user information for user id %d", ev->user.id);
+                    break;;
+                }
                 fprintf(stderr, "moving user id %d to channel id %d\n", ev->user.id, ev->channel.id);
                 channelTree->removeUser((uint32_t)ev->user.id);
                 channelTree->addUser((uint32_t)u->id, (uint32_t)ev->channel.id, u->name, u->comment, u->phonetic, u->url, u->integration_text);
@@ -284,6 +288,10 @@ Mangler::getNetworkEvent() {/*{{{*/
                 break;
             case V3_EVENT_CHAN_ADD:
                 c = v3_get_channel(ev->channel.id);
+                if (! c) {
+                    fprintf(stderr, "failed to retreive channel information for channel id %d", ev->channel.id);
+                    break;;
+                }
                 fprintf(stderr, "adding channel id %d: %s\n", ev->channel.id, c->name);
                 channelTree->addChannel((uint8_t)c->protect_mode, (uint32_t)c->id, (uint32_t)c->parent, c->name ? c->name : "", c->comment ? c->comment : "", c->phonetic ? c->phonetic : "");
                 v3_free_channel(c);
@@ -296,10 +304,19 @@ Mangler::getNetworkEvent() {/*{{{*/
                 msgdialog->hide();
                 break;
             case V3_EVENT_USER_TALK_START:
-                fprintf(stderr, "user %d started talking\n", ev->user.id);
-                channelTree->userIsTalking(ev->user.id, true);
-                if (!audio[ev->user.id]) {
-                    audio[ev->user.id] = new ManglerAudio(ev->user.id, ev->pcm.rate);
+                {
+                    v3_user *me, *user;
+                    fprintf(stderr, "user %d started talking\n", ev->user.id);
+                    me = v3_get_user(v3_get_user_id());
+                    user = v3_get_user(ev->user.id);
+                    channelTree->userIsTalking(ev->user.id, true);
+                    if (me && user && me->channel == user->channel) {
+                        if (!audio[ev->user.id]) {
+                            audio[ev->user.id] = new ManglerAudio(ev->user.id, ev->pcm.rate);
+                        }
+                    }
+                    v3_free_user(me);
+                    v3_free_user(user);
                 }
                 break;
             case V3_EVENT_USER_TALK_END:

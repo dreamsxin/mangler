@@ -344,6 +344,10 @@ ManglerChannelTree::channelView_row_activated_cb(const Gtk::TreeModel::Path& pat
     Gtk::TreeModel::Row row = *iter;
     int id = row[channelRecord.id];
     channel = v3_get_channel(id);
+    if (! channel) {
+        fprintf(stderr, "failed to retreive channel information for channel id %d", id);
+        return;
+    }
     if (channel->protect_mode == 1) {  // Channel is password protected
         password = mangler->getPasswordEntry("Channel Password");
     }
