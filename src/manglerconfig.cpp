@@ -78,6 +78,7 @@ std::string ManglerConfig::get(std::string cfgname) {/*{{{*/
             f.open((char *)cfgfilename.c_str());
         } catch (std::ifstream::failure e) {
             fprintf(stderr, "could not create %s\n", (char *)cfgfilename.c_str());
+            mutex.unlock();
             return "";
         };
     };
@@ -86,6 +87,7 @@ std::string ManglerConfig::get(std::string cfgname) {/*{{{*/
         try {
             f >> cfgline;
         } catch (std::ifstream::failure e) {
+            mutex.unlock();
             return "";
         }
         std::string name = cfgline.substr(0, cfgline.find("="));
