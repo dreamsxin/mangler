@@ -61,6 +61,7 @@ ManglerAudio::play(void) {
     int ret, error;
 
     g_async_queue_ref(pcm_queue);
+    usleep(250000); // buffer for a quarter second
     for (;;) {
         playing = true;
         pcmdata = (ManglerPCM *)g_async_queue_pop(pcm_queue);

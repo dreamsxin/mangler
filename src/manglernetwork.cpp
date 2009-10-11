@@ -36,7 +36,7 @@ ManglerNetwork::connect(std::string hostname, std::string port, std::string user
     Gtk::MessageDialog *msgdialog;
     Gtk::Statusbar *statusbar;
     Gtk::ProgressBar *progressbar;
-    //v3_debuglevel(V3_DEBUG_ALL ^ (V3_DEBUG_PACKET_ENCRYPTED));
+    v3_debuglevel(V3_DEBUG_ALL ^ (V3_DEBUG_PACKET_ENCRYPTED));
     std::string server = hostname + ":" + port;
     //std::string server = "tungsten.typefrag.com:29549"; std::string password = "";
     if (! v3_login((char *)server.c_str(), (char *)username.c_str(), (char *)password.c_str(), (char *)"")) {

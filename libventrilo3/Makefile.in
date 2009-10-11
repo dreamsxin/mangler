@@ -62,7 +62,6 @@ am_lv3_test_OBJECTS = lv3_test.$(OBJEXT)
 lv3_test_OBJECTS = $(am_lv3_test_OBJECTS)
 am__DEPENDENCIES_1 =
 lv3_test_DEPENDENCIES = libventrilo3.la $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1)
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -218,8 +217,8 @@ ACLOCAL_AMFLAGS = -I m4
 lib_LTLIBRARIES = libventrilo3.la
 libventrilo3_la_SOURCES = libventrilo3.c  libventrilo3_message.c  ventrilo3_handshake.c
 lv3_test_SOURCES = lv3_test.c
-INCLUDES = $(gtkmm_CFLAGS) $(gthread_CFLAGS) $(pulse_CFLAGS) $(speex_CFLAGS)
-lv3_test_LDADD = libventrilo3.la $(gtkmm_LIBS) $(gthread_LIBS) $(pulse_LIBS) $(speex_LIBS)
+INCLUDES = $(pulse_CFLAGS) $(speex_CFLAGS)
+lv3_test_LDADD = libventrilo3.la $(pulse_LIBS) $(speex_LIBS)
 all: all-am
 
 .SUFFIXES:
