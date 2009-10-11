@@ -1,7 +1,7 @@
 
 all: mangler-icons.h
 
-mangler-icons.h: black_circle.png blue_circle.png cyan_circle.png green_circle.png grey_circle.png purple_circle.png red_circle.png yellow_circle.png blue_circle_small.png
+mangler-icons.h: black_circle.png blue_circle.png cyan_circle.png green_circle.png grey_circle.png purple_circle.png red_circle.png yellow_circle.png blue_circle_small.png joystick.png
 	list=""
 	for f in ../icons/*.png ; do \
 		id=`echo $$f | perl -pe 's/^\.\.\/icons\/(.*)\..*$$/$$1/'`;  \

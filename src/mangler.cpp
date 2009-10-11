@@ -45,6 +45,7 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
     icons.insert(std::make_pair("purple_circle",                Gdk::Pixbuf::create_from_inline(-1, purple_circle               )));
     icons.insert(std::make_pair("red_circle",                   Gdk::Pixbuf::create_from_inline(-1, red_circle                  )));
     icons.insert(std::make_pair("yellow_circle",                Gdk::Pixbuf::create_from_inline(-1, yellow_circle               )));
+    icons.insert(std::make_pair("joystick",                     Gdk::Pixbuf::create_from_inline(-1, joystick                    )));
 
 
     try {
@@ -112,7 +113,7 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
     settings->config.load();
 
     // Statusbar Icon
-    statusIcon = Gtk::StatusIcon::create(icons["blue_circle"]);
+    statusIcon = Gtk::StatusIcon::create(icons["joystick"]);
 }/*}}}*/
 
 /*
