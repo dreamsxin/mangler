@@ -1596,8 +1596,12 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
             } else {
                 _v3_msg_0x53 *m = (_v3_msg_0x53 *)msg->contents;
                 v3_event *ev;
-                // queue the channel change notification
+                v3_user *user;
                 _v3_debug(V3_DEBUG_INFO, "user %d moved to channel %d", m->user_id, m->channel_id);
+                user = v3_get_user(m->user_id);
+                user->channel = m->channel_id;
+                _v3_update_user(user);
+                v3_free_user(user);
                 ev = malloc(sizeof(v3_event));
                 memset(ev, 0, sizeof(v3_event));
                 ev->type = V3_EVENT_USER_CHAN_MOVE;

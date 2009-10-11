@@ -306,7 +306,6 @@ Mangler::getNetworkEvent() {/*{{{*/
             case V3_EVENT_USER_TALK_START:
                 {
                     v3_user *me, *user;
-                    fprintf(stderr, "user %d started talking\n", ev->user.id);
                     me = v3_get_user(v3_get_user_id());
                     user = v3_get_user(ev->user.id);
                     channelTree->userIsTalking(ev->user.id, true);
@@ -314,9 +313,16 @@ Mangler::getNetworkEvent() {/*{{{*/
                         if (!audio[ev->user.id]) {
                             audio[ev->user.id] = new ManglerAudio(ev->user.id, ev->pcm.rate);
                         }
+                        v3_free_user(me);
+                        v3_free_user(user);
+                    } else {
+                        if (!me) {
+                            fprintf(stderr, "couldn't find my own user info %d\n", v3_get_user_id());
+                        }
+                        if (!user) {
+                            fprintf(stderr, "couldn't find user for for user id %d\n", ev->user.id);
+                        }
                     }
-                    v3_free_user(me);
-                    v3_free_user(user);
                 }
                 break;
             case V3_EVENT_USER_TALK_END:
