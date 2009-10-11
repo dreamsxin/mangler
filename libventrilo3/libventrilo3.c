@@ -567,7 +567,7 @@ _v3_recv(int block) {/*{{{*/
                             memset(&channel, 0, sizeof(_v3_msg_channel));
                             channel.id = ev.channel.id;
                             _v3_debug(V3_DEBUG_INFO, "changing to channel id %d", channel.id);
-                            msg = _v3_put_0x49(V3_CHANGE_CHANNEL, v3_get_user_id(), ev.password, &channel);
+                            msg = _v3_put_0x49(V3_CHANGE_CHANNEL, v3_get_user_id(), ev.text.password, &channel);
                             if (_v3_send(msg)) {
                                 _v3_destroy_packet(msg);
                             } else {
@@ -2107,12 +2107,16 @@ v3_change_channel(uint16_t channel_id, char *password) {/*{{{*/
     v3_event ev;
 
     _v3_func_enter("v3_change_channel");
+    if (!v3_is_loggedin()) {
+        _v3_func_leave("v3_change_channel");
+        return;
+    }
     memset(&ev, 0, sizeof(v3_event));
     ev.type = V3_EVENT_CHANGE_CHANNEL;
     if (password == NULL) {
-        strncpy(ev.password, "", 31);
+        strncpy(ev.text.password, "", 31);
     } else {
-        strncpy(ev.password, password, 31);
+        strncpy(ev.text.password, password, 31);
     }
     ev.channel.id = channel_id;
     ev.user.id = v3_get_user_id();
@@ -2134,6 +2138,7 @@ v3_set_text(char *comment, char *url, char *integration_text, uint8_t silent) {/
 
     _v3_func_enter("v3_set_text");
 
+    // TODO: this needs to be implemented using the queue
     user = v3_get_user(v3_luser.id);
     free(user->name);
     free(user->phonetic);

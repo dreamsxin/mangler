@@ -199,7 +199,6 @@ struct _v3_event {
         char message[512];
     } error;
     uint16_t ping;
-    char password[32];
     struct {
         uint16_t id;
     } user;
@@ -207,9 +206,18 @@ struct _v3_event {
         uint16_t id;
     } channel;
     struct {
+        char name[32];
+        char password[32];
+        char phonetic[32];
+        char comment[127];
+        char url[127];
+        char integration_text[127];
+    } text;
+    uint32_t flags;
+    struct {
         uint32_t length;
         uint32_t rate;
-        uint8_t  sample[32768];
+        uint8_t  sample[32768]; // this is probably too much. pcm events should probably cap at 16k
     } pcm;
     v3_event *next;
 };
@@ -236,8 +244,8 @@ typedef struct __v3_msg_user {/*{{{*/
     char *name;
     char *phonetic;
     char *comment;
-    char *integration_text;
     char *url;
+    char *integration_text;
 
     /*
      * Put locally used user state and internal variables here
