@@ -1439,6 +1439,16 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                             v3_queue_event(ev);
                         }
                         break;
+                    case V3_AUTHFAIL_CHANNEL:
+                        {
+                            v3_event *ev;
+                            ev = malloc(sizeof(v3_event));
+                            memset(ev, 0, sizeof(v3_event));
+                            ev->type = V3_EVENT_ERROR_MSG;
+                            strncpy(ev->error.message, "Error switching to channel.  The password you entered is wrong or you do not have permission", 511);
+                            v3_queue_event(ev);
+                        }
+                        break;
                 }
                 _v3_unlock_channellist();
             }

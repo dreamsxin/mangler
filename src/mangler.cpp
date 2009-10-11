@@ -328,6 +328,7 @@ Mangler::getNetworkEvent() {/*{{{*/
 std::string
 Mangler::getPasswordEntry(std::string title, std::string prompt) {
     password = "";
+    passwordEntry->set_text("");
     passwordDialog->set_title(title);
     passwordDialog->run();
     passwordDialog->hide();

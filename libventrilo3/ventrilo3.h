@@ -55,6 +55,7 @@
 #define V3_REMOVE_CHANNEL           0x02
 #define V3_CHANGE_CHANNEL           0x03
 #define V3_MODIFY_CHANNEL           0x05
+#define V3_AUTHFAIL_CHANNEL         0x07
 
 #define V3_REMOVE_USER              0x00
 #define V3_ADD_USER                 0x01
