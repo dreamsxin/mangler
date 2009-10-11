@@ -59,6 +59,7 @@ class ManglerAudio
         ~ManglerAudio();
         void            queue(uint32_t length, uint8_t *sample);
         void            play(void);
+        void            finish(void);
 
         GAsyncQueue*    pcm_queue;
 #ifdef HAVE_PULSE

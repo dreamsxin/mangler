@@ -41,13 +41,14 @@ ManglerAudio::ManglerAudio(uint16_t userid, uint32_t rate) {
     pcm_queue = g_async_queue_new();
     Glib::Thread::create(sigc::mem_fun(*this, &ManglerAudio::play), FALSE);
 }
-
 ManglerAudio::~ManglerAudio() {
+}
+
+void
+ManglerAudio::finish(void) {
     pcmdata = new ManglerPCM(0, NULL);
     g_async_queue_push(pcm_queue, pcmdata);
-    while (playing) {
-        usleep(20);
-    }
+    playing
 }
 
 void
@@ -61,7 +62,7 @@ ManglerAudio::play(void) {
     int ret, error;
 
     g_async_queue_ref(pcm_queue);
-    usleep(250000); // buffer for a quarter second
+    usleep(500000); // buffer for a half second
     for (;;) {
         playing = true;
         pcmdata = (ManglerPCM *)g_async_queue_pop(pcm_queue);
