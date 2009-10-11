@@ -65,12 +65,29 @@ void ManglerConfig::save() {/*{{{*/
 std::string ManglerConfig::get(std::string cfgname) {/*{{{*/
     mutex.lock();
     std::ifstream   f;
+    f.exceptions ( std::ifstream::eofbit | std::ifstream::failbit | std::ifstream::badbit );
     std::string     cfgfilename = getenv("HOME");
     cfgfilename += "/.manglerrc";
-    f.open((char *)cfgfilename.c_str());
+    try {
+        f.open((char *)cfgfilename.c_str());
+    } catch (std::ifstream::failure e) {
+        try {
+            mutex.unlock();
+            save();
+            mutex.lock();
+            f.open((char *)cfgfilename.c_str());
+        } catch (std::ifstream::failure e) {
+            fprintf(stderr, "could not create %s\n", (char *)cfgfilename.c_str());
+            return "";
+        };
+    };
     while (! f.eof()) {
         std::string cfgline;
-        f >> cfgline;
+        try {
+            f >> cfgline;
+        } catch (std::ifstream::failure e) {
+            return "";
+        }
         std::string name = cfgline.substr(0, cfgline.find("="));
         if (name == cfgname) {
             std::string value = cfgline.substr(cfgline.find("=")+1);
