@@ -285,7 +285,7 @@ Mangler::getNetworkEvent() {/*{{{*/
             case V3_EVENT_CHAN_ADD:
                 c = v3_get_channel(ev->channel.id);
                 fprintf(stderr, "adding channel id %d: %s\n", ev->channel.id, c->name);
-                channelTree->addChannel((uint32_t)c->id, (uint32_t)c->parent, c->name ? c->name : "", c->comment ? c->comment : "", c->phonetic ? c->phonetic : "");
+                channelTree->addChannel((uint8_t)c->protect_mode, (uint32_t)c->id, (uint32_t)c->parent, c->name ? c->name : "", c->comment ? c->comment : "", c->phonetic ? c->phonetic : "");
                 v3_free_channel(c);
                 break;
             case V3_EVENT_ERROR_MSG:

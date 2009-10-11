@@ -153,7 +153,7 @@ ManglerChannelTree::addUser(uint32_t id, uint32_t parent_id, std::string name, s
  * phonetic = ""
  */
 void
-ManglerChannelTree::addChannel(uint32_t id, uint32_t parent_id, std::string name, std::string comment, std::string phonetic) {/*{{{*/
+ManglerChannelTree::addChannel(uint8_t protect_mode, uint32_t id, uint32_t parent_id, std::string name, std::string comment, std::string phonetic) {/*{{{*/
     std::string displayName = "";
     Gtk::TreeModel::Row parent;
     gsize tmp;
@@ -174,7 +174,17 @@ ManglerChannelTree::addChannel(uint32_t id, uint32_t parent_id, std::string name
     channelRow                                  = *channelIter;
     //channelRow[channelRecord.displayName]       = g_locale_to_utf8(displayName.c_str(), -1, NULL, &tmp, NULL);
     channelRow[channelRecord.displayName]       = displayName.c_str();
-    channelRow[channelRecord.icon]              = mangler->icons["black_circle"]->scale_simple(9, 9, Gdk::INTERP_BILINEAR);;
+    switch (protect_mode) {
+        case 0:
+            channelRow[channelRecord.icon]              = mangler->icons["black_circle"]->scale_simple(9, 9, Gdk::INTERP_BILINEAR);;
+            break;
+        case 1:
+            channelRow[channelRecord.icon]              = mangler->icons["red_circle"]->scale_simple(9, 9, Gdk::INTERP_BILINEAR);;
+            break;
+        case 2:
+            channelRow[channelRecord.icon]              = mangler->icons["yellow_circle"]->scale_simple(9, 9, Gdk::INTERP_BILINEAR);;
+            break;
+    }
     channelRow[channelRecord.isUser]            = false;
     channelRow[channelRecord.id]                = id;
     channelRow[channelRecord.parent_id]         = parent_id;
@@ -325,7 +335,7 @@ ManglerChannelTree::clear(void) {/*{{{*/
 }/*}}}*/
 
 void
-ManglerChannelTree::channelView_row_activated_cb(const Gtk::TreeModel::Path& path, Gtk::TreeViewColumn* column) {
+ManglerChannelTree::channelView_row_activated_cb(const Gtk::TreeModel::Path& path, Gtk::TreeViewColumn* column) {/*{{{*/
     v3_channel *channel;
     Gtk::Dialog *dialog;
     std::string password;
@@ -342,5 +352,5 @@ ManglerChannelTree::channelView_row_activated_cb(const Gtk::TreeModel::Path& pat
     if (! isUser) {
         v3_change_channel(id, (char *)password.c_str());
     }
-}
+}/*}}}*/
 
