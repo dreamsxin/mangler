@@ -74,6 +74,7 @@ _v3_get_msg_string(void *offset, uint16_t *len) {/*{{{*/
     *len = htons(*len);
     _v3_debug(V3_DEBUG_PACKET_PARSE, "getting %d (0x%04X) byte string", *len, *len);
     s = malloc(*len+1);
+    memset(s, 0, *len+1);
     memcpy(s, offset+2, *len);
     s[*len] = '\0';
     *len+=2;
