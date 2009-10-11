@@ -55,6 +55,7 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
             builder = Gtk::Builder::create_from_string(ManglerUI);
         }
         builder->get_widget("manglerWindow", manglerWindow);
+        manglerWindow->set_icon(icons["joystick"]);
     } catch(const Glib::Error& e) {
         std::cerr << e.what() << std::endl;
         exit(0);
@@ -124,6 +125,7 @@ void Mangler::quickConnectButton_clicked_cb(void) {/*{{{*/
     Gtk::Entry *textbox;
 
     builder->get_widget("quickConnectDialog", dialog);
+    dialog->set_icon(icons["joystick"]);
 
     builder->get_widget("qcServerName", textbox);
     textbox->set_text(settings->config.qc_lastserver.name);
@@ -143,6 +145,7 @@ void Mangler::quickConnectButton_clicked_cb(void) {/*{{{*/
 }/*}}}*/
 void Mangler::serverConfigButton_clicked_cb(void) {/*{{{*/
     builder->get_widget("serverListWindow", window);
+    window->set_icon(icons["joystick"]);
     window->show();
 }/*}}}*/
 void Mangler::connectButton_clicked_cb(void) {/*{{{*/
@@ -174,9 +177,11 @@ void Mangler::settingsButton_clicked_cb(void) {/*{{{*/
     settings->settingsWindow->show();
 }/*}}}*/
 void Mangler::aboutButton_clicked_cb(void) {/*{{{*/
-    builder->get_widget("aboutWindow", dialog);
-    dialog->run();
-    dialog->hide();
+    builder->get_widget("aboutWindow", aboutdialog);
+    aboutdialog->set_icon(icons["joystick"]);
+    aboutdialog->set_logo(icons["joystick"]);
+    aboutdialog->run();
+    aboutdialog->hide();
 }/*}}}*/
 void Mangler::xmitButton_pressed_cb(void) {/*{{{*/
     fprintf(stderr, "xmit button pressed\n");
@@ -279,6 +284,7 @@ Mangler::getNetworkEvent() {/*{{{*/
                 break;
             case V3_EVENT_ERROR_MSG:
                 builder->get_widget("errorDialog", msgdialog);
+                msgdialog->set_icon(icons["joystick"]);
                 msgdialog->set_message(ev->error.message);
                 msgdialog->run();
                 msgdialog->hide();

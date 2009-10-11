@@ -50,6 +50,7 @@ class Mangler
         Glib::RefPtr<Gtk::Builder>          builder;
         Gtk::Button                         *button;
         Gtk::Dialog                         *dialog;
+        Gtk::AboutDialog                    *aboutdialog;
         Gtk::MessageDialog                  *msgdialog;
         Gtk::Window                         *window;
         Gtk::ProgressBar                    *progressbar;
