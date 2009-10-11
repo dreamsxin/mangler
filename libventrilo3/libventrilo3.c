@@ -151,6 +151,7 @@ _v3_status(uint8_t percent, const char *format, ...) {/*{{{*/
     vsnprintf(_v3_status_text, sizeof(_v3_status_text), format, args);
     va_end(args);
     ev = malloc(sizeof(v3_event));
+    memset(ev, 0, sizeof(v3_event));
     ev->type = V3_EVENT_STATUS;
     ev->status.percent = percent;
     strncpy(ev->status.message, _v3_status_text, 256);
@@ -553,6 +554,7 @@ _v3_recv(int block) {/*{{{*/
         if (waiting == V3_BOTH_WAITING || waiting == V3_EVENT_WAITING) {
             // receiving an event from the event pipe
             v3_event ev;
+            memset(&ev, 0, sizeof(v3_event));
             _v3_debug(V3_DEBUG_EVENT, "event waiting to processed and sent outbound");
             if (fread(&ev, sizeof(ev), 1, v3_server.evinstream) != 1) {
                 _v3_error("failed to receive from outbound pipe");
@@ -1218,6 +1220,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                 char buf[512] = "";
                 int error = false;
 
+                memset(ev, 0, sizeof(v3_event));
                 // This lock will only be needed when we start calling ventrilo_read_keys() from here.
                 _v3_lock_server();
                 if(m->subtype & 0x01) {
@@ -1294,6 +1297,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                 v3_event *ev;
                 _v3_msg_0x37 *m = msg->contents;
                 ev = malloc(sizeof(v3_event));
+                memset(ev, 0, sizeof(v3_event));
                 ev->type = V3_EVENT_PING;
                 ev->ping = m->ping;
                 v3_queue_event(ev);
@@ -1413,6 +1417,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                             _v3_debug(V3_DEBUG_INFO, "removing channel %d from list",  m->channel->id);
                             v3_event *ev;
                             ev = malloc(sizeof(v3_event));
+                            memset(ev, 0, sizeof(v3_event));
                             ev->type = V3_EVENT_CHAN_REMOVE;
                             ev->channel.id = m->channel->id;
                             _v3_debug(V3_DEBUG_INFO, "queuing event type %d for channel %d", ev->type, ev->channel.id);
@@ -1427,6 +1432,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                             v3_event *ev;
                             _v3_update_channel(m->channel);
                             ev = malloc(sizeof(v3_event));
+                            memset(ev, 0, sizeof(v3_event));
                             ev->type = (m->subtype == V3_MODIFY_CHANNEL) ? V3_EVENT_CHAN_MODIFY : V3_EVENT_CHAN_ADD;
                             ev->channel.id = m->channel->id;
                             _v3_debug(V3_DEBUG_INFO, "queuing event type %d for channel %d", ev->type, ev->channel.id);
@@ -1583,6 +1589,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                 // queue the channel change notification
                 _v3_debug(V3_DEBUG_INFO, "user %d moved to channel %d", m->user_id, m->channel_id);
                 ev = malloc(sizeof(v3_event));
+                memset(ev, 0, sizeof(v3_event));
                 ev->type = V3_EVENT_USER_CHAN_MOVE;
                 ev->user.id = m->user_id;
                 ev->channel.id = m->channel_id;
@@ -1631,6 +1638,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                     _v3_close_connection();
                 }
                 ev = malloc(sizeof(v3_event));
+                memset(ev, 0, sizeof(v3_event));
                 ev->type = V3_EVENT_ERROR_MSG;
                 ev->error.disconnected = m->close_connection;
                 strncpy(ev->error.message, buf, 512);
@@ -1677,6 +1685,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                         for (ctr = 0; ctr < m->user_count; ctr++) {
                             v3_event *ev;
                             ev = malloc(sizeof(v3_event));
+                            memset(ev, 0, sizeof(v3_event));
                             ev->type = V3_EVENT_USER_LOGOUT;
                             ev->user.id = m->user_list[ctr].id;
                             _v3_debug(V3_DEBUG_INFO, "queuing event type %d for user %d", ev->type, ev->user.id);
@@ -1691,6 +1700,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                             v3_event *ev;
                             _v3_update_user(&m->user_list[ctr]);
                             ev = malloc(sizeof(v3_event));
+                            memset(ev, 0, sizeof(v3_event));
                             ev->type = V3_ADD_USER ? V3_EVENT_USER_LOGIN : V3_EVENT_USER_MODIFY;
                             ev->user.id = m->user_list[ctr].id;
                             _v3_debug(V3_DEBUG_INFO, "queuing event type %d for user %d", ev->type, ev->user.id);
@@ -1737,6 +1747,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                             v3_event *ev;
                             _v3_update_user(&m->user_list[ctr]);
                             ev = malloc(sizeof(v3_event));
+                            memset(ev, 0, sizeof(v3_event));
                             ev->type = V3_EVENT_USER_LOGIN;
                             ev->user.id = m->user_list[ctr].id;
                             _v3_debug(V3_DEBUG_INFO, "queuing event type %d for user %d", ev->type, ev->user.id);
@@ -1771,6 +1782,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                     v3_event *ev;
                     _v3_update_channel(&m->channel_list[ctr]);
                     ev = malloc(sizeof(v3_event));
+                    memset(ev, 0, sizeof(v3_event));
                     ev->type = V3_EVENT_CHAN_ADD;
                     ev->channel.id = m->channel_list[ctr].id;
                     _v3_debug(V3_DEBUG_INFO, "queuing event type %d for channel %d", ev->type, ev->channel.id);
@@ -2018,6 +2030,7 @@ v3_login(char *server, char *username, char *password, char *phonetic) {/*{{{*/
         {
             v3_event *ev;
             ev = malloc(sizeof(v3_event));
+            memset(ev, 0, sizeof(v3_event));
             ev->type = V3_EVENT_LOGIN_COMPLETE;
             v3_queue_event(ev);
         }
