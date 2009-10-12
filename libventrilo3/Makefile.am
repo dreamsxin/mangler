@@ -7,11 +7,13 @@ lib_LTLIBRARIES = libventrilo3.la
 
 libventrilo3_la_SOURCES = libventrilo3.c  libventrilo3_message.c  ventrilo3_handshake.c
 
+libventrilo3_la_LIBADD = $(pulse_LIBS) $(speex_LIBS) $(gsm_LIBS)
+
 lv3_test_SOURCES = lv3_test.c
 
 INCLUDES=$(pulse_CFLAGS) $(speex_CFLAGS)
 
-lv3_test_LDADD = libventrilo3.la $(pulse_LIBS) $(speex_LIBS)
+lv3_test_LDADD = libventrilo3.la
 
 
 dev:

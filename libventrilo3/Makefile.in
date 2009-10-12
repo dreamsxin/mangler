@@ -55,7 +55,9 @@ am__strip_dir = `echo $$p | sed -e 's|^.*/||'`;
 am__installdirs = "$(DESTDIR)$(libdir)" "$(DESTDIR)$(bindir)"
 libLTLIBRARIES_INSTALL = $(INSTALL)
 LTLIBRARIES = $(lib_LTLIBRARIES)
-libventrilo3_la_LIBADD =
+am__DEPENDENCIES_1 =
+libventrilo3_la_DEPENDENCIES = $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1)
 am_libventrilo3_la_OBJECTS = libventrilo3.lo libventrilo3_message.lo \
 	ventrilo3_handshake.lo
 libventrilo3_la_OBJECTS = $(am_libventrilo3_la_OBJECTS)
@@ -63,9 +65,7 @@ binPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
 PROGRAMS = $(bin_PROGRAMS)
 am_lv3_test_OBJECTS = lv3_test.$(OBJEXT)
 lv3_test_OBJECTS = $(am_lv3_test_OBJECTS)
-am__DEPENDENCIES_1 =
-lv3_test_DEPENDENCIES = libventrilo3.la $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1)
+lv3_test_DEPENDENCIES = libventrilo3.la
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
@@ -219,9 +219,10 @@ top_srcdir = @top_srcdir@
 ACLOCAL_AMFLAGS = -I m4
 lib_LTLIBRARIES = libventrilo3.la
 libventrilo3_la_SOURCES = libventrilo3.c  libventrilo3_message.c  ventrilo3_handshake.c
+libventrilo3_la_LIBADD = $(pulse_LIBS) $(speex_LIBS) $(gsm_LIBS)
 lv3_test_SOURCES = lv3_test.c
 INCLUDES = $(pulse_CFLAGS) $(speex_CFLAGS)
-lv3_test_LDADD = libventrilo3.la $(pulse_LIBS) $(speex_LIBS)
+lv3_test_LDADD = libventrilo3.la
 all: all-am
 
 .SUFFIXES:
