@@ -808,14 +808,17 @@ _v3_update_channel(v3_channel *channel) {/*{{{*/
     } else {
         for (c = v3_channel_list; c != NULL; c = c->next) {
             if (c->id == channel->id) {
+                void *tmp;
                 _v3_debug(V3_DEBUG_INFO, "updating channel %s",  c->name);
                 free(c->name);
                 free(c->phonetic);
                 free(c->comment);
+                tmp = c->next;
                 memcpy(c, channel, sizeof(v3_channel));
                 c->name           = strdup(channel->name);
                 c->phonetic       = strdup(channel->phonetic);
                 c->comment        = strdup(channel->comment);
+                c->next = tmp;
                 _v3_debug(V3_DEBUG_INFO, "updated channel %s",  c->name);
                 _v3_unlock_channellist();
                 _v3_func_leave("_v3_update_channel");
@@ -843,7 +846,7 @@ _v3_update_user(v3_user *user) {/*{{{*/
 
     _v3_func_enter("_v3_update_user");
     _v3_lock_userlist();
-    if (v3_user_list == NULL) {
+    if (v3_user_list == NULL) { // no users in list... create the first
         u = malloc(sizeof(v3_user));
         memset(u, 0, sizeof(v3_user));
         memcpy(u, user, sizeof(v3_user));
@@ -855,26 +858,29 @@ _v3_update_user(v3_user *user) {/*{{{*/
         u->next             = NULL;
         v3_user_list = u;
     } else {
-        for (u = v3_user_list; u != NULL; u = u->next) {
+        for (u = v3_user_list; u != NULL; u = u->next) { // search for existing users
             if (u->id == user->id) {
+                void *tmp;
                 free(u->name);
                 free(u->phonetic);
                 free(u->comment);
                 free(u->integration_text);
                 free(u->url);
+                tmp = u->next;
                 memcpy(u, user, sizeof(v3_user));
                 u->name             = strdup(user->name);
                 u->comment          = strdup(user->comment);
                 u->phonetic         = strdup(user->phonetic);
                 u->integration_text = strdup(user->integration_text);
                 u->url              = strdup(user->url);
+                u->next             = tmp;
                 _v3_debug(V3_DEBUG_INFO, "updated user %s",  u->name);
                 _v3_unlock_userlist();
                 _v3_func_leave("_v3_update_user");
                 return true;
             }
             last = u;
-        }
+        } // add a new user
         u = last->next = malloc(sizeof(v3_user));
         memset(u, 0, sizeof(v3_user));
         memcpy(u, user, sizeof(v3_user));
