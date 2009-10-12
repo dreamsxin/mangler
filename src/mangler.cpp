@@ -38,7 +38,6 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
     // load all of our icons
     icons.insert(std::make_pair("black_circle",                 Gdk::Pixbuf::create_from_inline(-1, black_circle                )));
     icons.insert(std::make_pair("blue_circle",                  Gdk::Pixbuf::create_from_inline(-1, blue_circle                 )));
-    icons.insert(std::make_pair("blue_circle_small",            Gdk::Pixbuf::create_from_inline(-1, blue_circle_small           )));
     icons.insert(std::make_pair("cyan_circle",                  Gdk::Pixbuf::create_from_inline(-1, cyan_circle                 )));
     icons.insert(std::make_pair("green_circle",                 Gdk::Pixbuf::create_from_inline(-1, green_circle                )));
     icons.insert(std::make_pair("grey_circle",                  Gdk::Pixbuf::create_from_inline(-1, grey_circle                 )));
