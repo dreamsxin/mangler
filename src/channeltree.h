@@ -42,6 +42,7 @@ class channelModelColumns : public Gtk::TreeModelColumnRecord/*{{{*/
             add(phonetic);
             add(url);
             add(integration_text);
+            add(last_transmit);
         }
 
         Gtk::TreeModelColumn<Glib::ustring>                 displayName;
@@ -54,6 +55,7 @@ class channelModelColumns : public Gtk::TreeModelColumnRecord/*{{{*/
         Gtk::TreeModelColumn<Glib::ustring>                 phonetic;
         Gtk::TreeModelColumn<Glib::ustring>                 url;
         Gtk::TreeModelColumn<Glib::ustring>                 integration_text;
+        Gtk::TreeModelColumn<Glib::ustring>                 last_transmit;
 };/*}}}*/
 class ManglerChannelTree
 {
@@ -85,5 +87,7 @@ class ManglerChannelTree
 
         void channelView_row_activated_cb(const Gtk::TreeModel::Path& path, Gtk::TreeViewColumn* column);
 };
+
+std::string getTimeString(void);
 
 #endif

@@ -27,6 +27,7 @@
 #include "iostream"
 #include "mangler.h"
 #include "channeltree.h"
+#include "time.h"
 
 using namespace std;
 
@@ -41,10 +42,12 @@ ManglerChannelTree::ManglerChannelTree(Glib::RefPtr<Gtk::Builder> builder)/*{{{*
     channelView->set_model(channelStore);
 
     //channelView->append_column("ID", channelRecord.id);
-    Gtk::TreeView::Column* pColumn = Gtk::manage( new Gtk::TreeView::Column("Symbol") );
+    Gtk::TreeView::Column* pColumn = Gtk::manage( new Gtk::TreeView::Column("Name") );
     pColumn->pack_start(channelRecord.icon, false);
     pColumn->pack_start(channelRecord.displayName);
+    pColumn->set_expand(true);
     channelView->append_column(*pColumn);
+    channelView->append_column("Last Transmit", channelRecord.last_transmit);
 
     // connect our callbacks for clicking on rows
     channelView->signal_row_activated().connect(sigc::mem_fun(this, &ManglerChannelTree::channelView_row_activated_cb));
@@ -141,6 +144,7 @@ ManglerChannelTree::addUser(uint32_t id, uint32_t parent_id, std::string name, s
     channelRow[channelRecord.phonetic]          = phonetic;
     channelRow[channelRecord.url]               = url;
     channelRow[channelRecord.integration_text]  = integration_text;
+    channelRow[channelRecord.last_transmit]     = id != 0 ? "unknown" : "";
 }/*}}}*/
 
 /*
@@ -311,6 +315,7 @@ ManglerChannelTree::userIsTalking(uint16_t id, bool isTalking) {/*{{{*/
     Gtk::TreeModel::Row user = getUser(id, channelStore->children());
     if (isTalking) {
         user[channelRecord.icon]              = mangler->icons["green_circle"]->scale_simple(9, 9, Gdk::INTERP_BILINEAR);
+        user[channelRecord.last_transmit]     = getTimeString();
     } else {
         user[channelRecord.icon]              = mangler->icons["blue_circle"]->scale_simple(9, 9, Gdk::INTERP_BILINEAR);
     }
@@ -360,3 +365,21 @@ ManglerChannelTree::channelView_row_activated_cb(const Gtk::TreeModel::Path& pat
     }
 }/*}}}*/
 
+std::string getTimeString(void) {
+    char buf[64];
+    time_t t;
+    struct tm *tmp;
+    std::string cppbuf;
+
+    t = time(NULL);
+    tmp = localtime(&t);
+    if (tmp == NULL) {
+        strcpy(buf, "");
+    } else {
+        if (strftime(buf, sizeof(buf), "%X", tmp) == 0) {
+            strcpy(buf, "");
+        }
+    }
+    cppbuf = buf;
+    return cppbuf;
+}
