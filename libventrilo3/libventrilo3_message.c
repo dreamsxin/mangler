@@ -851,7 +851,7 @@ _v3_get_0x5d(_v3_net_message *msg) {/*{{{*/
     m->user_list = calloc(m->user_count, sizeof(_v3_msg_user));
     for (ctr = 0, offset = msg->data + 8; ctr < m->user_count; ctr++) {
         offset += _v3_get_msg_user(offset, &m->user_list[ctr]);
-        _v3_debug(V3_DEBUG_PACKET_PARSE, "got user: id: %d | chan: %d | name: %s | phonetic: %s | comment: %s | int: %s | url: %s",
+        _v3_debug(V3_DEBUG_PACKET_PARSE, "got user: id: %d | chan: %d | name: %s | phonetic: %s | comment: %s | int: %s | url: %s | guest %d",
                 m->user_list[ctr].id,
                 m->user_list[ctr].channel,
                 m->user_list[ctr].name,

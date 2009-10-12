@@ -256,6 +256,7 @@ typedef struct __v3_msg_user {/*{{{*/
     uint8_t  accept_u2u;
     uint8_t  accept_chat;
     uint8_t  allow_recording;
+    uint8_t  guest;
     void     *next;
 } _v3_msg_user;/*}}}*/
 typedef struct __v3_msg_channel {/*{{{*/

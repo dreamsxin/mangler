@@ -855,6 +855,7 @@ _v3_update_user(v3_user *user) {/*{{{*/
         u->phonetic         = strdup(user->phonetic);
         u->integration_text = strdup(user->integration_text);
         u->url              = strdup(user->url);
+        u->guest            = user->bitfield & 0x400 ? 1 : 0;
         u->next             = NULL;
         v3_user_list = u;
     } else {
@@ -873,6 +874,7 @@ _v3_update_user(v3_user *user) {/*{{{*/
                 u->phonetic         = strdup(user->phonetic);
                 u->integration_text = strdup(user->integration_text);
                 u->url              = strdup(user->url);
+                u->guest            = user->bitfield & 0x400 ? 1 : 0;
                 u->next             = tmp;
                 _v3_debug(V3_DEBUG_INFO, "updated user %s",  u->name);
                 _v3_unlock_userlist();
@@ -889,6 +891,7 @@ _v3_update_user(v3_user *user) {/*{{{*/
         u->phonetic         = strdup(user->phonetic);
         u->integration_text = strdup(user->integration_text);
         u->url              = strdup(user->url);
+        u->guest            = user->bitfield & 0x400 ? 1 : 0;
         u->next             = NULL;
     }
     _v3_unlock_userlist();

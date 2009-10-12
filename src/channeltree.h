@@ -35,6 +35,7 @@ class channelModelColumns : public Gtk::TreeModelColumnRecord/*{{{*/
             add(displayName);
             add(icon);
             add(isUser);
+            add(isGuest);
             add(id);
             add(parent_id);
             add(name);
@@ -48,6 +49,7 @@ class channelModelColumns : public Gtk::TreeModelColumnRecord/*{{{*/
         Gtk::TreeModelColumn<Glib::ustring>                 displayName;
         Gtk::TreeModelColumn<Glib::RefPtr<Gdk::Pixbuf> >    icon;
         Gtk::TreeModelColumn<bool>                          isUser;
+        Gtk::TreeModelColumn<bool>                          isGuest;
         Gtk::TreeModelColumn<uint32_t>                      id;
         Gtk::TreeModelColumn<uint32_t>                      parent_id;
         Gtk::TreeModelColumn<Glib::ustring>                 name;
@@ -74,7 +76,7 @@ class ManglerChannelTree
         ManglerChannelTree(Glib::RefPtr<Gtk::Builder> builder);
         Gtk::TreeView                       *channelView;
         void addChannel(uint8_t protect_mode, uint32_t id, uint32_t parent_id, std::string name, std::string comment = "", std::string phonetic = "");
-        void addUser(uint32_t id, uint32_t channel, std::string name, std::string comment = "", std::string phonetic = "", std::string url = "", std::string integration_text = "");
+        void addUser(uint32_t id, uint32_t channel, std::string name, std::string comment = "", std::string phonetic = "", std::string url = "", std::string integration_text = "", bool guest = false);
         void updateLobby(std::string name, std::string comment = "", std::string phonetic = "");
         void removeUser(uint32_t id);
         void removeChannel(uint32_t id);

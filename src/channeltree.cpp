@@ -106,7 +106,7 @@ ManglerChannelTree::renderCellData(Gtk::CellRenderer *cell, const Gtk::TreeModel
  * this calculates the display name automatically
  */
 void
-ManglerChannelTree::addUser(uint32_t id, uint32_t parent_id, std::string name, std::string comment, std::string phonetic, std::string url, std::string integration_text) {/*{{{*/
+ManglerChannelTree::addUser(uint32_t id, uint32_t parent_id, std::string name, std::string comment, std::string phonetic, std::string url, std::string integration_text, bool guest) {/*{{{*/
     std::string displayName = "";
     Gtk::TreeModel::Row parent;
     gsize tmp;
@@ -121,6 +121,9 @@ ManglerChannelTree::addUser(uint32_t id, uint32_t parent_id, std::string name, s
     }
     
     displayName = name;
+    if (guest) {
+        displayName = displayName + " (GUEST)";
+    }
     if (! comment.empty()) {
         displayName = displayName + " (" + (url.empty() ? "" : "U: ") + comment + ")";
     }
@@ -137,6 +140,7 @@ ManglerChannelTree::addUser(uint32_t id, uint32_t parent_id, std::string name, s
     channelRow[channelRecord.displayName]       = displayName.c_str();
     channelRow[channelRecord.icon]              = mangler->icons["blue_circle"]->scale_simple(9, 9, Gdk::INTERP_BILINEAR);
     channelRow[channelRecord.isUser]            = id == 0 ? false : true;
+    channelRow[channelRecord.isGuest]           = guest;
     channelRow[channelRecord.id]                = id;
     channelRow[channelRecord.parent_id]         = parent_id;
     channelRow[channelRecord.name]              = name;
@@ -190,6 +194,7 @@ ManglerChannelTree::addChannel(uint8_t protect_mode, uint32_t id, uint32_t paren
             break;
     }
     channelRow[channelRecord.isUser]            = false;
+    channelRow[channelRecord.isGuest]           = false;
     channelRow[channelRecord.id]                = id;
     channelRow[channelRecord.parent_id]         = parent_id;
     channelRow[channelRecord.name]              = name;
