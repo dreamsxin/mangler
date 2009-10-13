@@ -33,6 +33,7 @@
 #include "manglernetwork.h"
 #include "mangleraudio.h"
 #include "manglersettings.h"
+#include "locale.h"
 
 extern "C" {
 #include <ventrilo3.h>
@@ -58,7 +59,7 @@ class Mangler
         Gtk::Label                          *label;
         Gtk::Entry                          *entry;
         Gtk::TextView                       *textview;
-        std::map<std::string, Glib::RefPtr<Gdk::Pixbuf> >  icons;
+        std::map<Glib::ustring, Glib::RefPtr<Gdk::Pixbuf> >  icons;
         Glib::RefPtr<Gtk::StatusIcon>       statusIcon;
         ManglerChannelTree                  *channelTree;
         ManglerNetwork                      *network;
@@ -68,12 +69,12 @@ class Mangler
         // These are used by the password entry dialog
         Gtk::Dialog                         *passwordDialog;
         Gtk::Entry                          *passwordEntry;
-        std::string                         password;
+        Glib::ustring                         password;
         bool                                passwordStatus;
 
         Glib::Thread                        *networkThread;
 
-        std::string getPasswordEntry(std::string title = "Password", std::string prompt = "Password");
+        Glib::ustring getPasswordEntry(Glib::ustring title = "Password", Glib::ustring prompt = "Password");
 
         
     protected:
@@ -102,16 +103,16 @@ class Mangler
 
 struct _cli_options {
     bool uifromfile;
-    std::string uifilename;
+    Glib::ustring uifilename;
 };
 
 class ManglerError
 {
     public:
         uint32_t        code;
-        std::string     message;
-        std::string     module;
-        ManglerError(uint32_t code, std::string message, std::string module = "");
+        Glib::ustring     message;
+        Glib::ustring     module;
+        ManglerError(uint32_t code, Glib::ustring message, Glib::ustring module = "");
 };
 
 extern Mangler *mangler;

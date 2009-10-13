@@ -30,13 +30,13 @@
 class ManglerServerConfig/*{{{*/
 {
     public:
-        std::string         name;
-        std::string         port;
-        std::string         username;
-        std::string         password;
-        std::string         phonetic;
-        std::string         comment;
-        std::string         url;
+        Glib::ustring         name;
+        Glib::ustring         port;
+        Glib::ustring         username;
+        Glib::ustring         password;
+        Glib::ustring         phonetic;
+        Glib::ustring         comment;
+        Glib::ustring         url;
 
         ManglerServerConfig() {
         }
@@ -46,15 +46,15 @@ class ManglerConfig {
 		Glib::Mutex     mutex;
 		uint32_t        lv3_debuglevel;
 		bool            PushToTalkKeyEnabled;
-		std::string     PushToTalkKeyValue;
+                Glib::ustring     PushToTalkKeyValue;
 		bool            PushToTalkMouseEnabled;
-		std::string     PushToTalkMouseValue;
+                Glib::ustring     PushToTalkMouseValue;
 		ManglerServerConfig   qc_lastserver;
 		std::vector<ManglerServerConfig> serverlist;
 
 		ManglerConfig();
 		void save();
-		std::string get(std::string cfgname);
+                Glib::ustring get(Glib::ustring cfgname);
 		void load();
 };
 

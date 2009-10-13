@@ -106,8 +106,8 @@ ManglerChannelTree::renderCellData(Gtk::CellRenderer *cell, const Gtk::TreeModel
  * this calculates the display name automatically
  */
 void
-ManglerChannelTree::addUser(uint32_t id, uint32_t parent_id, std::string name, std::string comment, std::string phonetic, std::string url, std::string integration_text, bool guest) {/*{{{*/
-    std::string displayName = "";
+ManglerChannelTree::addUser(uint32_t id, uint32_t parent_id, Glib::ustring name, Glib::ustring comment, Glib::ustring phonetic, Glib::ustring url, Glib::ustring integration_text, bool guest) {/*{{{*/
+    Glib::ustring displayName = "";
     Gtk::TreeModel::Row parent;
     gsize tmp;
 
@@ -136,8 +136,7 @@ ManglerChannelTree::addUser(uint32_t id, uint32_t parent_id, std::string name, s
         channelIter                                 = channelStore->prepend();
     }
     channelRow                                  = *channelIter;
-    //channelRow[channelRecord.displayName]       = g_locale_to_utf8(displayName.c_str(), -1, NULL, &tmp, NULL);
-    channelRow[channelRecord.displayName]       = displayName.c_str();
+    channelRow[channelRecord.displayName]       = displayName;
     channelRow[channelRecord.icon]              = mangler->icons["blue_circle"]->scale_simple(9, 9, Gdk::INTERP_BILINEAR);
     channelRow[channelRecord.isUser]            = id == 0 ? false : true;
     channelRow[channelRecord.isGuest]           = guest;
@@ -161,8 +160,8 @@ ManglerChannelTree::addUser(uint32_t id, uint32_t parent_id, std::string name, s
  * phonetic = ""
  */
 void
-ManglerChannelTree::addChannel(uint8_t protect_mode, uint32_t id, uint32_t parent_id, std::string name, std::string comment, std::string phonetic) {/*{{{*/
-    std::string displayName = "";
+ManglerChannelTree::addChannel(uint8_t protect_mode, uint32_t id, uint32_t parent_id, Glib::ustring name, Glib::ustring comment, Glib::ustring phonetic) {/*{{{*/
+    Glib::ustring displayName = "";
     Gtk::TreeModel::Row parent;
     gsize tmp;
 
@@ -180,8 +179,7 @@ ManglerChannelTree::addChannel(uint8_t protect_mode, uint32_t id, uint32_t paren
         channelIter                                 = channelStore->append();
     }
     channelRow                                  = *channelIter;
-    //channelRow[channelRecord.displayName]       = g_locale_to_utf8(displayName.c_str(), -1, NULL, &tmp, NULL);
-    channelRow[channelRecord.displayName]       = displayName.c_str();
+    channelRow[channelRecord.displayName]       = displayName;
     switch (protect_mode) {
         case 0:
             channelRow[channelRecord.icon]              = mangler->icons["black_circle"]->scale_simple(9, 9, Gdk::INTERP_BILINEAR);;
@@ -211,7 +209,7 @@ ManglerChannelTree::addChannel(uint8_t protect_mode, uint32_t id, uint32_t paren
  */
 void
 ManglerChannelTree::removeUser(uint32_t id) {/*{{{*/
-    std::string displayName = "";
+    Glib::ustring displayName = "";
     Gtk::TreeModel::Row user;
 
     if (! (user = getUser(id, channelStore->children())) && id > 0) {
@@ -290,8 +288,8 @@ ManglerChannelTree::getUser(uint32_t id, Gtk::TreeModel::Children children) {/*{
 }/*}}}*/
 
 void
-ManglerChannelTree::updateLobby(std::string name, std::string comment, std::string phonetic) {/*{{{*/
-    std::string displayName = "";
+ManglerChannelTree::updateLobby(Glib::ustring name, Glib::ustring comment, Glib::ustring phonetic) {/*{{{*/
+    Glib::ustring displayName = "";
     Gtk::TreeModel::Row lobby;
     gsize tmp;
 
@@ -303,8 +301,7 @@ ManglerChannelTree::updateLobby(std::string name, std::string comment, std::stri
     if (! comment.empty()) {
         displayName = displayName + " (" + comment + ")";
     }
-    //lobby[channelRecord.displayName]       = g_locale_to_utf8(displayName.c_str(), -1, NULL, &tmp, NULL);
-    lobby[channelRecord.displayName]       = Glib::locale_to_utf8(displayName.c_str());
+    lobby[channelRecord.displayName]       = displayName;
     lobby[channelRecord.isUser]            = false;
     lobby[channelRecord.id]                = 0;
     lobby[channelRecord.parent_id]         = 0;
@@ -348,7 +345,7 @@ void
 ManglerChannelTree::channelView_row_activated_cb(const Gtk::TreeModel::Path& path, Gtk::TreeViewColumn* column) {/*{{{*/
     v3_channel *channel;
     Gtk::Dialog *dialog;
-    std::string password;
+    Glib::ustring password;
 
     Gtk::TreeModel::iterator iter = channelStore->get_iter(path);
     Gtk::TreeModel::Row row = *iter;
@@ -370,11 +367,11 @@ ManglerChannelTree::channelView_row_activated_cb(const Gtk::TreeModel::Path& pat
     }
 }/*}}}*/
 
-std::string getTimeString(void) {
+Glib::ustring getTimeString(void) {
     char buf[64];
     time_t t;
     struct tm *tmp;
-    std::string cppbuf;
+    Glib::ustring cppbuf;
 
     t = time(NULL);
     tmp = localtime(&t);
@@ -388,3 +385,4 @@ std::string getTimeString(void) {
     cppbuf = buf;
     return cppbuf;
 }
+

@@ -182,7 +182,7 @@ void ManglerSettings::settingsPTTMouseButton_clicked_cb(void) {/*{{{*/
 bool
 ManglerSettings::settingsPTTKeyDetect(void) {/*{{{*/
     char        pressed_keys[32];
-    std::string ptt_keylist;
+    Glib::ustring ptt_keylist;
     GdkWindow   *rootwin = gdk_get_default_root_window();
 
     // TODO: window close event needs to set isDetectingKey

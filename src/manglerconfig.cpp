@@ -43,7 +43,7 @@ ManglerConfig::ManglerConfig() {/*{{{*/
 void ManglerConfig::save() {/*{{{*/
     mutex.lock();
     std::ofstream   f;
-    std::string     cfgfilename = getenv("HOME");
+    Glib::ustring     cfgfilename = getenv("HOME");
     cfgfilename += "/.manglerrc";
     f.open((char *)cfgfilename.c_str());
     f << "PushToTalkKeyEnabled=" << PushToTalkKeyEnabled << std::endl;
@@ -62,11 +62,11 @@ void ManglerConfig::save() {/*{{{*/
     f.close();
     mutex.unlock();
 }/*}}}*/
-std::string ManglerConfig::get(std::string cfgname) {/*{{{*/
+Glib::ustring ManglerConfig::get(Glib::ustring cfgname) {/*{{{*/
     mutex.lock();
     std::ifstream   f;
     f.exceptions ( std::ifstream::eofbit | std::ifstream::failbit | std::ifstream::badbit );
-    std::string     cfgfilename = getenv("HOME");
+    Glib::ustring     cfgfilename = getenv("HOME");
     cfgfilename += "/.manglerrc";
     try {
         f.open((char *)cfgfilename.c_str());
@@ -83,7 +83,7 @@ std::string ManglerConfig::get(std::string cfgname) {/*{{{*/
         };
     };
     while (! f.eof()) {
-        std::string cfgline;
+        Glib::ustring cfgline;
         try {
             f >> cfgline;
         } catch (std::ifstream::failure e) {
@@ -91,9 +91,9 @@ std::string ManglerConfig::get(std::string cfgname) {/*{{{*/
             mutex.unlock();
             return "";
         }
-        std::string name = cfgline.substr(0, cfgline.find("="));
+        Glib::ustring name = cfgline.substr(0, cfgline.find("="));
         if (name == cfgname) {
-            std::string value = cfgline.substr(cfgline.find("=")+1);
+            Glib::ustring value = cfgline.substr(cfgline.find("=")+1);
             f.close();
             mutex.unlock();
             return value;

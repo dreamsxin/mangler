@@ -31,7 +31,7 @@ class ManglerNetwork
 {
     public:
         ManglerNetwork(Glib::RefPtr<Gtk::Builder> builder);
-        void connect(std::string hostname, std::string port, std::string username, std::string password);
+        void connect(Glib::ustring hostname, Glib::ustring port, Glib::ustring username, Glib::ustring password);
         void disconnect(void);
         Gtk::Button *button;
         Gtk::Label *label;

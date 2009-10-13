@@ -206,13 +206,13 @@ void Mangler::qcConnectButton_clicked_cb(void) {/*{{{*/
 
     channelTree->updateLobby("Connecting...");
     builder->get_widget("qcServerName", textbox);
-    std::string server = textbox->get_text();
+    Glib::ustring server = textbox->get_text();
     builder->get_widget("qcPort", textbox);
-    std::string port = textbox->get_text();
+    Glib::ustring port = textbox->get_text();
     builder->get_widget("qcUsername", textbox);
-    std::string username = textbox->get_text();
+    Glib::ustring username = textbox->get_text();
     builder->get_widget("qcPassword", textbox);
-    std::string password = textbox->get_text();
+    Glib::ustring password = textbox->get_text();
     fprintf(stderr, "connecting to: %s:%s\n", server.c_str(), port.c_str());
     settings->config.qc_lastserver.name = server;
     settings->config.qc_lastserver.port = port;
@@ -302,7 +302,6 @@ Mangler::getNetworkEvent() {/*{{{*/
                     fprintf(stderr, "failed to retreive channel information for channel id %d", ev->channel.id);
                     break;;
                 }
-                fprintf(stderr, "adding channel id %d: %s\n", ev->channel.id, c->name);
                 channelTree->addChannel((uint8_t)c->protect_mode, (uint32_t)c->id, (uint32_t)c->parent, c->name ? c->name : "", c->comment ? c->comment : "", c->phonetic ? c->phonetic : "");
                 v3_free_channel(c);
                 break;
@@ -369,8 +368,8 @@ Mangler::getNetworkEvent() {/*{{{*/
     return true;
 }/*}}}*/
 
-std::string
-Mangler::getPasswordEntry(std::string title, std::string prompt) {
+Glib::ustring
+Mangler::getPasswordEntry(Glib::ustring title, Glib::ustring prompt) {
     password = "";
     passwordEntry->set_text("");
     passwordDialog->set_title(title);
@@ -391,7 +390,7 @@ Mangler::passwordDialogCancelButton_clicked_cb(void) {
 
 
 
-ManglerError::ManglerError(uint32_t code, std::string message, std::string module) {
+ManglerError::ManglerError(uint32_t code, Glib::ustring message, Glib::ustring module) {
     this->code = code;
     this->message = message;
     this->module = module;
@@ -402,6 +401,7 @@ main (int argc, char *argv[])
 {
     Gtk::Main kit(argc, argv);
     struct _cli_options options;
+    char *locale;
 
     // TODO: use getopt()
     if (argc > 1) {
@@ -410,6 +410,12 @@ main (int argc, char *argv[])
         fprintf(stderr, "using ui file: %s\n", options.uifilename.c_str());
     } else {
         options.uifromfile = false;
+    }
+    if (locale = setlocale (LC_ALL, "")) {
+              fprintf(stderr, "initialized locale: %s\n", locale);
+    } else {
+              fprintf(stderr, "Can't set the specified locale! " "Check LANG, LC_CTYPE, LC_ALL.\n");
+              return 1;
     }
     Glib::thread_init();
     if(!Glib::thread_supported()) {

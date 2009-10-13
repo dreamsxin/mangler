@@ -75,9 +75,9 @@ class ManglerChannelTree
     public:
         ManglerChannelTree(Glib::RefPtr<Gtk::Builder> builder);
         Gtk::TreeView                       *channelView;
-        void addChannel(uint8_t protect_mode, uint32_t id, uint32_t parent_id, std::string name, std::string comment = "", std::string phonetic = "");
-        void addUser(uint32_t id, uint32_t channel, std::string name, std::string comment = "", std::string phonetic = "", std::string url = "", std::string integration_text = "", bool guest = false);
-        void updateLobby(std::string name, std::string comment = "", std::string phonetic = "");
+        void addChannel(uint8_t protect_mode, uint32_t id, uint32_t parent_id, Glib::ustring name, Glib::ustring comment = "", Glib::ustring phonetic = "");
+        void addUser(uint32_t id, uint32_t channel, Glib::ustring name, Glib::ustring comment = "", Glib::ustring phonetic = "", Glib::ustring url = "", Glib::ustring integration_text = "", bool guest = false);
+        void updateLobby(Glib::ustring name, Glib::ustring comment = "", Glib::ustring phonetic = "");
         void removeUser(uint32_t id);
         void removeChannel(uint32_t id);
         void userIsTalking(uint16_t id, bool isTalking);
@@ -90,6 +90,7 @@ class ManglerChannelTree
         void channelView_row_activated_cb(const Gtk::TreeModel::Path& path, Gtk::TreeViewColumn* column);
 };
 
-std::string getTimeString(void);
+Glib::ustring getTimeString(void);
+
 
 #endif

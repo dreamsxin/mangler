@@ -32,13 +32,13 @@ ManglerNetwork::ManglerNetwork(        Glib::RefPtr<Gtk::Builder>          build
 }
 
 void
-ManglerNetwork::connect(std::string hostname, std::string port, std::string username, std::string password) {/*{{{*/
+ManglerNetwork::connect(Glib::ustring hostname, Glib::ustring port, Glib::ustring username, Glib::ustring password) {/*{{{*/
     Gtk::MessageDialog *msgdialog;
     Gtk::Statusbar *statusbar;
     Gtk::ProgressBar *progressbar;
     v3_debuglevel(V3_DEBUG_ALL ^ (V3_DEBUG_PACKET_ENCRYPTED));
-    std::string server = hostname + ":" + port;
-    //std::string server = "tungsten.typefrag.com:29549"; std::string password = "";
+    Glib::ustring server = hostname + ":" + port;
+    //Glib::ustring server = "tungsten.typefrag.com:29549"; Glib::ustring password = "";
     if (! v3_login((char *)server.c_str(), (char *)username.c_str(), (char *)password.c_str(), (char *)"")) {
         gdk_threads_enter();
         builder->get_widget("errorDialog", msgdialog);
