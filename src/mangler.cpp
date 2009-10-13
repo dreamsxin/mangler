@@ -30,6 +30,8 @@
 #include "manglerui.h"
 #include "mangler-icons.h"
 
+Glib::ustring c_to_ustring(char *input);
+
 using namespace std;
 
 Mangler *mangler;
@@ -269,7 +271,15 @@ Mangler::getNetworkEvent() {/*{{{*/
             case V3_EVENT_USER_LOGIN:
                 u = v3_get_user(ev->user.id);
                 fprintf(stderr, "adding user id %d: %s\n", ev->user.id, u->name);
-                channelTree->addUser((uint32_t)u->id, (uint32_t)u->channel, u->name, u->comment, u->phonetic, u->url, u->integration_text, (bool)u->guest);
+                channelTree->addUser(
+                        (uint32_t)u->id,
+                        (uint32_t)ev->channel.id,
+                        c_to_ustring(u->name),
+                        c_to_ustring(u->comment),
+                        u->phonetic,
+                        u->url,
+                        c_to_ustring(u->integration_text),
+                        (bool)u->guest);
                 v3_free_user(u);
                 break;
             case V3_EVENT_CHAN_REMOVE:
@@ -293,7 +303,15 @@ Mangler::getNetworkEvent() {/*{{{*/
                 }
                 fprintf(stderr, "moving user id %d to channel id %d\n", ev->user.id, ev->channel.id);
                 channelTree->removeUser((uint32_t)ev->user.id);
-                channelTree->addUser((uint32_t)u->id, (uint32_t)ev->channel.id, u->name, u->comment, u->phonetic, u->url, u->integration_text);
+                channelTree->addUser(
+                        (uint32_t)u->id,
+                        (uint32_t)ev->channel.id,
+                        c_to_ustring(u->name),
+                        c_to_ustring(u->comment),
+                        u->phonetic,
+                        u->url,
+                        c_to_ustring(u->integration_text),
+                        (bool)u->guest);
                 v3_free_user(u);
                 break;
             case V3_EVENT_CHAN_ADD:
@@ -302,7 +320,13 @@ Mangler::getNetworkEvent() {/*{{{*/
                     fprintf(stderr, "failed to retreive channel information for channel id %d", ev->channel.id);
                     break;;
                 }
-                channelTree->addChannel((uint8_t)c->protect_mode, (uint32_t)c->id, (uint32_t)c->parent, c->name ? c->name : "", c->comment ? c->comment : "", c->phonetic ? c->phonetic : "");
+                channelTree->addChannel(
+                        (uint8_t)c->protect_mode,
+                        (uint32_t)c->id,
+                        (uint32_t)c->parent,
+                        c_to_ustring(c->name),
+                        c_to_ustring(c->comment),
+                        c->phonetic);
                 v3_free_channel(c);
                 break;
             case V3_EVENT_ERROR_MSG:
@@ -429,3 +453,18 @@ main (int argc, char *argv[])
     gdk_threads_leave();
 }
 
+Glib::ustring c_to_ustring(char *input) {
+    int ctr;
+    Glib::ustring u = "";
+    Glib::ustring e = "";
+
+    for (ctr = 0; ctr < strlen(input); ctr++) {
+        u += (gunichar)((uint8_t)input[ctr]);
+    }
+    try {
+        e = Glib::locale_to_utf8(u);
+    } catch (const Glib::Error& e) {
+        return u;
+    }
+    return e;
+}

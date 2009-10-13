@@ -1585,7 +1585,17 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
 
                                 speex_packet = (_v3_msg_0x52_speex *)m;
                                 enc_frame_size = speex_packet->length / speex_packet->audio_count - 2;
-                                state = speex_decoder_init(&speex_uwb_mode);
+                                switch (ev->pcm.rate) {
+                                    case 8000:
+                                        state = speex_decoder_init(&speex_nb_mode);
+                                        break;
+                                    case 16000:
+                                        state = speex_decoder_init(&speex_wb_mode);
+                                        break;
+                                    case 32000:
+                                        state = speex_decoder_init(&speex_uwb_mode);
+                                        break;
+                                }
                                 speex_bits_init(&bits);
                                 for (ctr = 0; ctr < speex_packet->audio_count; ctr++) {
                                     memcpy(cbits, speex_packet->frames[ctr] + 2, enc_frame_size);

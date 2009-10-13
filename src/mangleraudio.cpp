@@ -37,6 +37,16 @@ ManglerAudio::ManglerAudio(uint16_t userid, uint32_t rate) {
         fprintf(stderr, __FILE__": pa_simple_new() failed: %s\n", pa_strerror(error));
         return;
     }
+#elif HAVE_ALSA
+    snd_pcm_t *pcm_handle;          
+    snd_pcm_stream_t stream = SND_PCM_STREAM_PLAYBACK;
+    snd_pcm_hw_params_t *hwparams;
+    char pcm_name[] = "plughw:0,0";
+    snd_pcm_hw_params_alloca(&hwparams);
+    if (snd_pcm_open(&pcm_handle, pcm_name, stream, 0) < 0) {
+        fprintf(stderr, "Error opening PCM device %s\n", pcm_name);
+        return(-1);
+    }
 #endif
     pcm_queue = g_async_queue_new();
     Glib::Thread::create(sigc::mem_fun(*this, &ManglerAudio::play), FALSE);
