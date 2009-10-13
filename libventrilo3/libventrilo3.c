@@ -1493,6 +1493,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                 } else {
                     size = strlen(*motd);
                     *motd = realloc(*motd, size + m->message_size + 1);
+                    memset(*motd + size, 0, m->message_size + 1);
                     memcpy(*motd + size, m->message, m->message_size);
                 }
                 if(m->message_id +1 == m->message_num) {
