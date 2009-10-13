@@ -44,7 +44,8 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
     icons.insert(std::make_pair("purple_circle",                Gdk::Pixbuf::create_from_inline(-1, purple_circle               )));
     icons.insert(std::make_pair("red_circle",                   Gdk::Pixbuf::create_from_inline(-1, red_circle                  )));
     icons.insert(std::make_pair("yellow_circle",                Gdk::Pixbuf::create_from_inline(-1, yellow_circle               )));
-    icons.insert(std::make_pair("joystick",                     Gdk::Pixbuf::create_from_inline(-1, joystick                    )));
+    icons.insert(std::make_pair("logo1",                        Gdk::Pixbuf::create_from_inline(-1, logo1                       )));
+    icons.insert(std::make_pair("logo2",                        Gdk::Pixbuf::create_from_inline(-1, logo2                       )));
 
 
     try {
@@ -54,7 +55,7 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
             builder = Gtk::Builder::create_from_string(ManglerUI);
         }
         builder->get_widget("manglerWindow", manglerWindow);
-        manglerWindow->set_icon(icons["joystick"]);
+        manglerWindow->set_icon(icons["logo2"]);
     } catch(const Glib::Error& e) {
         std::cerr << e.what() << std::endl;
         exit(0);
@@ -100,6 +101,10 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
     builder->get_widget("qcCancelButton", button);
     button->signal_clicked().connect(sigc::mem_fun(this, &Mangler::qcCancelButton_clicked_cb));
 
+    // MOTD Window Buttons
+    builder->get_widget("motdOkButton", button);
+    button->signal_clicked().connect(sigc::mem_fun(this, &Mangler::motdOkButton_clicked_cb));
+
     // Set up our generic password dialog box
     builder->get_widget("passwordDialog", passwordDialog);
     builder->get_widget("passwordEntry", passwordEntry);
@@ -119,7 +124,7 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
     settings->config.load();
 
     // Statusbar Icon
-    statusIcon = Gtk::StatusIcon::create(icons["joystick"]);
+    statusIcon = Gtk::StatusIcon::create(icons["logo2"]);
 }/*}}}*/
 
 /*
@@ -130,7 +135,7 @@ void Mangler::quickConnectButton_clicked_cb(void) {/*{{{*/
     Gtk::Entry *textbox;
 
     builder->get_widget("quickConnectDialog", dialog);
-    dialog->set_icon(icons["joystick"]);
+    dialog->set_icon(icons["logo2"]);
 
     builder->get_widget("qcServerName", textbox);
     textbox->set_text(settings->config.qc_lastserver.name);
@@ -150,7 +155,7 @@ void Mangler::quickConnectButton_clicked_cb(void) {/*{{{*/
 }/*}}}*/
 void Mangler::serverConfigButton_clicked_cb(void) {/*{{{*/
     builder->get_widget("serverListWindow", window);
-    window->set_icon(icons["joystick"]);
+    window->set_icon(icons["logo2"]);
     window->show();
 }/*}}}*/
 void Mangler::connectButton_clicked_cb(void) {/*{{{*/
@@ -183,8 +188,8 @@ void Mangler::settingsButton_clicked_cb(void) {/*{{{*/
 }/*}}}*/
 void Mangler::aboutButton_clicked_cb(void) {/*{{{*/
     builder->get_widget("aboutWindow", aboutdialog);
-    aboutdialog->set_icon(icons["joystick"]);
-    aboutdialog->set_logo(icons["joystick"]);
+    aboutdialog->set_icon(icons["logo2"]);
+    aboutdialog->set_logo(icons["logo2"]);
     aboutdialog->run();
     aboutdialog->hide();
 }/*}}}*/
@@ -218,6 +223,12 @@ void Mangler::qcConnectButton_clicked_cb(void) {/*{{{*/
     Glib::signal_timeout().connect( sigc::mem_fun(*this, &Mangler::getNetworkEvent), 50 );
 }/*}}}*/
 void Mangler::qcCancelButton_clicked_cb(void) {/*{{{*/
+}/*}}}*/
+
+// MOTD Window Callbacks
+void Mangler::motdOkButton_clicked_cb(void) {/*{{{*/
+    builder->get_widget("motdWindow", window);
+    window->hide();
 }/*}}}*/
 
 bool
@@ -297,7 +308,7 @@ Mangler::getNetworkEvent() {/*{{{*/
                 break;
             case V3_EVENT_ERROR_MSG:
                 builder->get_widget("errorDialog", msgdialog);
-                msgdialog->set_icon(icons["joystick"]);
+                msgdialog->set_icon(icons["logo2"]);
                 msgdialog->set_message(ev->error.message);
                 msgdialog->run();
                 msgdialog->hide();
@@ -334,7 +345,18 @@ Mangler::getNetworkEvent() {/*{{{*/
                 break;
             case V3_EVENT_PLAY_AUDIO:
                 if (audio[ev->user.id]) {
-                    audio[ev->user.id]->queue(ev->pcm.length, (uint8_t *)ev->pcm.sample);
+                    audio[ev->user.id]->queue(ev->pcm.length, (uint8_t *)ev->data.sample);
+                }
+                break;
+            case V3_EVENT_DISPLAY_MOTD:
+                {
+                    Glib::RefPtr< Gtk::TextBuffer > tb = Gtk::TextBuffer::create();
+                    builder->get_widget("motdWindow", window);
+                    window->set_title("Mangler - MOTD");
+                    builder->get_widget("motdTextView", textview);
+                    tb->set_text(ev->data.motd);
+                    textview->set_buffer(tb);
+                    window->show();
                 }
                 break;
             default:

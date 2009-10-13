@@ -151,7 +151,7 @@ int main(int argc, char *argv[]) {
                 }
                 _v3_debug(V3_DEBUG_INFO, "outputting sound");
                 _v3_debug(V3_DEBUG_INFO, "writing %d bytes to PA", ev->pcm.length);
-                if ((ret = pa_simple_write(PAs, ev->pcm.sample, (size_t) ev->pcm.length, &PAerror)) < 0) {
+                if ((ret = pa_simple_write(PAs, ev->data.sample, (size_t) ev->pcm.length, &PAerror)) < 0) {
                     fprintf(stderr, __FILE__": pa_simple_write() failed: %s\n", pa_strerror(PAerror));
                     exit(0);
                 }

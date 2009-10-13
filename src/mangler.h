@@ -46,7 +46,7 @@ class Mangler
     public:
         Mangler(struct _cli_options *options);
         void initialize(void);
-        Gtk::Window  *manglerWindow;
+        Gtk::Window                         *manglerWindow;
         Glib::RefPtr<Gtk::Builder>          builder;
         Gtk::Button                         *button;
         Gtk::Dialog                         *dialog;
@@ -57,6 +57,7 @@ class Mangler
         Gtk::Statusbar                      *statusbar;
         Gtk::Label                          *label;
         Gtk::Entry                          *entry;
+        Gtk::TextView                       *textview;
         std::map<std::string, Glib::RefPtr<Gdk::Pixbuf> >  icons;
         Glib::RefPtr<Gtk::StatusIcon>       statusIcon;
         ManglerChannelTree                  *channelTree;
@@ -91,6 +92,8 @@ class Mangler
         // quick connect signal handlers
         void qcConnectButton_clicked_cb(void);
         void qcCancelButton_clicked_cb(void);
+
+        void motdOkButton_clicked_cb(void);
 
         // password dialog signal handlers
         void passwordDialogOkButton_clicked_cb(void);

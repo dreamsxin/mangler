@@ -173,6 +173,7 @@ enum _v3_events
     V3_EVENT_USER_TALK_START,
     V3_EVENT_USER_TALK_END,
     V3_EVENT_PLAY_AUDIO,
+    V3_EVENT_DISPLAY_MOTD,
 
     // outbound specific event types
     V3_EVENT_CHANGE_CHANNEL,
@@ -218,8 +219,11 @@ struct _v3_event {
     struct {
         uint32_t length;
         uint32_t rate;
-        uint8_t  sample[32768]; // this is probably too much. pcm events should probably cap at 16k
     } pcm;
+    union {
+        uint8_t sample[32768]; // this is probably too much. pcm events should probably cap at 16k
+        char    motd[2048]; 
+    } data;
     v3_event *next;
 };
 

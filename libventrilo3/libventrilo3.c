@@ -1497,6 +1497,12 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                 }
                 if(m->message_id +1 == m->message_num) {
                     // At this point we have our motd, may want to notify the user here :)
+                    v3_event *ev;
+                    ev = malloc(sizeof(v3_event));
+                    memset(ev, 0, sizeof(v3_event));
+                    ev->type = V3_EVENT_DISPLAY_MOTD;
+                    strncpy(ev->data.motd, *motd, 2047);
+                    v3_queue_event(ev);
                 }
                 _v3_destroy_packet(msg);
                 _v3_func_leave("_v3_process_message");
@@ -1563,8 +1569,8 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                                         _v3_debug(V3_DEBUG_INFO, "failed to decode gsm frame %d", ctr);
                                         continue;
                                     }
-                                    _v3_debug(V3_DEBUG_INFO, "copying 640 bytes of frame %d from %lu to %lu", ctr, sample, ev->pcm.sample+(ctr*640));
-                                    memcpy(ev->pcm.sample+(ctr*640), sample, 640);
+                                    _v3_debug(V3_DEBUG_INFO, "copying 640 bytes of frame %d from %lu to %lu", ctr, sample, ev->data.sample+(ctr*640));
+                                    memcpy(ev->data.sample+(ctr*640), sample, 640);
                                 }
                                 ev->pcm.length = gsm_packet->length/65*640;
                                 _v3_debug(V3_DEBUG_EVENT, "queueing pcm msg length %d", ev->pcm.length);
@@ -1583,7 +1589,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                                 for (ctr = 0; ctr < speex_packet->audio_count; ctr++) {
                                     memcpy(cbits, speex_packet->frames[ctr] + 2, enc_frame_size);
                                     speex_bits_read_from(&bits, cbits, enc_frame_size);
-                                    speex_decode_int(state, &bits, ((int16_t *)ev->pcm.sample)+ctr*speex_packet->frame_size);
+                                    speex_decode_int(state, &bits, ((int16_t *)ev->data.sample)+ctr*speex_packet->frame_size);
                                 }
                                 ev->pcm.length  = speex_packet->audio_count * speex_packet->frame_size * sizeof(int16_t);
                                 _v3_debug(V3_DEBUG_EVENT, "queueing pcm msg length %d", ev->pcm.length);
@@ -1917,6 +1923,12 @@ v3_login(char *server, char *username, char *password, char *phonetic) {/*{{{*/
     v3_luser.name = strdup(username);
     v3_luser.password = strdup(password);
     v3_luser.phonetic = strdup(phonetic);
+    if (pipe(v3_server.evpipe)) {
+        _v3_error("could not create outbound event queue");
+        return false;
+    }
+    v3_server.evinstream = fdopen(v3_server.evpipe[0], "r");
+    v3_server.evoutstream = fdopen(v3_server.evpipe[1], "w");
     free(srvname);
     /*
        Call home and verify the server's license
@@ -2040,15 +2052,6 @@ v3_login(char *server, char *username, char *password, char *phonetic) {/*{{{*/
         _v3_send(response);
         _v3_destroy_packet(response);
 
-        // create our event pipe to listen on
-        _v3_status(97, "Creating Event Queue.");
-        if (pipe(v3_server.evpipe)) {
-            _v3_error("could not create outbound event queue");
-            return false;
-        }
-        v3_server.evinstream = fdopen(v3_server.evpipe[0], "r");
-        v3_server.evoutstream = fdopen(v3_server.evpipe[1], "w");
-
         _v3_status(100, "Login Complete.");
         {
             v3_event *ev;
@@ -2081,8 +2084,12 @@ v3_logout(void) {/*{{{*/
     _v3_destroy_channellist();
     _v3_destroy_userlist();
     v3_luser.id = -1;
+    fclose(v3_server.evinstream);
+    fclose(v3_server.evoutstream);
     close(v3_server.evpipe[0]);
     close(v3_server.evpipe[1]);
+    v3_server.evpipe[0] = -1;
+    v3_server.evpipe[1] = -1;
     _v3_func_leave("v3_logout");
     return true;
 }/*}}}*/
