@@ -24,8 +24,10 @@
  * along with Mangler.  If not, see <http://www.gnu.org/licenses/>.
  */
 		
-#include <iostream>
-#include <fstream>
+#include <stdio.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
 #include "mangler.h"
 #include "manglerconfig.h"
 
@@ -40,66 +42,120 @@ ManglerConfig::ManglerConfig() {/*{{{*/
     std::vector<ManglerServerConfig> serverlist;
     load();
 }/*}}}*/
-void ManglerConfig::save() {/*{{{*/
+bool ManglerConfig::save() {/*{{{*/
+    // We're going to do this in one in C because it's easier for me...
+    char buf[1024];
+    bool notified;
+
     mutex.lock();
-    std::ofstream   f;
     Glib::ustring     cfgfilename = getenv("HOME");
     cfgfilename += "/.manglerrc";
-    f.open((char *)cfgfilename.c_str());
-    f << "PushToTalkKeyEnabled=" << PushToTalkKeyEnabled << std::endl;
-    f << "PushToTalkKeyValue=" << PushToTalkKeyValue << std::endl;
-    f << "PushToTalkMouseEnabled=" << PushToTalkMouseEnabled << std::endl;
-    f << "PushToTalkMouseValue=" << PushToTalkMouseValue << std::endl;
-    f << "qc_lastserver.name=" << qc_lastserver.name << std::endl;
-    f << "qc_lastserver.port=" << qc_lastserver.port << std::endl;
-    f << "qc_lastserver.username=" << qc_lastserver.username << std::endl;
-    f << "qc_lastserver.password=" << qc_lastserver.password << std::endl;
-    f << "qc_lastserver.phonetic=" << "" << std::endl;
-    f << "qc_lastserver.comment=" << "" << std::endl;
-    f << "lastConnectedServerId=" << "-1" << std::endl;
-    f << "lv3_debuglevel=" << lv3_debuglevel << std::endl;
+    if (! (this->cfgstream = fopen((char *)cfgfilename.c_str(), "w"))) {
+        fprintf(stderr, "could not open settings file for writing: %s\n", (char *)cfgfilename.c_str());
+        mutex.unlock();
+        return false;
+    }
+    put("PushToTalkKeyEnabled", PushToTalkKeyEnabled);
+    put("PushToTalkKeyValue", PushToTalkKeyValue);
+    put("PushToTalkMouseEnabled", PushToTalkMouseEnabled);
+    put("PushToTalkMouseValue", PushToTalkMouseValue);
+    put("qc_lastserver.name", qc_lastserver.name);
+    put("qc_lastserver.port", qc_lastserver.port);
+    put("qc_lastserver.username", qc_lastserver.username);
+    put("qc_lastserver.password", qc_lastserver.password);
+    put("qc_lastserver.phonetic", "");
+    put("qc_lastserver.comment", "");
+    put("lastConnectedServerId", "-1");
     // TODO: saveServerList();
-    f.close();
+    fclose(this->cfgstream);
     mutex.unlock();
 }/*}}}*/
+bool ManglerConfig::put(Glib::ustring name, Glib::ustring value) {/*{{{*/
+    char buf[1024];
+    snprintf(buf, 1023, "%s=%s\n", (char *)name.c_str(), (char *)value.c_str());
+    if (!fputs(buf, this->cfgstream)) {
+        return false;
+    }
+    return true;
+}/*}}}*/
+bool ManglerConfig::put(Glib::ustring name, uint32_t value) {/*{{{*/
+    char buf[1024];
+    snprintf(buf, 1023, "%s=%d\n", (char *)name.c_str(), value);
+    if (!fputs(buf, this->cfgstream)) {
+        return false;
+    }
+    return true;
+}/*}}}*/
+bool ManglerConfig::put(Glib::ustring name, bool value) {/*{{{*/
+    char buf[1024];
+    snprintf(buf, 1023, "%s=%d\n", (char *)name.c_str(), value ? 1 : 0);
+    if (!fputs(buf, this->cfgstream)) {
+        return false;
+    }
+    return true;
+}/*}}}*/
 Glib::ustring ManglerConfig::get(Glib::ustring cfgname) {/*{{{*/
+    // We're going to do this in one in C too...
+    struct stat cfgstat;
+    static bool notified = false;
+    char buf[1024];
+    int ctr = 0;
+
     mutex.lock();
-    std::ifstream   f;
-    f.exceptions ( std::ifstream::eofbit | std::ifstream::failbit | std::ifstream::badbit );
     Glib::ustring     cfgfilename = getenv("HOME");
     cfgfilename += "/.manglerrc";
-    try {
-        f.open((char *)cfgfilename.c_str());
-    } catch (std::ifstream::failure e) {
-        try {
-            mutex.unlock();
-            save();
-            mutex.lock();
-            f.open((char *)cfgfilename.c_str());
-        } catch (std::ifstream::failure e) {
-            fprintf(stderr, "could not create %s\n", (char *)cfgfilename.c_str());
-            mutex.unlock();
-            return "";
-        };
-    };
-    while (! f.eof()) {
-        Glib::ustring cfgline;
-        try {
-            f >> cfgline;
-        } catch (std::ifstream::failure e) {
-            f.close();
+    // check to see if the file exists
+    if (stat(cfgfilename.c_str(), &cfgstat)) {
+        // if not create it
+        if (! (this->cfgstream = fopen(cfgfilename.c_str(), "w"))) {
+            // if creation fails, print error
+            if (!notified) {
+                fprintf(stderr, "could not create settings file: %s\n", (char *)cfgfilename.c_str());
+                notified = true;
+            }
             mutex.unlock();
             return "";
-        }
-        Glib::ustring name = cfgline.substr(0, cfgline.find("="));
-        if (name == cfgname) {
-            Glib::ustring value = cfgline.substr(cfgline.find("=")+1);
-            f.close();
-            mutex.unlock();
-            return value;
+        } else {
+            fclose(this->cfgstream);
         }
     }
-    f.close();
+    if (! (this->cfgstream = fopen(cfgfilename.c_str(), "r"))) {
+        if (!notified) {
+            fprintf(stderr, "could not open settings file for reading: %s\n", (char *)cfgfilename.c_str());
+            notified = true;
+        }
+        mutex.unlock();
+    }
+
+    while (! feof(this->cfgstream)) {
+        char *name, *value;
+        if (! fgets(buf, 1024, this->cfgstream)) {
+            fclose(this->cfgstream);
+            mutex.unlock();
+            return "";
+        }
+        ctr++;
+        if (buf[strlen(buf)-1] != '\n') {
+            fprintf(stderr, "error in settings file: line %d is longer than 1024 characters\n", ctr);
+            fclose(this->cfgstream);
+            mutex.unlock();
+            return "";
+        }
+        buf[strlen(buf)-1] = '\0';
+        name = buf;
+        if ((value = strchr(buf, '=')) == NULL) {
+            continue;
+        }
+        *value = '\0';
+        value++;
+        if (strcmp((char *)cfgname.c_str(), name) == 0) {
+            Glib::ustring uvalue = value;
+            fclose(this->cfgstream);
+            mutex.unlock();
+            return uvalue;
+        }
+    }
+    fclose(this->cfgstream);
     mutex.unlock();
     return "";
 }/*}}}*/

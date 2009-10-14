@@ -46,15 +46,19 @@ class ManglerConfig {
 		Glib::Mutex     mutex;
 		uint32_t        lv3_debuglevel;
 		bool            PushToTalkKeyEnabled;
-                Glib::ustring     PushToTalkKeyValue;
+                Glib::ustring   PushToTalkKeyValue;
 		bool            PushToTalkMouseEnabled;
-                Glib::ustring     PushToTalkMouseValue;
+                Glib::ustring   PushToTalkMouseValue;
 		ManglerServerConfig   qc_lastserver;
 		std::vector<ManglerServerConfig> serverlist;
+                FILE            *cfgstream;
 
 		ManglerConfig();
-		void save();
+		bool save();
                 Glib::ustring get(Glib::ustring cfgname);
+                bool put(Glib::ustring name, bool value);
+                bool put(Glib::ustring name, Glib::ustring value);
+                bool put(Glib::ustring name, uint32_t value);
 		void load();
 };
 
