@@ -320,7 +320,7 @@
                         <property name="visible">True</property>
                         <property name="orientation">vertical</property>
                         <child>
-                          <object class="GtkHBox" id="hbox2">
+                          <object class="GtkHBox" id="serverSelectHbox">
                             <property name="visible">True</property>
                             <child>
                               <object class="GtkComboBox" id="serverSelectComboBox">
@@ -352,7 +352,7 @@
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkTable" id="table1">
+                          <object class="GtkTable" id="serverTable">
                             <property name="visible">True</property>
                             <property name="n_rows">2</property>
                             <property name="n_columns">6</property>
@@ -360,7 +360,7 @@
                             <property name="row_spacing">3</property>
                             <property name="homogeneous">True</property>
                             <child>
-                              <object class="GtkLabel" id="label1">
+                              <object class="GtkLabel" id="pingHeaderLabel">
                                 <property name="visible">True</property>
                                 <property name="xalign">0.94999998807907104</property>
                                 <property name="label" translatable="yes">Ping:</property>
@@ -379,7 +379,7 @@
                               </packing>
                             </child>
                             <child>
-                              <object class="GtkLabel" id="label3">
+                              <object class="GtkLabel" id="userHeaderLabel">
                                 <property name="visible">True</property>
                                 <property name="xalign">0.94999998807907104</property>
                                 <property name="label" translatable="yes">Users:</property>
@@ -402,7 +402,7 @@
                               </packing>
                             </child>
                             <child>
-                              <object class="GtkLabel" id="label2">
+                              <object class="GtkLabel" id="recordingLabelHeader">
                                 <property name="visible">True</property>
                                 <property name="xalign">0.94999998807907104</property>
                                 <property name="label" translatable="yes">Recording:</property>
@@ -413,7 +413,7 @@
                               </packing>
                             </child>
                             <child>
-                              <object class="GtkLabel" id="label25">
+                              <object class="GtkLabel" id="recordingLabel">
                                 <property name="visible">True</property>
                                 <property name="xalign">0</property>
                                 <property name="label" translatable="yes">&lt;span color="darkgreen"&gt;No&lt;/span&gt;</property>
@@ -457,7 +457,7 @@
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkScrolledWindow" id="scrolledwindow1">
+                          <object class="GtkScrolledWindow" id="channelViewScrolledWindow">
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="hscrollbar_policy">automatic</property>
