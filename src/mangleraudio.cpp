@@ -33,7 +33,7 @@ ManglerAudio::ManglerAudio(uint16_t userid, uint32_t rate) {
     pulse_samplespec.rate = rate;
     pulse_samplespec.channels = 1;
     this->userid = userid;
-    if (!(pulse_stream = pa_simple_new(NULL, "mangler", PA_STREAM_PLAYBACK, NULL, &pulse_samplespec, NULL, NULL, &error))) {
+    if (!(pulse_stream = pa_simple_new(NULL, "mangler", PA_STREAM_PLAYBACK, NULL, "playback", &pulse_samplespec, NULL, NULL, &error))) {
         fprintf(stderr, __FILE__": pa_simple_new() failed: %s\n", pa_strerror(error));
         return;
     }

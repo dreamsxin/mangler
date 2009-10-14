@@ -3,11 +3,8 @@ Section: net
 Priority: extra
 Maintainer: Eric Kilfoil <ekilfoil@gmail.com>
 Build-Depends: debhelper (>= 7), autotools-dev, libgsm1-dev, libspeex-dev, libgtkmm-2.4-dev, libpulse-dev
-
-
 Standards-Version: 3.8.0
 Homepage: http://www.mangler.org/
-
 Package: mangler
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
