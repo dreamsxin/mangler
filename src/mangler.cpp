@@ -31,6 +31,7 @@
 #include "mangler-icons.h"
 
 Glib::ustring c_to_ustring(char *input);
+Glib::ustring iso_8859_1_to_utf8(char *input);
 
 using namespace std;
 
@@ -468,44 +469,91 @@ main (int argc, char *argv[])
 }
 
 Glib::ustring c_to_ustring(char *input) {
-    int ctr;
-    Glib::ustring u = "";
-    Glib::ustring e = "";
+    Glib::ustring converted, input_u = input;
 
-    for (ctr = 0; ctr < strlen(input); ctr++) {
-        u += (gunichar)((uint8_t)input[ctr]);
-    }
+    // check if input is already valid UTF-8
+    if (input_u.validate())
+        return input_u;
+
+   // try to convert using the current locale
     try {
-        e = Glib::locale_to_utf8(u);
-    } catch (const Glib::Error& e) {
-        return u;
+        converted = Glib::locale_to_utf8(input);
+    } catch (Glib::ConvertError &e) {
+        // locale conversion failed
+        converted = iso_8859_1_to_utf8(input);
     }
-    return e;
+
+    return converted;
 }
 
-/*
-Glib::ustring c_to_ustring(char *input) {
-    int ctr;
-    Glib::ustring u = "";
-    Glib::ustring e = "";
+/* converts a CP1252/ISO-8859-1(5) hybrid to UTF-8                           */
+/* Features: 1. It never fails, all 00-FF chars are converted to valid UTF-8 */
+/*           2. Uses CP1252 in the range 80-9f because ISO doesn't have any- */
+/*              thing useful in this range and it helps us receive from mIRC */
+/*           3. The five undefined chars in CP1252 80-9f are replaced with   */
+/*              ISO-8859-15 control codes.                                   */
+/*           4. Handles 0xa4 as a Euro symbol ala ISO-8859-15.               */
+/*           5. Uses ISO-8859-1 (which matches CP1252) for everything else.  */
+/*           6. This routine measured 3x faster than g_convert :)            */
+Glib::ustring iso_8859_1_to_utf8 (char *input) {
+    Glib::ustring output;
+    unsigned char *text = (unsigned char *)input;
+    int len = strlen(input);
+    static const gunichar lowtable[] = /* 74 byte table for 80-a4 */
+    {
+    /* compressed utf-8 table */
+        0x20ac, /* 80 Euro. CP1252 from here on... */
+        0x81,   /* 81 NA */
+        0x201a, /* 82 */
+        0x192,  /* 83 */
+        0x201e, /* 84 */
+        0x2026, /* 85 */
+        0x2020, /* 86 */
+        0x2021, /* 87 */
+        0x2c6,  /* 88 */
+        0x2030, /* 89 */
+        0x160,  /* 8a */
+        0x2039, /* 8b */
+        0x152,  /* 8c */
+        0x8d,   /* 8d NA */
+        0x17d,  /* 8e */
+        0x8f,   /* 8f NA */
+        0x90,   /* 90 NA */
+        0x2018, /* 91 */
+        0x2019, /* 92 */
+        0x201c, /* 93 */
+        0x201d, /* 94 */
+        0x2022, /* 95 */
+        0x2013, /* 96 */
+        0x2014, /* 97 */
+        0x2dc,  /* 98 */
+        0x2122, /* 99 */
+        0x161,  /* 9a */
+        0x203a, /* 9b */
+        0x153,  /* 9c */
+        0x9d,   /* 9d NA */
+        0x17e,  /* 9e */
+        0x178,  /* 9f */
+        0xa0,   /* a0 */
+        0xa1,   /* a1 */
+        0xa2,   /* a2 */
+        0xa3,   /* a3 */
+        0x20ac  /* a4 ISO-8859-15 Euro. */
+    };
 
-    printf("UTF8: trying conversion\n");
-    try {
-        e = Glib::locale_to_utf8(input);
-    } catch (const Glib::Error& error) {
-        printf("UTF8: initial failed... converting manually\n");
-        for (ctr = 0; ctr < strlen(input); ctr++) {
-            u += (gunichar)((uint8_t)input[ctr]);
+    while (len) {
+        if (G_UNLIKELY(*text >= 0x80) && G_UNLIKELY(*text <= 0xa4)) {
+            int idx = *text - 0x80;
+            output += lowtable[idx];
+        } else {
+            output += (gunichar)*text;    /* ascii/iso88591 maps directly */
         }
-        try {
-            printf("UTF8: trying conversion again\n");
-            e = Glib::locale_to_utf8(u);
-        } catch (const Glib::Error& error) {
-            printf("UTF8: second conversion failed too\n");
-            return Glib::ustring(input);
-        }
-        return e;
+
+        text++;
+        len--;
     }
-    return e;
+
+    output += '\x00';    /* terminate */
+
+    return output;
 }
-*/
