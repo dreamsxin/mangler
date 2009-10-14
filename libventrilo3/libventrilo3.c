@@ -1803,7 +1803,8 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                             memset(ev, 0, sizeof(v3_event));
                             ev->type = V3_EVENT_USER_LOGIN;
                             ev->user.id = m->user_list[ctr].id;
-                            _v3_debug(V3_DEBUG_INFO, "queuing event type %d for user %d", ev->type, ev->user.id);
+                            ev->channel.id = m->user_list[ctr].channel;
+                            _v3_debug(V3_DEBUG_INFO, "queuing event type %d for user %d to channel %d", ev->type, ev->user.id, ev->channel.id);
                             v3_queue_event(ev);
                         }
                         break;

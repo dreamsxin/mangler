@@ -270,7 +270,7 @@ Mangler::getNetworkEvent() {/*{{{*/
                 break;/*}}}*/
             case V3_EVENT_USER_LOGIN:/*{{{*/
                 u = v3_get_user(ev->user.id);
-                fprintf(stderr, "adding user id %d: %s\n", ev->user.id, u->name);
+                fprintf(stderr, "adding user id %d: %s to channel %d\n", ev->user.id, u->name, ev->channel.id);
                 channelTree->addUser(
                         (uint32_t)u->id,
                         (uint32_t)ev->channel.id,
