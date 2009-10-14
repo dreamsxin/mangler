@@ -350,20 +350,32 @@ ManglerChannelTree::channelView_row_activated_cb(const Gtk::TreeModel::Path& pat
     Gtk::TreeModel::iterator iter = channelStore->get_iter(path);
     Gtk::TreeModel::Row row = *iter;
     int id = row[channelRecord.id];
-    if (id != 0) {
-        channel = v3_get_channel(id);
-        if (! channel) {
-            fprintf(stderr, "failed to retrieve channel information for channel id %d", id);
+    bool isUser = row[channelRecord.isUser];
+    if (isUser) {
+        // double clicked a user
+    } else {
+        // double clicked a channel
+        Gtk::TreeModel::Row user = getUser(v3_get_user_id(), channelStore->children());
+        int curchannel = user[channelRecord.parent_id];
+        if (id == curchannel) {
+            // we're already in this channel
             return;
         }
-        if (channel->protect_mode == 1) {  // Channel is password protected
-            password = mangler->getPasswordEntry("Channel Password");
+        if (id != 0) {
+            channel = v3_get_channel(id);
+            if (! channel) {
+                fprintf(stderr, "failed to retrieve channel information for channel id %d", id);
+                return;
+            }
+            if (channel->protect_mode == 1) {  // Channel is password protected
+                password = mangler->getPasswordEntry("Channel Password");
+            }
+            v3_free_channel(channel);
         }
-        v3_free_channel(channel);
-    }
-    bool isUser = row[channelRecord.isUser];
-    if (! isUser) {
-        v3_change_channel(id, (char *)password.c_str());
+        bool isUser = row[channelRecord.isUser];
+        if (! isUser) {
+            v3_change_channel(id, (char *)password.c_str());
+        }
     }
 }/*}}}*/
 

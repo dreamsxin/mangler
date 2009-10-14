@@ -249,6 +249,25 @@ _v3_net_message *_v3_put_0x37(int sequence) {/*{{{*/
     return m;
 }/*}}}*/
 /*}}}*/
+// Message 0x3c (60) | PING /*{{{*/
+int
+_v3_get_0x3c(_v3_net_message *msg) {/*{{{*/
+    _v3_msg_0x3c *m;
+
+    _v3_func_enter("_v3_get_0x3c");
+    if (msg->len != sizeof(_v3_msg_0x3c)) {
+        _v3_debug(V3_DEBUG_PACKET_PARSE, "expected %d bytes, but message is %d bytes", sizeof(_v3_msg_0x4a), msg->len);
+        _v3_func_leave("_v3_get_0x3c");
+        return false;
+    }
+    m = msg->contents = msg->data;
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "Codec Information:");
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "codec...............: %d",   m->codec);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "format..............: %d",   m->codec_format);
+    _v3_func_leave("_v3_get_0x3c");
+    return true;
+}/*}}}*/
+/*}}}*/
 // Message 0x4b (75) | TIMESTAMP /*{{{*/
 
 _v3_net_message *_v3_put_0x4b(void) {/*{{{*/

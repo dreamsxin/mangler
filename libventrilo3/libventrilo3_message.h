@@ -94,6 +94,14 @@ typedef struct _v3_net_message_0x3b {/*{{{*/
     uint16_t channel_id;	// 6
     uint32_t error_id;		// 8
 } _v3_msg_0x3b;/*}}}*/
+typedef struct _v3_net_message_0x3c {/*{{{*/
+    uint32_t type;		// 0
+    uint8_t  unknown1[4];
+    uint16_t codec;
+    uint16_t codec_format;
+    uint8_t  unknown2[12];
+} _v3_msg_0x3c;
+int _v3_get_0x3c(_v3_net_message *msg);/*}}}*/
 typedef struct _v3_net_message_0x3f {/*{{{*/
     uint32_t type;		// 0
     uint32_t empty;		// 4

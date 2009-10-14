@@ -1320,6 +1320,19 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
             _v3_destroy_packet(msg);
             _v3_func_leave("_v3_process_message");
             return V3_OK;/*}}}*/
+        case 0x3c:/*{{{*/
+            if (!_v3_get_0x3c(msg)) {
+                _v3_destroy_packet(msg);
+                _v3_func_leave("_v3_process_message");
+                return V3_MALFORMED;
+            } else {
+                _v3_msg_0x3c *m = msg->contents;
+                v3_server.codec = m->codec;
+                v3_server.codec_format = m->codec_format;
+            }
+            _v3_destroy_packet(msg);
+            _v3_func_leave("_v3_process_message");
+            return V3_OK;/*}}}*/
         case 0x46:/*{{{*/
             if (!_v3_get_0x46(msg)) {
                 _v3_destroy_packet(msg);
@@ -2397,7 +2410,7 @@ v3_get_codec_rate(uint16_t codec, uint16_t format) {/*{{{*/
 }/*}}}*/
 
 const v3_codec*
-v3_get_codec_name(uint16_t codec, uint16_t format) {/*{{{*/
+v3_get_codec(uint16_t codec, uint16_t format) {/*{{{*/
     int ctr;
 
     for (ctr = 0; v3_codecs[ctr].codec != -1; ctr++) {
@@ -2407,6 +2420,23 @@ v3_get_codec_name(uint16_t codec, uint16_t format) {/*{{{*/
     }
 }/*}}}*/
 
+const v3_codec*
+v3_get_channel_codec(uint16_t channel_id) {/*{{{*/
+    v3_channel *c;
+    const v3_codec *codec_info;
+
+    if (channel_id == 0) { // the lobby is always the default codec
+        return v3_get_codec(v3_server.codec, v3_server.codec_format);
+    }
+    c = v3_get_channel(channel_id);
+    if (c->channel_codec == -1 || c->channel_format == -1) {
+        codec_info = v3_get_codec(c->channel_codec, c->channel_format);
+    } else {
+        codec_info = v3_get_codec(v3_server.codec, v3_server.codec_format);
+    }
+    v3_free_channel(c);
+    return codec_info;
+}/*}}}*/
 
 /*
    struct  v3_channel **v3_channel_list(void);

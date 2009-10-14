@@ -350,6 +350,8 @@ typedef struct __v3_server {
     int evpipe[2];                    // This is a pipe that libventrilo3 listens on for outbound events
     FILE *evinstream;                 // The inbound stream for the event queue pipe
     FILE *evoutstream;                // The outbound stream for the event queue pipe
+    uint16_t codec;                   // The server's default codec
+    uint16_t codec_format;            // The server's default codec format
     ventrilo_key_ctx server_key;      // The key used for decrypting messages from the server
     ventrilo_key_ctx client_key;      // The key used for encrypting messages to the server
     _v3_net_message *_queue;          // This queue (linked list) is used internally
@@ -411,7 +413,8 @@ v3_event    *v3_get_event(int block);
 int         v3_get_max_clients(void);
 void        v3_clear_events(void);
 uint32_t    v3_get_codec_rate(uint16_t codec, uint16_t format);
-const v3_codec *v3_get_codec_name(uint16_t codec, uint16_t format);
+const v3_codec *v3_get_codec(uint16_t codec, uint16_t format);
+const v3_codec *v3_get_channel_codec(uint16_t channel_id);
 
 // User list functions
 int         v3_user_count(void);

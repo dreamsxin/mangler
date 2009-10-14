@@ -242,7 +242,7 @@ Mangler::getNetworkEvent() {/*{{{*/
         v3_channel *c;
         gdk_threads_enter();
         switch (ev->type) {
-            case V3_EVENT_PING:
+            case V3_EVENT_PING:/*{{{*/
                 char buf[16];
                 builder->get_widget("pingLabel", label);
                 if (ev->ping != 65535) {
@@ -254,8 +254,8 @@ Mangler::getNetworkEvent() {/*{{{*/
                 builder->get_widget("userCountLabel", label);
                 snprintf(buf, 16, "%d/%d", v3_user_count(), v3_get_max_clients());
                 label->set_text(buf);
-                break;
-            case V3_EVENT_STATUS:
+                break;/*}}}*/
+            case V3_EVENT_STATUS:/*{{{*/
                 builder->get_widget("progressbar", progressbar);
                 builder->get_widget("statusbar", statusbar);
                 progressbar->set_fraction(ev->status.percent/(float)100);
@@ -267,8 +267,8 @@ Mangler::getNetworkEvent() {/*{{{*/
                 statusbar->pop();
                 statusbar->push(ev->status.message);
                 fprintf(stderr, "got event type %d: %d %s\n", ev->type, ev->status.percent, ev->status.message);
-                break;
-            case V3_EVENT_USER_LOGIN:
+                break;/*}}}*/
+            case V3_EVENT_USER_LOGIN:/*{{{*/
                 u = v3_get_user(ev->user.id);
                 fprintf(stderr, "adding user id %d: %s\n", ev->user.id, u->name);
                 channelTree->addUser(
@@ -281,25 +281,39 @@ Mangler::getNetworkEvent() {/*{{{*/
                         c_to_ustring(u->integration_text),
                         (bool)u->guest);
                 v3_free_user(u);
-                break;
-            case V3_EVENT_CHAN_REMOVE:
+                break;/*}}}*/
+            case V3_EVENT_CHAN_REMOVE:/*{{{*/
                 // can't get any channel info... it's already gone by this point
                 fprintf(stderr, "removing channel id %d\n", ev->channel.id);
                 channelTree->removeChannel(ev->channel.id);
-                break;
-            case V3_EVENT_USER_LOGOUT:
+                break;/*}}}*/
+            case V3_EVENT_USER_LOGOUT:/*{{{*/
                 // can't get any user info... it's already gone by this point
                 fprintf(stderr, "removing user id %d\n", ev->user.id);
                 channelTree->removeUser(ev->user.id);
-                break;
-            case V3_EVENT_LOGIN_COMPLETE:
-                channelTree->expand_all();
-                break;
-            case V3_EVENT_USER_CHAN_MOVE:
+                break;/*}}}*/
+            case V3_EVENT_LOGIN_COMPLETE:/*{{{*/
+                {
+                    const v3_codec *codec_info;
+                    codec_info = v3_get_channel_codec(0);
+                    builder->get_widget("codecLabel", label);
+                    label->set_text(codec_info->name);
+                    channelTree->expand_all();
+                }
+                break;/*}}}*/
+            case V3_EVENT_USER_CHAN_MOVE:/*{{{*/
                 u = v3_get_user(ev->user.id);
                 if (! u) {
                     fprintf(stderr, "failed to retreive user information for user id %d", ev->user.id);
                     break;;
+                }
+                if (ev->user.id == v3_get_user_id()) {
+                    // we're moving channels...
+                    // update the codec label
+                    const v3_codec *codec_info;
+                    codec_info = v3_get_channel_codec(ev->channel.id);
+                    builder->get_widget("codecLabel", label);
+                    label->set_text(codec_info->name);
                 }
                 fprintf(stderr, "moving user id %d to channel id %d\n", ev->user.id, ev->channel.id);
                 channelTree->removeUser((uint32_t)ev->user.id);
@@ -313,8 +327,8 @@ Mangler::getNetworkEvent() {/*{{{*/
                         c_to_ustring(u->integration_text),
                         (bool)u->guest);
                 v3_free_user(u);
-                break;
-            case V3_EVENT_CHAN_ADD:
+                break;/*}}}*/
+            case V3_EVENT_CHAN_ADD:/*{{{*/
                 c = v3_get_channel(ev->channel.id);
                 if (! c) {
                     fprintf(stderr, "failed to retreive channel information for channel id %d", ev->channel.id);
@@ -328,15 +342,15 @@ Mangler::getNetworkEvent() {/*{{{*/
                         c_to_ustring(c->comment),
                         c->phonetic);
                 v3_free_channel(c);
-                break;
-            case V3_EVENT_ERROR_MSG:
+                break;/*}}}*/
+            case V3_EVENT_ERROR_MSG:/*{{{*/
                 builder->get_widget("errorDialog", msgdialog);
                 msgdialog->set_icon(icons["logo2"]);
                 msgdialog->set_message(ev->error.message);
                 msgdialog->run();
                 msgdialog->hide();
-                break;
-            case V3_EVENT_USER_TALK_START:
+                break;/*}}}*/
+            case V3_EVENT_USER_TALK_START:/*{{{*/
                 {
                     v3_user *me, *user;
                     me = v3_get_user(v3_get_user_id());
@@ -357,21 +371,21 @@ Mangler::getNetworkEvent() {/*{{{*/
                         }
                     }
                 }
-                break;
-            case V3_EVENT_USER_TALK_END:
+                break;/*}}}*/
+            case V3_EVENT_USER_TALK_END:/*{{{*/
                 fprintf(stderr, "user %d stopped talking\n", ev->user.id);
                 channelTree->userIsTalking(ev->user.id, false);
                 if (audio[ev->user.id]) {
                     audio[ev->user.id]->finish();
                     audio.erase(ev->user.id);
                 }
-                break;
-            case V3_EVENT_PLAY_AUDIO:
+                break;/*}}}*/
+            case V3_EVENT_PLAY_AUDIO:/*{{{*/
                 if (audio[ev->user.id]) {
                     audio[ev->user.id]->queue(ev->pcm.length, (uint8_t *)ev->data.sample);
                 }
-                break;
-            case V3_EVENT_DISPLAY_MOTD:
+                break;/*}}}*/
+            case V3_EVENT_DISPLAY_MOTD:/*{{{*/
                 {
                     Glib::RefPtr< Gtk::TextBuffer > tb = Gtk::TextBuffer::create();
                     builder->get_widget("motdWindow", window);
@@ -381,7 +395,7 @@ Mangler::getNetworkEvent() {/*{{{*/
                     textview->set_buffer(tb);
                     window->show();
                 }
-                break;
+                break;/*}}}*/
             default:
                 fprintf(stderr, "******************************************************** got unknown event type %d\n", ev->type);
         }
@@ -468,3 +482,30 @@ Glib::ustring c_to_ustring(char *input) {
     }
     return e;
 }
+
+/*
+Glib::ustring c_to_ustring(char *input) {
+    int ctr;
+    Glib::ustring u = "";
+    Glib::ustring e = "";
+
+    printf("UTF8: trying conversion\n");
+    try {
+        e = Glib::locale_to_utf8(input);
+    } catch (const Glib::Error& error) {
+        printf("UTF8: initial failed... converting manually\n");
+        for (ctr = 0; ctr < strlen(input); ctr++) {
+            u += (gunichar)((uint8_t)input[ctr]);
+        }
+        try {
+            printf("UTF8: trying conversion again\n");
+            e = Glib::locale_to_utf8(u);
+        } catch (const Glib::Error& error) {
+            printf("UTF8: second conversion failed too\n");
+            return Glib::ustring(input);
+        }
+        return e;
+    }
+    return e;
+}
+*/
