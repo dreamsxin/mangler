@@ -84,6 +84,7 @@ void ManglerSettings::settingsWindow_show_cb(void) {/*{{{*/
     settingsEnablePTTKeyCheckButton_toggled_cb();
     settingsEnablePTTMouseCheckButton_toggled_cb();
 
+    // Clear the input device store and rebuild it from the audioControl vector
     inputDeviceTreeModel->clear();
     row = *(inputDeviceTreeModel->append());
     row[inputColumns.id] = -1;
@@ -98,7 +99,10 @@ void ManglerSettings::settingsWindow_show_cb(void) {/*{{{*/
         row[inputColumns.name] = (*i)->name;
         row[inputColumns.description] = (*i)->description;
     }
+    // TODO: get the currently selected item from settings object and select it
+    inputDeviceComboBox->set_active(0);
 
+    // Clear the output device store and rebuild it from the audioControl vector
     outputDeviceTreeModel->clear();
     row = *(outputDeviceTreeModel->append());
     row[outputColumns.id] = -1;
@@ -113,7 +117,8 @@ void ManglerSettings::settingsWindow_show_cb(void) {/*{{{*/
         row[outputColumns.name] = (*i)->name;
         row[outputColumns.description] = (*i)->description;
     }
-
+    // TODO: get the currently selected item from settings object and select it
+    outputDeviceComboBox->set_active(0);
 }/*}}}*/
 void ManglerSettings::settingsWindow_hide_cb(void) {/*{{{*/
     isDetectingKey = false;

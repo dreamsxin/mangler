@@ -1430,7 +1430,7 @@ Specifically:
                 <property name="left_padding">5</property>
                 <property name="right_padding">5</property>
                 <child>
-                  <object class="GtkTable" id="table1">
+                  <object class="GtkTable" id="audioDeviceTable">
                     <property name="visible">True</property>
                     <property name="n_rows">2</property>
                     <property name="n_columns">2</property>
