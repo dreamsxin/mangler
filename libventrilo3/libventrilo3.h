@@ -375,6 +375,7 @@ void                    ventrilo_dec(ventrilo_key_ctx *ctx, uint8_t *data, int s
 void                    ventrilo_enc(ventrilo_key_ctx *ctx, uint8_t *data, int size);
 int                     ventrilo3_handshake(uint32_t ip, uint16_t port, uint8_t *handshake, uint32_t *handshake_num, uint8_t *handshake_key);
 void                    ventrilo3_algo_scramble(ventrilo_key_ctx *ctx, uint8_t *v3key);
+int                     _v3_logout(void);
 
 /*
  *  Internal functions

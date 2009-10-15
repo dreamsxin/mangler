@@ -93,7 +93,8 @@ typedef struct _v3_net_message_0x3b {/*{{{*/
     uint16_t user_id;		// 4
     uint16_t channel_id;	// 6
     uint32_t error_id;		// 8
-} _v3_msg_0x3b;/*}}}*/
+} _v3_msg_0x3b;
+int _v3_get_0x3b(_v3_net_message *msg);/*}}}*/
 typedef struct _v3_net_message_0x3c {/*{{{*/
     uint32_t type;		// 0
     uint8_t  unknown1[4];

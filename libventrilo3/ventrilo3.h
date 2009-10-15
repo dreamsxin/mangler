@@ -174,6 +174,7 @@ enum _v3_events
     V3_EVENT_USER_TALK_END,
     V3_EVENT_PLAY_AUDIO,
     V3_EVENT_DISPLAY_MOTD,
+    V3_EVENT_DISCONNECT,
 
     // outbound specific event types
     V3_EVENT_CHANGE_CHANNEL,
@@ -400,7 +401,7 @@ void    _v3_print_channel_list(void);   // testing function -- will be deleted
  * External functions that are used by a program linking to the library
  */
 int         v3_login(char *server, char *username, char *password, char *phonetic);
-int         v3_logout(void);
+void        v3_logout(void);
 void        v3_change_channel(uint16_t channel_id, char *password);
 int         v3_debuglevel(uint32_t level);
 int         v3_is_loggedin(void);

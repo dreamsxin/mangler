@@ -560,7 +560,12 @@ _v3_recv(int block) {/*{{{*/
                 _v3_error("failed to receive from outbound pipe");
             } else {
                 switch (ev.type) {
-                    case V3_EVENT_CHANGE_CHANNEL:
+                    case V3_EVENT_DISCONNECT:/*{{{*/
+                        {
+                            _v3_logout();
+                        }
+                        break;/*}}}*/
+                    case V3_EVENT_CHANGE_CHANNEL:/*{{{*/
                         {
                             _v3_net_message *msg;
                             v3_channel channel;
@@ -575,7 +580,7 @@ _v3_recv(int block) {/*{{{*/
                                 _v3_destroy_packet(msg);
                             }
                         }
-                        break;
+                        break;/*}}}*/
                     default:
                         _v3_debug(V3_DEBUG_EVENT, "received unknown event type %d from queue", ev.type);
                         break;
@@ -597,9 +602,11 @@ _v3_recv(int block) {/*{{{*/
             if ((msg->len = _v3_recv_enc_msg(msgdata)) <= 0) {
                 if (msg->len == 0) {
                     _v3_debug(V3_DEBUG_SOCKET, "server closed connection");
+                    _v3_logout();
                 } else {
                     _v3_debug(V3_DEBUG_SOCKET, "receive failed");
                     free(msg);
+                    _v3_logout();
                     _v3_func_leave("_v3_recv");
                     return NULL;
                 }
@@ -1236,7 +1243,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                     error = true;
                     ev->error.disconnected = true;
                     strncat(buf, "You have been disconnected from the server.\n", 511);
-                    v3_logout();
+                    _v3_logout();
                 }
                 if(m->subtype & 0x02) {
                     _v3_debug(V3_DEBUG_INTERNAL, "FIXME: Authenticated as administrator.");
@@ -1286,6 +1293,40 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                 _v3_unlock_server();
             }
 	return V3_OK;/*}}}*/
+        case 0x3b:/*{{{*/
+            /*
+             *  This is almost identical to 0x53, so whatever you do here probably
+             *  needs to be done there, too.
+             */
+            if (!_v3_get_0x3b(msg)) {
+                _v3_destroy_packet(msg);
+                _v3_func_leave("_v3_process_message");
+                return V3_MALFORMED;
+            } else {
+                  //libventrilo3: 15:35:41:         ======= received TCP packet =====================================
+                  //libventrilo3: 15:35:41:         PACKET: message type: 0x3B (59)
+                  //libventrilo3: 15:35:41:         PACKET: data length : 12
+                  //libventrilo3: 15:35:41:         PACKET:     3B 00 00 00 05 00 03 00 00 00 00 00                  ;...........
+
+                _v3_msg_0x3b *m = msg->contents;
+
+                v3_event *ev;
+                v3_user *user;
+                _v3_debug(V3_DEBUG_INFO, "user %d moved to channel %d", m->user_id, m->channel_id);
+                user = v3_get_user(m->user_id);
+                user->channel = m->channel_id;
+                _v3_update_user(user);
+                v3_free_user(user);
+                ev = malloc(sizeof(v3_event));
+                memset(ev, 0, sizeof(v3_event));
+                ev->type = V3_EVENT_USER_CHAN_MOVE;
+                ev->user.id = m->user_id;
+                ev->channel.id = m->channel_id;
+                v3_queue_event(ev);
+            }
+            _v3_destroy_packet(msg);
+            _v3_func_leave("_v3_process_message");
+            return V3_OK;/*}}}*/
         case 0x34:/*{{{*/
             _v3_lock_server();
             _v3_debug(V3_DEBUG_INTERNAL, "scrambling client encryption keys");
@@ -1628,6 +1669,10 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
             _v3_func_leave("_v3_process_message");
             return V3_OK;/*}}}*/
         case 0x53:/*{{{*/
+            /*
+             *  This is almost identical to 0x3b, so whatever you do here probably
+             *  needs to be done there, too.
+             */
             if (!_v3_get_0x53(msg)) {
                 _v3_destroy_packet(msg);
                 _v3_func_leave("_v3_process_message");
@@ -2065,7 +2110,8 @@ v3_login(char *server, char *username, char *password, char *phonetic) {/*{{{*/
         _v3_send(response);
         _v3_destroy_packet(response);
 
-        response = _v3_put_0x46(V3_USER_ACCEPT_U2U, v3_luser.accept_u2u);
+        //response = _v3_put_0x46(V3_USER_ACCEPT_U2U, v3_luser.accept_u2u);
+        response = _v3_put_0x46(V3_USER_ACCEPT_U2U, 1);
         _v3_send(response);
         _v3_destroy_packet(response);
 
@@ -2092,8 +2138,17 @@ v3_login(char *server, char *username, char *password, char *phonetic) {/*{{{*/
 }/*}}}*/
 
 int
-v3_logout(void) {/*{{{*/
-    _v3_func_enter("v3_logout");
+_v3_logout(void) {/*{{{*/
+    v3_event *ev;
+
+    _v3_func_enter("_v3_logout");
+
+    // notify the client that they are disconnected
+    ev = malloc(sizeof(v3_event));
+    memset(ev, 0, sizeof(v3_event));
+    ev->type = V3_EVENT_DISCONNECT;
+    v3_queue_event(ev);
+
     _v3_close_connection();
     free(v3_luser.name);
     free(v3_luser.password);
@@ -2115,7 +2170,7 @@ v3_logout(void) {/*{{{*/
     close(v3_server.evpipe[1]);
     v3_server.evpipe[0] = -1;
     v3_server.evpipe[1] = -1;
-    _v3_func_leave("v3_logout");
+    _v3_func_leave("_v3_logout");
     return true;
 }/*}}}*/
 
@@ -2437,6 +2492,35 @@ v3_get_channel_codec(uint16_t channel_id) {/*{{{*/
     }
     v3_free_channel(c);
     return codec_info;
+}/*}}}*/
+
+/*
+ * Do not confuse v3_logout() with _v3_logout().  This is the external API
+ * function that requests a disconnect via the pipe.  _v3_logout() responds by
+ * queueing a V3_EVENT_DISCONNECT event
+ */
+void
+v3_logout(void) {/*{{{*/
+    v3_event ev;
+
+    _v3_func_enter("v3_logout");
+    if (!v3_is_loggedin()) {
+        _v3_func_leave("v3_logout");
+        return;
+    }
+    memset(&ev, 0, sizeof(v3_event));
+    ev.type = V3_EVENT_DISCONNECT;
+    _v3_lock_sendq();
+    _v3_debug(V3_DEBUG_EVENT, "sending %lu bytes to event pipe", sizeof(v3_event));
+    if (fwrite(&ev, sizeof(struct _v3_event), 1, v3_server.evoutstream) != 1) {
+        _v3_error("could not write to event pipe");
+        _v3_func_leave("v3_logout");
+        return;
+    }
+    fflush(v3_server.evoutstream);
+    _v3_unlock_sendq();
+    _v3_func_leave("v3_logout");
+    return;
 }/*}}}*/
 
 /*

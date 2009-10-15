@@ -249,6 +249,26 @@ _v3_net_message *_v3_put_0x37(int sequence) {/*{{{*/
     return m;
 }/*}}}*/
 /*}}}*/
+// Message 0x3b (59) | FORCE CHANNEL MOVE /*{{{*/
+int
+_v3_get_0x3b(_v3_net_message *msg) {/*{{{*/
+    _v3_msg_0x3b *m;
+
+    _v3_func_enter("_v3_get_0x3b");
+    if (msg->len != sizeof(_v3_msg_0x3b)) {
+        _v3_debug(V3_DEBUG_PACKET_PARSE, "expected %d bytes, but message is %d bytes", sizeof(_v3_msg_0x3b), msg->len);
+        _v3_func_leave("_v3_get_0x3b");
+        return false;
+    }
+    m = msg->contents = msg->data;
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "Force Channel Move:");
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "user id.............: %d",   m->user_id);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "channel id..........: %d",   m->channel_id);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "error id............: %d",   m->error_id);
+    _v3_func_leave("_v3_get_0x3b");
+    return true;
+}/*}}}*/
+/*}}}*/
 // Message 0x3c (60) | CODEC INFORMATION /*{{{*/
 int
 _v3_get_0x3c(_v3_net_message *msg) {/*{{{*/

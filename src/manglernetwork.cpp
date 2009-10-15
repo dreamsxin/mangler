@@ -50,6 +50,7 @@ ManglerNetwork::connect(Glib::ustring hostname, Glib::ustring port, Glib::ustrin
         builder->get_widget("statusbar", statusbar);
         statusbar->pop();
         statusbar->push("Not connected.");
+        mangler->channelTree->clear();
         msgdialog->run();
         msgdialog->hide();
         gdk_threads_leave();

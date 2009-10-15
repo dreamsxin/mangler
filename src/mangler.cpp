@@ -170,16 +170,9 @@ void Mangler::connectButton_clicked_cb(void) {/*{{{*/
     channelTree->updateLobby("Connecting...");
     if (button->get_label() == "gtk-connect") {
         Glib::Thread::create(sigc::bind(sigc::mem_fun(this->network, &ManglerNetwork::connect), "localhost", "3784", "username", "password"), FALSE);
-        Glib::signal_timeout().connect( sigc::mem_fun(*this, &Mangler::getNetworkEvent), 50 );
+        // TODO: move this into a thread and use blocking waits
+        Glib::signal_timeout().connect( sigc::mem_fun(*this, &Mangler::getNetworkEvent), 10 );
     } else {
-        channelTree->clear();
-        button->set_label("gtk-connect");
-        builder->get_widget("progressbar", progressbar);
-        builder->get_widget("statusbar", statusbar);
-        progressbar->set_text("");
-        progressbar->set_fraction(0);
-        statusbar->pop();
-        statusbar->push("Not connected");
         v3_logout();
     }
     return;
@@ -227,7 +220,8 @@ void Mangler::qcConnectButton_clicked_cb(void) {/*{{{*/
     settings->config.qc_lastserver.password = password;
     settings->config.save();
     Glib::Thread::create(sigc::bind(sigc::mem_fun(this->network, &ManglerNetwork::connect), server, port, username, password), FALSE);
-    Glib::signal_timeout().connect( sigc::mem_fun(*this, &Mangler::getNetworkEvent), 50 );
+    // TODO: move this into a thread and use blocking waits
+    Glib::signal_timeout().connect( sigc::mem_fun(*this, &Mangler::getNetworkEvent), 10 );
 }/*}}}*/
 void Mangler::qcCancelButton_clicked_cb(void) {/*{{{*/
 }/*}}}*/
@@ -264,11 +258,6 @@ Mangler::getNetworkEvent() {/*{{{*/
                 builder->get_widget("progressbar", progressbar);
                 builder->get_widget("statusbar", statusbar);
                 progressbar->set_fraction(ev->status.percent/(float)100);
-                if (ev->status.percent == 100) {
-                    progressbar->set_text("");
-                } else {
-                    progressbar->set_text("Logging in...");
-                }
                 statusbar->pop();
                 statusbar->push(ev->status.message);
                 fprintf(stderr, "got event type %d: %d %s\n", ev->type, ev->status.percent, ev->status.message);
@@ -399,6 +388,18 @@ Mangler::getNetworkEvent() {/*{{{*/
                     tb->set_text(ev->data.motd);
                     textview->set_buffer(tb);
                     window->show();
+                }
+                break;/*}}}*/
+            case V3_EVENT_DISCONNECT:/*{{{*/
+                {
+                    channelTree->clear();
+                    button->set_label("gtk-connect");
+                    builder->get_widget("progressbar", progressbar);
+                    builder->get_widget("statusbar", statusbar);
+                    progressbar->set_text("");
+                    progressbar->set_fraction(0);
+                    statusbar->pop();
+                    statusbar->push("Not connected");
                 }
                 break;/*}}}*/
             default:
@@ -556,8 +557,5 @@ Glib::ustring iso_8859_1_to_utf8 (char *input) {
         text++;
         len--;
     }
-
-    output += '\x00';    /* terminate */
-
     return output;
 }
