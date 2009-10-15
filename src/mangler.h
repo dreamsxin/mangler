@@ -70,7 +70,7 @@ class Mangler
         // These are used by the password entry dialog
         Gtk::Dialog                         *passwordDialog;
         Gtk::Entry                          *passwordEntry;
-        Glib::ustring                         password;
+        Glib::ustring                       password;
         bool                                passwordStatus;
 
         Glib::Thread                        *networkThread;

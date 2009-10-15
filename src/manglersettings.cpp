@@ -61,10 +61,12 @@ ManglerSettings::ManglerSettings(Glib::RefPtr<Gtk::Builder> builder) {
     builder->get_widget("inputDeviceComboBox", inputDeviceComboBox);
     inputDeviceTreeModel = Gtk::ListStore::create(inputColumns);
     inputDeviceComboBox->set_model(inputDeviceTreeModel);
+    inputDeviceComboBox->pack_start(inputColumns.description);
 
     builder->get_widget("outputDeviceComboBox", outputDeviceComboBox);
     outputDeviceTreeModel = Gtk::ListStore::create(outputColumns);
     outputDeviceComboBox->set_model(outputDeviceTreeModel);
+    outputDeviceComboBox->pack_start(outputColumns.description);
 }
 
 // Settings Window Callbacks
@@ -76,11 +78,13 @@ void ManglerSettings::settingsWindow_show_cb(void) {/*{{{*/
     Gtk::TreeModel::Row row;
     isDetectingKey = false;
     isDetectingMouse = false;
+    static int initialized = false;
 
     // these callbacks initialize the state
     settingsEnablePTTKeyCheckButton_toggled_cb();
     settingsEnablePTTMouseCheckButton_toggled_cb();
 
+    inputDeviceTreeModel->clear();
     row = *(inputDeviceTreeModel->append());
     row[inputColumns.id] = -1;
     row[inputColumns.name] = "Default";
@@ -94,8 +98,8 @@ void ManglerSettings::settingsWindow_show_cb(void) {/*{{{*/
         row[inputColumns.name] = (*i)->name;
         row[inputColumns.description] = (*i)->description;
     }
-    inputDeviceComboBox->pack_start(inputColumns.description);
 
+    outputDeviceTreeModel->clear();
     row = *(outputDeviceTreeModel->append());
     row[outputColumns.id] = -1;
     row[outputColumns.name] = "Default";
@@ -109,7 +113,6 @@ void ManglerSettings::settingsWindow_show_cb(void) {/*{{{*/
         row[outputColumns.name] = (*i)->name;
         row[outputColumns.description] = (*i)->description;
     }
-    outputDeviceComboBox->pack_start(outputColumns.description);
 
 }/*}}}*/
 void ManglerSettings::settingsWindow_hide_cb(void) {/*{{{*/
