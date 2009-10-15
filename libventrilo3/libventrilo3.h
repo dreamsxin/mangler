@@ -124,11 +124,15 @@ char *_v3_server_disabled_errors[] = {
     "This server has been disabled by order of the United States Military."
 };
 
-/*
- * These should be accessed through m->bitmask_id - 8.
- */
 char *_v3_bitmasks[] = {
-    "255.0.0.0",
+    "0.0.0.0",
+    "128.0.0.0",
+    "192.0.0.0",
+    "224.0.0.0",
+    "240.0.0.0",
+    "248.0.0.0",
+    "252.0.0.0",
+    "254.0.0.0",
     "255.0.0.0",
     "255.128.0.0",
     "255.192.0.0",
