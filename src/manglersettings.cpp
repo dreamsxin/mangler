@@ -57,6 +57,14 @@ ManglerSettings::ManglerSettings(Glib::RefPtr<Gtk::Builder> builder) {
 
     builder->get_widget("settingsPTTMouseButton", button);
     button->signal_clicked().connect(sigc::mem_fun(this, &ManglerSettings::settingsPTTMouseButton_clicked_cb));
+
+    builder->get_widget("inputDeviceComboBox", inputDeviceComboBox);
+    inputDeviceTreeModel = Gtk::ListStore::create(inputColumns);
+    inputDeviceComboBox->set_model(inputDeviceTreeModel);
+
+    builder->get_widget("outputDeviceComboBox", outputDeviceComboBox);
+    outputDeviceTreeModel = Gtk::ListStore::create(outputColumns);
+    outputDeviceComboBox->set_model(outputDeviceTreeModel);
 }
 
 // Settings Window Callbacks
@@ -65,12 +73,44 @@ void ManglerSettings::showSettingsWindow(void) {/*{{{*/
 }/*}}}*/
 
 void ManglerSettings::settingsWindow_show_cb(void) {/*{{{*/
+    Gtk::TreeModel::Row row;
     isDetectingKey = false;
     isDetectingMouse = false;
 
     // these callbacks initialize the state
     settingsEnablePTTKeyCheckButton_toggled_cb();
     settingsEnablePTTMouseCheckButton_toggled_cb();
+
+    row = *(inputDeviceTreeModel->append());
+    row[inputColumns.id] = -1;
+    row[inputColumns.name] = "Default";
+    row[inputColumns.description] = "Default";
+    for (
+            std::vector<ManglerAudioDevice*>::iterator i = mangler->audioControl->inputDevices.begin();
+            i <  mangler->audioControl->inputDevices.end();
+            i++) {
+        Gtk::TreeModel::Row row = *(inputDeviceTreeModel->append());
+        row[inputColumns.id] = (*i)->id;
+        row[inputColumns.name] = (*i)->name;
+        row[inputColumns.description] = (*i)->description;
+    }
+    inputDeviceComboBox->pack_start(inputColumns.description);
+
+    row = *(outputDeviceTreeModel->append());
+    row[outputColumns.id] = -1;
+    row[outputColumns.name] = "Default";
+    row[outputColumns.description] = "Default";
+    for (
+            std::vector<ManglerAudioDevice*>::iterator i = mangler->audioControl->outputDevices.begin();
+            i <  mangler->audioControl->outputDevices.end();
+            i++) {
+        Gtk::TreeModel::Row row = *(outputDeviceTreeModel->append());
+        row[outputColumns.id] = (*i)->id;
+        row[outputColumns.name] = (*i)->name;
+        row[outputColumns.description] = (*i)->description;
+    }
+    outputDeviceComboBox->pack_start(outputColumns.description);
+
 }/*}}}*/
 void ManglerSettings::settingsWindow_hide_cb(void) {/*{{{*/
     isDetectingKey = false;

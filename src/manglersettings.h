@@ -43,6 +43,31 @@ class ManglerSettings
         bool                isDetectingMouse;
         ManglerConfig       config;
 
+        // Input Device Combo Box Setup
+        Gtk::ComboBox       *inputDeviceComboBox;
+        class inputDeviceModelColumns : public Gtk::TreeModel::ColumnRecord
+        {
+            public:
+                inputDeviceModelColumns() { add(id); add(name); add(description); }
+                Gtk::TreeModelColumn<uint32_t>      id;
+                Gtk::TreeModelColumn<Glib::ustring> name;
+                Gtk::TreeModelColumn<Glib::ustring> description;
+        };
+        inputDeviceModelColumns  inputColumns;
+        Glib::RefPtr<Gtk::ListStore> inputDeviceTreeModel;
+
+        // Output Device Combo Box Setup
+        Gtk::ComboBox       *outputDeviceComboBox;
+        class outputDeviceModelColumns : public Gtk::TreeModel::ColumnRecord
+        {
+            public:
+                outputDeviceModelColumns() { add(id); add(name); add(description); }
+                Gtk::TreeModelColumn<uint32_t>      id;
+                Gtk::TreeModelColumn<Glib::ustring> name;
+                Gtk::TreeModelColumn<Glib::ustring> description;
+        };
+        outputDeviceModelColumns  outputColumns;
+        Glib::RefPtr<Gtk::ListStore> outputDeviceTreeModel;
 
         // members functions
         void showSettingsWindow(void);

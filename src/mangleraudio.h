@@ -30,6 +30,7 @@
 #include "config.h"
 
 #ifdef HAVE_PULSE
+#include <pulse/pulseaudio.h>
 #include <pulse/simple.h>
 #include <pulse/error.h>
 #include <pulse/gccmacro.h>
@@ -52,14 +53,30 @@ class ManglerPCM
         uint32_t            length;
         uint8_t             *sample;
 };
+class ManglerAudioDevice
+{
+    public:
+        ManglerAudioDevice(uint32_t id, Glib::ustring name, Glib::ustring description) {
+            this->id            = id;
+            this->name          = name;
+            this->description   = description;
+        }
+        ~ManglerAudioDevice() {
+        }
+        uint32_t            id;
+        Glib::ustring       name;
+        Glib::ustring       description;
+};
 class ManglerAudio
 {
     public:
+        ManglerAudio();
         ManglerAudio(uint16_t userid, uint32_t rate);
         ~ManglerAudio();
         void            queue(uint32_t length, uint8_t *sample);
         void            play(void);
         void            finish(void);
+        void            getDeviceList(void);
 
         GAsyncQueue*    pcm_queue;
 #ifdef HAVE_PULSE
@@ -68,10 +85,28 @@ class ManglerAudio
 #endif
         ManglerPCM      *pcmdata;
 
+        std::vector<ManglerAudioDevice*> inputDevices;
+        std::vector<ManglerAudioDevice*> outputDevices;
         uint16_t        userid;
         int             error;
         bool            playing;
 };
+
+
+// this is easier in C
+#ifdef HAVE_PULSE
+typedef struct pa_devicelist {
+    uint8_t initialized;
+    char name[512];
+    uint32_t index;
+    char description[256];
+} pa_devicelist_t;
+
+void pa_state_cb(pa_context *c, void *userdata);
+void pa_sinklist_cb(pa_context *c, const pa_sink_info *l, int eol, void *userdata);
+void pa_sourcelist_cb(pa_context *c, const pa_source_info *l, int eol, void *userdata);
+int pa_get_devicelist(pa_devicelist_t *input, pa_devicelist_t *output);
+#endif
 
 
 #endif

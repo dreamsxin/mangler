@@ -122,12 +122,16 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
     // Create Network Communication Object
     network = new ManglerNetwork(builder);
 
+    // Create our audio control object for managing devices
+    audioControl = new ManglerAudio();
+
     // Create settings object and load the configuration file
     settings = new ManglerSettings(builder);
     settings->config.load();
 
     // Statusbar Icon
     statusIcon = Gtk::StatusIcon::create(icons["logo2"]);
+
 }/*}}}*/
 
 /*
