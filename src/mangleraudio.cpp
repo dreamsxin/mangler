@@ -37,6 +37,7 @@ ManglerAudio::ManglerAudio(uint16_t userid, uint32_t rate) {/*{{{*/
         fprintf(stderr, __FILE__": pa_simple_new() failed: %s\n", pa_strerror(error));
         return;
     }
+    outputStreamOpen = true;
 #elif HAVE_ALSA
     snd_pcm_t *pcm_handle;          
     snd_pcm_stream_t stream = SND_PCM_STREAM_PLAYBACK;
@@ -102,12 +103,18 @@ ManglerAudio::getDeviceList(void) {/*{{{*/
 
 void
 ManglerAudio::finish(void) {/*{{{*/
+    if (!outputStreamOpen) {
+        return;
+    }
     pcmdata = new ManglerPCM(0, NULL);
     g_async_queue_push(pcm_queue, pcmdata);
 }/*}}}*/
 
 void
 ManglerAudio::queue(uint32_t length, uint8_t *sample) {/*{{{*/
+    if (!outputStreamOpen) {
+        return;
+    }
     pcmdata = new ManglerPCM(length, sample);
     g_async_queue_push(pcm_queue, pcmdata);
 }/*}}}*/
@@ -116,6 +123,10 @@ void
 ManglerAudio::play(void) {/*{{{*/
     int ret, error;
 
+    // Make sure we have a stream open, or just die out
+    if (!outputStreamOpen) {
+        Glib::Thread::Exit();
+    }
     g_async_queue_ref(pcm_queue);
     usleep(500000); // buffer for a half second
     for (;;) {
@@ -141,6 +152,7 @@ ManglerAudio::play(void) {/*{{{*/
     pa_simple_free(pulse_stream);
 #endif
     playing = false;
+    outputStreamOpen = true;
     Glib::Thread::Exit();
 }/*}}}*/
 
