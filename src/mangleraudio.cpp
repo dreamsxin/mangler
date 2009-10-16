@@ -28,6 +28,7 @@
 #include "mangleraudio.h"
 
 ManglerAudio::ManglerAudio(uint16_t userid, uint32_t rate) {/*{{{*/
+    outputStreamOpen = false;
 #ifdef HAVE_PULSE
     pulse_samplespec.format = PA_SAMPLE_S16LE;
     pulse_samplespec.rate = rate;
