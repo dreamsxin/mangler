@@ -59,6 +59,7 @@ ManglerAudio::~ManglerAudio() {/*{{{*/
 
 void
 ManglerAudio::getDeviceList(void) {/*{{{*/
+#ifdef HAVE_PULSE
     int ctr;
 
     // This is where we'll store the input device list
@@ -96,6 +97,7 @@ ManglerAudio::getDeviceList(void) {/*{{{*/
                 );
     }
     return;
+#endif
 }/*}}}*/
 
 void

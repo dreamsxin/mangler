@@ -124,6 +124,7 @@ void ManglerSettings::applySettings(void) {/*{{{*/
     debuglevel |= checkbutton->get_active() ? V3_DEBUG_PACKET_ENCRYPTED : 0;
 
     config.lv3_debuglevel = debuglevel;
+    v3_debuglevel(debuglevel);
     config.save();
 }/*}}}*/
 void ManglerSettings::initSettings(void) {/*{{{*/
