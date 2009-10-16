@@ -385,7 +385,7 @@ Mangler::getNetworkEvent() {/*{{{*/
                     builder->get_widget("motdWindow", window);
                     window->set_title("Mangler - MOTD");
                     builder->get_widget("motdTextView", textview);
-                    tb->set_text(ev->data.motd);
+                    tb->set_text(c_to_ustring(ev->data.motd));
                     textview->set_buffer(tb);
                     window->show();
                 }
