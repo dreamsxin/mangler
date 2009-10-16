@@ -28,7 +28,7 @@
 #include "manglersettings.h"
 #include <gdk/gdkx.h>
 
-ManglerSettings::ManglerSettings(Glib::RefPtr<Gtk::Builder> builder) {
+ManglerSettings::ManglerSettings(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
 
     this->builder = builder;
 
@@ -67,7 +67,122 @@ ManglerSettings::ManglerSettings(Glib::RefPtr<Gtk::Builder> builder) {
     outputDeviceTreeModel = Gtk::ListStore::create(outputColumns);
     outputDeviceComboBox->set_model(outputDeviceTreeModel);
     outputDeviceComboBox->pack_start(outputColumns.description);
-}
+}/*}}}*/
+void ManglerSettings::applySettings(void) {/*{{{*/
+    // Push to Talk
+    builder->get_widget("settingsEnablePTTKeyCheckButton", checkbutton);
+    config.PushToTalkKeyEnabled = checkbutton->get_active() ? true : false;
+    builder->get_widget("settingsPTTKeyValueLabel", label);
+    config.PushToTalkKeyValue = label->get_text();
+
+    // Mouse to Talk
+    builder->get_widget("settingsEnablePTTMouseCheckButton", checkbutton);
+    config.PushToTalkMouseEnabled = checkbutton->get_active() ? true : false;
+    builder->get_widget("settingsPTTMouseValueLabel", label);
+    config.PushToTalkMouseValue = label->get_text();
+
+
+    // Audio Devices
+    // ...
+
+    // Debug level
+    uint32_t debuglevel = 0;
+    builder->get_widget("debugStatus", checkbutton);
+    debuglevel |= checkbutton->get_active() ? V3_DEBUG_STATUS : 0;
+
+    builder->get_widget("debugError", checkbutton);
+    debuglevel |= checkbutton->get_active() ? V3_DEBUG_ERROR : 0;
+
+    builder->get_widget("debugStack", checkbutton);
+    debuglevel |= checkbutton->get_active() ? V3_DEBUG_STACK : 0;
+
+    builder->get_widget("debugInternalNet", checkbutton);
+    debuglevel |= checkbutton->get_active() ? V3_DEBUG_INTERNAL : 0;
+
+    builder->get_widget("debugPacketDump", checkbutton);
+    debuglevel |= checkbutton->get_active() ? V3_DEBUG_PACKET : 0;
+
+    builder->get_widget("debugPacketParse", checkbutton);
+    debuglevel |= checkbutton->get_active() ? V3_DEBUG_PACKET_PARSE : 0;
+
+    builder->get_widget("debugSocket", checkbutton);
+    debuglevel |= checkbutton->get_active() ? V3_DEBUG_SOCKET : 0;
+
+    builder->get_widget("debugNotice", checkbutton);
+    debuglevel |= checkbutton->get_active() ? V3_DEBUG_NOTICE : 0;
+
+    builder->get_widget("debugInfo", checkbutton);
+    debuglevel |= checkbutton->get_active() ? V3_DEBUG_INFO : 0;
+
+    builder->get_widget("debugMutex", checkbutton);
+    debuglevel |= checkbutton->get_active() ? V3_DEBUG_MUTEX : 0;
+
+    builder->get_widget("debugMemory", checkbutton);
+    debuglevel |= checkbutton->get_active() ? V3_DEBUG_MEMORY : 0;
+
+    builder->get_widget("debugEncryptedPacket", checkbutton);
+    debuglevel |= checkbutton->get_active() ? V3_DEBUG_PACKET_ENCRYPTED : 0;
+
+    config.lv3_debuglevel = debuglevel;
+    config.save();
+}/*}}}*/
+void ManglerSettings::initSettings(void) {/*{{{*/
+    config.load();
+
+    // Push to Talk
+    builder->get_widget("settingsEnablePTTKeyCheckButton", checkbutton);
+    checkbutton->set_active(config.PushToTalkKeyEnabled ? true : false);
+    builder->get_widget("settingsPTTKeyValueLabel", label);
+    label->set_text(config.PushToTalkKeyValue);
+
+    // Mouse to Talk
+    builder->get_widget("settingsEnablePTTMouseCheckButton", checkbutton);
+    checkbutton->set_active(config.PushToTalkMouseEnabled ? true : false);
+    builder->get_widget("settingsPTTMouseValueLabel", label);
+    label->set_text(config.PushToTalkMouseValue);
+
+    // Audio Devices
+    // ...
+
+    fprintf(stderr, "debug: %d\n", config.lv3_debuglevel);
+    // Debug level
+    uint32_t debuglevel = 0;
+    builder->get_widget("debugStatus", checkbutton);
+    checkbutton->set_active(config.lv3_debuglevel & V3_DEBUG_STATUS ? 1 : 0);
+
+    builder->get_widget("debugError", checkbutton);
+    checkbutton->set_active(config.lv3_debuglevel & V3_DEBUG_ERROR ? 1 : 0);
+
+    builder->get_widget("debugStack", checkbutton);
+    checkbutton->set_active(config.lv3_debuglevel & V3_DEBUG_STACK ? 1 : 0);
+
+    builder->get_widget("debugInternalNet", checkbutton);
+    checkbutton->set_active(config.lv3_debuglevel & V3_DEBUG_INTERNAL ? 1 : 0);
+
+    builder->get_widget("debugPacketDump", checkbutton);
+    checkbutton->set_active(config.lv3_debuglevel & V3_DEBUG_PACKET ? 1 : 0);
+
+    builder->get_widget("debugPacketParse", checkbutton);
+    checkbutton->set_active(config.lv3_debuglevel & V3_DEBUG_PACKET_PARSE ? 1 : 0);
+
+    builder->get_widget("debugSocket", checkbutton);
+    checkbutton->set_active(config.lv3_debuglevel & V3_DEBUG_SOCKET ? 1 : 0);
+
+    builder->get_widget("debugNotice", checkbutton);
+    checkbutton->set_active(config.lv3_debuglevel & V3_DEBUG_NOTICE ? 1 : 0);
+
+    builder->get_widget("debugInfo", checkbutton);
+    checkbutton->set_active(config.lv3_debuglevel & V3_DEBUG_INFO ? 1 : 0);
+
+    builder->get_widget("debugMutex", checkbutton);
+    checkbutton->set_active(config.lv3_debuglevel & V3_DEBUG_MUTEX ? 1 : 0);
+
+    builder->get_widget("debugMemory", checkbutton);
+    checkbutton->set_active(config.lv3_debuglevel & V3_DEBUG_MEMORY ? 1 : 0);
+
+    builder->get_widget("debugEncryptedPacket", checkbutton);
+    checkbutton->set_active(config.lv3_debuglevel & V3_DEBUG_PACKET_ENCRYPTED ? 1 : 0);
+}/*}}}*/
 
 // Settings Window Callbacks
 void ManglerSettings::showSettingsWindow(void) {/*{{{*/
@@ -80,6 +195,7 @@ void ManglerSettings::settingsWindow_show_cb(void) {/*{{{*/
     isDetectingMouse = false;
     static int initialized = false;
 
+    initSettings();
     // these callbacks initialize the state
     settingsEnablePTTKeyCheckButton_toggled_cb();
     settingsEnablePTTMouseCheckButton_toggled_cb();
@@ -129,12 +245,10 @@ void ManglerSettings::settingsCancelButton_clicked_cb(void) {/*{{{*/
     settingsWindow->hide();
 }/*}}}*/
 void ManglerSettings::settingsApplyButton_clicked_cb(void) {/*{{{*/
-    fprintf(stderr, "settings window Apply button clicked\n");
-    // TODO: save settings to file
+    applySettings();
 }/*}}}*/
 void ManglerSettings::settingsOkButton_clicked_cb(void) {/*{{{*/
-    fprintf(stderr, "settings window OK button clicked\n");
-    // TODO: save settings to file
+    applySettings();
     settingsWindow->hide();
 }/*}}}*/
 void ManglerSettings::settingsEnablePTTKeyCheckButton_toggled_cb(void) {/*{{{*/

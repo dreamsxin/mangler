@@ -36,7 +36,7 @@ ManglerNetwork::connect(Glib::ustring hostname, Glib::ustring port, Glib::ustrin
     Gtk::MessageDialog *msgdialog;
     Gtk::Statusbar *statusbar;
     Gtk::ProgressBar *progressbar;
-    v3_debuglevel(V3_DEBUG_ALL ^ (V3_DEBUG_PACKET_ENCRYPTED));
+    //v3_debuglevel(V3_DEBUG_ALL ^ (V3_DEBUG_PACKET_ENCRYPTED));
     Glib::ustring server = hostname + ":" + port;
     //Glib::ustring server = "tungsten.typefrag.com:29549"; Glib::ustring password = "";
     if (! v3_login((char *)server.c_str(), (char *)username.c_str(), (char *)password.c_str(), (char *)"")) {

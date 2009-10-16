@@ -73,6 +73,8 @@ class ManglerSettings
         void showSettingsWindow(void);
         bool settingsPTTKeyDetect(void);
         bool settingsPTTMouseDetect(void);
+        void applySettings(void);
+        void initSettings(void);
 
         // callbacks
         void settingsWindow_show_cb(void);
@@ -84,6 +86,7 @@ class ManglerSettings
         void settingsPTTKeyButton_clicked_cb(void);
         void settingsEnablePTTMouseCheckButton_toggled_cb(void);
         void settingsPTTMouseButton_clicked_cb(void);
+
 
 };
 

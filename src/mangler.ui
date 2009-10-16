@@ -1529,7 +1529,7 @@ Specifically:
                               </object>
                             </child>
                             <child>
-                              <object class="GtkCheckButton" id="debugStatus1">
+                              <object class="GtkCheckButton" id="debugError">
                                 <property name="label" translatable="yes">Error Messages</property>
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
@@ -1542,7 +1542,7 @@ Specifically:
                               </packing>
                             </child>
                             <child>
-                              <object class="GtkCheckButton" id="debugStatus2">
+                              <object class="GtkCheckButton" id="debugPacketDump">
                                 <property name="label" translatable="yes">Packet Dumps</property>
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
@@ -1555,7 +1555,7 @@ Specifically:
                               </packing>
                             </child>
                             <child>
-                              <object class="GtkCheckButton" id="debugStatus3">
+                              <object class="GtkCheckButton" id="debugInternalNet">
                                 <property name="label" translatable="yes">Internal Network Info</property>
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
@@ -1568,7 +1568,7 @@ Specifically:
                               </packing>
                             </child>
                             <child>
-                              <object class="GtkCheckButton" id="debugStatus4">
+                              <object class="GtkCheckButton" id="debugStack">
                                 <property name="label" translatable="yes">Stack Info</property>
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
@@ -1581,7 +1581,7 @@ Specifically:
                               </packing>
                             </child>
                             <child>
-                              <object class="GtkCheckButton" id="debugStatus6">
+                              <object class="GtkCheckButton" id="debugPacketParse">
                                 <property name="label" translatable="yes">Packet Parsing</property>
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
@@ -1594,7 +1594,7 @@ Specifically:
                               </packing>
                             </child>
                             <child>
-                              <object class="GtkCheckButton" id="debugStatus8">
+                              <object class="GtkCheckButton" id="debugSocket">
                                 <property name="label" translatable="yes">Socket Messages</property>
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
@@ -1607,7 +1607,7 @@ Specifically:
                               </packing>
                             </child>
                             <child>
-                              <object class="GtkCheckButton" id="debugStatus9">
+                              <object class="GtkCheckButton" id="debugNotice">
                                 <property name="label" translatable="yes">General Notices</property>
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
@@ -1622,7 +1622,7 @@ Specifically:
                               </packing>
                             </child>
                             <child>
-                              <object class="GtkCheckButton" id="debugStatus10">
+                              <object class="GtkCheckButton" id="debugInfo">
                                 <property name="label" translatable="yes">General Info</property>
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
@@ -1637,7 +1637,7 @@ Specifically:
                               </packing>
                             </child>
                             <child>
-                              <object class="GtkCheckButton" id="debugStatus11">
+                              <object class="GtkCheckButton" id="debugMutex">
                                 <property name="label" translatable="yes">Mutex Info</property>
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
@@ -1652,7 +1652,7 @@ Specifically:
                               </packing>
                             </child>
                             <child>
-                              <object class="GtkCheckButton" id="debugStatus12">
+                              <object class="GtkCheckButton" id="debugMemory">
                                 <property name="label" translatable="yes">Memory Allocation</property>
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
@@ -1667,7 +1667,7 @@ Specifically:
                               </packing>
                             </child>
                             <child>
-                              <object class="GtkCheckButton" id="debugStatus5">
+                              <object class="GtkCheckButton" id="debugEncryptedPacket">
                                 <property name="label" translatable="yes">Encrypted Packet Dumps</property>
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>

@@ -396,6 +396,8 @@ Mangler::getNetworkEvent() {/*{{{*/
                     button->set_label("gtk-connect");
                     builder->get_widget("progressbar", progressbar);
                     builder->get_widget("statusbar", statusbar);
+                    builder->get_widget("serverTabLabel", label);
+                    label->set_label("Not Connected");
                     progressbar->set_text("");
                     progressbar->set_fraction(0);
                     statusbar->pop();

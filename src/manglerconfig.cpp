@@ -66,6 +66,7 @@ bool ManglerConfig::save() {/*{{{*/
     put("qc_lastserver.phonetic", "");
     put("qc_lastserver.comment", "");
     put("lastConnectedServerId", "-1");
+    put("lv3_debuglevel", lv3_debuglevel);
     // TODO: saveServerList();
     fclose(this->cfgstream);
     mutex.unlock();
@@ -170,5 +171,6 @@ void ManglerConfig::load() {/*{{{*/
     qc_lastserver.password      = get("qc_lastserver.password");
     qc_lastserver.phonetic      = get("qc_lastserver.phonetic");
     qc_lastserver.comment       = get("qc_lastserver.comment");
+    lv3_debuglevel              = atoi(get("lv3_debuglevel").c_str());
 }/*}}}*/
 
