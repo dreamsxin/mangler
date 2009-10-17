@@ -42,7 +42,7 @@ ManglerNetwork::connect(Glib::ustring hostname, Glib::ustring port, Glib::ustrin
     if (! v3_login((char *)server.c_str(), (char *)username.c_str(), (char *)password.c_str(), (char *)"")) {
         gdk_threads_enter();
         builder->get_widget("errorDialog", msgdialog);
-        msgdialog->set_icon(mangler->icons["logo3"]);
+        msgdialog->set_icon(mangler->icons["tray_icon"]);
         msgdialog->set_message(_v3_error(NULL));
         builder->get_widget("progressbar", progressbar);
         progressbar->set_fraction(0);

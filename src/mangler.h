@@ -85,6 +85,8 @@ class Mangler
         void connectButton_clicked_cb(void);
         void commentButton_clicked_cb(void);
         void chatButton_clicked_cb(void);
+        void bindingsButton_clicked_cb(void);
+        void adminButton_clicked_cb(void);
         void settingsButton_clicked_cb(void);
         void aboutButton_clicked_cb(void);
         void xmitButton_pressed_cb(void);

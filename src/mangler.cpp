@@ -51,7 +51,11 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
     icons.insert(std::make_pair("logo2",                        Gdk::Pixbuf::create_from_inline(-1, logo2                       )));
     icons.insert(std::make_pair("logo3",                        Gdk::Pixbuf::create_from_inline(-1, logo3                       )));
 
-    icons.insert(std::make_pair("tray_icon",                    Gdk::Pixbuf::create_from_inline(-1, tray_icon                   )));
+    icons.insert(std::make_pair("tray_icon",                    Gdk::Pixbuf::create_from_inline(-1, tray_icon_blue              )));
+    icons.insert(std::make_pair("tray_icon_blue",               Gdk::Pixbuf::create_from_inline(-1, tray_icon_blue              )));
+    icons.insert(std::make_pair("tray_icon_red",                Gdk::Pixbuf::create_from_inline(-1, tray_icon_red               )));
+    icons.insert(std::make_pair("tray_icon_green",              Gdk::Pixbuf::create_from_inline(-1, tray_icon_green             )));
+    icons.insert(std::make_pair("tray_icon_yellow",             Gdk::Pixbuf::create_from_inline(-1, tray_icon_yellow            )));
 
     icons.insert(std::make_pair("user_icon_xmit",               Gdk::Pixbuf::create_from_inline(-1, user_icon_xmit              )));
     icons.insert(std::make_pair("user_icon_noxmit",             Gdk::Pixbuf::create_from_inline(-1, user_icon_noxmit            )));
@@ -67,7 +71,7 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
             builder = Gtk::Builder::create_from_string(ManglerUI);
         }
         builder->get_widget("manglerWindow", manglerWindow);
-        manglerWindow->set_icon(icons["logo3"]);
+        manglerWindow->set_icon(icons["tray_icon"]);
     } catch(const Glib::Error& e) {
         std::cerr << e.what() << std::endl;
         exit(0);
@@ -92,6 +96,14 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
     // Chat Button
     builder->get_widget("chatButton", button);
     button->signal_clicked().connect(sigc::mem_fun(this, &Mangler::chatButton_clicked_cb));
+
+    // Bindings Button
+    builder->get_widget("bindingsButton", button);
+    button->signal_clicked().connect(sigc::mem_fun(this, &Mangler::bindingsButton_clicked_cb));
+
+    // Admin Button
+    builder->get_widget("adminButton", button);
+    button->signal_clicked().connect(sigc::mem_fun(this, &Mangler::adminButton_clicked_cb));
 
     // Settings Button
     builder->get_widget("settingsButton", button);
@@ -151,7 +163,7 @@ void Mangler::quickConnectButton_clicked_cb(void) {/*{{{*/
     Gtk::Entry *textbox;
 
     builder->get_widget("quickConnectDialog", dialog);
-    dialog->set_icon(icons["logo3"]);
+    dialog->set_icon(icons["tray_icon"]);
 
     builder->get_widget("qcServerName", textbox);
     textbox->set_text(settings->config.qc_lastserver.name);
@@ -171,7 +183,7 @@ void Mangler::quickConnectButton_clicked_cb(void) {/*{{{*/
 }/*}}}*/
 void Mangler::serverConfigButton_clicked_cb(void) {/*{{{*/
     builder->get_widget("serverListWindow", window);
-    window->set_icon(icons["logo3"]);
+    window->set_icon(icons["tray_icon"]);
     window->show();
 }/*}}}*/
 void Mangler::connectButton_clicked_cb(void) {/*{{{*/
@@ -192,13 +204,33 @@ void Mangler::commentButton_clicked_cb(void) {/*{{{*/
 void Mangler::chatButton_clicked_cb(void) {/*{{{*/
     fprintf(stderr, "chat button clicked\n");
 }/*}}}*/
+void Mangler::bindingsButton_clicked_cb(void) {/*{{{*/
+    fprintf(stderr, "bindings button clicked\n");
+    static Glib::ustring color = "red";
+    if (color == "red") {
+        statusIcon = Gtk::StatusIcon::create(icons["tray_icon_green"]);
+        color = "green";
+    } else if (color == "green") {
+        statusIcon = Gtk::StatusIcon::create(icons["tray_icon_blue"]);
+        color = "blue";
+    } else if (color == "blue") {
+        statusIcon = Gtk::StatusIcon::create(icons["tray_icon_yellow"]);
+        color = "yellow";
+    } else if (color == "yellow") {
+        statusIcon = Gtk::StatusIcon::create(icons["tray_icon_red"]);
+        color = "red";
+    }
+}/*}}}*/
+void Mangler::adminButton_clicked_cb(void) {/*{{{*/
+    fprintf(stderr, "admin button clicked\n");
+}/*}}}*/
 void Mangler::settingsButton_clicked_cb(void) {/*{{{*/
     settings->settingsWindow->show();
 }/*}}}*/
 void Mangler::aboutButton_clicked_cb(void) {/*{{{*/
     builder->get_widget("aboutWindow", aboutdialog);
-    aboutdialog->set_icon(icons["logo3"]);
-    aboutdialog->set_logo(icons["logo3"]);
+    aboutdialog->set_icon(icons["tray_icon"]);
+    aboutdialog->set_logo(icons["tray_icon"]);
     aboutdialog->run();
     aboutdialog->hide();
 }/*}}}*/
@@ -348,7 +380,7 @@ Mangler::getNetworkEvent() {/*{{{*/
                 break;/*}}}*/
             case V3_EVENT_ERROR_MSG:/*{{{*/
                 builder->get_widget("errorDialog", msgdialog);
-                msgdialog->set_icon(icons["logo3"]);
+                msgdialog->set_icon(icons["tray_icon"]);
                 msgdialog->set_message(ev->error.message);
                 msgdialog->run();
                 msgdialog->hide();
