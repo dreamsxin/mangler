@@ -34,7 +34,16 @@ ManglerAudio::ManglerAudio(uint16_t userid, uint32_t rate) {/*{{{*/
     pulse_samplespec.rate = rate;
     pulse_samplespec.channels = 1;
     this->userid = userid;
-    if (!(pulse_stream = pa_simple_new(NULL, "mangler", PA_STREAM_PLAYBACK, NULL, "playback", &pulse_samplespec, NULL, NULL, &error))) {
+    if (!(pulse_stream = pa_simple_new(
+                    NULL,
+                    "mangler",
+                    PA_STREAM_PLAYBACK,
+                    (mangler->settings->config.outputDeviceName == "Default" ? NULL : (char *)mangler->settings->config.outputDeviceName.c_str()),
+                    "playback",
+                    &pulse_samplespec,
+                    NULL,
+                    NULL,
+                    &error))) {
         fprintf(stderr, __FILE__": pa_simple_new() failed: %s\n", pa_strerror(error));
         return;
     }
@@ -158,7 +167,7 @@ ManglerAudio::play(void) {/*{{{*/
 }/*}}}*/
 
 #ifdef HAVE_PULSE
-// Pulse Audio Device List Retrieval (in all of it's C glory/*{{{*/
+// Pulse Audio Device List Retrieval (in all of it's C glory)/*{{{*/
 int pa_get_devicelist(pa_devicelist_t *input, pa_devicelist_t *output) {
     // Define our pulse audio loop and connection variables
     pa_mainloop *pa_ml;

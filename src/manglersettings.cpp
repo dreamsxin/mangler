@@ -83,7 +83,17 @@ void ManglerSettings::applySettings(void) {/*{{{*/
 
 
     // Audio Devices
-    // ...
+    Gtk::TreeModel::iterator iter;
+    iter = inputDeviceComboBox->get_active();
+    if (iter) {
+        Gtk::TreeModel::Row row = *iter;
+        config.inputDeviceName = row[inputColumns.name];
+    }
+    iter = outputDeviceComboBox->get_active();
+    if (iter) {
+        Gtk::TreeModel::Row row = *iter;
+        config.outputDeviceName = row[outputColumns.name];
+    }
 
     // Debug level
     uint32_t debuglevel = 0;
@@ -213,17 +223,22 @@ void ManglerSettings::settingsWindow_show_cb(void) {/*{{{*/
     row[inputColumns.id] = -1;
     row[inputColumns.name] = "Default";
     row[inputColumns.description] = "Default";
+    int inputSelection = 0;
+    int inputCtr = 1;
     for (
             std::vector<ManglerAudioDevice*>::iterator i = mangler->audioControl->inputDevices.begin();
             i <  mangler->audioControl->inputDevices.end();
-            i++) {
+            i++, inputCtr++) {
         Gtk::TreeModel::Row row = *(inputDeviceTreeModel->append());
         row[inputColumns.id] = (*i)->id;
         row[inputColumns.name] = (*i)->name;
         row[inputColumns.description] = (*i)->description;
+        if (config.inputDeviceName == (*i)->name) {
+            inputSelection = inputCtr;
+        }
     }
     // TODO: get the currently selected item from settings object and select it
-    inputDeviceComboBox->set_active(0);
+    inputDeviceComboBox->set_active(inputSelection);
 
     // Clear the output device store and rebuild it from the audioControl vector
     outputDeviceTreeModel->clear();
@@ -231,17 +246,22 @@ void ManglerSettings::settingsWindow_show_cb(void) {/*{{{*/
     row[outputColumns.id] = -1;
     row[outputColumns.name] = "Default";
     row[outputColumns.description] = "Default";
+    int outputSelection = 0;
+    int outputCtr = 1;
     for (
             std::vector<ManglerAudioDevice*>::iterator i = mangler->audioControl->outputDevices.begin();
             i <  mangler->audioControl->outputDevices.end();
-            i++) {
+            i++, outputCtr++) {
         Gtk::TreeModel::Row row = *(outputDeviceTreeModel->append());
         row[outputColumns.id] = (*i)->id;
         row[outputColumns.name] = (*i)->name;
         row[outputColumns.description] = (*i)->description;
+        if (config.outputDeviceName == (*i)->name) {
+            outputSelection = outputCtr;
+        }
     }
     // TODO: get the currently selected item from settings object and select it
-    outputDeviceComboBox->set_active(0);
+    outputDeviceComboBox->set_active(outputSelection);
 }/*}}}*/
 void ManglerSettings::settingsWindow_hide_cb(void) {/*{{{*/
     isDetectingKey = false;

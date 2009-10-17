@@ -59,6 +59,8 @@ bool ManglerConfig::save() {/*{{{*/
     put("PushToTalkKeyValue", PushToTalkKeyValue);
     put("PushToTalkMouseEnabled", PushToTalkMouseEnabled);
     put("PushToTalkMouseValue", PushToTalkMouseValue);
+    put("inputDeviceName", inputDeviceName);
+    put("outputDeviceName", outputDeviceName);
     put("qc_lastserver.name", qc_lastserver.name);
     put("qc_lastserver.port", qc_lastserver.port);
     put("qc_lastserver.username", qc_lastserver.username);
@@ -165,6 +167,8 @@ void ManglerConfig::load() {/*{{{*/
     PushToTalkKeyValue          = get("PushToTalkKeyValue");
     PushToTalkMouseEnabled      = get("PushToTalkMouseEnabled") == "0" ? false : true;
     PushToTalkMouseValue        = get("PushToTalkMouseValue");
+    inputDeviceName             = get("inputDeviceName");
+    outputDeviceName            = get("outputDeviceName");
     qc_lastserver.name          = get("qc_lastserver.name");
     qc_lastserver.port          = get("qc_lastserver.port");
     qc_lastserver.username      = get("qc_lastserver.username");
