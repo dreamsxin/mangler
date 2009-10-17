@@ -49,6 +49,15 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
     icons.insert(std::make_pair("yellow_circle",                Gdk::Pixbuf::create_from_inline(-1, yellow_circle               )));
     icons.insert(std::make_pair("logo1",                        Gdk::Pixbuf::create_from_inline(-1, logo1                       )));
     icons.insert(std::make_pair("logo2",                        Gdk::Pixbuf::create_from_inline(-1, logo2                       )));
+    icons.insert(std::make_pair("logo3",                        Gdk::Pixbuf::create_from_inline(-1, logo3                       )));
+
+    icons.insert(std::make_pair("tray_icon",                    Gdk::Pixbuf::create_from_inline(-1, tray_icon                   )));
+
+    icons.insert(std::make_pair("user_icon_xmit",               Gdk::Pixbuf::create_from_inline(-1, user_icon_xmit              )));
+    icons.insert(std::make_pair("user_icon_noxmit",             Gdk::Pixbuf::create_from_inline(-1, user_icon_noxmit            )));
+
+    icons.insert(std::make_pair("user_icon_xmit_otherroom",     Gdk::Pixbuf::create_from_inline(-1, user_icon_xmit_otherroom    )));
+    icons.insert(std::make_pair("user_icon_noxmit_otherroom",   Gdk::Pixbuf::create_from_inline(-1, user_icon_noxmit_otherroom  )));
 
 
     try {
@@ -58,7 +67,7 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
             builder = Gtk::Builder::create_from_string(ManglerUI);
         }
         builder->get_widget("manglerWindow", manglerWindow);
-        manglerWindow->set_icon(icons["logo2"]);
+        manglerWindow->set_icon(icons["logo3"]);
     } catch(const Glib::Error& e) {
         std::cerr << e.what() << std::endl;
         exit(0);
@@ -130,7 +139,7 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
     settings->config.load();
 
     // Statusbar Icon
-    statusIcon = Gtk::StatusIcon::create(icons["logo2"]);
+    statusIcon = Gtk::StatusIcon::create(icons["tray_icon"]);
 
 }/*}}}*/
 
@@ -142,7 +151,7 @@ void Mangler::quickConnectButton_clicked_cb(void) {/*{{{*/
     Gtk::Entry *textbox;
 
     builder->get_widget("quickConnectDialog", dialog);
-    dialog->set_icon(icons["logo2"]);
+    dialog->set_icon(icons["logo3"]);
 
     builder->get_widget("qcServerName", textbox);
     textbox->set_text(settings->config.qc_lastserver.name);
@@ -162,7 +171,7 @@ void Mangler::quickConnectButton_clicked_cb(void) {/*{{{*/
 }/*}}}*/
 void Mangler::serverConfigButton_clicked_cb(void) {/*{{{*/
     builder->get_widget("serverListWindow", window);
-    window->set_icon(icons["logo2"]);
+    window->set_icon(icons["logo3"]);
     window->show();
 }/*}}}*/
 void Mangler::connectButton_clicked_cb(void) {/*{{{*/
@@ -188,8 +197,8 @@ void Mangler::settingsButton_clicked_cb(void) {/*{{{*/
 }/*}}}*/
 void Mangler::aboutButton_clicked_cb(void) {/*{{{*/
     builder->get_widget("aboutWindow", aboutdialog);
-    aboutdialog->set_icon(icons["logo2"]);
-    aboutdialog->set_logo(icons["logo2"]);
+    aboutdialog->set_icon(icons["logo3"]);
+    aboutdialog->set_logo(icons["logo3"]);
     aboutdialog->run();
     aboutdialog->hide();
 }/*}}}*/
@@ -339,7 +348,7 @@ Mangler::getNetworkEvent() {/*{{{*/
                 break;/*}}}*/
             case V3_EVENT_ERROR_MSG:/*{{{*/
                 builder->get_widget("errorDialog", msgdialog);
-                msgdialog->set_icon(icons["logo2"]);
+                msgdialog->set_icon(icons["logo3"]);
                 msgdialog->set_message(ev->error.message);
                 msgdialog->run();
                 msgdialog->hide();

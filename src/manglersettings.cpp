@@ -105,6 +105,9 @@ void ManglerSettings::applySettings(void) {/*{{{*/
     builder->get_widget("debugPacketParse", checkbutton);
     debuglevel |= checkbutton->get_active() ? V3_DEBUG_PACKET_PARSE : 0;
 
+    builder->get_widget("debugEventQueue", checkbutton);
+    debuglevel |= checkbutton->get_active() ? V3_DEBUG_EVENT : 0;
+
     builder->get_widget("debugSocket", checkbutton);
     debuglevel |= checkbutton->get_active() ? V3_DEBUG_SOCKET : 0;
 
@@ -165,6 +168,9 @@ void ManglerSettings::initSettings(void) {/*{{{*/
     builder->get_widget("debugPacketParse", checkbutton);
     checkbutton->set_active(config.lv3_debuglevel & V3_DEBUG_PACKET_PARSE ? 1 : 0);
 
+    builder->get_widget("debugEventQueue", checkbutton);
+    checkbutton->set_active(config.lv3_debuglevel & V3_DEBUG_EVENT ? 1 : 0);
+
     builder->get_widget("debugSocket", checkbutton);
     checkbutton->set_active(config.lv3_debuglevel & V3_DEBUG_SOCKET ? 1 : 0);
 
@@ -182,6 +188,7 @@ void ManglerSettings::initSettings(void) {/*{{{*/
 
     builder->get_widget("debugEncryptedPacket", checkbutton);
     checkbutton->set_active(config.lv3_debuglevel & V3_DEBUG_PACKET_ENCRYPTED ? 1 : 0);
+
 }/*}}}*/
 
 // Settings Window Callbacks
