@@ -566,95 +566,96 @@ _v3_get_0x52(_v3_net_message *msg) {/*{{{*/
 
     _v3_func_enter("_v3_get_0x52");
     m = malloc(sizeof(_v3_msg_0x52));
-    memcpy(m, msg->data, 12);
-    _v3_debug(V3_DEBUG_PACKET_PARSE, "subtype;      : %d", m->subtype);
-    _v3_debug(V3_DEBUG_PACKET_PARSE, "user_id;      : %d", m->user_id);
+    memcpy(m, msg->data, sizeof(_v3_msg_0x52));
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "subtype.......: %d", m->subtype);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "user_id.......: %d", m->user_id);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "send_type.....: %d", m->send_type);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "data length...: %d", m->data_length);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "codec info....: %d %d", m->codec, m->codec_format);
     switch (m->subtype) {
         case 0x00:
-            _v3_debug(V3_DEBUG_PACKET_PARSE, "user %d started transmitting", m->user_id);
-            msg->contents = m;
-            _v3_func_leave("_v3_get_0x52");
-            return true;
+            {
+                _v3_msg_0x52_0x00 *msub = (_v3_msg_0x52_0x00 *)m;
+                msub = realloc(m, sizeof(_v3_msg_0x52_0x00));
+                memcpy(msub, msg->data, sizeof(_v3_msg_0x52_0x00));
+                _v3_debug(V3_DEBUG_PACKET_PARSE, "user %d started transmitting", m->user_id);
+                msg->contents = msub;
+                _v3_func_leave("_v3_get_0x52_0x00");
+                return true;
+            }
         case 0x01:
             {
-                _v3_msg_0x52_0x01 *msub = (_v3_msg_0x52_0x01 *)m;
-                _v3_debug(V3_DEBUG_PACKET_PARSE, "allocating %d bytes for audio packet", sizeof(_v3_msg_0x52_0x01));
-                msub = realloc(m, sizeof(_v3_msg_0x52_0x01));
-                memcpy(msub, msg->data, sizeof(_v3_msg_0x52_0x01));
+                _v3_msg_0x52_0x01_in *msub = (_v3_msg_0x52_0x01_in *)m;
+                _v3_debug(V3_DEBUG_PACKET_PARSE, "allocating %d bytes for audio packet", sizeof(_v3_msg_0x52_0x01_in));
+                msub = realloc(m, sizeof(_v3_msg_0x52_0x01_in));
+                memcpy(msub, msg->data, sizeof(_v3_msg_0x52_0x01_in));
                 _v3_debug(V3_DEBUG_PACKET_PARSE, "received an audio packet from user id %d", msub->user_id);
                 switch (msub->codec) {
                     case 0x00: // GSM
                         if (msub->codec_format > 3) {
-                            // this should always be less than 3, otherwise, bail out
+                            // this should always be <= than 3, otherwise, bail out
                             free(msub);
                             _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown gsm codec format 0x%02X", msub->codec_format);
-                            _v3_func_leave("_v3_get_0x52 (0x01 gsm)");
+                            _v3_func_leave("_v3_get_0x52 (0x01_in gsm)");
                             return false;
                         } else {
-                            _v3_msg_0x52_gsm *gsm = (_v3_msg_0x52_gsm *) msub;
-                            gsm = realloc(msub, sizeof(_v3_msg_0x52_gsm));
-                            memcpy(gsm, msg->data, sizeof(_v3_msg_0x52_gsm));
-
-                            _v3_debug(V3_DEBUG_PACKET_PARSE, "gsm length          : %d (%d frames)", gsm->length, gsm->length/65);
-                            _v3_debug(V3_DEBUG_PACKET_PARSE, "gsm sound speed     : %d (or %d)", gsm->sound_speed, htons(gsm->sound_speed));
-
-                            _v3_debug(V3_DEBUG_PACKET_PARSE, "allocating %d bytes for pointers", gsm->length / 65 * sizeof(uint8_t *));
-                            gsm->frames = malloc(gsm->length / 65 * sizeof(uint8_t *));
-                            for (ctr = 0, offset = 28; ctr < gsm->length / 65; ctr++, offset += 65) {
+                            _v3_msg_0x52_gsmdata *data;
+                            data = malloc(sizeof(_v3_msg_0x52_gsmdata));
+                            _v3_debug(V3_DEBUG_PACKET_PARSE, "gsm length..........: %d (%d frames)", msub->data_length, msub->data_length/65);
+                            _v3_debug(V3_DEBUG_PACKET_PARSE, "allocating %d bytes for pointers", msub->data_length / 65 * sizeof(uint8_t *));
+                            data->frames = malloc(msub->data_length / 65 * sizeof(uint8_t *));
+                            for (ctr = 0, offset = 28; ctr < msub->data_length / 65; ctr++, offset += 65) {
                                 _v3_debug(V3_DEBUG_PACKET_PARSE, "allocating 65 bytes for frame");
-                                gsm->frames[ctr] = malloc(65);
-                                memcpy(gsm->frames[ctr], msg->data+offset, 65);
+                                data->frames[ctr] = malloc(65);
+                                memcpy(data->frames[ctr], msg->data+offset, 65);
                             }
-
-                            msg->contents = gsm;
-                            _v3_func_leave("_v3_get_0x52 (0x01 gsm)");
+                            msub->data = data;
+                            msg->contents = msub;
+                            _v3_func_leave("_v3_get_0x52 (0x01_in gsm)");
                             return true;
                         }
                         break;
                     case 0x03: // speex
                         if (msub->codec_format > 32) {
-                            // this should always be less than 32, otherwise bail out
+                            // this should always be <= than 32, otherwise bail out
                             free(msub);
                             _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown speex codec format %02X", msub->codec_format);
-                            _v3_func_leave("_v3_get_0x52 (0x01 speex)");
+                            _v3_func_leave("_v3_get_0x52 (0x01_in speex)");
                             return false;
                         } else {
-                            _v3_msg_0x52_speex *speex = (_v3_msg_0x52_speex *) msub;
-                            speex = realloc(msub, sizeof(_v3_msg_0x52_speex));
-                            memcpy(speex, msg->data, sizeof(_v3_msg_0x52_speex));
-                            speex->sound_speed = speex->sound_speed;
-                            speex->audio_count = htons(speex->audio_count);
-                            speex->frame_size  = htons(speex->frame_size);
-
-                            _v3_debug(V3_DEBUG_PACKET_PARSE, "speex length     : %d", speex->length);
-                            _v3_debug(V3_DEBUG_PACKET_PARSE, "speex sound speed: %d (or %d)", speex->sound_speed, htons(speex->sound_speed));
-                            _v3_debug(V3_DEBUG_PACKET_PARSE, "speex audio count: %d (%d byte frames)", speex->audio_count, speex->length / speex->audio_count);
-                            _v3_debug(V3_DEBUG_PACKET_PARSE, "speex frame size : %d", speex->frame_size);
-
-                            _v3_debug(V3_DEBUG_PACKET_PARSE, "allocating %d bytes for pointers", speex->audio_count * sizeof(uint8_t *));
-                            speex->frames = malloc(speex->audio_count * sizeof(uint8_t *));
-                            for (ctr = 0, offset = 32; ctr < speex->audio_count; ctr++, offset += speex->length / speex->audio_count) {
-                                _v3_debug(V3_DEBUG_PACKET_PARSE, "allocating %d bytes for frame", speex->length / speex->audio_count);
-                                speex->frames[ctr] = malloc(speex->length / speex->audio_count);
-                                memcpy(speex->frames[ctr], msg->data+offset, speex->length / speex->audio_count);
+                            _v3_msg_0x52_speexdata *data;
+                            data = malloc(sizeof(_v3_msg_0x52_speexdata));
+                            memcpy(data, msg->data+28, sizeof(uint16_t) * 2); // copy the audio count and frame size values
+                            data->frame_count = ntohs(data->frame_count); // for some reason, these are big endian
+                            data->frame_size  = ntohs(data->frame_size);  // convert them to host byte order
+                            _v3_debug(V3_DEBUG_PACKET_PARSE, "speex audio count: %d (%d byte frames)", data->frame_count, msub->data_length / data->frame_count);
+                            _v3_debug(V3_DEBUG_PACKET_PARSE, "allocating %d bytes for pointers", data->frame_count * sizeof(uint8_t *));
+                            data->frames = malloc(data->frame_count * sizeof(uint8_t *));
+                            for (ctr = 0, offset = 32; ctr < data->frame_count; ctr++, offset += msub->data_length / data->frame_count) {
+                                _v3_debug(V3_DEBUG_PACKET_PARSE, "allocating %d bytes for frame", msub->data_length / data->frame_count);
+                                data->frames[ctr] = malloc(msub->data_length / data->frame_count);
+                                memcpy(data->frames[ctr], msg->data+offset, msub->data_length / data->frame_count);
                             }
 
-                            msg->contents = speex;
-                            _v3_func_leave("_v3_get_0x52 (0x01 speex)");
+                            msub->data = data;
+                            msg->contents = msub;
+                            _v3_func_leave("_v3_get_0x52 (0x01_in speex)");
                             return true;
                         }
                         break;
                     default:
                         _v3_debug(V3_DEBUG_PACKET_PARSE, "unsupported codec type 0x%02X", (uint16_t)msub->codec);
-                        _v3_func_leave("_v3_get_0x52 (0x01)");
+                        _v3_func_leave("_v3_get_0x52 (0x01_in)");
                         return false;
                 }
                 return true;
             }
             break;
         case 0x02:
-            msg->contents = m;
+            m = realloc(m, sizeof(_v3_msg_0x52_0x02));
+            memcpy(m, msg->data, sizeof(_v3_msg_0x52_0x02));
             _v3_debug(V3_DEBUG_PACKET_PARSE, "user %d stopped transmitting", m->user_id);
+            msg->contents = m;
             _v3_func_leave("_v3_get_0x52");
             return true;
         default:
@@ -667,21 +668,23 @@ _v3_get_0x52(_v3_net_message *msg) {/*{{{*/
 
 int
 _v3_destroy_0x52(_v3_net_message *msg) {/*{{{*/
+    /*
     _v3_msg_0x52 *m;
-    _v3_msg_0x52_0x01 *msub;
-    _v3_msg_0x52_gsm *gsm;
-    _v3_msg_0x52_speex *speex;
+    _v3_msg_0x52_0x01_in *msubin;
+    _v3_msg_0x52_0x01_out *msubout;
+    _v3_msg_0x52_gsmdata *gsmdata;
+    _v3_msg_0x52_speexdata *speexdata;
     int ctr;
 
     _v3_func_enter("_v3_destroy_0x52");
     m = msg->contents;
     switch (m->subtype) {
         case 0x01:
-            msub = (_v3_msg_0x52_0x01 *)m;
+            msub = (_v3_msg_0x52_0x01_in *)m;
             switch (msub->codec) {
                 case 0x00:
                     gsm = (_v3_msg_0x52_gsm *)msub;
-                    for (ctr = 0; ctr < gsm->length / 65; ctr++) {
+                    for (ctr = 0; ctr < gsm->data_length / 65; ctr++) {
                         _v3_debug(V3_DEBUG_PACKET_PARSE, "freeing 65 bytes for gsm frame %d", ctr);
                         free(gsm->frames[ctr]);
                     }
@@ -689,8 +692,8 @@ _v3_destroy_0x52(_v3_net_message *msg) {/*{{{*/
                     break;
                 case 0x03:
                     speex = (_v3_msg_0x52_speex *)msub;
-                    for (ctr = 0; ctr < speex->audio_count; ctr++) {
-                        _v3_debug(V3_DEBUG_PACKET_PARSE, "freeing %d bytes for frame %d", speex->length / speex->audio_count, ctr);
+                    for (ctr = 0; ctr < speex->frame_count; ctr++) {
+                        _v3_debug(V3_DEBUG_PACKET_PARSE, "freeing %d bytes for frame %d", speex->data_length / speex->frame_count, ctr);
                         free(speex->frames[ctr]);
                     }
                     free(speex->frames);
@@ -702,6 +705,7 @@ _v3_destroy_0x52(_v3_net_message *msg) {/*{{{*/
     }
     _v3_func_leave("_v3_destroy_0x52");
     return true;
+    */
 }/*}}}*/
 
 /*}}}*/

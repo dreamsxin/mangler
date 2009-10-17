@@ -125,7 +125,7 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
     // Create our audio control object for managing devices
     audioControl = new ManglerAudio();
 
-    // Create settings object and load the configuration file
+    // Create settings object, load the configuration file, and apply
     settings = new ManglerSettings(builder);
     settings->config.load();
 

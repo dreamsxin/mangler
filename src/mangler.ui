@@ -540,6 +540,8 @@
   </object>
   <object class="GtkWindow" id="serverListWindow">
     <property name="title" translatable="yes">Mangler Server List</property>
+    <property name="skip_taskbar_hint">True</property>
+    <property name="skip_pager_hint">True</property>
     <property name="transient_for">manglerWindow</property>
     <child>
       <object class="GtkHBox" id="hbox7">
@@ -991,7 +993,10 @@
   <object class="GtkAboutDialog" id="aboutWindow">
     <property name="border_width">5</property>
     <property name="window_position">center-on-parent</property>
+    <property name="destroy_with_parent">True</property>
     <property name="type_hint">normal</property>
+    <property name="skip_taskbar_hint">True</property>
+    <property name="skip_pager_hint">True</property>
     <property name="transient_for">manglerWindow</property>
     <property name="has_separator">False</property>
     <property name="program_name">Mangler</property>
@@ -1015,7 +1020,7 @@ Specifically:
 - Cris Favero
 </property>
     <property name="documenters">Documentation?  What documentation?</property>
-    <property name="artists">Tommy Brunn</property>
+    <property name="artists"></property>
     <property name="wrap_license">True</property>
     <child internal-child="vbox">
       <object class="GtkVBox" id="dialog-vbox6">
@@ -1273,6 +1278,9 @@ Specifically:
     <property name="width_request">500</property>
     <property name="title" translatable="yes">Settings</property>
     <property name="resizable">False</property>
+    <property name="modal">True</property>
+    <property name="skip_taskbar_hint">True</property>
+    <property name="skip_pager_hint">True</property>
     <property name="transient_for">manglerWindow</property>
     <child>
       <object class="GtkVBox" id="vbox104">

@@ -238,6 +238,7 @@ struct _v3_event {
 #define V3_USER_ACCEPT_U2U          0x01
 #define V3_USER_ALLOW_RECORD        0x02
 #define V3_USER_ACCEPT_CHAT         0x03
+#define V3_USER_GLOBAL_MUTE         0x04
 
 #define V3_MAX_USER_SIZE            512
 #define V3_MAX_CHANNEL_SIZE         512

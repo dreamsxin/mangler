@@ -145,7 +145,6 @@ void ManglerSettings::initSettings(void) {/*{{{*/
     // Audio Devices
     // ...
 
-    fprintf(stderr, "debug: %d\n", config.lv3_debuglevel);
     // Debug level
     uint32_t debuglevel = 0;
     builder->get_widget("debugStatus", checkbutton);

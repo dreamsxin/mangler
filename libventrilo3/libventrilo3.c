@@ -104,6 +104,8 @@ _v3_func_enter(char *func) {/*{{{*/
     char buf[256] = "";
 
     if (! (V3_DEBUG_STACK & v3_debuglevel(-1))) {
+        // maintain the stack level even if we're not debugging this
+        stack_level++;
         return;
     }
     snprintf(buf, 255, "---> %s()", func);
@@ -116,7 +118,13 @@ void
 _v3_func_leave(char *func) {/*{{{*/
     char buf[256] = "";
 
+    // make sure we're at least one level deep to prevent underruns
+    if (stack_level < 1) {
+        stack_level = 1;
+    }
     if (! (V3_DEBUG_STACK & v3_debuglevel(-1))) {
+        // maintain the stack level even if we're not debugging this
+        stack_level--;
         return;
     }
     stack_level--;
@@ -1571,6 +1579,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                 _v3_func_leave("_v3_process_message");
                 return V3_MALFORMED;
             } else {
+                /*
                 _v3_msg_0x52        *m = (_v3_msg_0x52 *)msg->contents;
                 _v3_msg_0x52_gsm    *gsm_packet;
                 _v3_msg_0x52_speex  *speex_packet;
@@ -1601,7 +1610,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                             ev->pcm.rate = v3_get_codec_rate(msub->codec, msub->codec_format);
 
                             // TODO: it's too messy to have this here.  Write a function that decodes
-                            if (msub->codec == 0) {                 // GSM {{{
+                            if (msub->codec == 0) {                 // GSM
                                 gsm_packet = (_v3_msg_0x52_gsm *)m;
                                 gsm handle;
                                 uint8_t buf[65];
@@ -1629,8 +1638,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                                 }
                                 ev->pcm.length = gsm_packet->length/65*640;
                                 _v3_debug(V3_DEBUG_EVENT, "queueing pcm msg length %d", ev->pcm.length);
-                                /*}}}*/
-                            } else if (msub->codec == 3) {          // SPEEX/*{{{*/
+                            } else if (msub->codec == 3) {          // SPEEX
                                 char  cbits[200];
                                 void *state;
                                 SpeexBits bits;
@@ -1658,13 +1666,14 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                                 }
                                 ev->pcm.length  = speex_packet->audio_count * speex_packet->frame_size * sizeof(int16_t);
                                 _v3_debug(V3_DEBUG_EVENT, "queueing pcm msg length %d", ev->pcm.length);
-                            }/*}}}*/
+                            }
                         }
                         break;
                 }
                 v3_queue_event(ev);
+                _v3_destroy_0x52(msg);
+                */
             }
-            _v3_destroy_0x52(msg);
             _v3_destroy_packet(msg);
             _v3_func_leave("_v3_process_message");
             return V3_OK;/*}}}*/
