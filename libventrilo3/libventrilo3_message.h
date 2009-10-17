@@ -244,13 +244,6 @@ typedef struct _v3_net_message_0x50 {/*{{{*/
 } _v3_msg_0x50;
 int _v3_get_0x50(_v3_net_message *msg);/*}}}*/
 
-#define V3_AUDIO_SENDTYPE_UNK0   0x00  // possibly broadcast?
-#define V3_AUDIO_SENDTYPE_UNK1   0x01  // possibly broadcast to lobby?
-#define V3_AUDIO_SENDTYPE_U2CCUR 0x02  // user to current channel
-#define V3_AUDIO_SENDTYPE_U2C    0x03  // user to specific channel
-#define V3_AUDIO_SENDTYPE_U2CSUB 0x04  // user to channel and all subchannels
-#define V3_AUDIO_SENDTYPE_U2U    0x05  // user to user
-#define V3_AUDIO_SENDTYPE_U2TARG 0x06  // user to voice target
 typedef struct _v3_net_message_0x52 {/*{{{*/
     uint32_t type;              // 0
     uint16_t subtype;           // 4
@@ -279,7 +272,6 @@ typedef struct _v3_net_message_0x52_0x00 {/*{{{*/
     uint16_t unknown_6;         // 28
     uint16_t unknown_7;         // 30
 } _v3_msg_0x52_0x00; /*}}}*/
-
 typedef struct _v3_net_message_0x52_0x01_in {/*{{{*/
     uint16_t type;              // 0
     uint16_t empty;             // 2
@@ -319,10 +311,9 @@ typedef struct _v3_net_message_0x52_gsmdata {/*{{{*/
 } _v3_msg_0x52_gsmdata;/*}}}*/
 typedef struct _v3_net_message_0x52_speexdata {/*{{{*/
     uint16_t frame_count;
-    uint16_t frame_size;
+    uint16_t sample_size;
     uint8_t  **frames;
 } _v3_msg_0x52_speexdata;/*}}}*/
-
 typedef struct _v3_net_message_0x52_0x02 {/*{{{*/
     uint32_t type;              // 0
     uint16_t subtype;           // 4

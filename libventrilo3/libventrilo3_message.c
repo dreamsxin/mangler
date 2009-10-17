@@ -71,7 +71,7 @@ _v3_get_msg_string(void *offset, uint16_t *len) {/*{{{*/
 
     _v3_func_enter("_v3_get_msg_string");
     memcpy(len, offset, 2);
-    *len = htons(*len);
+    *len = ntohs(*len);
     _v3_debug(V3_DEBUG_PACKET_PARSE, "getting %d (0x%04X) byte string", *len, *len);
     s = malloc(*len+1);
     memset(s, 0, *len+1);
@@ -578,7 +578,7 @@ _v3_get_0x52(_v3_net_message *msg) {/*{{{*/
                 _v3_msg_0x52_0x00 *msub = (_v3_msg_0x52_0x00 *)m;
                 msub = realloc(m, sizeof(_v3_msg_0x52_0x00));
                 memcpy(msub, msg->data, sizeof(_v3_msg_0x52_0x00));
-                _v3_debug(V3_DEBUG_PACKET_PARSE, "user %d started transmitting", m->user_id);
+                _v3_debug(V3_DEBUG_PACKET_PARSE, "user %d started transmitting", msub->user_id);
                 msg->contents = msub;
                 _v3_func_leave("_v3_get_0x52_0x00");
                 return true;
@@ -627,7 +627,7 @@ _v3_get_0x52(_v3_net_message *msg) {/*{{{*/
                             data = malloc(sizeof(_v3_msg_0x52_speexdata));
                             memcpy(data, msg->data+28, sizeof(uint16_t) * 2); // copy the audio count and frame size values
                             data->frame_count = ntohs(data->frame_count); // for some reason, these are big endian
-                            data->frame_size  = ntohs(data->frame_size);  // convert them to host byte order
+                            data->sample_size  = ntohs(data->sample_size);  // convert them to host byte order
                             _v3_debug(V3_DEBUG_PACKET_PARSE, "speex audio count: %d (%d byte frames)", data->frame_count, msub->data_length / data->frame_count);
                             _v3_debug(V3_DEBUG_PACKET_PARSE, "allocating %d bytes for pointers", data->frame_count * sizeof(uint8_t *));
                             data->frames = malloc(data->frame_count * sizeof(uint8_t *));
@@ -652,11 +652,14 @@ _v3_get_0x52(_v3_net_message *msg) {/*{{{*/
             }
             break;
         case 0x02:
-            m = realloc(m, sizeof(_v3_msg_0x52_0x02));
-            memcpy(m, msg->data, sizeof(_v3_msg_0x52_0x02));
-            _v3_debug(V3_DEBUG_PACKET_PARSE, "user %d stopped transmitting", m->user_id);
-            msg->contents = m;
-            _v3_func_leave("_v3_get_0x52");
+            {
+                _v3_msg_0x52_0x02 *msub = (_v3_msg_0x52_0x02 *)m;
+                msub = realloc(m, sizeof(_v3_msg_0x52_0x02));
+                memcpy(msub, msg->data, sizeof(_v3_msg_0x52_0x02));
+                _v3_debug(V3_DEBUG_PACKET_PARSE, "user %d stopped transmitting", msub->user_id);
+                msg->contents = msub;
+                _v3_func_leave("_v3_get_0x52");
+            }
             return true;
         default:
             _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown 0x52 subtype %02x", m->subtype);

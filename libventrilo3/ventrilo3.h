@@ -188,6 +188,14 @@ enum _v3_events
     V3_EVENT_RECV_AUDIO,
 };
 
+#define V3_AUDIO_SENDTYPE_UNK0   0x00  // possibly broadcast?
+#define V3_AUDIO_SENDTYPE_UNK1   0x01  // possibly broadcast to lobby?
+#define V3_AUDIO_SENDTYPE_U2CCUR 0x02  // user to current channel
+#define V3_AUDIO_SENDTYPE_U2C    0x03  // user to specific channel
+#define V3_AUDIO_SENDTYPE_U2CSUB 0x04  // user to channel and all subchannels
+#define V3_AUDIO_SENDTYPE_U2U    0x05  // user to user
+#define V3_AUDIO_SENDTYPE_U2TARG 0x06  // user to voice target
+
 typedef struct _v3_event v3_event;
 struct _v3_event {
     uint16_t type;
@@ -219,6 +227,7 @@ struct _v3_event {
     uint32_t flags;
     struct {
         uint32_t length;
+        uint16_t send_type;
         uint32_t rate;
     } pcm;
     union {
