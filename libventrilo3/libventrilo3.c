@@ -97,7 +97,7 @@ _v3_debug(uint32_t level, const char *format, ...) {/*{{{*/
         return;
     }
 
-    fprintf(stderr, "libventrilo3: %s.%06d: %s\n", timestamp, tv.tv_usec, buf); //print with timestamp
+    fprintf(stderr, "libventrilo3: %s.%06d: %s\n", timestamp, (uint32_t)tv.tv_usec, buf); //print with timestamp
     return;
 }/*}}}*/
 
@@ -601,16 +601,37 @@ _v3_recv(int block) {/*{{{*/
                             uint16_t        send_type;
                             const v3_codec  *codec;
                             void            *data;
+                            int             ctr;
 
-                            _v3_debug(V3_DEBUG_INFO, "got outbound audio event", codec->rate);
                             codec = v3_get_channel_codec(v3_get_user_channel(v3_get_user_id()));
+                            _v3_debug(V3_DEBUG_INFO, "got outbound audio event", codec->rate);
                             // TODO: this is too messy to do here, make it a function
                             switch (codec->codec) {
                                 case 0:
+                                    {
+                                        uint8_t *frames;
+                                        gsm handle;
+                                        if (!(handle = gsm_create())) {
+                                            _v3_debug(V3_DEBUG_INFO, "could not encode audio: failed to create gsm handle");
+                                        }
+                                        frames = calloc(ev.pcm.length / 640, 640);
+                                        for (ctr = 0; ctr < ev.pcm.length / 640; ctr++) {
+                                            gsm_signal sample[320];
+                                            int one = 1;
+
+                                            gsm_option(handle, GSM_OPT_WAV49, &one);
+                                            memcpy(sample, ((uint8_t *)&ev.data)+(ctr*640), 640);
+                                            gsm_encode(handle, sample, &frames[ctr]);
+                                            gsm_encode(handle, ((short*)sample)+160, &frames[ctr]+32);
+                                            _v3_debug(V3_DEBUG_INFO, "encoding frame %d", ctr);
+                                        }
+                                        gsm_destroy(handle);
+                                        //msg = _v3_put_0x52(codec->codec, codec->format, send_type, ctr*65, data);
+                                    }
                                     _v3_debug(V3_DEBUG_INFO, "encoding PCM to GSM @ %lu", codec->rate);
                                     break;
                                 case 3:
-                                    _v3_debug(V3_DEBUG_INFO, "encoding PCM to GSM @ %lu", codec->rate);
+                                    _v3_debug(V3_DEBUG_INFO, "encoding PCM to SPEEX @ %lu", codec->rate);
                                     break;
                             }
                             /*

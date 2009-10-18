@@ -231,7 +231,7 @@ struct _v3_event {
         uint32_t rate;
     } pcm;
     union {
-        uint8_t sample[16384];
+        uint8_t sample[32768];
         char    motd[2048]; 
     } data;
     v3_event *next;
