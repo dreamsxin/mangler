@@ -1582,7 +1582,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                 _v3_msg_0x52_0x01_in     *m = (_v3_msg_0x52_0x01_in *)msg->contents;
 
                 v3_event *ev = malloc(sizeof(v3_event));
-                ev = malloc(sizeof(v3_event));
+                fprintf(stderr, "allocated memory at %lu\n", (uint64_t)ev);
                 memset(ev, 0, sizeof(v3_event));
 
                 switch (m->subtype) {
@@ -1624,6 +1624,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                                             _v3_destroy_0x52(msg);
                                             _v3_destroy_packet(msg);
                                             _v3_func_leave("_v3_process_message");
+                                            free(ev);
                                             return V3_MALFORMED; // it's not really a malformed packet...
                                         }
                                         memset(sample, 0, 640);
@@ -1666,6 +1667,12 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                                             case 32000:
                                                 state = speex_decoder_init(&speex_uwb_mode);
                                                 break;
+                                            default:
+                                                _v3_debug(V3_DEBUG_INFO, "received unknown speex pcm rate %d", ev->pcm.rate);
+                                                _v3_destroy_0x52(msg);
+                                                _v3_destroy_packet(msg);
+                                                free(ev);
+                                                return V3_MALFORMED;
                                         }
                                         speex_bits_init(&bits);
                                         for (ctr = 0; ctr < speexdata->frame_count; ctr++) {
@@ -1675,6 +1682,8 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                                         }
                                         ev->pcm.length  = speexdata->frame_count * speexdata->sample_size * sizeof(int16_t);
                                         _v3_debug(V3_DEBUG_EVENT, "queueing pcm msg length %d", ev->pcm.length);
+                                        speex_decoder_destroy(state);
+                                        speex_bits_destroy(&bits);
                                     }
                                     break;
                             }
@@ -2382,6 +2391,7 @@ v3_queue_event(v3_event *ev) {/*{{{*/
         // do not queue events if the mutex hasn't been initialized.  This
         // means the client isn't ready (or doesn't want) to receive events
         free(ev);
+        _v3_debug(V3_DEBUG_EVENT, "client does appear to be listening yet... not queueing");
         _v3_func_leave("v3_queue_event");
         return true;
     }

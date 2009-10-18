@@ -487,8 +487,9 @@ Mangler::getNetworkEvent() {/*{{{*/
                 fprintf(stderr, "******************************************************** got unknown event type %d\n", ev->type);
         }
         channelTree->expand_all();
-        gdk_threads_leave();
+        fprintf(stderr, "freeing memory at %lu\n", (uint64_t)ev);
         free(ev);
+        gdk_threads_leave();
     }
     return true;
 }/*}}}*/
