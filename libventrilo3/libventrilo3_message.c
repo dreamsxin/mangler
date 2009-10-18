@@ -671,7 +671,6 @@ _v3_get_0x52(_v3_net_message *msg) {/*{{{*/
 
 int
 _v3_destroy_0x52(_v3_net_message *msg) {/*{{{*/
-    /*
     _v3_msg_0x52 *m;
     _v3_msg_0x52_0x01_in *msubin;
     _v3_msg_0x52_0x01_out *msubout;
@@ -683,23 +682,29 @@ _v3_destroy_0x52(_v3_net_message *msg) {/*{{{*/
     m = msg->contents;
     switch (m->subtype) {
         case 0x01:
-            msub = (_v3_msg_0x52_0x01_in *)m;
-            switch (msub->codec) {
+            msubin = (_v3_msg_0x52_0x01_in *)m;
+            switch (msubin->codec) {
                 case 0x00:
-                    gsm = (_v3_msg_0x52_gsm *)msub;
-                    for (ctr = 0; ctr < gsm->data_length / 65; ctr++) {
-                        _v3_debug(V3_DEBUG_PACKET_PARSE, "freeing 65 bytes for gsm frame %d", ctr);
-                        free(gsm->frames[ctr]);
+                    {
+                       _v3_msg_0x52_gsmdata *gsmdata = msubin->data;
+                        for (ctr = 0; ctr < msubin->data_length / 65; ctr++) {
+                            _v3_debug(V3_DEBUG_PACKET_PARSE, "freeing 65 bytes for gsm frame %d", ctr);
+                            free(gsmdata->frames[ctr]);
+                        }
+                        free(gsmdata->frames);
+                        free(gsmdata);
                     }
-                    free(gsm->frames);
                     break;
                 case 0x03:
-                    speex = (_v3_msg_0x52_speex *)msub;
-                    for (ctr = 0; ctr < speex->frame_count; ctr++) {
-                        _v3_debug(V3_DEBUG_PACKET_PARSE, "freeing %d bytes for frame %d", speex->data_length / speex->frame_count, ctr);
-                        free(speex->frames[ctr]);
+                    {
+                        _v3_msg_0x52_speexdata *speexdata = msubin->data;
+                        for (ctr = 0; ctr < speexdata->frame_count; ctr++) {
+                            _v3_debug(V3_DEBUG_PACKET_PARSE, "freeing %d bytes for frame %d", msubin->data_length / speexdata->frame_count, ctr);
+                            free(speexdata->frames[ctr]);
+                        }
+                        free(speexdata->frames);
+                        free(speexdata);
                     }
-                    free(speex->frames);
                     break;
             }
             break;
@@ -708,7 +713,6 @@ _v3_destroy_0x52(_v3_net_message *msg) {/*{{{*/
     }
     _v3_func_leave("_v3_destroy_0x52");
     return true;
-    */
 }/*}}}*/
 
 /*}}}*/
