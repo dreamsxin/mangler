@@ -542,10 +542,8 @@ main (int argc, char *argv[])
               fprintf(stderr, "Can't set the specified locale! " "Check LANG, LC_CTYPE, LC_ALL.\n");
               return 1;
     }
-    Glib::thread_init();
     if(!Glib::thread_supported()) {
-        fprintf(stderr, "error: could not intialize Mangler: thread initialization failed\n");
-        exit(0);
+        Glib::thread_init();
     }
     gdk_threads_init();
     mangler = new Mangler(&options);
