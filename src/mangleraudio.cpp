@@ -131,7 +131,7 @@ ManglerAudio::input(void) {/*{{{*/
             //fprintf(stderr, "reallocating %d bytes of memory\n", pcm_framesize*(ctr+1));
             if ((pcm_framesize*(ctr+1)) > 16384) {
                 fprintf(stderr, "audio frames are greater than buffer size.  dropping audio frames\n");
-                continue;
+                break;
             }
             buf = (uint8_t *)realloc(buf, pcm_framesize*(ctr+1));
             //fprintf(stderr, "reading %d bytes of memory to %lu\n", pcm_framesize, (uint64_t) buf+(pcm_framesize*ctr));
