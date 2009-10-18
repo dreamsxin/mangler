@@ -29,7 +29,7 @@
 #include <sys/time.h>
 
 ManglerAudio::ManglerAudio() {/*{{{*/
-    fprintf(stderr, "creating audio object\n");
+    //fprintf(stderr, "creating audio object\n");
 }/*}}}*/
 ManglerAudio::~ManglerAudio() {/*{{{*/
 }/*}}}*/
@@ -38,7 +38,7 @@ void
 ManglerAudio::open(uint32_t rate, bool type, uint32_t pcm_framesize) {/*{{{*/
     outputStreamOpen = false;
     inputStreamOpen = false;
-    fprintf(stderr, "creating object: %d \n", type);
+    //fprintf(stderr, "creating object: %d \n", type);
     this->rate = rate;
 #ifdef HAVE_PULSE
     pulse_samplespec.format = PA_SAMPLE_S16LE;
@@ -46,7 +46,7 @@ ManglerAudio::open(uint32_t rate, bool type, uint32_t pcm_framesize) {/*{{{*/
     pulse_samplespec.channels = 1;
 #endif
     if (type == AUDIO_OUTPUT) {
-        fprintf(stderr, "opening audio output\n");
+        //fprintf(stderr, "opening audio output\n");
 #ifdef HAVE_PULSE
         if (!(pulse_stream = pa_simple_new(
                         NULL,
@@ -64,7 +64,7 @@ ManglerAudio::open(uint32_t rate, bool type, uint32_t pcm_framesize) {/*{{{*/
 #endif
         outputStreamOpen = true;
         inputStreamOpen = false;
-        fprintf(stderr, "starting output thread\n");
+        //fprintf(stderr, "starting output thread\n");
         pcm_queue = g_async_queue_new();
         Glib::Thread::create(sigc::mem_fun(*this, &ManglerAudio::output), FALSE);
     } else {
@@ -92,7 +92,7 @@ ManglerAudio::open(uint32_t rate, bool type, uint32_t pcm_framesize) {/*{{{*/
         stop_input = false;
         outputStreamOpen = false;
         inputStreamOpen = true;
-        fprintf(stderr, "starting input thread\n");
+        //fprintf(stderr, "starting input thread\n");
         Glib::Thread::create(sigc::mem_fun(*this, &ManglerAudio::input), FALSE);
     }
 }/*}}}*/
@@ -115,7 +115,6 @@ ManglerAudio::input(void) {/*{{{*/
     int ctr;
 
     for (;;) {
-        fprintf(stderr, "frame packet begin\n");
         if (stop_input == true) {
             Glib::Thread::Exit();
             return;
@@ -146,9 +145,9 @@ ManglerAudio::input(void) {/*{{{*/
             seconds = (float)diff.tv_sec + ((float)diff.tv_usec / (float)1000000);
             ctr++;
         }
-        fprintf(stderr, "queuing %d frames with %f seconds\n", ctr, seconds);
-        // hard coding user to channel for now
-        // v3_send_audio(V3_AUDIO_SENDTYPE_U2CCUR, buf, ctr * pcm_framesize);
+        fprintf(stderr, "queuing %d frames (%d bytes) with %f seconds\n", ctr, ctr * pcm_framesize, seconds);
+        // TODO: hard coding user to channel for now, need to implement U2U
+        v3_send_audio(V3_AUDIO_SENDTYPE_U2CCUR, rate, buf, ctr * pcm_framesize);
         free(buf);
         buf = NULL;
         if (stop_input == true) {
@@ -167,7 +166,7 @@ void
 ManglerAudio::output(void) {/*{{{*/
     int ret, error;
 
-    fprintf(stderr, "playing audio\n");
+    //fprintf(stderr, "playing audio\n");
     // If we don't have a pcm queue set up for us, something is very wrong
     if (!pcm_queue) {
         Glib::Thread::Exit();
@@ -213,7 +212,7 @@ ManglerAudio::finish(void) {/*{{{*/
         g_async_queue_push(pcm_queue, pcmdata);
     }
     if (inputStreamOpen) {
-        fprintf(stderr, "stopping input stream\n");
+        //fprintf(stderr, "stopping input stream\n");
         stop_input = true;
     }
 }/*}}}*/

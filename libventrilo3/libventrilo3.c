@@ -70,6 +70,7 @@ _v3_debug(uint32_t level, const char *format, ...) {/*{{{*/
     struct tm *tmp;
     char buf[1024] = "";
     int ctr;
+    struct timeval tv;
 
     if (! (level & v3_debuglevel(-1))) {
         return;
@@ -83,19 +84,20 @@ _v3_debug(uint32_t level, const char *format, ...) {/*{{{*/
         strncat(buf, " ", 1023);
     }
     strncat(buf, str, 1023);
-    t = time(NULL);
+    gettimeofday(&tv, NULL);
+    t = tv.tv_sec;
     tmp = localtime(&t);
     if (tmp == NULL) {
         fprintf(stderr, "libventrilo3: %s\n",buf); // print without timestamp
         return;
     }
 
-    if (strftime(timestamp, sizeof(timestamp), "%T: ", tmp) == 0) {
+    if (strftime(timestamp, sizeof(timestamp), "%T", tmp) == 0) {
         fprintf(stderr, "libventrilo3: %s\n",buf); // print without timestamp
         return;
     }
 
-    fprintf(stderr, "libventrilo3: %s%s\n", timestamp, buf); //print with timestamp
+    fprintf(stderr, "libventrilo3: %s.%06d: %s\n", timestamp, tv.tv_usec, buf); //print with timestamp
     return;
 }/*}}}*/
 
@@ -546,6 +548,10 @@ _v3_send_enc_msg(char *data, int len) {/*{{{*/
     return true;
 }/*}}}*/
 
+/*
+ * The majority of outbound message processing happens here since this function
+ * also reads from the event pipe from the client
+ */
 _v3_net_message *
 _v3_recv(int block) {/*{{{*/
     _v3_net_message *msg;
@@ -587,6 +593,35 @@ _v3_recv(int block) {/*{{{*/
                                 _v3_debug(V3_DEBUG_SOCKET, "failed to send channel change message");
                                 _v3_destroy_packet(msg);
                             }
+                        }
+                        break;/*}}}*/
+                    case V3_EVENT_PLAY_AUDIO:/*{{{*/
+                        {
+                            _v3_net_message *msg;
+                            uint16_t        send_type;
+                            const v3_codec  *codec;
+                            void            *data;
+
+                            _v3_debug(V3_DEBUG_INFO, "got outbound audio event", codec->rate);
+                            codec = v3_get_channel_codec(v3_get_user_channel(v3_get_user_id()));
+                            // TODO: this is too messy to do here, make it a function
+                            switch (codec->codec) {
+                                case 0:
+                                    _v3_debug(V3_DEBUG_INFO, "encoding PCM to GSM @ %lu", codec->rate);
+                                    break;
+                                case 3:
+                                    _v3_debug(V3_DEBUG_INFO, "encoding PCM to GSM @ %lu", codec->rate);
+                                    break;
+                            }
+                            /*
+                            msg = _v3_put_0x52(send_type, codec, codec_format, data);
+                            if (_v3_send(msg)) {
+                                _v3_destroy_packet(msg);
+                            } else {
+                                _v3_debug(V3_DEBUG_SOCKET, "failed to send channel change message");
+                                _v3_destroy_packet(msg);
+                            }
+                            */
                         }
                         break;/*}}}*/
                     default:
@@ -730,6 +765,7 @@ v3_message_waiting(int block) {/*{{{*/
         if (ret == 0) {
             _v3_net_message *m;
             FD_ZERO(&rset);
+            FD_SET(v3_server.evpipe[0], &rset);
             FD_SET(_v3_sockd, &rset);
 
             m = _v3_put_0x4b();
@@ -1582,7 +1618,6 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                 _v3_msg_0x52_0x01_in     *m = (_v3_msg_0x52_0x01_in *)msg->contents;
 
                 v3_event *ev = malloc(sizeof(v3_event));
-                fprintf(stderr, "allocated memory at %lu\n", (uint64_t)ev);
                 memset(ev, 0, sizeof(v3_event));
 
                 switch (m->subtype) {
@@ -2343,6 +2378,23 @@ v3_get_user(uint16_t id) {/*{{{*/
     return NULL;
 }/*}}}*/
 
+uint16_t
+v3_get_user_channel(uint16_t id) {/*{{{*/
+    v3_user *u;
+    uint16_t channel;
+
+    _v3_lock_userlist();
+    for (u = v3_user_list; u != NULL; u = u->next) {
+        if (u->id == id) {
+            channel = u->channel;
+            _v3_unlock_userlist();
+            return channel;
+        }
+    }
+    _v3_unlock_userlist();
+    return -1;
+}/*}}}*/
+
 void
 v3_free_user(v3_user *user) {/*{{{*/
     free(user->name);
@@ -2496,11 +2548,9 @@ v3_get_codec(uint16_t codec, uint16_t format) {/*{{{*/
 
     for (ctr = 0; v3_codecs[ctr].codec != -1; ctr++) {
         if (v3_codecs[ctr].codec == codec && v3_codecs[ctr].format == format) {
-            fprintf(stderr, "codec rate is %d\n", v3_codecs[ctr].rate);
             return &v3_codecs[ctr];
         }
     }
-    fprintf(stderr, "codec not found\n");
     return NULL;
 }/*}}}*/
 
@@ -2509,7 +2559,6 @@ v3_get_channel_codec(uint16_t channel_id) {/*{{{*/
     v3_channel *c;
     const v3_codec *codec_info;
 
-    fprintf(stderr, "getting codec for channel %d\n", channel_id);
     if (channel_id == 0) { // the lobby is always the default codec
         return v3_get_codec(v3_server.codec, v3_server.codec_format);
     }
@@ -2553,7 +2602,28 @@ v3_logout(void) {/*{{{*/
 }/*}}}*/
 
 void
-v3_send_audio(uint16_t send_type, uint8_t *pcm, uint32_t length) {/*{{{*/
+v3_send_audio(uint16_t send_type, uint32_t rate, uint8_t *pcm, uint32_t length) {/*{{{*/
+    v3_event ev;
+
+    _v3_func_enter("v3_send_audio");
+    if (!v3_is_loggedin()) {
+        _v3_func_leave("v3_send_audio");
+        return;
+    }
+    memset(&ev, 0, sizeof(v3_event));
+    ev.type = V3_EVENT_PLAY_AUDIO;
+    ev.pcm.rate = rate;
+    ev.pcm.length = length;
+    memcpy(ev.data.sample, pcm, length);
+    _v3_lock_sendq();
+    _v3_debug(V3_DEBUG_EVENT, "sending %lu bytes to event pipe for event type %d", sizeof(v3_event), ev.type);
+    if (fwrite(&ev, sizeof(struct _v3_event), 1, v3_server.evoutstream) != 1) {
+        _v3_error("could not write to event pipe");
+    }
+    fflush(v3_server.evoutstream);
+    _v3_unlock_sendq();
+    _v3_func_leave("v3_send_audio");
+    return;
 }/*}}}*/
 
 /*

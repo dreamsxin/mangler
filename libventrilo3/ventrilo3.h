@@ -231,7 +231,7 @@ struct _v3_event {
         uint32_t rate;
     } pcm;
     union {
-        uint8_t sample[32768]; // this is probably too much. pcm events should probably cap at 16k
+        uint8_t sample[16384];
         char    motd[2048]; 
     } data;
     v3_event *next;
@@ -427,7 +427,8 @@ void        v3_clear_events(void);
 uint32_t    v3_get_codec_rate(uint16_t codec, uint16_t format);
 const v3_codec *v3_get_codec(uint16_t codec, uint16_t format);
 const v3_codec *v3_get_channel_codec(uint16_t channel_id);
-void        v3_send_audio(uint16_t send_type, uint8_t *pcm, uint32_t length);
+void        v3_send_audio(uint16_t send_type, uint32_t rate, uint8_t *pcm, uint32_t length);
+uint16_t    v3_get_user_channel(uint16_t id);
 
 // User list functions
 int         v3_user_count(void);
