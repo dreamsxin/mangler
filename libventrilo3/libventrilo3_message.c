@@ -673,7 +673,7 @@ int
 _v3_destroy_0x52(_v3_net_message *msg) {/*{{{*/
     _v3_msg_0x52 *m;
     _v3_msg_0x52_0x01_in *msubin;
-    _v3_msg_0x52_0x01_out *msubout;
+    // _v3_msg_0x52_0x01_out *msubout; // TODO: free output structures
     _v3_msg_0x52_gsmdata *gsmdata;
     _v3_msg_0x52_speexdata *speexdata;
     int ctr;
@@ -685,26 +685,22 @@ _v3_destroy_0x52(_v3_net_message *msg) {/*{{{*/
             msubin = (_v3_msg_0x52_0x01_in *)m;
             switch (msubin->codec) {
                 case 0x00:
-                    {
-                       _v3_msg_0x52_gsmdata *gsmdata = msubin->data;
-                        for (ctr = 0; ctr < msubin->data_length / 65; ctr++) {
-                            _v3_debug(V3_DEBUG_PACKET_PARSE, "freeing 65 bytes for gsm frame %d", ctr);
-                            free(gsmdata->frames[ctr]);
-                        }
-                        free(gsmdata->frames);
-                        free(gsmdata);
+                    gsmdata = msubin->data;
+                    for (ctr = 0; ctr < msubin->data_length / 65; ctr++) {
+                        _v3_debug(V3_DEBUG_PACKET_PARSE, "freeing 65 bytes for gsm frame %d", ctr);
+                        free(gsmdata->frames[ctr]);
                     }
+                    free(gsmdata->frames);
+                    free(gsmdata);
                     break;
                 case 0x03:
-                    {
-                        _v3_msg_0x52_speexdata *speexdata = msubin->data;
-                        for (ctr = 0; ctr < speexdata->frame_count; ctr++) {
-                            _v3_debug(V3_DEBUG_PACKET_PARSE, "freeing %d bytes for frame %d", msubin->data_length / speexdata->frame_count, ctr);
-                            free(speexdata->frames[ctr]);
-                        }
-                        free(speexdata->frames);
-                        free(speexdata);
+                    speexdata = msubin->data;
+                    for (ctr = 0; ctr < speexdata->frame_count; ctr++) {
+                        _v3_debug(V3_DEBUG_PACKET_PARSE, "freeing %d bytes for frame %d", msubin->data_length / speexdata->frame_count, ctr);
+                        free(speexdata->frames[ctr]);
                     }
+                    free(speexdata->frames);
+                    free(speexdata);
                     break;
             }
             break;

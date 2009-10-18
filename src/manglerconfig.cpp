@@ -44,9 +44,6 @@ ManglerConfig::ManglerConfig() {/*{{{*/
 }/*}}}*/
 bool ManglerConfig::save() {/*{{{*/
     // We're going to do this in one in C because it's easier for me...
-    char buf[1024];
-    bool notified;
-
     mutex.lock();
     Glib::ustring     cfgfilename = getenv("HOME");
     cfgfilename += "/.manglerrc";
@@ -72,6 +69,7 @@ bool ManglerConfig::save() {/*{{{*/
     // TODO: saveServerList();
     fclose(this->cfgstream);
     mutex.unlock();
+    return true;
 }/*}}}*/
 bool ManglerConfig::put(Glib::ustring name, Glib::ustring value) {/*{{{*/
     char buf[1024];

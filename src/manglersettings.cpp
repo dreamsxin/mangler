@@ -159,7 +159,7 @@ void ManglerSettings::initSettings(void) {/*{{{*/
     // ...
 
     // Debug level
-    uint32_t debuglevel = 0;
+    config.lv3_debuglevel = 0;
     builder->get_widget("debugStatus", checkbutton);
     checkbutton->set_active(config.lv3_debuglevel & V3_DEBUG_STATUS ? 1 : 0);
 
@@ -210,7 +210,6 @@ void ManglerSettings::settingsWindow_show_cb(void) {/*{{{*/
     Gtk::TreeModel::Row row;
     isDetectingKey = false;
     isDetectingMouse = false;
-    static int initialized = false;
 
     initSettings();
     // these callbacks initialize the state

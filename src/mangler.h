@@ -63,9 +63,9 @@ class Mangler
         Glib::RefPtr<Gtk::StatusIcon>       statusIcon;
         ManglerChannelTree                  *channelTree;
         ManglerNetwork                      *network;
-        std::map<uint32_t, ManglerAudio* >  audio;
+        std::map<uint32_t, ManglerAudio* >  outputAudio;
+        ManglerAudio                        *inputAudio;
         ManglerAudio                        *audioControl;
-        ManglerAudio                        *inputaudio;
         ManglerSettings                     *settings;
 
         // These are used by the password entry dialog

@@ -109,7 +109,6 @@ void
 ManglerChannelTree::addUser(uint32_t id, uint32_t parent_id, Glib::ustring name, Glib::ustring comment, Glib::ustring phonetic, Glib::ustring url, Glib::ustring integration_text, bool guest) {/*{{{*/
     Glib::ustring displayName = "";
     Gtk::TreeModel::Row parent;
-    gsize tmp;
 
     if (id == 0) {
         updateLobby(name, comment, phonetic);
@@ -163,7 +162,6 @@ void
 ManglerChannelTree::addChannel(uint8_t protect_mode, uint32_t id, uint32_t parent_id, Glib::ustring name, Glib::ustring comment, Glib::ustring phonetic) {/*{{{*/
     Glib::ustring displayName = "";
     Gtk::TreeModel::Row parent;
-    gsize tmp;
 
     if (! (parent = getChannel(parent_id, channelStore->children())) && id > 0) {
         fprintf(stderr, "orphaned channel: id %d: %s is supposed to be a child of %d\n", id, name.c_str(), parent_id);
@@ -291,7 +289,6 @@ void
 ManglerChannelTree::updateLobby(Glib::ustring name, Glib::ustring comment, Glib::ustring phonetic) {/*{{{*/
     Glib::ustring displayName = "";
     Gtk::TreeModel::Row lobby;
-    gsize tmp;
 
     if (! (lobby = getChannel(0, channelStore->children()))) {
         channelIter                                 = channelStore->append();
@@ -349,7 +346,6 @@ ManglerChannelTree::clear(void) {/*{{{*/
 void
 ManglerChannelTree::channelView_row_activated_cb(const Gtk::TreeModel::Path& path, Gtk::TreeViewColumn* column) {/*{{{*/
     v3_channel *channel;
-    Gtk::Dialog *dialog;
     Glib::ustring password;
 
     Gtk::TreeModel::iterator iter = channelStore->get_iter(path);

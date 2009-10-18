@@ -38,8 +38,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define AUDIO_INBOUND  false
-#define AUDIO_OUTBOUND true
+#define AUDIO_INPUT  false
+#define AUDIO_OUTPUT true
 
 class ManglerPCM
 {
@@ -73,12 +73,13 @@ class ManglerAudio
 {
     public:
         ManglerAudio();
-        ManglerAudio(uint16_t userid, uint32_t rate, bool direction = AUDIO_OUTBOUND);
         ~ManglerAudio();
+        void            open(uint32_t rate, bool type, uint32_t pcm_framesize = 0);
         void            queue(uint32_t length, uint8_t *sample);
-        void            play(void);
-        void            record(int bufsize);
+        void            output(void);
+        void            input(void);
         void            finish(void);
+
         void            getDeviceList(void);
 
         GAsyncQueue*    pcm_queue;
@@ -91,10 +92,13 @@ class ManglerAudio
 
         std::vector<ManglerAudioDevice*> inputDevices;
         std::vector<ManglerAudioDevice*> outputDevices;
-        uint16_t        userid;
+
         int             error;
-        bool            playing;
-        bool            stoprecord;
+
+        bool            stop_input;
+        bool            stop_output;
+        uint32_t        pcm_framesize;
+
         bool            outputStreamOpen;
         bool            inputStreamOpen;
 };

@@ -145,6 +145,7 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
 
     // Create our audio control object for managing devices
     audioControl = new ManglerAudio();
+    audioControl->getDeviceList();
 
     // Create settings object, load the configuration file, and apply
     settings = new ManglerSettings(builder);
@@ -235,10 +236,11 @@ void Mangler::aboutButton_clicked_cb(void) {/*{{{*/
     aboutdialog->hide();
 }/*}}}*/
 void Mangler::xmitButton_pressed_cb(void) {/*{{{*/
-    const v3_codec *codec;
-    v3_user  *user;
+    //const v3_codec *codec;
+    //v3_user  *user;
     fprintf(stderr, "xmit clicked\n");
 
+    /*
     if (! v3_is_loggedin()) {
         return;
     }
@@ -252,12 +254,13 @@ void Mangler::xmitButton_pressed_cb(void) {/*{{{*/
     inputaudio = new ManglerAudio(v3_get_user_id(), codec->rate, AUDIO_OUTBOUND);
     fprintf(stderr, "starting outbound thread\n");
     Glib::Thread::create(sigc::bind(sigc::mem_fun(this->inputaudio, &ManglerAudio::record), codec->samplesize), FALSE);
+    */
 }/*}}}*/
 void Mangler::xmitButton_released_cb(void) {/*{{{*/
     if (! v3_is_loggedin()) {
         return;
     }
-    inputaudio->finish();
+    //inputaudio->finish();
 }/*}}}*/
 
 // Quick Connect callbacks
@@ -412,9 +415,11 @@ Mangler::getNetworkEvent() {/*{{{*/
                     channelTree->userIsTalking(ev->user.id, true);
                     if (me && user && me->channel == user->channel) { // this is wrong... need to check utu
                         if (me->id != user->id) { // don't start a stream for ourself
+                            /*
                             if (!audio[ev->user.id]) {
                                 audio[ev->user.id] = new ManglerAudio(ev->user.id, ev->pcm.rate, AUDIO_INBOUND);
                             }
+                            */
                         }
                         v3_free_user(me);
                         v3_free_user(user);
@@ -431,15 +436,19 @@ Mangler::getNetworkEvent() {/*{{{*/
             case V3_EVENT_USER_TALK_END:/*{{{*/
                 fprintf(stderr, "user %d stopped talking\n", ev->user.id);
                 channelTree->userIsTalking(ev->user.id, false);
+                /*
                 if (audio[ev->user.id]) {
                     audio[ev->user.id]->finish();
                     audio.erase(ev->user.id);
                 }
+                */
                 break;/*}}}*/
             case V3_EVENT_PLAY_AUDIO:/*{{{*/
+                /*
                 if (audio[ev->user.id]) {
                     audio[ev->user.id]->queue(ev->pcm.length, (uint8_t *)ev->data.sample);
                 }
+                */
                 break;/*}}}*/
             case V3_EVENT_DISPLAY_MOTD:/*{{{*/
                 {
@@ -519,7 +528,7 @@ main (int argc, char *argv[])
     } else {
         options.uifromfile = false;
     }
-    if (locale = setlocale (LC_ALL, "")) {
+    if ((locale = setlocale (LC_ALL, ""))) {
               fprintf(stderr, "initialized locale: %s\n", locale);
     } else {
               fprintf(stderr, "Can't set the specified locale! " "Check LANG, LC_CTYPE, LC_ALL.\n");

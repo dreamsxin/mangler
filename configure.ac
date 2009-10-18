@@ -50,7 +50,7 @@ PKG_CHECK_MODULES(gtkmm, gtkmm-2.4 >= 1.3.3)
 AC_SUBST(gtkmm_CFLAGS)
 AC_SUBST(gtkmm_LIBS)
 
-PKG_CHECK_MODULES(pulse, libpulse-simple >= 0.9.14, [AC_DEFINE(HAVE_PULSE, 1, [have pulse audio])], [echo "compiling without pulse.  you will not have sound support"])
+PKG_CHECK_MODULES(pulse, libpulse-simple >= 0.9.14, [AC_DEFINE(HAVE_PULSE, 1, [have pulse audio])], [echo "*** WARNING: compiling without pulse.  you will not have sound support"])
 AC_SUBST(pulse_CFLAGS)
 AC_SUBST(pulse_LIBS)
 

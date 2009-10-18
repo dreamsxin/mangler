@@ -28,18 +28,26 @@
 #include "mangleraudio.h"
 #include <sys/time.h>
 
-ManglerAudio::ManglerAudio(uint16_t userid, uint32_t rate, bool direction) {/*{{{*/
+ManglerAudio::ManglerAudio() {/*{{{*/
+    fprintf(stderr, "creating audio object\n");
+}/*}}}*/
+ManglerAudio::~ManglerAudio() {/*{{{*/
+}/*}}}*/
+
+void
+ManglerAudio::open(uint32_t rate, bool type, uint32_t pcm_framesize) {/*{{{*/
     outputStreamOpen = false;
     inputStreamOpen = false;
-    fprintf(stderr, "creating object: %d \n", direction);
+    fprintf(stderr, "creating object: %d \n", type);
+    this->rate = rate;
 #ifdef HAVE_PULSE
     pulse_samplespec.format = PA_SAMPLE_S16LE;
     pulse_samplespec.rate = rate;
     pulse_samplespec.channels = 1;
-    this->rate = rate;
-    this->userid = userid;
-    if (direction == AUDIO_INBOUND) {
-        fprintf(stderr, "opening audio inbound\n");
+#endif
+    if (type == AUDIO_OUTPUT) {
+        fprintf(stderr, "opening audio output\n");
+#ifdef HAVE_PULSE
         if (!(pulse_stream = pa_simple_new(
                         NULL,
                         "Mangler",
@@ -53,12 +61,20 @@ ManglerAudio::ManglerAudio(uint16_t userid, uint32_t rate, bool direction) {/*{{
             fprintf(stderr, __FILE__": pa_simple_new() failed: %s\n", pa_strerror(error));
             return;
         }
+#endif
         outputStreamOpen = true;
         inputStreamOpen = false;
-        fprintf(stderr, "starting inbound thread\n");
-        Glib::Thread::create(sigc::mem_fun(*this, &ManglerAudio::play), FALSE);
+        fprintf(stderr, "starting output thread\n");
+        pcm_queue = g_async_queue_new();
+        Glib::Thread::create(sigc::mem_fun(*this, &ManglerAudio::output), FALSE);
     } else {
-        fprintf(stderr, "starting outputstream with rate %d\n", rate);
+        fprintf(stderr, "starting input with rate %d\n", rate);
+        if (pcm_framesize == 0) {
+            fprintf(stderr, "framesize not specified on input stream open\n");
+            return;
+        }
+        this->pcm_framesize = pcm_framesize;
+#ifdef HAVE_PULSE
         if (!(pulse_stream = pa_simple_new(
                         NULL,
                         "Mangler",
@@ -72,35 +88,148 @@ ManglerAudio::ManglerAudio(uint16_t userid, uint32_t rate, bool direction) {/*{{
             fprintf(stderr, __FILE__": pa_simple_new() failed: %s\n", pa_strerror(error));
             return;
         }
-        stoprecord = false;
+#endif
+        stop_input = false;
         outputStreamOpen = false;
         inputStreamOpen = true;
+        Glib::Thread::create(sigc::mem_fun(*this, &ManglerAudio::input), FALSE);
     }
-#elif HAVE_ALSA
-    snd_pcm_t *pcm_handle;          
-    snd_pcm_stream_t stream = SND_PCM_STREAM_PLAYBACK;
-    snd_pcm_hw_params_t *hwparams;
-    char pcm_name[] = "plughw:0,0";
-    snd_pcm_hw_params_alloca(&hwparams);
-    if (snd_pcm_open(&pcm_handle, pcm_name, stream, 0) < 0) {
-        fprintf(stderr, "Error opening PCM device %s\n", pcm_name);
-        return(-1);
+}/*}}}*/
+
+void
+ManglerAudio::queue(uint32_t length, uint8_t *sample) {/*{{{*/
+    if (!outputStreamOpen) {
+        return;
     }
+    pcmdata = new ManglerPCM(length, sample);
+    g_async_queue_push(pcm_queue, pcmdata);
+}/*}}}*/
+
+void
+ManglerAudio::input(void) {/*{{{*/
+    int ret, error;
+    uint8_t *buf = NULL;
+    float seconds = 0;
+    struct timeval start, now, diff;
+    int ctr;
+
+    fprintf(stderr, "reading recording\n");
+    for (;;) {
+        if (stop_input == true) {
+            return;
+        }
+        if (!inputStreamOpen) {
+            usleep(5);
+            continue;
+        }
+        gettimeofday(&start, NULL);
+        seconds = 0.0;
+        ctr = 0;
+        // As best as I can tell, we're supposed to send 0.11 seconds of audio in each packet
+        while (seconds < 0.11) {
+            fprintf(stderr, "allocating %d bytes of memory\n", pcm_framesize*(ctr+1));
+            buf = (uint8_t *)realloc(buf, pcm_framesize*(ctr+1));
+            fprintf(stderr, "reading %d bytes of memory to %lu\n", pcm_framesize, (uint64_t) buf+(pcm_framesize*ctr));
+#ifdef HAVE_PULSE
+            if ((ret = pa_simple_read(pulse_stream, buf+(pcm_framesize*ctr), pcm_framesize, &error)) < 0) {
+                fprintf(stderr, __FILE__": pa_simple_read() failed: %s\n", pa_strerror(error));
+                pa_simple_free(pulse_stream);
+                stop_input = true;
+                Glib::Thread::Exit();
+                return;
+            }
 #endif
-    pcm_queue = g_async_queue_new();
+            gettimeofday(&now, NULL);
+            timeval_subtract(&diff, &now, &start);
+            seconds = (float)diff.tv_sec + ((float)diff.tv_usec / (float)1000000);
+            if (stop_input == true) {
+                fprintf(stderr, "stopping record\n");
+#ifdef HAVE_PULSE
+                pa_simple_free(pulse_stream);
+#endif
+                outputStreamOpen = true;
+                Glib::Thread::Exit();
+                return;
+            }
+            ctr++;
+        }
+        fprintf(stderr, "queuing %d frames with %f seconds\n", ctr, seconds);
+        // hard coding user to channel for now
+        v3_send_audio(V3_AUDIO_SENDTYPE_U2CCUR, buf, ctr * pcm_framesize);
+        free(buf);
+        buf = NULL;
+    }
+#ifdef HAVE_PULSE
+    pa_simple_free(pulse_stream);
+#endif
+    outputStreamOpen = true;
+    gdk_threads_leave();
+    Glib::Thread::Exit();
+    return;
 }/*}}}*/
-ManglerAudio::ManglerAudio() {/*{{{*/
-    fprintf(stderr, "creating control object\n");
-    this->getDeviceList();
+
+void
+ManglerAudio::output(void) {/*{{{*/
+    int ret, error;
+
+    fprintf(stderr, "playing audio\n");
+    // Make sure we have a stream open, or just die out
+    if (!outputStreamOpen) {
+        Glib::Thread::Exit();
+        return;
+    }
+    if (!pcm_queue) {
+        Glib::Thread::Exit();
+        return;
+    }
+    g_async_queue_ref(pcm_queue);
+    usleep(500000); // buffer for a half second
+    for (;;) {
+        stop_output = false;
+        pcmdata = (ManglerPCM *)g_async_queue_pop(pcm_queue);
+        if (pcmdata->length == 0) {
+            break;
+        }
+#ifdef HAVE_PULSE
+        if ((ret = pa_simple_write(pulse_stream, pcmdata->sample, pcmdata->length, &error)) < 0) {
+            fprintf(stderr, __FILE__": pa_simple_write() failed: %s\n", pa_strerror(error));
+            g_async_queue_unref(pcm_queue);
+            pa_simple_free(pulse_stream);
+            stop_output = true;
+            Glib::Thread::Exit();
+            return;
+        }
+#endif
+    }
+#ifdef HAVE_PULSE
+    if (pa_simple_drain(pulse_stream, &error) < 0) {
+        fprintf(stderr, __FILE__": pa_simple_drain() failed: %s\n", pa_strerror(error));
+    }
+    pa_simple_free(pulse_stream);
+#endif
+    stop_output = true;
+    outputStreamOpen = true;
+    Glib::Thread::Exit();
+    return;
 }/*}}}*/
-ManglerAudio::~ManglerAudio() {/*{{{*/
+
+void
+ManglerAudio::finish(void) {/*{{{*/
+    if (outputStreamOpen) {
+        stop_output = true;
+        pcmdata = new ManglerPCM(0, NULL);
+        g_async_queue_push(pcm_queue, pcmdata);
+    }
+    if (inputStreamOpen) {
+        stop_input = true;
+    }
 }/*}}}*/
 
 void
 ManglerAudio::getDeviceList(void) {/*{{{*/
-#ifdef HAVE_PULSE
     int ctr;
 
+#ifdef HAVE_PULSE
     // This is where we'll store the input device list
     pa_devicelist_t pa_input_devicelist[16];
 
@@ -137,132 +266,6 @@ ManglerAudio::getDeviceList(void) {/*{{{*/
     }
     return;
 #endif
-}/*}}}*/
-
-void
-ManglerAudio::finish(void) {/*{{{*/
-    if (outputStreamOpen) {
-        pcmdata = new ManglerPCM(0, NULL);
-        g_async_queue_push(pcm_queue, pcmdata);
-    }
-    if (inputStreamOpen) {
-        stoprecord = true;
-    }
-}/*}}}*/
-
-void
-ManglerAudio::queue(uint32_t length, uint8_t *sample) {/*{{{*/
-    if (!outputStreamOpen) {
-        return;
-    }
-    pcmdata = new ManglerPCM(length, sample);
-    g_async_queue_push(pcm_queue, pcmdata);
-}/*}}}*/
-
-void
-ManglerAudio::record(int bufsize) {/*{{{*/
-    int ret, error;
-    uint8_t *buf = NULL;
-    float seconds = 0;
-    struct timeval start, now, diff;
-    int ctr;
-
-    fprintf(stderr, "reading recording\n");
-#ifdef HAVE_PULSE
-    for (;;) {
-        if (stoprecord == true) {
-            return;
-        }
-        if (!inputStreamOpen) {
-            usleep(5);
-            continue;
-        }
-        gettimeofday(&start, NULL);
-        seconds = 0.0;
-        ctr = 0;
-        // As best as I can tell, we're supposed to send 0.11 seconds of audio in each packet
-        while (seconds < 0.11) {
-            fprintf(stderr, "allocating %d bytes of memory\n", bufsize*(ctr+1));
-            buf = (uint8_t *)realloc(buf, bufsize*(ctr+1));
-            fprintf(stderr, "reading %d bytes of memory to %lu\n", bufsize, (uint64_t) buf+(bufsize*ctr));
-            if ((ret = pa_simple_read(pulse_stream, buf+(bufsize*ctr), bufsize, &error)) < 0) {
-                fprintf(stderr, __FILE__": pa_simple_read() failed: %s\n", pa_strerror(error));
-                pa_simple_free(pulse_stream);
-                stoprecord = true;
-                Glib::Thread::Exit();
-                return;
-            }
-            gettimeofday(&now, NULL);
-            timeval_subtract(&diff, &now, &start);
-            seconds = (float)diff.tv_sec + ((float)diff.tv_usec / (float)1000000);
-            if (stoprecord == true) {
-                fprintf(stderr, "stopping record\n");
-                pa_simple_free(pulse_stream);
-                playing = false;
-                outputStreamOpen = true;
-                Glib::Thread::Exit();
-                return;
-            }
-            ctr++;
-        }
-        fprintf(stderr, "queuing %d frames with %f seconds\n", ctr, seconds);
-        // hard coding user to channel for now
-        v3_send_audio(V3_AUDIO_SENDTYPE_U2CCUR, buf, ctr * bufsize);
-        free(buf);
-        buf = NULL;
-    }
-    pa_simple_free(pulse_stream);
-    playing = false;
-    outputStreamOpen = true;
-    gdk_threads_leave();
-#endif
-    Glib::Thread::Exit();
-    return;
-}/*}}}*/
-
-void
-ManglerAudio::play(void) {/*{{{*/
-    int ret, error;
-
-    fprintf(stderr, "playing audio\n");
-    // Make sure we have a stream open, or just die out
-    if (!outputStreamOpen) {
-        Glib::Thread::Exit();
-        return;
-    }
-    if (!pcm_queue) {
-        Glib::Thread::Exit();
-        return;
-    }
-    g_async_queue_ref(pcm_queue);
-    usleep(500000); // buffer for a half second
-    for (;;) {
-        playing = true;
-        pcmdata = (ManglerPCM *)g_async_queue_pop(pcm_queue);
-        if (pcmdata->length == 0) {
-            break;
-        }
-#ifdef HAVE_PULSE
-        if ((ret = pa_simple_write(pulse_stream, pcmdata->sample, pcmdata->length, &error)) < 0) {
-            fprintf(stderr, __FILE__": pa_simple_write() failed: %s\n", pa_strerror(error));
-            g_async_queue_unref(pcm_queue);
-            pa_simple_free(pulse_stream);
-            playing = false;
-            Glib::Thread::Exit();
-            return;
-        }
-#endif
-    }
-#ifdef HAVE_PULSE
-    if (pa_simple_drain(pulse_stream, &error) < 0) {
-        fprintf(stderr, __FILE__": pa_simple_drain() failed: %s\n", pa_strerror(error));
-    }
-    pa_simple_free(pulse_stream);
-#endif
-    playing = false;
-    outputStreamOpen = true;
-    Glib::Thread::Exit();
-    return;
 }/*}}}*/
 
 #ifdef HAVE_PULSE

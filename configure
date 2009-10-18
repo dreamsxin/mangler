@@ -17108,9 +17108,9 @@ fi
 
 	{ $as_echo "$as_me:$LINENO: result: no" >&5
 $as_echo "no" >&6; }
-                echo "compiling without pulse.  you will not have sound support"
+                echo "*** WARNING: compiling without pulse.  you will not have sound support"
 elif test $pkg_failed = untried; then
-	echo "compiling without pulse.  you will not have sound support"
+	echo "*** WARNING: compiling without pulse.  you will not have sound support"
 else
 	pulse_CFLAGS=$pkg_cv_pulse_CFLAGS
 	pulse_LIBS=$pkg_cv_pulse_LIBS
