@@ -92,7 +92,11 @@ class Mangler
         void aboutButton_clicked_cb(void);
         void xmitButton_pressed_cb(void);
         void xmitButton_released_cb(void);
+
         bool getNetworkEvent(void);
+
+        void startTransmit(void);
+        void stopTransmit(void);
 
         // quick connect signal handlers
         void qcConnectButton_clicked_cb(void);

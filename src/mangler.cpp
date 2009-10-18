@@ -236,11 +236,17 @@ void Mangler::aboutButton_clicked_cb(void) {/*{{{*/
     aboutdialog->hide();
 }/*}}}*/
 void Mangler::xmitButton_pressed_cb(void) {/*{{{*/
-    //const v3_codec *codec;
-    //v3_user  *user;
     fprintf(stderr, "xmit clicked\n");
+    startTransmit();
+}/*}}}*/
+void Mangler::xmitButton_released_cb(void) {/*{{{*/
+    stopTransmit();
+}/*}}}*/
 
-    /*
+void Mangler::startTransmit(void) {/*{{{*/
+    const v3_codec *codec;
+    v3_user  *user;
+
     if (! v3_is_loggedin()) {
         return;
     }
@@ -249,18 +255,18 @@ void Mangler::xmitButton_pressed_cb(void) {/*{{{*/
         return;
     }
     codec = v3_get_channel_codec(user->channel);
+    fprintf(stderr, "channel %d codec rate: %d at sample size %d\n", user->channel, codec->rate, codec->samplesize);
     v3_free_user(user);
-    fprintf(stderr, "codec rate: %d at sample size %d\n", codec->rate, codec->samplesize);
-    inputaudio = new ManglerAudio(v3_get_user_id(), codec->rate, AUDIO_OUTBOUND);
-    fprintf(stderr, "starting outbound thread\n");
-    Glib::Thread::create(sigc::bind(sigc::mem_fun(this->inputaudio, &ManglerAudio::record), codec->samplesize), FALSE);
-    */
+    inputAudio = new ManglerAudio();
+    inputAudio->open(codec->rate, AUDIO_INPUT, codec->samplesize);
 }/*}}}*/
-void Mangler::xmitButton_released_cb(void) {/*{{{*/
+void Mangler::stopTransmit(void) {/*{{{*/
     if (! v3_is_loggedin()) {
         return;
     }
-    //inputaudio->finish();
+    if (inputAudio) {
+        inputAudio->finish();
+    }
 }/*}}}*/
 
 // Quick Connect callbacks
@@ -327,6 +333,10 @@ Mangler::getNetworkEvent() {/*{{{*/
                 break;/*}}}*/
             case V3_EVENT_USER_LOGIN:/*{{{*/
                 u = v3_get_user(ev->user.id);
+                if (!u) {
+                    fprintf(stderr, "couldn't retreive user id %d\n", ev->user.id);
+                    break;
+                }
                 fprintf(stderr, "adding user id %d: %s to channel %d\n", ev->user.id, u->name, ev->channel.id);
                 channelTree->addUser(
                         (uint32_t)u->id,
@@ -413,14 +423,7 @@ Mangler::getNetworkEvent() {/*{{{*/
                     me = v3_get_user(v3_get_user_id());
                     user = v3_get_user(ev->user.id);
                     channelTree->userIsTalking(ev->user.id, true);
-                    if (me && user && me->channel == user->channel) { // this is wrong... need to check utu
-                        if (me->id != user->id) { // don't start a stream for ourself
-                            /*
-                            if (!audio[ev->user.id]) {
-                                audio[ev->user.id] = new ManglerAudio(ev->user.id, ev->pcm.rate, AUDIO_INBOUND);
-                            }
-                            */
-                        }
+                    if (me && user && me->channel == user->channel) {
                         v3_free_user(me);
                         v3_free_user(user);
                     } else {
@@ -436,19 +439,24 @@ Mangler::getNetworkEvent() {/*{{{*/
             case V3_EVENT_USER_TALK_END:/*{{{*/
                 fprintf(stderr, "user %d stopped talking\n", ev->user.id);
                 channelTree->userIsTalking(ev->user.id, false);
-                /*
-                if (audio[ev->user.id]) {
-                    audio[ev->user.id]->finish();
-                    audio.erase(ev->user.id);
+                // TODO: this is bad, there must be a flag in the last audio
+                // packet saying that it's the last one.  Need to figure out
+                // what that flag is and close it in V3_EVENT_PLAY_AUDIO
+                if (outputAudio[ev->user.id]) {
+                    outputAudio[ev->user.id]->finish();
+                    outputAudio.erase(ev->user.id);
                 }
-                */
                 break;/*}}}*/
             case V3_EVENT_PLAY_AUDIO:/*{{{*/
-                /*
-                if (audio[ev->user.id]) {
-                    audio[ev->user.id]->queue(ev->pcm.length, (uint8_t *)ev->data.sample);
+                // Open a stream if we don't have one for this user
+                if (!outputAudio[ev->user.id]) {
+                    outputAudio[ev->user.id] = new ManglerAudio();
+                    outputAudio[ev->user.id]->open(ev->pcm.rate, AUDIO_OUTPUT);
                 }
-                */
+                // And queue the audio
+                if (outputAudio[ev->user.id]) {
+                    outputAudio[ev->user.id]->queue(ev->pcm.length, (uint8_t *)ev->data.sample);
+                }
                 break;/*}}}*/
             case V3_EVENT_DISPLAY_MOTD:/*{{{*/
                 {
