@@ -17,7 +17,7 @@ INCLUDES = -I@top_srcdir@/libventrilo3/ -I@top_srcdir@/icons/ $(gtkmm_CFLAGS) $(
 
 dev:
 	cd ../libventrilo3 && make dev
-	gcc -Wall -o mangler -I../ -I../libventrilo3/ -I../icons/ -pthread \
+	gcc -g -Wall -o mangler -I../ -I../libventrilo3/ -I../icons/ -pthread \
 		channeltree.cpp  mangleraudio.cpp  manglerconfig.cpp  mangler.cpp \
 		manglernetwork.cpp  manglerserverlist.cpp  manglersettings.cpp \
 		../libventrilo3/libventrilo3.a \

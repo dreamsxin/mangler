@@ -2379,15 +2379,10 @@ v3_queue_event(v3_event *ev) {/*{{{*/
 
     _v3_func_enter("v3_queue_event");
     if (eventq_mutex == NULL) {
-        pthread_mutexattr_t mta;
-        pthread_mutexattr_init(&mta);
-        pthread_mutexattr_settype(&mta, PTHREAD_MUTEX_ERRORCHECK);
-
-        _v3_debug(V3_DEBUG_MUTEX, "initializing _v3_eventq mutex");
-        eventq_mutex = malloc(sizeof(pthread_mutex_t));
-        eventq_cond = malloc(sizeof(pthread_cond_t));
-        pthread_mutex_init(eventq_mutex, &mta);
-        pthread_cond_init(eventq_cond, (pthread_condattr_t *) &mta);
+        // do not queue events if the mutex hasn't been initialized.  This
+        // means the client isn't ready (or doesn't want) to receive events
+        free(ev);
+        return true;
     }
     pthread_mutex_lock(eventq_mutex);
     ev->next = NULL;
