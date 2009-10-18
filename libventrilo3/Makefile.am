@@ -17,5 +17,11 @@ lv3_test_LDADD = libventrilo3.la
 
 
 dev:
-	gcc -Wall -g -o lv3_test -I../ -pthread lv3_test.c libventrilo3.c libventrilo3_message.c  ventrilo3_handshake.c -lpulse-simple -lpulse -lspeex -lgsm
+	gcc -pthread -Wall -g -c -I../ -o libventrilo3.o libventrilo3.c
+	gcc -pthread -Wall -g -c -I../ -o ventrilo3_handshake.o ventrilo3_handshake.c
+	gcc -pthread -Wall -g -c -I../ -o libventrilo3_message.o libventrilo3_message.c
+	ar rvs libventrilo3.a libventrilo3.o ventrilo3_handshake.o libventrilo3_message.o
+	gcc -Wall -g -o lv3_test -I../ -pthread lv3_test.c -L. -lventrilo3 -lpulse-simple -lpulse -lspeex -lgsm
+
+
 

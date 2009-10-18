@@ -65,6 +65,7 @@ class Mangler
         ManglerNetwork                      *network;
         std::map<uint32_t, ManglerAudio* >  audio;
         ManglerAudio                        *audioControl;
+        ManglerAudio                        *inputaudio;
         ManglerSettings                     *settings;
 
         // These are used by the password entry dialog

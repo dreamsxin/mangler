@@ -340,6 +340,7 @@ typedef struct {
 typedef struct __v3_codec {
     uint8_t codec;
     uint8_t format;
+    uint32_t samplesize;
     uint32_t rate;
     char name[128];
 } v3_codec;
@@ -426,6 +427,7 @@ void        v3_clear_events(void);
 uint32_t    v3_get_codec_rate(uint16_t codec, uint16_t format);
 const v3_codec *v3_get_codec(uint16_t codec, uint16_t format);
 const v3_codec *v3_get_channel_codec(uint16_t channel_id);
+void        v3_send_audio(uint16_t send_type, uint8_t *pcm, uint32_t length);
 
 // User list functions
 int         v3_user_count(void);

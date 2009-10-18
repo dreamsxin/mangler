@@ -2490,9 +2490,12 @@ v3_get_codec(uint16_t codec, uint16_t format) {/*{{{*/
 
     for (ctr = 0; v3_codecs[ctr].codec != -1; ctr++) {
         if (v3_codecs[ctr].codec == codec && v3_codecs[ctr].format == format) {
+            fprintf(stderr, "codec rate is %d\n", v3_codecs[ctr].rate);
             return &v3_codecs[ctr];
         }
     }
+    fprintf(stderr, "codec not found\n");
+    return NULL;
 }/*}}}*/
 
 const v3_codec*
@@ -2500,6 +2503,7 @@ v3_get_channel_codec(uint16_t channel_id) {/*{{{*/
     v3_channel *c;
     const v3_codec *codec_info;
 
+    fprintf(stderr, "getting codec for channel %d\n", channel_id);
     if (channel_id == 0) { // the lobby is always the default codec
         return v3_get_codec(v3_server.codec, v3_server.codec_format);
     }
@@ -2540,6 +2544,10 @@ v3_logout(void) {/*{{{*/
     _v3_unlock_sendq();
     _v3_func_leave("v3_logout");
     return;
+}/*}}}*/
+
+void
+v3_send_audio(uint16_t send_type, uint8_t *pcm, uint32_t length) {/*{{{*/
 }/*}}}*/
 
 /*

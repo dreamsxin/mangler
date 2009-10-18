@@ -235,10 +235,29 @@ void Mangler::aboutButton_clicked_cb(void) {/*{{{*/
     aboutdialog->hide();
 }/*}}}*/
 void Mangler::xmitButton_pressed_cb(void) {/*{{{*/
-    fprintf(stderr, "xmit button pressed\n");
+    const v3_codec *codec;
+    v3_user  *user;
+    fprintf(stderr, "xmit clicked\n");
+
+    if (! v3_is_loggedin()) {
+        return;
+    }
+    user = v3_get_user(v3_get_user_id());
+    if (! user) {
+        return;
+    }
+    codec = v3_get_channel_codec(user->channel);
+    v3_free_user(user);
+    fprintf(stderr, "codec rate: %d at sample size %d\n", codec->rate, codec->samplesize);
+    inputaudio = new ManglerAudio(v3_get_user_id(), codec->rate, AUDIO_OUTBOUND);
+    fprintf(stderr, "starting outbound thread\n");
+    Glib::Thread::create(sigc::bind(sigc::mem_fun(this->inputaudio, &ManglerAudio::record), codec->samplesize), FALSE);
 }/*}}}*/
 void Mangler::xmitButton_released_cb(void) {/*{{{*/
-    fprintf(stderr, "xmit button released\n");
+    if (! v3_is_loggedin()) {
+        return;
+    }
+    inputaudio->finish();
 }/*}}}*/
 
 // Quick Connect callbacks
@@ -391,9 +410,11 @@ Mangler::getNetworkEvent() {/*{{{*/
                     me = v3_get_user(v3_get_user_id());
                     user = v3_get_user(ev->user.id);
                     channelTree->userIsTalking(ev->user.id, true);
-                    if (me && user && me->channel == user->channel) {
-                        if (!audio[ev->user.id]) {
-                            audio[ev->user.id] = new ManglerAudio(ev->user.id, ev->pcm.rate);
+                    if (me && user && me->channel == user->channel) { // this is wrong... need to check utu
+                        if (me->id != user->id) { // don't start a stream for ourself
+                            if (!audio[ev->user.id]) {
+                                audio[ev->user.id] = new ManglerAudio(ev->user.id, ev->pcm.rate, AUDIO_INBOUND);
+                            }
                         }
                         v3_free_user(me);
                         v3_free_user(user);

@@ -511,7 +511,7 @@ manglerui:
 	echo ";" >> manglerui.h
 
 dev:
-	gcc -o mangler -I../ -I../libventrilo3/ -I../icons/ -L../libventrilo3/.libs/libventrilo3.a -pthread *.cpp -lpulse-simple -lpulse -lspeex -lgsm `pkg-config --cflags --libs gthread-2.0` `pkg-config --cflags --libs gtkmm-2.4` -lventrilo3
+	gcc -Wall -o mangler -I../ -I../libventrilo3/ -I../icons/ -pthread *.cpp ../libventrilo3/libventrilo3.a -lpulse-simple -lpulse -lspeex -lgsm `pkg-config --cflags --libs gthread-2.0` `pkg-config --cflags --libs gtkmm-2.4`
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

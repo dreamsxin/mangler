@@ -38,6 +38,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define AUDIO_INBOUND  false
+#define AUDIO_OUTBOUND true
 
 class ManglerPCM
 {
@@ -71,14 +73,16 @@ class ManglerAudio
 {
     public:
         ManglerAudio();
-        ManglerAudio(uint16_t userid, uint32_t rate);
+        ManglerAudio(uint16_t userid, uint32_t rate, bool direction = AUDIO_OUTBOUND);
         ~ManglerAudio();
         void            queue(uint32_t length, uint8_t *sample);
         void            play(void);
+        void            record(int bufsize);
         void            finish(void);
         void            getDeviceList(void);
 
         GAsyncQueue*    pcm_queue;
+        int             rate;
 #ifdef HAVE_PULSE
         pa_sample_spec  pulse_samplespec;
         pa_simple       *pulse_stream;
@@ -90,7 +94,9 @@ class ManglerAudio
         uint16_t        userid;
         int             error;
         bool            playing;
+        bool            stoprecord;
         bool            outputStreamOpen;
+        bool            inputStreamOpen;
 };
 
 
@@ -109,5 +115,6 @@ void pa_sourcelist_cb(pa_context *c, const pa_source_info *l, int eol, void *use
 int pa_get_devicelist(pa_devicelist_t *input, pa_devicelist_t *output);
 #endif
 
+int timeval_subtract (struct timeval *result, struct timeval *x, struct timeval *y);
 
 #endif
