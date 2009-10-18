@@ -2382,6 +2382,7 @@ v3_queue_event(v3_event *ev) {/*{{{*/
         // do not queue events if the mutex hasn't been initialized.  This
         // means the client isn't ready (or doesn't want) to receive events
         free(ev);
+        _v3_func_leave("v3_queue_event");
         return true;
     }
     pthread_mutex_lock(eventq_mutex);
