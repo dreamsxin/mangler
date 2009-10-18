@@ -230,6 +230,10 @@ ManglerAudio::play(void) {/*{{{*/
         Glib::Thread::Exit();
         return;
     }
+    if (!pcm_queue) {
+        Glib::Thread::Exit();
+        return;
+    }
     g_async_queue_ref(pcm_queue);
     usleep(500000); // buffer for a half second
     for (;;) {
