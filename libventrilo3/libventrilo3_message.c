@@ -717,16 +717,15 @@ _v3_put_0x52(uint8_t type, uint16_t codec, uint16_t codec_format, uint16_t send_
     msgdata->data_length = length;
 
     _v3_debug(V3_DEBUG_MEMORY, "allocating %d bytes for data", sizeof(_v3_msg_0x52_0x01_out) - sizeof(void *) + length);
-    msg->data = malloc(sizeof(_v3_msg_0x52_0x01_out) - sizeof(void *) + length);
-    memset(msg->data, 0, sizeof(_v3_msg_0x52_0x01_out) - sizeof(void *) + length);
+    msg->data = malloc(sizeof(_v3_msg_0x52_0x01_out) - sizeof(void *) + length); memset(msg->data, 0, sizeof(_v3_msg_0x52_0x01_out) - sizeof(void *) + length);
     memcpy(msg->data, msgdata, sizeof(_v3_msg_0x52_0x01_out) - sizeof(void*)); // only the first 8 bytes are sent, the rest is user structures
     switch (codec) {
         case 0:
             {
                 char *offset = msg->data + sizeof(_v3_msg_0x52_0x01_out) - sizeof(void *);
-                uint8_t *frames = data;
+                uint8_t **frames = data;
                 for (ctr = 0; ctr < length / 65; ctr++) {
-                    memcpy(offset, &frames[ctr], 65);
+                    memcpy(offset, frames[ctr], 65);
                     offset+=65;
                 }
             }

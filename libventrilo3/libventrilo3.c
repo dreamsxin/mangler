@@ -221,7 +221,7 @@ _v3_hexdump(char *data, int len) {/*{{{*/
             }
             _v3_debug(V3_DEBUG_INFO, "%s", buf);
         } else {
-            _v3_debug(V3_DEBUG_INFO, "%02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X",
+            _v3_debug(V3_DEBUG_PACKET, "PACKET:     %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X      %c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c",
                     (uint8_t)data[ctr],
                     (uint8_t)data[ctr+1],
                     (uint8_t)data[ctr+2],
@@ -237,7 +237,23 @@ _v3_hexdump(char *data, int len) {/*{{{*/
                     (uint8_t)data[ctr+12],
                     (uint8_t)data[ctr+13],
                     (uint8_t)data[ctr+14],
-                    (uint8_t)data[ctr+15]
+                    (uint8_t)data[ctr+15],
+                    (uint8_t)data[ctr]    > 32 && (uint8_t)data[ctr]    < 127 ? (uint8_t)data[ctr]     : '.',
+                    (uint8_t)data[ctr+1]  > 32 && (uint8_t)data[ctr+1]  < 127 ? (uint8_t)data[ctr+1]   : '.',
+                    (uint8_t)data[ctr+2]  > 32 && (uint8_t)data[ctr+2]  < 127 ? (uint8_t)data[ctr+2]   : '.',
+                    (uint8_t)data[ctr+3]  > 32 && (uint8_t)data[ctr+3]  < 127 ? (uint8_t)data[ctr+3]   : '.',
+                    (uint8_t)data[ctr+4]  > 32 && (uint8_t)data[ctr+4]  < 127 ? (uint8_t)data[ctr+4]   : '.',
+                    (uint8_t)data[ctr+5]  > 32 && (uint8_t)data[ctr+5]  < 127 ? (uint8_t)data[ctr+5]   : '.',
+                    (uint8_t)data[ctr+6]  > 32 && (uint8_t)data[ctr+6]  < 127 ? (uint8_t)data[ctr+6]   : '.',
+                    (uint8_t)data[ctr+7]  > 32 && (uint8_t)data[ctr+7]  < 127 ? (uint8_t)data[ctr+7]   : '.',
+                    (uint8_t)data[ctr+8]  > 32 && (uint8_t)data[ctr+8]  < 127 ? (uint8_t)data[ctr+8]   : '.',
+                    (uint8_t)data[ctr+9]  > 32 && (uint8_t)data[ctr+9]  < 127 ? (uint8_t)data[ctr+9]   : '.',
+                    (uint8_t)data[ctr+10] > 32 && (uint8_t)data[ctr+10] < 127 ? (uint8_t)data[ctr+10]  : '.',
+                    (uint8_t)data[ctr+11] > 32 && (uint8_t)data[ctr+11] < 127 ? (uint8_t)data[ctr+11]  : '.',
+                    (uint8_t)data[ctr+12] > 32 && (uint8_t)data[ctr+12] < 127 ? (uint8_t)data[ctr+12]  : '.',
+                    (uint8_t)data[ctr+13] > 32 && (uint8_t)data[ctr+13] < 127 ? (uint8_t)data[ctr+13]  : '.',
+                    (uint8_t)data[ctr+14] > 32 && (uint8_t)data[ctr+14] < 127 ? (uint8_t)data[ctr+14]  : '.',
+                    (uint8_t)data[ctr+15] > 32 && (uint8_t)data[ctr+15] < 127 ? (uint8_t)data[ctr+15]  : '.'
                     );
         }
     }
@@ -599,7 +615,6 @@ _v3_recv(int block) {/*{{{*/
                         {
                             _v3_net_message *msg;
                             const v3_codec  *codec;
-                            int             ctr;
 
                             codec = v3_get_channel_codec(v3_get_user_channel(v3_get_user_id()));
                             _v3_debug(V3_DEBUG_INFO, "got outbound audio event", codec->rate);
@@ -624,22 +639,22 @@ _v3_recv(int block) {/*{{{*/
                             switch (codec->codec) {
                                 case 0:
                                     {
-                                        uint8_t *frames;
+                                        uint8_t **frames;
                                         gsm handle;
                                         if (!(handle = gsm_create())) {
                                             _v3_debug(V3_DEBUG_INFO, "could not encode audio: failed to create gsm handle");
                                         }
-                                        frames = calloc(ev.pcm.length / 640, 65);
+                                        frames = malloc(ev.pcm.length / 640 * sizeof(void *));
                                         for (ctr = 0; ctr < ev.pcm.length / 640; ctr++) {
                                             gsm_signal sample[320];
                                             int one = 1;
 
+                                            frames[ctr] = malloc(65);
                                             gsm_option(handle, GSM_OPT_WAV49, &one);
                                             memcpy(sample, ((uint8_t *)&ev.data)+(ctr*640), 640);
-                                            gsm_encode(handle, sample, &frames[ctr]);
-                                            gsm_encode(handle, ((short*)sample)+160, &frames[ctr]+32);
+                                            gsm_encode(handle, sample, frames[ctr]);
+                                            gsm_encode(handle, ((short*)sample)+160, frames[ctr]+32);
                                             _v3_debug(V3_DEBUG_INFO, "encoding frame %d", ctr);
-
                                         }
                                         gsm_destroy(handle);
                                         msg = _v3_put_0x52(V3_AUDIO_DATA, codec->codec, codec->format, ev.pcm.send_type, ctr*65, frames);
@@ -648,8 +663,9 @@ _v3_recv(int block) {/*{{{*/
                                     break;
                                 case 3:
                                     _v3_debug(V3_DEBUG_INFO, "encoding PCM to SPEEX @ %lu", codec->rate);
-                                    return;
-                                    break;
+                                    return false;
+                                default:
+                                    return false;
                             }
                             if (_v3_send(msg)) {
                                 _v3_destroy_packet(msg);
@@ -663,7 +679,6 @@ _v3_recv(int block) {/*{{{*/
                         {
                             _v3_net_message *msg;
                             const v3_codec  *codec;
-                            int             ctr;
 
                             codec = v3_get_channel_codec(v3_get_user_channel(v3_get_user_id()));
                             _v3_debug(V3_DEBUG_INFO, "got outbound audio event", codec->rate);
