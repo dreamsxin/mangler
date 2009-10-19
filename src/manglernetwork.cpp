@@ -67,7 +67,7 @@ ManglerNetwork::connect(Glib::ustring hostname, Glib::ustring port, Glib::ustrin
         _v3_net_message *msg;
 
         if ((msg = _v3_recv(V3_BLOCK)) == NULL) {
-            printf("recv() failed: %s\n", _v3_error(NULL));
+            //printf("recv() failed: %s\n", _v3_error(NULL));
             return;
         }
         switch (_v3_process_message(msg)) {

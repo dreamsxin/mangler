@@ -62,6 +62,11 @@
 #define V3_MODIFY_USER              0x02
 #define V3_USER_LIST                0x04
 
+#define V3_AUDIO_START              0x00
+#define V3_AUDIO_DATA               0x01
+#define V3_AUDIO_STOP               0x02
+#define V3_AUDIO_UNK                0x03
+
 #define V3_DEBUG_NONE               0
 #define V3_DEBUG_STATUS             1
 #define V3_DEBUG_ERROR              1 << 2
@@ -427,8 +432,10 @@ void        v3_clear_events(void);
 uint32_t    v3_get_codec_rate(uint16_t codec, uint16_t format);
 const v3_codec *v3_get_codec(uint16_t codec, uint16_t format);
 const v3_codec *v3_get_channel_codec(uint16_t channel_id);
-void        v3_send_audio(uint16_t send_type, uint32_t rate, uint8_t *pcm, uint32_t length);
 uint16_t    v3_get_user_channel(uint16_t id);
+void        v3_start_audio(uint16_t send_type);
+void        v3_send_audio(uint16_t send_type, uint32_t rate, uint8_t *pcm, uint32_t length);
+void        v3_stop_audio(void);
 
 // User list functions
 int         v3_user_count(void);

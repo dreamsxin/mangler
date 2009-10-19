@@ -256,6 +256,7 @@ void Mangler::startTransmit(void) {/*{{{*/
     }
     codec = v3_get_channel_codec(user->channel);
     fprintf(stderr, "channel %d codec rate: %d at sample size %d\n", user->channel, codec->rate, codec->samplesize);
+    v3_start_audio(V3_AUDIO_SENDTYPE_U2CCUR);
     v3_free_user(user);
     inputAudio = new ManglerAudio();
     inputAudio->open(codec->rate, AUDIO_INPUT, codec->samplesize);

@@ -158,6 +158,7 @@ ManglerAudio::input(void) {/*{{{*/
             break;
         }
     }
+    v3_stop_audio();
 #ifdef HAVE_PULSE
     pa_simple_free(pulse_stream);
 #endif

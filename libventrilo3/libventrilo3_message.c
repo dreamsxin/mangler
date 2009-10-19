@@ -436,7 +436,7 @@ _v3_put_0x49(uint16_t subtype, uint16_t user_id, char *channel_password, _v3_msg
 }/*}}}*/
 
 int
-_v3_get_0x49(_v3_net_message *msg) {
+_v3_get_0x49(_v3_net_message *msg) {/*{{{*/
     /*
      * PACKET: message type: 0x49 (73)
      * PACKET: data length : 98
@@ -465,7 +465,7 @@ _v3_get_0x49(_v3_net_message *msg) {
     msg->contents = m;
     _v3_func_leave("_v3_get_0x49");
     return true;
-}
+}/*}}}*/
 
 /*}}}*/
 // Message 0x4a (74) | USER PERMISSIONS /*{{{*/
@@ -668,6 +668,78 @@ _v3_get_0x52(_v3_net_message *msg) {/*{{{*/
     }
     _v3_func_leave("_v3_get_0x52");
 }/*}}}*/
+
+_v3_net_message *
+_v3_put_0x52(uint8_t type, uint16_t codec, uint16_t codec_format, uint16_t send_type, uint32_t length, void *data) {
+    _v3_net_message *msg;
+    _v3_msg_0x52_0x01_out *msgdata;
+    int ctr;
+
+    _v3_func_enter("_v3_put_0x52");
+    msg = malloc(sizeof(_v3_net_message));
+    memset(msg, 0, sizeof(_v3_net_message));
+
+    switch (type) {
+        case V3_AUDIO_START:
+            _v3_debug(V3_DEBUG_PACKET_PARSE, "sending 0x52 subtype 0x00");
+            msgdata = malloc(sizeof(_v3_msg_0x52_0x00));
+            memset(msgdata, 0, sizeof(_v3_msg_0x52_0x00));
+            msg->len = sizeof(_v3_msg_0x52_0x00);
+            msgdata->subtype = V3_AUDIO_START;
+            msgdata->unknown_4 = htons(1);
+            msgdata->unknown_5 = htons(2);
+            msgdata->unknown_6 = htons(1);
+            break;
+        case V3_AUDIO_DATA:
+            _v3_debug(V3_DEBUG_PACKET_PARSE, "sending 0x52 subtype 0x01");
+            msgdata = malloc(sizeof(_v3_msg_0x52_0x01_out));
+            memset(msgdata, 0, sizeof(_v3_msg_0x52_0x01_out));
+            msg->len = sizeof(_v3_msg_0x52_0x01_out) - sizeof(void *) + length;
+            msgdata->subtype = V3_AUDIO_DATA;
+            msgdata->unknown_2 = 11610;
+            msgdata->unknown_4 = htons(1);
+            msgdata->unknown_5 = htons(2);
+            msgdata->unknown_6 = htons(1);
+            break;
+        case V3_AUDIO_STOP:
+            _v3_debug(V3_DEBUG_PACKET_PARSE, "sending 0x52 subtype 0x02");
+            msgdata = malloc(sizeof(_v3_msg_0x52_0x02));
+            memset(msgdata, 0, sizeof(_v3_msg_0x52_0x02));
+            msg->len = sizeof(_v3_msg_0x52_0x02);
+            msgdata->subtype = V3_AUDIO_STOP;
+            break;
+    }
+    msgdata->type = 0x52;
+    msgdata->user_id = v3_get_user_id();
+    msgdata->codec = codec;
+    msgdata->codec_format = codec_format;
+    msgdata->send_type = send_type;
+    msgdata->data_length = length;
+
+    _v3_debug(V3_DEBUG_MEMORY, "allocating %d bytes for data", sizeof(_v3_msg_0x52_0x01_out) - sizeof(void *) + length);
+    msg->data = malloc(sizeof(_v3_msg_0x52_0x01_out) - sizeof(void *) + length);
+    memset(msg->data, 0, sizeof(_v3_msg_0x52_0x01_out) - sizeof(void *) + length);
+    memcpy(msg->data, msgdata, sizeof(_v3_msg_0x52_0x01_out) - sizeof(void*)); // only the first 8 bytes are sent, the rest is user structures
+    switch (codec) {
+        case 0:
+            {
+                char *offset = msg->data + sizeof(_v3_msg_0x52_0x01_out) - sizeof(void *);
+                uint8_t *frames = data;
+                for (ctr = 0; ctr < length / 65; ctr++) {
+                    memcpy(offset, &frames[ctr], 65);
+                    offset+=65;
+                }
+            }
+            break;
+        case 3:
+            _v3_debug(V3_DEBUG_INFO, "requested outbound speex transmission, which is not supported");
+            break;
+    }
+    free(msgdata);
+    _v3_func_leave("_v3_put_0x5d");
+    return msg;
+
+}
 
 int
 _v3_destroy_0x52(_v3_net_message *msg) {/*{{{*/

@@ -595,12 +595,27 @@ _v3_recv(int block) {/*{{{*/
                             }
                         }
                         break;/*}}}*/
+                    case V3_EVENT_USER_TALK_START:/*{{{*/
+                        {
+                            _v3_net_message *msg;
+                            const v3_codec  *codec;
+                            int             ctr;
+
+                            codec = v3_get_channel_codec(v3_get_user_channel(v3_get_user_id()));
+                            _v3_debug(V3_DEBUG_INFO, "got outbound audio event", codec->rate);
+                            msg = _v3_put_0x52(V3_AUDIO_START, codec->codec, codec->format, ev.pcm.send_type, 0, NULL);
+                            if (_v3_send(msg)) {
+                                _v3_destroy_packet(msg);
+                            } else {
+                                _v3_debug(V3_DEBUG_SOCKET, "failed to send channel change message");
+                                _v3_destroy_packet(msg);
+                            }
+                        }
+                        break;/*}}}*/
                     case V3_EVENT_PLAY_AUDIO:/*{{{*/
                         {
                             _v3_net_message *msg;
-                            uint16_t        send_type;
                             const v3_codec  *codec;
-                            void            *data;
                             int             ctr;
 
                             codec = v3_get_channel_codec(v3_get_user_channel(v3_get_user_id()));
@@ -614,7 +629,7 @@ _v3_recv(int block) {/*{{{*/
                                         if (!(handle = gsm_create())) {
                                             _v3_debug(V3_DEBUG_INFO, "could not encode audio: failed to create gsm handle");
                                         }
-                                        frames = calloc(ev.pcm.length / 640, 640);
+                                        frames = calloc(ev.pcm.length / 640, 65);
                                         for (ctr = 0; ctr < ev.pcm.length / 640; ctr++) {
                                             gsm_signal sample[320];
                                             int one = 1;
@@ -624,25 +639,41 @@ _v3_recv(int block) {/*{{{*/
                                             gsm_encode(handle, sample, &frames[ctr]);
                                             gsm_encode(handle, ((short*)sample)+160, &frames[ctr]+32);
                                             _v3_debug(V3_DEBUG_INFO, "encoding frame %d", ctr);
+
                                         }
                                         gsm_destroy(handle);
-                                        //msg = _v3_put_0x52(codec->codec, codec->format, send_type, ctr*65, data);
+                                        msg = _v3_put_0x52(V3_AUDIO_DATA, codec->codec, codec->format, ev.pcm.send_type, ctr*65, frames);
                                     }
                                     _v3_debug(V3_DEBUG_INFO, "encoding PCM to GSM @ %lu", codec->rate);
                                     break;
                                 case 3:
                                     _v3_debug(V3_DEBUG_INFO, "encoding PCM to SPEEX @ %lu", codec->rate);
+                                    return;
                                     break;
                             }
-                            /*
-                            msg = _v3_put_0x52(send_type, codec, codec_format, data);
                             if (_v3_send(msg)) {
                                 _v3_destroy_packet(msg);
                             } else {
                                 _v3_debug(V3_DEBUG_SOCKET, "failed to send channel change message");
                                 _v3_destroy_packet(msg);
                             }
-                            */
+                        }
+                        break;/*}}}*/
+                    case V3_EVENT_USER_TALK_END:/*{{{*/
+                        {
+                            _v3_net_message *msg;
+                            const v3_codec  *codec;
+                            int             ctr;
+
+                            codec = v3_get_channel_codec(v3_get_user_channel(v3_get_user_id()));
+                            _v3_debug(V3_DEBUG_INFO, "got outbound audio event", codec->rate);
+                            msg = _v3_put_0x52(V3_AUDIO_STOP, -1, -1, 0, 0, NULL);
+                            if (_v3_send(msg)) {
+                                _v3_destroy_packet(msg);
+                            } else {
+                                _v3_debug(V3_DEBUG_SOCKET, "failed to send channel change message");
+                                _v3_destroy_packet(msg);
+                            }
                         }
                         break;/*}}}*/
                     default:
@@ -2623,6 +2654,28 @@ v3_logout(void) {/*{{{*/
 }/*}}}*/
 
 void
+v3_start_audio(uint16_t send_type) {/*{{{*/
+    v3_event ev;
+
+    _v3_func_enter("v3_start_audio");
+    if (!v3_is_loggedin()) {
+        _v3_func_leave("v3_start_audio");
+        return;
+    }
+    memset(&ev, 0, sizeof(v3_event));
+    ev.type = V3_EVENT_USER_TALK_START;
+    _v3_lock_sendq();
+    _v3_debug(V3_DEBUG_EVENT, "sending %lu bytes to event pipe for event type %d", sizeof(v3_event), ev.type);
+    if (fwrite(&ev, sizeof(struct _v3_event), 1, v3_server.evoutstream) != 1) {
+        _v3_error("could not write to event pipe");
+    }
+    fflush(v3_server.evoutstream);
+    _v3_unlock_sendq();
+    _v3_func_leave("v3_start_audio");
+    return;
+}/*}}}*/
+
+void
 v3_send_audio(uint16_t send_type, uint32_t rate, uint8_t *pcm, uint32_t length) {/*{{{*/
     v3_event ev;
 
@@ -2644,6 +2697,28 @@ v3_send_audio(uint16_t send_type, uint32_t rate, uint8_t *pcm, uint32_t length) 
     fflush(v3_server.evoutstream);
     _v3_unlock_sendq();
     _v3_func_leave("v3_send_audio");
+    return;
+}/*}}}*/
+
+void
+v3_stop_audio(void) {/*{{{*/
+    v3_event ev;
+
+    _v3_func_enter("v3_start_audio");
+    if (!v3_is_loggedin()) {
+        _v3_func_leave("v3_start_audio");
+        return;
+    }
+    memset(&ev, 0, sizeof(v3_event));
+    ev.type = V3_EVENT_USER_TALK_END;
+    _v3_lock_sendq();
+    _v3_debug(V3_DEBUG_EVENT, "sending %lu bytes to event pipe for event type %d", sizeof(v3_event), ev.type);
+    if (fwrite(&ev, sizeof(struct _v3_event), 1, v3_server.evoutstream) != 1) {
+        _v3_error("could not write to event pipe");
+    }
+    fflush(v3_server.evoutstream);
+    _v3_unlock_sendq();
+    _v3_func_leave("v3_start_audio");
     return;
 }/*}}}*/
 
