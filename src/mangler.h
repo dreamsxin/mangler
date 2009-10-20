@@ -68,6 +68,9 @@ class Mangler
         ManglerAudio                        *audioControl;
         ManglerSettings                     *settings;
         bool                                isTransmitting;
+        bool                                isTransmittingButton;
+        bool                                isTransmittingKey;
+        bool                                isTransmittingMouse;
 
         // These are used by the password entry dialog
         Gtk::Dialog                         *passwordDialog;

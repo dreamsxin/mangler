@@ -242,10 +242,14 @@ void Mangler::aboutButton_clicked_cb(void) {/*{{{*/
 }/*}}}*/
 void Mangler::xmitButton_pressed_cb(void) {/*{{{*/
     fprintf(stderr, "xmit clicked\n");
+    isTransmittingButton = true;
     startTransmit();
 }/*}}}*/
 void Mangler::xmitButton_released_cb(void) {/*{{{*/
-    stopTransmit();
+    isTransmittingButton = false;
+    if (! isTransmittingKey && ! isTransmittingMouse) {
+        stopTransmit();
+    }
 }/*}}}*/
 
 void Mangler::startTransmit(void) {/*{{{*/
@@ -521,9 +525,13 @@ bool Mangler::checkPushToTalkKeys(void) {/*{{{*/
         }
     }
     if (ptt_on) {
+        isTransmittingKey = true;
         startTransmit();
     } else {
-        stopTransmit();
+        isTransmittingKey = false;
+        if (! isTransmittingButton && ! isTransmittingMouse) {
+            stopTransmit();
+        }
     }
     return(true);
 
