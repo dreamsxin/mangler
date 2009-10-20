@@ -67,6 +67,7 @@ class Mangler
         ManglerAudio                        *inputAudio;
         ManglerAudio                        *audioControl;
         ManglerSettings                     *settings;
+        bool                                isTransmitting;
 
         // These are used by the password entry dialog
         Gtk::Dialog                         *passwordDialog;
@@ -94,9 +95,11 @@ class Mangler
         void xmitButton_released_cb(void);
 
         bool getNetworkEvent(void);
+        bool checkPushToTalkKeys(void);
 
         void startTransmit(void);
         void stopTransmit(void);
+
 
         // quick connect signal handlers
         void qcConnectButton_clicked_cb(void);

@@ -47,6 +47,7 @@ class ManglerConfig {
 		uint32_t        lv3_debuglevel;
 		bool            PushToTalkKeyEnabled;
                 Glib::ustring   PushToTalkKeyValue;
+                std::vector<int>     PushToTalkXKeyCodes;
 		bool            PushToTalkMouseEnabled;
                 Glib::ustring   PushToTalkMouseValue;
                 Glib::ustring   inputDeviceName;
@@ -62,6 +63,7 @@ class ManglerConfig {
                 bool put(Glib::ustring name, Glib::ustring value);
                 bool put(Glib::ustring name, uint32_t value);
 		void load();
+                void parsePushToTalkValue(Glib::ustring pttString);
 };
 
 #endif

@@ -29,6 +29,8 @@
 #include "mangler.h"
 #include "manglerui.h"
 #include "mangler-icons.h"
+#include <gdk/gdkx.h>
+
 
 Glib::ustring c_to_ustring(char *input);
 Glib::ustring iso_8859_1_to_utf8(char *input);
@@ -147,9 +149,12 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
     audioControl = new ManglerAudio();
     audioControl->getDeviceList();
 
-    // Create settings object, load the configuration file, and apply
+    // Create settings object, load the configuration file, and apply.  If the
+    // user has PTT key/mouse enabled, start a timer here
     settings = new ManglerSettings(builder);
-    settings->config.load();
+    if (settings->config.PushToTalkKeyEnabled) {
+        Glib::signal_timeout().connect(sigc::mem_fun(this, &Mangler::checkPushToTalkKeys), 100);
+    }
 
     // Statusbar Icon
     statusIcon = Gtk::StatusIcon::create(icons["tray_icon"]);
@@ -254,6 +259,10 @@ void Mangler::startTransmit(void) {/*{{{*/
     if (! user) {
         return;
     }
+    if (isTransmitting) {
+        return;
+    }
+    isTransmitting = true;
     codec = v3_get_channel_codec(user->channel);
     fprintf(stderr, "channel %d codec rate: %d at sample size %d\n", user->channel, codec->rate, codec->samplesize);
     v3_start_audio(V3_AUDIO_SENDTYPE_U2CCUR);
@@ -265,6 +274,10 @@ void Mangler::stopTransmit(void) {/*{{{*/
     if (! v3_is_loggedin()) {
         return;
     }
+    if (!isTransmitting) {
+        return;
+    }
+    isTransmitting = false;
     if (inputAudio) {
         inputAudio->finish();
     }
@@ -302,8 +315,8 @@ void Mangler::motdOkButton_clicked_cb(void) {/*{{{*/
     window->hide();
 }/*}}}*/
 
-bool
-Mangler::getNetworkEvent() {/*{{{*/
+// Timeout Callbacks
+bool Mangler::getNetworkEvent() {/*{{{*/
     v3_event *ev;
 
     while ((ev = v3_get_event(V3_NONBLOCK)) != NULL) {
@@ -493,34 +506,49 @@ Mangler::getNetworkEvent() {/*{{{*/
     }
     return true;
 }/*}}}*/
+bool Mangler::checkPushToTalkKeys(void) {/*{{{*/
+    char        pressed_keys[32];
+    GdkWindow   *rootwin = gdk_get_default_root_window();
+    vector<int>::iterator i;
+    bool        ptt_on = true;;
 
-Glib::ustring
-Mangler::getPasswordEntry(Glib::ustring title, Glib::ustring prompt) {
+    XQueryKeymap(GDK_WINDOW_XDISPLAY(rootwin), pressed_keys);
+    for (   i = settings->config.PushToTalkXKeyCodes.begin();
+            i < settings->config.PushToTalkXKeyCodes.end();
+            i++) {
+        if (!((pressed_keys[*i >> 3] >> (*i & 0x07)) & 0x01)) {
+            ptt_on = false;
+        }
+    }
+    if (ptt_on) {
+        startTransmit();
+    } else {
+        stopTransmit();
+    }
+    return(true);
+
+}/*}}}*/
+
+Glib::ustring Mangler::getPasswordEntry(Glib::ustring title, Glib::ustring prompt) {/*{{{*/
     password = "";
     passwordEntry->set_text("");
     passwordDialog->set_title(title);
     passwordDialog->run();
     passwordDialog->hide();
     return(password);
-}
-
-void
-Mangler::passwordDialogOkButton_clicked_cb(void) {
+}/*}}}*/
+void Mangler::passwordDialogOkButton_clicked_cb(void) {/*{{{*/
     password = passwordEntry->get_text();
-}
-
-void
-Mangler::passwordDialogCancelButton_clicked_cb(void) {
+}/*}}}*/
+void Mangler::passwordDialogCancelButton_clicked_cb(void) {/*{{{*/
     password = "";
-}
+}/*}}}*/
 
-
-
-ManglerError::ManglerError(uint32_t code, Glib::ustring message, Glib::ustring module) {
+ManglerError::ManglerError(uint32_t code, Glib::ustring message, Glib::ustring module) {/*{{{*/
     this->code = code;
     this->message = message;
     this->module = module;
-}
+}/*}}}*/
 
 int
 main (int argc, char *argv[])
@@ -553,7 +581,7 @@ main (int argc, char *argv[])
     gdk_threads_leave();
 }
 
-Glib::ustring c_to_ustring(char *input) {
+Glib::ustring c_to_ustring(char *input) {/*{{{*/
     Glib::ustring converted, input_u = input;
 
     // check if input is already valid UTF-8
@@ -569,7 +597,7 @@ Glib::ustring c_to_ustring(char *input) {
     }
 
     return converted;
-}
+}/*}}}*/
 
 /* converts a CP1252/ISO-8859-1(5) hybrid to UTF-8                           */
 /* Features: 1. It never fails, all 00-FF chars are converted to valid UTF-8 */
@@ -580,7 +608,7 @@ Glib::ustring c_to_ustring(char *input) {
 /*           4. Handles 0xa4 as a Euro symbol ala ISO-8859-15.               */
 /*           5. Uses ISO-8859-1 (which matches CP1252) for everything else.  */
 /*           6. This routine measured 3x faster than g_convert :)            */
-Glib::ustring iso_8859_1_to_utf8 (char *input) {
+Glib::ustring iso_8859_1_to_utf8 (char *input) {/*{{{*/
     Glib::ustring output;
     unsigned char *text = (unsigned char *)input;
     int len = strlen(input);
@@ -638,4 +666,4 @@ Glib::ustring iso_8859_1_to_utf8 (char *input) {
         len--;
     }
     return output;
-}
+}/*}}}*/

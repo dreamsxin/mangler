@@ -149,7 +149,6 @@ ManglerAudio::input(void) {/*{{{*/
             seconds = (float)diff.tv_sec + ((float)diff.tv_usec / (float)1000000);
             ctr++;
         }
-        fprintf(stderr, "queuing %d frames (%d bytes) with %f seconds\n", ctr, ctr * pcm_framesize, seconds);
         // TODO: hard coding user to channel for now, need to implement U2U
         v3_send_audio(V3_AUDIO_SENDTYPE_U2CCUR, rate, buf, ctr * pcm_framesize);
         free(buf);

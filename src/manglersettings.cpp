@@ -74,6 +74,7 @@ void ManglerSettings::applySettings(void) {/*{{{*/
     config.PushToTalkKeyEnabled = checkbutton->get_active() ? true : false;
     builder->get_widget("settingsPTTKeyValueLabel", label);
     config.PushToTalkKeyValue = label->get_text();
+    config.parsePushToTalkValue(config.PushToTalkKeyValue);
 
     // Mouse to Talk
     builder->get_widget("settingsEnablePTTMouseCheckButton", checkbutton);

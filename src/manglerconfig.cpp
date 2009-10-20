@@ -30,6 +30,7 @@
 #include <unistd.h>
 #include "mangler.h"
 #include "manglerconfig.h"
+#include <gdk/gdkx.h>
 
 
 ManglerConfig::ManglerConfig() {/*{{{*/
@@ -163,6 +164,7 @@ Glib::ustring ManglerConfig::get(Glib::ustring cfgname) {/*{{{*/
 void ManglerConfig::load() {/*{{{*/
     PushToTalkKeyEnabled        = get("PushToTalkKeyEnabled") == "0" ? false : true;
     PushToTalkKeyValue          = get("PushToTalkKeyValue");
+    parsePushToTalkValue(PushToTalkKeyValue);
     PushToTalkMouseEnabled      = get("PushToTalkMouseEnabled") == "0" ? false : true;
     PushToTalkMouseValue        = get("PushToTalkMouseValue");
     inputDeviceName             = get("inputDeviceName");
@@ -174,5 +176,30 @@ void ManglerConfig::load() {/*{{{*/
     qc_lastserver.phonetic      = get("qc_lastserver.phonetic");
     qc_lastserver.comment       = get("qc_lastserver.comment");
     lv3_debuglevel              = atoi(get("lv3_debuglevel").c_str());
+}/*}}}*/
+void ManglerConfig::parsePushToTalkValue(Glib::ustring pttString) {/*{{{*/
+    int begin = 0;
+    int ctr;
+    GdkWindow   *rootwin = gdk_get_default_root_window();
+
+    Glib::ustring keyname;
+    PushToTalkXKeyCodes.clear();
+    for (ctr = 0; ctr < pttString.length(); ctr++) {
+        if (pttString[ctr] == '+') {
+            keyname = pttString.substr(begin, ctr-begin);
+            begin = ctr+1;
+            if (keyname[0] == '<' && keyname[keyname.length()-1] == '>') {
+                keyname = keyname.substr(1, keyname.length() - 2);
+            }
+            int keycode = XKeysymToKeycode(GDK_WINDOW_XDISPLAY(rootwin), XStringToKeysym(keyname.c_str()));
+            PushToTalkXKeyCodes.push_back(keycode);
+        }
+    }
+    keyname = pttString.substr(begin, ctr-begin);
+    if (keyname[0] == '<' && keyname[keyname.length()-1] == '>') {
+        keyname = keyname.substr(1, keyname.length() - 2);
+    }
+    int keycode = XKeysymToKeycode(GDK_WINDOW_XDISPLAY(rootwin), XStringToKeysym(keyname.c_str()));
+    PushToTalkXKeyCodes.push_back(keycode);
 }/*}}}*/
 
