@@ -567,6 +567,8 @@ _v3_send_enc_msg(char *data, int len) {/*{{{*/
 /*
  * The majority of outbound message processing happens here since this function
  * also reads from the event pipe from the client
+ * 
+ * This is more like a mainloop than a receive function.
  */
 _v3_net_message *
 _v3_recv(int block) {/*{{{*/
@@ -632,6 +634,7 @@ _v3_recv(int block) {/*{{{*/
                             _v3_net_message *msg;
                             const v3_codec  *codec;
                             int             ctr;
+                            int             send = false;
 
                             codec = v3_get_channel_codec(v3_get_user_channel(v3_get_user_id()));
                             _v3_debug(V3_DEBUG_INFO, "got outbound audio event", codec->rate);
@@ -660,18 +663,24 @@ _v3_recv(int block) {/*{{{*/
                                         msg = _v3_put_0x52(V3_AUDIO_DATA, codec->codec, codec->format, ev.pcm.send_type, ctr*65, frames);
                                     }
                                     _v3_debug(V3_DEBUG_INFO, "encoding PCM to GSM @ %lu", codec->rate);
+                                    send = true;
                                     break;
                                 case 3:
                                     _v3_debug(V3_DEBUG_INFO, "encoding PCM to SPEEX @ %lu", codec->rate);
-                                    return false;
+                                    send = false;
+                                    break;
                                 default:
-                                    return false;
+                                    _v3_debug(V3_DEBUG_INFO, "unsupported codec %d/%d", codec->codec, codec->format);
+                                    send = false;
+                                    break;
                             }
-                            if (_v3_send(msg)) {
-                                _v3_destroy_packet(msg);
-                            } else {
-                                _v3_debug(V3_DEBUG_SOCKET, "failed to send channel change message");
-                                _v3_destroy_packet(msg);
+                            if (send) {
+                                if (_v3_send(msg)) {
+                                    _v3_destroy_packet(msg);
+                                } else {
+                                    _v3_debug(V3_DEBUG_SOCKET, "failed to send audio message");
+                                    _v3_destroy_packet(msg);
+                                }
                             }
                         }
                         break;/*}}}*/
