@@ -644,17 +644,18 @@ _v3_recv(int block) {/*{{{*/
                                     {
                                         uint8_t **frames;
                                         gsm handle;
+                                        _v3_debug(V3_DEBUG_INFO, "encoding PCM to GSM @ %lu", codec->rate);
                                         if (!(handle = gsm_create())) {
                                             _v3_debug(V3_DEBUG_INFO, "could not encode audio: failed to create gsm handle");
                                         }
-                                        frames = malloc(ev.pcm.length / 640 * sizeof(void *));
-                                        for (ctr = 0; ctr < ev.pcm.length / 640; ctr++) {
+                                        frames = malloc(ev.pcm.length / codec->samplesize * sizeof(void *));
+                                        for (ctr = 0; ctr < ev.pcm.length / codec->samplesize; ctr++) {
                                             gsm_signal sample[320];
                                             int one = 1;
 
                                             frames[ctr] = malloc(65);
                                             gsm_option(handle, GSM_OPT_WAV49, &one);
-                                            memcpy(sample, ((uint8_t *)&ev.data)+(ctr*640), 640);
+                                            memcpy(sample, ((uint8_t *)&ev.data.sample)+(ctr*codec->samplesize), codec->samplesize);
                                             gsm_encode(handle, sample, frames[ctr]);
                                             gsm_encode(handle, ((short*)sample)+160, frames[ctr]+32);
                                             _v3_debug(V3_DEBUG_INFO, "encoding frame %d", ctr);
@@ -662,11 +663,90 @@ _v3_recv(int block) {/*{{{*/
                                         gsm_destroy(handle);
                                         msg = _v3_put_0x52(V3_AUDIO_DATA, codec->codec, codec->format, ev.pcm.send_type, ctr*65, frames);
                                     }
-                                    _v3_debug(V3_DEBUG_INFO, "encoding PCM to GSM @ %lu", codec->rate);
                                     send = true;
                                     break;
                                 case 3:
-                                    _v3_debug(V3_DEBUG_INFO, "encoding PCM to SPEEX @ %lu", codec->rate);
+                                    {
+                                        _v3_debug(V3_DEBUG_INFO, "encoding PCM to SPEEX @ %lu", codec->rate);
+                                        float input[codec->samplesize];
+                                        char cbits[200];
+                                        uint16_t nbBytes;
+                                        void *state;
+                                        SpeexBits bits;
+                                        int i, encoded_size;
+                                        _v3_msg_0x52_speexdata *speexdata = malloc(sizeof(_v3_msg_0x52_speexdata));
+
+                                        speexdata->frame_count = ev.pcm.length / codec->samplesize;
+                                        speexdata->sample_size = codec->samplesize;
+                                        /*Create a new encoder state in appropriate band*/
+                                        switch (codec->rate) {
+                                            case 8000:
+                                                state = speex_encoder_init(&speex_nb_mode);
+                                                send = true;
+                                                break;
+                                            case 16000:
+                                                state = speex_encoder_init(&speex_wb_mode);
+                                                send = true;
+                                                break;
+                                            case 32000:
+                                                state = speex_encoder_init(&speex_uwb_mode);
+                                                send = true;
+                                                break;
+                                            default:
+                                                send = false;
+                                                break;
+                                        }
+                                        if (send == false) {
+                                            // just give up now...
+                                            break;
+                                        }
+
+                                        /*
+                                        speex_encoder_ctl(state, SPEEX_SET_QUALITY, (int *)&codec->quality);
+
+                                        nbBytes = 4; // speex data has a 4 byte header
+
+                                        // Initialization of the structure that holds the bits
+                                        speex_bits_init(&bits);
+
+                                        // allocate memory for pointers to our frames
+                                        speexdata->frames = malloc(ev.pcm.length / codec->samplesize * sizeof(void *));
+
+                                        fprintf(stderr, "starting frame processing for %d frames\n", speexdata->frame_count);
+                                        for (ctr = 0; ctr < speexdata->frame_count; ctr++) {
+                                            fprintf(stderr, "ctr: %d\n", ctr);
+                                            // Copy the 16 bits values to float so Speex can work on them
+                                            for (i = 0; i < codec->samplesize; i++) {
+                                                input[i] = ev.data.sample[i*ctr];
+                                            }
+
+                                            // Flush all the bits in the struct so we can encode a new frame
+                                            speex_bits_reset(&bits);
+
+                                            // Encode the frame
+                                            speex_encode(state, input, &bits);
+
+                                            // Copy the bits to an array of char that can be written
+                                            nbBytes += encoded_size = speex_bits_write(&bits, cbits, 200);
+
+                                            // allocate memory for the actual frame
+                                            speexdata->frames[ctr] = malloc(nbBytes + 2);
+
+                                            // Copy the size of the frame first.
+                                            encoded_size = htons(encoded_size);
+                                            memcpy(&speexdata->frames[ctr], &encoded_size, 2);
+
+                                            // copy the frame data
+                                            memcpy((&speexdata->frames[ctr])+2, cbits, ntohs(encoded_size));
+                                        }
+                                        //msg = _v3_put_0x52(V3_AUDIO_DATA, codec->codec, codec->format, ev.pcm.send_type, nbBytes + 4, speexdata);
+
+                                        // Destroy the encoder state
+                                        speex_encoder_destroy(state);
+                                        // Destroy the bit-packing struct
+                                        speex_bits_destroy(&bits);
+                                        */
+                                    }
                                     send = false;
                                     break;
                                 default:

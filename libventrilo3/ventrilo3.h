@@ -347,6 +347,7 @@ typedef struct __v3_codec {
     uint8_t format;
     uint32_t samplesize;
     uint32_t rate;
+    uint8_t quality;
     char name[128];
 } v3_codec;
 extern v3_codec v3_codecs[];
