@@ -1357,7 +1357,7 @@ Specifically:
                         <child>
                           <object class="GtkLabel" id="settingsPTTKeyValueLabel">
                             <property name="visible">True</property>
-                            <property name="label" translatable="yes">&lt;span weight="light"&gt;&amp;lt;press the set button to define a hokey&amp;gt;&lt;/span&gt;</property>
+                            <property name="label" translatable="yes">&lt;span weight="light"&gt;&amp;lt;press the set button to define a hotkey&amp;gt;&lt;/span&gt;</property>
                             <property name="use_markup">True</property>
                           </object>
                           <packing>

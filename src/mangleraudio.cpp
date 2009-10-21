@@ -113,6 +113,7 @@ ManglerAudio::input(void) {/*{{{*/
     float seconds = 0;
     struct timeval start, now, diff;
     int ctr;
+    bool drop;
 
     for (;;) {
         if (stop_input == true) {
@@ -126,13 +127,15 @@ ManglerAudio::input(void) {/*{{{*/
         gettimeofday(&start, NULL);
         seconds = 0.0;
         ctr = 0;
-        // As best as I can tell, we're supposed to send 0.11 seconds of audio in each packet
-        while (seconds < 0.11) {
+        // As best as I can tell, we're supposed to send ~0.11 seconds of audio in each packet
+        while (seconds < 0.115) {
             //fprintf(stderr, "reallocating %d bytes of memory\n", pcm_framesize*(ctr+1));
             if ((pcm_framesize*(ctr+1)) > 16384) {
                 fprintf(stderr, "audio frames are greater than buffer size.  dropping audio frames\n");
+                drop = true;
                 break;
             }
+            drop = false;
             buf = (uint8_t *)realloc(buf, pcm_framesize*(ctr+1));
             //fprintf(stderr, "reading %d bytes of memory to %lu\n", pcm_framesize, (uint64_t) buf+(pcm_framesize*ctr));
 #ifdef HAVE_PULSE
@@ -149,8 +152,10 @@ ManglerAudio::input(void) {/*{{{*/
             seconds = (float)diff.tv_sec + ((float)diff.tv_usec / (float)1000000);
             ctr++;
         }
-        // TODO: hard coding user to channel for now, need to implement U2U
-        v3_send_audio(V3_AUDIO_SENDTYPE_U2CCUR, rate, buf, ctr * pcm_framesize);
+        if (! drop) {
+            // TODO: hard coding user to channel for now, need to implement U2U
+            v3_send_audio(V3_AUDIO_SENDTYPE_U2CCUR, rate, buf, ctr * pcm_framesize);
+        }
         free(buf);
         buf = NULL;
         if (stop_input == true) {

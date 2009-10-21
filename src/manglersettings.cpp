@@ -330,7 +330,7 @@ void ManglerSettings::settingsPTTKeyButton_clicked_cb(void) {/*{{{*/
         // if the text is as follows, the user pressed done without any keys
         // pressed down.  Reset it to the default text
         if (label->get_text() == "Hold your key combination and click done") {
-            label->set_markup("<span weight='light'>&lt;press the set button to define a hokey&gt;</span>");
+            label->set_markup("<span weight='light'>&lt;press the set button to define a hotkey&gt;</span>");
         }
     }
 }/*}}}*/

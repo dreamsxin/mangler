@@ -326,9 +326,9 @@ v3_event                *_v3_eventq = NULL;
 
 v3_codec v3_codecs[] = {
     { 0, 0, 640, 8000, "GSM 6.10 8kHz" },
-    { 0, 1, 640, 11000, "GSM 6.10 11kHz" },
-    { 0, 2, 640, 22000, "GSM 6.10 22kHz" },
-    { 0, 3, 640, 44000, "GSM 6.10 44kHz" },
+    { 0, 1, 640, 11025, "GSM 6.10 11kHz" },
+    { 0, 2, 640, 22050, "GSM 6.10 22kHz" },
+    { 0, 3, 640, 44100, "GSM 6.10 44kHz" },
     { 3, 0, 320, 8000, "Speex 8kHz Quality 0" },
     { 3, 1, 320, 8000, "Speex 8kHz Quality 1" },
     { 3, 2, 320, 8000, "Speex 8kHz Quality 2" },
