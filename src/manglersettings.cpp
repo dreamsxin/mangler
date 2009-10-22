@@ -185,7 +185,7 @@ void ManglerSettings::initSettings(void) {/*{{{*/
     checkbutton->set_active(config.lv3_debuglevel & V3_DEBUG_SOCKET ? 1 : 0);
 
     builder->get_widget("debugNotice", checkbutton);
-    checkbutton->set_active(config.lv3_debuglevel & V3_DEBUG_NOTICE ? 1 : 0);
+    checkbutton->set_active(config.lv3_debuglevel & (uint32_t)V3_DEBUG_NOTICE ? 1 : 0);
 
     builder->get_widget("debugInfo", checkbutton);
     checkbutton->set_active(config.lv3_debuglevel & V3_DEBUG_INFO ? 1 : 0);

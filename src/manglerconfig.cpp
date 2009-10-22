@@ -179,7 +179,7 @@ void ManglerConfig::load() {/*{{{*/
 }/*}}}*/
 void ManglerConfig::parsePushToTalkValue(Glib::ustring pttString) {/*{{{*/
     int begin = 0;
-    int ctr;
+    uint32_t ctr;
     GdkWindow   *rootwin = gdk_get_default_root_window();
 
     Glib::ustring keyname;

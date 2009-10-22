@@ -668,16 +668,16 @@ _v3_recv(int block) {/*{{{*/
                                 case 3:
                                     {
                                         _v3_debug(V3_DEBUG_INFO, "encoding PCM to SPEEX @ %lu", codec->rate);
-                                        float input[codec->samplesize];
                                         char cbits[200];
                                         uint16_t nbBytes;
                                         void *state;
+                                        uint8_t sample[codec->samplesize];
                                         SpeexBits bits;
-                                        int i, encoded_size;
+                                        int encoded_size;
                                         _v3_msg_0x52_speexdata *speexdata = malloc(sizeof(_v3_msg_0x52_speexdata));
 
-                                        speexdata->frame_count = ev.pcm.length / codec->samplesize;
-                                        speexdata->sample_size = codec->samplesize;
+                                        speexdata->frame_count = ev.pcm.length / (codec->samplesize / 2);
+                                        speexdata->sample_size = (codec->samplesize / 2);
                                         /*Create a new encoder state in appropriate band*/
                                         switch (codec->rate) {
                                             case 8000:
@@ -701,7 +701,6 @@ _v3_recv(int block) {/*{{{*/
                                             break;
                                         }
 
-                                        /*
                                         speex_encoder_ctl(state, SPEEX_SET_QUALITY, (int *)&codec->quality);
 
                                         nbBytes = 4; // speex data has a 4 byte header
@@ -710,42 +709,43 @@ _v3_recv(int block) {/*{{{*/
                                         speex_bits_init(&bits);
 
                                         // allocate memory for pointers to our frames
-                                        speexdata->frames = malloc(ev.pcm.length / codec->samplesize * sizeof(void *));
+                                        fprintf(stderr, "allocating %lu bytes for %d frame pointers\n", speexdata->frame_count * sizeof(uint8_t *), speexdata->frame_count);
+                                        speexdata->frames = malloc(speexdata->frame_count * sizeof(uint8_t *));
 
                                         fprintf(stderr, "starting frame processing for %d frames\n", speexdata->frame_count);
                                         for (ctr = 0; ctr < speexdata->frame_count; ctr++) {
                                             fprintf(stderr, "ctr: %d\n", ctr);
-                                            // Copy the 16 bits values to float so Speex can work on them
-                                            for (i = 0; i < codec->samplesize; i++) {
-                                                input[i] = ev.data.sample[i*ctr];
-                                            }
+                                            // Copy the 16 bits values to a temp variable for the sake of code readability
+                                            fprintf(stderr, "copying %d bytes from %d to %d\n", codec->samplesize, ev.data.sample+(ctr*codec->samplesize), sample);
+                                            memcpy(sample, ev.data.sample+(ctr*codec->samplesize), codec->samplesize);
 
                                             // Flush all the bits in the struct so we can encode a new frame
                                             speex_bits_reset(&bits);
 
                                             // Encode the frame
-                                            speex_encode(state, input, &bits);
+                                            speex_encode_int(state, (int16_t *)sample, &bits);
 
                                             // Copy the bits to an array of char that can be written
                                             nbBytes += encoded_size = speex_bits_write(&bits, cbits, 200);
 
                                             // allocate memory for the actual frame
-                                            speexdata->frames[ctr] = malloc(nbBytes + 2);
+                                            speexdata->frames[ctr] = malloc(encoded_size + 2);
 
+                                            fprintf(stderr, "encoded size is %d bytes (total %d)\n", encoded_size, nbBytes);
                                             // Copy the size of the frame first.
                                             encoded_size = htons(encoded_size);
-                                            memcpy(&speexdata->frames[ctr], &encoded_size, 2);
+                                            memcpy(speexdata->frames[ctr], &encoded_size, 2);
 
                                             // copy the frame data
-                                            memcpy((&speexdata->frames[ctr])+2, cbits, ntohs(encoded_size));
+                                            memcpy(speexdata->frames[ctr]+2, cbits, ntohs(encoded_size));
                                         }
                                         //msg = _v3_put_0x52(V3_AUDIO_DATA, codec->codec, codec->format, ev.pcm.send_type, nbBytes + 4, speexdata);
 
                                         // Destroy the encoder state
                                         speex_encoder_destroy(state);
+
                                         // Destroy the bit-packing struct
                                         speex_bits_destroy(&bits);
-                                        */
                                     }
                                     send = false;
                                     break;
