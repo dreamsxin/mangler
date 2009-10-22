@@ -709,14 +709,14 @@ _v3_recv(int block) {/*{{{*/
                                         speex_bits_init(&bits);
 
                                         // allocate memory for pointers to our frames
-                                        fprintf(stderr, "allocating %lu bytes for %d frame pointers\n", speexdata->frame_count * sizeof(uint8_t *), speexdata->frame_count);
+                                        _v3_debug(V3_DEBUG_MEMORY, "allocating %lu bytes for %d frame pointers", speexdata->frame_count * sizeof(uint8_t *), speexdata->frame_count);
                                         speexdata->frames = malloc(speexdata->frame_count * sizeof(uint8_t *));
 
-                                        fprintf(stderr, "starting frame processing for %d frames\n", speexdata->frame_count);
+                                        _v3_debug(V3_DEBUG_INFO, "starting frame processing for %d frames", speexdata->frame_count);
                                         for (ctr = 0; ctr < speexdata->frame_count; ctr++) {
-                                            fprintf(stderr, "ctr: %d\n", ctr);
+                                            _v3_debug(V3_DEBUG_INFO, "encoding frame %d", ctr);
                                             // Copy the 16 bits values to a temp variable for the sake of code readability
-                                            fprintf(stderr, "copying %d bytes from %d to %d\n", codec->samplesize, ev.data.sample+(ctr*codec->samplesize), sample);
+                                            _v3_debug(V3_DEBUG_INFO, "copying %d bytes from %d to %d", codec->samplesize, ev.data.sample+(ctr*codec->samplesize), sample);
                                             memcpy(sample, ev.data.sample+(ctr*codec->samplesize), codec->samplesize);
 
                                             // Flush all the bits in the struct so we can encode a new frame
@@ -727,11 +727,12 @@ _v3_recv(int block) {/*{{{*/
 
                                             // Copy the bits to an array of char that can be written
                                             nbBytes += encoded_size = speex_bits_write(&bits, cbits, 200);
+                                            nbBytes += 2; // add two bytes for the encoded length
 
                                             // allocate memory for the actual frame
                                             speexdata->frames[ctr] = malloc(encoded_size + 2);
 
-                                            fprintf(stderr, "encoded size is %d bytes (total %d)\n", encoded_size, nbBytes);
+                                            _v3_debug(V3_DEBUG_INFO, "encoded size is %d bytes (total %d)", encoded_size, nbBytes);
                                             // Copy the size of the frame first.
                                             encoded_size = htons(encoded_size);
                                             memcpy(speexdata->frames[ctr], &encoded_size, 2);
