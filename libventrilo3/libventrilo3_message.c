@@ -707,8 +707,8 @@ _v3_put_0x52(uint8_t subtype, uint16_t codec, uint16_t codec_format, uint16_t se
             memset(msgdata, 0, sizeof(_v3_msg_0x52_0x01_out));
             msg->len = sizeof(_v3_msg_0x52_0x01_out) - sizeof(void *) + length;
             _v3_debug(V3_DEBUG_PACKET_PARSE, "setting unknown 2 to %d", length / 65 * 640 + 1000);
-            msgdata->unknown_2 = length / 65 * 640 + 1000;
-            //msgdata->unknown_2 = 8960;
+            //msgdata->unknown_2 = length / 65 * 640 + 1000;
+            msgdata->unknown_2 = 8960;
             msgdata->unknown_4 = htons(1);
             msgdata->unknown_5 = htons(2);
             msgdata->unknown_6 = htons(1);

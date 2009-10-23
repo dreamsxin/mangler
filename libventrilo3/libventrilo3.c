@@ -674,9 +674,10 @@ _v3_recv(int block) {/*{{{*/
                                         uint8_t sample[codec->samplesize];
                                         SpeexBits bits;
                                         int encoded_size;
+                                        uint8_t tmp;
                                         _v3_msg_0x52_speexdata *speexdata = malloc(sizeof(_v3_msg_0x52_speexdata));
 
-                                        speexdata->frame_count = ev.pcm.length / (codec->samplesize / 2);
+                                        speexdata->frame_count = ev.pcm.length / codec->samplesize;
                                         speexdata->sample_size = (codec->samplesize / 2);
                                         /*Create a new encoder state in appropriate band*/
                                         switch (codec->rate) {
@@ -703,8 +704,8 @@ _v3_recv(int block) {/*{{{*/
                                             // just give up now...
                                             break;
                                         }
-
-                                        speex_encoder_ctl(state, SPEEX_SET_QUALITY, (int *)&codec->quality);
+                                        tmp = codec->quality;
+                                        speex_encoder_ctl(state, SPEEX_SET_QUALITY, &tmp);
 
                                         nbBytes = 4; // speex data has a 4 byte header
 
@@ -735,7 +736,7 @@ _v3_recv(int block) {/*{{{*/
                                             // allocate memory for the actual frame
                                             speexdata->frames[ctr] = malloc(encoded_size + 2);
 
-                                            _v3_debug(V3_DEBUG_INFO, "encoded size is %d bytes (total %d)", encoded_size, nbBytes);
+                                            _v3_debug(V3_DEBUG_INFO, "encoded size is %d bytes (total %d) @ qual %d", encoded_size, nbBytes, codec->quality);
                                             // Copy the size of the frame first.
                                             encoded_size = htons(encoded_size);
                                             memcpy(speexdata->frames[ctr], &encoded_size, 2);
