@@ -545,17 +545,15 @@ _v3_send(_v3_net_message *message) {/*{{{*/
 int
 _v3_send_enc_msg(char *data, int len) {/*{{{*/
     uint16_t lenptr;
+    uint8_t buf[len+2];
 
     _v3_func_enter("_v3_send_enc_msg");
     _v3_debug(V3_DEBUG_PACKET, "======= sending encrypted TCP packet ============================");
     _v3_net_message_dump_raw(data, len);
     lenptr = htons(len);
-    if (send(_v3_sockd, &lenptr, 2, 0) != 2) {
-        _v3_error("failed to send packet length");
-        _v3_func_leave("_v3_send_enc_msg");
-        return false;
-    }
-    if (send(_v3_sockd, data, len, 0) != len) {
+    memcpy(buf, &lenptr, 2);
+    memcpy(buf+2, data, len);
+    if (send(_v3_sockd, buf, len+2, 0) != len+2) {
         _v3_error("failed to send packet data");
         _v3_func_leave("_v3_send_enc_msg");
         return false;
