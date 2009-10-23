@@ -624,7 +624,7 @@ _v3_recv(int block) {/*{{{*/
                             if (_v3_send(msg)) {
                                 _v3_destroy_packet(msg);
                             } else {
-                                _v3_debug(V3_DEBUG_SOCKET, "failed to send channel change message");
+                                _v3_debug(V3_DEBUG_SOCKET, "failed to send user talk start message");
                                 _v3_destroy_packet(msg);
                             }
                         }
@@ -681,14 +681,17 @@ _v3_recv(int block) {/*{{{*/
                                         /*Create a new encoder state in appropriate band*/
                                         switch (codec->rate) {
                                             case 8000:
+                                                _v3_debug(V3_DEBUG_INFO, "using narrow band");
                                                 state = speex_encoder_init(&speex_nb_mode);
                                                 send = true;
                                                 break;
                                             case 16000:
+                                                _v3_debug(V3_DEBUG_INFO, "using wide band");
                                                 state = speex_encoder_init(&speex_wb_mode);
                                                 send = true;
                                                 break;
                                             case 32000:
+                                                _v3_debug(V3_DEBUG_INFO, "using ultra-wide band");
                                                 state = speex_encoder_init(&speex_uwb_mode);
                                                 send = true;
                                                 break;
@@ -740,7 +743,7 @@ _v3_recv(int block) {/*{{{*/
                                             // copy the frame data
                                             memcpy(speexdata->frames[ctr]+2, cbits, ntohs(encoded_size));
                                         }
-                                        //msg = _v3_put_0x52(V3_AUDIO_DATA, codec->codec, codec->format, ev.pcm.send_type, nbBytes + 4, speexdata);
+                                        msg = _v3_put_0x52(V3_AUDIO_DATA, codec->codec, codec->format, ev.pcm.send_type, nbBytes, speexdata);
 
                                         // Destroy the encoder state
                                         speex_encoder_destroy(state);
@@ -748,7 +751,7 @@ _v3_recv(int block) {/*{{{*/
                                         // Destroy the bit-packing struct
                                         speex_bits_destroy(&bits);
                                     }
-                                    send = false;
+                                    send = true;
                                     break;
                                 default:
                                     _v3_debug(V3_DEBUG_INFO, "unsupported codec %d/%d", codec->codec, codec->format);
@@ -2791,11 +2794,12 @@ v3_send_audio(uint16_t send_type, uint32_t rate, uint8_t *pcm, uint32_t length) 
     }
     memset(&ev, 0, sizeof(v3_event));
     ev.type = V3_EVENT_PLAY_AUDIO;
+    ev.pcm.send_type = send_type;
     ev.pcm.rate = rate;
     ev.pcm.length = length;
     memcpy(ev.data.sample, pcm, length);
     _v3_lock_sendq();
-    _v3_debug(V3_DEBUG_EVENT, "sending %lu bytes to event pipe for event type %d", sizeof(v3_event), ev.type);
+    _v3_debug(V3_DEBUG_EVENT, "sending %lu bytes to event pipe for event type %d (pcm length %d)", sizeof(v3_event), ev.type, length);
     if (fwrite(&ev, sizeof(struct _v3_event), 1, v3_server.evoutstream) != 1) {
         _v3_error("could not write to event pipe");
     }

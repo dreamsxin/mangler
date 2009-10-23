@@ -675,7 +675,7 @@ _v3_get_0x52(_v3_net_message *msg) {/*{{{*/
 }/*}}}*/
 
 _v3_net_message *
-_v3_put_0x52(uint8_t type, uint16_t codec, uint16_t codec_format, uint16_t send_type, uint32_t length, void *data) {/*{{{*/
+_v3_put_0x52(uint8_t subtype, uint16_t codec, uint16_t codec_format, uint16_t send_type, uint32_t length, void *data) {/*{{{*/
     _v3_net_message *msg;
     _v3_msg_0x52_0x01_out *msgdata;
     int ctr;
@@ -684,64 +684,118 @@ _v3_put_0x52(uint8_t type, uint16_t codec, uint16_t codec_format, uint16_t send_
     msg = malloc(sizeof(_v3_net_message));
     memset(msg, 0, sizeof(_v3_net_message));
 
-    switch (type) {
+    /*
+     * First we go through and create our main message structure 
+     */
+    switch (subtype) {
         case V3_AUDIO_START:
-            _v3_debug(V3_DEBUG_PACKET_PARSE, "sending 0x52 subtype 0x00");
+            _v3_debug(V3_DEBUG_PACKET_PARSE, "sending 0x52 subtype 0x00 size %d", sizeof(_v3_msg_0x52_0x00));
             msgdata = malloc(sizeof(_v3_msg_0x52_0x00));
             memset(msgdata, 0, sizeof(_v3_msg_0x52_0x00));
-            msg->len = sizeof(_v3_msg_0x52_0x00);
             msgdata->subtype = V3_AUDIO_START;
             msgdata->unknown_4 = htons(1);
             msgdata->unknown_5 = htons(2);
             msgdata->unknown_6 = htons(1);
+            msgdata->data_length = 0;
+            msgdata->user_id = v3_get_user_id();
+            msgdata->send_type = send_type;
+            msg->len = sizeof(_v3_msg_0x52_0x00);
             break;
         case V3_AUDIO_DATA:
-            _v3_debug(V3_DEBUG_PACKET_PARSE, "sending 0x52 subtype 0x01");
+            _v3_debug(V3_DEBUG_PACKET_PARSE, "sending 0x52 subtype 0x01 header size %d data size %d", sizeof(_v3_msg_0x52_0x00), length);
             msgdata = malloc(sizeof(_v3_msg_0x52_0x01_out));
             memset(msgdata, 0, sizeof(_v3_msg_0x52_0x01_out));
             msg->len = sizeof(_v3_msg_0x52_0x01_out) - sizeof(void *) + length;
-            msgdata->subtype = V3_AUDIO_DATA;
             _v3_debug(V3_DEBUG_PACKET_PARSE, "setting unknown 2 to %d", length / 65 * 640 + 1000);
             msgdata->unknown_2 = length / 65 * 640 + 1000;
+            //msgdata->unknown_2 = 8960;
             msgdata->unknown_4 = htons(1);
             msgdata->unknown_5 = htons(2);
             msgdata->unknown_6 = htons(1);
+            msgdata->data_length = length;
             break;
         case V3_AUDIO_STOP:
-            _v3_debug(V3_DEBUG_PACKET_PARSE, "sending 0x52 subtype 0x02");
+            _v3_debug(V3_DEBUG_PACKET_PARSE, "sending 0x52 subtype 0x02 size %d", sizeof(_v3_msg_0x52_0x00));
             msgdata = malloc(sizeof(_v3_msg_0x52_0x02));
             memset(msgdata, 0, sizeof(_v3_msg_0x52_0x02));
             msg->len = sizeof(_v3_msg_0x52_0x02);
             msgdata->subtype = V3_AUDIO_STOP;
+            msgdata->data_length = 0;
+            msgdata->user_id = v3_get_user_id();
+            msgdata->send_type = send_type;
             break;
+        default:
+            return NULL;
     }
-    msgdata->type = 0x52;
-    msgdata->user_id = v3_get_user_id();
+    msgdata->type = msg->type = 0x52;
+    msgdata->subtype = subtype;
     msgdata->codec = codec;
     msgdata->codec_format = codec_format;
-    msgdata->send_type = send_type;
-    msgdata->data_length = length;
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "user id is %d - send_type is %d (from %d)\n", msgdata->user_id, msgdata->send_type, send_type);
 
+    /*
+     * Now we allocate the actual msg->data for the network packet representation
+     */
     _v3_debug(V3_DEBUG_MEMORY, "allocating %d bytes for data", sizeof(_v3_msg_0x52_0x01_out) - sizeof(void *) + length);
-    msg->data = malloc(sizeof(_v3_msg_0x52_0x01_out) - sizeof(void *) + length); memset(msg->data, 0, sizeof(_v3_msg_0x52_0x01_out) - sizeof(void *) + length);
-    memcpy(msg->data, msgdata, sizeof(_v3_msg_0x52_0x01_out) - sizeof(void*));
-    switch (codec) {
-        case 0:
-            {
-                char *offset = msg->data + sizeof(_v3_msg_0x52_0x01_out) - sizeof(void *);
-                uint8_t **frames = data;
-                for (ctr = 0; ctr < length / 65; ctr++) {
-                    memcpy(offset, frames[ctr], 65);
-                    offset+=65;
-                }
+    msg->data = malloc(msg->len);
+    memset(msg->data, 0, msg->len);
+    
+    /*
+     * Next, copy all of the data into the newly allocated memory
+     */
+    switch (subtype) {
+        case V3_AUDIO_START:
+            memcpy(msg->data, msgdata, sizeof(_v3_msg_0x52_0x00));
+            break;
+        case V3_AUDIO_DATA:
+            _v3_debug(V3_DEBUG_PACKET_PARSE, "send_type is %d\n", msgdata->send_type);
+            memcpy(msg->data, msgdata, sizeof(_v3_msg_0x52_0x01_out));
+            switch (codec) {
+                case 0:
+                    {
+                        // Set our beginning offset into the packet
+                        char *offset = msg->data + sizeof(_v3_msg_0x52_0x01_out) - sizeof(void *);
+                        uint8_t **frames = data;
+                        // copy the frames
+                        for (ctr = 0; ctr < length / 65; ctr++) {
+                            memcpy(offset, frames[ctr], 65);
+                            offset += 65;
+                        }
+                    }
+                    break;
+                case 3:
+                    {
+                        // Set our beginning offset into the packet
+                        char *offset = msg->data + sizeof(_v3_msg_0x52_0x01_out) - sizeof(void *);
+                        uint16_t tmp, enc_frame_size;
+                        _v3_msg_0x52_speexdata *speexdata = data;
+
+                        tmp = htons(speexdata->frame_count);
+                        memcpy(offset, &tmp, 2);
+                        offset += 2;
+
+                        tmp = htons(speexdata->sample_size);
+                        memcpy(offset, &tmp, 2);
+                        offset += 2;
+
+                        // Figure out how long each frame is
+                        enc_frame_size = ((length - 4) / speexdata->frame_count);
+
+                        // Copy all frames in the array into the network packet
+                        for (ctr = 0; ctr < speexdata->frame_count; ctr++) {
+                            memcpy(offset, speexdata->frames[ctr], enc_frame_size);
+                            offset += enc_frame_size;
+                        }
+                    }
+                    break;
             }
             break;
-        case 3:
-            _v3_debug(V3_DEBUG_INFO, "requested outbound speex transmission, which is not supported");
+        case V3_AUDIO_STOP:
+            memcpy(msg->data, msgdata, sizeof(_v3_msg_0x52_0x02));
             break;
     }
     free(msgdata);
-    _v3_func_leave("_v3_put_0x5d");
+    _v3_func_leave("_v3_put_0x52");
     return msg;
 
 }/*}}}*/

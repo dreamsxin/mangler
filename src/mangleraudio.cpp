@@ -115,12 +115,16 @@ ManglerAudio::input(void) {/*{{{*/
     int ctr;
     bool drop;
 
+    fprintf(stderr, "getting input\n");
     for (;;) {
+        fprintf(stderr, "main input iteration\n");
         if (stop_input == true) {
+            fprintf(stderr, "stopping input\n");
             Glib::Thread::Exit();
             return;
         }
         if (!inputStreamOpen) {
+            fprintf(stderr, "input stream is not open\n");
             Glib::Thread::Exit();
             return;
         }
@@ -153,6 +157,7 @@ ManglerAudio::input(void) {/*{{{*/
             ctr++;
         }
         if (! drop) {
+            fprintf(stderr, "sending audio %d bytes of audio\n", ctr * pcm_framesize);
             // TODO: hard coding user to channel for now, need to implement U2U
             v3_send_audio(V3_AUDIO_SENDTYPE_U2CCUR, rate, buf, ctr * pcm_framesize);
         }
@@ -162,6 +167,7 @@ ManglerAudio::input(void) {/*{{{*/
             break;
         }
     }
+    fprintf(stderr, "done with input\n");
     v3_stop_audio();
 #ifdef HAVE_PULSE
     pa_simple_free(pulse_stream);
