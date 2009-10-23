@@ -267,6 +267,7 @@ void Mangler::startTransmit(void) {/*{{{*/
         return;
     }
     isTransmitting = true;
+    channelTree->userIsTalking(v3_get_user_id(), true);
     codec = v3_get_channel_codec(user->channel);
     fprintf(stderr, "channel %d codec rate: %d at sample size %d\n", user->channel, codec->rate, codec->samplesize);
     v3_start_audio(V3_AUDIO_SENDTYPE_U2CCUR);
@@ -281,6 +282,7 @@ void Mangler::stopTransmit(void) {/*{{{*/
     if (!isTransmitting) {
         return;
     }
+    channelTree->userIsTalking(v3_get_user_id(), false);
     isTransmitting = false;
     if (inputAudio) {
         inputAudio->finish();
