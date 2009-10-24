@@ -641,10 +641,13 @@ _v3_recv(int block) {/*{{{*/
                                 case 0:
                                     {
                                         uint8_t **frames;
-                                        gsm handle;
+                                        static gsm handle = NULL;
                                         _v3_debug(V3_DEBUG_INFO, "encoding PCM to GSM @ %lu", codec->rate);
-                                        if (!(handle = gsm_create())) {
-                                            _v3_debug(V3_DEBUG_INFO, "could not encode audio: failed to create gsm handle");
+                                        if (handle == NULL) {
+                                            _v3_debug(V3_DEBUG_INFO, "creating gsm encoding handle");
+                                            if (!(handle = gsm_create())) {
+                                                _v3_debug(V3_DEBUG_INFO, "could not encode audio: failed to create gsm handle");
+                                            }
                                         }
                                         frames = malloc(ev.pcm.length / codec->samplesize * sizeof(void *));
                                         for (ctr = 0; ctr < ev.pcm.length / codec->samplesize; ctr++) {
@@ -658,7 +661,7 @@ _v3_recv(int block) {/*{{{*/
                                             gsm_encode(handle, ((short*)sample)+160, frames[ctr]+32);
                                             _v3_debug(V3_DEBUG_INFO, "encoding frame %d", ctr);
                                         }
-                                        gsm_destroy(handle);
+                                        //gsm_destroy(handle);
                                         msg = _v3_put_0x52(V3_AUDIO_DATA, codec->codec, codec->format, ev.pcm.send_type, ctr*65, frames);
                                     }
                                     send = true;
