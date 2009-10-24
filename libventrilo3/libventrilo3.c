@@ -665,10 +665,10 @@ _v3_recv(int block) {/*{{{*/
                                     break;
                                 case 3:
                                     {
-                                        _v3_debug(V3_DEBUG_INFO, "encoding PCM to SPEEX @ %lu", codec->rate);
+                                        _v3_debug(V3_DEBUG_INFO, "encoding %d bytes of PCM to SPEEX @ %lu", codec->samplesize, codec->rate);
                                         char cbits[200];
                                         uint16_t nbBytes;
-                                        void *state;
+                                        static void *state = NULL;
                                         uint8_t sample[codec->samplesize];
                                         SpeexBits bits;
                                         int encoded_size;
@@ -677,33 +677,39 @@ _v3_recv(int block) {/*{{{*/
 
                                         speexdata->frame_count = ev.pcm.length / codec->samplesize;
                                         speexdata->sample_size = (codec->samplesize / 2);
-                                        /*Create a new encoder state in appropriate band*/
-                                        switch (codec->rate) {
-                                            case 8000:
-                                                _v3_debug(V3_DEBUG_INFO, "using narrow band");
-                                                state = speex_encoder_init(&speex_nb_mode);
-                                                send = true;
+
+                                        // TODO: we need to make sure the current band is correct in case the codec format
+                                        // changes (i.e. per channel codecs)
+                                        if (!state) {
+                                            /*Create a new encoder state in appropriate band*/
+                                            switch (codec->rate) {
+                                                case 8000:
+                                                    _v3_debug(V3_DEBUG_INFO, "using narrow band");
+                                                    state = speex_encoder_init(&speex_nb_mode);
+                                                    send = true;
+                                                    break;
+                                                case 16000:
+                                                    _v3_debug(V3_DEBUG_INFO, "using wide band");
+                                                    state = speex_encoder_init(&speex_wb_mode);
+                                                    send = true;
+                                                    break;
+                                                case 32000:
+                                                    _v3_debug(V3_DEBUG_INFO, "using ultra-wide band");
+                                                    state = speex_encoder_init(&speex_uwb_mode);
+                                                    send = true;
+                                                    break;
+                                                default:
+                                                    send = false;
+                                                    break;
+                                            }
+                                            tmp = codec->quality;
+                                            speex_encoder_ctl(state, SPEEX_SET_QUALITY, &tmp);
+                                            if (send == false) {
+                                                // just give up now...
                                                 break;
-                                            case 16000:
-                                                _v3_debug(V3_DEBUG_INFO, "using wide band");
-                                                state = speex_encoder_init(&speex_wb_mode);
-                                                send = true;
-                                                break;
-                                            case 32000:
-                                                _v3_debug(V3_DEBUG_INFO, "using ultra-wide band");
-                                                state = speex_encoder_init(&speex_uwb_mode);
-                                                send = true;
-                                                break;
-                                            default:
-                                                send = false;
-                                                break;
+                                            }
                                         }
-                                        if (send == false) {
-                                            // just give up now...
-                                            break;
-                                        }
-                                        tmp = codec->quality;
-                                        speex_encoder_ctl(state, SPEEX_SET_QUALITY, &tmp);
+                                        send = true;
 
                                         nbBytes = 4; // speex data has a 4 byte header
 
@@ -745,7 +751,7 @@ _v3_recv(int block) {/*{{{*/
                                         msg = _v3_put_0x52(V3_AUDIO_DATA, codec->codec, codec->format, ev.pcm.send_type, nbBytes, speexdata);
 
                                         // Destroy the encoder state
-                                        speex_encoder_destroy(state);
+                                        // speex_encoder_destroy(state);
 
                                         // Destroy the bit-packing struct
                                         speex_bits_destroy(&bits);
