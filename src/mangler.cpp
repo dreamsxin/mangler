@@ -369,15 +369,34 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                         (bool)u->guest);
                 v3_free_user(u);
                 break;/*}}}*/
-            case V3_EVENT_CHAN_REMOVE:/*{{{*/
-                // can't get any channel info... it's already gone by this point
-                fprintf(stderr, "removing channel id %d\n", ev->channel.id);
-                channelTree->removeChannel(ev->channel.id);
+            case V3_EVENT_USER_MODIFY:/*{{{*/
+                u = v3_get_user(ev->user.id);
+                if (!u) {
+                    fprintf(stderr, "couldn't retreive user id %d\n", ev->user.id);
+                    break;
+                }
+                fprintf(stderr, "updating user id %d: %s in channel %d\n", ev->user.id, u->name, ev->channel.id);
+                channelTree->removeUser(ev->user.id);
+                channelTree->addUser(
+                        (uint32_t)u->id,
+                        (uint32_t)ev->channel.id,
+                        c_to_ustring(u->name),
+                        c_to_ustring(u->comment),
+                        u->phonetic,
+                        u->url,
+                        c_to_ustring(u->integration_text),
+                        (bool)u->guest);
+                v3_free_user(u);
                 break;/*}}}*/
             case V3_EVENT_USER_LOGOUT:/*{{{*/
                 // can't get any user info... it's already gone by this point
                 fprintf(stderr, "removing user id %d\n", ev->user.id);
                 channelTree->removeUser(ev->user.id);
+                break;/*}}}*/
+            case V3_EVENT_CHAN_REMOVE:/*{{{*/
+                // can't get any channel info... it's already gone by this point
+                fprintf(stderr, "removing channel id %d\n", ev->channel.id);
+                channelTree->removeChannel(ev->channel.id);
                 break;/*}}}*/
             case V3_EVENT_LOGIN_COMPLETE:/*{{{*/
                 {

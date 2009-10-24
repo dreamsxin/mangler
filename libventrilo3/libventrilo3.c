@@ -1072,14 +1072,19 @@ _v3_update_user(v3_user *user) {/*{{{*/
         for (u = v3_user_list; u != NULL; u = u->next) { // search for existing users
             if (u->id == user->id) {
                 void *tmp;
-                free(u->name);
+                char *nametmp;
+                // Users cannot change their name
+                // free(u->name);
+                nametmp = u->name;
                 free(u->phonetic);
                 free(u->comment);
                 free(u->integration_text);
                 free(u->url);
                 tmp = u->next;
                 memcpy(u, user, sizeof(v3_user));
-                u->name             = strdup(user->name);
+                // Users cannot change their name
+                // u->name          = strdup(user->name);
+                u->name             = nametmp;
                 u->comment          = strdup(user->comment);
                 u->phonetic         = strdup(user->phonetic);
                 u->integration_text = strdup(user->integration_text);
@@ -2021,7 +2026,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                             _v3_update_user(&m->user_list[ctr]);
                             ev = malloc(sizeof(v3_event));
                             memset(ev, 0, sizeof(v3_event));
-                            ev->type = V3_ADD_USER ? V3_EVENT_USER_LOGIN : V3_EVENT_USER_MODIFY;
+                            ev->type = (m->subtype == V3_ADD_USER ? V3_EVENT_USER_LOGIN : V3_EVENT_USER_MODIFY);
                             ev->user.id = m->user_list[ctr].id;
                             _v3_debug(V3_DEBUG_INFO, "queuing event type %d for user %d", ev->type, ev->user.id);
                             v3_queue_event(ev);
