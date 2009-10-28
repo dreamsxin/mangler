@@ -52,7 +52,7 @@ ManglerAudio::open(uint32_t rate, bool type, uint32_t pcm_framesize) {/*{{{*/
                         NULL,
                         "Mangler",
                         PA_STREAM_PLAYBACK,
-                        (mangler->settings->config.outputDeviceName == "Default" ? NULL : (char *)mangler->settings->config.outputDeviceName.c_str()),
+                        (mangler->settings->config.outputDeviceName == "Default" || mangler->settings->config.outputDeviceName == "" ? NULL : (char *)mangler->settings->config.outputDeviceName.c_str()),
                         "User Talking In Ventrilo Channel",
                         &pulse_samplespec,
                         NULL,
@@ -79,7 +79,7 @@ ManglerAudio::open(uint32_t rate, bool type, uint32_t pcm_framesize) {/*{{{*/
                         NULL,
                         "Mangler",
                         PA_STREAM_RECORD,
-                        (mangler->settings->config.inputDeviceName == "Default" ? NULL : (char *)mangler->settings->config.inputDeviceName.c_str()),
+                        (mangler->settings->config.outputDeviceName == "Default" || mangler->settings->config.outputDeviceName == "" ? NULL : (char *)mangler->settings->config.outputDeviceName.c_str()),
                         "Talking In Ventrilo Channel",
                         &pulse_samplespec,
                         NULL,
@@ -135,7 +135,7 @@ ManglerAudio::input(void) {/*{{{*/
         while (seconds < 0.115) {
             //fprintf(stderr, "reallocating %d bytes of memory\n", pcm_framesize*(ctr+1));
             if ((pcm_framesize*(ctr+1)) > 16384) {
-                fprintf(stderr, "audio frames are greater than buffer size.  dropping audio frames\n");
+                fprintf(stderr, "audio frames are greater than buffer size.  dropping audio frames after %f seconds\n", seconds);
                 drop = true;
                 break;
             }
@@ -143,6 +143,7 @@ ManglerAudio::input(void) {/*{{{*/
             buf = (uint8_t *)realloc(buf, pcm_framesize*(ctr+1));
             //fprintf(stderr, "reading %d bytes of memory to %lu\n", pcm_framesize, (uint64_t) buf+(pcm_framesize*ctr));
 #ifdef HAVE_PULSE
+            fprintf(stderr, "reading %d bytes from pulse source\n", pcm_framesize);
             if ((ret = pa_simple_read(pulse_stream, buf+(pcm_framesize*ctr), pcm_framesize, &error)) < 0) {
                 fprintf(stderr, __FILE__": pa_simple_read() failed: %s\n", pa_strerror(error));
                 pa_simple_free(pulse_stream);
@@ -154,6 +155,7 @@ ManglerAudio::input(void) {/*{{{*/
             gettimeofday(&now, NULL);
             timeval_subtract(&diff, &now, &start);
             seconds = (float)diff.tv_sec + ((float)diff.tv_usec / (float)1000000);
+            fprintf(stderr, "iteration after %f seconds\n", seconds);
             ctr++;
         }
         if (! drop) {
