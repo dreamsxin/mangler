@@ -48,6 +48,7 @@ ManglerAudio::open(uint32_t rate, bool type, uint32_t pcm_framesize) {/*{{{*/
     if (type == AUDIO_OUTPUT) {
         //fprintf(stderr, "opening audio output\n");
 #ifdef HAVE_PULSE
+        fprintf(stderr, "on pulse device %s\n", (char *)mangler->settings->config.outputDeviceName.c_str());
         if (!(pulse_stream = pa_simple_new(
                         NULL,
                         "Mangler",
@@ -75,11 +76,12 @@ ManglerAudio::open(uint32_t rate, bool type, uint32_t pcm_framesize) {/*{{{*/
         }
         fprintf(stderr, "starting input with rate %d and framesize %d\n", rate, pcm_framesize);
 #ifdef HAVE_PULSE
+        fprintf(stderr, "on pulse device %s\n", (char *)mangler->settings->config.outputDeviceName.c_str());
         if (!(pulse_stream = pa_simple_new(
                         NULL,
                         "Mangler",
                         PA_STREAM_RECORD,
-                        (mangler->settings->config.outputDeviceName == "Default" || mangler->settings->config.outputDeviceName == "" ? NULL : (char *)mangler->settings->config.outputDeviceName.c_str()),
+                        (mangler->settings->config.inputDeviceName == "Default" || mangler->settings->config.inputDeviceName == "" ? NULL : (char *)mangler->settings->config.inputDeviceName.c_str()),
                         "Talking In Ventrilo Channel",
                         &pulse_samplespec,
                         NULL,
