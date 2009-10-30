@@ -152,6 +152,10 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
     // Create settings object, load the configuration file, and apply.  If the
     // user has PTT key/mouse enabled, start a timer here
     settings = new ManglerSettings(builder);
+    isTransmittingButton = 0;
+    isTransmittingMouse = 0;
+    isTransmittingKey = 0;
+    isTransmitting = 0;
     if (settings->config.PushToTalkKeyEnabled) {
         Glib::signal_timeout().connect(sigc::mem_fun(this, &Mangler::checkPushToTalkKeys), 100);
     }

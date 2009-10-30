@@ -48,7 +48,7 @@ ManglerAudio::open(uint32_t rate, bool type, uint32_t pcm_framesize) {/*{{{*/
     if (type == AUDIO_OUTPUT) {
         //fprintf(stderr, "opening audio output\n");
 #ifdef HAVE_PULSE
-        fprintf(stderr, "on pulse device %s\n", (char *)mangler->settings->config.outputDeviceName.c_str());
+        fprintf(stderr, "opening on pulse device %s\n", (char *)mangler->settings->config.outputDeviceName.c_str());
         if (!(pulse_stream = pa_simple_new(
                         NULL,
                         "Mangler",
@@ -62,6 +62,7 @@ ManglerAudio::open(uint32_t rate, bool type, uint32_t pcm_framesize) {/*{{{*/
             fprintf(stderr, __FILE__": pa_simple_new() failed: %s\n", pa_strerror(error));
             return;
         }
+        fprintf(stderr, __FILE__": pa_simple_new() success: %s\n", pa_strerror(error));
 #endif
         outputStreamOpen = true;
         inputStreamOpen = false;
@@ -138,7 +139,7 @@ ManglerAudio::input(void) {/*{{{*/
             //fprintf(stderr, "reallocating %d bytes of memory\n", pcm_framesize*(ctr+1));
             if ((pcm_framesize*(ctr+1)) > 16384) {
                 fprintf(stderr, "audio frames are greater than buffer size.  dropping audio frames after %f seconds\n", seconds);
-                drop = true;
+                drop = false;
                 break;
             }
             drop = false;
