@@ -59,7 +59,7 @@ bool ManglerConfig::save() {/*{{{*/
     put("PushToTalkMouseValue", PushToTalkMouseValue);
     put("inputDeviceName", inputDeviceName);
     put("outputDeviceName", outputDeviceName);
-    put("qc_lastserver.name", qc_lastserver.name);
+    put("qc_lastserver.hostname", qc_lastserver.hostname);
     put("qc_lastserver.port", qc_lastserver.port);
     put("qc_lastserver.username", qc_lastserver.username);
     put("qc_lastserver.password", qc_lastserver.password);
