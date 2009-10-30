@@ -1983,7 +1983,6 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
             _v3_func_leave("_v3_process_message");
             return V3_OK;/*}}}*/
         case 0x5c:/*{{{*/
-            return V3_OK;
             if (!_v3_get_0x5c(msg)) {
                 _v3_destroy_packet(msg);
                 _v3_func_leave("_v3_process_message");
