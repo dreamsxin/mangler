@@ -172,7 +172,7 @@ void Mangler::quickConnectButton_clicked_cb(void) {/*{{{*/
     dialog->set_icon(icons["tray_icon"]);
 
     builder->get_widget("qcServerName", textbox);
-    textbox->set_text(settings->config.qc_lastserver.name);
+    textbox->set_text(settings->config.qc_lastserver.hostname);
 
     builder->get_widget("qcPort", textbox);
     textbox->set_text(settings->config.qc_lastserver.port);
@@ -303,7 +303,7 @@ void Mangler::qcConnectButton_clicked_cb(void) {/*{{{*/
     builder->get_widget("qcPassword", textbox);
     Glib::ustring password = textbox->get_text();
     fprintf(stderr, "connecting to: %s:%s\n", server.c_str(), port.c_str());
-    settings->config.qc_lastserver.name = server;
+    settings->config.qc_lastserver.hostname = server;
     settings->config.qc_lastserver.port = port;
     settings->config.qc_lastserver.username = username;
     settings->config.qc_lastserver.password = password;

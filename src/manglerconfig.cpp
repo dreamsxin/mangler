@@ -96,6 +96,20 @@ bool ManglerConfig::put(Glib::ustring name, bool value) {/*{{{*/
     }
     return true;
 }/*}}}*/
+bool ManglerConfig::put(uint16_t id, ManglerServerConfig server) {/*{{{*/
+    char name[1024];
+
+    // Please excuse the formatting, this is easier to maintain
+    snprintf(name, 1023, "serverlist.%d.name",     id); if (!put(name, server.name      ))  return false;
+    snprintf(name, 1023, "serverlist.%d.hostname", id); if (!put(name, server.hostname  ))  return false;
+    snprintf(name, 1023, "serverlist.%d.port",     id); if (!put(name, server.port      ))  return false;
+    snprintf(name, 1023, "serverlist.%d.username", id); if (!put(name, server.username  ))  return false;
+    snprintf(name, 1023, "serverlist.%d.password", id); if (!put(name, server.password  ))  return false;
+    snprintf(name, 1023, "serverlist.%d.phonetic", id); if (!put(name, server.phonetic  ))  return false;
+    snprintf(name, 1023, "serverlist.%d.comment",  id); if (!put(name, server.comment   ))  return false;
+    snprintf(name, 1023, "serverlist.%d.url",      id); if (!put(name, server.url       ))  return false;
+    return true;
+}/*}}}*/
 Glib::ustring ManglerConfig::get(Glib::ustring cfgname) {/*{{{*/
     // We're going to do this in one in C too...
     struct stat cfgstat;

@@ -31,6 +31,7 @@ class ManglerServerConfig/*{{{*/
 {
     public:
         Glib::ustring         name;
+        Glib::ustring         hostname;
         Glib::ustring         port;
         Glib::ustring         username;
         Glib::ustring         password;
@@ -62,6 +63,7 @@ class ManglerConfig {
                 bool put(Glib::ustring name, bool value);
                 bool put(Glib::ustring name, Glib::ustring value);
                 bool put(Glib::ustring name, uint32_t value);
+                bool put(uint16_t id, ManglerServerConfig server);
 		void load();
                 void parsePushToTalkValue(Glib::ustring pttString);
 };

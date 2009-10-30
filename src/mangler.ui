@@ -215,7 +215,6 @@
                     <child>
                       <object class="GtkButton" id="chatButton">
                         <property name="label" translatable="yes">Chat</property>
-                        <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
                         <property name="use_underline">True</property>
@@ -228,7 +227,6 @@
                     <child>
                       <object class="GtkButton" id="bindingsButton">
                         <property name="label" translatable="yes">_Bindings</property>
-                        <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
                         <property name="use_underline">True</property>
@@ -241,7 +239,6 @@
                     <child>
                       <object class="GtkButton" id="adminButton">
                         <property name="label" translatable="yes">_Admin</property>
-                        <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
                         <property name="use_underline">True</property>
@@ -643,7 +640,7 @@
                 <property name="vscrollbar_policy">automatic</property>
                 <property name="shadow_type">in</property>
                 <child>
-                  <object class="GtkTreeView" id="serverListTreeView">
+                  <object class="GtkTreeView" id="serverListView">
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
                   </object>
