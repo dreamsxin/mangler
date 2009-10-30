@@ -2037,6 +2037,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                             memset(ev, 0, sizeof(v3_event));
                             ev->type = (m->subtype == V3_ADD_USER ? V3_EVENT_USER_LOGIN : V3_EVENT_USER_MODIFY);
                             ev->user.id = m->user_list[ctr].id;
+                            ev->channel.id = m->user_list[ctr].channel;
                             _v3_debug(V3_DEBUG_INFO, "queuing event type %d for user %d", ev->type, ev->user.id);
                             v3_queue_event(ev);
                         }
