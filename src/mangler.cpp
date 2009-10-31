@@ -52,12 +52,14 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
     icons.insert(std::make_pair("logo1",                        Gdk::Pixbuf::create_from_inline(-1, logo1                       )));
     icons.insert(std::make_pair("logo2",                        Gdk::Pixbuf::create_from_inline(-1, logo2                       )));
     icons.insert(std::make_pair("logo3",                        Gdk::Pixbuf::create_from_inline(-1, logo3                       )));
+    icons.insert(std::make_pair("logo4",                        Gdk::Pixbuf::create_from_inline(-1, logo4                       )));
 
     icons.insert(std::make_pair("tray_icon",                    Gdk::Pixbuf::create_from_inline(-1, tray_icon_blue              )));
     icons.insert(std::make_pair("tray_icon_blue",               Gdk::Pixbuf::create_from_inline(-1, tray_icon_blue              )));
     icons.insert(std::make_pair("tray_icon_red",                Gdk::Pixbuf::create_from_inline(-1, tray_icon_red               )));
     icons.insert(std::make_pair("tray_icon_green",              Gdk::Pixbuf::create_from_inline(-1, tray_icon_green             )));
     icons.insert(std::make_pair("tray_icon_yellow",             Gdk::Pixbuf::create_from_inline(-1, tray_icon_yellow            )));
+    icons.insert(std::make_pair("tray_icon_grey",               Gdk::Pixbuf::create_from_inline(-1, tray_icon_grey              )));
 
     icons.insert(std::make_pair("user_icon_xmit",               Gdk::Pixbuf::create_from_inline(-1, user_icon_xmit              )));
     icons.insert(std::make_pair("user_icon_noxmit",             Gdk::Pixbuf::create_from_inline(-1, user_icon_noxmit            )));
@@ -161,7 +163,7 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
     }
 
     // Statusbar Icon
-    statusIcon = Gtk::StatusIcon::create(icons["tray_icon"]);
+    statusIcon = Gtk::StatusIcon::create(icons["tray_icon_grey"]);
 
 }/*}}}*/
 
@@ -218,17 +220,17 @@ void Mangler::bindingsButton_clicked_cb(void) {/*{{{*/
     //fprintf(stderr, "bindings button clicked\n");
     static Glib::ustring color = "red";
     if (color == "red") {
-        statusIcon = Gtk::StatusIcon::create(icons["tray_icon_green"]);
         color = "green";
+        statusIcon->set(icons["tray_icon_green"]);
     } else if (color == "green") {
-        statusIcon = Gtk::StatusIcon::create(icons["tray_icon_blue"]);
         color = "blue";
+        statusIcon->set(icons["tray_icon_blue"]);
     } else if (color == "blue") {
-        statusIcon = Gtk::StatusIcon::create(icons["tray_icon_yellow"]);
         color = "yellow";
+        statusIcon->set(icons["tray_icon_yellow"]);
     } else if (color == "yellow") {
-        statusIcon = Gtk::StatusIcon::create(icons["tray_icon_red"]);
         color = "red";
+        statusIcon->set(icons["tray_icon_red"]);
     }
 }/*}}}*/
 void Mangler::adminButton_clicked_cb(void) {/*{{{*/
@@ -270,6 +272,7 @@ void Mangler::startTransmit(void) {/*{{{*/
     if (isTransmitting) {
         return;
     }
+    statusIcon->set(icons["tray_icon_green"]);
     isTransmitting = true;
     channelTree->userIsTalking(v3_get_user_id(), true);
     codec = v3_get_channel_codec(user->channel);
@@ -286,6 +289,7 @@ void Mangler::stopTransmit(void) {/*{{{*/
     if (!isTransmitting) {
         return;
     }
+    statusIcon->set(icons["tray_icon_red"]);
     channelTree->userIsTalking(v3_get_user_id(), false);
     isTransmitting = false;
     if (inputAudio) {
@@ -527,6 +531,7 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                     progressbar->set_fraction(0);
                     statusbar->pop();
                     statusbar->push("Not connected");
+                    mangler->statusIcon->set(icons["tray_icon_grey"]);
                 }
                 break;/*}}}*/
             default:

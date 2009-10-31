@@ -54,7 +54,7 @@ ManglerAudio::open(uint32_t rate, bool type, uint32_t pcm_framesize) {/*{{{*/
     if (type == AUDIO_OUTPUT) {
         //fprintf(stderr, "opening audio output\n");
 #ifdef HAVE_PULSE
-        fprintf(stderr, "opening on pulse device %s\n", (char *)mangler->settings->config.outputDeviceName.c_str());
+        //fprintf(stderr, "opening on pulse device %s\n", (char *)mangler->settings->config.outputDeviceName.c_str());
         if (!(pulse_stream = pa_simple_new(
                         NULL,
                         "Mangler",
