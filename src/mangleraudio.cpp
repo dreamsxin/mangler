@@ -44,6 +44,12 @@ ManglerAudio::open(uint32_t rate, bool type, uint32_t pcm_framesize) {/*{{{*/
     pulse_samplespec.format = PA_SAMPLE_S16LE;
     pulse_samplespec.rate = rate;
     pulse_samplespec.channels = 1;
+    pa_buffer_attr buffer_attr;
+    buffer_attr.maxlength = -1;
+    buffer_attr.tlength = -1;
+    buffer_attr.prebuf = -1;
+    buffer_attr.minreq = -1;
+    buffer_attr.fragsize = pcm_framesize;
 #endif
     if (type == AUDIO_OUTPUT) {
         //fprintf(stderr, "opening audio output\n");
@@ -57,7 +63,7 @@ ManglerAudio::open(uint32_t rate, bool type, uint32_t pcm_framesize) {/*{{{*/
                         "User Talking In Ventrilo Channel",
                         &pulse_samplespec,
                         NULL,
-                        NULL,
+                        &buffer_attr,
                         &error))) {
             fprintf(stderr, __FILE__": pa_simple_new() failed: %s\n", pa_strerror(error));
             return;
@@ -86,7 +92,7 @@ ManglerAudio::open(uint32_t rate, bool type, uint32_t pcm_framesize) {/*{{{*/
                         "Talking In Ventrilo Channel",
                         &pulse_samplespec,
                         NULL,
-                        NULL,
+                        &buffer_attr,
                         &error))) {
             fprintf(stderr, __FILE__": pa_simple_new() failed: %s\n", pa_strerror(error));
             return;
