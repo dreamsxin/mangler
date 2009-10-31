@@ -735,7 +735,7 @@ _v3_put_0x52(uint8_t subtype, uint16_t codec, uint16_t codec_format, uint16_t se
     msgdata->subtype = subtype;
     msgdata->codec = codec;
     msgdata->codec_format = codec_format;
-    _v3_debug(V3_DEBUG_PACKET_PARSE, "user id is %d - send_type is %d (from %d)\n", msgdata->user_id, msgdata->send_type, send_type);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "user id is %d - send_type is %d (from %d)", msgdata->user_id, msgdata->send_type, send_type);
 
     /*
      * Now we allocate the actual msg->data for the network packet representation
@@ -752,7 +752,7 @@ _v3_put_0x52(uint8_t subtype, uint16_t codec, uint16_t codec_format, uint16_t se
             memcpy(msg->data, msgdata, sizeof(_v3_msg_0x52_0x00));
             break;
         case V3_AUDIO_DATA:
-            _v3_debug(V3_DEBUG_PACKET_PARSE, "send_type is %d\n", msgdata->send_type);
+            _v3_debug(V3_DEBUG_PACKET_PARSE, "send_type is %d", msgdata->send_type);
             memcpy(msg->data, msgdata, sizeof(_v3_msg_0x52_0x01_out));
             switch (codec) {
                 case 0:

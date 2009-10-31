@@ -63,7 +63,7 @@ ManglerAudio::open(uint32_t rate, bool type, uint32_t pcm_framesize) {/*{{{*/
                         "User Talking In Ventrilo Channel",
                         &pulse_samplespec,
                         NULL,
-                        &buffer_attr,
+                        NULL,
                         &error))) {
             fprintf(stderr, __FILE__": pa_simple_new() failed: %s\n", pa_strerror(error));
             return;
