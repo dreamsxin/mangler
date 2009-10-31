@@ -33,6 +33,7 @@
 #include "manglernetwork.h"
 #include "mangleraudio.h"
 #include "manglersettings.h"
+#include "manglerserverlist.h"
 #include "locale.h"
 
 extern "C" {

@@ -24,3 +24,6 @@
  * along with Mangler.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "mangler.h"
+#include "manglerserverlist.h"
+

@@ -44,15 +44,22 @@ ManglerAudio::open(uint32_t rate, bool type, uint32_t pcm_framesize) {/*{{{*/
     pulse_samplespec.format = PA_SAMPLE_S16LE;
     pulse_samplespec.rate = rate;
     pulse_samplespec.channels = 1;
+    pa_buffer_attr buffer_attr;
+    buffer_attr.maxlength = -1;
+    buffer_attr.tlength = -1;
+    buffer_attr.prebuf = -1;
+    buffer_attr.minreq = -1;
+    buffer_attr.fragsize = pcm_framesize;
 #endif
     if (type == AUDIO_OUTPUT) {
         //fprintf(stderr, "opening audio output\n");
 #ifdef HAVE_PULSE
+        //fprintf(stderr, "opening on pulse device %s\n", (char *)mangler->settings->config.outputDeviceName.c_str());
         if (!(pulse_stream = pa_simple_new(
                         NULL,
                         "Mangler",
                         PA_STREAM_PLAYBACK,
-                        (mangler->settings->config.outputDeviceName == "Default" ? NULL : (char *)mangler->settings->config.outputDeviceName.c_str()),
+                        (mangler->settings->config.outputDeviceName == "Default" || mangler->settings->config.outputDeviceName == "" ? NULL : (char *)mangler->settings->config.outputDeviceName.c_str()),
                         "User Talking In Ventrilo Channel",
                         &pulse_samplespec,
                         NULL,
@@ -73,17 +80,18 @@ ManglerAudio::open(uint32_t rate, bool type, uint32_t pcm_framesize) {/*{{{*/
             fprintf(stderr, "framesize not specified on input stream open\n");
             return;
         }
-        fprintf(stderr, "starting input with rate %d and framesize %d\n", rate, pcm_framesize);
+        //fprintf(stderr, "starting input with rate %d and framesize %d\n", rate, pcm_framesize);
 #ifdef HAVE_PULSE
+        //fprintf(stderr, "on pulse device %s\n", (char *)mangler->settings->config.outputDeviceName.c_str());
         if (!(pulse_stream = pa_simple_new(
                         NULL,
                         "Mangler",
                         PA_STREAM_RECORD,
-                        (mangler->settings->config.inputDeviceName == "Default" ? NULL : (char *)mangler->settings->config.inputDeviceName.c_str()),
+                        (mangler->settings->config.inputDeviceName == "Default" || mangler->settings->config.inputDeviceName == "" ? NULL : (char *)mangler->settings->config.inputDeviceName.c_str()),
                         "Talking In Ventrilo Channel",
                         &pulse_samplespec,
                         NULL,
-                        NULL,
+                        &buffer_attr,
                         &error))) {
             fprintf(stderr, __FILE__": pa_simple_new() failed: %s\n", pa_strerror(error));
             return;
@@ -115,9 +123,9 @@ ManglerAudio::input(void) {/*{{{*/
     int ctr;
     bool drop;
 
-    fprintf(stderr, "getting input\n");
+    //fprintf(stderr, "getting input\n");
     for (;;) {
-        fprintf(stderr, "main input iteration\n");
+        //fprintf(stderr, "main input iteration\n");
         if (stop_input == true) {
             fprintf(stderr, "stopping input\n");
             Glib::Thread::Exit();
@@ -133,9 +141,13 @@ ManglerAudio::input(void) {/*{{{*/
         ctr = 0;
         // As best as I can tell, we're supposed to send ~0.11 seconds of audio in each packet
         while (seconds < 0.115) {
+            if (pcm_framesize * ctr > rate * 0.115 * 2) {
+                //fprintf(stderr, "we have 0.115 seconds of audio in %d iterations\n", ctr);
+                break;
+            }
             //fprintf(stderr, "reallocating %d bytes of memory\n", pcm_framesize*(ctr+1));
             if ((pcm_framesize*(ctr+1)) > 16384) {
-                fprintf(stderr, "audio frames are greater than buffer size.  dropping audio frames\n");
+                fprintf(stderr, "audio frames are greater than buffer size.  dropping audio frames after %f seconds\n", seconds);
                 drop = true;
                 break;
             }
@@ -143,8 +155,9 @@ ManglerAudio::input(void) {/*{{{*/
             buf = (uint8_t *)realloc(buf, pcm_framesize*(ctr+1));
             //fprintf(stderr, "reading %d bytes of memory to %lu\n", pcm_framesize, (uint64_t) buf+(pcm_framesize*ctr));
 #ifdef HAVE_PULSE
+            //fprintf(stderr, "reading %d bytes from pulse source\n", pcm_framesize);
             if ((ret = pa_simple_read(pulse_stream, buf+(pcm_framesize*ctr), pcm_framesize, &error)) < 0) {
-                fprintf(stderr, __FILE__": pa_simple_read() failed: %s\n", pa_strerror(error));
+                //fprintf(stderr, __FILE__": pa_simple_read() failed: %s\n", pa_strerror(error));
                 pa_simple_free(pulse_stream);
                 stop_input = true;
                 Glib::Thread::Exit();
@@ -154,10 +167,11 @@ ManglerAudio::input(void) {/*{{{*/
             gettimeofday(&now, NULL);
             timeval_subtract(&diff, &now, &start);
             seconds = (float)diff.tv_sec + ((float)diff.tv_usec / (float)1000000);
+            //fprintf(stderr, "iteration after %f seconds\n", seconds);
             ctr++;
         }
         if (! drop) {
-            fprintf(stderr, "sending audio %d bytes of audio\n", ctr * pcm_framesize);
+            //fprintf(stderr, "sending audio %d bytes of audio\n", ctr * pcm_framesize);
             // TODO: hard coding user to channel for now, need to implement U2U
             v3_send_audio(V3_AUDIO_SENDTYPE_U2CCUR, rate, buf, ctr * pcm_framesize);
         }
@@ -167,7 +181,7 @@ ManglerAudio::input(void) {/*{{{*/
             break;
         }
     }
-    fprintf(stderr, "done with input\n");
+    //fprintf(stderr, "done with input\n");
     v3_stop_audio();
 #ifdef HAVE_PULSE
     pa_simple_free(pulse_stream);

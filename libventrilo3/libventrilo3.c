@@ -1023,7 +1023,7 @@ _v3_update_channel(v3_channel *channel) {/*{{{*/
         c->comment        = strdup(channel->comment);
         c->next           = NULL;
         v3_channel_list = c;
-        _v3_debug(V3_DEBUG_INFO, "added first channel %s",  c->name);
+        _v3_debug(V3_DEBUG_INFO, "added first channel %s (codec: %d/%d)",  c->name, c->channel_codec, c->channel_format);
     } else {
         for (c = v3_channel_list; c != NULL; c = c->next) {
             if (c->id == channel->id) {
@@ -1038,7 +1038,7 @@ _v3_update_channel(v3_channel *channel) {/*{{{*/
                 c->phonetic       = strdup(channel->phonetic);
                 c->comment        = strdup(channel->comment);
                 c->next = tmp;
-                _v3_debug(V3_DEBUG_INFO, "updated channel %s",  c->name);
+                _v3_debug(V3_DEBUG_INFO, "updated channel %s (codec %d/%d)",  c->name, c->channel_codec, c->channel_format);
                 _v3_unlock_channellist();
                 _v3_func_leave("_v3_update_channel");
                 return true;
@@ -1052,7 +1052,7 @@ _v3_update_channel(v3_channel *channel) {/*{{{*/
         c->phonetic       = strdup(channel->phonetic);
         c->comment        = strdup(channel->comment);
         c->next           = NULL;
-        _v3_debug(V3_DEBUG_INFO, "added channel %s",  c->name);
+        _v3_debug(V3_DEBUG_INFO, "added channel %s (codec %d/%d)",  c->name, c->channel_codec, c->channel_format);
     }
     _v3_unlock_channellist();
     _v3_func_leave("_v3_update_channel");
@@ -2037,6 +2037,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                             memset(ev, 0, sizeof(v3_event));
                             ev->type = (m->subtype == V3_ADD_USER ? V3_EVENT_USER_LOGIN : V3_EVENT_USER_MODIFY);
                             ev->user.id = m->user_list[ctr].id;
+                            ev->channel.id = m->user_list[ctr].channel;
                             _v3_debug(V3_DEBUG_INFO, "queuing event type %d for user %d", ev->type, ev->user.id);
                             v3_queue_event(ev);
                         }
@@ -2732,16 +2733,23 @@ v3_get_channel_codec(uint16_t channel_id) {/*{{{*/
     v3_channel *c;
     const v3_codec *codec_info;
 
+    _v3_func_enter("v3_get_channel_codec");
     if (channel_id == 0) { // the lobby is always the default codec
+        _v3_func_leave("v3_get_channel_codec");
         return v3_get_codec(v3_server.codec, v3_server.codec_format);
     }
     c = v3_get_channel(channel_id);
-    if (c->channel_codec == -1 || c->channel_format == -1) {
-        codec_info = v3_get_codec(c->channel_codec, c->channel_format);
-    } else {
+    _v3_debug(V3_DEBUG_INFO, "getting codec for %d/%d", c->channel_codec, c->channel_format);
+    if (c->channel_codec == 65535 || c->channel_format == 65535) {
+        _v3_debug(V3_DEBUG_INFO, "getting server default codec");
         codec_info = v3_get_codec(v3_server.codec, v3_server.codec_format);
+    } else {
+        _v3_debug(V3_DEBUG_INFO, "getting channel codec");
+        codec_info = v3_get_codec(c->channel_codec, c->channel_format);
     }
     v3_free_channel(c);
+    _v3_debug(V3_DEBUG_INFO, "channel codec is %d/%d %s", codec_info->codec, codec_info->format, codec_info->name);
+    _v3_func_leave("v3_get_channel_codec");
     return codec_info;
 }/*}}}*/
 

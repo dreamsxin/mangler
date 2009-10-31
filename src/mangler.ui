@@ -13,7 +13,6 @@
         <property name="spacing">3</property>
         <child>
           <object class="GtkMenuBar" id="menubar1">
-            <property name="visible">True</property>
             <child>
               <object class="GtkMenuItem" id="menuitem1">
                 <property name="visible">True</property>
@@ -202,7 +201,6 @@
                     <child>
                       <object class="GtkButton" id="commentButton">
                         <property name="label" translatable="yes">Comment</property>
-                        <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
                         <property name="use_underline">True</property>
@@ -215,7 +213,6 @@
                     <child>
                       <object class="GtkButton" id="chatButton">
                         <property name="label" translatable="yes">Chat</property>
-                        <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
                         <property name="use_underline">True</property>
@@ -228,7 +225,6 @@
                     <child>
                       <object class="GtkButton" id="bindingsButton">
                         <property name="label" translatable="yes">_Bindings</property>
-                        <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
                         <property name="use_underline">True</property>
@@ -241,7 +237,6 @@
                     <child>
                       <object class="GtkButton" id="adminButton">
                         <property name="label" translatable="yes">_Admin</property>
-                        <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
                         <property name="use_underline">True</property>
@@ -332,7 +327,7 @@
                             </child>
                             <child>
                               <object class="GtkButton" id="connectButton">
-                                <property name="label" translatable="yes">gtk-connect</property>
+                                <property name="label">gtk-connect</property>
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
                                 <property name="receives_default">True</property>
@@ -643,7 +638,7 @@
                 <property name="vscrollbar_policy">automatic</property>
                 <property name="shadow_type">in</property>
                 <child>
-                  <object class="GtkTreeView" id="serverListTreeView">
+                  <object class="GtkTreeView" id="serverListView">
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
                   </object>
@@ -1028,7 +1023,7 @@
     <property name="transient_for">manglerWindow</property>
     <property name="has_separator">False</property>
     <property name="program_name">Mangler</property>
-    <property name="version">0.0 (r160 2009/10/26)</property>
+    <property name="version">0.0 (SVN)</property>
     <property name="copyright" translatable="yes">Copyright 2009 by Eric Kilfoil</property>
     <property name="website">http://www.mangler.org</property>
     <property name="website_label" translatable="yes">http://www.mangler.org</property>
@@ -1036,7 +1031,7 @@
 
 Mangler is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public License along with Mangler.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</property>
+You should have received a copy of the GNU General Public License along with Mangler.  If not, see &lt;http://www.gnu.org/licenses&gt;.</property>
     <property name="authors">Eric Kilfoil
 Daniel Sloof
 
@@ -1265,7 +1260,7 @@ out the encryption
             <property name="layout_style">end</property>
             <child>
               <object class="GtkButton" id="qcConnectButton">
-                <property name="label" translatable="yes">gtk-connect</property>
+                <property name="label">gtk-connect</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
@@ -1280,7 +1275,7 @@ out the encryption
             </child>
             <child>
               <object class="GtkButton" id="qcCancelButton">
-                <property name="label" translatable="yes">gtk-cancel</property>
+                <property name="label">gtk-cancel</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
@@ -1943,7 +1938,7 @@ out the encryption
             <property name="layout_style">end</property>
             <child>
               <object class="GtkButton" id="passwordCancelButton">
-                <property name="label" translatable="yes">gtk-cancel</property>
+                <property name="label">gtk-cancel</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
@@ -1957,7 +1952,7 @@ out the encryption
             </child>
             <child>
               <object class="GtkButton" id="passwordOkButton">
-                <property name="label" translatable="yes">gtk-ok</property>
+                <property name="label">gtk-ok</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="can_default">True</property>
@@ -2048,7 +2043,7 @@ out the encryption
                 </child>
                 <child>
                   <object class="GtkButton" id="motdOkButton">
-                    <property name="label" translatable="yes">gtk-ok</property>
+                    <property name="label">gtk-ok</property>
                     <property name="width_request">75</property>
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>

@@ -58,6 +58,7 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
     icons.insert(std::make_pair("tray_icon_red",                Gdk::Pixbuf::create_from_inline(-1, tray_icon_red               )));
     icons.insert(std::make_pair("tray_icon_green",              Gdk::Pixbuf::create_from_inline(-1, tray_icon_green             )));
     icons.insert(std::make_pair("tray_icon_yellow",             Gdk::Pixbuf::create_from_inline(-1, tray_icon_yellow            )));
+    icons.insert(std::make_pair("tray_icon_grey",               Gdk::Pixbuf::create_from_inline(-1, tray_icon_grey              )));
 
     icons.insert(std::make_pair("user_icon_xmit",               Gdk::Pixbuf::create_from_inline(-1, user_icon_xmit              )));
     icons.insert(std::make_pair("user_icon_noxmit",             Gdk::Pixbuf::create_from_inline(-1, user_icon_noxmit            )));
@@ -152,12 +153,16 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
     // Create settings object, load the configuration file, and apply.  If the
     // user has PTT key/mouse enabled, start a timer here
     settings = new ManglerSettings(builder);
+    isTransmittingButton = 0;
+    isTransmittingMouse = 0;
+    isTransmittingKey = 0;
+    isTransmitting = 0;
     if (settings->config.PushToTalkKeyEnabled) {
         Glib::signal_timeout().connect(sigc::mem_fun(this, &Mangler::checkPushToTalkKeys), 100);
     }
 
     // Statusbar Icon
-    statusIcon = Gtk::StatusIcon::create(icons["tray_icon"]);
+    statusIcon = Gtk::StatusIcon::create(icons["tray_icon_grey"]);
 
 }/*}}}*/
 
@@ -172,7 +177,7 @@ void Mangler::quickConnectButton_clicked_cb(void) {/*{{{*/
     dialog->set_icon(icons["tray_icon"]);
 
     builder->get_widget("qcServerName", textbox);
-    textbox->set_text(settings->config.qc_lastserver.name);
+    textbox->set_text(settings->config.qc_lastserver.hostname);
 
     builder->get_widget("qcPort", textbox);
     textbox->set_text(settings->config.qc_lastserver.port);
@@ -183,6 +188,13 @@ void Mangler::quickConnectButton_clicked_cb(void) {/*{{{*/
     builder->get_widget("qcPassword", textbox);
     textbox->set_text(settings->config.qc_lastserver.password);
 
+    if (v3_is_loggedin()) {
+        builder->get_widget("qcConnectButton", button);
+        button->set_sensitive(false);
+    } else {
+        builder->get_widget("qcConnectButton", button);
+        button->set_sensitive(true);
+    }
     dialog->run();
     dialog->hide();
 
@@ -205,30 +217,30 @@ void Mangler::connectButton_clicked_cb(void) {/*{{{*/
     return;
 }/*}}}*/
 void Mangler::commentButton_clicked_cb(void) {/*{{{*/
-    fprintf(stderr, "comment button clicked\n");
+    //fprintf(stderr, "comment button clicked\n");
 }/*}}}*/
 void Mangler::chatButton_clicked_cb(void) {/*{{{*/
-    fprintf(stderr, "chat button clicked\n");
+    //fprintf(stderr, "chat button clicked\n");
 }/*}}}*/
 void Mangler::bindingsButton_clicked_cb(void) {/*{{{*/
-    fprintf(stderr, "bindings button clicked\n");
+    //fprintf(stderr, "bindings button clicked\n");
     static Glib::ustring color = "red";
     if (color == "red") {
-        statusIcon = Gtk::StatusIcon::create(icons["tray_icon_green"]);
         color = "green";
+        statusIcon->set(icons["tray_icon_green"]);
     } else if (color == "green") {
-        statusIcon = Gtk::StatusIcon::create(icons["tray_icon_blue"]);
         color = "blue";
+        statusIcon->set(icons["tray_icon_blue"]);
     } else if (color == "blue") {
-        statusIcon = Gtk::StatusIcon::create(icons["tray_icon_yellow"]);
         color = "yellow";
+        statusIcon->set(icons["tray_icon_yellow"]);
     } else if (color == "yellow") {
-        statusIcon = Gtk::StatusIcon::create(icons["tray_icon_red"]);
         color = "red";
+        statusIcon->set(icons["tray_icon_red"]);
     }
 }/*}}}*/
 void Mangler::adminButton_clicked_cb(void) {/*{{{*/
-    fprintf(stderr, "admin button clicked\n");
+    //fprintf(stderr, "admin button clicked\n");
 }/*}}}*/
 void Mangler::settingsButton_clicked_cb(void) {/*{{{*/
     settings->settingsWindow->show();
@@ -241,7 +253,7 @@ void Mangler::aboutButton_clicked_cb(void) {/*{{{*/
     aboutdialog->hide();
 }/*}}}*/
 void Mangler::xmitButton_pressed_cb(void) {/*{{{*/
-    fprintf(stderr, "xmit clicked\n");
+    //fprintf(stderr, "xmit clicked\n");
     isTransmittingButton = true;
     startTransmit();
 }/*}}}*/
@@ -266,22 +278,21 @@ void Mangler::startTransmit(void) {/*{{{*/
     if (isTransmitting) {
         return;
     }
+    statusIcon->set(icons["tray_icon_green"]);
     isTransmitting = true;
     channelTree->userIsTalking(v3_get_user_id(), true);
     codec = v3_get_channel_codec(user->channel);
-    fprintf(stderr, "channel %d codec rate: %d at sample size %d\n", user->channel, codec->rate, codec->samplesize);
+    //fprintf(stderr, "channel %d codec rate: %d at sample size %d\n", user->channel, codec->rate, codec->samplesize);
     v3_start_audio(V3_AUDIO_SENDTYPE_U2CCUR);
     v3_free_user(user);
     inputAudio = new ManglerAudio();
     inputAudio->open(codec->rate, AUDIO_INPUT, codec->samplesize);
 }/*}}}*/
 void Mangler::stopTransmit(void) {/*{{{*/
-    if (! v3_is_loggedin()) {
-        return;
-    }
     if (!isTransmitting) {
         return;
     }
+    statusIcon->set(icons["tray_icon_red"]);
     channelTree->userIsTalking(v3_get_user_id(), false);
     isTransmitting = false;
     if (inputAudio) {
@@ -303,7 +314,7 @@ void Mangler::qcConnectButton_clicked_cb(void) {/*{{{*/
     builder->get_widget("qcPassword", textbox);
     Glib::ustring password = textbox->get_text();
     fprintf(stderr, "connecting to: %s:%s\n", server.c_str(), port.c_str());
-    settings->config.qc_lastserver.name = server;
+    settings->config.qc_lastserver.hostname = server;
     settings->config.qc_lastserver.port = port;
     settings->config.qc_lastserver.username = username;
     settings->config.qc_lastserver.password = password;
@@ -349,7 +360,7 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                 progressbar->set_fraction(ev->status.percent/(float)100);
                 statusbar->pop();
                 statusbar->push(ev->status.message);
-                fprintf(stderr, "got event type %d: %d %s\n", ev->type, ev->status.percent, ev->status.message);
+                //fprintf(stderr, "got event type %d: %d %s\n", ev->type, ev->status.percent, ev->status.message);
                 break;/*}}}*/
             case V3_EVENT_USER_LOGIN:/*{{{*/
                 u = v3_get_user(ev->user.id);
@@ -357,7 +368,7 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                     fprintf(stderr, "couldn't retreive user id %d\n", ev->user.id);
                     break;
                 }
-                fprintf(stderr, "adding user id %d: %s to channel %d\n", ev->user.id, u->name, ev->channel.id);
+                //fprintf(stderr, "adding user id %d: %s to channel %d\n", ev->user.id, u->name, ev->channel.id);
                 channelTree->addUser(
                         (uint32_t)u->id,
                         (uint32_t)ev->channel.id,
@@ -375,7 +386,11 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                     fprintf(stderr, "couldn't retreive user id %d\n", ev->user.id);
                     break;
                 }
-                fprintf(stderr, "updating user id %d: %s in channel %d\n", ev->user.id, u->name, ev->channel.id);
+                // we cannot remove the lobby user, so bail out when the server comment is updated. See ticket #30
+                if (u->id == 0) {
+                    break;
+                }
+                //fprintf(stderr, "updating user id %d: %s in channel %d\n", ev->user.id, u->name, ev->channel.id);
                 channelTree->removeUser(ev->user.id);
                 channelTree->addUser(
                         (uint32_t)u->id,
@@ -390,12 +405,12 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                 break;/*}}}*/
             case V3_EVENT_USER_LOGOUT:/*{{{*/
                 // can't get any user info... it's already gone by this point
-                fprintf(stderr, "removing user id %d\n", ev->user.id);
+                //fprintf(stderr, "removing user id %d\n", ev->user.id);
                 channelTree->removeUser(ev->user.id);
                 break;/*}}}*/
             case V3_EVENT_CHAN_REMOVE:/*{{{*/
                 // can't get any channel info... it's already gone by this point
-                fprintf(stderr, "removing channel id %d\n", ev->channel.id);
+                //fprintf(stderr, "removing channel id %d\n", ev->channel.id);
                 channelTree->removeChannel(ev->channel.id);
                 break;/*}}}*/
             case V3_EVENT_LOGIN_COMPLETE:/*{{{*/
@@ -414,14 +429,13 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                     break;;
                 }
                 if (ev->user.id == v3_get_user_id()) {
-                    // we're moving channels...
-                    // update the codec label
+                    // we're moving channels... update the codec label
                     const v3_codec *codec_info;
                     codec_info = v3_get_channel_codec(ev->channel.id);
                     builder->get_widget("codecLabel", label);
                     label->set_text(codec_info->name);
                 }
-                fprintf(stderr, "moving user id %d to channel id %d\n", ev->user.id, ev->channel.id);
+                //fprintf(stderr, "moving user id %d to channel id %d\n", ev->user.id, ev->channel.id);
                 channelTree->removeUser((uint32_t)ev->user.id);
                 channelTree->addUser(
                         (uint32_t)u->id,
@@ -476,7 +490,7 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                 }
                 break;/*}}}*/
             case V3_EVENT_USER_TALK_END:/*{{{*/
-                fprintf(stderr, "user %d stopped talking\n", ev->user.id);
+                //fprintf(stderr, "user %d stopped talking\n", ev->user.id);
                 channelTree->userIsTalking(ev->user.id, false);
                 // TODO: this is bad, there must be a flag in the last audio
                 // packet saying that it's the last one.  Need to figure out
@@ -520,6 +534,7 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                     progressbar->set_fraction(0);
                     statusbar->pop();
                     statusbar->push("Not connected");
+                    mangler->statusIcon->set(icons["tray_icon_grey"]);
                 }
                 break;/*}}}*/
             default:
@@ -595,7 +610,7 @@ main (int argc, char *argv[])
         options.uifromfile = false;
     }
     if ((locale = setlocale (LC_ALL, ""))) {
-              fprintf(stderr, "initialized locale: %s\n", locale);
+              //fprintf(stderr, "initialized locale: %s\n", locale);
     } else {
               fprintf(stderr, "Can't set the specified locale! " "Check LANG, LC_CTYPE, LC_ALL.\n");
               return 1;
