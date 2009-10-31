@@ -290,9 +290,6 @@ void Mangler::startTransmit(void) {/*{{{*/
     inputAudio->open(codec->rate, AUDIO_INPUT, codec->samplesize);
 }/*}}}*/
 void Mangler::stopTransmit(void) {/*{{{*/
-    if (! v3_is_loggedin()) {
-        return;
-    }
     if (!isTransmitting) {
         return;
     }
