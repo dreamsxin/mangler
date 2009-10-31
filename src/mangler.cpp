@@ -189,6 +189,13 @@ void Mangler::quickConnectButton_clicked_cb(void) {/*{{{*/
     builder->get_widget("qcPassword", textbox);
     textbox->set_text(settings->config.qc_lastserver.password);
 
+    if (v3_is_loggedin()) {
+        builder->get_widget("qcConnectButton", button);
+        button->set_sensitive(false);
+    } else {
+        builder->get_widget("qcConnectButton", button);
+        button->set_sensitive(true);
+    }
     dialog->run();
     dialog->hide();
 
