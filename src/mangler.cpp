@@ -53,12 +53,13 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
     icons.insert(std::make_pair("logo2",                        Gdk::Pixbuf::create_from_inline(-1, logo2                       )));
     icons.insert(std::make_pair("logo3",                        Gdk::Pixbuf::create_from_inline(-1, logo3                       )));
 
-    icons.insert(std::make_pair("tray_icon",                    Gdk::Pixbuf::create_from_inline(-1, tray_icon_blue              )));
+    icons.insert(std::make_pair("tray_icon",                    Gdk::Pixbuf::create_from_inline(-1, tray_icon_purple            )));
     icons.insert(std::make_pair("tray_icon_blue",               Gdk::Pixbuf::create_from_inline(-1, tray_icon_blue              )));
     icons.insert(std::make_pair("tray_icon_red",                Gdk::Pixbuf::create_from_inline(-1, tray_icon_red               )));
     icons.insert(std::make_pair("tray_icon_green",              Gdk::Pixbuf::create_from_inline(-1, tray_icon_green             )));
     icons.insert(std::make_pair("tray_icon_yellow",             Gdk::Pixbuf::create_from_inline(-1, tray_icon_yellow            )));
     icons.insert(std::make_pair("tray_icon_grey",               Gdk::Pixbuf::create_from_inline(-1, tray_icon_grey              )));
+    icons.insert(std::make_pair("tray_icon_purple",             Gdk::Pixbuf::create_from_inline(-1, tray_icon_purple            )));
 
     icons.insert(std::make_pair("user_icon_xmit",               Gdk::Pixbuf::create_from_inline(-1, user_icon_xmit              )));
     icons.insert(std::make_pair("user_icon_noxmit",             Gdk::Pixbuf::create_from_inline(-1, user_icon_noxmit            )));
@@ -528,12 +529,18 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                     button->set_label("gtk-connect");
                     builder->get_widget("progressbar", progressbar);
                     builder->get_widget("statusbar", statusbar);
-                    builder->get_widget("serverTabLabel", label);
-                    label->set_label("Not Connected");
                     progressbar->set_text("");
                     progressbar->set_fraction(0);
                     statusbar->pop();
                     statusbar->push("Not connected");
+                    builder->get_widget("serverTabLabel", label);
+                    label->set_label("Not Connected");
+                    builder->get_widget("pingLabel", label);
+                    label->set_label("N/A");
+                    builder->get_widget("userCountLabel", label);
+                    label->set_label("N/A");
+                    builder->get_widget("codecLabel", label);
+                    label->set_label("N/A");
                     mangler->statusIcon->set(icons["tray_icon_grey"]);
                 }
                 break;/*}}}*/
