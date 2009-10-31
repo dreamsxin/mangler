@@ -183,7 +183,7 @@ void ManglerConfig::load() {/*{{{*/
     PushToTalkMouseValue        = get("PushToTalkMouseValue");
     inputDeviceName             = get("inputDeviceName");
     outputDeviceName            = get("outputDeviceName");
-    qc_lastserver.name          = get("qc_lastserver.name");
+    qc_lastserver.hostname      = get("qc_lastserver.hostname");
     qc_lastserver.port          = get("qc_lastserver.port");
     qc_lastserver.username      = get("qc_lastserver.username");
     qc_lastserver.password      = get("qc_lastserver.password");
