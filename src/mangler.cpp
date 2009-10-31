@@ -209,13 +209,13 @@ void Mangler::connectButton_clicked_cb(void) {/*{{{*/
     return;
 }/*}}}*/
 void Mangler::commentButton_clicked_cb(void) {/*{{{*/
-    fprintf(stderr, "comment button clicked\n");
+    //fprintf(stderr, "comment button clicked\n");
 }/*}}}*/
 void Mangler::chatButton_clicked_cb(void) {/*{{{*/
-    fprintf(stderr, "chat button clicked\n");
+    //fprintf(stderr, "chat button clicked\n");
 }/*}}}*/
 void Mangler::bindingsButton_clicked_cb(void) {/*{{{*/
-    fprintf(stderr, "bindings button clicked\n");
+    //fprintf(stderr, "bindings button clicked\n");
     static Glib::ustring color = "red";
     if (color == "red") {
         statusIcon = Gtk::StatusIcon::create(icons["tray_icon_green"]);
@@ -232,7 +232,7 @@ void Mangler::bindingsButton_clicked_cb(void) {/*{{{*/
     }
 }/*}}}*/
 void Mangler::adminButton_clicked_cb(void) {/*{{{*/
-    fprintf(stderr, "admin button clicked\n");
+    //fprintf(stderr, "admin button clicked\n");
 }/*}}}*/
 void Mangler::settingsButton_clicked_cb(void) {/*{{{*/
     settings->settingsWindow->show();
@@ -245,7 +245,7 @@ void Mangler::aboutButton_clicked_cb(void) {/*{{{*/
     aboutdialog->hide();
 }/*}}}*/
 void Mangler::xmitButton_pressed_cb(void) {/*{{{*/
-    fprintf(stderr, "xmit clicked\n");
+    //fprintf(stderr, "xmit clicked\n");
     isTransmittingButton = true;
     startTransmit();
 }/*}}}*/
@@ -273,7 +273,7 @@ void Mangler::startTransmit(void) {/*{{{*/
     isTransmitting = true;
     channelTree->userIsTalking(v3_get_user_id(), true);
     codec = v3_get_channel_codec(user->channel);
-    fprintf(stderr, "channel %d codec rate: %d at sample size %d\n", user->channel, codec->rate, codec->samplesize);
+    //fprintf(stderr, "channel %d codec rate: %d at sample size %d\n", user->channel, codec->rate, codec->samplesize);
     v3_start_audio(V3_AUDIO_SENDTYPE_U2CCUR);
     v3_free_user(user);
     inputAudio = new ManglerAudio();
@@ -353,7 +353,7 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                 progressbar->set_fraction(ev->status.percent/(float)100);
                 statusbar->pop();
                 statusbar->push(ev->status.message);
-                fprintf(stderr, "got event type %d: %d %s\n", ev->type, ev->status.percent, ev->status.message);
+                //fprintf(stderr, "got event type %d: %d %s\n", ev->type, ev->status.percent, ev->status.message);
                 break;/*}}}*/
             case V3_EVENT_USER_LOGIN:/*{{{*/
                 u = v3_get_user(ev->user.id);
@@ -361,7 +361,7 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                     fprintf(stderr, "couldn't retreive user id %d\n", ev->user.id);
                     break;
                 }
-                fprintf(stderr, "adding user id %d: %s to channel %d\n", ev->user.id, u->name, ev->channel.id);
+                //fprintf(stderr, "adding user id %d: %s to channel %d\n", ev->user.id, u->name, ev->channel.id);
                 channelTree->addUser(
                         (uint32_t)u->id,
                         (uint32_t)ev->channel.id,
@@ -379,7 +379,11 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                     fprintf(stderr, "couldn't retreive user id %d\n", ev->user.id);
                     break;
                 }
-                fprintf(stderr, "updating user id %d: %s in channel %d\n", ev->user.id, u->name, ev->channel.id);
+                // we cannot remove the lobby user, so bail out when the server comment is updated. See ticket #30
+                if (u->id == 0) {
+                    break;
+                }
+                //fprintf(stderr, "updating user id %d: %s in channel %d\n", ev->user.id, u->name, ev->channel.id);
                 channelTree->removeUser(ev->user.id);
                 channelTree->addUser(
                         (uint32_t)u->id,
@@ -394,12 +398,12 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                 break;/*}}}*/
             case V3_EVENT_USER_LOGOUT:/*{{{*/
                 // can't get any user info... it's already gone by this point
-                fprintf(stderr, "removing user id %d\n", ev->user.id);
+                //fprintf(stderr, "removing user id %d\n", ev->user.id);
                 channelTree->removeUser(ev->user.id);
                 break;/*}}}*/
             case V3_EVENT_CHAN_REMOVE:/*{{{*/
                 // can't get any channel info... it's already gone by this point
-                fprintf(stderr, "removing channel id %d\n", ev->channel.id);
+                //fprintf(stderr, "removing channel id %d\n", ev->channel.id);
                 channelTree->removeChannel(ev->channel.id);
                 break;/*}}}*/
             case V3_EVENT_LOGIN_COMPLETE:/*{{{*/
@@ -418,14 +422,13 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                     break;;
                 }
                 if (ev->user.id == v3_get_user_id()) {
-                    // we're moving channels...
-                    // update the codec label
+                    // we're moving channels... update the codec label
                     const v3_codec *codec_info;
                     codec_info = v3_get_channel_codec(ev->channel.id);
                     builder->get_widget("codecLabel", label);
                     label->set_text(codec_info->name);
                 }
-                fprintf(stderr, "moving user id %d to channel id %d\n", ev->user.id, ev->channel.id);
+                //fprintf(stderr, "moving user id %d to channel id %d\n", ev->user.id, ev->channel.id);
                 channelTree->removeUser((uint32_t)ev->user.id);
                 channelTree->addUser(
                         (uint32_t)u->id,
@@ -480,7 +483,7 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                 }
                 break;/*}}}*/
             case V3_EVENT_USER_TALK_END:/*{{{*/
-                fprintf(stderr, "user %d stopped talking\n", ev->user.id);
+                //fprintf(stderr, "user %d stopped talking\n", ev->user.id);
                 channelTree->userIsTalking(ev->user.id, false);
                 // TODO: this is bad, there must be a flag in the last audio
                 // packet saying that it's the last one.  Need to figure out
@@ -599,7 +602,7 @@ main (int argc, char *argv[])
         options.uifromfile = false;
     }
     if ((locale = setlocale (LC_ALL, ""))) {
-              fprintf(stderr, "initialized locale: %s\n", locale);
+              //fprintf(stderr, "initialized locale: %s\n", locale);
     } else {
               fprintf(stderr, "Can't set the specified locale! " "Check LANG, LC_CTYPE, LC_ALL.\n");
               return 1;

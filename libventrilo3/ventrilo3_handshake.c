@@ -235,7 +235,7 @@ int ventrilo3_send_udp(int sd, int vnum, u32 ip, u16 port, u8 *data, int len) {
     peer.sin_port        = htons(port);
     peer.sin_family      = AF_INET;
 
-    printf(". %s:%hu\n", inet_ntoa(peer.sin_addr), ntohs(peer.sin_port));
+    //printf(". %s:%hu\n", inet_ntoa(peer.sin_addr), ntohs(peer.sin_port));
     sendto(sd, data, len, 0, (struct sockaddr *)&peer, sizeof(struct sockaddr_in));
     return(0);
 }
