@@ -97,6 +97,8 @@ class Mangler
         void aboutButton_clicked_cb(void);
         void xmitButton_pressed_cb(void);
         void xmitButton_released_cb(void);
+        void settingsIcon_activate_cb(void);
+
 
         bool getNetworkEvent(void);
         bool checkPushToTalkKeys(void);
