@@ -82,7 +82,6 @@ void ManglerSettings::applySettings(void) {/*{{{*/
     builder->get_widget("settingsPTTMouseValueLabel", label);
     config.PushToTalkMouseValue = label->get_text();
 
-
     // Audio Devices
     Gtk::TreeModel::iterator iter;
     iter = inputDeviceComboBox->get_active();

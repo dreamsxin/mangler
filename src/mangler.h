@@ -102,6 +102,7 @@ class Mangler
 
         bool getNetworkEvent(void);
         bool checkPushToTalkKeys(void);
+        bool checkPushToTalkMouse(void);
 
         void startTransmit(void);
         void stopTransmit(void);

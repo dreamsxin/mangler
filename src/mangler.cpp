@@ -158,9 +158,8 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
     isTransmittingMouse = 0;
     isTransmittingKey = 0;
     isTransmitting = 0;
-    if (settings->config.PushToTalkKeyEnabled) {
-        Glib::signal_timeout().connect(sigc::mem_fun(this, &Mangler::checkPushToTalkKeys), 100);
-    }
+    Glib::signal_timeout().connect(sigc::mem_fun(this, &Mangler::checkPushToTalkKeys), 100);
+    Glib::signal_timeout().connect(sigc::mem_fun(this, &Mangler::checkPushToTalkMouse), 100);
 
     // Statusbar Icon
     statusIcon = Gtk::StatusIcon::create(icons["tray_icon_grey"]);
@@ -564,12 +563,18 @@ bool Mangler::checkPushToTalkKeys(void) {/*{{{*/
     vector<int>::iterator i;
     bool        ptt_on = true;;
 
+    if (! settings->config.PushToTalkKeyEnabled) {
+        isTransmittingKey = false;
+        stopTransmit();
+        return true;
+    }
     XQueryKeymap(GDK_WINDOW_XDISPLAY(rootwin), pressed_keys);
     for (   i = settings->config.PushToTalkXKeyCodes.begin();
             i < settings->config.PushToTalkXKeyCodes.end();
             i++) {
         if (!((pressed_keys[*i >> 3] >> (*i & 0x07)) & 0x01)) {
             ptt_on = false;
+            break;
         }
     }
     if (ptt_on) {
@@ -578,6 +583,47 @@ bool Mangler::checkPushToTalkKeys(void) {/*{{{*/
     } else {
         isTransmittingKey = false;
         if (! isTransmittingButton && ! isTransmittingMouse) {
+            stopTransmit();
+        }
+    }
+    return(true);
+
+}/*}}}*/
+bool Mangler::checkPushToTalkMouse(void) {/*{{{*/
+    GdkWindow   *rootwin = gdk_get_default_root_window();
+
+    Window root_return, child_return;
+    int root_x_return, root_y_return;
+    int win_x_return, win_y_return;
+    unsigned int mask_return;
+
+    bool        ptt_on = false;
+
+    if (! settings->config.PushToTalkMouseEnabled) {
+        isTransmittingKey = false;
+        stopTransmit();
+        return true;
+    }
+    XQueryPointer(GDK_WINDOW_XDISPLAY(rootwin), GDK_ROOT_WINDOW(), &root_return, &child_return, &root_x_return, &root_y_return, &win_x_return, &win_y_return, &mask_return);
+    if (settings->config.PushToTalkMouseValue == "Button1" &&  mask_return & Button1Mask) {
+        ptt_on = true;
+    } else if (settings->config.PushToTalkMouseValue == "Button2" &&  mask_return & Button2Mask) {
+        ptt_on = true;
+    } else if (settings->config.PushToTalkMouseValue == "Button3" &&  mask_return & Button3Mask) {
+        ptt_on = true;
+    } else if (settings->config.PushToTalkMouseValue == "Button4" &&  mask_return & Button4Mask) {
+        ptt_on = true;
+    } else if (settings->config.PushToTalkMouseValue == "Button5" &&  mask_return & Button5Mask) {
+        ptt_on = true;
+    } else {
+        ptt_on = false;
+    }
+    if (ptt_on) {
+        isTransmittingMouse = true;
+        startTransmit();
+    } else {
+        isTransmittingMouse = false;
+        if (! isTransmittingButton && ! isTransmittingKey) {
             stopTransmit();
         }
     }
