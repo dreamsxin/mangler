@@ -430,9 +430,6 @@ ManglerSettings::settingsPTTMouseDetect(void) {/*{{{*/
             usleep(100000);
         }
         XNextEvent(GDK_WINDOW_XDISPLAY(rootwin), &ev);
-        if (ev.type != MotionNotify) {
-            printf("got an event: ");
-        }
         switch (ev.type) {
             case ButtonPress:
                 snprintf(buttonname, 31, "Button%d", ev.xbutton.button);
