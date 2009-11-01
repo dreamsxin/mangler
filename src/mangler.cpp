@@ -565,7 +565,6 @@ bool Mangler::checkPushToTalkKeys(void) {/*{{{*/
 
     if (! settings->config.PushToTalkKeyEnabled) {
         isTransmittingKey = false;
-        stopTransmit();
         return true;
     }
     XQueryKeymap(GDK_WINDOW_XDISPLAY(rootwin), pressed_keys);
@@ -601,7 +600,6 @@ bool Mangler::checkPushToTalkMouse(void) {/*{{{*/
 
     if (! settings->config.PushToTalkMouseEnabled) {
         isTransmittingKey = false;
-        stopTransmit();
         return true;
     }
     XQueryPointer(GDK_WINDOW_XDISPLAY(rootwin), GDK_ROOT_WINDOW(), &root_return, &child_return, &root_x_return, &root_y_return, &win_x_return, &win_y_return, &mask_return);
