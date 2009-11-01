@@ -355,16 +355,21 @@ void ManglerSettings::settingsEnablePTTMouseCheckButton_toggled_cb(void) {/*{{{*
     }
 }/*}}}*/
 void ManglerSettings::settingsPTTMouseButton_clicked_cb(void) {/*{{{*/
-    builder->get_widget("settingsPTTMouseButton", button);
+    GdkWindow   *rootwin = gdk_get_default_root_window();
+
     isDetectingMouse = true;
-    button->set_label("Done");
+    builder->get_widget("settingsPTTMouseValueLabel", label);
+    label->set_markup("<span color='red'>&lt;Click the mouse button you wish to use&gt;</span>");
+    builder->get_widget("settingsPTTMouseButton", button);
+    button->set_sensitive(false);
     builder->get_widget("settingsCancelButton", button);
     button->set_sensitive(false);
     builder->get_widget("settingsApplyButton", button);
     button->set_sensitive(false);
     builder->get_widget("settingsOkButton", button);
     button->set_sensitive(false);
-    // at this point, we need to grab the mouse and wait for a mouse button event
+    Glib::signal_timeout().connect( sigc::mem_fun(*this, &ManglerSettings::settingsPTTMouseDetect), 100 );
+
 }/*}}}*/
 
 bool
@@ -403,3 +408,68 @@ ManglerSettings::settingsPTTKeyDetect(void) {/*{{{*/
     return(true);
 }/*}}}*/
 
+bool
+ManglerSettings::settingsPTTMouseDetect(void) {/*{{{*/
+    GdkWindow   *rootwin = gdk_get_default_root_window();
+    char buttonname[32];
+    static bool grabbed = false;
+    int flag = 0;
+    int x, y;
+    XEvent ev;
+
+
+    // TODO: window close event needs to set isDetectingKey
+    if (!isDetectingMouse) {
+        return false;
+    }
+    if (! grabbed) {
+        XGrabPointer(GDK_WINDOW_XDISPLAY(rootwin), GDK_ROOT_WINDOW(), False, ButtonPress, GrabModeAsync, GrabModeAsync, None, None, CurrentTime);
+        grabbed = true;
+    }
+    while (flag == 0) {
+        while (!XPending(GDK_WINDOW_XDISPLAY(rootwin))) {
+            usleep(100000);
+        }
+        XNextEvent(GDK_WINDOW_XDISPLAY(rootwin), &ev);
+        if (ev.type != MotionNotify) {
+            printf("got an event: ");
+        }
+        switch (ev.type) {
+            case ButtonPress:
+                snprintf(buttonname, 31, "Button%d", ev.xbutton.button);
+                config.PushToTalkMouseValue = buttonname;
+                flag = 1;
+                XUngrabPointer(GDK_WINDOW_XDISPLAY(rootwin), CurrentTime);
+                grabbed = false;
+                isDetectingMouse = false;
+                x = ev.xbutton.x_root;
+                y = ev.xbutton.y_root;
+                break;
+            case MotionNotify:
+                break;
+            default:
+                break;
+        }
+        XAllowEvents (GDK_WINDOW_XDISPLAY(rootwin), AsyncBoth, CurrentTime);
+    }
+    isDetectingMouse = false;
+    builder->get_widget("settingsPTTMouseValueLabel", label);
+    label->set_markup(config.PushToTalkMouseValue);
+
+    builder->get_widget("settingsCancelButton", button);
+    button->set_sensitive(true);
+
+    builder->get_widget("settingsApplyButton", button);
+    button->set_sensitive(true);
+
+    builder->get_widget("settingsOkButton", button);
+    button->set_sensitive(true);
+
+    builder->get_widget("settingsOkButton", button);
+    button->set_sensitive(true);
+
+    builder->get_widget("settingsPTTMouseButton", button);
+    button->set_sensitive(true);
+
+    return(true);
+}/*}}}*/
