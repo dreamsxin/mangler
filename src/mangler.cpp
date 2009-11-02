@@ -507,6 +507,7 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                 break;/*}}}*/
             case V3_EVENT_PLAY_AUDIO:/*{{{*/
                 // Open a stream if we don't have one for this user
+                channelTree->userIsTalking(ev->user.id, true);
                 if (!outputAudio[ev->user.id]) {
                     outputAudio[ev->user.id] = new ManglerAudio();
                     outputAudio[ev->user.id]->open(ev->pcm.rate, AUDIO_OUTPUT);

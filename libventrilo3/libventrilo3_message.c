@@ -715,7 +715,7 @@ _v3_put_0x52(uint8_t subtype, uint16_t codec, uint16_t codec_format, uint16_t se
             if (codec == 0) {
                 msgdata->unknown_2 = length / 65 * 640 + 1000;
             } else if (codec == 3) {
-                msgdata->unknown_2 = 9280;
+                msgdata->unknown_2 = 10240;
             }
             msgdata->unknown_4 = htons(1);
             msgdata->unknown_5 = htons(2);
