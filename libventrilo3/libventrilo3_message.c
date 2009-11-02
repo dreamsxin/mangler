@@ -633,6 +633,10 @@ _v3_get_0x52(_v3_net_message *msg) {/*{{{*/
                             memcpy(data, msg->data+28, sizeof(uint16_t) * 2); // copy the audio count and frame size values
                             data->frame_count = ntohs(data->frame_count); // for some reason, these are big endian
                             data->sample_size  = ntohs(data->sample_size);  // convert them to host byte order
+                            if (data->frame_count == 0) {
+                                _v3_debug(V3_DEBUG_PACKET_PARSE, "received audio packet with zero frames");
+                                return false;
+                            }
                             _v3_debug(V3_DEBUG_PACKET_PARSE, "speex audio count: %d (%d byte frames)", data->frame_count, msub->data_length / data->frame_count);
                             _v3_debug(V3_DEBUG_PACKET_PARSE, "allocating %d bytes for pointers", data->frame_count * sizeof(uint8_t *));
                             data->frames = malloc(data->frame_count * sizeof(uint8_t *));
