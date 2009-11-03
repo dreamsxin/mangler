@@ -47,6 +47,8 @@ PKG_CHECK_MODULES(speex, speex >= 1.2)
 AC_SUBST(speex_CFLAGS)
 AC_SUBST(speex_LIBS)
 
+PKG_CHECK_MODULES(gtk, gtk+-2.0 >= 2.16.0)
+
 PKG_CHECK_MODULES(gtkmm, gtkmm-2.4 >= 1.3.3)
 AC_SUBST(gtkmm_CFLAGS)
 AC_SUBST(gtkmm_LIBS)
@@ -58,6 +60,8 @@ AC_SUBST(pulse_LIBS)
 PKG_CHECK_MODULES(gthread, gthread-2.0 >= 2.20.1)
 AC_SUBST(gthread_CFLAGS)
 AC_SUBST(gthread_LIBS)
+
+PKG_CHECK_MODULES(gtkmm, gtkmm-2.4 >= 1.3.3)
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_HEADER_STDBOOL
