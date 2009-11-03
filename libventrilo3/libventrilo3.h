@@ -365,6 +365,14 @@ v3_codec v3_codecs[] = {
     { -1, -1, -1, -1, -1, "" },
 };
 
+typedef struct __v3_decoders {
+    gsm gsm;
+    void *speex;
+} _v3_decoders;
+
+_v3_decoders v3_decoders[65535];
+
+
 /*
  * Functions in ventrilo3_algo.c
  */

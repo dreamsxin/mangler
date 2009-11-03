@@ -1157,7 +1157,6 @@ _v3_destroy_channellist(void) {/*{{{*/
     _v3_func_leave("_v3_destroy_channel");
 }/*}}}*/
 
-
 int
 _v3_remove_user(uint16_t id) {/*{{{*/
     v3_user *u, *last;
@@ -1422,6 +1421,31 @@ _v3_unlock_server(void) {/*{{{*/
     }
     _v3_debug(V3_DEBUG_MUTEX, "unlocking server");
     pthread_mutex_unlock(server_mutex);
+}/*}}}*/
+
+void
+_v3_init_decoders(void) {/*{{{*/
+    int ctr;
+
+    _v3_func_enter("_v3_init_decoders");
+    memset(&v3_decoders, 0, sizeof(v3_decoders));
+    _v3_func_leave("_v3_init_decoders");
+}/*}}}*/
+
+void
+_v3_destroy_decoders(void) {/*{{{*/
+    int ctr;
+
+    _v3_func_enter("_v3_destroy_decoders");
+    for (ctr = 0; ctr < 65535; ctr++) {
+        if (v3_decoders[ctr].gsm != NULL) {
+            gsm_destroy(v3_decoders[ctr].gsm);
+        }
+        if (v3_decoders[ctr].speex != NULL) {
+            speex_decoder_destroy(v3_decoders[ctr].speex);
+        }
+    }
+    _v3_func_leave("_v3_destroy_decoders");
 }/*}}}*/
 
 /*
@@ -1821,13 +1845,12 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                                 case 0: // GSM
                                     {
                                         _v3_msg_0x52_gsmdata *gsmdata =  msub->data;
-                                        gsm handle;
                                         uint8_t buf[65];
                                         int8_t sample[640];
                                         int ctr;
                                         int one = 1; // used for codec settings
 
-                                        if (!(handle = gsm_create())) {
+                                        if (!(v3_decoders[m->user_id].gsm = gsm_create())) {
                                             _v3_error("couldn't create gsm handle");
                                             _v3_destroy_0x52(msg);
                                             _v3_destroy_packet(msg);
@@ -1836,10 +1859,10 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                                             return V3_MALFORMED; // it's not really a malformed packet...
                                         }
                                         memset(sample, 0, 640);
-                                        gsm_option(handle, GSM_OPT_WAV49, &one);
+                                        gsm_option(v3_decoders[m->user_id].gsm, GSM_OPT_WAV49, &one);
                                         for (ctr = 0; ctr < msub->data_length / 65; ctr++) {
                                             memcpy(buf, gsmdata->frames[ctr], 65);
-                                            if (gsm_decode(handle, buf, (int16_t *)sample) || gsm_decode(handle, buf+33, ((int16_t *)sample)+160)) {
+                                            if (gsm_decode(v3_decoders[m->user_id].gsm, buf, (int16_t *)sample) || gsm_decode(v3_decoders[m->user_id].gsm, buf+33, ((int16_t *)sample)+160)) {
                                                 _v3_debug(V3_DEBUG_INFO, "failed to decode gsm frame %d", ctr);
                                                 continue;
                                             }
@@ -1853,7 +1876,6 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                                 case 3: // SPEEX
                                     {
                                         char  cbits[200];
-                                        void *state;
                                         SpeexBits bits;
                                         int frame_size;
                                         int ctr;
@@ -1865,32 +1887,33 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                                         // is the actual frame size in the packet.  Then
                                         // subtract two for extra int16 specifying length
                                         frame_size = msub->data_length / speexdata->frame_count - 2;
-                                        switch (ev->pcm.rate) {
-                                            case 8000:
-                                                state = speex_decoder_init(&speex_nb_mode);
-                                                break;
-                                            case 16000:
-                                                state = speex_decoder_init(&speex_wb_mode);
-                                                break;
-                                            case 32000:
-                                                state = speex_decoder_init(&speex_uwb_mode);
-                                                break;
-                                            default:
-                                                _v3_debug(V3_DEBUG_INFO, "received unknown speex pcm rate %d", ev->pcm.rate);
-                                                _v3_destroy_0x52(msg);
-                                                _v3_destroy_packet(msg);
-                                                free(ev);
-                                                return V3_MALFORMED;
+                                        if (v3_decoders[m->user_id].speex == NULL) {
+                                            switch (ev->pcm.rate) {
+                                                case 8000:
+                                                    v3_decoders[m->user_id].speex = speex_decoder_init(&speex_nb_mode);
+                                                    break;
+                                                case 16000:
+                                                    v3_decoders[m->user_id].speex = speex_decoder_init(&speex_wb_mode);
+                                                    break;
+                                                case 32000:
+                                                    v3_decoders[m->user_id].speex = speex_decoder_init(&speex_uwb_mode);
+                                                    break;
+                                                default:
+                                                    _v3_debug(V3_DEBUG_INFO, "received unknown speex pcm rate %d", ev->pcm.rate);
+                                                    _v3_destroy_0x52(msg);
+                                                    _v3_destroy_packet(msg);
+                                                    free(ev);
+                                                    return V3_MALFORMED;
+                                            }
                                         }
                                         speex_bits_init(&bits);
                                         for (ctr = 0; ctr < speexdata->frame_count; ctr++) {
                                             memcpy(cbits, speexdata->frames[ctr] + 2, frame_size);
                                             speex_bits_read_from(&bits, cbits, frame_size);
-                                            speex_decode_int(state, &bits, ((int16_t *)ev->data.sample)+ctr*speexdata->sample_size);
+                                            speex_decode_int(v3_decoders[m->user_id].speex, &bits, ((int16_t *)ev->data.sample)+ctr*speexdata->sample_size);
                                         }
                                         ev->pcm.length  = speexdata->frame_count * speexdata->sample_size * sizeof(int16_t);
                                         _v3_debug(V3_DEBUG_EVENT, "queueing pcm msg length %d", ev->pcm.length);
-                                        speex_decoder_destroy(state);
                                         speex_bits_destroy(&bits);
                                     }
                                     break;
@@ -2230,6 +2253,7 @@ v3_login(char *server, char *username, char *password, char *phonetic) {/*{{{*/
     v3_luser.name = strdup(username);
     v3_luser.password = strdup(password);
     v3_luser.phonetic = strdup(phonetic);
+    _v3_init_decoders();
     if (pipe(v3_server.evpipe)) {
         _v3_error("could not create outbound event queue");
         return false;
@@ -2398,6 +2422,7 @@ _v3_logout(void) {/*{{{*/
     free(luser_mutex);
     free(sendq_mutex);
     */
+    _v3_destroy_decoders();
     _v3_destroy_channellist();
     _v3_destroy_userlist();
     v3_luser.id = -1;
