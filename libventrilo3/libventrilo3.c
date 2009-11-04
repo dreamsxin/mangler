@@ -39,6 +39,7 @@
 #include <errno.h>
 #include <unistd.h>
 #include <speex/speex.h>
+#include <math.h>
 #ifdef HAVE_GSM_H
 #include <gsm.h>
 #else
@@ -1076,6 +1077,7 @@ _v3_update_user(v3_user *user) {/*{{{*/
         u->url              = strdup(user->url);
         u->guest            = user->bitfield & 0x400 ? 1 : 0;
         u->next             = NULL;
+        _v3_user_volumes[u->id] = 79;
         v3_user_list = u;
     } else {
         for (u = v3_user_list; u != NULL; u = u->next) { // search for existing users
@@ -1116,6 +1118,7 @@ _v3_update_user(v3_user *user) {/*{{{*/
         u->integration_text = strdup(user->integration_text);
         u->url              = strdup(user->url);
         u->guest            = user->bitfield & 0x400 ? 1 : 0;
+        _v3_user_volumes[u->id] = 79;
         u->next             = NULL;
     }
     _v3_unlock_userlist();
@@ -1833,12 +1836,13 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                         }
                         break;
                     case 0x01:
-                        {   
+                        {
                             _v3_msg_0x52_0x01_in *msub = (_v3_msg_0x52_0x01_in *)msg->contents;
                             ev->type = V3_EVENT_PLAY_AUDIO;
                             ev->user.id = m->user_id;
                             ev->pcm.send_type = m->send_type;
                             ev->pcm.rate = v3_get_codec_rate(msub->codec, msub->codec_format);
+                            int volumectr;
 
                             // TODO: it's too messy to have this here.  Write a function that decodes
                             switch (msub->codec) {
@@ -1919,6 +1923,13 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                                         speex_bits_destroy(&bits);
                                     }
                                     break;
+                            }
+                            // don't waste resources if we don't need to deal with it
+                            if (_v3_user_volumes[ev->user.id] != 79) {
+                                float multiplier = tan(_v3_user_volumes[ev->user.id]/100.0);
+                                for (volumectr = 0; volumectr < ev->pcm.length / 2; volumectr++) {
+                                    ev->data.sample16[volumectr] *= multiplier;
+                                }
                             }
                         }
                         break;
@@ -2879,18 +2890,32 @@ v3_stop_audio(void) {/*{{{*/
     return;
 }/*}}}*/
 
+
 /*
-   struct  v3_channel **v3_channel_list(void);
-   struct  v3_channel *v3_channel_info_by_name(char *channel_name);
-   struct  v3_channel *v3_channel_info_by_id(int channel_id);
-   int     v3_channel_count(void);
-
-   struct  v3_user **v3_user_list();
-   struct  v3_user *v3_user_info_by_name(char *user_name);
-   struct  v3_user *v3_user_info_by_id(int user_id);
-   int     v3_user_count(void);
-
-   int     v3_send_audio(void);
-
-   int     v3_register_event_handler(uint16_t event_type, void *event_handler);
+ * Using these functions may chew up CPU since they perform mathmetical
+ * operations on every 16 bit pcm sample.
  */
+void
+v3_set_volume_user(uint16_t id, int level) {/*{{{*/
+    fprintf(stderr, "setting volume for %d to level %d\n", id, level);
+    if (level < 0 || level > 128) {
+        return;
+    }
+    _v3_user_volumes[id] = level;
+}/*}}}*/
+
+void
+v3_set_volume_luser(int level) {/*{{{*/
+    v3_set_volume_user(v3_get_user_id(), level);
+}/*}}}*/
+
+uint8_t
+v3_get_volume_user(uint16_t id) {
+    return _v3_user_volumes[id];
+}
+
+uint8_t
+v3_get_volume_luser(void) {
+    return v3_get_volume_user(v3_get_user_id());
+}
+

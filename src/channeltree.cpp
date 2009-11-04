@@ -354,6 +354,25 @@ ManglerChannelTree::channelView_row_activated_cb(const Gtk::TreeModel::Path& pat
     bool isUser = row[channelRecord.isUser];
     if (isUser) {
         // double clicked a user
+        if (id == v3_get_user_id()) {
+            // clicked on ourself
+        } else {
+            Glib::ustring name = row[channelRecord.name];
+            builder->get_widget("userSettingsWindow", window);
+            builder->get_widget("userSettingsNameValueLabel", label);
+            label->set_text(name);
+            /*
+             * I can't find a way to do this in builder, so let's pack our volume adjustment manually
+             */
+            volumeAdjustment = new Gtk::Adjustment(79, 0, 138, 1, 10, 10);
+            volumevscale = new Gtk::VScale(*volumeAdjustment);
+            volumevscale->add_mark(79, Gtk::POS_LEFT, "100%");
+            volumevscale->set_inverted(true);
+            builder->get_widget("userSettingsVolumeAdjustVBox", vbox);
+            vbox->pack_start(*volumevscale);
+            volumeAdjustment->signal_value_changed().connect(sigc::bind(sigc::mem_fun(this, &ManglerChannelTree::volumeAdjustment_value_changed_cb), id));
+            window->show_all();
+        }
     } else {
         // double clicked a channel
         Gtk::TreeModel::Row user = getUser(v3_get_user_id(), channelStore->children());
@@ -379,6 +398,12 @@ ManglerChannelTree::channelView_row_activated_cb(const Gtk::TreeModel::Path& pat
         }
     }
 }/*}}}*/
+
+void
+ManglerChannelTree::volumeAdjustment_value_changed_cb(uint16_t id) {
+    fprintf(stderr, "in callback\n");
+    v3_set_volume_user(id, volumeAdjustment->get_value());
+}
 
 Glib::ustring getTimeString(void) {
     char buf[64];

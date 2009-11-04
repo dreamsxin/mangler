@@ -236,6 +236,7 @@ struct _v3_event {
         uint32_t rate;
     } pcm;
     union {
+        int16_t sample16[16384];
         uint8_t sample[32768];
         char    motd[2048]; 
     } data;
@@ -447,6 +448,12 @@ v3_user     *v3_get_user(uint16_t id);
 int         v3_channel_count(void);
 void        v3_free_channel(v3_channel *channel);
 v3_channel  *v3_get_channel(uint16_t id);
+
+// audio effects
+void v3_set_volume_user(uint16_t id, int level);
+void v3_set_volume_luser(int level);
+uint8_t v3_get_volume_user(uint16_t id);
+uint8_t v3_get_volume_luser(void);
 
 
 #endif // _VENTRILO3_H
