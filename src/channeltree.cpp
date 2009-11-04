@@ -63,6 +63,17 @@ ManglerChannelTree::ManglerChannelTree(Glib::RefPtr<Gtk::Builder> builder)/*{{{*
                 sigc::mem_fun(*this, &ManglerChannelTree::renderCellData)
                 );
      */
+
+    /*
+     * We have to finish off our user settings window.  I can't find a way to
+     * do this in builder, so let's pack our volume adjustment manually
+     */
+    volumeAdjustment = new Gtk::Adjustment(79, 0, 138, 1, 10, 10);
+    volumevscale = new Gtk::VScale(*volumeAdjustment);
+    volumevscale->add_mark(79, Gtk::POS_LEFT, "100%");
+    volumevscale->set_inverted(true);
+    builder->get_widget("userSettingsVolumeAdjustVBox", vbox);
+    vbox->pack_start(*volumevscale);
 }/*}}}*/
 
 /*
@@ -358,20 +369,21 @@ ManglerChannelTree::channelView_row_activated_cb(const Gtk::TreeModel::Path& pat
             // clicked on ourself
         } else {
             Glib::ustring name = row[channelRecord.name];
-            builder->get_widget("userSettingsWindow", window);
+
+            // disconnect whatever was connected before and reconnect
+            volumeAdjustSignalConnection.disconnect();
+            volumeAdjustSignalConnection = volumeAdjustment->signal_value_changed().connect(sigc::bind(sigc::mem_fun(this, &ManglerChannelTree::volumeAdjustment_value_changed_cb), id));
+
+            // set the user name
             builder->get_widget("userSettingsNameValueLabel", label);
             label->set_text(name);
-            /*
-             * I can't find a way to do this in builder, so let's pack our volume adjustment manually
-             */
-            volumeAdjustment = new Gtk::Adjustment(79, 0, 138, 1, 10, 10);
-            volumevscale = new Gtk::VScale(*volumeAdjustment);
-            volumevscale->add_mark(79, Gtk::POS_LEFT, "100%");
-            volumevscale->set_inverted(true);
-            builder->get_widget("userSettingsVolumeAdjustVBox", vbox);
-            vbox->pack_start(*volumevscale);
-            volumeAdjustment->signal_value_changed().connect(sigc::bind(sigc::mem_fun(this, &ManglerChannelTree::volumeAdjustment_value_changed_cb), id));
+
+            // set the current volume level for this user
+            volumeAdjustment->set_value(v3_get_volume_user(id));
+
+            builder->get_widget("userSettingsWindow", window);
             window->show_all();
+            window->present();
         }
     } else {
         // double clicked a channel
@@ -401,7 +413,6 @@ ManglerChannelTree::channelView_row_activated_cb(const Gtk::TreeModel::Path& pat
 
 void
 ManglerChannelTree::volumeAdjustment_value_changed_cb(uint16_t id) {
-    fprintf(stderr, "in callback\n");
     v3_set_volume_user(id, volumeAdjustment->get_value());
 }
 

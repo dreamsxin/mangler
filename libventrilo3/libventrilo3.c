@@ -2897,7 +2897,6 @@ v3_stop_audio(void) {/*{{{*/
  */
 void
 v3_set_volume_user(uint16_t id, int level) {/*{{{*/
-    fprintf(stderr, "setting volume for %d to level %d\n", id, level);
     if (level < 0 || level > 128) {
         return;
     }
