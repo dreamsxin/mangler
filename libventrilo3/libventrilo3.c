@@ -1850,16 +1850,18 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                                         int ctr;
                                         int one = 1; // used for codec settings
 
-                                        if (!(v3_decoders[m->user_id].gsm = gsm_create())) {
-                                            _v3_error("couldn't create gsm handle");
-                                            _v3_destroy_0x52(msg);
-                                            _v3_destroy_packet(msg);
-                                            _v3_func_leave("_v3_process_message");
-                                            free(ev);
-                                            return V3_MALFORMED; // it's not really a malformed packet...
+                                        if (! v3_decoders[m->user_id].gsm) {
+                                            if (!(v3_decoders[m->user_id].gsm = gsm_create())) {
+                                                _v3_error("couldn't create gsm handle");
+                                                _v3_destroy_0x52(msg);
+                                                _v3_destroy_packet(msg);
+                                                _v3_func_leave("_v3_process_message");
+                                                free(ev);
+                                                return V3_MALFORMED; // it's not really a malformed packet...
+                                            }
+                                            gsm_option(v3_decoders[m->user_id].gsm, GSM_OPT_WAV49, &one);
                                         }
                                         memset(sample, 0, 640);
-                                        gsm_option(v3_decoders[m->user_id].gsm, GSM_OPT_WAV49, &one);
                                         for (ctr = 0; ctr < msub->data_length / 65; ctr++) {
                                             memcpy(buf, gsmdata->frames[ctr], 65);
                                             if (gsm_decode(v3_decoders[m->user_id].gsm, buf, (int16_t *)sample) || gsm_decode(v3_decoders[m->user_id].gsm, buf+33, ((int16_t *)sample)+160)) {
