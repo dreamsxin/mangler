@@ -72,6 +72,7 @@ ManglerChannelTree::ManglerChannelTree(Glib::RefPtr<Gtk::Builder> builder)/*{{{*
     volumevscale = new Gtk::VScale(*volumeAdjustment);
     volumevscale->add_mark(79, Gtk::POS_LEFT, "100%");
     volumevscale->set_inverted(true);
+    volumevscale->set_draw_value(false);
     builder->get_widget("userSettingsVolumeAdjustVBox", vbox);
     vbox->pack_start(*volumevscale);
 }/*}}}*/

@@ -2071,7 +2071,7 @@ out the encryption
     </child>
   </object>
   <object class="GtkWindow" id="userSettingsWindow">
-    <property name="height_request">150</property>
+    <property name="height_request">200</property>
     <property name="title" translatable="yes">User Settings Window</property>
     <property name="destroy_with_parent">True</property>
     <property name="transient_for">manglerWindow</property>
@@ -2137,6 +2137,7 @@ out the encryption
                     <child>
                       <object class="GtkLabel" id="userSettingsVolumeLabel">
                         <property name="visible">True</property>
+                        <property name="ypad">4</property>
                         <property name="label" translatable="yes">User Volume:</property>
                       </object>
                       <packing>
