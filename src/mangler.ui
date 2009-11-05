@@ -2138,7 +2138,7 @@ out the encryption
                       <object class="GtkLabel" id="userSettingsVolumeLabel">
                         <property name="visible">True</property>
                         <property name="ypad">4</property>
-                        <property name="label" translatable="yes">User Volume:</property>
+                        <property name="label" translatable="yes">User Volume</property>
                       </object>
                       <packing>
                         <property name="expand">False</property>

@@ -1431,7 +1431,7 @@ _v3_init_decoders(void) {/*{{{*/
     int ctr;
 
     _v3_func_enter("_v3_init_decoders");
-    memset(&v3_decoders, 0, sizeof(v3_decoders));
+    memset(v3_decoders, 0, sizeof(v3_decoders));
     _v3_func_leave("_v3_init_decoders");
 }/*}}}*/
 
