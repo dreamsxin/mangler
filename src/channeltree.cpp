@@ -412,6 +412,12 @@ ManglerChannelTree::channelView_row_activated_cb(const Gtk::TreeModel::Path& pat
     }
 }/*}}}*/
 
+uint16_t
+ManglerChannelTree::getUserChannelId(uint16_t userid) {/*{{{*/
+    Gtk::TreeModel::Row user = getUser(userid, channelStore->children());
+    return(user[channelRecord.parent_id]);
+}/*}}}*/
+
 void
 ManglerChannelTree::volumeAdjustment_value_changed_cb(uint16_t id) {
     v3_set_volume_user(id, volumeAdjustment->get_value());

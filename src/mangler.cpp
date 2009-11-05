@@ -148,7 +148,7 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
     network = new ManglerNetwork(builder);
 
     // Create our audio control object for managing devices
-    audioControl = new ManglerAudio();
+    audioControl = new ManglerAudio("control");
     audioControl->getDeviceList();
 
     // Create settings object, load the configuration file, and apply.  If the
@@ -283,6 +283,7 @@ void Mangler::startTransmit(void) {/*{{{*/
     if (isTransmitting) {
         return;
     }
+    audioControl->playNotification("talkstart");
     statusIcon->set(icons["tray_icon_green"]);
     isTransmitting = true;
     channelTree->userIsTalking(v3_get_user_id(), true);
@@ -290,13 +291,14 @@ void Mangler::startTransmit(void) {/*{{{*/
     //fprintf(stderr, "channel %d codec rate: %d at sample size %d\n", user->channel, codec->rate, codec->samplesize);
     v3_start_audio(V3_AUDIO_SENDTYPE_U2CCUR);
     v3_free_user(user);
-    inputAudio = new ManglerAudio();
+    inputAudio = new ManglerAudio("input");
     inputAudio->open(codec->rate, AUDIO_INPUT, codec->samplesize);
 }/*}}}*/
 void Mangler::stopTransmit(void) {/*{{{*/
     if (!isTransmitting) {
         return;
     }
+    audioControl->playNotification("talkend");
     statusIcon->set(icons["tray_icon_red"]);
     channelTree->userIsTalking(v3_get_user_id(), false);
     isTransmitting = false;
@@ -425,6 +427,7 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                     builder->get_widget("codecLabel", label);
                     label->set_text(codec_info->name);
                     channelTree->expand_all();
+                    audioControl->playNotification("login");
                 }
                 break;/*}}}*/
             case V3_EVENT_USER_CHAN_MOVE:/*{{{*/
@@ -439,6 +442,14 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                     codec_info = v3_get_channel_codec(ev->channel.id);
                     builder->get_widget("codecLabel", label);
                     label->set_text(codec_info->name);
+                } else {
+                    if (ev->channel.id == v3_get_user_channel(v3_get_user_id())) {
+                        // they're joining our channel
+                        audioControl->playNotification("channelenter");
+                    } else if (channelTree->getUserChannelId(ev->user.id) == v3_get_user_channel(v3_get_user_id())) {
+                        // they're leaving our channel
+                        audioControl->playNotification("channelleave");
+                    }
                 }
                 //fprintf(stderr, "moving user id %d to channel id %d\n", ev->user.id, ev->channel.id);
                 channelTree->removeUser((uint32_t)ev->user.id);
@@ -509,7 +520,7 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                 // Open a stream if we don't have one for this user
                 channelTree->userIsTalking(ev->user.id, true);
                 if (!outputAudio[ev->user.id]) {
-                    outputAudio[ev->user.id] = new ManglerAudio();
+                    outputAudio[ev->user.id] = new ManglerAudio("output");
                     outputAudio[ev->user.id]->open(ev->pcm.rate, AUDIO_OUTPUT);
                 }
                 // And queue the audio
@@ -547,6 +558,7 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                     builder->get_widget("codecLabel", label);
                     label->set_label("N/A");
                     mangler->statusIcon->set(icons["tray_icon_grey"]);
+                    audioControl->playNotification("logout");
                 }
                 break;/*}}}*/
             default:

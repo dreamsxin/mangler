@@ -26,9 +26,10 @@
 
 #include "mangler.h"
 #include "mangleraudio.h"
+#include "mangler-sounds.h"
 #include <sys/time.h>
 
-ManglerAudio::ManglerAudio() {/*{{{*/
+ManglerAudio::ManglerAudio(Glib::ustring type) {/*{{{*/
     //fprintf(stderr, "creating audio object\n");
 }/*}}}*/
 ManglerAudio::~ManglerAudio() {/*{{{*/
@@ -288,6 +289,64 @@ ManglerAudio::getDeviceList(void) {/*{{{*/
     return;
 #endif
 }/*}}}*/
+
+void
+ManglerAudio::playNotification(Glib::ustring name) {
+    if (sounds.empty()) {
+        sounds["talkstart"]    = new ManglerPCM(sizeof(sound_talkstart),    sound_talkstart);
+        sounds["talkend"]      = new ManglerPCM(sizeof(sound_talkend),      sound_talkend);
+        sounds["channelenter"] = new ManglerPCM(sizeof(sound_channelenter), sound_channelenter);
+        sounds["channelleave"] = new ManglerPCM(sizeof(sound_channelleave), sound_channelleave);
+        sounds["login"]        = new ManglerPCM(sizeof(sound_login),        sound_login);
+        sounds["logout"]       = new ManglerPCM(sizeof(sound_logout),       sound_logout);
+    }
+    Glib::Thread::create(sigc::bind(sigc::mem_fun(this, &ManglerAudio::playNotification_thread), name), FALSE);
+}
+
+void
+ManglerAudio::playNotification_thread(Glib::ustring name) {
+#ifdef HAVE_PULSE
+    int ret;
+    pa_simple       *s;
+    pulse_samplespec.format = PA_SAMPLE_S16LE;
+    pulse_samplespec.rate = 44100;
+    pulse_samplespec.channels = 1;
+    pa_buffer_attr buffer_attr;
+    buffer_attr.maxlength = -1;
+    buffer_attr.tlength = -1;
+    buffer_attr.prebuf = -1;
+    buffer_attr.minreq = -1;
+    buffer_attr.fragsize = pcm_framesize;
+    if (!(s = pa_simple_new(
+                    NULL,
+                    "Mangler",
+                    PA_STREAM_PLAYBACK,
+                    (mangler->settings->config.outputDeviceName == "Default" || mangler->settings->config.outputDeviceName == "" ? NULL : (char *)mangler->settings->config.outputDeviceName.c_str()),
+                    "Notification Sound",
+                    &pulse_samplespec,
+                    NULL,
+                    NULL,
+                    &error))) {
+        fprintf(stderr, __FILE__": pa_simple_new() failed: %s\n", pa_strerror(error));
+        Glib::Thread::Exit();
+        return;
+    }
+    if ((ret = pa_simple_write(s, sounds[name]->sample, sounds[name]->length, &error)) < 0) {
+        fprintf(stderr, __FILE__": pa_simple_write() failed: %s\n", pa_strerror(error));
+        pa_simple_free(s);
+        stop_output = true;
+        Glib::Thread::Exit();
+        return;
+    }
+    if (pa_simple_drain(s, &error) < 0) {
+        fprintf(stderr, __FILE__": pa_simple_drain() failed: %s\n", pa_strerror(error));
+    }
+
+    pa_simple_free(s);
+#endif
+    Glib::Thread::Exit();
+    return;
+}
 
 #ifdef HAVE_PULSE
 // Pulse Audio Device List Retrieval (in all of it's C glory)/*{{{*/

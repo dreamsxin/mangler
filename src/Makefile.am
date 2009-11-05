@@ -13,11 +13,11 @@ mangler_SOURCES = manglerui.h mangler.cpp channeltree.cpp  mangleraudio.cpp  man
 
 mangler_LDADD = @top_srcdir@/libventrilo3/libventrilo3.la $(gtkmm_LIBS) $(gthread_LIBS) $(pulse_LIBS) $(speex_LIBS)
 
-INCLUDES = -I@top_srcdir@/libventrilo3/ -I@top_srcdir@/icons/ $(gtkmm_CFLAGS) $(gthread_CFLAGS) $(pulse_CFLAGS) $(speex_CFLAGS)
+INCLUDES = -I@top_srcdir@/libventrilo3/ -I@top_srcdir@/icons/ -I@top_srcdir@/sounds/ $(gtkmm_CFLAGS) $(gthread_CFLAGS) $(pulse_CFLAGS) $(speex_CFLAGS)
 
 dev:
 	cd ../libventrilo3 && make dev
-	gcc -g -Wall -o mangler -I../ -I../libventrilo3/ -I../icons/ -pthread \
+	gcc -g -Wall -o mangler -I../ -I../libventrilo3/ -I../icons/ -I ../sounds/ -pthread \
 		channeltree.cpp  mangleraudio.cpp  manglerconfig.cpp  mangler.cpp \
 		manglernetwork.cpp  manglerserverlist.cpp  manglersettings.cpp \
 		../libventrilo3/libventrilo3.a \

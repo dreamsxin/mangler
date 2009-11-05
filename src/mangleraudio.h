@@ -72,7 +72,7 @@ class ManglerAudioDevice
 class ManglerAudio
 {
     public:
-        ManglerAudio();
+        ManglerAudio(Glib::ustring type);
         ~ManglerAudio();
         void            open(uint32_t rate, bool type, uint32_t pcm_framesize = 0);
         void            queue(uint32_t length, uint8_t *sample);
@@ -81,6 +81,10 @@ class ManglerAudio
         void            finish(void);
 
         void            getDeviceList(void);
+        void            playNotification(Glib::ustring name);
+        void            playNotification_thread(Glib::ustring name);
+
+
 
         GAsyncQueue*    pcm_queue;
         int             rate;
@@ -89,6 +93,8 @@ class ManglerAudio
         pa_simple       *pulse_stream;
 #endif
         ManglerPCM      *pcmdata;
+
+        std::map<Glib::ustring, ManglerPCM *> sounds;
 
         std::vector<ManglerAudioDevice*> inputDevices;
         std::vector<ManglerAudioDevice*> outputDevices;

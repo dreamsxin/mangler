@@ -89,6 +89,7 @@ class ManglerChannelTree
         void userIsTalking(uint16_t id, bool isTalking);
         Gtk::TreeModel::Row getChannel(uint32_t id, Gtk::TreeModel::Children children);
         Gtk::TreeModel::Row getUser(uint32_t id, Gtk::TreeModel::Children children);
+        uint16_t getUserChannelId(uint16_t userid);
         bool expand_all(void);
         bool collapse_all(void);
         void clear(void);
