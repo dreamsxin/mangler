@@ -49,9 +49,7 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
     icons.insert(std::make_pair("purple_circle",                Gdk::Pixbuf::create_from_inline(-1, purple_circle               )));
     icons.insert(std::make_pair("red_circle",                   Gdk::Pixbuf::create_from_inline(-1, red_circle                  )));
     icons.insert(std::make_pair("yellow_circle",                Gdk::Pixbuf::create_from_inline(-1, yellow_circle               )));
-    icons.insert(std::make_pair("logo1",                        Gdk::Pixbuf::create_from_inline(-1, logo1                       )));
-    icons.insert(std::make_pair("logo2",                        Gdk::Pixbuf::create_from_inline(-1, logo2                       )));
-    icons.insert(std::make_pair("logo3",                        Gdk::Pixbuf::create_from_inline(-1, logo3                       )));
+    icons.insert(std::make_pair("mangler_logo",                 Gdk::Pixbuf::create_from_inline(-1, mangler_logo                )));
 
     icons.insert(std::make_pair("tray_icon",                    Gdk::Pixbuf::create_from_inline(-1, tray_icon_purple            )));
     icons.insert(std::make_pair("tray_icon_blue",               Gdk::Pixbuf::create_from_inline(-1, tray_icon_blue              )));
@@ -251,7 +249,7 @@ void Mangler::settingsButton_clicked_cb(void) {/*{{{*/
 void Mangler::aboutButton_clicked_cb(void) {/*{{{*/
     builder->get_widget("aboutWindow", aboutdialog);
     aboutdialog->set_keep_above(true);
-    aboutdialog->set_logo(icons["tray_icon"]);
+    aboutdialog->set_logo(icons["mangler_logo"]);
     aboutdialog->run();
     aboutdialog->hide();
 }/*}}}*/
