@@ -32,7 +32,6 @@
 #include <gdk/gdkx.h>
 
 
-Glib::ustring c_to_ustring(char *input);
 Glib::ustring iso_8859_1_to_utf8(char *input);
 
 using namespace std;
@@ -703,6 +702,21 @@ main (int argc, char *argv[])
     gdk_threads_enter();
     Gtk::Main::run(*mangler->manglerWindow);
     gdk_threads_leave();
+}
+
+std::string ustring_to_c(Glib::ustring input) {
+    std::string to_charset, converted;
+
+    if (Glib::get_charset(to_charset) == true)
+        to_charset = "ISO-8859-1";
+
+    try {
+        converted = Glib::convert_with_fallback(input, to_charset, "UTF-8", "?");
+    } catch (Glib::ConvertError &e) {
+        converted = input;
+    }
+    
+    return converted;
 }
 
 Glib::ustring c_to_ustring(char *input) {/*{{{*/

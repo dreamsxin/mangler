@@ -134,6 +134,9 @@ class ManglerError
         ManglerError(uint32_t code, Glib::ustring message, Glib::ustring module = "");
 };
 
+Glib::ustring c_to_ustring(char *input);
+std::string ustring_to_c(Glib::ustring input);
+
 extern Mangler *mangler;
 
 #endif

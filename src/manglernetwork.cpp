@@ -39,7 +39,7 @@ ManglerNetwork::connect(Glib::ustring hostname, Glib::ustring port, Glib::ustrin
     v3_debuglevel(mangler->settings->config.lv3_debuglevel);
     Glib::ustring server = hostname + ":" + port;
     //Glib::ustring server = "tungsten.typefrag.com:29549"; Glib::ustring password = "";
-    if (! v3_login((char *)server.c_str(), (char *)username.c_str(), (char *)password.c_str(), (char *)"")) {
+    if (! v3_login((char *)server.c_str(), (char *)ustring_to_c(username).c_str(), (char *)password.c_str(), (char *)"")) {
         gdk_threads_enter();
         builder->get_widget("errorDialog", msgdialog);
         msgdialog->set_icon(mangler->icons["tray_icon"]);
