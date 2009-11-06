@@ -19,13 +19,13 @@ int main( int argc, char * argv[])
 
     in = fopen( argv[ 1], "rb");
     if( in == NULL) { 
-	printf( "Cannot find input file '%s'..\n", argv[ 1]);
+	fprintf(stderr,"Cannot find input file '%s'..\n", argv[ 1]);
 	return -1;
     }
 
     out = fopen( argv[ 2], "wb");
     if( out == NULL) { 
-	printf( "Cannot create output file '%s'..\n", argv[ 2]);
+	fprintf(stderr,"Cannot create output file '%s'..\n", argv[ 2]);
 	return -1;
     }
 
@@ -51,6 +51,7 @@ int main( int argc, char * argv[])
 
     fclose( in);
     fclose( out);
+    return 0;
 }
 
 // vim: sts=4 sw=4 cindent
