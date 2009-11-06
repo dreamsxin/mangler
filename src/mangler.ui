@@ -1467,7 +1467,7 @@ out the encryption
                 <child>
                   <object class="GtkTable" id="audioDeviceTable">
                     <property name="visible">True</property>
-                    <property name="n_rows">3</property>
+                    <property name="n_rows">5</property>
                     <property name="n_columns">2</property>
                     <property name="column_spacing">6</property>
                     <property name="row_spacing">9</property>
@@ -1524,8 +1524,8 @@ out the encryption
                         <property name="label" translatable="yes">Notification Device:</property>
                       </object>
                       <packing>
-                        <property name="top_attach">2</property>
-                        <property name="bottom_attach">3</property>
+                        <property name="top_attach">4</property>
+                        <property name="bottom_attach">5</property>
                         <property name="x_options">GTK_FILL</property>
                         <property name="y_options">GTK_FILL</property>
                       </packing>
@@ -1536,6 +1536,33 @@ out the encryption
                       </object>
                       <packing>
                         <property name="left_attach">1</property>
+                        <property name="right_attach">2</property>
+                        <property name="top_attach">4</property>
+                        <property name="bottom_attach">5</property>
+                        <property name="y_options">GTK_FILL</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkLabel" id="notificationDeviceInfoLabel">
+                        <property name="visible">True</property>
+                        <property name="xalign">0.05000000074505806</property>
+                        <property name="label" translatable="yes">The notification device is the device that sound effects are sent to when you login, logout, a user joins your channel, etc.</property>
+                        <property name="use_markup">True</property>
+                        <property name="wrap">True</property>
+                        <property name="wrap_mode">word-char</property>
+                      </object>
+                      <packing>
+                        <property name="right_attach">2</property>
+                        <property name="top_attach">3</property>
+                        <property name="bottom_attach">4</property>
+                        <property name="y_options">GTK_FILL</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkHSeparator" id="hseparator3">
+                        <property name="visible">True</property>
+                      </object>
+                      <packing>
                         <property name="right_attach">2</property>
                         <property name="top_attach">2</property>
                         <property name="bottom_attach">3</property>
