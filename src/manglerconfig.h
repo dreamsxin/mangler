@@ -54,6 +54,10 @@ class ManglerConfig {
                 Glib::ustring   inputDeviceName;
                 Glib::ustring   outputDeviceName;
                 Glib::ustring   notificationDeviceName;
+                bool            notificationLoginLogout;
+                bool            notificationChannelEnterLeave;
+                bool            notificationTransmitStartStop;
+
 		ManglerServerConfig   qc_lastserver;
 		std::vector<ManglerServerConfig> serverlist;
                 FILE            *cfgstream;

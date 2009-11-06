@@ -292,6 +292,15 @@ ManglerAudio::getDeviceList(void) {/*{{{*/
 
 void
 ManglerAudio::playNotification(Glib::ustring name) {
+    if ((name == "talkstart" || name == "talkend") && ! mangler->settings->config.notificationTransmitStartStop) {
+        return;
+    }
+    if ((name == "channelenter" || name == "channelleave") && ! mangler->settings->config.notificationChannelEnterLeave) {
+        return;
+    }
+    if ((name == "login" || name == "logout") && ! mangler->settings->config.notificationLoginLogout) {
+        return;
+    }
     if (sounds.empty()) {
         sounds["talkstart"]    = new ManglerPCM(sizeof(sound_talkstart),    sound_talkstart);
         sounds["talkend"]      = new ManglerPCM(sizeof(sound_talkend),      sound_talkend);

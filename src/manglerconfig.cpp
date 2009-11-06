@@ -34,12 +34,15 @@
 
 
 ManglerConfig::ManglerConfig() {/*{{{*/
-    lv3_debuglevel              = 0;
-    PushToTalkKeyEnabled        = false;
-    PushToTalkKeyValue          = "";
-    PushToTalkMouseEnabled      = false;
-    PushToTalkMouseValue        = "";
-    ManglerServerConfig         qc_lastserver;
+    lv3_debuglevel                  = 0;
+    PushToTalkKeyEnabled            = false;
+    PushToTalkKeyValue              = "";
+    PushToTalkMouseEnabled          = false;
+    PushToTalkMouseValue            = "";
+    notificationLoginLogout         = true;
+    notificationChannelEnterLeave   = true;
+    notificationTransmitStartStop   = true;
+    ManglerServerConfig             qc_lastserver;
     std::vector<ManglerServerConfig> serverlist;
     load();
 }/*}}}*/
@@ -60,6 +63,9 @@ bool ManglerConfig::save() {/*{{{*/
     put("inputDeviceName", inputDeviceName);
     put("outputDeviceName", outputDeviceName);
     put("notificationDeviceName", notificationDeviceName);
+    put("notification.loginLogout", notificationLoginLogout);
+    put("notification.channelEnterLeave", notificationChannelEnterLeave);
+    put("notification.transmitStartStop", notificationTransmitStartStop);
     put("qc_lastserver.hostname", qc_lastserver.hostname);
     put("qc_lastserver.port", qc_lastserver.port);
     put("qc_lastserver.username", qc_lastserver.username);
@@ -177,21 +183,24 @@ Glib::ustring ManglerConfig::get(Glib::ustring cfgname) {/*{{{*/
     return "";
 }/*}}}*/
 void ManglerConfig::load() {/*{{{*/
-    PushToTalkKeyEnabled        = get("PushToTalkKeyEnabled") == "0" ? false : true;
-    PushToTalkKeyValue          = get("PushToTalkKeyValue");
+    PushToTalkKeyEnabled          = get("PushToTalkKeyEnabled") == "0" ? false : true;
+    PushToTalkKeyValue            = get("PushToTalkKeyValue");
     parsePushToTalkValue(PushToTalkKeyValue);
-    PushToTalkMouseEnabled      = get("PushToTalkMouseEnabled") == "0" ? false : true;
-    PushToTalkMouseValue        = get("PushToTalkMouseValue");
-    inputDeviceName             = get("inputDeviceName");
-    outputDeviceName            = get("outputDeviceName");
-    notificationDeviceName      = get("notificationDeviceName");
-    qc_lastserver.hostname      = get("qc_lastserver.hostname");
-    qc_lastserver.port          = get("qc_lastserver.port");
-    qc_lastserver.username      = get("qc_lastserver.username");
-    qc_lastserver.password      = get("qc_lastserver.password");
-    qc_lastserver.phonetic      = get("qc_lastserver.phonetic");
-    qc_lastserver.comment       = get("qc_lastserver.comment");
-    lv3_debuglevel              = atoi(get("lv3_debuglevel").c_str());
+    PushToTalkMouseEnabled        = get("PushToTalkMouseEnabled") == "0" ? false : true;
+    PushToTalkMouseValue          = get("PushToTalkMouseValue");
+    inputDeviceName               = get("inputDeviceName");
+    outputDeviceName              = get("outputDeviceName");
+    notificationDeviceName        = get("notificationDeviceName");
+    notificationLoginLogout       = get("notification.loginLogout") == "0" ? false : true;;
+    notificationChannelEnterLeave = get("notification.channelEnterLeave") == "0" ? false : true;;
+    notificationTransmitStartStop = get("notification.transmitStartStop") == "0" ? false : true;;
+    qc_lastserver.hostname        = get("qc_lastserver.hostname");
+    qc_lastserver.port            = get("qc_lastserver.port");
+    qc_lastserver.username        = get("qc_lastserver.username");
+    qc_lastserver.password        = get("qc_lastserver.password");
+    qc_lastserver.phonetic        = get("qc_lastserver.phonetic");
+    qc_lastserver.comment         = get("qc_lastserver.comment");
+    lv3_debuglevel                = atoi(get("lv3_debuglevel").c_str());
 }/*}}}*/
 void ManglerConfig::parsePushToTalkValue(Glib::ustring pttString) {/*{{{*/
     int begin = 0;

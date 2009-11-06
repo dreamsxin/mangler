@@ -1467,7 +1467,7 @@ out the encryption
                 <child>
                   <object class="GtkTable" id="audioDeviceTable">
                     <property name="visible">True</property>
-                    <property name="n_rows">5</property>
+                    <property name="n_rows">6</property>
                     <property name="n_columns">2</property>
                     <property name="column_spacing">6</property>
                     <property name="row_spacing">9</property>
@@ -1567,6 +1567,57 @@ out the encryption
                         <property name="top_attach">2</property>
                         <property name="bottom_attach">3</property>
                         <property name="y_options">GTK_FILL</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkTable" id="table3">
+                        <property name="visible">True</property>
+                        <property name="n_rows">2</property>
+                        <property name="n_columns">2</property>
+                        <child>
+                          <object class="GtkCheckButton" id="notificationLoginLogoutCheckButton">
+                            <property name="label" translatable="yes">Login and Logout Notifications</property>
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <property name="receives_default">False</property>
+                            <property name="draw_indicator">True</property>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="GtkCheckButton" id="notificationChannelEnterLeaveCheckButton">
+                            <property name="label" translatable="yes">Channel Enter and Leave Notification</property>
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <property name="receives_default">False</property>
+                            <property name="draw_indicator">True</property>
+                          </object>
+                          <packing>
+                            <property name="top_attach">1</property>
+                            <property name="bottom_attach">2</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <placeholder/>
+                        </child>
+                        <child>
+                          <object class="GtkCheckButton" id="notificationTalkStartEndCheckButton">
+                            <property name="label" translatable="yes">Start and Stop Transmitting Notification</property>
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <property name="receives_default">False</property>
+                            <property name="draw_indicator">True</property>
+                          </object>
+                          <packing>
+                            <property name="left_attach">1</property>
+                            <property name="right_attach">2</property>
+                          </packing>
+                        </child>
+                      </object>
+                      <packing>
+                        <property name="right_attach">2</property>
+                        <property name="top_attach">5</property>
+                        <property name="bottom_attach">6</property>
+                        <property name="y_options"></property>
                       </packing>
                     </child>
                   </object>

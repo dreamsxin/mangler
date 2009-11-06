@@ -105,6 +105,16 @@ void ManglerSettings::applySettings(void) {/*{{{*/
         config.notificationDeviceName = row[notificationColumns.name];
     }
 
+    // Notification sounds
+    builder->get_widget("notificationLoginLogoutCheckButton", checkbutton);
+    config.notificationLoginLogout = checkbutton->get_active() ? true : false;
+
+    builder->get_widget("notificationChannelEnterLeaveCheckButton", checkbutton);
+    config.notificationChannelEnterLeave = checkbutton->get_active() ? true : false;
+
+    builder->get_widget("notificationTalkStartEndCheckButton", checkbutton);
+    config.notificationTransmitStartStop = checkbutton->get_active() ? true : false;
+
     // Debug level
     uint32_t debuglevel = 0;
     builder->get_widget("debugStatus", checkbutton);
@@ -166,7 +176,15 @@ void ManglerSettings::initSettings(void) {/*{{{*/
     label->set_text(config.PushToTalkMouseValue);
 
     // Audio Devices
-    // ...
+    // Notification sounds
+    builder->get_widget("notificationLoginLogoutCheckButton", checkbutton);
+    checkbutton->set_active(config.notificationLoginLogout ? true : false);
+
+    builder->get_widget("notificationChannelEnterLeaveCheckButton", checkbutton);
+    checkbutton->set_active(config.notificationChannelEnterLeave ? true : false);
+
+    builder->get_widget("notificationTalkStartEndCheckButton", checkbutton);
+    checkbutton->set_active(config.notificationTransmitStartStop ? true : false);
 
     // Debug level
     builder->get_widget("debugStatus", checkbutton);
