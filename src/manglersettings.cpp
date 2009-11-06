@@ -67,6 +67,11 @@ ManglerSettings::ManglerSettings(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
     outputDeviceTreeModel = Gtk::ListStore::create(outputColumns);
     outputDeviceComboBox->set_model(outputDeviceTreeModel);
     outputDeviceComboBox->pack_start(outputColumns.description);
+
+    builder->get_widget("notificationDeviceComboBox", notificationDeviceComboBox);
+    notificationDeviceTreeModel = Gtk::ListStore::create(notificationColumns);
+    notificationDeviceComboBox->set_model(notificationDeviceTreeModel);
+    notificationDeviceComboBox->pack_start(notificationColumns.description);
 }/*}}}*/
 void ManglerSettings::applySettings(void) {/*{{{*/
     // Push to Talk
@@ -93,6 +98,11 @@ void ManglerSettings::applySettings(void) {/*{{{*/
     if (iter) {
         Gtk::TreeModel::Row row = *iter;
         config.outputDeviceName = row[outputColumns.name];
+    }
+    iter = notificationDeviceComboBox->get_active();
+    if (iter) {
+        Gtk::TreeModel::Row row = *iter;
+        config.notificationDeviceName = row[notificationColumns.name];
     }
 
     // Debug level
@@ -260,6 +270,29 @@ void ManglerSettings::settingsWindow_show_cb(void) {/*{{{*/
     }
     // TODO: get the currently selected item from settings object and select it
     outputDeviceComboBox->set_active(outputSelection);
+
+    // Clear the notification device store and rebuild it from the audioControl vector
+    notificationDeviceTreeModel->clear();
+    row = *(notificationDeviceTreeModel->append());
+    row[notificationColumns.id] = -1;
+    row[notificationColumns.name] = "Default";
+    row[notificationColumns.description] = "Default";
+    int notificationSelection = 0;
+    int notificationCtr = 1;
+    for (
+            std::vector<ManglerAudioDevice*>::iterator i = mangler->audioControl->outputDevices.begin();
+            i <  mangler->audioControl->outputDevices.end();
+            i++, notificationCtr++) {
+        Gtk::TreeModel::Row row = *(notificationDeviceTreeModel->append());
+        row[notificationColumns.id] = (*i)->id;
+        row[notificationColumns.name] = (*i)->name;
+        row[notificationColumns.description] = (*i)->description;
+        if (config.notificationDeviceName == (*i)->name) {
+            notificationSelection = notificationCtr;
+        }
+    }
+    // TODO: get the currently selected item from settings object and select it
+    notificationDeviceComboBox->set_active(notificationSelection);
 }/*}}}*/
 void ManglerSettings::settingsWindow_hide_cb(void) {/*{{{*/
     isDetectingKey = false;

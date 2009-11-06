@@ -53,6 +53,7 @@ class ManglerConfig {
                 Glib::ustring   PushToTalkMouseValue;
                 Glib::ustring   inputDeviceName;
                 Glib::ustring   outputDeviceName;
+                Glib::ustring   notificationDeviceName;
 		ManglerServerConfig   qc_lastserver;
 		std::vector<ManglerServerConfig> serverlist;
                 FILE            *cfgstream;

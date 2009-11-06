@@ -72,6 +72,7 @@ class Mangler
         bool                                isTransmittingButton;
         bool                                isTransmittingKey;
         bool                                isTransmittingMouse;
+        bool                                iconified;
 
         // These are used by the password entry dialog
         Gtk::Dialog                         *passwordDialog;
@@ -97,7 +98,7 @@ class Mangler
         void aboutButton_clicked_cb(void);
         void xmitButton_pressed_cb(void);
         void xmitButton_released_cb(void);
-        void settingsIcon_activate_cb(void);
+        void statusIcon_activate_cb(void);
 
 
         bool getNetworkEvent(void);

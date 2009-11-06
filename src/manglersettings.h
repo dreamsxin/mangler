@@ -69,6 +69,19 @@ class ManglerSettings
         outputDeviceModelColumns  outputColumns;
         Glib::RefPtr<Gtk::ListStore> outputDeviceTreeModel;
 
+        // Notification Device Combo Box Setup
+        Gtk::ComboBox       *notificationDeviceComboBox;
+        class notificationDeviceModelColumns : public Gtk::TreeModel::ColumnRecord
+        {
+            public:
+                notificationDeviceModelColumns() { add(id); add(name); add(description); }
+                Gtk::TreeModelColumn<uint32_t>      id;
+                Gtk::TreeModelColumn<Glib::ustring> name;
+                Gtk::TreeModelColumn<Glib::ustring> description;
+        };
+        notificationDeviceModelColumns  notificationColumns;
+        Glib::RefPtr<Gtk::ListStore> notificationDeviceTreeModel;
+
         // members functions
         void showSettingsWindow(void);
         bool settingsPTTKeyDetect(void);

@@ -163,7 +163,7 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
 
     // Statusbar Icon
     statusIcon = Gtk::StatusIcon::create(icons["tray_icon_grey"]);
-    statusIcon->signal_activate().connect(sigc::mem_fun(this, &Mangler::settingsIcon_activate_cb));
+    statusIcon->signal_activate().connect(sigc::mem_fun(this, &Mangler::statusIcon_activate_cb));
 
 }/*}}}*/
 
@@ -264,9 +264,19 @@ void Mangler::xmitButton_released_cb(void) {/*{{{*/
         stopTransmit();
     }
 }/*}}}*/
-void Mangler::settingsIcon_activate_cb(void) {/*{{{*/
-    fprintf(stderr, "tray icon clicked\n");
-    manglerWindow->present();
+void Mangler::statusIcon_activate_cb(void) {/*{{{*/
+    if (iconified == true) {
+        manglerWindow->deiconify();
+        manglerWindow->set_skip_pager_hint(false);
+        manglerWindow->set_skip_taskbar_hint(false);
+        manglerWindow->present();
+        iconified = false;
+    } else {
+        manglerWindow->iconify();
+        manglerWindow->set_skip_pager_hint(true);
+        manglerWindow->set_skip_taskbar_hint(true);
+        iconified = true;
+    }
 }/*}}}*/
 
 void Mangler::startTransmit(void) {/*{{{*/

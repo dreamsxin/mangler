@@ -321,7 +321,7 @@ ManglerAudio::playNotification_thread(Glib::ustring name) {
                     NULL,
                     "Mangler",
                     PA_STREAM_PLAYBACK,
-                    (mangler->settings->config.outputDeviceName == "Default" || mangler->settings->config.outputDeviceName == "" ? NULL : (char *)mangler->settings->config.outputDeviceName.c_str()),
+                    (mangler->settings->config.notificationDeviceName == "Default" || mangler->settings->config.notificationDeviceName == "" ? NULL : (char *)mangler->settings->config.notificationDeviceName.c_str()),
                     "Notification Sound",
                     &pulse_samplespec,
                     NULL,
@@ -334,7 +334,6 @@ ManglerAudio::playNotification_thread(Glib::ustring name) {
     if ((ret = pa_simple_write(s, sounds[name]->sample, sounds[name]->length, &error)) < 0) {
         fprintf(stderr, __FILE__": pa_simple_write() failed: %s\n", pa_strerror(error));
         pa_simple_free(s);
-        stop_output = true;
         Glib::Thread::Exit();
         return;
     }
