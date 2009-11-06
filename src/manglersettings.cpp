@@ -34,6 +34,11 @@ ManglerSettings::ManglerSettings(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
 
     // Connect our signals for this window
     builder->get_widget("settingsWindow", settingsWindow);
+    /*
+     * Set window properties that are not settable in builder
+     */
+    settingsWindow->set_keep_above(true);
+
     settingsWindow->signal_show().connect(sigc::mem_fun(this, &ManglerSettings::settingsWindow_show_cb));
     settingsWindow->signal_hide().connect(sigc::mem_fun(this, &ManglerSettings::settingsWindow_hide_cb));
 

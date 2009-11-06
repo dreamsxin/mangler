@@ -197,6 +197,7 @@ void Mangler::quickConnectButton_clicked_cb(void) {/*{{{*/
         builder->get_widget("qcConnectButton", button);
         button->set_sensitive(true);
     }
+    dialog->set_keep_above(true);
     dialog->run();
     dialog->hide();
 
@@ -249,7 +250,7 @@ void Mangler::settingsButton_clicked_cb(void) {/*{{{*/
 }/*}}}*/
 void Mangler::aboutButton_clicked_cb(void) {/*{{{*/
     builder->get_widget("aboutWindow", aboutdialog);
-    aboutdialog->set_icon(icons["tray_icon"]);
+    aboutdialog->set_keep_above(true);
     aboutdialog->set_logo(icons["tray_icon"]);
     aboutdialog->run();
     aboutdialog->hide();
@@ -272,9 +273,9 @@ void Mangler::statusIcon_activate_cb(void) {/*{{{*/
         manglerWindow->set_skip_taskbar_hint(false);
         iconified = false;
     } else {
+        manglerWindow->iconify();
         manglerWindow->set_skip_pager_hint(true);
         manglerWindow->set_skip_taskbar_hint(true);
-        manglerWindow->iconify();
         iconified = true;
     }
 }/*}}}*/
@@ -492,6 +493,7 @@ bool Mangler::getNetworkEvent() {/*{{{*/
             case V3_EVENT_ERROR_MSG:/*{{{*/
                 builder->get_widget("errorDialog", msgdialog);
                 msgdialog->set_icon(icons["tray_icon"]);
+                msgdialog->set_keep_above(true);
                 msgdialog->set_message(ev->error.message);
                 msgdialog->run();
                 msgdialog->hide();
@@ -655,6 +657,7 @@ bool Mangler::checkPushToTalkMouse(void) {/*{{{*/
 Glib::ustring Mangler::getPasswordEntry(Glib::ustring title, Glib::ustring prompt) {/*{{{*/
     password = "";
     passwordEntry->set_text("");
+    passwordDialog->set_keep_above(true);
     passwordDialog->set_title(title);
     passwordDialog->run();
     passwordDialog->hide();

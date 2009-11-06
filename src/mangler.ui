@@ -536,6 +536,7 @@
   </object>
   <object class="GtkWindow" id="serverListWindow">
     <property name="title" translatable="yes">Mangler Server List</property>
+    <property name="type_hint">dialog</property>
     <property name="skip_taskbar_hint">True</property>
     <property name="skip_pager_hint">True</property>
     <property name="transient_for">manglerWindow</property>
@@ -1017,11 +1018,10 @@
     <property name="border_width">5</property>
     <property name="window_position">center-on-parent</property>
     <property name="destroy_with_parent">True</property>
-    <property name="type_hint">normal</property>
+    <property name="type_hint">dialog</property>
     <property name="skip_taskbar_hint">True</property>
     <property name="skip_pager_hint">True</property>
     <property name="transient_for">manglerWindow</property>
-    <property name="has_separator">False</property>
     <property name="program_name">Mangler</property>
     <property name="version">0.0 (SVN)</property>
     <property name="copyright" translatable="yes">Copyright 2009 by Eric Kilfoil</property>
@@ -1078,7 +1078,7 @@ out the encryption
     <property name="modal">True</property>
     <property name="window_position">center-on-parent</property>
     <property name="destroy_with_parent">True</property>
-    <property name="type_hint">normal</property>
+    <property name="type_hint">dialog</property>
     <property name="skip_taskbar_hint">True</property>
     <property name="skip_pager_hint">True</property>
     <property name="urgency_hint">True</property>
@@ -1305,6 +1305,8 @@ out the encryption
     <property name="title" translatable="yes">Settings</property>
     <property name="resizable">False</property>
     <property name="modal">True</property>
+    <property name="destroy_with_parent">True</property>
+    <property name="type_hint">dialog</property>
     <property name="skip_taskbar_hint">True</property>
     <property name="skip_pager_hint">True</property>
     <property name="transient_for">manglerWindow</property>
@@ -1544,7 +1546,7 @@ out the encryption
                     <child>
                       <object class="GtkLabel" id="notificationDeviceInfoLabel">
                         <property name="visible">True</property>
-                        <property name="xalign">0.05000000074505806</property>
+                        <property name="xalign">0</property>
                         <property name="label" translatable="yes">&lt;b&gt;Notifications&lt;/b&gt;
 Notifications are the sound effects that are played when you login, logout, a user joins your channel, etc.</property>
                         <property name="use_markup">True</property>
@@ -1993,7 +1995,7 @@ Notifications are the sound effects that are played when you login, logout, a us
     <property name="modal">True</property>
     <property name="window_position">center-on-parent</property>
     <property name="destroy_with_parent">True</property>
-    <property name="type_hint">normal</property>
+    <property name="type_hint">dialog</property>
     <property name="skip_taskbar_hint">True</property>
     <property name="skip_pager_hint">True</property>
     <property name="transient_for">manglerWindow</property>
@@ -2087,6 +2089,7 @@ Notifications are the sound effects that are played when you login, logout, a us
     <property name="width_request">300</property>
     <property name="height_request">300</property>
     <property name="window_position">center-on-parent</property>
+    <property name="type_hint">dialog</property>
     <property name="skip_taskbar_hint">True</property>
     <property name="skip_pager_hint">True</property>
     <property name="transient_for">manglerWindow</property>
@@ -2177,6 +2180,7 @@ Notifications are the sound effects that are played when you login, logout, a us
     <property name="height_request">200</property>
     <property name="title" translatable="yes">User Settings Window</property>
     <property name="destroy_with_parent">True</property>
+    <property name="type_hint">dialog</property>
     <property name="transient_for">manglerWindow</property>
     <child>
       <object class="GtkAlignment" id="alignment6">
