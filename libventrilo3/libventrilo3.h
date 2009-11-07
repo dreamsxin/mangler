@@ -163,6 +163,7 @@ char *_v3_bitmasks[] = {
 #define V3_OK        0
 #define V3_MALFORMED 1
 #define V3_NOTIMPL   2
+#define V3_FAILURE	 3
 
 #define V3_NOT_WAITING 0
 #define V3_EVENT_WAITING 1

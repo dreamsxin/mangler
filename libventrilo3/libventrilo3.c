@@ -1461,7 +1461,6 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
 					int error = false;
 
 					memset(ev, 0, sizeof(v3_event));
-					// This lock will only be needed when we start calling ventrilo_read_keys() from here.
 					_v3_lock_server();
 					if(m->subtype & 0x01) {
 						error = true;
@@ -1476,6 +1475,8 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
 						_v3_net_message_dump_raw(m->encryption_key, msg->len - 12);
 						if (ventrilo_read_keys(&v3_server.client_key, &v3_server.server_key, m->encryption_key, msg->len - 12) < 0) {
 							_v3_error("could not parse keys from the server");
+							free(m->encryption_key);
+							return V3_FAILURE;
 						}
 						free(m->encryption_key);
 					}
@@ -1493,23 +1494,28 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
 						_v3_debug(V3_DEBUG_INTERNAL, "FIXME: Unknown subtype, please report a packetdump.");
 					}
 					if(m->subtype & 0x200) {
-						_v3_debug(V3_DEBUG_INTERNAL, "FIXME: Server has been disabled: %s", _v3_server_disabled_errors[m->error_id-1]);
+						error = true;
+						strncat(buf, _v3_server_disabled_errors[m->error_id-1], 511);
 					}
 					if(m->subtype & 0x400) {
 						_v3_debug(V3_DEBUG_INTERNAL, "FIXME: Unknown subtype, please report a packetdump.");
 					}
+					
+					_v3_destroy_packet(msg);
+					_v3_unlock_server();
+					
 					if (error) {
 						ev->type = V3_EVENT_ERROR_MSG;
 						strncpy(ev->error.message, buf, 512);
 						v3_queue_event(ev);
+						_v3_func_leave("_v3_process_message");
+						return V3_FAILURE;
 					} else {
 						// it's an informational message free it for now, may want
 						// to queue it as something else later
 						free(ev);
 					}
-					_v3_destroy_packet(msg);
 					_v3_func_leave("_v3_process_message");
-					_v3_unlock_server();
 				}
 		return V3_OK;/*}}}*/
         case 0x3b:/*{{{*/
@@ -2280,19 +2286,23 @@ v3_login(char *server, char *username, char *password, char *phonetic) {/*{{{*/
        Grab server information.
      */
     msg = _v3_recv(V3_BLOCK);
-    if(msg->type == 0x59) {
-		_v3_process_message(msg);
-		return false;
-	}
+    type = msg->type;
     _v3_process_message(msg);
     
+    /*
+       User was banned, get to the choppah!
+     */
+	if(type == 0x59) {
+		return false;
+	}
+
     /*
        Send authentication info.
      */
 	msg = _v3_put_0x48();
 	_v3_send(msg);
 	_v3_destroy_packet(msg);
-    
+
     /*
        Process several messages until we're logged in.
      */
@@ -2316,7 +2326,20 @@ v3_login(char *server, char *username, char *password, char *phonetic) {/*{{{*/
                 _v3_status(80, "Receiving MOTD.");
                 break;
         }
-		_v3_process_message(msg);
+		switch (_v3_process_message(msg)) {
+			case V3_MALFORMED:
+				_v3_debug(V3_DEBUG_INTERNAL, "received malformed packet");
+				break;
+			case V3_NOTIMPL:
+				_v3_debug(V3_DEBUG_INTERNAL, "packet type not implemented");
+				break;
+			case V3_OK:
+				_v3_debug(V3_DEBUG_INTERNAL, "packet processed");
+				break;
+			case V3_FAILURE:
+				return false;
+				break;
+		}
 	} while(type != 0x34);
 	
 	if (v3_is_loggedin()) {

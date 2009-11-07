@@ -236,13 +236,14 @@ _v3_net_message *_v3_put_0x00() {
     
     mc->type = 0x00;
     strncpy(mc->version, "3.0.0", 16);
+    memset(mc->salt1, 0, 32);
+    memset(mc->salt2, 0, 32);
     int ctr;
     for(ctr = 0; ctr < 31; ctr++) {
         mc->salt1[ctr] = rand() % 93 + 33;
         mc->salt2[ctr] = rand() % 93 + 33;
     }
-    mc->salt1[ctr] = '\0';
-    mc->salt2[ctr] = '\0';
+    
     m->contents = mc;
     m->data = (char *)mc;
     _v3_func_leave("_v3_put_0x00");
