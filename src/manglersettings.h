@@ -43,6 +43,18 @@ class ManglerSettings
         bool                isDetectingMouse;
         ManglerConfig       config;
 
+        // Audio Player List Combo Box Setup
+        Gtk::ComboBox       *audioPlayerComboBox;
+        class audioPlayerModelColumns : public Gtk::TreeModel::ColumnRecord
+        {
+            public:
+                audioPlayerModelColumns() { add(id); add(name); }
+                Gtk::TreeModelColumn<uint32_t>      id;
+                Gtk::TreeModelColumn<Glib::ustring> name;
+        };
+        audioPlayerModelColumns  audioPlayerColumns;
+        Glib::RefPtr<Gtk::ListStore> audioPlayerTreeModel;
+
         // Input Device Combo Box Setup
         Gtk::ComboBox       *inputDeviceComboBox;
         class inputDeviceModelColumns : public Gtk::TreeModel::ColumnRecord
@@ -99,7 +111,7 @@ class ManglerSettings
         void settingsPTTKeyButton_clicked_cb(void);
         void settingsEnablePTTMouseCheckButton_toggled_cb(void);
         void settingsPTTMouseButton_clicked_cb(void);
-
+        void settingsEnableAudioIntegrationCheckButton_toggled_cb(void);
 
 };
 

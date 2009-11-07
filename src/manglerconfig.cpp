@@ -39,6 +39,8 @@ ManglerConfig::ManglerConfig() {/*{{{*/
     PushToTalkKeyValue              = "";
     PushToTalkMouseEnabled          = false;
     PushToTalkMouseValue            = "";
+    AudioIntegrationEnabled         = false;
+    AudioIntegrationPlayer          = "";
     notificationLoginLogout         = true;
     notificationChannelEnterLeave   = true;
     notificationTransmitStartStop   = true;
@@ -60,6 +62,8 @@ bool ManglerConfig::save() {/*{{{*/
     put("PushToTalkKeyValue", PushToTalkKeyValue);
     put("PushToTalkMouseEnabled", PushToTalkMouseEnabled);
     put("PushToTalkMouseValue", PushToTalkMouseValue);
+    put("AudioIntegrationEnabled", AudioIntegrationEnabled);
+    put("AudioIntegrationPlayer", AudioIntegrationPlayer);
     put("inputDeviceName", inputDeviceName);
     put("outputDeviceName", outputDeviceName);
     put("notificationDeviceName", notificationDeviceName);
@@ -188,6 +192,8 @@ void ManglerConfig::load() {/*{{{*/
     parsePushToTalkValue(PushToTalkKeyValue);
     PushToTalkMouseEnabled        = get("PushToTalkMouseEnabled") == "0" ? false : true;
     PushToTalkMouseValue          = get("PushToTalkMouseValue");
+    AudioIntegrationEnabled       = get("AudioIntegrationEnabled") == "0" ? false : true;
+    AudioIntegrationPlayer        = get("AudioIntegrationPlayer");
     inputDeviceName               = get("inputDeviceName");
     outputDeviceName              = get("outputDeviceName");
     notificationDeviceName        = get("notificationDeviceName");

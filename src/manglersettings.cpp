@@ -63,6 +63,18 @@ ManglerSettings::ManglerSettings(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
     builder->get_widget("settingsPTTMouseButton", button);
     button->signal_clicked().connect(sigc::mem_fun(this, &ManglerSettings::settingsPTTMouseButton_clicked_cb));
 
+    builder->get_widget("settingsEnableAudioIntegrationCheckButton", checkbutton);
+    checkbutton->signal_toggled().connect(sigc::mem_fun(this, &ManglerSettings::settingsEnableAudioIntegrationCheckButton_toggled_cb));
+    builder->get_widget("settingsAudioIntegrationComboBox", audioPlayerComboBox);
+    audioPlayerTreeModel = Gtk::ListStore::create(audioPlayerColumns);
+    audioPlayerComboBox->set_model(audioPlayerTreeModel);
+    // create a "none" row
+    Gtk::TreeModel::Row audioPlayerNoneRow = *(audioPlayerTreeModel->append());
+    audioPlayerNoneRow[audioPlayerColumns.id] = -1;
+    audioPlayerNoneRow[audioPlayerColumns.name] = "None";
+    audioPlayerComboBox->pack_start(audioPlayerColumns.name);
+    audioPlayerComboBox->set_active(audioPlayerNoneRow);
+
     builder->get_widget("inputDeviceComboBox", inputDeviceComboBox);
     inputDeviceTreeModel = Gtk::ListStore::create(inputColumns);
     inputDeviceComboBox->set_model(inputDeviceTreeModel);
@@ -79,6 +91,8 @@ ManglerSettings::ManglerSettings(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
     notificationDeviceComboBox->pack_start(notificationColumns.description);
 }/*}}}*/
 void ManglerSettings::applySettings(void) {/*{{{*/
+    Gtk::TreeModel::iterator iter;
+
     // Push to Talk
     builder->get_widget("settingsEnablePTTKeyCheckButton", checkbutton);
     config.PushToTalkKeyEnabled = checkbutton->get_active() ? true : false;
@@ -92,8 +106,16 @@ void ManglerSettings::applySettings(void) {/*{{{*/
     builder->get_widget("settingsPTTMouseValueLabel", label);
     config.PushToTalkMouseValue = label->get_text();
 
+    // Audio Player Integration
+    builder->get_widget("settingsEnableAudioIntegrationCheckButton", checkbutton);
+    config.AudioIntegrationEnabled = checkbutton->get_active() ? true : false;
+    iter = audioPlayerComboBox->get_active();
+    if (iter) {
+        Gtk::TreeModel::Row row = *iter;
+        config.AudioIntegrationPlayer = row[audioPlayerColumns.name];
+    }
+
     // Audio Devices
-    Gtk::TreeModel::iterator iter;
     iter = inputDeviceComboBox->get_active();
     if (iter) {
         Gtk::TreeModel::Row row = *iter;
@@ -180,7 +202,19 @@ void ManglerSettings::initSettings(void) {/*{{{*/
     builder->get_widget("settingsPTTMouseValueLabel", label);
     label->set_text(config.PushToTalkMouseValue);
 
+    // Audio Player Integration
+    builder->get_widget("settingsEnableAudioIntegrationCheckButton", checkbutton);
+    checkbutton->set_active(config.AudioIntegrationEnabled ? true : false);
+    int inputSelection = 0;
+    int inputCtr = 1;
+    /*
+       iterate through whatever is available based on what we can find and populate the store
+       audioPlayerComboBox->set_active(iterOfSelectedinStore);
+    */
+
     // Audio Devices
+    // the proper devices are selected in the window->show() callback
+
     // Notification sounds
     builder->get_widget("notificationLoginLogoutCheckButton", checkbutton);
     checkbutton->set_active(config.notificationLoginLogout ? true : false);
@@ -350,6 +384,14 @@ void ManglerSettings::settingsEnablePTTKeyCheckButton_toggled_cb(void) {/*{{{*/
         label->set_sensitive(false);
         builder->get_widget("settingsPTTKeyButton", button);
         button->set_sensitive(false);
+    }
+}/*}}}*/
+void ManglerSettings::settingsEnableAudioIntegrationCheckButton_toggled_cb(void) {/*{{{*/
+    builder->get_widget("settingsEnableAudioIntegrationCheckButton", checkbutton);
+    if (checkbutton->get_active()) {
+        audioPlayerComboBox->set_sensitive(true);
+    } else {
+        audioPlayerComboBox->set_sensitive(false);
     }
 }/*}}}*/
 /*
