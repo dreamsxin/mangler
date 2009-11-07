@@ -180,12 +180,12 @@ enum _v3_events
     V3_EVENT_PLAY_AUDIO,
     V3_EVENT_DISPLAY_MOTD,
     V3_EVENT_DISCONNECT,
+    V3_EVENT_USER_MODIFY,
 
     // outbound specific event types
     V3_EVENT_CHANGE_CHANNEL,
 
     // not implemented
-    V3_EVENT_USER_MODIFY,
     V3_EVENT_USER_PAGED,
     V3_EVENT_LUSER_FORCE_CHAN_MOVE,
     V3_EVENT_CHAN_REMOVED,

@@ -138,6 +138,16 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
     builder->get_widget("passwordCancelButton", button);
     button->signal_clicked().connect(sigc::mem_fun(this, &Mangler::passwordDialogCancelButton_clicked_cb));
 
+    // Set up the text string change dialog box
+    builder->get_widget("textStringChangeDialog", textStringChangeDialog);
+    builder->get_widget("textStringChangeCommentEntry", textStringChangeCommentEntry);
+    builder->get_widget("textStringChangeURLEntry", textStringChangeURLEntry);
+    builder->get_widget("textStringChangeIntegrationEntry", textStringChangeIntegrationEntry);
+    builder->get_widget("textStringOkButton", button);
+    button->signal_clicked().connect(sigc::mem_fun(this, &Mangler::textStringChangeDialogOkButton_clicked_cb));
+    builder->get_widget("textStringCancelButton", button);
+    button->signal_clicked().connect(sigc::mem_fun(this, &Mangler::textStringChangeDialogCancelButton_clicked_cb));
+
     // Create Channel Tree
     channelTree = new ManglerChannelTree(builder);
 
@@ -217,7 +227,8 @@ void Mangler::connectButton_clicked_cb(void) {/*{{{*/
     return;
 }/*}}}*/
 void Mangler::commentButton_clicked_cb(void) {/*{{{*/
-    //fprintf(stderr, "comment button clicked\n");
+    textStringChangeDialog->run();
+    textStringChangeDialog->hide();
 }/*}}}*/
 void Mangler::chatButton_clicked_cb(void) {/*{{{*/
     //fprintf(stderr, "chat button clicked\n");
@@ -667,6 +678,18 @@ void Mangler::passwordDialogCancelButton_clicked_cb(void) {/*{{{*/
     password = "";
 }/*}}}*/
 
+void Mangler::textStringChangeDialogOkButton_clicked_cb(void) {/*{{{*/
+    comment          = textStringChangeCommentEntry->get_text();
+    url              = textStringChangeURLEntry->get_text();
+    integration_text = textStringChangeIntegrationEntry->get_text();
+    v3_set_text((char *) ustring_to_c(comment).c_str(), (char *) ustring_to_c(url).c_str(), (char *) ustring_to_c(integration_text).c_str(), false);
+}/*}}}*/
+void Mangler::textStringChangeDialogCancelButton_clicked_cb(void) {/*{{{*/
+    textStringChangeCommentEntry->set_text(comment);
+    textStringChangeURLEntry->set_text(url);
+    textStringChangeIntegrationEntry->set_text(integration_text);
+}/*}}}*/
+
 ManglerError::ManglerError(uint32_t code, Glib::ustring message, Glib::ustring module) {/*{{{*/
     this->code = code;
     this->message = message;
@@ -704,7 +727,7 @@ main (int argc, char *argv[])
     gdk_threads_leave();
 }
 
-std::string ustring_to_c(Glib::ustring input) {
+std::string ustring_to_c(Glib::ustring input) {/*{{{*/
     std::string to_charset, converted;
 
     if (Glib::get_charset(to_charset) == true)
@@ -717,8 +740,7 @@ std::string ustring_to_c(Glib::ustring input) {
     }
     
     return converted;
-}
-
+}/*}}}*/
 Glib::ustring c_to_ustring(char *input) {/*{{{*/
     Glib::ustring converted, input_u = input;
 

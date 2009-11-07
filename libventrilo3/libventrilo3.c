@@ -793,6 +793,33 @@ _v3_recv(int block) {/*{{{*/
                             }
                         }
                         break;/*}}}*/
+                    case V3_EVENT_USER_MODIFY:/*{{{*/
+                        {
+                            _v3_net_message *msg;
+                            v3_user *user;
+
+                            user = v3_get_user(v3_luser.id);
+                            free(user->name);
+                            free(user->phonetic);
+                            free(user->comment);
+                            free(user->url);
+                            free(user->integration_text);
+                            user->name = strdup("");
+                            user->phonetic = strdup("");
+                            user->comment = strdup(ev.text.comment);
+                            user->url = strdup(ev.text.url);
+                            user->integration_text = strdup(ev.text.integration_text);
+                            _v3_debug(V3_DEBUG_INFO, "setting cm: %s, url: %s, integration: %s", ev.text.comment, ev.text.url, ev.text.integration_text);
+                            msg = _v3_put_0x5d(V3_MODIFY_USER, 1, user);
+                            if (_v3_send(msg)) {
+                                _v3_debug(V3_DEBUG_SOCKET, "sent text strings changes to server");
+                            } else {
+                                _v3_debug(V3_DEBUG_SOCKET, "failed to send text string change message");
+                            }
+                            v3_free_user(user);
+                            _v3_destroy_packet(msg);
+                        }
+                        break;/*}}}*/
                     default:
                         _v3_debug(V3_DEBUG_EVENT, "received unknown event type %d from queue", ev.type);
                         break;
@@ -2518,37 +2545,28 @@ v3_change_channel(uint16_t channel_id, char *password) {/*{{{*/
 
 int
 v3_set_text(char *comment, char *url, char *integration_text, uint8_t silent) {/*{{{*/
-    _v3_net_message *msg;
-    v3_user *user;
+    v3_event ev;
 
     _v3_func_enter("v3_set_text");
-
-    // TODO: this needs to be implemented using the queue
-    user = v3_get_user(v3_luser.id);
-    free(user->name);
-    free(user->phonetic);
-    free(user->comment);
-    free(user->url);
-    free(user->integration_text);
-    user->name = strdup("");
-    user->phonetic = strdup("");
-    user->comment = strdup(comment);
-    user->url = strdup(url);
-    user->integration_text = strdup(integration_text);
-    _v3_debug(V3_DEBUG_INFO, "setting cm: %s, url: %s, integration: %s", comment, url, integration_text);
-    msg = _v3_put_0x5d(V3_MODIFY_USER, 1, user);
-    if (_v3_send(msg)) {
-        v3_free_user(user);
-        _v3_destroy_packet(msg);
+    if (!v3_is_loggedin()) {
         _v3_func_leave("v3_set_text");
-        return true;
-    } else {
-        v3_free_user(user);
-        _v3_debug(V3_DEBUG_INFO, "send failed: ", _v3_error(NULL));
-        _v3_func_leave("v3_set_text");
-        _v3_destroy_packet(msg);
-        return false;
+        return;
     }
+    memset(&ev, 0, sizeof(v3_event));
+    ev.type = V3_EVENT_USER_MODIFY;
+    ev.user.id = v3_get_user_id();
+    strncpy(ev.text.comment, comment, 127);
+    strncpy(ev.text.url, url, 127);
+    strncpy(ev.text.integration_text, integration_text, 127);
+    _v3_lock_sendq();
+    _v3_debug(V3_DEBUG_EVENT, "sending %lu bytes to event pipe", sizeof(v3_event));
+    if (fwrite(&ev, sizeof(struct _v3_event), 1, v3_server.evoutstream) != 1) {
+        _v3_error("could not write to event pipe");
+    }
+    fflush(v3_server.evoutstream);
+    _v3_unlock_sendq();
+    _v3_func_leave("v3_change_channel");
+    return;
 }/*}}}*/
 
 int

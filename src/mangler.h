@@ -80,6 +80,15 @@ class Mangler
         Glib::ustring                       password;
         bool                                passwordStatus;
 
+        // These are used by the text string entry dialog
+        Gtk::Dialog                         *textStringChangeDialog;
+        Gtk::Entry                          *textStringChangeCommentEntry;
+        Gtk::Entry                          *textStringChangeURLEntry;
+        Gtk::Entry                          *textStringChangeIntegrationEntry;
+        Glib::ustring                       comment;
+        Glib::ustring                       url;
+        Glib::ustring                       integration_text;
+
         Glib::Thread                        *networkThread;
 
         Glib::ustring getPasswordEntry(Glib::ustring title = "Password", Glib::ustring prompt = "Password");
@@ -118,6 +127,10 @@ class Mangler
         // password dialog signal handlers
         void passwordDialogOkButton_clicked_cb(void);
         void passwordDialogCancelButton_clicked_cb(void);
+
+        // text string change dialog signal handlers
+        void textStringChangeDialogOkButton_clicked_cb(void);
+        void textStringChangeDialogCancelButton_clicked_cb(void);
 };
 
 struct _cli_options {
