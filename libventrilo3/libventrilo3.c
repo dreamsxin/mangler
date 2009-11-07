@@ -2174,6 +2174,8 @@ v3_login(char *server, char *username, char *password, char *phonetic) {/*{{{*/
         _v3_debug(V3_DEBUG_INTERNAL, "freeing up resources from previous login");
         v3_server.port = 0;
         v3_server.max_clients = 0;
+        v3_server.byte_count = 0;
+        v3_server.packet_count = 0;
         v3_server.connected_clients = 0;
         free(v3_server.name);
         free(v3_server.version);
