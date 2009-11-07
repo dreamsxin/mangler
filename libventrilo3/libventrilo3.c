@@ -384,60 +384,6 @@ _v3_next_timestamp(struct timeval *result, struct timeval *timestamp) {/*{{{*/
     return last.tv_sec < now.tv_sec;
 }/*}}}*/
 
-/*
-   Perform the initial key exchange with the server
- */
-int
-_v3_server_key_exchange(void) {/*{{{*/
-    _v3_net_message msg;
-    _v3_msg_0x00 msg0;
-    char buf[32];
-    char *msgdata;
-    int ctr, len;
-
-    _v3_func_enter("_v3_server_key_exchange");
-
-    // Build a net message of type zero with random data
-    memset(&msg0, 0, sizeof(_v3_msg_0x00));
-    strncpy(msg0.version, "3.0.0", 16);
-    
-    for(ctr = 0; ctr < 31; ctr++) {
-        buf[ctr] = rand() % 93 + 33;
-    }
-    buf[ctr] = '\0';
-    memcpy(msg0.salt1, buf, 32);
-    
-    for(ctr = 0; ctr < 31; ctr++) {
-        buf[ctr] = rand() % 93 + 33;
-    }
-    buf[ctr] = '\0';
-    memcpy(msg0.salt2, buf, 32);
-    
-    msg.type = 0x00;
-    msg.len  = sizeof(_v3_msg_0x00);
-    msg.data = (char *)&msg0;
-    
-    _v3_net_message_dump(&msg);
-
-    // Encrypt the message and send it to the server
-    ventrilo_first_enc((uint8_t *)msg.data, msg.len);
-    _v3_send_enc_msg(msg.data, msg.len);
-
-    msgdata = malloc(0xffff);
-    len = _v3_recv_enc_msg(msgdata);
-    ventrilo_first_dec((uint8_t *)msgdata, len);
-    _v3_debug(V3_DEBUG_INFO, "Received following packet with keys:");
-    _v3_net_message_dump_raw(msgdata, len);
-
-    if (ventrilo_read_keys(&v3_server.client_key, &v3_server.server_key, (uint8_t *)msgdata+12, len-12) < 0) {
-        _v3_error("could not parse keys from the server");
-    }
-    free(msgdata);
-
-    _v3_func_leave("_v3_server_key_exchange");
-    return true;
-}/*}}}*/
-
 int
 _v3_server_auth(struct in_addr *srvip, uint16_t srvport) {/*{{{*/
     int sd, len, hs_srv_num;
@@ -853,9 +799,16 @@ _v3_recv(int block) {/*{{{*/
                 _v3_func_leave("_v3_recv");
                 return NULL;
             } else {
+				v3_server.packet_count++;
+				v3_server.byte_count += msg->len;
                 _v3_debug(V3_DEBUG_SOCKET, "received %d bytes", msg->len);
             }
-            ventrilo_dec(&v3_server.server_key, (uint8_t *)msgdata, msg->len);
+            
+            if(v3_server.packet_count == 1) {
+				ventrilo_first_dec((uint8_t *)msgdata, msg->len);
+			} else {
+				ventrilo_dec(&v3_server.server_key, (uint8_t *)msgdata, msg->len);
+			}
             _v3_debug(V3_DEBUG_INTERNAL, "decryption complete");
             memcpy(&msg->type, msgdata, 2);
             msg->data = malloc(msg->len);
@@ -1496,74 +1449,69 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
     _v3_func_enter("_v3_process_message");
     _v3_debug(V3_DEBUG_INTERNAL, "beginning packet processing on msg type '0x%02X' (%d)", msg->type, (uint16_t)msg->type);
     switch (msg->type) {
-	case 0x06:/*{{{*/
-	    if(!_v3_get_0x06(msg)) {
-		_v3_destroy_packet(msg);
-		_v3_func_leave("_v3_process_message");
-		return V3_MALFORMED;
-            } else {
-                _v3_msg_0x06 *m = msg->contents;
-                v3_event *ev = malloc(sizeof(v3_event));
-                char buf[512] = "";
-                int error = false;
+		case 0x06:/*{{{*/
+			if(!_v3_get_0x06(msg)) {
+			_v3_destroy_packet(msg);
+			_v3_func_leave("_v3_process_message");
+			return V3_MALFORMED;
+				} else {
+					_v3_msg_0x06 *m = msg->contents;
+					v3_event *ev = malloc(sizeof(v3_event));
+					char buf[512] = "";
+					int error = false;
 
-                memset(ev, 0, sizeof(v3_event));
-                // This lock will only be needed when we start calling ventrilo_read_keys() from here.
-                _v3_lock_server();
-                if(m->subtype & 0x01) {
-                    error = true;
-                    ev->error.disconnected = true;
-                    strncat(buf, "You have been disconnected from the server.\n", 511);
-                    _v3_logout();
-                }
-                if(m->subtype & 0x02) {
-                    _v3_debug(V3_DEBUG_INTERNAL, "FIXME: Authenticated as administrator.");
-                }
-                if(m->subtype & 0x04) {
-                    /*
-                     * TODO: 
-                     * We should pass m->encryption_key to ventrilo_read_keys() and respond with our own key.
-                     * For now, this is done using the _v3_server_key_exchange() function.
-                     */
-                    _v3_debug(V3_DEBUG_INTERNAL, "FIXME: ventrilo_read_keys() should be called from 0x06 processing.");
-                    /*
-                       if (ventrilo_read_keys(&v3_server.client_key, &v3_server.server_key, m->encryption_key, m->len - 12) < 0) {
-                       _v3_error("could not parse keys from the server");
-                       }*/
-                }
-                if(m->subtype & 0x10) {
-                    _v3_debug(V3_DEBUG_INTERNAL, "FIXME: Unknown subtype, please report a packetdump.");
-                }
-                if(m->subtype & 0x20) {
-                    _v3_debug(V3_DEBUG_INTERNAL, "FIXME: Unknown subtype, please report a packetdump.");
-                }
-                if(m->subtype & 0x40) {
-                    error = true;
-                    strncat(buf, "The supplied password is incorrect.\n", 511);
-                }
-                if(m->subtype & 0x100) {
-                    _v3_debug(V3_DEBUG_INTERNAL, "FIXME: Unknown subtype, please report a packetdump.");
-                }
-                if(m->subtype & 0x200) {
-                    _v3_debug(V3_DEBUG_INTERNAL, "FIXME: Server has been disabled: %s", _v3_server_disabled_errors[m->error_id-1]);
-                }
-                if(m->subtype & 0x400) {
-                    _v3_debug(V3_DEBUG_INTERNAL, "FIXME: Unknown subtype, please report a packetdump.");
-                }
-                if (error) {
-                    ev->type = V3_EVENT_ERROR_MSG;
-                    strncpy(ev->error.message, buf, 512);
-                    v3_queue_event(ev);
-                } else {
-                    // it's an informational message free it for now, may want
-                    // to queue it as something else later
-                    free(ev);
-                }
-                _v3_destroy_packet(msg);
-                _v3_func_leave("_v3_process_message");
-                _v3_unlock_server();
-            }
-	return V3_OK;/*}}}*/
+					memset(ev, 0, sizeof(v3_event));
+					// This lock will only be needed when we start calling ventrilo_read_keys() from here.
+					_v3_lock_server();
+					if(m->subtype & 0x01) {
+						error = true;
+						ev->error.disconnected = true;
+						strncat(buf, "You have been disconnected from the server.\n", 511);
+						_v3_logout();
+					}
+					if(m->subtype & 0x02) {
+						_v3_debug(V3_DEBUG_INTERNAL, "FIXME: Authenticated as administrator.");
+					}
+					if(m->subtype & 0x04) {
+						_v3_net_message_dump_raw(m->encryption_key, msg->len - 12);
+						if (ventrilo_read_keys(&v3_server.client_key, &v3_server.server_key, m->encryption_key, msg->len - 12) < 0) {
+							_v3_error("could not parse keys from the server");
+						}
+						free(m->encryption_key);
+					}
+					if(m->subtype & 0x10) {
+						_v3_debug(V3_DEBUG_INTERNAL, "FIXME: Unknown subtype, please report a packetdump.");
+					}
+					if(m->subtype & 0x20) {
+						_v3_debug(V3_DEBUG_INTERNAL, "FIXME: Unknown subtype, please report a packetdump.");
+					}
+					if(m->subtype & 0x40) {
+						error = true;
+						strncat(buf, "The supplied password is incorrect.\n", 511);
+					}
+					if(m->subtype & 0x100) {
+						_v3_debug(V3_DEBUG_INTERNAL, "FIXME: Unknown subtype, please report a packetdump.");
+					}
+					if(m->subtype & 0x200) {
+						_v3_debug(V3_DEBUG_INTERNAL, "FIXME: Server has been disabled: %s", _v3_server_disabled_errors[m->error_id-1]);
+					}
+					if(m->subtype & 0x400) {
+						_v3_debug(V3_DEBUG_INTERNAL, "FIXME: Unknown subtype, please report a packetdump.");
+					}
+					if (error) {
+						ev->type = V3_EVENT_ERROR_MSG;
+						strncpy(ev->error.message, buf, 512);
+						v3_queue_event(ev);
+					} else {
+						// it's an informational message free it for now, may want
+						// to queue it as something else later
+						free(ev);
+					}
+					_v3_destroy_packet(msg);
+					_v3_func_leave("_v3_process_message");
+					_v3_unlock_server();
+				}
+		return V3_OK;/*}}}*/
         case 0x3b:/*{{{*/
             /*
              *  This is almost identical to 0x53, so whatever you do here probably
@@ -2032,7 +1980,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                         strncat(buf, buf2, 1023);
                     }
                     _v3_debug(V3_DEBUG_INTERNAL, "disconnecting from server");
-                    _v3_close_connection();
+                    _v3_logout();
                 }
                 ev = malloc(sizeof(v3_event));
                 memset(ev, 0, sizeof(v3_event));
@@ -2319,99 +2267,77 @@ v3_login(char *server, char *username, char *password, char *phonetic) {/*{{{*/
     }
     _v3_status(20, "Connected to %s... exchanging encryption keys", inet_ntoa(srvip));
     gettimeofday(&v3_server.last_timestamp, NULL);
+    
     /*
-       At this point, we have a TCP connection to the server.  It's time to
-       start the authentication process, first start with the key exchange
+	   Initiate the encryption handshake by handing the server our randomly generated key.
      */
-    _v3_server_key_exchange();
-
-    // Wait for the info message to come back
-    msg = _v3_recv(V3_BLOCK);
-    if (msg->type != 0x57) {
-        _v3_debug(V3_DEBUG_INTERNAL, "expected message type 0x57, received type %02X", msg->type);
-        return false;
-    }
-    switch (_v3_process_message(msg)) {
-        case V3_MALFORMED:
-            _v3_debug(V3_DEBUG_INTERNAL, "received malformed packet or unimplemented subtype");
-            break;
-        case V3_NOTIMPL:
-            _v3_debug(V3_DEBUG_INTERNAL, "packet type not implemented -- if we ignore it, maybe it'll go away");
-            break;
-        case V3_OK:
-            _v3_debug(V3_DEBUG_INTERNAL, "packet processed");
-            break;
-    }
-
-    /*
-     * Message type 0x48 is the actual login message.  This sends the username,
-     * password, phonetic, etc.  Process all responses up to (and including)
-     * 0x34, which is the key scramble
-     */
-    _v3_status(30, "Connected to %s... logging in", inet_ntoa(srvip));
-    msg = _v3_put_0x48();
-    _v3_send(msg);
+    msg = _v3_put_0x00();
+    ventrilo_first_enc((uint8_t *)msg->data, msg->len);
+    _v3_send_enc_msg(msg->data, msg->len);
     _v3_destroy_packet(msg);
+    
+    /*
+       Grab server information.
+     */
+    msg = _v3_recv(V3_BLOCK);
+    if(msg->type == 0x59) {
+		_v3_process_message(msg);
+		return false;
+	}
+    _v3_process_message(msg);
+    
+    /*
+       Send authentication info.
+     */
+	msg = _v3_put_0x48();
+	_v3_send(msg);
+	_v3_destroy_packet(msg);
+    
+    /*
+       Process several messages until we're logged in.
+     */
     do {
-        if ((msg = _v3_recv(V3_BLOCK)) == NULL) {
-            _v3_error("recv() failed");
-            return false;
-        }
-        type = msg->type;
+		msg = _v3_recv(V3_BLOCK);	
+		type = msg->type;
         switch (type) {
             case 0x4a:
-                _v3_status(40, "Receiving User Permissions.");
+                _v3_status(40, "Receiving user permissions.");
                 break;
             case 0x5d:
-                _v3_status(50, "Receiving User List.");
+                _v3_status(50, "Receiving user list.");
                 break;
             case 0x60:
-                _v3_status(60, "Receiving Channel List.");
+                _v3_status(60, "Receiving channel list.");
                 break;
             case 0x46:
-                _v3_status(70, "Receiving User Settings.");
+                _v3_status(70, "Receiving user settings.");
                 break;
             case 0x50:
                 _v3_status(80, "Receiving MOTD.");
                 break;
         }
-        switch (_v3_process_message(msg)) {
-            case V3_MALFORMED:
-                _v3_debug(V3_DEBUG_INTERNAL, "received malformed packet");
-                break;
-            case V3_NOTIMPL:
-                _v3_debug(V3_DEBUG_INTERNAL, "packet type not implemented");
-                break;
-            case V3_OK:
-                _v3_debug(V3_DEBUG_INTERNAL, "packet processed");
-                break;
-        }
-        // 0x59 is a error message that will be received if you are banned
-        // 0x06 is a specific authentication error message
-        if (type == 0x59 || type == 0x06) {
-            return false;
-        }
-    } while (type != 0x34);
-    /*
-     * After we recive the key scramble packet, if we're still connected, we
-     * should be logged in.  We need t respond to the 0x5c message we
-     * previously ignored and send our user settings to the server.  At that
-     * point, normal packet processing can begin.
-     */
-    if (v3_is_loggedin()) {
+		_v3_process_message(msg);
+	} while(type != 0x34);
+	
+	if (v3_is_loggedin()) {
         _v3_net_message *response;
 
-        _v3_status(90, "Scraming Encryption Table.");
+		/*
+		 * Start off the 0x5C sequence to verify we're a valid client.
+		 */
+        _v3_status(90, "Scrambling encryption table.");
         response = _v3_put_0x5c(0);
         _v3_send(response);
         _v3_destroy_packet(response);
 
-        _v3_status(95, "Sending User Settings.");
+		/*
+		 * Tell server some specific client settings.
+		 */
+        _v3_status(95, "Sending user settings.");
         response = _v3_put_0x46(V3_USER_ACCEPT_PAGES, v3_luser.accept_pages);
         _v3_send(response);
         _v3_destroy_packet(response);
 
-        //response = _v3_put_0x46(V3_USER_ACCEPT_U2U, v3_luser.accept_u2u);
         response = _v3_put_0x46(V3_USER_ACCEPT_U2U, 1);
         _v3_send(response);
         _v3_destroy_packet(response);
@@ -2424,7 +2350,10 @@ v3_login(char *server, char *username, char *password, char *phonetic) {/*{{{*/
         _v3_send(response);
         _v3_destroy_packet(response);
 
-        _v3_status(100, "Login Complete.");
+		/*
+		 * Let GUI know that login completed.
+		 */
+        _v3_status(100, "Login complete.");
         {
             v3_event *ev;
             ev = malloc(sizeof(v3_event));
@@ -2432,10 +2361,12 @@ v3_login(char *server, char *username, char *password, char *phonetic) {/*{{{*/
             ev->type = V3_EVENT_LOGIN_COMPLETE;
             v3_queue_event(ev);
         }
-
+		_v3_func_leave("v3_login");
         return true;
-    }
-    return false;
+    } else {
+		_v3_func_leave("v3_login");
+		return false;
+	}
 }/*}}}*/
 
 int

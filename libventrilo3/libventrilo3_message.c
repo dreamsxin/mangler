@@ -188,18 +188,13 @@ _v3_get_0x06(_v3_net_message *msg) {/*{{{*/
     m = malloc(sizeof(_v3_msg_0x06));
     memcpy(m, msg->data, 12);
     if(m->subtype & 4) {
-	/*
-	 * TODO: 
-	 * This will leak memory. 
-	 * BE SURE to free when we start calling ventrilo_read_keys from process_message.
-	 */
-	m->encryption_key = malloc(msg->len - 12);
-	memcpy(m->encryption_key, msg->data + 12, msg->len - 12);
+		m->encryption_key = malloc(msg->len - 12);
+		memcpy(m->encryption_key, msg->data + 12, msg->len - 12);
     } else {
-	m->unknown_2 = msg->data[12];
+		m->unknown_2 = msg->data[12];
     }
     msg->contents = m;
-    _v3_func_enter("_v3_get_0x06");
+    _v3_func_leave("_v3_get_0x06");
     return true;
 }/*}}}*/
 
@@ -223,6 +218,36 @@ _v3_get_0x37(_v3_net_message *msg) {/*{{{*/
     _v3_func_leave("_v3_get_0x37");
     return true;
 }/*}}}*/
+
+_v3_net_message *_v3_put_0x00() {
+    _v3_net_message *m;
+    _v3_msg_0x00 *mc;
+    
+    _v3_func_enter("_v3_put_0x00");
+    // Build our message
+    m = malloc(sizeof(_v3_net_message));
+    memset(m, 0, sizeof(_v3_net_message));
+    m->type = 0x00;
+    m->len = sizeof(_v3_msg_0x00);
+    
+    // Build our message contents
+    mc = malloc(sizeof(_v3_msg_0x00));
+    memset(mc, 0, sizeof(_v3_msg_0x00));
+    
+    mc->type = 0x00;
+    strncpy(mc->version, "3.0.0", 16);
+    int ctr;
+    for(ctr = 0; ctr < 31; ctr++) {
+        mc->salt1[ctr] = rand() % 93 + 33;
+        mc->salt2[ctr] = rand() % 93 + 33;
+    }
+    mc->salt1[ctr] = '\0';
+    mc->salt2[ctr] = '\0';
+    m->contents = mc;
+    m->data = (char *)mc;
+    _v3_func_leave("_v3_put_0x00");
+    return m;
+}
 
 _v3_net_message *_v3_put_0x37(int sequence) {/*{{{*/
     _v3_net_message *m;

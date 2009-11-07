@@ -376,6 +376,8 @@ typedef struct __v3_server {
     _v3_net_message *_queue;          // This queue (linked list) is used internally
     _v3_net_message *queue;           // This queue (linked list) stores messages that need to be processed by the client
     struct timeval last_timestamp;    // The time() of the last timestamp, a timestamp is sent every 10 seconds
+    uint32_t packet_count;			  // Total amount of packets received from server.
+    uint32_t byte_count;			  // Total amount of bytes received from server.
 } _v3_server;
 
 /*
