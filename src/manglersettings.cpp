@@ -205,8 +205,6 @@ void ManglerSettings::initSettings(void) {/*{{{*/
     // Audio Player Integration
     builder->get_widget("settingsEnableAudioIntegrationCheckButton", checkbutton);
     checkbutton->set_active(config.AudioIntegrationEnabled ? true : false);
-    int inputSelection = 0;
-    int inputCtr = 1;
     /*
        iterate through whatever is available based on what we can find and populate the store
        audioPlayerComboBox->set_active(iterOfSelectedinStore);
@@ -452,8 +450,6 @@ void ManglerSettings::settingsEnablePTTMouseCheckButton_toggled_cb(void) {/*{{{*
     }
 }/*}}}*/
 void ManglerSettings::settingsPTTMouseButton_clicked_cb(void) {/*{{{*/
-    GdkWindow   *rootwin = gdk_get_default_root_window();
-
     isDetectingMouse = true;
     builder->get_widget("settingsPTTMouseValueLabel", label);
     label->set_markup("<span color='red'>&lt;Click the mouse button you wish to use&gt;</span>");
@@ -466,7 +462,6 @@ void ManglerSettings::settingsPTTMouseButton_clicked_cb(void) {/*{{{*/
     builder->get_widget("settingsOkButton", button);
     button->set_sensitive(false);
     Glib::signal_timeout().connect( sigc::mem_fun(*this, &ManglerSettings::settingsPTTMouseDetect), 100 );
-
 }/*}}}*/
 
 bool

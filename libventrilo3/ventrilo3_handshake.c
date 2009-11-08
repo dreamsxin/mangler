@@ -39,12 +39,6 @@
 #include "ventrilo3.h"
 #include "ventrilo_algo.h"
 
-typedef uint8_t     u8;
-typedef uint16_t    u16;
-typedef uint32_t    u32;
-
-
-
 #define V3HVER      "0.3"
 #define V3HBUFFSZ   0x200
 
@@ -54,16 +48,14 @@ typedef uint32_t    u32;
     #define V3HPROXY_PARS
 #endif
 
-
-
 typedef struct {
-    int     vnum;
-    u8      *host;
-    u16     port;
+    uint32_t     vnum;
+    char         *host;
+    uint16_t     port;
 #ifdef V3HPROXY
-    u8      handshake_key[64];
-    u8      handshake[16];
-    int     ok;
+    uint8_t      handshake_key[64];
+    uint8_t      handshake[16];
+    uint32_t     ok;
 #endif
 } ventrilo3_auth_t;
 
@@ -75,21 +67,16 @@ static ventrilo3_auth_t ventrilo3_auth[] = {
     { -1, NULL,            0    V3HPROXY_PARS }
 };
 
+uint32_t ventrilo3_hdr_udp(uint32_t type, uint8_t *buff, uint8_t *pck);
+uint32_t ventrilo3_send_udp(uint32_t sd, uint32_t vnum, uint32_t ip, uint16_t port, uint8_t *data, uint32_t len);
+uint32_t ventrilo3_recv_udp(uint32_t sd, ventrilo3_auth_t *vauth, uint8_t *data, uint32_t maxsz, uint32_t *handshake_num);
+uint32_t getbe(uint8_t *data, uint32_t *ret, uint32_t bits);
+uint32_t putbe(uint8_t *data, uint32_t num, uint32_t bits);
+uint32_t v3timeout(uint32_t sock, uint32_t secs);
 
-
-int ventrilo3_hdr_udp(int type, u8 *buff, u8 *pck);
-int ventrilo3_send_udp(int sd, int vnum, u32 ip, u16 port, u8 *data, int len);
-int ventrilo3_recv_udp(int sd, ventrilo3_auth_t *vauth, u8 *data, int maxsz, int *handshake_num);
-int getbe(u8 *data, u32 *ret, int bits);
-int putbe(u8 *data, u32 num, int bits);
-int v3timeout(int sock, int secs);
-
-
-
-void ventrilo3_algo_scramble(ventrilo_key_ctx *ctx, u8 *v3key) {
-    int     i,
-            keylen;
-    u8      *key;
+void ventrilo3_algo_scramble(ventrilo_key_ctx *ctx, uint8_t *v3key) {
+    uint32_t i, keylen;
+    uint8_t  *key;
 
     key = ctx->key;
     if(ctx->size < 64) {
@@ -110,13 +97,10 @@ void ventrilo3_algo_scramble(ventrilo_key_ctx *ctx, u8 *v3key) {
 
 
 
-int ventrilo3_handshake(u32 ip, u16 port, u8 *handshake, int *handshake_num, u8 *handshake_key) {
+uint32_t ventrilo3_handshake(uint32_t ip, uint16_t port, uint8_t *handshake, uint32_t *handshake_num, uint8_t *handshake_key) {
     struct  linger  ling = {1,1};
-    int     sd;
-    int     i,
-            len;
-    u8      sbuff[V3HBUFFSZ],
-            rbuff[V3HBUFFSZ];
+    uint32_t sd, i, len;
+    uint8_t  sbuff[V3HBUFFSZ], rbuff[V3HBUFFSZ];
 
     sd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
     if(sd < 0) return(-1);
@@ -165,8 +149,8 @@ quit:
 
 
 
-int ventrilo3_hdr_udp(int type, u8 *buff, u8 *pck) {
-    u8      c;
+uint32_t ventrilo3_hdr_udp(uint32_t type, uint8_t *buff, uint8_t *pck) {
+    uint8_t c;
 
     memset(buff, 0, 0x200); // no, I'm not mad, this is EXACTLY what Ventrilo does
 
@@ -214,11 +198,10 @@ int ventrilo3_hdr_udp(int type, u8 *buff, u8 *pck) {
 
 
 
-int ventrilo3_send_udp(int sd, int vnum, u32 ip, u16 port, u8 *data, int len) {
+uint32_t ventrilo3_send_udp(uint32_t sd, uint32_t vnum, uint32_t ip, uint16_t port, uint8_t *data, uint32_t len) {
     struct  sockaddr_in peer;
-    int     i,
-            k;
-    u8      tmp[4];
+    uint32_t i, k;
+    uint8_t  tmp[4];
 
     if(vnum >= 0) {
         tmp[0] = ip;
@@ -235,22 +218,16 @@ int ventrilo3_send_udp(int sd, int vnum, u32 ip, u16 port, u8 *data, int len) {
     peer.sin_port        = htons(port);
     peer.sin_family      = AF_INET;
 
-    //printf(". %s:%hu\n", inet_ntoa(peer.sin_addr), ntohs(peer.sin_port));
     sendto(sd, data, len, 0, (struct sockaddr *)&peer, sizeof(struct sockaddr_in));
     return(0);
 }
 
 
 
-int ventrilo3_recv_udp(int sd, ventrilo3_auth_t *vauth, u8 *data, int maxsz, int *handshake_num) {
-    struct  sockaddr_in peer;
-    u32     ip;
-    int     len,
-            i,
-            k,
-            vnum,
-            psz;
-    u8      tmp[4];
+uint32_t ventrilo3_recv_udp(uint32_t sd, ventrilo3_auth_t *vauth, uint8_t *data, uint32_t maxsz, uint32_t *handshake_num) {
+    struct   sockaddr_in peer;
+    uint32_t ip, len, i, k, vnum, psz;
+    uint8_t  tmp[4];
 
     if(v3timeout(sd, 2) < 0) return(-1);
     psz = sizeof(struct sockaddr_in);
@@ -268,7 +245,7 @@ int ventrilo3_recv_udp(int sd, ventrilo3_auth_t *vauth, u8 *data, int maxsz, int
     if(!vauth[i].host) return(0);
 
     *handshake_num = i;
-    if(16 < (data[10] | (data[11] << 8))) { // blah, from Ventrilo
+    if(16 < (data[10] | (data[11] << 8))) {
         tmp[0] = ip;
         tmp[1] = ip >> 8;
         tmp[2] = ip >> 16;
@@ -283,11 +260,9 @@ int ventrilo3_recv_udp(int sd, ventrilo3_auth_t *vauth, u8 *data, int maxsz, int
 
 
 
-int getbe(u8 *data, u32 *ret, int bits) {
-    u32     num;
-    int     i,
-            bytes;
-
+uint32_t getbe(uint8_t *data, uint32_t *ret, uint32_t bits) {
+    uint32_t i, bytes, num;
+    
     bytes = bits >> 3;
     for(num = i = 0; i < bytes; i++) {
         num |= (data[i] << ((bytes - 1 - i) << 3));
@@ -299,9 +274,8 @@ int getbe(u8 *data, u32 *ret, int bits) {
 
 
 
-int putbe(u8 *data, u32 num, int bits) {
-    int     i,
-            bytes;
+uint32_t putbe(uint8_t *data, uint32_t num, uint32_t bits) {
+    uint32_t i, bytes;
 
     bytes = bits >> 3;
     for(i = 0; i < bytes; i++) {
@@ -312,9 +286,9 @@ int putbe(u8 *data, u32 num, int bits) {
 
 
 
-int v3timeout(int sock, int secs) {
-    struct  timeval tout;
-    fd_set  fd_read;
+uint32_t v3timeout(uint32_t sock, uint32_t secs) {
+    struct timeval tout;
+    fd_set fd_read;
 
     tout.tv_sec  = secs;
     tout.tv_usec = 0;

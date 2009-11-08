@@ -1408,8 +1408,6 @@ _v3_unlock_server(void) {/*{{{*/
 
 void
 _v3_init_decoders(void) {/*{{{*/
-    int ctr;
-
     _v3_func_enter("_v3_init_decoders");
     memset(v3_decoders, 0, sizeof(v3_decoders));
     _v3_func_leave("_v3_init_decoders");
@@ -1472,7 +1470,6 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
 						_v3_debug(V3_DEBUG_INTERNAL, "FIXME: Authenticated as administrator.");
 					}
 					if(m->subtype & 0x04) {
-						_v3_net_message_dump_raw(m->encryption_key, msg->len - 12);
 						if (ventrilo_read_keys(&v3_server.client_key, &v3_server.server_key, m->encryption_key, msg->len - 12) < 0) {
 							_v3_error("could not parse keys from the server");
 							free(m->encryption_key);
@@ -2499,7 +2496,7 @@ v3_change_channel(uint16_t channel_id, char *password) {/*{{{*/
     return;
 }/*}}}*/
 
-int
+void
 v3_set_text(char *comment, char *url, char *integration_text, uint8_t silent) {/*{{{*/
     v3_event ev;
 
