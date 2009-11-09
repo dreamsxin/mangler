@@ -32,7 +32,9 @@ AC_CHECK_LIB([m], [tan], [], [
 	echo "error: cannot find a working math library"
 	exit -1
 	])
-AC_CHECK_LIB([mpdclient], [mpd_run_status])
+AC_CHECK_HEADER([mpd/client.h],
+	[AC_CHECK_LIB([mpdclient], [mpd_run_status])]
+)
 AC_CHECK_LIB([gsm], [gsm_create], [], [
 	echo "error: cannot find libgsm: Is it installed? Also make sure you have the"
 	echo "       libgsm development packages installed"

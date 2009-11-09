@@ -15343,7 +15343,9 @@ else
 
 fi
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for mpd_run_status in -lmpdclient" >&5
+ac_fn_c_check_header_mongrel "$LINENO" "mpd/client.h" "ac_cv_header_mpd_client_h" "$ac_includes_default"
+if test "x$ac_cv_header_mpd_client_h" = x""yes; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for mpd_run_status in -lmpdclient" >&5
 $as_echo_n "checking for mpd_run_status in -lmpdclient... " >&6; }
 if test "${ac_cv_lib_mpdclient_mpd_run_status+set}" = set; then :
   $as_echo_n "(cached) " >&6
@@ -15387,6 +15389,10 @@ _ACEOF
   LIBS="-lmpdclient $LIBS"
 
 fi
+
+
+fi
+
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for gsm_create in -lgsm" >&5
 $as_echo_n "checking for gsm_create in -lgsm... " >&6; }
