@@ -2306,7 +2306,10 @@ v3_login(char *server, char *username, char *password, char *phonetic) {/*{{{*/
        Process several messages until we're logged in.
      */
     do {
-        msg = _v3_recv(V3_BLOCK);	
+        msg = _v3_recv(V3_BLOCK);
+        if(!msg) {
+            return false;
+        }	
         type = msg->type;
         switch (type) {
             case 0x4a:
