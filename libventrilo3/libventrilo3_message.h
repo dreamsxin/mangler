@@ -68,7 +68,7 @@ typedef struct _v3_net_message_0x06 {/*{{{*/
     uint16_t unknown_1;         // 4
     uint16_t error_id;          // 6
     uint32_t subtype;           // 8
-    
+
     uint8_t  unknown_2;         // 12 - variable length starts here
     uint8_t* encryption_key;
 } _v3_msg_0x06;
@@ -86,7 +86,7 @@ typedef struct _v3_net_message_0x3a {/*{{{*/
     uint32_t type;              // 0
     uint32_t empty;             // 4
     uint16_t msglen;            // 6
-    
+
     char *   msg;               // 8 - variable length starts here
 } _v3_msg_0x3a;/*}}}*/
 typedef struct _v3_net_message_0x3b {/*{{{*/
@@ -108,7 +108,7 @@ typedef struct _v3_net_message_0x3f {/*{{{*/
     uint32_t type;              // 0
     uint32_t empty;             // 4
     uint16_t pathlen;           // 6
-    
+
     char *   filepath;          // 8 - variable length starts here
 } _v3_msg_0x3f;/*}}}*/
 typedef struct _v3_net_message_0x42 {/*{{{*/
