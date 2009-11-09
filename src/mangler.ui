@@ -1615,7 +1615,7 @@ Notifications are the sound effects that are played when you login, logout, a us
                         <property name="n_columns">2</property>
                         <child>
                           <object class="GtkCheckButton" id="notificationLoginLogoutCheckButton">
-                            <property name="label" translatable="yes">Login and Logout Notifications</property>
+                            <property name="label" translatable="yes">Login and Logout</property>
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">False</property>
@@ -1624,7 +1624,7 @@ Notifications are the sound effects that are played when you login, logout, a us
                         </child>
                         <child>
                           <object class="GtkCheckButton" id="notificationChannelEnterLeaveCheckButton">
-                            <property name="label" translatable="yes">Channel Enter and Leave Notification</property>
+                            <property name="label" translatable="yes">User Joins/Leaves Channel</property>
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">False</property>
@@ -1637,7 +1637,7 @@ Notifications are the sound effects that are played when you login, logout, a us
                         </child>
                         <child>
                           <object class="GtkCheckButton" id="notificationTalkStartEndCheckButton">
-                            <property name="label" translatable="yes">Start and Stop Transmitting Notification</property>
+                            <property name="label" translatable="yes">Start and Stop Transmit</property>
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">False</property>

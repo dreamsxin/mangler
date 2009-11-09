@@ -129,12 +129,12 @@ ManglerAudio::input(void) {/*{{{*/
         //fprintf(stderr, "main input iteration\n");
         if (stop_input == true) {
             fprintf(stderr, "stopping input\n");
-            Glib::Thread::Exit();
+            //throw Glib::Thread::Exit();
             return;
         }
         if (!inputStreamOpen) {
             fprintf(stderr, "input stream is not open\n");
-            Glib::Thread::Exit();
+            //throw Glib::Thread::Exit();
             return;
         }
         gettimeofday(&start, NULL);
@@ -161,7 +161,7 @@ ManglerAudio::input(void) {/*{{{*/
                 //fprintf(stderr, __FILE__": pa_simple_read() failed: %s\n", pa_strerror(error));
                 pa_simple_free(pulse_stream);
                 stop_input = true;
-                Glib::Thread::Exit();
+                //throw Glib::Thread::Exit();
                 return;
             }
 #endif
@@ -188,7 +188,7 @@ ManglerAudio::input(void) {/*{{{*/
     pa_simple_free(pulse_stream);
 #endif
     outputStreamOpen = false;
-    Glib::Thread::Exit();
+    //throw Glib::Thread::Exit();
     return;
 }/*}}}*/
 
@@ -199,7 +199,7 @@ ManglerAudio::output(void) {/*{{{*/
     //fprintf(stderr, "playing audio\n");
     // If we don't have a pcm queue set up for us, something is very wrong
     if (!pcm_queue) {
-        Glib::Thread::Exit();
+        //throw Glib::Thread::Exit();
         return;
     }
     g_async_queue_ref(pcm_queue);
@@ -217,7 +217,7 @@ ManglerAudio::output(void) {/*{{{*/
             g_async_queue_unref(pcm_queue);
             pa_simple_free(pulse_stream);
             stop_output = true;
-            Glib::Thread::Exit();
+            //throw Glib::Thread::Exit();
             return;
         }
 #endif
@@ -230,7 +230,7 @@ ManglerAudio::output(void) {/*{{{*/
 #endif
     stop_output = true;
     outputStreamOpen = true;
-    Glib::Thread::Exit();
+    //throw Glib::Thread::Exit();
     return;
 }/*}}}*/
 
@@ -337,13 +337,13 @@ ManglerAudio::playNotification_thread(Glib::ustring name) {
                     NULL,
                     &error))) {
         fprintf(stderr, __FILE__": pa_simple_new() failed: %s\n", pa_strerror(error));
-        Glib::Thread::Exit();
+        //throw Glib::Thread::Exit();
         return;
     }
     if ((ret = pa_simple_write(s, sounds[name]->sample, sounds[name]->length, &error)) < 0) {
         fprintf(stderr, __FILE__": pa_simple_write() failed: %s\n", pa_strerror(error));
         pa_simple_free(s);
-        Glib::Thread::Exit();
+        //throw Glib::Thread::Exit();
         return;
     }
     if (pa_simple_drain(s, &error) < 0) {
@@ -352,7 +352,7 @@ ManglerAudio::playNotification_thread(Glib::ustring name) {
 
     pa_simple_free(s);
 #endif
-    Glib::Thread::Exit();
+    //throw Glib::Thread::Exit();
     return;
 }
 
