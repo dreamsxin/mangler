@@ -78,7 +78,9 @@ bool ManglerConfig::save() {/*{{{*/
     put("qc_lastserver.comment", "");
     put("lastConnectedServerId", "-1");
     put("lv3_debuglevel", lv3_debuglevel);
-    // TODO: saveServerList();
+    for (int ctr = 0; ctr < serverlist.size(); ctr++) {
+        put(ctr, *serverlist[ctr]);
+    }
     fclose(this->cfgstream);
     mutex.unlock();
     return true;
@@ -111,14 +113,18 @@ bool ManglerConfig::put(uint16_t id, ManglerServerConfig server) {/*{{{*/
     char name[1024];
 
     // Please excuse the formatting, this is easier to maintain
-    snprintf(name, 1023, "serverlist.%d.name",     id); if (!put(name, server.name      ))  return false;
-    snprintf(name, 1023, "serverlist.%d.hostname", id); if (!put(name, server.hostname  ))  return false;
-    snprintf(name, 1023, "serverlist.%d.port",     id); if (!put(name, server.port      ))  return false;
-    snprintf(name, 1023, "serverlist.%d.username", id); if (!put(name, server.username  ))  return false;
-    snprintf(name, 1023, "serverlist.%d.password", id); if (!put(name, server.password  ))  return false;
-    snprintf(name, 1023, "serverlist.%d.phonetic", id); if (!put(name, server.phonetic  ))  return false;
-    snprintf(name, 1023, "serverlist.%d.comment",  id); if (!put(name, server.comment   ))  return false;
-    snprintf(name, 1023, "serverlist.%d.url",      id); if (!put(name, server.url       ))  return false;
+    snprintf(name, 1023, "serverlist.%d.name",             id); if (!put(name, server.name             ))  return false;
+    snprintf(name, 1023, "serverlist.%d.hostname",         id); if (!put(name, server.hostname         ))  return false;
+    snprintf(name, 1023, "serverlist.%d.port",             id); if (!put(name, server.port             ))  return false;
+    snprintf(name, 1023, "serverlist.%d.username",         id); if (!put(name, server.username         ))  return false;
+    snprintf(name, 1023, "serverlist.%d.password",         id); if (!put(name, server.password         ))  return false;
+    snprintf(name, 1023, "serverlist.%d.phonetic",         id); if (!put(name, server.phonetic         ))  return false;
+    snprintf(name, 1023, "serverlist.%d.comment",          id); if (!put(name, server.comment          ))  return false;
+    snprintf(name, 1023, "serverlist.%d.url",              id); if (!put(name, server.url              ))  return false;
+    snprintf(name, 1023, "serverlist.%d.accept_u2u",       id); if (!put(name, server.acceptU2U        ))  return false;
+    snprintf(name, 1023, "serverlist.%d.accept_pages",     id); if (!put(name, server.acceptPages      ))  return false;
+    snprintf(name, 1023, "serverlist.%d.accept_privchat",  id); if (!put(name, server.acceptPrivateChat))  return false;
+    snprintf(name, 1023, "serverlist.%d.allow_recording",  id); if (!put(name, server.allowRecording   ))  return false;
     return true;
 }/*}}}*/
 Glib::ustring ManglerConfig::get(Glib::ustring cfgname) {/*{{{*/
@@ -207,6 +213,30 @@ void ManglerConfig::load() {/*{{{*/
     qc_lastserver.phonetic        = get("qc_lastserver.phonetic");
     qc_lastserver.comment         = get("qc_lastserver.comment");
     lv3_debuglevel                = atoi(get("lv3_debuglevel").c_str());
+    for (int ctr = 0; ctr < 65535; ctr++) {
+        char buf[1024];
+        Glib::ustring base;
+        snprintf(buf, 1023, "serverlist.%d.", ctr);
+        base = buf;
+        if (get(base + "hostname") == "") {
+            break;
+        } else {
+            ManglerServerConfig *server = new ManglerServerConfig();
+            server->name = get(base + "name");
+            server->hostname = get(base + "hostname");
+            server->port = get(base + "port");
+            server->username = get(base + "username");
+            server->password = get(base + "password");
+            server->phonetic = get(base + "phonetic");
+            server->comment = get(base + "comment");
+            server->url = get(base + "url");
+            server->acceptU2U = get(base + "accept_u2u") == "0" ? false : true;
+            server->acceptPages = get(base + "accept_pages") == "0" ? false : true;
+            server->acceptPrivateChat = get(base + "accept_privchat") == "0" ? false : true;
+            server->allowRecording = get(base + "allow_recording") == "0" ? false : true;
+            serverlist.push_back(server);
+        }
+    }
 }/*}}}*/
 void ManglerConfig::parsePushToTalkValue(Glib::ustring pttString) {/*{{{*/
     int begin = 0;
@@ -233,4 +263,15 @@ void ManglerConfig::parsePushToTalkValue(Glib::ustring pttString) {/*{{{*/
     int keycode = XKeysymToKeycode(GDK_WINDOW_XDISPLAY(rootwin), XStringToKeysym(keyname.c_str()));
     PushToTalkXKeyCodes.push_back(keycode);
 }/*}}}*/
-
+uint32_t ManglerConfig::addserver(void) {/*{{{*/
+    serverlist.push_back(new ManglerServerConfig);
+    return serverlist.size() - 1;
+}/*}}}*/
+void ManglerConfig::removeserver(uint32_t id) {/*{{{*/
+    serverlist.push_back(new ManglerServerConfig);
+    serverlist.erase(serverlist.begin() + id);
+    return;
+}/*}}}*/
+ManglerServerConfig *ManglerConfig::getserver(uint32_t id) {/*{{{*/
+    return serverlist.at(id);
+}/*}}}*/

@@ -27,3 +27,121 @@
 #include "mangler.h"
 #include "manglerserverlist.h"
 
+ManglerServerList::ManglerServerList(Glib::RefPtr<Gtk::Builder> builder) {
+    serverListTreeModel = Gtk::ListStore::create(serverListColumns);
+    builder->get_widget("serverListWindow", serverListWindow);
+    serverListWindow->signal_show().connect(sigc::mem_fun(this, &ManglerServerList::serverListWindow_show_cb));
+
+    builder->get_widget("serverListView", serverListView);
+    serverListView->set_model(serverListTreeModel);
+    serverListView->append_column("Name", serverListColumns.name);
+    serverListView->append_column("Username", serverListColumns.username);
+    serverListView->append_column("Hostname", serverListColumns.hostname);
+    serverListView->append_column("Port", serverListColumns.port);
+
+
+    builder->get_widget("serverListAddButton", button);
+    button->signal_clicked().connect(sigc::mem_fun(this, &ManglerServerList::serverListAddButton_clicked_cb));
+
+    builder->get_widget("serverListServerSaveButton", button);
+    button->signal_clicked().connect(sigc::mem_fun(this, &ManglerServerList::serverListServerSaveButton_clicked_cb));
+
+    builder->get_widget("serverListServerNameEntry",    serverListServerNameEntry);
+    builder->get_widget("serverListHostnameEntry",      serverListHostnameEntry);
+    builder->get_widget("serverListPortEntry",          serverListPortEntry);
+    builder->get_widget("serverListUsernameEntry",      serverListUsernameEntry);
+    builder->get_widget("serverListPasswordEntry",      serverListPasswordEntry);
+    builder->get_widget("serverListPhoneticEntry",      serverListPhoneticEntry);
+    builder->get_widget("serverListCommentEntry",       serverListCommentEntry);
+
+    // CheckButton fields
+    builder->get_widget("serverListPageCheckButton",        serverListPageCheckButton);
+    builder->get_widget("serverListUtUCheckButton",         serverListUtUCheckButton);
+    builder->get_widget("serverListPrivateChatCheckButton", serverListPrivateChatCheckButton);
+    builder->get_widget("serverListRecordCheckButton",      serverListRecordCheckButton);
+}
+
+void ManglerServerList::serverListWindow_show_cb(void) {
+}
+
+void ManglerServerList::serverListAddButton_clicked_cb(void) {
+    uint32_t id;
+    ManglerServerConfig *server;
+    Gtk::TreeModel::Row row;
+
+    id = mangler->settings->config.addserver();
+    fprintf(stderr, "server id %d\n", id);
+    server = mangler->settings->config.getserver(id);
+    server->name = "New Server";
+    row = *(serverListTreeModel->append());
+    row[serverListColumns.id] = id;
+    row[serverListColumns.name] = "New Server";
+    row[serverListColumns.hostname] = "";
+    row[serverListColumns.port] = "";
+    row[serverListColumns.username] = "";
+    editRow(id);
+}
+
+void ManglerServerList::serverListServerSaveButton_clicked_cb(void) {
+    saveRow();
+}
+
+void ManglerServerList::editRow(uint32_t id) {
+    Gtk::TreeModel::Row row;
+    Gtk::TreeModel::Children::iterator iter = serverListTreeModel->children().begin();
+    ManglerServerConfig *server;
+
+    while (iter != serverListTreeModel->children().end()) {
+        row = *iter;
+        uint32_t rowId = row[serverListColumns.id];
+        if (rowId == id) {
+            break;
+        }
+        iter++;
+    }
+    serverListServerNameEntry->grab_focus();
+    editorId = id;
+    server = mangler->settings->config.getserver(id);
+    serverListServerNameEntry->set_text(server->name);
+    serverListHostnameEntry->set_text(server->hostname);
+    serverListPortEntry->set_text(server->port);
+    serverListUsernameEntry->set_text(server->username);
+    serverListPasswordEntry->set_text(server->password);
+    serverListPhoneticEntry->set_text(server->phonetic);
+    serverListPageCheckButton->set_active(server->acceptPages);
+    serverListUtUCheckButton->set_active(server->acceptU2U);
+    serverListPrivateChatCheckButton->set_active(server->acceptPrivateChat);
+    serverListRecordCheckButton->set_active(server->allowRecording);
+}
+
+void ManglerServerList::saveRow() {
+    Gtk::TreeModel::Row row;
+    Gtk::TreeModel::Children::iterator iter = serverListTreeModel->children().begin();
+    ManglerServerConfig *server;
+
+    while (iter != serverListTreeModel->children().end()) {
+        row = *iter;
+        uint32_t rowId = row[serverListColumns.id];
+        if (rowId == editorId) {
+            break;
+        }
+        iter++;
+    }
+    server = mangler->settings->config.getserver(editorId);
+    server->name = serverListServerNameEntry->get_text();
+    server->hostname = serverListHostnameEntry->get_text();
+    server->port = serverListPortEntry->get_text();
+    server->username = serverListUsernameEntry->get_text();
+    server->password = serverListPasswordEntry->get_text();
+    server->phonetic = serverListPhoneticEntry->get_text();
+    server->acceptPages = serverListPageCheckButton->get_active();
+    server->acceptU2U = serverListUtUCheckButton->get_active();
+    server->acceptPrivateChat = serverListPrivateChatCheckButton->get_active();
+    server->allowRecording = serverListRecordCheckButton->get_active();
+
+    row[serverListColumns.name] = server->name;
+    row[serverListColumns.hostname] = server->hostname;
+    row[serverListColumns.port] = server->port;
+    row[serverListColumns.username] = server->username;
+    mangler->settings->config.save();
+}

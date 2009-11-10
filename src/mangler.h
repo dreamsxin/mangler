@@ -59,9 +59,11 @@ class Mangler
         Gtk::Statusbar                      *statusbar;
         Gtk::Label                          *label;
         Gtk::Entry                          *entry;
+        Gtk::ComboBox                       *combobox;
         Gtk::TextView                       *textview;
         std::map<Glib::ustring, Glib::RefPtr<Gdk::Pixbuf> >  icons;
         Glib::RefPtr<Gtk::StatusIcon>       statusIcon;
+        ManglerServerList                   *serverList;
         ManglerChannelTree                  *channelTree;
         ManglerNetwork                      *network;
         std::map<uint32_t, ManglerAudio* >  outputAudio;

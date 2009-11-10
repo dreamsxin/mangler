@@ -168,6 +168,21 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
     Glib::signal_timeout().connect(sigc::mem_fun(this, &Mangler::checkPushToTalkKeys), 100);
     Glib::signal_timeout().connect(sigc::mem_fun(this, &Mangler::checkPushToTalkMouse), 100);
 
+    // Create Server List Window
+    serverList = new ManglerServerList(builder);
+    builder->get_widget("serverSelectComboBox", combobox);
+    combobox->set_model(serverList->serverListTreeModel);
+    combobox->pack_start(serverList->serverListColumns.name);
+    for (int ctr = 0; ctr < settings->config.serverlist.size(); ctr++) {
+        ManglerServerConfig *server = settings->config.serverlist[ctr];
+        Gtk::TreeRow row = *(serverList->serverListTreeModel->append());
+        row[serverList->serverListColumns.id] = ctr;
+        row[serverList->serverListColumns.name] = server->name;
+        row[serverList->serverListColumns.hostname] = server->hostname;
+        row[serverList->serverListColumns.port] = server->port;
+        row[serverList->serverListColumns.username] = server->username;
+    }
+
     // Statusbar Icon
     statusIcon = Gtk::StatusIcon::create(icons["tray_icon_grey"]);
     statusIcon->signal_activate().connect(sigc::mem_fun(this, &Mangler::statusIcon_activate_cb));
@@ -215,12 +230,30 @@ void Mangler::serverConfigButton_clicked_cb(void) {/*{{{*/
     window->show();
 }/*}}}*/
 void Mangler::connectButton_clicked_cb(void) {/*{{{*/
+    Gtk::TreeModel::iterator iter;
+
     builder->get_widget("connectButton", button);
     channelTree->updateLobby("Connecting...");
     if (button->get_label() == "gtk-connect") {
-        Glib::Thread::create(sigc::bind(sigc::mem_fun(this->network, &ManglerNetwork::connect), "localhost", "3784", "username", "password"), FALSE);
-        // TODO: move this into a thread and use blocking waits
-        Glib::signal_timeout().connect( sigc::mem_fun(*this, &Mangler::getNetworkEvent), 10 );
+        builder->get_widget("serverSelectComboBox", combobox);
+        iter = combobox->get_active();
+        if (iter) {
+            Gtk::TreeModel::Row row = *iter;
+            ManglerServerConfig *server;
+
+            uint32_t server_id = row[serverList->serverListColumns.id];
+            server = settings->config.getserver(server_id);
+            Glib::ustring hostname = server->hostname;
+            Glib::ustring port     = server->port;
+            Glib::ustring username = server->username;
+            Glib::ustring password = server->password;
+            if (server->hostname.empty() || server->port.empty() || server->username.empty()) {
+                return;
+            }
+            Glib::Thread::create(sigc::bind(sigc::mem_fun(this->network, &ManglerNetwork::connect), hostname, port, username, password), FALSE);
+            // TODO: move this into a thread and use blocking waits
+            Glib::signal_timeout().connect( sigc::mem_fun(*this, &Mangler::getNetworkEvent), 10 );
+        }
     } else {
         v3_logout();
     }

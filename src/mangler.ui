@@ -567,7 +567,6 @@
             <child>
               <object class="GtkButton" id="serverListDeleteButton">
                 <property name="label" translatable="yes">_Delete Server</property>
-                <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
                 <property name="use_underline">True</property>
@@ -582,7 +581,6 @@
             <child>
               <object class="GtkButton" id="serverListSetDefaultButton">
                 <property name="label" translatable="yes">_Set as Default</property>
-                <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
                 <property name="use_underline">True</property>
@@ -837,7 +835,7 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkEntry" id="serverListServerHostname">
+                      <object class="GtkEntry" id="serverListHostnameEntry">
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="invisible_char">&#x25CF;</property>
@@ -966,7 +964,6 @@
                           <object class="GtkButton" id="serverListServerClearButton">
                             <property name="label" translatable="yes">Clear</property>
                             <property name="width_request">100</property>
-                            <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">True</property>
                           </object>

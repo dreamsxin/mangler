@@ -30,6 +30,7 @@
 class ManglerServerConfig/*{{{*/
 {
     public:
+        uint32_t              id;
         Glib::ustring         name;
         Glib::ustring         hostname;
         Glib::ustring         port;
@@ -38,8 +39,25 @@ class ManglerServerConfig/*{{{*/
         Glib::ustring         phonetic;
         Glib::ustring         comment;
         Glib::ustring         url;
+        bool                  acceptU2U;
+        bool                  acceptPages;
+        bool                  acceptPrivateChat;
+        bool                  allowRecording;
+        std::map <Glib::ustring, uint8_t> uservolume;
 
         ManglerServerConfig() {
+            name = "";
+            hostname = "";
+            port = "";
+            username = "";
+            password = "";
+            phonetic = "";
+            comment = "";
+            url = "";
+            acceptU2U = true;
+            acceptPages = true;
+            acceptPrivateChat = true;
+            allowRecording = true;
         }
 };/*}}}*/
 class ManglerConfig {
@@ -61,7 +79,7 @@ class ManglerConfig {
                 bool            notificationTransmitStartStop;
 
 		ManglerServerConfig   qc_lastserver;
-		std::vector<ManglerServerConfig> serverlist;
+		std::vector<ManglerServerConfig *> serverlist;
                 FILE            *cfgstream;
 
 		ManglerConfig();
@@ -73,6 +91,10 @@ class ManglerConfig {
                 bool put(uint16_t id, ManglerServerConfig server);
 		void load();
                 void parsePushToTalkValue(Glib::ustring pttString);
+                uint32_t addserver(void);
+                ManglerServerConfig *getserver(uint32_t id);
+                void removeserver(uint32_t id);
+
 };
 
 #endif

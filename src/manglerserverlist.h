@@ -31,41 +31,51 @@
 
 class ManglerServerList {
     public:
+        ManglerServerList(Glib::RefPtr<Gtk::Builder> builder);
+        Gtk::Window *serverListWindow;
+
         class serverListModelColumns : public Gtk::TreeModel::ColumnRecord {
             public:
-                serverListModelColumns() { add(id); add(server); }
+                serverListModelColumns() { add(id); add(name); add(hostname); add(port); add(username); }
                 Gtk::TreeModelColumn<uint32_t>              id;
                 Gtk::TreeModelColumn<Glib::ustring>         name;
                 Gtk::TreeModelColumn<Glib::ustring>         hostname;
                 Gtk::TreeModelColumn<Glib::ustring>         port;
                 Gtk::TreeModelColumn<Glib::ustring>         username;
-                Gtk::TreeModelColumn<ManglerServerConfig>   server;
         };
         serverListModelColumns       serverListColumns;
         Glib::RefPtr<Gtk::ListStore> serverListTreeModel;
         Gtk::TreeView                *serverListView;
 
         // Entry fields
+        uint32_t   editorId;
         Gtk::Entry *serverListServerNameEntry;
-        Gtk::Entry *serverListServerHostnameEntry;
-        Gtk::Entry *serverListServerPortEntry;
-        Gtk::Entry *serverListServerUsernameEntry;
-        Gtk::Entry *serverListServerPasswordEntry;
-        Gtk::Entry *serverListServerPhoneticEntry;
-        Gtk::Entry *serverListServerCommentEntry;
+        Gtk::Entry *serverListHostnameEntry;
+        Gtk::Entry *serverListPortEntry;
+        Gtk::Entry *serverListUsernameEntry;
+        Gtk::Entry *serverListPasswordEntry;
+        Gtk::Entry *serverListPhoneticEntry;
+        Gtk::Entry *serverListCommentEntry;
 
         // CheckButton fields
-        Gtk::CheckButton *serverListServerPageCheckButton;
-        Gtk::CheckButton *serverListServerUtUCheckButton;
-        Gtk::CheckButton *serverListServerPrivateChatCheckButton;
-        Gtk::CheckButton *serverListServerRecordCheckButton;
+        Gtk::CheckButton *serverListPageCheckButton;
+        Gtk::CheckButton *serverListUtUCheckButton;
+        Gtk::CheckButton *serverListPrivateChatCheckButton;
+        Gtk::CheckButton *serverListRecordCheckButton;
 
+        void serverListWindow_show_cb(void);
         void serverListAddButton_clicked_cb(void);
         void serverListDeleteButton_clicked_cb(void);
         void serverListSetDefaultButton_clicked_cb(void);
         void serverListCloseButton_clicked_cb(void);
         void serverListServerSaveButton_clicked_cb(void);
         void serverListServerClearButton_clicked_cb(void);
+
+        void editRow(uint32_t id);
+        void saveRow();
+
+        // generic types for builder
+        Gtk::Button     *button;
 };
 
 #endif
