@@ -66,6 +66,7 @@ class Mangler
         ManglerServerList                   *serverList;
         ManglerChannelTree                  *channelTree;
         ManglerNetwork                      *network;
+        int32_t                             connectedServerId;
         std::map<uint32_t, ManglerAudio* >  outputAudio;
         ManglerAudio                        *inputAudio;
         ManglerAudio                        *audioControl;

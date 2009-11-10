@@ -43,6 +43,7 @@ class ManglerServerConfig/*{{{*/
         bool                  acceptPages;
         bool                  acceptPrivateChat;
         bool                  allowRecording;
+        uint32_t              motdhash;
         std::map <Glib::ustring, uint8_t> uservolume;
 
         ManglerServerConfig() {
@@ -54,6 +55,7 @@ class ManglerServerConfig/*{{{*/
             phonetic = "";
             comment = "";
             url = "";
+            motdhash = 0;
             acceptU2U = true;
             acceptPages = true;
             acceptPrivateChat = true;
@@ -77,6 +79,7 @@ class ManglerConfig {
                 bool            notificationLoginLogout;
                 bool            notificationChannelEnterLeave;
                 bool            notificationTransmitStartStop;
+                int32_t         lastConnectedServerId;
 
 		ManglerServerConfig   qc_lastserver;
 		std::vector<ManglerServerConfig *> serverlist;
@@ -88,6 +91,7 @@ class ManglerConfig {
                 bool put(Glib::ustring name, bool value);
                 bool put(Glib::ustring name, Glib::ustring value);
                 bool put(Glib::ustring name, uint32_t value);
+                bool put(Glib::ustring name, int32_t value);
                 bool put(uint16_t id, ManglerServerConfig server);
 		void load();
                 void parsePushToTalkValue(Glib::ustring pttString);

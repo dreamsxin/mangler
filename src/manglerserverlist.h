@@ -46,9 +46,10 @@ class ManglerServerList {
         serverListModelColumns       serverListColumns;
         Glib::RefPtr<Gtk::ListStore> serverListTreeModel;
         Gtk::TreeView                *serverListView;
+        Glib::RefPtr<Gtk::TreeSelection> serverListSelection;
 
         // Entry fields
-        uint32_t   editorId;
+        int32_t   editorId;
         Gtk::Entry *serverListServerNameEntry;
         Gtk::Entry *serverListHostnameEntry;
         Gtk::Entry *serverListPortEntry;
@@ -64,6 +65,7 @@ class ManglerServerList {
         Gtk::CheckButton *serverListRecordCheckButton;
 
         void serverListWindow_show_cb(void);
+        void serverListSelection_changed_cb(void);
         void serverListAddButton_clicked_cb(void);
         void serverListDeleteButton_clicked_cb(void);
         void serverListSetDefaultButton_clicked_cb(void);

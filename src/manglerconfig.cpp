@@ -76,7 +76,7 @@ bool ManglerConfig::save() {/*{{{*/
     put("qc_lastserver.password", qc_lastserver.password);
     put("qc_lastserver.phonetic", "");
     put("qc_lastserver.comment", "");
-    put("lastConnectedServerId", "-1");
+    put("lastConnectedServerId", lastConnectedServerId);
     put("lv3_debuglevel", lv3_debuglevel);
     for (int ctr = 0; ctr < serverlist.size(); ctr++) {
         put(ctr, *serverlist[ctr]);
@@ -94,6 +94,14 @@ bool ManglerConfig::put(Glib::ustring name, Glib::ustring value) {/*{{{*/
     return true;
 }/*}}}*/
 bool ManglerConfig::put(Glib::ustring name, uint32_t value) {/*{{{*/
+    char buf[1024];
+    snprintf(buf, 1023, "%s=%d\n", (char *)name.c_str(), value);
+    if (!fputs(buf, this->cfgstream)) {
+        return false;
+    }
+    return true;
+}/*}}}*/
+bool ManglerConfig::put(Glib::ustring name, int32_t value) {/*{{{*/
     char buf[1024];
     snprintf(buf, 1023, "%s=%d\n", (char *)name.c_str(), value);
     if (!fputs(buf, this->cfgstream)) {
@@ -125,6 +133,7 @@ bool ManglerConfig::put(uint16_t id, ManglerServerConfig server) {/*{{{*/
     snprintf(name, 1023, "serverlist.%d.accept_pages",     id); if (!put(name, server.acceptPages      ))  return false;
     snprintf(name, 1023, "serverlist.%d.accept_privchat",  id); if (!put(name, server.acceptPrivateChat))  return false;
     snprintf(name, 1023, "serverlist.%d.allow_recording",  id); if (!put(name, server.allowRecording   ))  return false;
+    snprintf(name, 1023, "serverlist.%d.motdhash",         id); if (!put(name, server.motdhash         ))  return false;
     return true;
 }/*}}}*/
 Glib::ustring ManglerConfig::get(Glib::ustring cfgname) {/*{{{*/
@@ -213,6 +222,11 @@ void ManglerConfig::load() {/*{{{*/
     qc_lastserver.phonetic        = get("qc_lastserver.phonetic");
     qc_lastserver.comment         = get("qc_lastserver.comment");
     lv3_debuglevel                = atoi(get("lv3_debuglevel").c_str());
+    lastConnectedServerId         = atoi(get("lastConnectedServerId").c_str());
+    for (int ctr = 0; ctr < serverlist.size(); ctr++) {
+        delete serverlist[ctr];
+    }
+    serverlist.clear();
     for (int ctr = 0; ctr < 65535; ctr++) {
         char buf[1024];
         Glib::ustring base;
@@ -234,6 +248,7 @@ void ManglerConfig::load() {/*{{{*/
             server->acceptPages = get(base + "accept_pages") == "0" ? false : true;
             server->acceptPrivateChat = get(base + "accept_privchat") == "0" ? false : true;
             server->allowRecording = get(base + "allow_recording") == "0" ? false : true;
+            server->motdhash = atoi(get(base + "motdhash").c_str());
             serverlist.push_back(server);
         }
     }
@@ -268,7 +283,7 @@ uint32_t ManglerConfig::addserver(void) {/*{{{*/
     return serverlist.size() - 1;
 }/*}}}*/
 void ManglerConfig::removeserver(uint32_t id) {/*{{{*/
-    serverlist.push_back(new ManglerServerConfig);
+    delete serverlist[id];
     serverlist.erase(serverlist.begin() + id);
     return;
 }/*}}}*/

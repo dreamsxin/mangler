@@ -38,10 +38,17 @@ ManglerServerList::ManglerServerList(Glib::RefPtr<Gtk::Builder> builder) {
     serverListView->append_column("Username", serverListColumns.username);
     serverListView->append_column("Hostname", serverListColumns.hostname);
     serverListView->append_column("Port", serverListColumns.port);
-
+    serverListSelection = serverListView->get_selection();
+    serverListSelection->signal_changed().connect(sigc::mem_fun(this, &ManglerServerList::serverListSelection_changed_cb));
 
     builder->get_widget("serverListAddButton", button);
     button->signal_clicked().connect(sigc::mem_fun(this, &ManglerServerList::serverListAddButton_clicked_cb));
+
+    builder->get_widget("serverListDeleteButton", button);
+    button->signal_clicked().connect(sigc::mem_fun(this, &ManglerServerList::serverListDeleteButton_clicked_cb));
+
+    builder->get_widget("serverListCloseButton", button);
+    button->signal_clicked().connect(sigc::mem_fun(this, &ManglerServerList::serverListCloseButton_clicked_cb));
 
     builder->get_widget("serverListServerSaveButton", button);
     button->signal_clicked().connect(sigc::mem_fun(this, &ManglerServerList::serverListServerSaveButton_clicked_cb));
@@ -59,9 +66,32 @@ ManglerServerList::ManglerServerList(Glib::RefPtr<Gtk::Builder> builder) {
     builder->get_widget("serverListUtUCheckButton",         serverListUtUCheckButton);
     builder->get_widget("serverListPrivateChatCheckButton", serverListPrivateChatCheckButton);
     builder->get_widget("serverListRecordCheckButton",      serverListRecordCheckButton);
+
+    editorId = -1;
 }
 
 void ManglerServerList::serverListWindow_show_cb(void) {
+}
+
+void ManglerServerList::serverListSelection_changed_cb(void) {
+    Gtk::TreeModel::iterator iter = serverListSelection->get_selected();
+    if(iter) {
+        Gtk::TreeModel::Row row = *iter;
+        uint32_t rowId = row[serverListColumns.id];
+        editRow(rowId);
+    }
+}
+
+void ManglerServerList::serverListDeleteButton_clicked_cb(void) {
+    uint32_t id;
+    Gtk::TreeModel::iterator iter = serverListSelection->get_selected();
+    if(iter) {
+        Gtk::TreeModel::Row row = *iter;
+        id = row[serverListColumns.id];
+        serverListTreeModel->erase(row);
+        mangler->settings->config.removeserver(id);
+        mangler->settings->config.save();
+    }
 }
 
 void ManglerServerList::serverListAddButton_clicked_cb(void) {
@@ -70,7 +100,6 @@ void ManglerServerList::serverListAddButton_clicked_cb(void) {
     Gtk::TreeModel::Row row;
 
     id = mangler->settings->config.addserver();
-    fprintf(stderr, "server id %d\n", id);
     server = mangler->settings->config.getserver(id);
     server->name = "New Server";
     row = *(serverListTreeModel->append());
@@ -82,8 +111,14 @@ void ManglerServerList::serverListAddButton_clicked_cb(void) {
     editRow(id);
 }
 
+void ManglerServerList::serverListCloseButton_clicked_cb(void) {
+    serverListWindow->hide();
+}
+
 void ManglerServerList::serverListServerSaveButton_clicked_cb(void) {
-    saveRow();
+    if (editorId >= 0) {
+        saveRow();
+    }
 }
 
 void ManglerServerList::editRow(uint32_t id) {

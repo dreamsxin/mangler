@@ -170,9 +170,12 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
 
     // Create Server List Window
     serverList = new ManglerServerList(builder);
+
+    // Add our servers to the main window drop down
     builder->get_widget("serverSelectComboBox", combobox);
     combobox->set_model(serverList->serverListTreeModel);
     combobox->pack_start(serverList->serverListColumns.name);
+    int serverSelection = 0;
     for (int ctr = 0; ctr < settings->config.serverlist.size(); ctr++) {
         ManglerServerConfig *server = settings->config.serverlist[ctr];
         Gtk::TreeRow row = *(serverList->serverListTreeModel->append());
@@ -181,7 +184,12 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
         row[serverList->serverListColumns.hostname] = server->hostname;
         row[serverList->serverListColumns.port] = server->port;
         row[serverList->serverListColumns.username] = server->username;
+        if (ctr == settings->config.lastConnectedServerId) {
+            serverSelection = ctr;
+        }
     }
+    //  Select the last one used (or the first if unknown)
+    combobox->set_active(serverSelection);
 
     // Statusbar Icon
     statusIcon = Gtk::StatusIcon::create(icons["tray_icon_grey"]);
@@ -242,14 +250,18 @@ void Mangler::connectButton_clicked_cb(void) {/*{{{*/
             ManglerServerConfig *server;
 
             uint32_t server_id = row[serverList->serverListColumns.id];
+            connectedServerId = server_id;
             server = settings->config.getserver(server_id);
             Glib::ustring hostname = server->hostname;
             Glib::ustring port     = server->port;
             Glib::ustring username = server->username;
             Glib::ustring password = server->password;
-            if (server->hostname.empty() || server->port.empty() || server->username.empty()) {
+            if (!server || server->hostname.empty() || server->port.empty() || server->username.empty()) {
+                channelTree->updateLobby("Not connected");
                 return;
             }
+            settings->config.lastConnectedServerId = server_id;
+            settings->config.save();
             Glib::Thread::create(sigc::bind(sigc::mem_fun(this->network, &ManglerNetwork::connect), hostname, port, username, password), FALSE);
             // TODO: move this into a thread and use blocking waits
             Glib::signal_timeout().connect( sigc::mem_fun(*this, &Mangler::getNetworkEvent), 10 );
@@ -378,6 +390,7 @@ void Mangler::qcConnectButton_clicked_cb(void) {/*{{{*/
     settings->config.qc_lastserver.username = username;
     settings->config.qc_lastserver.password = password;
     settings->config.save();
+    connectedServerId = -1;
     Glib::Thread::create(sigc::bind(sigc::mem_fun(this->network, &ManglerNetwork::connect), server, port, username, password), FALSE);
     // TODO: move this into a thread and use blocking waits
     Glib::signal_timeout().connect( sigc::mem_fun(*this, &Mangler::getNetworkEvent), 10 );
@@ -583,13 +596,30 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                 break;/*}}}*/
             case V3_EVENT_DISPLAY_MOTD:/*{{{*/
                 {
-                    Glib::RefPtr< Gtk::TextBuffer > tb = Gtk::TextBuffer::create();
-                    builder->get_widget("motdWindow", window);
-                    window->set_title("Mangler - MOTD");
-                    builder->get_widget("motdTextView", textview);
-                    tb->set_text(c_to_ustring(ev->data.motd));
-                    textview->set_buffer(tb);
-                    window->show();
+                    uint32_t motdhash;
+                    ManglerServerConfig *server = NULL;
+
+                    if (connectedServerId != -1) {
+                        server = settings->config.getserver(connectedServerId);
+                        // we're not launching a space shuttle here, no need for
+                        // anything super complex
+                        for (int ctr = 0; ctr < strlen(ev->data.motd); ctr++) {
+                            motdhash += ev->data.motd[ctr] + ctr;
+                        }
+                    }
+                    if (connectedServerId == -1 || (server && (motdhash != server->motdhash))) {
+                        Glib::RefPtr< Gtk::TextBuffer > tb = Gtk::TextBuffer::create();
+                        builder->get_widget("motdWindow", window);
+                        window->set_title("Mangler - MOTD");
+                        builder->get_widget("motdTextView", textview);
+                        tb->set_text(c_to_ustring(ev->data.motd));
+                        textview->set_buffer(tb);
+                        window->show();
+                        if (server) {
+                            server->motdhash = motdhash;
+                            settings->config.save();
+                        }
+                    }
                 }
                 break;/*}}}*/
             case V3_EVENT_DISCONNECT:/*{{{*/
@@ -612,6 +642,7 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                     label->set_label("N/A");
                     mangler->statusIcon->set(icons["tray_icon_grey"]);
                     audioControl->playNotification("logout");
+                    connectedServerId = -1;
                 }
                 break;/*}}}*/
             default:
