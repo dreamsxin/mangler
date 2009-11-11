@@ -671,6 +671,7 @@
                     <child>
                       <object class="GtkEntry" id="serverListServerNameEntry">
                         <property name="visible">True</property>
+                        <property name="sensitive">False</property>
                         <property name="can_focus">True</property>
                         <property name="invisible_char">&#x25CF;</property>
                         <property name="activates_default">True</property>
@@ -744,6 +745,7 @@
                     <child>
                       <object class="GtkEntry" id="serverListPortEntry">
                         <property name="visible">True</property>
+                        <property name="sensitive">False</property>
                         <property name="can_focus">True</property>
                         <property name="max_length">5</property>
                         <property name="invisible_char">&#x25CF;</property>
@@ -761,6 +763,7 @@
                     <child>
                       <object class="GtkEntry" id="serverListUsernameEntry">
                         <property name="visible">True</property>
+                        <property name="sensitive">False</property>
                         <property name="can_focus">True</property>
                         <property name="max_length">31</property>
                         <property name="invisible_char">&#x25CF;</property>
@@ -777,6 +780,7 @@
                     <child>
                       <object class="GtkEntry" id="serverListPasswordEntry">
                         <property name="visible">True</property>
+                        <property name="sensitive">False</property>
                         <property name="can_focus">True</property>
                         <property name="max_length">16</property>
                         <property name="visibility">False</property>
@@ -795,6 +799,7 @@
                     <child>
                       <object class="GtkEntry" id="serverListPhoneticEntry">
                         <property name="visible">True</property>
+                        <property name="sensitive">False</property>
                         <property name="can_focus">True</property>
                         <property name="max_length">31</property>
                         <property name="invisible_char">&#x25CF;</property>
@@ -810,7 +815,6 @@
                     </child>
                     <child>
                       <object class="GtkEntry" id="serverListCommentEntry">
-                        <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="max_length">127</property>
                         <property name="invisible_char">&#x25CF;</property>
@@ -838,6 +842,7 @@
                     <child>
                       <object class="GtkEntry" id="serverListHostnameEntry">
                         <property name="visible">True</property>
+                        <property name="sensitive">False</property>
                         <property name="can_focus">True</property>
                         <property name="invisible_char">&#x25CF;</property>
                         <property name="activates_default">True</property>
@@ -877,6 +882,7 @@
                                   <object class="GtkCheckButton" id="serverListPageCheckButton">
                                     <property name="label" translatable="yes">Accept Page Requests</property>
                                     <property name="visible">True</property>
+                                    <property name="sensitive">False</property>
                                     <property name="can_focus">True</property>
                                     <property name="receives_default">False</property>
                                     <property name="draw_indicator">True</property>
@@ -890,6 +896,7 @@
                                   <object class="GtkCheckButton" id="serverListUtUCheckButton">
                                     <property name="label" translatable="yes">Accept User to User Transmissions</property>
                                     <property name="visible">True</property>
+                                    <property name="sensitive">False</property>
                                     <property name="can_focus">True</property>
                                     <property name="receives_default">False</property>
                                     <property name="draw_indicator">True</property>
@@ -903,6 +910,7 @@
                                   <object class="GtkCheckButton" id="serverListPrivateChatCheckButton">
                                     <property name="label" translatable="yes">Accept Private Chat Requests</property>
                                     <property name="visible">True</property>
+                                    <property name="sensitive">False</property>
                                     <property name="can_focus">True</property>
                                     <property name="receives_default">False</property>
                                     <property name="draw_indicator">True</property>
@@ -916,6 +924,7 @@
                                   <object class="GtkCheckButton" id="serverListRecordCheckButton">
                                     <property name="label" translatable="yes">Allow Users To Record Your Conversations</property>
                                     <property name="visible">True</property>
+                                    <property name="sensitive">False</property>
                                     <property name="can_focus">True</property>
                                     <property name="receives_default">False</property>
                                     <property name="draw_indicator">True</property>
@@ -949,6 +958,7 @@
                             <property name="label" translatable="yes">Save</property>
                             <property name="width_request">100</property>
                             <property name="visible">True</property>
+                            <property name="sensitive">False</property>
                             <property name="can_focus">True</property>
                             <property name="can_default">True</property>
                             <property name="has_default">True</property>
@@ -965,6 +975,7 @@
                           <object class="GtkButton" id="serverListServerClearButton">
                             <property name="label" translatable="yes">Clear</property>
                             <property name="width_request">100</property>
+                            <property name="sensitive">False</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">True</property>
                           </object>

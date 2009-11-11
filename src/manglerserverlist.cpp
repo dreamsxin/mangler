@@ -50,8 +50,8 @@ ManglerServerList::ManglerServerList(Glib::RefPtr<Gtk::Builder> builder) {
     builder->get_widget("serverListCloseButton", button);
     button->signal_clicked().connect(sigc::mem_fun(this, &ManglerServerList::serverListCloseButton_clicked_cb));
 
-    builder->get_widget("serverListServerSaveButton", button);
-    button->signal_clicked().connect(sigc::mem_fun(this, &ManglerServerList::serverListServerSaveButton_clicked_cb));
+    builder->get_widget("serverListServerSaveButton", serverListServerSaveButton);
+    serverListServerSaveButton->signal_clicked().connect(sigc::mem_fun(this, &ManglerServerList::serverListServerSaveButton_clicked_cb));
 
     builder->get_widget("serverListServerNameEntry",    serverListServerNameEntry);
     builder->get_widget("serverListHostnameEntry",      serverListHostnameEntry);
@@ -93,6 +93,17 @@ void ManglerServerList::serverListDeleteButton_clicked_cb(void) {
         mangler->settings->config.save();
         editorId = -1;
         clearEntries();
+        serverListServerNameEntry->set_sensitive(false);
+        serverListHostnameEntry->set_sensitive(false);
+        serverListPortEntry->set_sensitive(false);
+        serverListUsernameEntry->set_sensitive(false);
+        serverListPasswordEntry->set_sensitive(false);
+        serverListPhoneticEntry->set_sensitive(false);
+        serverListPageCheckButton->set_sensitive(false);
+        serverListUtUCheckButton->set_sensitive(false);
+        serverListPrivateChatCheckButton->set_sensitive(false);
+        serverListRecordCheckButton->set_sensitive(false);
+        serverListServerSaveButton->set_sensitive(false);
     }
 }
 
@@ -117,9 +128,11 @@ void ManglerServerList::serverListAddButton_clicked_cb(void) {
     row = *(serverListTreeModel->append());
     row[serverListColumns.id] = id;
     row[serverListColumns.name] = "New Server";
-    row[serverListColumns.hostname] = "localhost";
-    row[serverListColumns.port] = "3784";
+    row[serverListColumns.hostname] = "";
+    row[serverListColumns.port] = "";
     row[serverListColumns.username] = "";
+    serverListSelection = serverListView->get_selection();
+    serverListSelection->select(row);
     editRow(id);
 }
 
@@ -149,6 +162,18 @@ void ManglerServerList::editRow(uint32_t id) {
     serverListServerNameEntry->grab_focus();
     editorId = id;
     server = mangler->settings->config.getserver(id);
+    serverListServerNameEntry->set_sensitive(true);
+    serverListHostnameEntry->set_sensitive(true);
+    serverListPortEntry->set_sensitive(true);
+    serverListUsernameEntry->set_sensitive(true);
+    serverListPasswordEntry->set_sensitive(true);
+    serverListPhoneticEntry->set_sensitive(true);
+    serverListPageCheckButton->set_sensitive(true);
+    serverListUtUCheckButton->set_sensitive(true);
+    serverListPrivateChatCheckButton->set_sensitive(true);
+    serverListRecordCheckButton->set_sensitive(true);
+    serverListServerSaveButton->set_sensitive(true);
+
     serverListServerNameEntry->set_text(server->name);
     serverListHostnameEntry->set_text(server->hostname);
     serverListPortEntry->set_text(server->port);
