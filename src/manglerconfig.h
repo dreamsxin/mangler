@@ -43,6 +43,7 @@ class ManglerServerConfig/*{{{*/
         bool                  acceptPages;
         bool                  acceptPrivateChat;
         bool                  allowRecording;
+        bool                  persistentComments;
         uint32_t              motdhash;
         std::map <Glib::ustring, uint8_t> uservolume;
 
@@ -60,6 +61,7 @@ class ManglerServerConfig/*{{{*/
             acceptPages = true;
             acceptPrivateChat = true;
             allowRecording = true;
+            persistentComments = true;
         }
 };/*}}}*/
 class ManglerConfig {

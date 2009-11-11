@@ -121,19 +121,20 @@ bool ManglerConfig::put(uint16_t id, ManglerServerConfig server) {/*{{{*/
     char name[1024];
 
     // Please excuse the formatting, this is easier to maintain
-    snprintf(name, 1023, "serverlist.%d.name",             id); if (!put(name, server.name             ))  return false;
-    snprintf(name, 1023, "serverlist.%d.hostname",         id); if (!put(name, server.hostname         ))  return false;
-    snprintf(name, 1023, "serverlist.%d.port",             id); if (!put(name, server.port             ))  return false;
-    snprintf(name, 1023, "serverlist.%d.username",         id); if (!put(name, server.username         ))  return false;
-    snprintf(name, 1023, "serverlist.%d.password",         id); if (!put(name, server.password         ))  return false;
-    snprintf(name, 1023, "serverlist.%d.phonetic",         id); if (!put(name, server.phonetic         ))  return false;
-    snprintf(name, 1023, "serverlist.%d.comment",          id); if (!put(name, server.comment          ))  return false;
-    snprintf(name, 1023, "serverlist.%d.url",              id); if (!put(name, server.url              ))  return false;
-    snprintf(name, 1023, "serverlist.%d.accept_u2u",       id); if (!put(name, server.acceptU2U        ))  return false;
-    snprintf(name, 1023, "serverlist.%d.accept_pages",     id); if (!put(name, server.acceptPages      ))  return false;
-    snprintf(name, 1023, "serverlist.%d.accept_privchat",  id); if (!put(name, server.acceptPrivateChat))  return false;
-    snprintf(name, 1023, "serverlist.%d.allow_recording",  id); if (!put(name, server.allowRecording   ))  return false;
-    snprintf(name, 1023, "serverlist.%d.motdhash",         id); if (!put(name, server.motdhash         ))  return false;
+    snprintf(name, 1023, "serverlist.%d.name",                 id); if (!put(name, server.name                 ))  return false;
+    snprintf(name, 1023, "serverlist.%d.hostname",             id); if (!put(name, server.hostname             ))  return false;
+    snprintf(name, 1023, "serverlist.%d.port",                 id); if (!put(name, server.port                 ))  return false;
+    snprintf(name, 1023, "serverlist.%d.username",             id); if (!put(name, server.username             ))  return false;
+    snprintf(name, 1023, "serverlist.%d.password",             id); if (!put(name, server.password             ))  return false;
+    snprintf(name, 1023, "serverlist.%d.phonetic",             id); if (!put(name, server.phonetic             ))  return false;
+    snprintf(name, 1023, "serverlist.%d.comment",              id); if (!put(name, server.comment              ))  return false;
+    snprintf(name, 1023, "serverlist.%d.url",                  id); if (!put(name, server.url                  ))  return false;
+    snprintf(name, 1023, "serverlist.%d.accept_u2u",           id); if (!put(name, server.acceptU2U            ))  return false;
+    snprintf(name, 1023, "serverlist.%d.accept_pages",         id); if (!put(name, server.acceptPages          ))  return false;
+    snprintf(name, 1023, "serverlist.%d.accept_privchat",      id); if (!put(name, server.acceptPrivateChat    ))  return false;
+    snprintf(name, 1023, "serverlist.%d.allow_recording",      id); if (!put(name, server.allowRecording       ))  return false;
+    snprintf(name, 1023, "serverlist.%d.persistent_comments",  id); if (!put(name, server.persistentComments   ))  return false;
+    snprintf(name, 1023, "serverlist.%d.motdhash",             id); if (!put(name, server.motdhash             ))  return false;
     return true;
 }/*}}}*/
 Glib::ustring ManglerConfig::get(Glib::ustring cfgname) {/*{{{*/
@@ -248,6 +249,7 @@ void ManglerConfig::load() {/*{{{*/
             server->acceptPages = get(base + "accept_pages") == "0" ? false : true;
             server->acceptPrivateChat = get(base + "accept_privchat") == "0" ? false : true;
             server->allowRecording = get(base + "allow_recording") == "0" ? false : true;
+            server->persistentComments = get(base + "persistent_comments") == "0" ? false : true;
             server->motdhash = atoi(get(base + "motdhash").c_str());
             serverlist.push_back(server);
         }

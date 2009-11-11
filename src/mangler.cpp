@@ -752,6 +752,14 @@ void Mangler::textStringChangeDialogOkButton_clicked_cb(void) {/*{{{*/
     comment          = textStringChangeCommentEntry->get_text();
     url              = textStringChangeURLEntry->get_text();
     integration_text = textStringChangeIntegrationEntry->get_text();
+    if (connectedServerId != -1) {
+        ManglerServerConfig *server;
+        server = settings->config.getserver(connectedServerId);
+        if (server->persistentComments) {
+            server->comment = comment;
+            settings->config.save();
+        }
+    }
     v3_set_text((char *) ustring_to_c(comment).c_str(), (char *) ustring_to_c(url).c_str(), (char *) ustring_to_c(integration_text).c_str(), false);
 }/*}}}*/
 void Mangler::textStringChangeDialogCancelButton_clicked_cb(void) {/*{{{*/

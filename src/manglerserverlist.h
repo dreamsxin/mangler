@@ -63,6 +63,7 @@ class ManglerServerList {
         Gtk::CheckButton *serverListUtUCheckButton;
         Gtk::CheckButton *serverListPrivateChatCheckButton;
         Gtk::CheckButton *serverListRecordCheckButton;
+        Gtk::CheckButton *serverListPersistentCommentsCheckButton;
 
         // Editor Buttons
         Gtk::Button *serverListServerSaveButton;
