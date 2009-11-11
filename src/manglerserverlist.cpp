@@ -116,6 +116,7 @@ void ManglerServerList::serverListDeleteButton_clicked_cb(void) {
         serverListUsernameEntry->set_sensitive(false);
         serverListPasswordEntry->set_sensitive(false);
         serverListPhoneticEntry->set_sensitive(false);
+        serverListCommentEntry->set_sensitive(false);
         serverListPageCheckButton->set_sensitive(false);
         serverListUtUCheckButton->set_sensitive(false);
         serverListPrivateChatCheckButton->set_sensitive(false);
@@ -185,6 +186,7 @@ void ManglerServerList::editRow(uint32_t id) {
     serverListUsernameEntry->set_sensitive(true);
     serverListPasswordEntry->set_sensitive(true);
     serverListPhoneticEntry->set_sensitive(true);
+    serverListCommentEntry->set_sensitive(true);
     serverListPageCheckButton->set_sensitive(true);
     serverListUtUCheckButton->set_sensitive(true);
     serverListPrivateChatCheckButton->set_sensitive(true);
@@ -197,6 +199,7 @@ void ManglerServerList::editRow(uint32_t id) {
     serverListUsernameEntry->set_text(server->username);
     serverListPasswordEntry->set_text(server->password);
     serverListPhoneticEntry->set_text(server->phonetic);
+    serverListCommentEntry->set_text(server->comment);
     serverListPageCheckButton->set_active(server->acceptPages);
     serverListUtUCheckButton->set_active(server->acceptU2U);
     serverListPrivateChatCheckButton->set_active(server->acceptPrivateChat);
@@ -223,6 +226,7 @@ void ManglerServerList::saveRow() {
     server->username = serverListUsernameEntry->get_text();
     server->password = serverListPasswordEntry->get_text();
     server->phonetic = serverListPhoneticEntry->get_text();
+    server->comment = serverListCommentEntry->get_text();
     server->acceptPages = serverListPageCheckButton->get_active();
     server->acceptU2U = serverListUtUCheckButton->get_active();
     server->acceptPrivateChat = serverListPrivateChatCheckButton->get_active();
