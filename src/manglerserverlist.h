@@ -75,6 +75,7 @@ class ManglerServerList {
 
         void editRow(uint32_t id);
         void saveRow();
+        void clearEntries(void);
 
         // generic types for builder
         Gtk::Button     *button;

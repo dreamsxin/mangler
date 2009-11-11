@@ -91,7 +91,19 @@ void ManglerServerList::serverListDeleteButton_clicked_cb(void) {
         serverListTreeModel->erase(row);
         mangler->settings->config.removeserver(id);
         mangler->settings->config.save();
+        editorId = -1;
+        clearEntries();
     }
+}
+
+void ManglerServerList::clearEntries(void) {
+    serverListServerNameEntry->set_text("");
+    serverListHostnameEntry->set_text("");
+    serverListPortEntry->set_text("");
+    serverListUsernameEntry->set_text("");
+    serverListPasswordEntry->set_text("");
+    serverListPhoneticEntry->set_text("");
+    serverListCommentEntry->set_text("");
 }
 
 void ManglerServerList::serverListAddButton_clicked_cb(void) {
