@@ -463,8 +463,7 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                     break;
                 }
                 //fprintf(stderr, "updating user id %d: %s in channel %d\n", ev->user.id, u->name, ev->channel.id);
-                channelTree->removeUser(ev->user.id);
-                channelTree->addUser(
+                channelTree->updateUser(
                         (uint32_t)u->id,
                         (uint32_t)ev->channel.id,
                         c_to_ustring(u->name),

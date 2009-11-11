@@ -162,6 +162,58 @@ ManglerChannelTree::addUser(uint32_t id, uint32_t parent_id, Glib::ustring name,
 }/*}}}*/
 
 /*
+ * Update a user in the channel tree
+ *
+ * id                       user's ventrilo id
+ * parent_id                the channel id of the channel the user is in
+ * name                     the user name
+ * comment = ""
+ * phonetic = ""
+ * url = ""
+ * integration_text = ""     
+ *
+ * this calculates the display name automatically
+ */
+void
+ManglerChannelTree::updateUser(uint32_t id, uint32_t parent_id, Glib::ustring name, Glib::ustring comment, Glib::ustring phonetic, Glib::ustring url, Glib::ustring integration_text, bool guest) {/*{{{*/
+    Glib::ustring displayName = "";
+    Gtk::TreeModel::Row user;
+
+
+    if (id == 0) {
+        updateLobby(name, comment, phonetic);
+        return;
+    }
+    if (! (user = getUser(id, channelStore->children())) && id > 0) {
+        fprintf(stderr, "missing user: id %d: %s is supposed to be in channel %d\n", id, name.c_str(), parent_id);
+        return;
+    }
+    
+    displayName = name;
+    if (guest) {
+        displayName = displayName + " (GUEST)";
+    }
+    if (! comment.empty()) {
+        displayName = displayName + " (" + (url.empty() ? "" : "U: ") + comment + ")";
+    }
+    if (! integration_text.empty()) {
+        displayName = displayName + " {" + integration_text + "}";
+    }
+    user[channelRecord.displayName]       = displayName;
+    user[channelRecord.icon]              = mangler->icons["user_icon_noxmit"]->scale_simple(15, 15, Gdk::INTERP_BILINEAR);
+    user[channelRecord.isUser]            = id == 0 ? false : true;
+    user[channelRecord.isGuest]           = guest;
+    user[channelRecord.id]                = id;
+    user[channelRecord.parent_id]         = parent_id;
+    user[channelRecord.name]              = name;
+    user[channelRecord.comment]           = comment;
+    user[channelRecord.phonetic]          = phonetic;
+    user[channelRecord.url]               = url;
+    user[channelRecord.integration_text]  = integration_text;
+    user[channelRecord.last_transmit]     = id != 0 ? "unknown" : "";
+}/*}}}*/
+
+/*
  * Add a channel to the channel tree
  *
  * id                       user's ventrilo id
