@@ -33,11 +33,28 @@ ManglerServerList::ManglerServerList(Glib::RefPtr<Gtk::Builder> builder) {
     serverListWindow->signal_show().connect(sigc::mem_fun(this, &ManglerServerList::serverListWindow_show_cb));
 
     builder->get_widget("serverListView", serverListView);
+    Gtk::TreeView::Column *column;
     serverListView->set_model(serverListTreeModel);
     serverListView->append_column("Name", serverListColumns.name);
+    column = serverListView->get_column(0);
+    if (column) {
+        column->set_sort_column(serverListColumns.name);
+    }
     serverListView->append_column("Username", serverListColumns.username);
+    column = serverListView->get_column(1);
+    if (column) {
+        column->set_sort_column(serverListColumns.username);
+    }
     serverListView->append_column("Hostname", serverListColumns.hostname);
+    column = serverListView->get_column(2);
+    if (column) {
+        column->set_sort_column(serverListColumns.hostname);
+    }
     serverListView->append_column("Port", serverListColumns.port);
+    column = serverListView->get_column(3);
+    if (column) {
+        column->set_sort_column(serverListColumns.port);
+    }
     serverListSelection = serverListView->get_selection();
     serverListSelection->signal_changed().connect(sigc::mem_fun(this, &ManglerServerList::serverListSelection_changed_cb));
 
