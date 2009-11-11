@@ -273,6 +273,9 @@ void Mangler::connectButton_clicked_cb(void) {/*{{{*/
     return;
 }/*}}}*/
 void Mangler::commentButton_clicked_cb(void) {/*{{{*/
+    textStringChangeCommentEntry->set_text(comment);
+    textStringChangeURLEntry->set_text(url);
+    textStringChangeIntegrationEntry->set_text(integration_text);
     textStringChangeDialog->run();
     textStringChangeDialog->hide();
 }/*}}}*/
@@ -497,7 +500,9 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                     if (connectedServerId != -1) {
                         ManglerServerConfig *server;
                         server = settings->config.getserver(connectedServerId);
-                        v3_set_text((char *) ustring_to_c(server->comment).c_str(), (char *) ustring_to_c(server->url).c_str(), (char *) ustring_to_c(integration_text).c_str(), false);
+                        comment = server->comment;
+                        url = server->url;
+                        v3_set_text((char *) ustring_to_c(server->comment).c_str(), (char *) ustring_to_c(server->url).c_str(), (char *) ustring_to_c(integration_text).c_str(), true);
                     }
                 }
                 break;/*}}}*/
@@ -760,7 +765,7 @@ void Mangler::textStringChangeDialogOkButton_clicked_cb(void) {/*{{{*/
             settings->config.save();
         }
     }
-    v3_set_text((char *) ustring_to_c(comment).c_str(), (char *) ustring_to_c(url).c_str(), (char *) ustring_to_c(integration_text).c_str(), false);
+    v3_set_text((char *) ustring_to_c(comment).c_str(), (char *) ustring_to_c(url).c_str(), (char *) ustring_to_c(integration_text).c_str(), true);
 }/*}}}*/
 void Mangler::textStringChangeDialogCancelButton_clicked_cb(void) {/*{{{*/
     textStringChangeCommentEntry->set_text(comment);
