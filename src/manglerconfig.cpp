@@ -285,6 +285,17 @@ uint32_t ManglerConfig::addserver(void) {/*{{{*/
 void ManglerConfig::removeserver(uint32_t id) {/*{{{*/
     delete serverlist[id];
     serverlist.erase(serverlist.begin() + id);
+    // we need to rebuild the serverlist liststore since the ids are changed now
+    mangler->serverList->serverListTreeModel->clear();
+    for (int ctr = 0; ctr < serverlist.size(); ctr++) {
+        ManglerServerConfig *server = serverlist[ctr];
+        Gtk::TreeRow row = *(mangler->serverList->serverListTreeModel->append());
+        row[mangler->serverList->serverListColumns.id] = ctr;
+        row[mangler->serverList->serverListColumns.name] = server->name;
+        row[mangler->serverList->serverListColumns.hostname] = server->hostname;
+        row[mangler->serverList->serverListColumns.port] = server->port;
+        row[mangler->serverList->serverListColumns.username] = server->username;
+    }
     return;
 }/*}}}*/
 ManglerServerConfig *ManglerConfig::getserver(uint32_t id) {/*{{{*/

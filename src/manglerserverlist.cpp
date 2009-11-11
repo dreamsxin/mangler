@@ -117,8 +117,8 @@ void ManglerServerList::serverListAddButton_clicked_cb(void) {
     row = *(serverListTreeModel->append());
     row[serverListColumns.id] = id;
     row[serverListColumns.name] = "New Server";
-    row[serverListColumns.hostname] = "";
-    row[serverListColumns.port] = "";
+    row[serverListColumns.hostname] = "localhost";
+    row[serverListColumns.port] = "3784";
     row[serverListColumns.username] = "";
     editRow(id);
 }
