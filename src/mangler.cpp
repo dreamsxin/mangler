@@ -256,13 +256,14 @@ void Mangler::connectButton_clicked_cb(void) {/*{{{*/
             Glib::ustring port     = server->port;
             Glib::ustring username = server->username;
             Glib::ustring password = server->password;
+            Glib::ustring phonetic = server->phonetic;
             if (!server || server->hostname.empty() || server->port.empty() || server->username.empty()) {
                 channelTree->updateLobby("Not connected");
                 return;
             }
             settings->config.lastConnectedServerId = server_id;
             settings->config.save();
-            Glib::Thread::create(sigc::bind(sigc::mem_fun(this->network, &ManglerNetwork::connect), hostname, port, username, password), FALSE);
+            Glib::Thread::create(sigc::bind(sigc::mem_fun(this->network, &ManglerNetwork::connect), hostname, port, username, password, phonetic), FALSE);
             // TODO: move this into a thread and use blocking waits
             Glib::signal_timeout().connect( sigc::mem_fun(*this, &Mangler::getNetworkEvent), 10 );
         }
@@ -391,7 +392,7 @@ void Mangler::qcConnectButton_clicked_cb(void) {/*{{{*/
     settings->config.qc_lastserver.password = password;
     settings->config.save();
     connectedServerId = -1;
-    Glib::Thread::create(sigc::bind(sigc::mem_fun(this->network, &ManglerNetwork::connect), server, port, username, password), FALSE);
+    Glib::Thread::create(sigc::bind(sigc::mem_fun(this->network, &ManglerNetwork::connect), server, port, username, password, ""), FALSE);
     // TODO: move this into a thread and use blocking waits
     Glib::signal_timeout().connect( sigc::mem_fun(*this, &Mangler::getNetworkEvent), 10 );
 }/*}}}*/
@@ -492,6 +493,11 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                     label->set_text(codec_info->name);
                     channelTree->expand_all();
                     audioControl->playNotification("login");
+                    if (connectedServerId != -1) {
+                        ManglerServerConfig *server;
+                        server = settings->config.getserver(connectedServerId);
+                        v3_set_text((char *) ustring_to_c(server->comment).c_str(), (char *) ustring_to_c(server->url).c_str(), (char *) ustring_to_c(integration_text).c_str(), false);
+                    }
                 }
                 break;/*}}}*/
             case V3_EVENT_USER_CHAN_MOVE:/*{{{*/
