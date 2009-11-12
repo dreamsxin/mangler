@@ -351,7 +351,7 @@
                           <object class="GtkTable" id="serverTable">
                             <property name="visible">True</property>
                             <property name="n_rows">2</property>
-                            <property name="n_columns">6</property>
+                            <property name="n_columns">4</property>
                             <property name="column_spacing">3</property>
                             <property name="row_spacing">3</property>
                             <child>
@@ -397,29 +397,6 @@
                               </packing>
                             </child>
                             <child>
-                              <object class="GtkLabel" id="recordingLabelHeader">
-                                <property name="visible">True</property>
-                                <property name="xalign">0.94999998807907104</property>
-                                <property name="label" translatable="yes">Recording:</property>
-                              </object>
-                              <packing>
-                                <property name="left_attach">4</property>
-                                <property name="right_attach">5</property>
-                              </packing>
-                            </child>
-                            <child>
-                              <object class="GtkLabel" id="recordingLabel">
-                                <property name="visible">True</property>
-                                <property name="xalign">0</property>
-                                <property name="label" translatable="yes">&lt;span color="darkgreen"&gt;No&lt;/span&gt;</property>
-                                <property name="use_markup">True</property>
-                              </object>
-                              <packing>
-                                <property name="left_attach">5</property>
-                                <property name="right_attach">6</property>
-                              </packing>
-                            </child>
-                            <child>
                               <object class="GtkLabel" id="codecLabelHeader">
                                 <property name="visible">True</property>
                                 <property name="xalign">0.94999998807907104</property>
@@ -432,7 +409,7 @@
                             </child>
                             <child>
                               <object class="GtkLabel" id="codecLabel">
-                                <property name="width_request">250</property>
+                                <property name="width_request">200</property>
                                 <property name="visible">True</property>
                                 <property name="xalign">0</property>
                                 <property name="label" translatable="yes">N/A</property>
@@ -440,7 +417,7 @@
                               </object>
                               <packing>
                                 <property name="left_attach">1</property>
-                                <property name="right_attach">6</property>
+                                <property name="right_attach">4</property>
                                 <property name="top_attach">1</property>
                                 <property name="bottom_attach">2</property>
                               </packing>
@@ -1471,7 +1448,6 @@ out the encryption
                     <child>
                       <object class="GtkCheckButton" id="settingsEnableAudioIntegrationCheckButton">
                         <property name="label" translatable="yes">Enable "Now Playing" Music Player Integration</property>
-                        <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">False</property>
                         <property name="draw_indicator">True</property>
@@ -1486,7 +1462,6 @@ out the encryption
                         <property name="visible">True</property>
                         <child>
                           <object class="GtkLabel" id="settingsAudioIntegrationLabel">
-                            <property name="visible">True</property>
                             <property name="xalign">0.94999998807907104</property>
                             <property name="label" translatable="yes">Media Player:</property>
                           </object>
@@ -1496,9 +1471,7 @@ out the encryption
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkComboBox" id="settingsAudioIntegrationComboBox">
-                            <property name="visible">True</property>
-                          </object>
+                          <object class="GtkComboBox" id="settingsAudioIntegrationComboBox"/>
                           <packing>
                             <property name="padding">5</property>
                             <property name="position">1</property>

@@ -78,7 +78,7 @@ bool ManglerConfig::save() {/*{{{*/
     put("qc_lastserver.comment", "");
     put("lastConnectedServerId", lastConnectedServerId);
     put("lv3_debuglevel", lv3_debuglevel);
-    for (int ctr = 0; ctr < serverlist.size(); ctr++) {
+    for (uint32_t ctr = 0; ctr < serverlist.size(); ctr++) {
         put(ctr, *serverlist[ctr]);
     }
     fclose(this->cfgstream);
@@ -224,7 +224,7 @@ void ManglerConfig::load() {/*{{{*/
     qc_lastserver.comment         = get("qc_lastserver.comment");
     lv3_debuglevel                = atoi(get("lv3_debuglevel").c_str());
     lastConnectedServerId         = atoi(get("lastConnectedServerId").c_str());
-    for (int ctr = 0; ctr < serverlist.size(); ctr++) {
+    for (uint32_t ctr = 0; ctr < serverlist.size(); ctr++) {
         delete serverlist[ctr];
     }
     serverlist.clear();
@@ -289,7 +289,7 @@ void ManglerConfig::removeserver(uint32_t id) {/*{{{*/
     serverlist.erase(serverlist.begin() + id);
     // we need to rebuild the serverlist liststore since the ids are changed now
     mangler->serverList->serverListTreeModel->clear();
-    for (int ctr = 0; ctr < serverlist.size(); ctr++) {
+    for (uint32_t ctr = 0; ctr < serverlist.size(); ctr++) {
         ManglerServerConfig *server = serverlist[ctr];
         Gtk::TreeRow row = *(mangler->serverList->serverListTreeModel->append());
         row[mangler->serverList->serverListColumns.id] = ctr;

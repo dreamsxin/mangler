@@ -176,7 +176,7 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
     combobox->set_model(serverList->serverListTreeModel);
     combobox->pack_start(serverList->serverListColumns.name);
     int serverSelection = 0;
-    for (int ctr = 0; ctr < settings->config.serverlist.size(); ctr++) {
+    for (int32_t ctr = 0; ctr < (int32_t)settings->config.serverlist.size(); ctr++) {
         ManglerServerConfig *server = settings->config.serverlist[ctr];
         Gtk::TreeRow row = *(serverList->serverListTreeModel->append());
         row[serverList->serverListColumns.id] = ctr;
@@ -388,7 +388,7 @@ void Mangler::qcConnectButton_clicked_cb(void) {/*{{{*/
     Glib::ustring username = textbox->get_text();
     builder->get_widget("qcPassword", textbox);
     Glib::ustring password = textbox->get_text();
-    fprintf(stderr, "connecting to: %s:%s\n", server.c_str(), port.c_str());
+    //fprintf(stderr, "connecting to: %s:%s\n", server.c_str(), port.c_str());
     settings->config.qc_lastserver.hostname = server;
     settings->config.qc_lastserver.port = port;
     settings->config.qc_lastserver.username = username;
@@ -607,14 +607,14 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                 break;/*}}}*/
             case V3_EVENT_DISPLAY_MOTD:/*{{{*/
                 {
-                    uint32_t motdhash;
+                    uint32_t motdhash = 0;
                     ManglerServerConfig *server = NULL;
 
                     if (connectedServerId != -1) {
                         server = settings->config.getserver(connectedServerId);
                         // we're not launching a space shuttle here, no need for
                         // anything super complex
-                        for (int ctr = 0; ctr < strlen(ev->data.motd); ctr++) {
+                        for (uint32_t ctr = 0; ctr < strlen(ev->data.motd); ctr++) {
                             motdhash += ev->data.motd[ctr] + ctr;
                         }
                     }

@@ -217,7 +217,7 @@ void ManglerServerList::saveRow() {
 
     while (iter != serverListTreeModel->children().end()) {
         row = *iter;
-        uint32_t rowId = row[serverListColumns.id];
+        int32_t rowId = row[serverListColumns.id];
         if (rowId == editorId) {
             break;
         }

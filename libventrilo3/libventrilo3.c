@@ -176,6 +176,11 @@ _v3_net_message_dump_raw(char *data, int len) {/*{{{*/
     int ctr, ctr2;
     char buf[256], buf2[4];
 
+    // specifically bail out of this one since there's a lot of wasted
+    // processing if we're not debugging it
+    if (! (V3_DEBUG_PACKET_ENCRYPTED & v3_debuglevel(-1))) {
+        return;
+    }
     for (ctr = 0; ctr < len; ctr+=16) {
         if (ctr+16 > len) {
             buf[0] = 0;
@@ -266,6 +271,11 @@ _v3_net_message_dump(_v3_net_message *msg) {/*{{{*/
     int ctr, ctr2;
     char buf[256] = "", buf2[8] = "";
 
+    // specifically bail out of this one since there's a lot of wasted
+    // processing if we're not debugging it
+    if (! (V3_DEBUG_PACKET & v3_debuglevel(-1))) {
+        return;
+    }
     _v3_debug(V3_DEBUG_PACKET, "PACKET: message type: 0x%02X (%d)", (uint8_t)msg->type, (uint16_t)msg->type);
     _v3_debug(V3_DEBUG_PACKET, "PACKET: data length : %d", msg->len);
     for (ctr = 0; ctr < msg->len; ctr+=16) {
