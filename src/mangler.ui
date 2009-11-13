@@ -1028,7 +1028,7 @@
     <property name="skip_pager_hint">True</property>
     <property name="transient_for">manglerWindow</property>
     <property name="program_name">Mangler</property>
-    <property name="version">1.0rc1 (r239)</property>
+    <property name="version">1.0rc1</property>
     <property name="copyright" translatable="yes">Copyright 2009 by Eric Kilfoil</property>
     <property name="website">http://www.mangler.org</property>
     <property name="website_label" translatable="yes">http://www.mangler.org</property>
@@ -2373,6 +2373,7 @@ Notifications are the sound effects that are played when you login, logout, a us
               <object class="GtkEntry" id="textStringChangeCommentEntry">
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
+                <property name="max_length">127</property>
                 <property name="invisible_char">&#x25CF;</property>
               </object>
               <packing>
@@ -2385,6 +2386,7 @@ Notifications are the sound effects that are played when you login, logout, a us
               <object class="GtkEntry" id="textStringChangeURLEntry">
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
+                <property name="max_length">127</property>
                 <property name="invisible_char">&#x25CF;</property>
               </object>
               <packing>
@@ -2399,6 +2401,7 @@ Notifications are the sound effects that are played when you login, logout, a us
               <object class="GtkEntry" id="textStringChangeIntegrationEntry">
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
+                <property name="max_length">127</property>
                 <property name="invisible_char">&#x25CF;</property>
               </object>
               <packing>
