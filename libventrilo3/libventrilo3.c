@@ -780,8 +780,8 @@ _v3_recv(int block) {/*{{{*/
                             } else {
                                 _v3_debug(V3_DEBUG_SOCKET, "failed to send join chat request message");
                             }
-                        }/*}}}*/
-                        break;
+                        }
+                        break;/*}}}*/
                     case V3_EVENT_CHAT_LEAVE:/*{{{*/
                         {
                             _v3_net_message *msg = _v3_put_0x42(V3_LEAVE_CHAT, v3_luser.id, NULL);
@@ -791,8 +791,8 @@ _v3_recv(int block) {/*{{{*/
                                 _v3_debug(V3_DEBUG_SOCKET, "failed to send leave chat request message");
                             }
                         }
-                        break;
-                    case V3_EVENT_CHAT_MESSAGE:
+                        break;/*}}}*/
+                    case V3_EVENT_CHAT_MESSAGE:/*{{{*/
                         {
                             _v3_net_message *msg = _v3_put_0x42(V3_TALK_CHAT, v3_luser.id, ev.data.chatmessage);   
                             if (_v3_send(msg)) {
@@ -800,7 +800,7 @@ _v3_recv(int block) {/*{{{*/
                             } else {
                                 _v3_debug(V3_DEBUG_SOCKET, "failed to chat message message");
                             }
-                        }
+                        }/*}}}*/
                     default:
                         _v3_debug(V3_DEBUG_EVENT, "received unknown event type %d from queue", ev.type);
                         break;
@@ -2425,7 +2425,8 @@ v3_login(char *server, char *username, char *password, char *phonetic) {/*{{{*/
     }
 }/*}}}*/
 
-void v3_join_chat() {
+void
+v3_join_chat() {/*{{{*/
     v3_event ev;
 
     _v3_func_enter("v3_join_chat");
@@ -2446,9 +2447,10 @@ void v3_join_chat() {
     _v3_unlock_sendq();
     _v3_func_leave("v3_join_chat");
     return;
-}
+}/*}}}*/
 
-void v3_leave_chat() {
+void
+v3_leave_chat() {/*{{{*/
     v3_event ev;
 
     _v3_func_enter("v3_leave_chat");
@@ -2469,9 +2471,10 @@ void v3_leave_chat() {
     _v3_unlock_sendq();
     _v3_func_leave("v3_leave_chat");
     return;
-}
+}/*}}}*/
 
-void v3_send_chat_message(char* message) {
+void
+v3_send_chat_message(char* message) {/*{{{*/
     v3_event ev;
 
     _v3_func_enter("v3_send_chat_message");
@@ -2493,7 +2496,7 @@ void v3_send_chat_message(char* message) {
     _v3_unlock_sendq();
     _v3_func_leave("v3_send_chat_message");
     return;
-}
+}/*}}}*/
 
 int
 _v3_logout(void) {/*{{{*/
@@ -2990,12 +2993,12 @@ v3_set_volume_luser(int level) {/*{{{*/
 }/*}}}*/
 
 uint8_t
-v3_get_volume_user(uint16_t id) {
+v3_get_volume_user(uint16_t id) {/*{{{*/
     return _v3_user_volumes[id];
-}
+}/*}}}*/
 
 uint8_t
-v3_get_volume_luser(void) {
+v3_get_volume_luser(void) {/*{{{*/
     return v3_get_volume_user(v3_get_user_id());
-}
+}/*}}}*/
 
