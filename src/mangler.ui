@@ -2374,7 +2374,6 @@ Notifications are the sound effects that are played when you login, logout, a us
               <object class="GtkEntry" id="textStringChangeCommentEntry">
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
-                <property name="max_length">127</property>
                 <property name="invisible_char">&#x25CF;</property>
               </object>
               <packing>
@@ -2387,7 +2386,6 @@ Notifications are the sound effects that are played when you login, logout, a us
               <object class="GtkEntry" id="textStringChangeURLEntry">
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
-                <property name="max_length">127</property>
                 <property name="invisible_char">&#x25CF;</property>
               </object>
               <packing>
@@ -2402,7 +2400,6 @@ Notifications are the sound effects that are played when you login, logout, a us
               <object class="GtkEntry" id="textStringChangeIntegrationEntry">
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
-                <property name="max_length">127</property>
                 <property name="invisible_char">&#x25CF;</property>
               </object>
               <packing>
@@ -2464,5 +2461,59 @@ Notifications are the sound effects that are played when you login, logout, a us
       <action-widget response="0">textStringCancelButton</action-widget>
       <action-widget response="0">textStringOkButton</action-widget>
     </action-widgets>
+  </object>
+  <object class="GtkWindow" id="chatWindow">
+    <property name="title" translatable="yes">Mangler Chat Window</property>
+    <property name="default_width">500</property>
+    <property name="default_height">300</property>
+    <child>
+      <object class="GtkVBox" id="vbox6">
+        <property name="visible">True</property>
+        <property name="orientation">vertical</property>
+        <child>
+          <object class="GtkTextView" id="chatBox">
+            <property name="visible">True</property>
+            <property name="can_focus">True</property>
+            <property name="editable">False</property>
+          </object>
+          <packing>
+            <property name="position">0</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkHBox" id="hbox9">
+            <property name="visible">True</property>
+            <child>
+              <object class="GtkEntry" id="chatMessage">
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="invisible_char">&#x25CF;</property>
+              </object>
+              <packing>
+                <property name="position">0</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkButton" id="sendChat">
+                <property name="label" translatable="yes">Send</property>
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="can_default">True</property>
+                <property name="has_default">True</property>
+                <property name="receives_default">True</property>
+                <property name="focus_on_click">False</property>
+              </object>
+              <packing>
+                <property name="position">1</property>
+              </packing>
+            </child>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="position">1</property>
+          </packing>
+        </child>
+      </object>
+    </child>
   </object>
 </interface>

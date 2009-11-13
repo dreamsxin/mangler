@@ -34,6 +34,7 @@
 #include "mangleraudio.h"
 #include "manglersettings.h"
 #include "manglerserverlist.h"
+#include "manglerchat.h"
 #include "locale.h"
 
 extern "C" {
@@ -64,6 +65,7 @@ class Mangler
         std::map<Glib::ustring, Glib::RefPtr<Gdk::Pixbuf> >  icons;
         Glib::RefPtr<Gtk::StatusIcon>       statusIcon;
         ManglerServerList                   *serverList;
+        ManglerChat                         *chat;
         ManglerChannelTree                  *channelTree;
         ManglerNetwork                      *network;
         int32_t                             connectedServerId;

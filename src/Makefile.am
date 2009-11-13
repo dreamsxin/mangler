@@ -9,7 +9,7 @@ manglerui:
 
 bin_PROGRAMS = mangler
 
-mangler_SOURCES = manglerui.h mangler.cpp channeltree.cpp  mangleraudio.cpp  manglernetwork.cpp  manglerserverlist.cpp  manglersettings.cpp manglerconfig.cpp
+mangler_SOURCES = manglerui.h mangler.cpp channeltree.cpp  mangleraudio.cpp  manglernetwork.cpp  manglerserverlist.cpp  manglersettings.cpp manglerconfig.cpp manglerchat.cpp
 
 mangler_LDADD = @top_srcdir@/libventrilo3/libventrilo3.la $(gtkmm_LIBS) $(gthread_LIBS) $(pulse_LIBS) $(speex_LIBS)
 
@@ -20,6 +20,7 @@ dev:
 	gcc -g -Wall -o mangler -I../ -I../libventrilo3/ -I../icons/ -I ../sounds/ -pthread \
 		channeltree.cpp  mangleraudio.cpp  manglerconfig.cpp  mangler.cpp \
 		manglernetwork.cpp  manglerserverlist.cpp  manglersettings.cpp \
+		manglerchat.cpp \
 		../libventrilo3/libventrilo3.a \
 		-lpulse-simple -lpulse -lspeex -lgsm \
 		`pkg-config --cflags --libs gthread-2.0` \

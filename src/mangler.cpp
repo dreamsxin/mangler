@@ -170,6 +170,9 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
 
     // Create Server List Window
     serverList = new ManglerServerList(builder);
+    
+    // Create Chat Window
+    chat = new ManglerChat(builder);
 
     // Add our servers to the main window drop down
     builder->get_widget("serverSelectComboBox", combobox);
@@ -280,10 +283,9 @@ void Mangler::commentButton_clicked_cb(void) {/*{{{*/
     textStringChangeDialog->hide();
 }/*}}}*/
 void Mangler::chatButton_clicked_cb(void) {/*{{{*/
-    if(v3_is_loggedin()) {
-        v3_join_chat();
-        v3_send_chat_message("helloworld");
-        v3_leave_chat();
+    if (v3_is_loggedin()) {
+        builder->get_widget("chatWindow", window);
+        window->show();
     }
 }/*}}}*/
 void Mangler::bindingsButton_clicked_cb(void) {/*{{{*/
@@ -660,6 +662,15 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                     connectedServerId = -1;
                 }
                 break;/*}}}*/
+            case V3_EVENT_CHAT_JOIN:
+            
+                break;
+            case V3_EVENT_CHAT_LEAVE:
+            
+                break;
+            case V3_EVENT_CHAT_MESSAGE:
+            
+                break;
             default:
                 fprintf(stderr, "******************************************************** got unknown event type %d\n", ev->type);
         }
