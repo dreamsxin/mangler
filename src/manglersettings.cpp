@@ -34,6 +34,11 @@ ManglerSettings::ManglerSettings(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
 
     // Connect our signals for this window
     builder->get_widget("settingsWindow", settingsWindow);
+    /*
+     * Set window properties that are not settable in builder
+     */
+    settingsWindow->set_keep_above(true);
+
     settingsWindow->signal_show().connect(sigc::mem_fun(this, &ManglerSettings::settingsWindow_show_cb));
     settingsWindow->signal_hide().connect(sigc::mem_fun(this, &ManglerSettings::settingsWindow_hide_cb));
 
@@ -58,6 +63,18 @@ ManglerSettings::ManglerSettings(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
     builder->get_widget("settingsPTTMouseButton", button);
     button->signal_clicked().connect(sigc::mem_fun(this, &ManglerSettings::settingsPTTMouseButton_clicked_cb));
 
+    builder->get_widget("settingsEnableAudioIntegrationCheckButton", checkbutton);
+    checkbutton->signal_toggled().connect(sigc::mem_fun(this, &ManglerSettings::settingsEnableAudioIntegrationCheckButton_toggled_cb));
+    builder->get_widget("settingsAudioIntegrationComboBox", audioPlayerComboBox);
+    audioPlayerTreeModel = Gtk::ListStore::create(audioPlayerColumns);
+    audioPlayerComboBox->set_model(audioPlayerTreeModel);
+    // create a "none" row
+    Gtk::TreeModel::Row audioPlayerNoneRow = *(audioPlayerTreeModel->append());
+    audioPlayerNoneRow[audioPlayerColumns.id] = -1;
+    audioPlayerNoneRow[audioPlayerColumns.name] = "None";
+    audioPlayerComboBox->pack_start(audioPlayerColumns.name);
+    audioPlayerComboBox->set_active(audioPlayerNoneRow);
+
     builder->get_widget("inputDeviceComboBox", inputDeviceComboBox);
     inputDeviceTreeModel = Gtk::ListStore::create(inputColumns);
     inputDeviceComboBox->set_model(inputDeviceTreeModel);
@@ -67,8 +84,15 @@ ManglerSettings::ManglerSettings(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
     outputDeviceTreeModel = Gtk::ListStore::create(outputColumns);
     outputDeviceComboBox->set_model(outputDeviceTreeModel);
     outputDeviceComboBox->pack_start(outputColumns.description);
+
+    builder->get_widget("notificationDeviceComboBox", notificationDeviceComboBox);
+    notificationDeviceTreeModel = Gtk::ListStore::create(notificationColumns);
+    notificationDeviceComboBox->set_model(notificationDeviceTreeModel);
+    notificationDeviceComboBox->pack_start(notificationColumns.description);
 }/*}}}*/
 void ManglerSettings::applySettings(void) {/*{{{*/
+    Gtk::TreeModel::iterator iter;
+
     // Push to Talk
     builder->get_widget("settingsEnablePTTKeyCheckButton", checkbutton);
     config.PushToTalkKeyEnabled = checkbutton->get_active() ? true : false;
@@ -82,9 +106,16 @@ void ManglerSettings::applySettings(void) {/*{{{*/
     builder->get_widget("settingsPTTMouseValueLabel", label);
     config.PushToTalkMouseValue = label->get_text();
 
+    // Audio Player Integration
+    builder->get_widget("settingsEnableAudioIntegrationCheckButton", checkbutton);
+    config.AudioIntegrationEnabled = checkbutton->get_active() ? true : false;
+    iter = audioPlayerComboBox->get_active();
+    if (iter) {
+        Gtk::TreeModel::Row row = *iter;
+        config.AudioIntegrationPlayer = row[audioPlayerColumns.name];
+    }
 
     // Audio Devices
-    Gtk::TreeModel::iterator iter;
     iter = inputDeviceComboBox->get_active();
     if (iter) {
         Gtk::TreeModel::Row row = *iter;
@@ -95,6 +126,21 @@ void ManglerSettings::applySettings(void) {/*{{{*/
         Gtk::TreeModel::Row row = *iter;
         config.outputDeviceName = row[outputColumns.name];
     }
+    iter = notificationDeviceComboBox->get_active();
+    if (iter) {
+        Gtk::TreeModel::Row row = *iter;
+        config.notificationDeviceName = row[notificationColumns.name];
+    }
+
+    // Notification sounds
+    builder->get_widget("notificationLoginLogoutCheckButton", checkbutton);
+    config.notificationLoginLogout = checkbutton->get_active() ? true : false;
+
+    builder->get_widget("notificationChannelEnterLeaveCheckButton", checkbutton);
+    config.notificationChannelEnterLeave = checkbutton->get_active() ? true : false;
+
+    builder->get_widget("notificationTalkStartEndCheckButton", checkbutton);
+    config.notificationTransmitStartStop = checkbutton->get_active() ? true : false;
 
     // Debug level
     uint32_t debuglevel = 0;
@@ -156,8 +202,26 @@ void ManglerSettings::initSettings(void) {/*{{{*/
     builder->get_widget("settingsPTTMouseValueLabel", label);
     label->set_text(config.PushToTalkMouseValue);
 
+    // Audio Player Integration
+    builder->get_widget("settingsEnableAudioIntegrationCheckButton", checkbutton);
+    checkbutton->set_active(config.AudioIntegrationEnabled ? true : false);
+    /*
+       iterate through whatever is available based on what we can find and populate the store
+       audioPlayerComboBox->set_active(iterOfSelectedinStore);
+    */
+
     // Audio Devices
-    // ...
+    // the proper devices are selected in the window->show() callback
+
+    // Notification sounds
+    builder->get_widget("notificationLoginLogoutCheckButton", checkbutton);
+    checkbutton->set_active(config.notificationLoginLogout ? true : false);
+
+    builder->get_widget("notificationChannelEnterLeaveCheckButton", checkbutton);
+    checkbutton->set_active(config.notificationChannelEnterLeave ? true : false);
+
+    builder->get_widget("notificationTalkStartEndCheckButton", checkbutton);
+    checkbutton->set_active(config.notificationTransmitStartStop ? true : false);
 
     // Debug level
     builder->get_widget("debugStatus", checkbutton);
@@ -261,6 +325,29 @@ void ManglerSettings::settingsWindow_show_cb(void) {/*{{{*/
     }
     // TODO: get the currently selected item from settings object and select it
     outputDeviceComboBox->set_active(outputSelection);
+
+    // Clear the notification device store and rebuild it from the audioControl vector
+    notificationDeviceTreeModel->clear();
+    row = *(notificationDeviceTreeModel->append());
+    row[notificationColumns.id] = -1;
+    row[notificationColumns.name] = "Default";
+    row[notificationColumns.description] = "Default";
+    int notificationSelection = 0;
+    int notificationCtr = 1;
+    for (
+            std::vector<ManglerAudioDevice*>::iterator i = mangler->audioControl->outputDevices.begin();
+            i <  mangler->audioControl->outputDevices.end();
+            i++, notificationCtr++) {
+        Gtk::TreeModel::Row row = *(notificationDeviceTreeModel->append());
+        row[notificationColumns.id] = (*i)->id;
+        row[notificationColumns.name] = (*i)->name;
+        row[notificationColumns.description] = (*i)->description;
+        if (config.notificationDeviceName == (*i)->name) {
+            notificationSelection = notificationCtr;
+        }
+    }
+    // TODO: get the currently selected item from settings object and select it
+    notificationDeviceComboBox->set_active(notificationSelection);
 }/*}}}*/
 void ManglerSettings::settingsWindow_hide_cb(void) {/*{{{*/
     isDetectingKey = false;
@@ -295,6 +382,14 @@ void ManglerSettings::settingsEnablePTTKeyCheckButton_toggled_cb(void) {/*{{{*/
         label->set_sensitive(false);
         builder->get_widget("settingsPTTKeyButton", button);
         button->set_sensitive(false);
+    }
+}/*}}}*/
+void ManglerSettings::settingsEnableAudioIntegrationCheckButton_toggled_cb(void) {/*{{{*/
+    builder->get_widget("settingsEnableAudioIntegrationCheckButton", checkbutton);
+    if (checkbutton->get_active()) {
+        audioPlayerComboBox->set_sensitive(true);
+    } else {
+        audioPlayerComboBox->set_sensitive(false);
     }
 }/*}}}*/
 /*
@@ -355,16 +450,18 @@ void ManglerSettings::settingsEnablePTTMouseCheckButton_toggled_cb(void) {/*{{{*
     }
 }/*}}}*/
 void ManglerSettings::settingsPTTMouseButton_clicked_cb(void) {/*{{{*/
-    builder->get_widget("settingsPTTMouseButton", button);
     isDetectingMouse = true;
-    button->set_label("Done");
+    builder->get_widget("settingsPTTMouseValueLabel", label);
+    label->set_markup("<span color='red'>&lt;Click the mouse button you wish to use&gt;</span>");
+    builder->get_widget("settingsPTTMouseButton", button);
+    button->set_sensitive(false);
     builder->get_widget("settingsCancelButton", button);
     button->set_sensitive(false);
     builder->get_widget("settingsApplyButton", button);
     button->set_sensitive(false);
     builder->get_widget("settingsOkButton", button);
     button->set_sensitive(false);
-    // at this point, we need to grab the mouse and wait for a mouse button event
+    Glib::signal_timeout().connect( sigc::mem_fun(*this, &ManglerSettings::settingsPTTMouseDetect), 100 );
 }/*}}}*/
 
 bool
@@ -403,3 +500,65 @@ ManglerSettings::settingsPTTKeyDetect(void) {/*{{{*/
     return(true);
 }/*}}}*/
 
+bool
+ManglerSettings::settingsPTTMouseDetect(void) {/*{{{*/
+    GdkWindow   *rootwin = gdk_get_default_root_window();
+    char buttonname[32];
+    static bool grabbed = false;
+    int flag = 0;
+    int x, y;
+    XEvent ev;
+
+
+    // TODO: window close event needs to set isDetectingKey
+    if (!isDetectingMouse) {
+        return false;
+    }
+    if (! grabbed) {
+        XGrabPointer(GDK_WINDOW_XDISPLAY(rootwin), GDK_ROOT_WINDOW(), False, ButtonPress, GrabModeAsync, GrabModeAsync, None, None, CurrentTime);
+        grabbed = true;
+    }
+    while (flag == 0) {
+        while (!XPending(GDK_WINDOW_XDISPLAY(rootwin))) {
+            usleep(100000);
+        }
+        XNextEvent(GDK_WINDOW_XDISPLAY(rootwin), &ev);
+        switch (ev.type) {
+            case ButtonPress:
+                snprintf(buttonname, 31, "Button%d", ev.xbutton.button);
+                config.PushToTalkMouseValue = buttonname;
+                flag = 1;
+                XUngrabPointer(GDK_WINDOW_XDISPLAY(rootwin), CurrentTime);
+                grabbed = false;
+                isDetectingMouse = false;
+                x = ev.xbutton.x_root;
+                y = ev.xbutton.y_root;
+                break;
+            case MotionNotify:
+                break;
+            default:
+                break;
+        }
+        XAllowEvents (GDK_WINDOW_XDISPLAY(rootwin), AsyncBoth, CurrentTime);
+    }
+    isDetectingMouse = false;
+    builder->get_widget("settingsPTTMouseValueLabel", label);
+    label->set_markup(config.PushToTalkMouseValue);
+
+    builder->get_widget("settingsCancelButton", button);
+    button->set_sensitive(true);
+
+    builder->get_widget("settingsApplyButton", button);
+    button->set_sensitive(true);
+
+    builder->get_widget("settingsOkButton", button);
+    button->set_sensitive(true);
+
+    builder->get_widget("settingsOkButton", button);
+    button->set_sensitive(true);
+
+    builder->get_widget("settingsPTTMouseButton", button);
+    button->set_sensitive(true);
+
+    return(true);
+}/*}}}*/

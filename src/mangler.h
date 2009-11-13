@@ -59,11 +59,14 @@ class Mangler
         Gtk::Statusbar                      *statusbar;
         Gtk::Label                          *label;
         Gtk::Entry                          *entry;
+        Gtk::ComboBox                       *combobox;
         Gtk::TextView                       *textview;
         std::map<Glib::ustring, Glib::RefPtr<Gdk::Pixbuf> >  icons;
         Glib::RefPtr<Gtk::StatusIcon>       statusIcon;
+        ManglerServerList                   *serverList;
         ManglerChannelTree                  *channelTree;
         ManglerNetwork                      *network;
+        int32_t                             connectedServerId;
         std::map<uint32_t, ManglerAudio* >  outputAudio;
         ManglerAudio                        *inputAudio;
         ManglerAudio                        *audioControl;
@@ -72,12 +75,22 @@ class Mangler
         bool                                isTransmittingButton;
         bool                                isTransmittingKey;
         bool                                isTransmittingMouse;
+        bool                                iconified;
 
         // These are used by the password entry dialog
         Gtk::Dialog                         *passwordDialog;
         Gtk::Entry                          *passwordEntry;
         Glib::ustring                       password;
         bool                                passwordStatus;
+
+        // These are used by the text string entry dialog
+        Gtk::Dialog                         *textStringChangeDialog;
+        Gtk::Entry                          *textStringChangeCommentEntry;
+        Gtk::Entry                          *textStringChangeURLEntry;
+        Gtk::Entry                          *textStringChangeIntegrationEntry;
+        Glib::ustring                       comment;
+        Glib::ustring                       url;
+        Glib::ustring                       integration_text;
 
         Glib::Thread                        *networkThread;
 
@@ -97,9 +110,12 @@ class Mangler
         void aboutButton_clicked_cb(void);
         void xmitButton_pressed_cb(void);
         void xmitButton_released_cb(void);
+        void statusIcon_activate_cb(void);
+
 
         bool getNetworkEvent(void);
         bool checkPushToTalkKeys(void);
+        bool checkPushToTalkMouse(void);
 
         void startTransmit(void);
         void stopTransmit(void);
@@ -114,6 +130,10 @@ class Mangler
         // password dialog signal handlers
         void passwordDialogOkButton_clicked_cb(void);
         void passwordDialogCancelButton_clicked_cb(void);
+
+        // text string change dialog signal handlers
+        void textStringChangeDialogOkButton_clicked_cb(void);
+        void textStringChangeDialogCancelButton_clicked_cb(void);
 };
 
 struct _cli_options {
@@ -129,6 +149,9 @@ class ManglerError
         Glib::ustring     module;
         ManglerError(uint32_t code, Glib::ustring message, Glib::ustring module = "");
 };
+
+Glib::ustring c_to_ustring(char *input);
+std::string ustring_to_c(Glib::ustring input);
 
 extern Mangler *mangler;
 

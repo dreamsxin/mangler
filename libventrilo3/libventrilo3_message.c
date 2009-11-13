@@ -188,18 +188,13 @@ _v3_get_0x06(_v3_net_message *msg) {/*{{{*/
     m = malloc(sizeof(_v3_msg_0x06));
     memcpy(m, msg->data, 12);
     if(m->subtype & 4) {
-	/*
-	 * TODO: 
-	 * This will leak memory. 
-	 * BE SURE to free when we start calling ventrilo_read_keys from process_message.
-	 */
-	m->encryption_key = malloc(msg->len - 12);
-	memcpy(m->encryption_key, msg->data + 12, msg->len - 12);
+        m->encryption_key = malloc(msg->len - 12);
+        memcpy(m->encryption_key, msg->data + 12, msg->len - 12);
     } else {
-	m->unknown_2 = msg->data[12];
+        m->unknown_2 = msg->data[12];
     }
     msg->contents = m;
-    _v3_func_enter("_v3_get_0x06");
+    _v3_func_leave("_v3_get_0x06");
     return true;
 }/*}}}*/
 
@@ -223,6 +218,37 @@ _v3_get_0x37(_v3_net_message *msg) {/*{{{*/
     _v3_func_leave("_v3_get_0x37");
     return true;
 }/*}}}*/
+
+_v3_net_message *_v3_put_0x00() {
+    _v3_net_message *m;
+    _v3_msg_0x00 *mc;
+
+    _v3_func_enter("_v3_put_0x00");
+    // Build our message
+    m = malloc(sizeof(_v3_net_message));
+    memset(m, 0, sizeof(_v3_net_message));
+    m->type = 0x00;
+    m->len = sizeof(_v3_msg_0x00);
+
+    // Build our message contents
+    mc = malloc(sizeof(_v3_msg_0x00));
+    memset(mc, 0, sizeof(_v3_msg_0x00));
+
+    mc->type = 0x00;
+    strncpy(mc->version, "3.0.0", 16);
+    memset(mc->salt1, 0, 32);
+    memset(mc->salt2, 0, 32);
+    int ctr;
+    for(ctr = 0; ctr < 31; ctr++) {
+        mc->salt1[ctr] = rand() % 93 + 33;
+        mc->salt2[ctr] = rand() % 93 + 33;
+    }
+
+    m->contents = mc;
+    m->data = (char *)mc;
+    _v3_func_leave("_v3_put_0x00");
+    return m;
+}
 
 _v3_net_message *_v3_put_0x37(int sequence) {/*{{{*/
     _v3_net_message *m;
@@ -633,6 +659,10 @@ _v3_get_0x52(_v3_net_message *msg) {/*{{{*/
                             memcpy(data, msg->data+28, sizeof(uint16_t) * 2); // copy the audio count and frame size values
                             data->frame_count = ntohs(data->frame_count); // for some reason, these are big endian
                             data->sample_size  = ntohs(data->sample_size);  // convert them to host byte order
+                            if (data->frame_count == 0) {
+                                _v3_debug(V3_DEBUG_PACKET_PARSE, "received audio packet with zero frames");
+                                return false;
+                            }
                             _v3_debug(V3_DEBUG_PACKET_PARSE, "speex audio count: %d (%d byte frames)", data->frame_count, msub->data_length / data->frame_count);
                             _v3_debug(V3_DEBUG_PACKET_PARSE, "allocating %d bytes for pointers", data->frame_count * sizeof(uint8_t *));
                             data->frames = malloc(data->frame_count * sizeof(uint8_t *));
@@ -711,7 +741,7 @@ _v3_put_0x52(uint8_t subtype, uint16_t codec, uint16_t codec_format, uint16_t se
             if (codec == 0) {
                 msgdata->unknown_2 = length / 65 * 640 + 1000;
             } else if (codec == 3) {
-                msgdata->unknown_2 = 9280;
+                msgdata->unknown_2 = 10240;
             }
             msgdata->unknown_4 = htons(1);
             msgdata->unknown_5 = htons(2);
@@ -743,7 +773,7 @@ _v3_put_0x52(uint8_t subtype, uint16_t codec, uint16_t codec_format, uint16_t se
     _v3_debug(V3_DEBUG_MEMORY, "allocating %d bytes for data", sizeof(_v3_msg_0x52_0x01_out) - sizeof(void *) + length);
     msg->data = malloc(msg->len);
     memset(msg->data, 0, msg->len);
-    
+
     /*
      * Next, copy all of the data into the newly allocated memory
      */
@@ -986,7 +1016,7 @@ _v3_put_0x5c(uint8_t subtype) {/*{{{*/
     return m;
 }/*}}}*/
 
-uint32_t
+    uint32_t
 _v3_msg5c_scramble(uint8_t* in)/*{{{*/
 {
     uint32_t i, out = 0;

@@ -163,6 +163,7 @@ char *_v3_bitmasks[] = {
 #define V3_OK        0
 #define V3_MALFORMED 1
 #define V3_NOTIMPL   2
+#define V3_FAILURE	 3
 
 #define V3_NOT_WAITING 0
 #define V3_EVENT_WAITING 1
@@ -174,55 +175,55 @@ char *_v3_bitmasks[] = {
    internal name, and a name suitable for display to a user.
  */
 struct _v3_perm_info v3_perm_info[]  = {
-        { 1,      "V3_PERM_LOCK_ACCT",               "Lock Account"                             },
-        { 2,      "V3_PERM_DFL_CHAN",                "Access Default Channel"                   },
-        { 3,      "V3_PERM_DUPE_IP",                 "DUPE_IP"                                  },
-        { 4,      "V3_PERM_SWITCH_CHAN",             "Switch Channels"                          },
-        { 5,      "V3_PERM_IN_RESERVE_LIST",         "IN_RESERVE_LIST"                          },
-        { 6,      "V3_PERM_RECV_BCAST",              "Receive Broadcasts"                       },
-        { 7,      "V3_PERM_ADD_PHANTOM",             "ADD_PHANTOM"                              },
-        { 8,      "V3_PERM_RECORD",                  "Record Audio"                             },
-        { 9,      "V3_PERM_RECV_COMPLAINT",          "Receive Complaint"                        },
-        { 10,     "V3_PERM_SEND_COMPLAINT",          "Send Complaint"                           },
-        { 11,     "V3_PERM_INACTIVE_EXEMPT",         "Exempt from Inactivity Timer"             },
-        { 12,     "V3_PERM_SRV_ADMIN",               "Server Admin"                             },
-        { 13,     "V3_PERM_ADD_USER",                "Add Users"                                },
-        { 14,     "V3_PERM_DEL_USER",                "Delete Users"                             },
-        { 15,     "V3_PERM_BAN_USER",                "Ban a User"                               },
-        { 16,     "V3_PERM_KICK_USER",               "Kick a User"                              },
-        { 17,     "V3_PERM_MOVE_USER",               "Move a User's Channel"                    },
-        { 18,     "V3_PERM_ASSIGN_CHAN_ADMIN",       "Assign Channel Admins"                    },
-        { 19,     "V3_PERM_EDIT_RANK",               "Edit User Ranks"                          },
-        { 20,     "V3_PERM_EDIT_MOTD",               "Edit the MOTD"                            },
-        { 21,     "V3_PERM_EDIT_GUEST_MOTD",         "Edit the Guest MOTD"                      },
-        { 22,     "V3_PERM_ISSUE_RCON_CMD",          "ISSUE_RCON_CMD"                           },
-        { 23,     "V3_PERM_EDIT_VOICE_TARGET",       "EDIT_VOICE_TARGET"                        },
-        { 24,     "V3_PERM_EDIT_COMMAND_TARGET",     "EDIT_COMMAND_TARGET"                      },
-        { 25,     "V3_PERM_ASSIGN_RANK",             "Assign a Rank"                            },
-        { 26,     "V3_PERM_ASSIGN_RESERVED",         "ASSIGN_RESERVED"                          },
-        { 27,     "V3_PERM_BCAST",                   "Send Broadcasts"                          },
-        { 28,     "V3_PERM_BCAST_LOBBY",             "Send Broadcast to Lobby"                  },
-        { 29,     "V3_PERM_BCAST_USER",              "Send Broadcast to User"                   },
-        { 30,     "V3_PERM_BCAST_X_CHAN",            "Send Cross Channel Broadcasts"            },
-        { 31,     "V3_PERM_SEND_TTS_BIND",           "SEND_TTS_BIND"                            },
-        { 32,     "V3_PERM_SEND_WAV_BIND",           "SEND_WAV_BIND"                            },
-        { 33,     "V3_PERM_SEND_PAGE",               "Send Pages"                               },
-        { 34,     "V3_PERM_SEND_COMMENT",            "Send Comments"                            },
-        { 35,     "V3_PERM_SET_PHON_NAME",           "Set Phonetic Name"                        },
-        { 36,     "V3_PERM_GEN_COMMENT_SNDS",        "GEN_COMMENT_SNDS"                         },
-        { 37,     "V3_PERM_EVENT_SNDS",              "EVENT_SNDS"                               },
-        { 38,     "V3_PERM_MUTE_GLBL",               "MUTE_GLBL"                                },
-        { 39,     "V3_PERM_MUTE_OTHER",              "MUTE_OTHER"                               },
-        { 40,     "V3_PERM_GLBL_CHAT",               "GLBL_CHAT"                                },
-        { 41,     "V3_PERM_START_PRIV_CHAT",         "START_PRIV_CHAT"                          },
-        { 42,     "V3_PERM_EQ_OUT",                  "EQ_OUT"                                   },
-        { 43,     "V3_PERM_SEE_GUEST",               "See Guests"                               },
-        { 44,     "V3_PERM_SEE_NONGUEST",            "See Registered Useres"                    },
-        { 45,     "V3_PERM_SEE_MOTD",                "See Message of the Day"                   },
-        { 46,     "V3_PERM_SEE_SRV_COMMENT",         "See Server Comment"                       },
-        { 47,     "V3_PERM_SEE_CHAN_LIST",           "See Channel List"                         },
-        { 48,     "V3_PERM_SEE_CHAN_COMMENT",        "See Channel Comments"                     },
-        { 49,     "V3_PERM_SEE_USER_COMMENT",        "See User Comments"                        }
+    { 1,      "V3_PERM_LOCK_ACCT",               "Lock Account"                             },
+    { 2,      "V3_PERM_DFL_CHAN",                "Access Default Channel"                   },
+    { 3,      "V3_PERM_DUPE_IP",                 "DUPE_IP"                                  },
+    { 4,      "V3_PERM_SWITCH_CHAN",             "Switch Channels"                          },
+    { 5,      "V3_PERM_IN_RESERVE_LIST",         "IN_RESERVE_LIST"                          },
+    { 6,      "V3_PERM_RECV_BCAST",              "Receive Broadcasts"                       },
+    { 7,      "V3_PERM_ADD_PHANTOM",             "ADD_PHANTOM"                              },
+    { 8,      "V3_PERM_RECORD",                  "Record Audio"                             },
+    { 9,      "V3_PERM_RECV_COMPLAINT",          "Receive Complaint"                        },
+    { 10,     "V3_PERM_SEND_COMPLAINT",          "Send Complaint"                           },
+    { 11,     "V3_PERM_INACTIVE_EXEMPT",         "Exempt from Inactivity Timer"             },
+    { 12,     "V3_PERM_SRV_ADMIN",               "Server Admin"                             },
+    { 13,     "V3_PERM_ADD_USER",                "Add Users"                                },
+    { 14,     "V3_PERM_DEL_USER",                "Delete Users"                             },
+    { 15,     "V3_PERM_BAN_USER",                "Ban a User"                               },
+    { 16,     "V3_PERM_KICK_USER",               "Kick a User"                              },
+    { 17,     "V3_PERM_MOVE_USER",               "Move a User's Channel"                    },
+    { 18,     "V3_PERM_ASSIGN_CHAN_ADMIN",       "Assign Channel Admins"                    },
+    { 19,     "V3_PERM_EDIT_RANK",               "Edit User Ranks"                          },
+    { 20,     "V3_PERM_EDIT_MOTD",               "Edit the MOTD"                            },
+    { 21,     "V3_PERM_EDIT_GUEST_MOTD",         "Edit the Guest MOTD"                      },
+    { 22,     "V3_PERM_ISSUE_RCON_CMD",          "ISSUE_RCON_CMD"                           },
+    { 23,     "V3_PERM_EDIT_VOICE_TARGET",       "EDIT_VOICE_TARGET"                        },
+    { 24,     "V3_PERM_EDIT_COMMAND_TARGET",     "EDIT_COMMAND_TARGET"                      },
+    { 25,     "V3_PERM_ASSIGN_RANK",             "Assign a Rank"                            },
+    { 26,     "V3_PERM_ASSIGN_RESERVED",         "ASSIGN_RESERVED"                          },
+    { 27,     "V3_PERM_BCAST",                   "Send Broadcasts"                          },
+    { 28,     "V3_PERM_BCAST_LOBBY",             "Send Broadcast to Lobby"                  },
+    { 29,     "V3_PERM_BCAST_USER",              "Send Broadcast to User"                   },
+    { 30,     "V3_PERM_BCAST_X_CHAN",            "Send Cross Channel Broadcasts"            },
+    { 31,     "V3_PERM_SEND_TTS_BIND",           "SEND_TTS_BIND"                            },
+    { 32,     "V3_PERM_SEND_WAV_BIND",           "SEND_WAV_BIND"                            },
+    { 33,     "V3_PERM_SEND_PAGE",               "Send Pages"                               },
+    { 34,     "V3_PERM_SEND_COMMENT",            "Send Comments"                            },
+    { 35,     "V3_PERM_SET_PHON_NAME",           "Set Phonetic Name"                        },
+    { 36,     "V3_PERM_GEN_COMMENT_SNDS",        "GEN_COMMENT_SNDS"                         },
+    { 37,     "V3_PERM_EVENT_SNDS",              "EVENT_SNDS"                               },
+    { 38,     "V3_PERM_MUTE_GLBL",               "MUTE_GLBL"                                },
+    { 39,     "V3_PERM_MUTE_OTHER",              "MUTE_OTHER"                               },
+    { 40,     "V3_PERM_GLBL_CHAT",               "GLBL_CHAT"                                },
+    { 41,     "V3_PERM_START_PRIV_CHAT",         "START_PRIV_CHAT"                          },
+    { 42,     "V3_PERM_EQ_OUT",                  "EQ_OUT"                                   },
+    { 43,     "V3_PERM_SEE_GUEST",               "See Guests"                               },
+    { 44,     "V3_PERM_SEE_NONGUEST",            "See Registered Useres"                    },
+    { 45,     "V3_PERM_SEE_MOTD",                "See Message of the Day"                   },
+    { 46,     "V3_PERM_SEE_SRV_COMMENT",         "See Server Comment"                       },
+    { 47,     "V3_PERM_SEE_CHAN_LIST",           "See Channel List"                         },
+    { 48,     "V3_PERM_SEE_CHAN_COMMENT",        "See Channel Comments"                     },
+    { 49,     "V3_PERM_SEE_USER_COMMENT",        "See User Comments"                        }
 };
 
 uint32_t _v3_hash_table[] =
@@ -297,7 +298,7 @@ uint32_t _v3_hash_table[] =
  * Global Variables
  */
 
-_v3_server  v3_server  = { 0, 0, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, -1, { 0, 0 }, NULL, NULL, 0, 0, { "", 0, 0 }, { "", 0, 0 }, NULL, NULL };
+_v3_server  v3_server  = { 0, 0, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, -1, { 0, 0 }, NULL, NULL, 0, 0, { "", 0, 0 }, { "", 0, 0 }, NULL, NULL, {0, 0},  0, 0 };
 _v3_luser   v3_luser   = { -1, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, 0, {  } };
 
 v3_channel              *v3_channel_list = NULL;
@@ -365,12 +366,22 @@ v3_codec v3_codecs[] = {
     { -1, -1, -1, -1, -1, "" },
 };
 
+typedef struct __v3_decoders {
+    gsm gsm;
+    void *speex;
+} _v3_decoders;
+
+_v3_decoders v3_decoders[65535];
+
+uint8_t _v3_user_volumes[65535];
+
+
 /*
  * Functions in ventrilo3_algo.c
  */
 int                     ventrilo_read_keys(ventrilo_key_ctx *client, ventrilo_key_ctx *server, uint8_t *data, int size
 #ifdef VENTRILO_ALGO_PROTOCOL
-                        , int protocol
+        , int protocol
 #endif
         );
 void                    ventrilo_first_dec(uint8_t *data, int size);

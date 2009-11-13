@@ -30,6 +30,7 @@
 class ManglerServerConfig/*{{{*/
 {
     public:
+        uint32_t              id;
         Glib::ustring         name;
         Glib::ustring         hostname;
         Glib::ustring         port;
@@ -38,8 +39,29 @@ class ManglerServerConfig/*{{{*/
         Glib::ustring         phonetic;
         Glib::ustring         comment;
         Glib::ustring         url;
+        bool                  acceptU2U;
+        bool                  acceptPages;
+        bool                  acceptPrivateChat;
+        bool                  allowRecording;
+        bool                  persistentComments;
+        uint32_t              motdhash;
+        std::map <Glib::ustring, uint8_t> uservolume;
 
         ManglerServerConfig() {
+            name = "";
+            hostname = "";
+            port = "";
+            username = "";
+            password = "";
+            phonetic = "";
+            comment = "";
+            url = "";
+            motdhash = 0;
+            acceptU2U = true;
+            acceptPages = true;
+            acceptPrivateChat = true;
+            allowRecording = true;
+            persistentComments = true;
         }
 };/*}}}*/
 class ManglerConfig {
@@ -51,10 +73,18 @@ class ManglerConfig {
                 std::vector<int>     PushToTalkXKeyCodes;
 		bool            PushToTalkMouseEnabled;
                 Glib::ustring   PushToTalkMouseValue;
+		bool            AudioIntegrationEnabled;
+                Glib::ustring   AudioIntegrationPlayer;
                 Glib::ustring   inputDeviceName;
                 Glib::ustring   outputDeviceName;
+                Glib::ustring   notificationDeviceName;
+                bool            notificationLoginLogout;
+                bool            notificationChannelEnterLeave;
+                bool            notificationTransmitStartStop;
+                int32_t         lastConnectedServerId;
+
 		ManglerServerConfig   qc_lastserver;
-		std::vector<ManglerServerConfig> serverlist;
+		std::vector<ManglerServerConfig *> serverlist;
                 FILE            *cfgstream;
 
 		ManglerConfig();
@@ -63,9 +93,14 @@ class ManglerConfig {
                 bool put(Glib::ustring name, bool value);
                 bool put(Glib::ustring name, Glib::ustring value);
                 bool put(Glib::ustring name, uint32_t value);
+                bool put(Glib::ustring name, int32_t value);
                 bool put(uint16_t id, ManglerServerConfig server);
 		void load();
                 void parsePushToTalkValue(Glib::ustring pttString);
+                uint32_t addserver(void);
+                ManglerServerConfig *getserver(uint32_t id);
+                void removeserver(uint32_t id);
+
 };
 
 #endif

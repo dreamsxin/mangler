@@ -203,6 +203,8 @@ dvidir = @dvidir@
 exec_prefix = @exec_prefix@
 gthread_CFLAGS = @gthread_CFLAGS@
 gthread_LIBS = @gthread_LIBS@
+gtk_CFLAGS = @gtk_CFLAGS@
+gtk_LIBS = @gtk_LIBS@
 gtkmm_CFLAGS = @gtkmm_CFLAGS@
 gtkmm_LIBS = @gtkmm_LIBS@
 host = @host@
@@ -239,7 +241,7 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 ACLOCAL_AMFLAGS = -I m4
-SUBDIRS = libventrilo3 icons src 
+SUBDIRS = libventrilo3 icons sounds src 
 all: config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-recursive
 

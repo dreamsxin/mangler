@@ -28,6 +28,13 @@ CC="$PTHREAD_CC"
 AM_PATH_GLIB_2_0([], [], [], [gthread])
 AC_CHECK_HEADERS([arpa/inet.h fcntl.h netdb.h netinet/in.h stdint.h stdlib.h string.h sys/socket.h sys/time.h unistd.h])
 
+AC_CHECK_LIB([m], [tan], [], [
+	echo "error: cannot find a working math library"
+	exit -1
+	])
+AC_CHECK_HEADER([mpd/client.h],
+	[AC_CHECK_LIB([mpdclient], [mpd_run_status])]
+)
 AC_CHECK_LIB([gsm], [gsm_create], [], [
 	echo "error: cannot find libgsm: Is it installed? Also make sure you have the"
 	echo "       libgsm development packages installed"
@@ -47,17 +54,26 @@ PKG_CHECK_MODULES(speex, speex >= 1.2)
 AC_SUBST(speex_CFLAGS)
 AC_SUBST(speex_LIBS)
 
+PKG_CHECK_MODULES(gtk, gtk+-2.0 >= 2.16.0)
+
 PKG_CHECK_MODULES(gtkmm, gtkmm-2.4 >= 1.3.3)
 AC_SUBST(gtkmm_CFLAGS)
 AC_SUBST(gtkmm_LIBS)
 
-PKG_CHECK_MODULES(pulse, libpulse-simple >= 0.9.14, [AC_DEFINE(HAVE_PULSE, 1, [have pulse audio])], [echo "*** WARNING: compiling without pulse.  you will not have sound support"])
+PKG_CHECK_MODULES(pulse, libpulse-simple >= 0.9.14, [AC_DEFINE(HAVE_PULSE, 1, [have pulse audio])], [
+	echo "**************************************************************************"
+	echo "*** WARNING: compiling without pulse.  you will not have sound support ***"
+	echo "*** PulseAudio 0.9.14 or higher is required for audio support          ***"
+	echo "**************************************************************************"
+])
 AC_SUBST(pulse_CFLAGS)
 AC_SUBST(pulse_LIBS)
 
 PKG_CHECK_MODULES(gthread, gthread-2.0 >= 2.20.1)
 AC_SUBST(gthread_CFLAGS)
 AC_SUBST(gthread_LIBS)
+
+PKG_CHECK_MODULES(gtkmm, gtkmm-2.4 >= 1.3.3)
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_HEADER_STDBOOL

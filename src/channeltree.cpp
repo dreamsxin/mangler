@@ -63,6 +63,18 @@ ManglerChannelTree::ManglerChannelTree(Glib::RefPtr<Gtk::Builder> builder)/*{{{*
                 sigc::mem_fun(*this, &ManglerChannelTree::renderCellData)
                 );
      */
+
+    /*
+     * We have to finish off our user settings window.  I can't find a way to
+     * do this in builder, so let's pack our volume adjustment manually
+     */
+    volumeAdjustment = new Gtk::Adjustment(79, 0, 138, 1, 10, 10);
+    volumevscale = new Gtk::VScale(*volumeAdjustment);
+    volumevscale->add_mark(79, Gtk::POS_LEFT, "100%");
+    volumevscale->set_inverted(true);
+    volumevscale->set_draw_value(false);
+    builder->get_widget("userSettingsVolumeAdjustVBox", vbox);
+    vbox->pack_start(*volumevscale);
 }/*}}}*/
 
 /*
@@ -147,6 +159,58 @@ ManglerChannelTree::addUser(uint32_t id, uint32_t parent_id, Glib::ustring name,
     channelRow[channelRecord.url]               = url;
     channelRow[channelRecord.integration_text]  = integration_text;
     channelRow[channelRecord.last_transmit]     = id != 0 ? "unknown" : "";
+}/*}}}*/
+
+/*
+ * Update a user in the channel tree
+ *
+ * id                       user's ventrilo id
+ * parent_id                the channel id of the channel the user is in
+ * name                     the user name
+ * comment = ""
+ * phonetic = ""
+ * url = ""
+ * integration_text = ""     
+ *
+ * this calculates the display name automatically
+ */
+void
+ManglerChannelTree::updateUser(uint32_t id, uint32_t parent_id, Glib::ustring name, Glib::ustring comment, Glib::ustring phonetic, Glib::ustring url, Glib::ustring integration_text, bool guest) {/*{{{*/
+    Glib::ustring displayName = "";
+    Gtk::TreeModel::Row user;
+
+
+    if (id == 0) {
+        updateLobby(name, comment, phonetic);
+        return;
+    }
+    if (! (user = getUser(id, channelStore->children())) && id > 0) {
+        fprintf(stderr, "missing user: id %d: %s is supposed to be in channel %d\n", id, name.c_str(), parent_id);
+        return;
+    }
+    
+    displayName = name;
+    if (guest) {
+        displayName = displayName + " (GUEST)";
+    }
+    if (! comment.empty()) {
+        displayName = displayName + " (" + (url.empty() ? "" : "U: ") + comment + ")";
+    }
+    if (! integration_text.empty()) {
+        displayName = displayName + " {" + integration_text + "}";
+    }
+    user[channelRecord.displayName]       = displayName;
+    user[channelRecord.icon]              = mangler->icons["user_icon_noxmit"]->scale_simple(15, 15, Gdk::INTERP_BILINEAR);
+    user[channelRecord.isUser]            = id == 0 ? false : true;
+    user[channelRecord.isGuest]           = guest;
+    user[channelRecord.id]                = id;
+    user[channelRecord.parent_id]         = parent_id;
+    user[channelRecord.name]              = name;
+    user[channelRecord.comment]           = comment;
+    user[channelRecord.phonetic]          = phonetic;
+    user[channelRecord.url]               = url;
+    user[channelRecord.integration_text]  = integration_text;
+    user[channelRecord.last_transmit]     = id != 0 ? "unknown" : "";
 }/*}}}*/
 
 /*
@@ -354,6 +418,26 @@ ManglerChannelTree::channelView_row_activated_cb(const Gtk::TreeModel::Path& pat
     bool isUser = row[channelRecord.isUser];
     if (isUser) {
         // double clicked a user
+        if (id == v3_get_user_id()) {
+            // clicked on ourself
+        } else {
+            Glib::ustring name = row[channelRecord.name];
+
+            // disconnect whatever was connected before and reconnect
+            volumeAdjustSignalConnection.disconnect();
+            volumeAdjustSignalConnection = volumeAdjustment->signal_value_changed().connect(sigc::bind(sigc::mem_fun(this, &ManglerChannelTree::volumeAdjustment_value_changed_cb), id));
+
+            // set the user name
+            builder->get_widget("userSettingsNameValueLabel", label);
+            label->set_text(name);
+
+            // set the current volume level for this user
+            volumeAdjustment->set_value(v3_get_volume_user(id));
+
+            builder->get_widget("userSettingsWindow", window);
+            window->show_all();
+            window->present();
+        }
     } else {
         // double clicked a channel
         Gtk::TreeModel::Row user = getUser(v3_get_user_id(), channelStore->children());
@@ -379,6 +463,17 @@ ManglerChannelTree::channelView_row_activated_cb(const Gtk::TreeModel::Path& pat
         }
     }
 }/*}}}*/
+
+uint16_t
+ManglerChannelTree::getUserChannelId(uint16_t userid) {/*{{{*/
+    Gtk::TreeModel::Row user = getUser(userid, channelStore->children());
+    return(user[channelRecord.parent_id]);
+}/*}}}*/
+
+void
+ManglerChannelTree::volumeAdjustment_value_changed_cb(uint16_t id) {
+    v3_set_volume_user(id, volumeAdjustment->get_value());
+}
 
 Glib::ustring getTimeString(void) {
     char buf[64];

@@ -39,6 +39,7 @@
 #include <errno.h>
 #include <unistd.h>
 #include <speex/speex.h>
+#include <math.h>
 #ifdef HAVE_GSM_H
 #include <gsm.h>
 #else
@@ -175,6 +176,11 @@ _v3_net_message_dump_raw(char *data, int len) {/*{{{*/
     int ctr, ctr2;
     char buf[256], buf2[4];
 
+    // specifically bail out of this one since there's a lot of wasted
+    // processing if we're not debugging it
+    if (! (V3_DEBUG_PACKET_ENCRYPTED & v3_debuglevel(-1))) {
+        return;
+    }
     for (ctr = 0; ctr < len; ctr+=16) {
         if (ctr+16 > len) {
             buf[0] = 0;
@@ -254,7 +260,7 @@ _v3_hexdump(char *data, int len) {/*{{{*/
                     (uint8_t)data[ctr+13] > 32 && (uint8_t)data[ctr+13] < 127 ? (uint8_t)data[ctr+13]  : '.',
                     (uint8_t)data[ctr+14] > 32 && (uint8_t)data[ctr+14] < 127 ? (uint8_t)data[ctr+14]  : '.',
                     (uint8_t)data[ctr+15] > 32 && (uint8_t)data[ctr+15] < 127 ? (uint8_t)data[ctr+15]  : '.'
-                    );
+                        );
         }
     }
     return;
@@ -265,6 +271,11 @@ _v3_net_message_dump(_v3_net_message *msg) {/*{{{*/
     int ctr, ctr2;
     char buf[256] = "", buf2[8] = "";
 
+    // specifically bail out of this one since there's a lot of wasted
+    // processing if we're not debugging it
+    if (! (V3_DEBUG_PACKET & v3_debuglevel(-1))) {
+        return;
+    }
     _v3_debug(V3_DEBUG_PACKET, "PACKET: message type: 0x%02X (%d)", (uint8_t)msg->type, (uint16_t)msg->type);
     _v3_debug(V3_DEBUG_PACKET, "PACKET: data length : %d", msg->len);
     for (ctr = 0; ctr < msg->len; ctr+=16) {
@@ -381,60 +392,6 @@ _v3_next_timestamp(struct timeval *result, struct timeval *timestamp) {/*{{{*/
     }
     // return 1 if negative
     return last.tv_sec < now.tv_sec;
-}/*}}}*/
-
-/*
-   Perform the initial key exchange with the server
- */
-int
-_v3_server_key_exchange(void) {/*{{{*/
-    _v3_net_message msg;
-    _v3_msg_0x00 msg0;
-    char buf[32];
-    char *msgdata;
-    int ctr, len;
-
-    _v3_func_enter("_v3_server_key_exchange");
-
-    // Build a net message of type zero with random data
-    memset(&msg0, 0, sizeof(_v3_msg_0x00));
-    strncpy(msg0.version, "3.0.0", 16);
-    
-    for(ctr = 0; ctr < 31; ctr++) {
-        buf[ctr] = rand() % 93 + 33;
-    }
-    buf[ctr] = '\0';
-    memcpy(msg0.salt1, buf, 32);
-    
-    for(ctr = 0; ctr < 31; ctr++) {
-        buf[ctr] = rand() % 93 + 33;
-    }
-    buf[ctr] = '\0';
-    memcpy(msg0.salt2, buf, 32);
-    
-    msg.type = 0x00;
-    msg.len  = sizeof(_v3_msg_0x00);
-    msg.data = (char *)&msg0;
-    
-    _v3_net_message_dump(&msg);
-
-    // Encrypt the message and send it to the server
-    ventrilo_first_enc((uint8_t *)msg.data, msg.len);
-    _v3_send_enc_msg(msg.data, msg.len);
-
-    msgdata = malloc(0xffff);
-    len = _v3_recv_enc_msg(msgdata);
-    ventrilo_first_dec((uint8_t *)msgdata, len);
-    _v3_debug(V3_DEBUG_INFO, "Received following packet with keys:");
-    _v3_net_message_dump_raw(msgdata, len);
-
-    if (ventrilo_read_keys(&v3_server.client_key, &v3_server.server_key, (uint8_t *)msgdata+12, len-12) < 0) {
-        _v3_error("could not parse keys from the server");
-    }
-    free(msgdata);
-
-    _v3_func_leave("_v3_server_key_exchange");
-    return true;
 }/*}}}*/
 
 int
@@ -792,6 +749,33 @@ _v3_recv(int block) {/*{{{*/
                             }
                         }
                         break;/*}}}*/
+                    case V3_EVENT_USER_MODIFY:/*{{{*/
+                        {
+                            _v3_net_message *msg;
+                            v3_user *user;
+
+                            user = v3_get_user(v3_luser.id);
+                            free(user->name);
+                            free(user->phonetic);
+                            free(user->comment);
+                            free(user->url);
+                            free(user->integration_text);
+                            user->name = strdup("");
+                            user->phonetic = strdup("");
+                            user->comment = strdup(ev.text.comment);
+                            user->url = strdup(ev.text.url);
+                            user->integration_text = strdup(ev.text.integration_text);
+                            _v3_debug(V3_DEBUG_INFO, "setting cm: %s, url: %s, integration: %s", ev.text.comment, ev.text.url, ev.text.integration_text);
+                            msg = _v3_put_0x5d(V3_MODIFY_USER, 1, user);
+                            if (_v3_send(msg)) {
+                                _v3_debug(V3_DEBUG_SOCKET, "sent text strings changes to server");
+                            } else {
+                                _v3_debug(V3_DEBUG_SOCKET, "failed to send text string change message");
+                            }
+                            v3_free_user(user);
+                            _v3_destroy_packet(msg);
+                        }
+                        break;/*}}}*/
                     default:
                         _v3_debug(V3_DEBUG_EVENT, "received unknown event type %d from queue", ev.type);
                         break;
@@ -825,9 +809,16 @@ _v3_recv(int block) {/*{{{*/
                 _v3_func_leave("_v3_recv");
                 return NULL;
             } else {
+                v3_server.packet_count++;
+                v3_server.byte_count += msg->len;
                 _v3_debug(V3_DEBUG_SOCKET, "received %d bytes", msg->len);
             }
-            ventrilo_dec(&v3_server.server_key, (uint8_t *)msgdata, msg->len);
+
+            if(v3_server.packet_count == 1) {
+                ventrilo_first_dec((uint8_t *)msgdata, msg->len);
+            } else {
+                ventrilo_dec(&v3_server.server_key, (uint8_t *)msgdata, msg->len);
+            }
             _v3_debug(V3_DEBUG_INTERNAL, "decryption complete");
             memcpy(&msg->type, msgdata, 2);
             msg->data = malloc(msg->len);
@@ -1076,6 +1067,7 @@ _v3_update_user(v3_user *user) {/*{{{*/
         u->url              = strdup(user->url);
         u->guest            = user->bitfield & 0x400 ? 1 : 0;
         u->next             = NULL;
+        _v3_user_volumes[u->id] = 79;
         v3_user_list = u;
     } else {
         for (u = v3_user_list; u != NULL; u = u->next) { // search for existing users
@@ -1116,6 +1108,7 @@ _v3_update_user(v3_user *user) {/*{{{*/
         u->integration_text = strdup(user->integration_text);
         u->url              = strdup(user->url);
         u->guest            = user->bitfield & 0x400 ? 1 : 0;
+        _v3_user_volumes[u->id] = 79;
         u->next             = NULL;
     }
     _v3_unlock_userlist();
@@ -1156,7 +1149,6 @@ _v3_destroy_channellist(void) {/*{{{*/
     _v3_unlock_channellist();
     _v3_func_leave("_v3_destroy_channel");
 }/*}}}*/
-
 
 int
 _v3_remove_user(uint16_t id) {/*{{{*/
@@ -1424,6 +1416,29 @@ _v3_unlock_server(void) {/*{{{*/
     pthread_mutex_unlock(server_mutex);
 }/*}}}*/
 
+void
+_v3_init_decoders(void) {/*{{{*/
+    _v3_func_enter("_v3_init_decoders");
+    memset(v3_decoders, 0, sizeof(v3_decoders));
+    _v3_func_leave("_v3_init_decoders");
+}/*}}}*/
+
+void
+_v3_destroy_decoders(void) {/*{{{*/
+    int ctr;
+
+    _v3_func_enter("_v3_destroy_decoders");
+    for (ctr = 0; ctr < 65535; ctr++) {
+        if (v3_decoders[ctr].gsm != NULL) {
+            gsm_destroy(v3_decoders[ctr].gsm);
+        }
+        if (v3_decoders[ctr].speex != NULL) {
+            speex_decoder_destroy(v3_decoders[ctr].speex);
+        }
+    }
+    _v3_func_leave("_v3_destroy_decoders");
+}/*}}}*/
+
 /*
  *  Pretty much all packet processing happens in this function.
  *
@@ -1442,11 +1457,11 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
     _v3_func_enter("_v3_process_message");
     _v3_debug(V3_DEBUG_INTERNAL, "beginning packet processing on msg type '0x%02X' (%d)", msg->type, (uint16_t)msg->type);
     switch (msg->type) {
-	case 0x06:/*{{{*/
-	    if(!_v3_get_0x06(msg)) {
-		_v3_destroy_packet(msg);
-		_v3_func_leave("_v3_process_message");
-		return V3_MALFORMED;
+        case 0x06:/*{{{*/
+            if(!_v3_get_0x06(msg)) {
+                _v3_destroy_packet(msg);
+                _v3_func_leave("_v3_process_message");
+                return V3_MALFORMED;
             } else {
                 _v3_msg_0x06 *m = msg->contents;
                 v3_event *ev = malloc(sizeof(v3_event));
@@ -1454,7 +1469,6 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                 int error = false;
 
                 memset(ev, 0, sizeof(v3_event));
-                // This lock will only be needed when we start calling ventrilo_read_keys() from here.
                 _v3_lock_server();
                 if(m->subtype & 0x01) {
                     error = true;
@@ -1466,16 +1480,12 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                     _v3_debug(V3_DEBUG_INTERNAL, "FIXME: Authenticated as administrator.");
                 }
                 if(m->subtype & 0x04) {
-                    /*
-                     * TODO: 
-                     * We should pass m->encryption_key to ventrilo_read_keys() and respond with our own key.
-                     * For now, this is done using the _v3_server_key_exchange() function.
-                     */
-                    _v3_debug(V3_DEBUG_INTERNAL, "FIXME: ventrilo_read_keys() should be called from 0x06 processing.");
-                    /*
-                       if (ventrilo_read_keys(&v3_server.client_key, &v3_server.server_key, m->encryption_key, m->len - 12) < 0) {
-                       _v3_error("could not parse keys from the server");
-                       }*/
+                    if (ventrilo_read_keys(&v3_server.client_key, &v3_server.server_key, m->encryption_key, msg->len - 12) < 0) {
+                        _v3_error("could not parse keys from the server");
+                        free(m->encryption_key);
+                        return V3_FAILURE;
+                    }
+                    free(m->encryption_key);
                 }
                 if(m->subtype & 0x10) {
                     _v3_debug(V3_DEBUG_INTERNAL, "FIXME: Unknown subtype, please report a packetdump.");
@@ -1491,25 +1501,30 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                     _v3_debug(V3_DEBUG_INTERNAL, "FIXME: Unknown subtype, please report a packetdump.");
                 }
                 if(m->subtype & 0x200) {
-                    _v3_debug(V3_DEBUG_INTERNAL, "FIXME: Server has been disabled: %s", _v3_server_disabled_errors[m->error_id-1]);
+                    error = true;
+                    strncat(buf, _v3_server_disabled_errors[m->error_id-1], 511);
                 }
                 if(m->subtype & 0x400) {
                     _v3_debug(V3_DEBUG_INTERNAL, "FIXME: Unknown subtype, please report a packetdump.");
                 }
+
+                _v3_destroy_packet(msg);
+                _v3_unlock_server();
+
                 if (error) {
                     ev->type = V3_EVENT_ERROR_MSG;
                     strncpy(ev->error.message, buf, 512);
                     v3_queue_event(ev);
+                    _v3_func_leave("_v3_process_message");
+                    return V3_FAILURE;
                 } else {
                     // it's an informational message free it for now, may want
                     // to queue it as something else later
                     free(ev);
                 }
-                _v3_destroy_packet(msg);
                 _v3_func_leave("_v3_process_message");
-                _v3_unlock_server();
             }
-	return V3_OK;/*}}}*/
+            return V3_OK;/*}}}*/
         case 0x3b:/*{{{*/
             /*
              *  This is almost identical to 0x53, so whatever you do here probably
@@ -1520,10 +1535,10 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                 _v3_func_leave("_v3_process_message");
                 return V3_MALFORMED;
             } else {
-                  //libventrilo3: 15:35:41:         ======= received TCP packet =====================================
-                  //libventrilo3: 15:35:41:         PACKET: message type: 0x3B (59)
-                  //libventrilo3: 15:35:41:         PACKET: data length : 12
-                  //libventrilo3: 15:35:41:         PACKET:     3B 00 00 00 05 00 03 00 00 00 00 00                  ;...........
+                //libventrilo3: 15:35:41:         ======= received TCP packet =====================================
+                //libventrilo3: 15:35:41:         PACKET: message type: 0x3B (59)
+                //libventrilo3: 15:35:41:         PACKET: data length : 12
+                //libventrilo3: 15:35:41:         PACKET:     3B 00 00 00 05 00 03 00 00 00 00 00                  ;...........
 
                 _v3_msg_0x3b *m = msg->contents;
 
@@ -1809,37 +1824,39 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                         }
                         break;
                     case 0x01:
-                        {   
+                        {
                             _v3_msg_0x52_0x01_in *msub = (_v3_msg_0x52_0x01_in *)msg->contents;
                             ev->type = V3_EVENT_PLAY_AUDIO;
                             ev->user.id = m->user_id;
                             ev->pcm.send_type = m->send_type;
                             ev->pcm.rate = v3_get_codec_rate(msub->codec, msub->codec_format);
+                            int volumectr;
 
                             // TODO: it's too messy to have this here.  Write a function that decodes
                             switch (msub->codec) {
                                 case 0: // GSM
                                     {
                                         _v3_msg_0x52_gsmdata *gsmdata =  msub->data;
-                                        gsm handle;
                                         uint8_t buf[65];
                                         int8_t sample[640];
                                         int ctr;
                                         int one = 1; // used for codec settings
 
-                                        if (!(handle = gsm_create())) {
-                                            _v3_error("couldn't create gsm handle");
-                                            _v3_destroy_0x52(msg);
-                                            _v3_destroy_packet(msg);
-                                            _v3_func_leave("_v3_process_message");
-                                            free(ev);
-                                            return V3_MALFORMED; // it's not really a malformed packet...
+                                        if (! v3_decoders[m->user_id].gsm) {
+                                            if (!(v3_decoders[m->user_id].gsm = gsm_create())) {
+                                                _v3_error("couldn't create gsm handle");
+                                                _v3_destroy_0x52(msg);
+                                                _v3_destroy_packet(msg);
+                                                _v3_func_leave("_v3_process_message");
+                                                free(ev);
+                                                return V3_MALFORMED; // it's not really a malformed packet...
+                                            }
+                                            gsm_option(v3_decoders[m->user_id].gsm, GSM_OPT_WAV49, &one);
                                         }
                                         memset(sample, 0, 640);
-                                        gsm_option(handle, GSM_OPT_WAV49, &one);
                                         for (ctr = 0; ctr < msub->data_length / 65; ctr++) {
                                             memcpy(buf, gsmdata->frames[ctr], 65);
-                                            if (gsm_decode(handle, buf, (int16_t *)sample) || gsm_decode(handle, buf+33, ((int16_t *)sample)+160)) {
+                                            if (gsm_decode(v3_decoders[m->user_id].gsm, buf, (int16_t *)sample) || gsm_decode(v3_decoders[m->user_id].gsm, buf+33, ((int16_t *)sample)+160)) {
                                                 _v3_debug(V3_DEBUG_INFO, "failed to decode gsm frame %d", ctr);
                                                 continue;
                                             }
@@ -1853,7 +1870,6 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                                 case 3: // SPEEX
                                     {
                                         char  cbits[200];
-                                        void *state;
                                         SpeexBits bits;
                                         int frame_size;
                                         int ctr;
@@ -1865,35 +1881,43 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                                         // is the actual frame size in the packet.  Then
                                         // subtract two for extra int16 specifying length
                                         frame_size = msub->data_length / speexdata->frame_count - 2;
-                                        switch (ev->pcm.rate) {
-                                            case 8000:
-                                                state = speex_decoder_init(&speex_nb_mode);
-                                                break;
-                                            case 16000:
-                                                state = speex_decoder_init(&speex_wb_mode);
-                                                break;
-                                            case 32000:
-                                                state = speex_decoder_init(&speex_uwb_mode);
-                                                break;
-                                            default:
-                                                _v3_debug(V3_DEBUG_INFO, "received unknown speex pcm rate %d", ev->pcm.rate);
-                                                _v3_destroy_0x52(msg);
-                                                _v3_destroy_packet(msg);
-                                                free(ev);
-                                                return V3_MALFORMED;
+                                        if (v3_decoders[m->user_id].speex == NULL) {
+                                            switch (ev->pcm.rate) {
+                                                case 8000:
+                                                    v3_decoders[m->user_id].speex = speex_decoder_init(&speex_nb_mode);
+                                                    break;
+                                                case 16000:
+                                                    v3_decoders[m->user_id].speex = speex_decoder_init(&speex_wb_mode);
+                                                    break;
+                                                case 32000:
+                                                    v3_decoders[m->user_id].speex = speex_decoder_init(&speex_uwb_mode);
+                                                    break;
+                                                default:
+                                                    _v3_debug(V3_DEBUG_INFO, "received unknown speex pcm rate %d", ev->pcm.rate);
+                                                    _v3_destroy_0x52(msg);
+                                                    _v3_destroy_packet(msg);
+                                                    free(ev);
+                                                    return V3_MALFORMED;
+                                            }
                                         }
                                         speex_bits_init(&bits);
                                         for (ctr = 0; ctr < speexdata->frame_count; ctr++) {
                                             memcpy(cbits, speexdata->frames[ctr] + 2, frame_size);
                                             speex_bits_read_from(&bits, cbits, frame_size);
-                                            speex_decode_int(state, &bits, ((int16_t *)ev->data.sample)+ctr*speexdata->sample_size);
+                                            speex_decode_int(v3_decoders[m->user_id].speex, &bits, ((int16_t *)ev->data.sample)+ctr*speexdata->sample_size);
                                         }
                                         ev->pcm.length  = speexdata->frame_count * speexdata->sample_size * sizeof(int16_t);
                                         _v3_debug(V3_DEBUG_EVENT, "queueing pcm msg length %d", ev->pcm.length);
-                                        speex_decoder_destroy(state);
                                         speex_bits_destroy(&bits);
                                     }
                                     break;
+                            }
+                            // don't waste resources if we don't need to deal with it
+                            if (_v3_user_volumes[ev->user.id] != 79) {
+                                float multiplier = tan(_v3_user_volumes[ev->user.id]/100.0);
+                                for (volumectr = 0; volumectr < ev->pcm.length / 2; volumectr++) {
+                                    ev->data.sample16[volumectr] *= multiplier;
+                                }
                             }
                         }
                         break;
@@ -1969,7 +1993,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                         strncat(buf, buf2, 1023);
                     }
                     _v3_debug(V3_DEBUG_INTERNAL, "disconnecting from server");
-                    _v3_close_connection();
+                    _v3_logout();
                 }
                 ev = malloc(sizeof(v3_event));
                 memset(ev, 0, sizeof(v3_event));
@@ -2157,6 +2181,8 @@ v3_login(char *server, char *username, char *password, char *phonetic) {/*{{{*/
         _v3_debug(V3_DEBUG_INTERNAL, "freeing up resources from previous login");
         v3_server.port = 0;
         v3_server.max_clients = 0;
+        v3_server.byte_count = 0;
+        v3_server.packet_count = 0;
         v3_server.connected_clients = 0;
         free(v3_server.name);
         free(v3_server.version);
@@ -2230,6 +2256,7 @@ v3_login(char *server, char *username, char *password, char *phonetic) {/*{{{*/
     v3_luser.name = strdup(username);
     v3_luser.password = strdup(password);
     v3_luser.phonetic = strdup(phonetic);
+    _v3_init_decoders();
     if (pipe(v3_server.evpipe)) {
         _v3_error("could not create outbound event queue");
         return false;
@@ -2255,57 +2282,57 @@ v3_login(char *server, char *username, char *password, char *phonetic) {/*{{{*/
     }
     _v3_status(20, "Connected to %s... exchanging encryption keys", inet_ntoa(srvip));
     gettimeofday(&v3_server.last_timestamp, NULL);
-    /*
-       At this point, we have a TCP connection to the server.  It's time to
-       start the authentication process, first start with the key exchange
-     */
-    _v3_server_key_exchange();
 
-    // Wait for the info message to come back
+    /*
+       Initiate the encryption handshake by handing the server our randomly generated key.
+     */
+    msg = _v3_put_0x00();
+    ventrilo_first_enc((uint8_t *)msg->data, msg->len);
+    _v3_send_enc_msg(msg->data, msg->len);
+    _v3_destroy_packet(msg);
+
+    /*
+       Grab server information.
+     */
     msg = _v3_recv(V3_BLOCK);
-    if (msg->type != 0x57) {
-        _v3_debug(V3_DEBUG_INTERNAL, "expected message type 0x57, received type %02X", msg->type);
+    type = msg->type;
+    _v3_process_message(msg);
+
+    /*
+       User was banned, get to the choppah!
+     */
+    if(type == 0x59) {
         return false;
     }
-    switch (_v3_process_message(msg)) {
-        case V3_MALFORMED:
-            _v3_debug(V3_DEBUG_INTERNAL, "received malformed packet or unimplemented subtype");
-            break;
-        case V3_NOTIMPL:
-            _v3_debug(V3_DEBUG_INTERNAL, "packet type not implemented -- if we ignore it, maybe it'll go away");
-            break;
-        case V3_OK:
-            _v3_debug(V3_DEBUG_INTERNAL, "packet processed");
-            break;
-    }
 
     /*
-     * Message type 0x48 is the actual login message.  This sends the username,
-     * password, phonetic, etc.  Process all responses up to (and including)
-     * 0x34, which is the key scramble
+       Send authentication info.
      */
-    _v3_status(30, "Connected to %s... logging in", inet_ntoa(srvip));
     msg = _v3_put_0x48();
     _v3_send(msg);
     _v3_destroy_packet(msg);
+
+    /*
+       Process several messages until we're logged in.
+     */
     do {
-        if ((msg = _v3_recv(V3_BLOCK)) == NULL) {
-            _v3_error("recv() failed");
+        msg = _v3_recv(V3_BLOCK);
+        if(!msg) {
             return false;
-        }
+        }	
         type = msg->type;
         switch (type) {
             case 0x4a:
-                _v3_status(40, "Receiving User Permissions.");
+                _v3_status(40, "Receiving user permissions.");
                 break;
             case 0x5d:
-                _v3_status(50, "Receiving User List.");
+                _v3_status(50, "Receiving user list.");
                 break;
             case 0x60:
-                _v3_status(60, "Receiving Channel List.");
+                _v3_status(60, "Receiving channel list.");
                 break;
             case 0x46:
-                _v3_status(70, "Receiving User Settings.");
+                _v3_status(70, "Receiving user settings.");
                 break;
             case 0x50:
                 _v3_status(80, "Receiving MOTD.");
@@ -2321,33 +2348,31 @@ v3_login(char *server, char *username, char *password, char *phonetic) {/*{{{*/
             case V3_OK:
                 _v3_debug(V3_DEBUG_INTERNAL, "packet processed");
                 break;
+            case V3_FAILURE:
+                return false;
+                break;
         }
-        // 0x59 is a error message that will be received if you are banned
-        // 0x06 is a specific authentication error message
-        if (type == 0x59 || type == 0x06) {
-            return false;
-        }
-    } while (type != 0x34);
-    /*
-     * After we recive the key scramble packet, if we're still connected, we
-     * should be logged in.  We need t respond to the 0x5c message we
-     * previously ignored and send our user settings to the server.  At that
-     * point, normal packet processing can begin.
-     */
+    } while(type != 0x34);
+
     if (v3_is_loggedin()) {
         _v3_net_message *response;
 
-        _v3_status(90, "Scraming Encryption Table.");
+        /*
+         * Start off the 0x5C sequence to verify we're a valid client.
+         */
+        _v3_status(90, "Scrambling encryption table.");
         response = _v3_put_0x5c(0);
         _v3_send(response);
         _v3_destroy_packet(response);
 
-        _v3_status(95, "Sending User Settings.");
+        /*
+         * Tell server some specific client settings.
+         */
+        _v3_status(95, "Sending user settings.");
         response = _v3_put_0x46(V3_USER_ACCEPT_PAGES, v3_luser.accept_pages);
         _v3_send(response);
         _v3_destroy_packet(response);
 
-        //response = _v3_put_0x46(V3_USER_ACCEPT_U2U, v3_luser.accept_u2u);
         response = _v3_put_0x46(V3_USER_ACCEPT_U2U, 1);
         _v3_send(response);
         _v3_destroy_packet(response);
@@ -2360,7 +2385,10 @@ v3_login(char *server, char *username, char *password, char *phonetic) {/*{{{*/
         _v3_send(response);
         _v3_destroy_packet(response);
 
-        _v3_status(100, "Login Complete.");
+        /*
+         * Let GUI know that login completed.
+         */
+        _v3_status(100, "Login complete.");
         {
             v3_event *ev;
             ev = malloc(sizeof(v3_event));
@@ -2368,10 +2396,12 @@ v3_login(char *server, char *username, char *password, char *phonetic) {/*{{{*/
             ev->type = V3_EVENT_LOGIN_COMPLETE;
             v3_queue_event(ev);
         }
-
+        _v3_func_leave("v3_login");
         return true;
+    } else {
+        _v3_func_leave("v3_login");
+        return false;
     }
-    return false;
 }/*}}}*/
 
 int
@@ -2392,12 +2422,13 @@ _v3_logout(void) {/*{{{*/
     free(v3_luser.phonetic);
     /*
      * freeing these causes a hang on logout...
-    free(userlist_mutex);
-    free(channellist_mutex);
-    free(server_mutex);
-    free(luser_mutex);
-    free(sendq_mutex);
-    */
+     free(userlist_mutex);
+     free(channellist_mutex);
+     free(server_mutex);
+     free(luser_mutex);
+     free(sendq_mutex);
+     */
+    _v3_destroy_decoders();
     _v3_destroy_channellist();
     _v3_destroy_userlist();
     v3_luser.id = -1;
@@ -2478,39 +2509,30 @@ v3_change_channel(uint16_t channel_id, char *password) {/*{{{*/
     return;
 }/*}}}*/
 
-int
+void
 v3_set_text(char *comment, char *url, char *integration_text, uint8_t silent) {/*{{{*/
-    _v3_net_message *msg;
-    v3_user *user;
+    v3_event ev;
 
     _v3_func_enter("v3_set_text");
-
-    // TODO: this needs to be implemented using the queue
-    user = v3_get_user(v3_luser.id);
-    free(user->name);
-    free(user->phonetic);
-    free(user->comment);
-    free(user->url);
-    free(user->integration_text);
-    user->name = strdup("");
-    user->phonetic = strdup("");
-    user->comment = strdup(comment);
-    user->url = strdup(url);
-    user->integration_text = strdup(integration_text);
-    _v3_debug(V3_DEBUG_INFO, "setting cm: %s, url: %s, integration: %s", comment, url, integration_text);
-    msg = _v3_put_0x5d(V3_MODIFY_USER, 1, user);
-    if (_v3_send(msg)) {
-        v3_free_user(user);
-        _v3_destroy_packet(msg);
+    if (!v3_is_loggedin()) {
         _v3_func_leave("v3_set_text");
-        return true;
-    } else {
-        v3_free_user(user);
-        _v3_debug(V3_DEBUG_INFO, "send failed: ", _v3_error(NULL));
-        _v3_func_leave("v3_set_text");
-        _v3_destroy_packet(msg);
-        return false;
+        return;
     }
+    memset(&ev, 0, sizeof(v3_event));
+    ev.type = V3_EVENT_USER_MODIFY;
+    ev.user.id = v3_get_user_id();
+    strncpy(ev.text.comment, comment, 127);
+    strncpy(ev.text.url, url, 127);
+    strncpy(ev.text.integration_text, integration_text, 127);
+    _v3_lock_sendq();
+    _v3_debug(V3_DEBUG_EVENT, "sending %lu bytes to event pipe", sizeof(v3_event));
+    if (fwrite(&ev, sizeof(struct _v3_event), 1, v3_server.evoutstream) != 1) {
+        _v3_error("could not write to event pipe");
+    }
+    fflush(v3_server.evoutstream);
+    _v3_unlock_sendq();
+    _v3_func_leave("v3_change_channel");
+    return;
 }/*}}}*/
 
 int
@@ -2852,18 +2874,31 @@ v3_stop_audio(void) {/*{{{*/
     return;
 }/*}}}*/
 
+
 /*
-   struct  v3_channel **v3_channel_list(void);
-   struct  v3_channel *v3_channel_info_by_name(char *channel_name);
-   struct  v3_channel *v3_channel_info_by_id(int channel_id);
-   int     v3_channel_count(void);
-
-   struct  v3_user **v3_user_list();
-   struct  v3_user *v3_user_info_by_name(char *user_name);
-   struct  v3_user *v3_user_info_by_id(int user_id);
-   int     v3_user_count(void);
-
-   int     v3_send_audio(void);
-
-   int     v3_register_event_handler(uint16_t event_type, void *event_handler);
+ * Using these functions may chew up CPU since they perform mathmetical
+ * operations on every 16 bit pcm sample.
  */
+void
+v3_set_volume_user(uint16_t id, int level) {/*{{{*/
+    if (level < 0 || level > 128) {
+        return;
+    }
+    _v3_user_volumes[id] = level;
+}/*}}}*/
+
+void
+v3_set_volume_luser(int level) {/*{{{*/
+    v3_set_volume_user(v3_get_user_id(), level);
+}/*}}}*/
+
+uint8_t
+v3_get_volume_user(uint16_t id) {
+    return _v3_user_volumes[id];
+}
+
+uint8_t
+v3_get_volume_luser(void) {
+    return v3_get_volume_user(v3_get_user_id());
+}
+

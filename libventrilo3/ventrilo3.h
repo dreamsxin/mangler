@@ -180,12 +180,12 @@ enum _v3_events
     V3_EVENT_PLAY_AUDIO,
     V3_EVENT_DISPLAY_MOTD,
     V3_EVENT_DISCONNECT,
+    V3_EVENT_USER_MODIFY,
 
     // outbound specific event types
     V3_EVENT_CHANGE_CHANNEL,
 
     // not implemented
-    V3_EVENT_USER_MODIFY,
     V3_EVENT_USER_PAGED,
     V3_EVENT_LUSER_FORCE_CHAN_MOVE,
     V3_EVENT_CHAN_REMOVED,
@@ -236,6 +236,7 @@ struct _v3_event {
         uint32_t rate;
     } pcm;
     union {
+        int16_t sample16[16384];
         uint8_t sample[32768];
         char    motd[2048]; 
     } data;
@@ -375,6 +376,8 @@ typedef struct __v3_server {
     _v3_net_message *_queue;          // This queue (linked list) is used internally
     _v3_net_message *queue;           // This queue (linked list) stores messages that need to be processed by the client
     struct timeval last_timestamp;    // The time() of the last timestamp, a timestamp is sent every 10 seconds
+    uint32_t packet_count;			  // Total amount of packets received from server.
+    uint32_t byte_count;			  // Total amount of bytes received from server.
 } _v3_server;
 
 /*
@@ -423,7 +426,7 @@ void        v3_change_channel(uint16_t channel_id, char *password);
 int         v3_debuglevel(uint32_t level);
 int         v3_is_loggedin(void);
 uint16_t    v3_get_user_id(void);
-int         v3_set_text(char *comment, char *url, char *integration_text, uint8_t silent);
+void        v3_set_text(char *comment, char *url, char *integration_text, uint8_t silent);
 int         v3_message_waiting(int block);
 uint16_t    *v3_get_soundq(uint32_t *len);
 uint32_t    v3_get_soundq_length(void);
@@ -447,6 +450,12 @@ v3_user     *v3_get_user(uint16_t id);
 int         v3_channel_count(void);
 void        v3_free_channel(v3_channel *channel);
 v3_channel  *v3_get_channel(uint16_t id);
+
+// audio effects
+void v3_set_volume_user(uint16_t id, int level);
+void v3_set_volume_luser(int level);
+uint8_t v3_get_volume_user(uint16_t id);
+uint8_t v3_get_volume_luser(void);
 
 
 #endif // _VENTRILO3_H
