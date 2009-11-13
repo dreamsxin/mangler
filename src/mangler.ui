@@ -2374,6 +2374,7 @@ Notifications are the sound effects that are played when you login, logout, a us
               <object class="GtkEntry" id="textStringChangeCommentEntry">
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
+                <property name="max_length">127</property>
                 <property name="invisible_char">&#x25CF;</property>
               </object>
               <packing>
@@ -2386,6 +2387,7 @@ Notifications are the sound effects that are played when you login, logout, a us
               <object class="GtkEntry" id="textStringChangeURLEntry">
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
+                <property name="max_length">127</property>
                 <property name="invisible_char">&#x25CF;</property>
               </object>
               <packing>
@@ -2400,6 +2402,7 @@ Notifications are the sound effects that are played when you login, logout, a us
               <object class="GtkEntry" id="textStringChangeIntegrationEntry">
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
+                <property name="max_length">127</property>
                 <property name="invisible_char">&#x25CF;</property>
               </object>
               <packing>
