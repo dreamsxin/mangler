@@ -772,7 +772,7 @@ _v3_recv(int block) {/*{{{*/
                             _v3_destroy_packet(msg);
                         }
                         break;/*}}}*/
-                    case V3_EVENT_JOIN_CHAT:/*{{{*/
+                    case V3_EVENT_CHAT_JOIN:/*{{{*/
                         {
                             _v3_net_message *msg = _v3_put_0x42(V3_JOIN_CHAT, v3_luser.id, NULL);
                             if (_v3_send(msg)) {
@@ -780,7 +780,7 @@ _v3_recv(int block) {/*{{{*/
                             } else {
                                 _v3_debug(V3_DEBUG_SOCKET, "failed to send join chat request message");
                             }
-                        }
+                        }/*}}}*/
                     default:
                         _v3_debug(V3_DEBUG_EVENT, "received unknown event type %d from queue", ev.type);
                         break;
