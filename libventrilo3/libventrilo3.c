@@ -948,6 +948,7 @@ v3_message_waiting(int block) {/*{{{*/
         _v3_next_timestamp(&tv, &v3_server.last_timestamp);
         _v3_debug(V3_DEBUG_INFO, "outbound timestamp pending in %d.%d seconds", tv.tv_sec, tv.tv_usec);
         if (!_v3_is_connected()) {
+            _v3_func_leave("v3_message_waiting");
             return false;
         }
         if (ret == 0) {
