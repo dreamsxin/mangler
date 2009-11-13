@@ -2474,6 +2474,8 @@ Notifications are the sound effects that are played when you login, logout, a us
           <object class="GtkHPaned" id="hpaned1">
             <property name="visible">True</property>
             <property name="can_focus">True</property>
+            <property name="position">375</property>
+            <property name="position_set">True</property>
             <child>
               <object class="GtkScrolledWindow" id="scrolledwindow1">
                 <property name="visible">True</property>
@@ -2495,13 +2497,13 @@ Notifications are the sound effects that are played when you login, logout, a us
             </child>
             <child>
               <object class="GtkScrolledWindow" id="scrolledwindow3">
+                <property name="width_request">100</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="hscrollbar_policy">automatic</property>
                 <property name="vscrollbar_policy">automatic</property>
                 <child>
                   <object class="GtkTreeView" id="userList">
-                    <property name="width_request">100</property>
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
                   </object>
