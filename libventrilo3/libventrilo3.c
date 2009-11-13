@@ -410,6 +410,7 @@ _v3_server_auth(struct in_addr *srvip, uint16_t srvport) {/*{{{*/
     sd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
     if (sd < 0) {
         _v3_error("could not authenticate server: failed to create socket");
+        _v3_func_leave("_v3_server_auth");
         return false;
     }
 
@@ -421,6 +422,7 @@ _v3_server_auth(struct in_addr *srvip, uint16_t srvport) {/*{{{*/
         _v3_error("could not authenticate server: failed to send auth packet");
         shutdown(sd, SHUT_WR);
         close(sd);
+        _v3_func_leave("_v3_server_auth");
         return false;
     }
     tout.tv_sec  = 4;
@@ -429,11 +431,13 @@ _v3_server_auth(struct in_addr *srvip, uint16_t srvport) {/*{{{*/
     FD_SET(sd, &fd_read);
     if(select(sd + 1, &fd_read, NULL, NULL, &tout) <= 0) {
         _v3_error("could not authenticate server: timed out waiting for auth server");
+        _v3_func_leave("_v3_server_auth");
         return false;
     }
     len = recvfrom(sd, buf, sizeof(buf), 0, NULL, NULL);
     if (len < 0) {
         _v3_error("could not authenticate server: udp receive failed");
+        _v3_func_leave("_v3_server_auth");
         return false;
     }
     if (buf[168] < '3') {
@@ -2228,10 +2232,12 @@ v3_login(char *server, char *username, char *password, char *phonetic) {/*{{{*/
 
     if (strlen(username) >= 32) {
         _v3_error("Login Failed: Username is too long (max is 32 characters).");
+        _v3_func_leave("v3_login");
         return false;
     }
     if (strlen(phonetic) >= 32) {
         _v3_error("Login Failed: Phonetic is too long (max is 32 characters).");
+        _v3_func_leave("v3_login");
         return false;
     }
     srvname = strdup(server);
@@ -2283,6 +2289,7 @@ v3_login(char *server, char *username, char *password, char *phonetic) {/*{{{*/
     _v3_init_decoders();
     if (pipe(v3_server.evpipe)) {
         _v3_error("could not create outbound event queue");
+        _v3_func_leave("v3_login");
         return false;
     }
     v3_server.evinstream = fdopen(v3_server.evpipe[0], "r");
@@ -2294,6 +2301,7 @@ v3_login(char *server, char *username, char *password, char *phonetic) {/*{{{*/
     _v3_status(10, "Checking server license.");
     if (! _v3_server_auth(&srvip, (uint16_t) v3_server.port)) {
         _v3_status(0, "Not connected.");
+        _v3_func_leave("v3_login");
         return false;
     }
 
@@ -2302,6 +2310,7 @@ v3_login(char *server, char *username, char *password, char *phonetic) {/*{{{*/
      */
     if (!_v3_login_connect(&srvip, (uint16_t) v3_server.port)) {
         _v3_status(0, "Not connected.");
+        _v3_func_leave("v3_login");
         return false;
     }
     _v3_status(20, "Connected to %s... exchanging encryption keys", inet_ntoa(srvip));
@@ -2326,6 +2335,7 @@ v3_login(char *server, char *username, char *password, char *phonetic) {/*{{{*/
        User was banned, get to the choppah!
      */
     if(type == 0x59) {
+        _v3_func_leave("v3_login");
         return false;
     }
 
@@ -2342,6 +2352,7 @@ v3_login(char *server, char *username, char *password, char *phonetic) {/*{{{*/
     do {
         msg = _v3_recv(V3_BLOCK);
         if(!msg) {
+            _v3_func_leave("v3_login");
             return false;
         }	
         type = msg->type;
@@ -2373,6 +2384,7 @@ v3_login(char *server, char *username, char *password, char *phonetic) {/*{{{*/
                 _v3_debug(V3_DEBUG_INTERNAL, "packet processed");
                 break;
             case V3_FAILURE:
+                _v3_func_leave("v3_login");
                 return false;
                 break;
         }
