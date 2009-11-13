@@ -37,6 +37,8 @@ ManglerChat::ManglerChat(Glib::RefPtr<Gtk::Builder> builder) {
     
     builder->get_widget("chatMessage", chatMessage);
     chatMessage->set_activates_default(true);
+    
+    builder->get_widget("chatBox", chatBox);
 }
 
 void ManglerChat::chatWindow_show_cb() {
@@ -56,4 +58,9 @@ void ManglerChat::chatWindowSendChat_clicked_cb() {
         v3_send_chat_message((char *)ustring_to_c(chatMessage->get_text()).c_str());
         chatMessage->set_text("");
     }
+}
+
+void ManglerChat::AddMessage(Glib::ustring username, Glib::ustring message) {
+    Glib::RefPtr<Gtk::TextBuffer> buffer = chatBox->get_buffer();
+    buffer->set_text(buffer->get_text() + "[" + username + "]: " + message + "\n");
 }

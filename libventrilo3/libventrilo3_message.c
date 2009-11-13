@@ -348,7 +348,7 @@ _v3_get_0x42(_v3_net_message *msg) {
     switch(m->subtype) {
         case 2:
         case 3:
-            m->msg = _v3_get_msg_string(msg->data + 14, &m->msglen);
+            m->msg = _v3_get_msg_string(msg->data + 12, &m->msglen);
             break;
     }
     _v3_func_leave("_v3_get_0x42");

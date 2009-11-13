@@ -669,7 +669,15 @@ bool Mangler::getNetworkEvent() {/*{{{*/
             
                 break;
             case V3_EVENT_CHAT_MESSAGE:
-            
+                {
+                    v3_user *user = v3_get_user(ev->user.id);
+                    if(user) {
+                        chat->AddMessage(c_to_ustring(user->name), c_to_ustring(ev->data.chatmessage));
+                        v3_free_user(user);
+                    } else {
+                        fprintf(stderr, "couldn't find user for for user id %d\n", ev->user.id);
+                    }
+                }
                 break;
             default:
                 fprintf(stderr, "******************************************************** got unknown event type %d\n", ev->type);
