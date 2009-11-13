@@ -280,7 +280,11 @@ void Mangler::commentButton_clicked_cb(void) {/*{{{*/
     textStringChangeDialog->hide();
 }/*}}}*/
 void Mangler::chatButton_clicked_cb(void) {/*{{{*/
-    //fprintf(stderr, "chat button clicked\n");
+    if(v3_is_loggedin()) {
+        v3_join_chat();
+        v3_send_chat_message("helloworld");
+        v3_leave_chat();
+    }
 }/*}}}*/
 void Mangler::bindingsButton_clicked_cb(void) {/*{{{*/
     //fprintf(stderr, "bindings button clicked\n");

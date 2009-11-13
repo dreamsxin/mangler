@@ -214,6 +214,7 @@
                     <child>
                       <object class="GtkButton" id="chatButton">
                         <property name="label" translatable="yes">Chat</property>
+                        <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
                         <property name="use_underline">True</property>

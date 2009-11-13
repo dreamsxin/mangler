@@ -85,7 +85,7 @@ _v3_get_msg_string(void *offset, uint16_t *len) {/*{{{*/
 int
 _v3_put_msg_string(void *buffer, char *string) {/*{{{*/
     int len;
-
+    
     _v3_func_enter("_v3_put_msg_string");
     len = htons((uint16_t)strlen(string));
     memcpy(buffer, &len, 2);
@@ -339,6 +339,53 @@ _v3_net_message *_v3_put_0x4b(void) {/*{{{*/
     return m;
 }/*}}}*/
 /*}}}*/
+
+int 
+_v3_get_0x42(_v3_net_message *msg) {
+    _v3_msg_0x42 *m;
+    _v3_func_enter("_v3_get_0x42");
+    m = msg->contents = msg->data;
+    switch(m->subtype) {
+        case 2:
+        case 3:
+            m->msg = _v3_get_msg_string(msg->data + 14, &m->msglen);
+            break;
+    }
+    _v3_func_leave("_v3_get_0x42");
+    return true;
+}
+
+_v3_net_message *_v3_put_0x42(uint16_t subtype, uint16_t user_id, char* message) {
+    _v3_net_message *m;
+    _v3_msg_0x42 *mc;
+
+    _v3_func_enter("_v3_put_0x42");
+    // Build our message
+    m = malloc(sizeof(_v3_net_message));
+    memset(m, 0, sizeof(_v3_net_message));
+    m->type = 0x42;
+    
+    // Build our message contents
+    uint16_t len = sizeof(_v3_msg_0x42) - 8;
+    mc = malloc(len);
+    memset(mc, 0, len);
+    mc->type = 0x42;
+    mc->subtype = subtype;
+    mc->user_id = user_id;
+    
+    if(message) {        
+        len += strlen(message) + 2;
+        mc = realloc(mc, len);
+        _v3_put_msg_string((char *)mc + (sizeof(_v3_msg_0x42) - 8), message);   
+    }
+    
+    m->contents = mc;
+    m->data = (char *)mc;
+    m->len = len;
+    _v3_func_leave("_v3_put_0x42");
+    return m;
+}
+
 // Message 0x46 (70) | USER OPTIONS /*{{{*/
 int
 _v3_get_0x46(_v3_net_message *msg) {/*{{{*/

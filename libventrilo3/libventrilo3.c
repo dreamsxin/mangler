@@ -153,17 +153,13 @@ _v3_error(const char *format, ...) {/*{{{*/
 char *
 _v3_status(uint8_t percent, const char *format, ...) {/*{{{*/
     va_list args;
-    v3_event *ev;
-
     if (format == NULL) {
         return _v3_status_text;
     }
     va_start(args, format);
     vsnprintf(_v3_status_text, sizeof(_v3_status_text), format, args);
     va_end(args);
-    ev = malloc(sizeof(v3_event));
-    memset(ev, 0, sizeof(v3_event));
-    ev->type = V3_EVENT_STATUS;
+    v3_event *ev = _v3_create_event(V3_EVENT_STATUS);
     ev->status.percent = percent;
     strncpy(ev->status.message, _v3_status_text, 256);
     v3_queue_event(ev);
@@ -1464,15 +1460,14 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                 return V3_MALFORMED;
             } else {
                 _v3_msg_0x06 *m = msg->contents;
-                v3_event *ev = malloc(sizeof(v3_event));
                 char buf[512] = "";
                 int error = false;
+                int disconnected = false;
 
-                memset(ev, 0, sizeof(v3_event));
                 _v3_lock_server();
                 if(m->subtype & 0x01) {
                     error = true;
-                    ev->error.disconnected = true;
+                    disconnected = true;
                     strncat(buf, "You have been disconnected from the server.\n", 511);
                     _v3_logout();
                 }
@@ -1512,7 +1507,8 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                 _v3_unlock_server();
 
                 if (error) {
-                    ev->type = V3_EVENT_ERROR_MSG;
+                    v3_event *ev = _v3_create_event(V3_EVENT_ERROR_MSG);
+                    ev->error.disconnected = disconnected;
                     strncpy(ev->error.message, buf, 512);
                     v3_queue_event(ev);
                     _v3_func_leave("_v3_process_message");
@@ -1520,7 +1516,6 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                 } else {
                     // it's an informational message free it for now, may want
                     // to queue it as something else later
-                    free(ev);
                 }
                 _v3_func_leave("_v3_process_message");
             }
@@ -1535,23 +1530,14 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                 _v3_func_leave("_v3_process_message");
                 return V3_MALFORMED;
             } else {
-                //libventrilo3: 15:35:41:         ======= received TCP packet =====================================
-                //libventrilo3: 15:35:41:         PACKET: message type: 0x3B (59)
-                //libventrilo3: 15:35:41:         PACKET: data length : 12
-                //libventrilo3: 15:35:41:         PACKET:     3B 00 00 00 05 00 03 00 00 00 00 00                  ;...........
-
                 _v3_msg_0x3b *m = msg->contents;
-
-                v3_event *ev;
                 v3_user *user;
                 _v3_debug(V3_DEBUG_INFO, "user %d moved to channel %d", m->user_id, m->channel_id);
                 user = v3_get_user(m->user_id);
                 user->channel = m->channel_id;
                 _v3_update_user(user);
                 v3_free_user(user);
-                ev = malloc(sizeof(v3_event));
-                memset(ev, 0, sizeof(v3_event));
-                ev->type = V3_EVENT_USER_CHAN_MOVE;
+                v3_event *ev = _v3_create_event(V3_EVENT_USER_CHAN_MOVE);
                 ev->user.id = m->user_id;
                 ev->channel.id = m->channel_id;
                 v3_queue_event(ev);
@@ -1576,11 +1562,8 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                 _v3_func_leave("_v3_process_message");
                 return V3_MALFORMED;
             } else {
-                v3_event *ev;
                 _v3_msg_0x37 *m = msg->contents;
-                ev = malloc(sizeof(v3_event));
-                memset(ev, 0, sizeof(v3_event));
-                ev->type = V3_EVENT_PING;
+                v3_event *ev = _v3_create_event(V3_EVENT_PING);
                 ev->ping = m->ping;
                 v3_queue_event(ev);
                 _v3_net_message *response;
@@ -1606,6 +1589,50 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
             _v3_destroy_packet(msg);
             _v3_func_leave("_v3_process_message");
             return V3_OK;/*}}}*/
+        case 0x42:
+            if(!_v3_get_0x42(msg)) {
+                _v3_destroy_packet(msg);
+                _v3_func_leave("_v3_process_message");
+                return V3_MALFORMED;
+            } else {
+                _v3_msg_0x42 *m = msg->contents;
+                switch(m->subtype) {
+                    case V3_JOIN_CHAT:
+                        {
+                            v3_event *ev = _v3_create_event(V3_EVENT_CHAT_JOIN);
+                            ev->user.id = m->user_id;
+                            v3_queue_event(ev);
+                        }
+                        break;
+                    case V3_LEAVE_CHAT:
+                        {
+                            v3_event *ev = _v3_create_event(V3_EVENT_CHAT_LEAVE);
+                            ev->user.id = m->user_id;
+                            v3_queue_event(ev);
+                        }
+                        break;
+                    case V3_TALK_CHAT:
+                        {   
+                            v3_event *ev = _v3_create_event(V3_EVENT_CHAT_MESSAGE);
+                            ev->user.id = m->user_id;
+                            strncpy(ev->data.chatmessage, m->msg, sizeof(ev->data.chatmessage) - 1);
+                            free(m->msg);
+                            v3_queue_event(ev);
+                        }
+                        break;
+                    case V3_RCON_CHAT: // rcon, deal with it later
+                        free(m->msg);
+                        break;
+                    case V3_JOINFAIL_CHAT:
+                        {
+                            v3_event *ev = _v3_create_event(V3_EVENT_ERROR_MSG);
+                            strncpy(ev->error.message, "You do not have sufficient access rights to use the global chat window.", 511);
+                            v3_queue_event(ev);
+                        }
+                        break;
+                }
+            }
+            return V3_OK;
         case 0x46:/*{{{*/
             if (!_v3_get_0x46(msg)) {
                 _v3_destroy_packet(msg);
@@ -1710,10 +1737,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                     case V3_REMOVE_CHANNEL:
                         {
                             _v3_debug(V3_DEBUG_INFO, "removing channel %d from list",  m->channel->id);
-                            v3_event *ev;
-                            ev = malloc(sizeof(v3_event));
-                            memset(ev, 0, sizeof(v3_event));
-                            ev->type = V3_EVENT_CHAN_REMOVE;
+                            v3_event *ev = _v3_create_event(V3_EVENT_CHAN_REMOVE);
                             ev->channel.id = m->channel->id;
                             _v3_debug(V3_DEBUG_INFO, "queuing event type %d for channel %d", ev->type, ev->channel.id);
                             _v3_remove_channel(m->channel->id);
@@ -1724,11 +1748,8 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                     case V3_ADD_CHANNEL:
                         {
                             _v3_debug(V3_DEBUG_INFO, "adding channel %d to list",  m->channel->id);
-                            v3_event *ev;
                             _v3_update_channel(m->channel);
-                            ev = malloc(sizeof(v3_event));
-                            memset(ev, 0, sizeof(v3_event));
-                            ev->type = (m->subtype == V3_MODIFY_CHANNEL) ? V3_EVENT_CHAN_MODIFY : V3_EVENT_CHAN_ADD;
+                            v3_event *ev = _v3_create_event((m->subtype == V3_MODIFY_CHANNEL) ? V3_EVENT_CHAN_MODIFY : V3_EVENT_CHAN_ADD);
                             ev->channel.id = m->channel->id;
                             _v3_debug(V3_DEBUG_INFO, "queuing event type %d for channel %d", ev->type, ev->channel.id);
                             v3_queue_event(ev);
@@ -1736,10 +1757,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                         break;
                     case V3_AUTHFAIL_CHANNEL:
                         {
-                            v3_event *ev;
-                            ev = malloc(sizeof(v3_event));
-                            memset(ev, 0, sizeof(v3_event));
-                            ev->type = V3_EVENT_ERROR_MSG;
+                            v3_event *ev = _v3_create_event(V3_EVENT_ERROR_MSG);
                             strncpy(ev->error.message, "Error switching to channel.  The password you entered is wrong or you do not have permission", 511);
                             v3_queue_event(ev);
                         }
@@ -1784,10 +1802,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                 }
                 if(m->message_id +1 == m->message_num) {
                     // At this point we have our motd, may want to notify the user here :)
-                    v3_event *ev;
-                    ev = malloc(sizeof(v3_event));
-                    memset(ev, 0, sizeof(v3_event));
-                    ev->type = V3_EVENT_DISPLAY_MOTD;
+                    v3_event *ev = _v3_create_event(V3_EVENT_DISPLAY_MOTD);
                     strncpy(ev->data.motd, *motd, 2047);
                     v3_queue_event(ev);
                 }
@@ -1803,11 +1818,8 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                 _v3_func_leave("_v3_process_message");
                 return V3_MALFORMED;
             } else {
-                _v3_msg_0x52_0x01_in     *m = (_v3_msg_0x52_0x01_in *)msg->contents;
-
-                v3_event *ev = malloc(sizeof(v3_event));
-                memset(ev, 0, sizeof(v3_event));
-
+                _v3_msg_0x52_0x01_in *m = (_v3_msg_0x52_0x01_in *)msg->contents;
+                v3_event *ev = _v3_create_event(0);
                 switch (m->subtype) {
                     case 0x00:
                         {
@@ -1939,16 +1951,14 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                 return V3_MALFORMED;
             } else {
                 _v3_msg_0x53 *m = (_v3_msg_0x53 *)msg->contents;
-                v3_event *ev;
+                
                 v3_user *user;
                 _v3_debug(V3_DEBUG_INFO, "user %d moved to channel %d", m->user_id, m->channel_id);
                 user = v3_get_user(m->user_id);
                 user->channel = m->channel_id;
                 _v3_update_user(user);
                 v3_free_user(user);
-                ev = malloc(sizeof(v3_event));
-                memset(ev, 0, sizeof(v3_event));
-                ev->type = V3_EVENT_USER_CHAN_MOVE;
+                v3_event *ev = _v3_create_event(V3_EVENT_USER_CHAN_MOVE);
                 ev->user.id = m->user_id;
                 ev->channel.id = m->channel_id;
                 v3_queue_event(ev);
@@ -1982,7 +1992,6 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                 _v3_func_leave("_v3_process_message");
                 return V3_MALFORMED;
             } else {
-                v3_event *ev;
                 char buf[1024];
                 _v3_msg_0x59 *m = msg->contents;
                 snprintf(buf, 1024, "%s%s", _v3_errors[m->error], m->message);
@@ -1995,9 +2004,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                     _v3_debug(V3_DEBUG_INTERNAL, "disconnecting from server");
                     _v3_logout();
                 }
-                ev = malloc(sizeof(v3_event));
-                memset(ev, 0, sizeof(v3_event));
-                ev->type = V3_EVENT_ERROR_MSG;
+                v3_event *ev = _v3_create_event(V3_EVENT_ERROR_MSG);
                 ev->error.disconnected = m->close_connection;
                 strncpy(ev->error.message, buf, 512);
                 v3_queue_event(ev);
@@ -2041,10 +2048,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                     case V3_REMOVE_USER:
                         _v3_debug(V3_DEBUG_INFO, "removing %d users from user list",  m->user_count);
                         for (ctr = 0; ctr < m->user_count; ctr++) {
-                            v3_event *ev;
-                            ev = malloc(sizeof(v3_event));
-                            memset(ev, 0, sizeof(v3_event));
-                            ev->type = V3_EVENT_USER_LOGOUT;
+                            v3_event *ev = _v3_create_event(V3_EVENT_USER_LOGOUT);
                             ev->user.id = m->user_list[ctr].id;
                             _v3_debug(V3_DEBUG_INFO, "queuing event type %d for user %d", ev->type, ev->user.id);
                             _v3_remove_user(m->user_list[ctr].id);
@@ -2055,11 +2059,8 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                     case V3_ADD_USER:
                         _v3_debug(V3_DEBUG_INFO, "adding %d users on user list",  m->user_count);
                         for (ctr = 0; ctr < m->user_count; ctr++) {
-                            v3_event *ev;
                             _v3_update_user(&m->user_list[ctr]);
-                            ev = malloc(sizeof(v3_event));
-                            memset(ev, 0, sizeof(v3_event));
-                            ev->type = (m->subtype == V3_ADD_USER ? V3_EVENT_USER_LOGIN : V3_EVENT_USER_MODIFY);
+                            v3_event *ev = _v3_create_event(m->subtype == V3_ADD_USER ? V3_EVENT_USER_LOGIN : V3_EVENT_USER_MODIFY);
                             ev->user.id = m->user_list[ctr].id;
                             ev->channel.id = m->user_list[ctr].channel;
                             _v3_debug(V3_DEBUG_INFO, "queuing event type %d for user %d", ev->type, ev->user.id);
@@ -2103,11 +2104,8 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                         }
                         _v3_debug(V3_DEBUG_INFO, "adding %d users to user list",  m->user_count);
                         for (ctr = 0; ctr < m->user_count; ctr++) {
-                            v3_event *ev;
                             _v3_update_user(&m->user_list[ctr]);
-                            ev = malloc(sizeof(v3_event));
-                            memset(ev, 0, sizeof(v3_event));
-                            ev->type = V3_EVENT_USER_LOGIN;
+                            v3_event *ev = _v3_create_event(V3_EVENT_USER_LOGIN);
                             ev->user.id = m->user_list[ctr].id;
                             ev->channel.id = m->user_list[ctr].channel;
                             _v3_debug(V3_DEBUG_INFO, "queuing event type %d for user %d to channel %d", ev->type, ev->user.id, ev->channel.id);
@@ -2139,11 +2137,8 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                 _v3_debug(V3_DEBUG_INFO, "adding %d channels from channel list",  m->channel_count);
                 cl = calloc(m->channel_count, sizeof(v3_channel));
                 for (ctr = 0; ctr < m->channel_count; ctr++) {
-                    v3_event *ev;
                     _v3_update_channel(&m->channel_list[ctr]);
-                    ev = malloc(sizeof(v3_event));
-                    memset(ev, 0, sizeof(v3_event));
-                    ev->type = V3_EVENT_CHAN_ADD;
+                    v3_event *ev = _v3_create_event(V3_EVENT_CHAN_ADD);
                     ev->channel.id = m->channel_list[ctr].id;
                     _v3_debug(V3_DEBUG_INFO, "queuing event type %d for channel %d", ev->type, ev->channel.id);
                     v3_queue_event(ev);
@@ -2390,10 +2385,7 @@ v3_login(char *server, char *username, char *password, char *phonetic) {/*{{{*/
          */
         _v3_status(100, "Login complete.");
         {
-            v3_event *ev;
-            ev = malloc(sizeof(v3_event));
-            memset(ev, 0, sizeof(v3_event));
-            ev->type = V3_EVENT_LOGIN_COMPLETE;
+            v3_event *ev = _v3_create_event(V3_EVENT_LOGIN_COMPLETE);
             v3_queue_event(ev);
         }
         _v3_func_leave("v3_login");
@@ -2404,16 +2396,33 @@ v3_login(char *server, char *username, char *password, char *phonetic) {/*{{{*/
     }
 }/*}}}*/
 
+void v3_join_chat() {
+    _v3_func_enter("v3_join_chat");
+    _v3_net_message *msg = _v3_put_0x42(V3_JOIN_CHAT, v3_luser.id, NULL);
+    _v3_send(msg);
+    _v3_func_leave("v3_join_chat");
+}
+
+void v3_leave_chat() {
+    _v3_func_enter("v3_leave_chat");
+    _v3_net_message *msg = _v3_put_0x42(V3_LEAVE_CHAT, v3_luser.id, NULL);
+    _v3_send(msg);
+    _v3_func_leave("v3_leave_chat");
+}
+
+void v3_send_chat_message(char* message) {
+    _v3_func_enter("v3_send_chat_message");
+    _v3_net_message *msg = _v3_put_0x42(V3_TALK_CHAT, v3_luser.id, message);
+    _v3_send(msg);
+    _v3_func_leave("v3_send_chat_message");
+}
+
 int
 _v3_logout(void) {/*{{{*/
-    v3_event *ev;
-
     _v3_func_enter("_v3_logout");
 
     // notify the client that they are disconnected
-    ev = malloc(sizeof(v3_event));
-    memset(ev, 0, sizeof(v3_event));
-    ev->type = V3_EVENT_DISCONNECT;
+    v3_event *ev = _v3_create_event(V3_EVENT_DISCONNECT);
     v3_queue_event(ev);
 
     _v3_close_connection();
@@ -2692,6 +2701,16 @@ v3_get_event(int block) {/*{{{*/
     pthread_mutex_unlock(eventq_mutex);
     return ev;
 }/*}}}*/
+
+v3_event *
+_v3_create_event(uint16_t event) {
+    v3_event *ev;
+    ev = malloc(sizeof(v3_event));
+    memset(ev, 0, sizeof(v3_event));
+    if(event) {
+        ev->type = event;
+    }
+}
 
 v3_event *
 _v3_get_last_event(int *len) {/*{{{*/

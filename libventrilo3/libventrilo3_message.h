@@ -114,9 +114,14 @@ typedef struct _v3_net_message_0x3f {/*{{{*/
 typedef struct _v3_net_message_0x42 {/*{{{*/
     uint32_t type;              // 0
     uint16_t user_id;           // 4
-    uint32_t subtype;           // 6
-    uint16_t unknown;           // 10
+    uint16_t subtype;           // 6
+    uint32_t unknown;           // 8
+    
+    uint16_t msglen;            // 12 - variable length starts here
+    char *   msg;               // 14
 } _v3_msg_0x42;/*}}}*/
+int _v3_get_0x42(_v3_net_message *msg);
+_v3_net_message *_v3_put_0x42(uint16_t subtype, uint16_t user_id, char* message);
 typedef struct _v3_net_message_0x46 {/*{{{*/
     uint32_t type;              // 0
     uint16_t user_id;           // 4
