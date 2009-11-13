@@ -366,9 +366,10 @@ _v3_net_message *_v3_put_0x42(uint16_t subtype, uint16_t user_id, char* message)
     m->type = 0x42;
     
     // Build our message contents
-    uint16_t len = sizeof(_v3_msg_0x42) - 8;
-    mc = malloc(len);
-    memset(mc, 0, len);
+    uint16_t base = sizeof(_v3_msg_0x42) - (sizeof(char *) + sizeof(uint16_t)); 
+    uint16_t len  = base;
+    mc = malloc(base);
+    memset(mc, 0, base);
     mc->type = 0x42;
     mc->subtype = subtype;
     mc->user_id = user_id;
@@ -376,7 +377,7 @@ _v3_net_message *_v3_put_0x42(uint16_t subtype, uint16_t user_id, char* message)
     if(message) {        
         len += strlen(message) + 2;
         mc = realloc(mc, len);
-        _v3_put_msg_string((char *)mc + (sizeof(_v3_msg_0x42) - 8), message);   
+        _v3_put_msg_string((char *)mc + base, message);   
     }
     
     m->contents = mc;

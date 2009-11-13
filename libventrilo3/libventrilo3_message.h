@@ -119,7 +119,7 @@ typedef struct _v3_net_message_0x42 {/*{{{*/
     
     uint16_t msglen;            // 12 - variable length starts here
     char *   msg;               // 14
-} _v3_msg_0x42;/*}}}*/
+} __attribute__ ((packed)) _v3_msg_0x42;/*}}}*/
 int _v3_get_0x42(_v3_net_message *msg);
 _v3_net_message *_v3_put_0x42(uint16_t subtype, uint16_t user_id, char* message);
 typedef struct _v3_net_message_0x46 {/*{{{*/
