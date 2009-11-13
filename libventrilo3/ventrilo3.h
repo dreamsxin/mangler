@@ -248,7 +248,7 @@ struct _v3_event {
         int16_t sample16[16384];
         uint8_t sample[32768];
         char    motd[2048]; 
-        char    chatmessage[2048];
+        char    chatmessage[256];
     } data;
     v3_event *next;
 };

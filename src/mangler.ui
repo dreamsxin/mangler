@@ -2474,30 +2474,10 @@ Notifications are the sound effects that are played when you login, logout, a us
           <object class="GtkHPaned" id="hpaned1">
             <property name="visible">True</property>
             <property name="can_focus">True</property>
-            <property name="position">375</property>
+            <property name="position">100</property>
             <property name="position_set">True</property>
             <child>
-              <object class="GtkScrolledWindow" id="scrolledwindow1">
-                <property name="visible">True</property>
-                <property name="can_focus">True</property>
-                <property name="hscrollbar_policy">automatic</property>
-                <property name="vscrollbar_policy">automatic</property>
-                <child>
-                  <object class="GtkTextView" id="chatBox">
-                    <property name="visible">True</property>
-                    <property name="can_focus">True</property>
-                    <property name="editable">False</property>
-                  </object>
-                </child>
-              </object>
-              <packing>
-                <property name="resize">False</property>
-                <property name="shrink">True</property>
-              </packing>
-            </child>
-            <child>
               <object class="GtkScrolledWindow" id="scrolledwindow3">
-                <property name="width_request">100</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="hscrollbar_policy">automatic</property>
@@ -2514,6 +2494,25 @@ Notifications are the sound effects that are played when you login, logout, a us
                 <property name="shrink">False</property>
               </packing>
             </child>
+            <child>
+              <object class="GtkScrolledWindow" id="scrolledwindow1">
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="hscrollbar_policy">automatic</property>
+                <property name="vscrollbar_policy">automatic</property>
+                <child>
+                  <object class="GtkTextView" id="chatBox">
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="editable">False</property>
+                  </object>
+                </child>
+              </object>
+              <packing>
+                <property name="resize">True</property>
+                <property name="shrink">True</property>
+              </packing>
+            </child>
           </object>
           <packing>
             <property name="position">0</property>
@@ -2526,7 +2525,10 @@ Notifications are the sound effects that are played when you login, logout, a us
               <object class="GtkEntry" id="chatMessage">
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
+                <property name="has_focus">True</property>
+                <property name="max_length">255</property>
                 <property name="invisible_char">&#x25CF;</property>
+                <property name="activates_default">True</property>
               </object>
               <packing>
                 <property name="position">0</property>
