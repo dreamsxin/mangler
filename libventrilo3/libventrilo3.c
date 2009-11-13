@@ -781,6 +781,26 @@ _v3_recv(int block) {/*{{{*/
                                 _v3_debug(V3_DEBUG_SOCKET, "failed to send join chat request message");
                             }
                         }/*}}}*/
+                        break;
+                    case V3_EVENT_CHAT_LEAVE:/*{{{*/
+                        {
+                            _v3_net_message *msg = _v3_put_0x42(V3_LEAVE_CHAT, v3_luser.id, NULL);
+                            if (_v3_send(msg)) {
+                                _v3_debug(V3_DEBUG_SOCKET, "sent leave chat request to server");
+                            } else {
+                                _v3_debug(V3_DEBUG_SOCKET, "failed to send leave chat request message");
+                            }
+                        }
+                        break;
+                    case V3_EVENT_CHAT_MESSAGE:
+                        {
+                            _v3_net_message *msg = _v3_put_0x42(V3_TALK_CHAT, v3_luser.id, ev.data.chatmessage);   
+                            if (_v3_send(msg)) {
+                                _v3_debug(V3_DEBUG_SOCKET, "sent chat message to server");
+                            } else {
+                                _v3_debug(V3_DEBUG_SOCKET, "failed to chat message message");
+                            }
+                        }
                     default:
                         _v3_debug(V3_DEBUG_EVENT, "received unknown event type %d from queue", ev.type);
                         break;
@@ -2429,17 +2449,50 @@ void v3_join_chat() {
 }
 
 void v3_leave_chat() {
+    v3_event ev;
+
     _v3_func_enter("v3_leave_chat");
-    _v3_net_message *msg = _v3_put_0x42(V3_LEAVE_CHAT, v3_luser.id, NULL);
-    _v3_send(msg);
+    if (!v3_is_loggedin()) {
+        _v3_func_leave("v3_leave_chat");
+        return;
+    }
+    memset(&ev, 0, sizeof(v3_event));
+    ev.type = V3_EVENT_CHAT_LEAVE;
+    _v3_lock_sendq();
+    _v3_debug(V3_DEBUG_EVENT, "sending %lu bytes to event pipe", sizeof(v3_event));
+    if (fwrite(&ev, sizeof(struct _v3_event), 1, v3_server.evoutstream) != 1) {
+        _v3_error("could not write to event pipe");
+        _v3_func_leave("v3_leave_chat");
+        return;
+    }
+    fflush(v3_server.evoutstream);
+    _v3_unlock_sendq();
     _v3_func_leave("v3_leave_chat");
+    return;
 }
 
 void v3_send_chat_message(char* message) {
+    v3_event ev;
+
     _v3_func_enter("v3_send_chat_message");
-    _v3_net_message *msg = _v3_put_0x42(V3_TALK_CHAT, v3_luser.id, message);
-    _v3_send(msg);
+    if (!v3_is_loggedin()) {
+        _v3_func_leave("v3_send_chat_message");
+        return;
+    }
+    memset(&ev, 0, sizeof(v3_event));
+    ev.type = V3_EVENT_CHAT_MESSAGE;
+    strncpy(ev.data.chatmessage, message, sizeof(ev.data.chatmessage)-1);
+    _v3_lock_sendq();
+    _v3_debug(V3_DEBUG_EVENT, "sending %lu bytes to event pipe", sizeof(v3_event));
+    if (fwrite(&ev, sizeof(struct _v3_event), 1, v3_server.evoutstream) != 1) {
+        _v3_error("could not write to event pipe");
+        _v3_func_leave("v3_send_chat_message");
+        return;
+    }
+    fflush(v3_server.evoutstream);
+    _v3_unlock_sendq();
     _v3_func_leave("v3_send_chat_message");
+    return;
 }
 
 int
