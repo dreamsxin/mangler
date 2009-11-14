@@ -78,6 +78,9 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
         exit(0);
     }
 
+    /*
+     * Retreive all buttons from builder and set their singal handler callbacks
+     */
     // Quick Connect Button
     builder->get_widget("quickConnectButton", button);
     button->signal_clicked().connect(sigc::mem_fun(this, &Mangler::quickConnectButton_clicked_cb));
@@ -129,6 +132,29 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
     // MOTD Window Buttons
     builder->get_widget("motdOkButton", button);
     button->signal_clicked().connect(sigc::mem_fun(this, &Mangler::motdOkButton_clicked_cb));
+
+    /*
+     * Retreive all menu bar items from builder and set their singal handler
+     * callbacks.  Most of these can use the same callback as their
+     * corresponding button
+     */
+    builder->get_widget("buttonMenuItem", checkmenuitem);
+    checkmenuitem->signal_toggled().connect(sigc::mem_fun(this, &Mangler::buttonMenuItem_toggled_cb));
+
+    builder->get_widget("serverListMenuItem", menuitem);
+    menuitem->signal_activate().connect(sigc::mem_fun(this, &Mangler::serverConfigButton_clicked_cb));
+
+    builder->get_widget("settingsMenuItem", menuitem);
+    menuitem->signal_activate().connect(sigc::mem_fun(this, &Mangler::settingsButton_clicked_cb));
+
+    builder->get_widget("commentMenuItem", menuitem);
+    menuitem->signal_activate().connect(sigc::mem_fun(this, &Mangler::commentButton_clicked_cb));
+
+    builder->get_widget("quitMenuItem", menuitem);
+    menuitem->signal_activate().connect(sigc::mem_fun(this, &Mangler::quitMenuItem_activate_cb));
+
+    builder->get_widget("aboutMenuItem", menuitem);
+    menuitem->signal_activate().connect(sigc::mem_fun(this, &Mangler::aboutButton_clicked_cb));
 
     // Set up our generic password dialog box
     builder->get_widget("passwordDialog", passwordDialog);
@@ -202,7 +228,7 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
 }/*}}}*/
 
 /*
- * Signal handler callbacks
+ * Button signal handler callbacks
  */
 void Mangler::quickConnectButton_clicked_cb(void) {/*{{{*/
     Gtk::Dialog *dialog;
@@ -329,6 +355,26 @@ void Mangler::xmitButton_released_cb(void) {/*{{{*/
         stopTransmit();
     }
 }/*}}}*/
+
+/*
+ * Menu bar signal handler callbacks
+ */
+void Mangler::buttonMenuItem_toggled_cb(void) {/*{{{*/
+    builder->get_widget("buttonMenuItem", checkmenuitem);
+    builder->get_widget("mainWindowButtonVBox", vbox);
+    if (checkmenuitem->get_active()) {
+        vbox->set_visible(false);
+    } else {
+        vbox->set_visible(true);
+    }
+}/*}}}*/
+void Mangler::quitMenuItem_activate_cb(void) {/*{{{*/
+    Gtk::Main::quit();
+}/*}}}*/
+
+/*
+ * Other signal handler callbacks
+ */
 void Mangler::statusIcon_activate_cb(void) {/*{{{*/
     if (iconified == true) {
         manglerWindow->deiconify();

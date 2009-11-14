@@ -62,6 +62,9 @@ class Mangler
         Gtk::Entry                          *entry;
         Gtk::ComboBox                       *combobox;
         Gtk::TextView                       *textview;
+        Gtk::VBox                           *vbox;
+        Gtk::CheckMenuItem                  *checkmenuitem;
+        Gtk::MenuItem                       *menuitem;
         std::map<Glib::ustring, Glib::RefPtr<Gdk::Pixbuf> >  icons;
         Glib::RefPtr<Gtk::StatusIcon>       statusIcon;
         ManglerServerList                   *serverList;
@@ -101,7 +104,7 @@ class Mangler
         void setActiveServer(uint32_t row_number);
         
     protected:
-        // signal handlers
+        // button signal handlers
         void quickConnectButton_clicked_cb(void);
         void serverConfigButton_clicked_cb(void);
         void connectButton_clicked_cb(void);
@@ -114,6 +117,10 @@ class Mangler
         void xmitButton_pressed_cb(void);
         void xmitButton_released_cb(void);
         void statusIcon_activate_cb(void);
+
+        // menu bar signal handlers
+        void buttonMenuItem_toggled_cb(void);
+        void quitMenuItem_activate_cb(void);
 
 
         bool getNetworkEvent(void);
