@@ -215,6 +215,10 @@ void ManglerServerList::saveRow() {
     Gtk::TreeModel::Children::iterator iter = serverListTreeModel->children().begin();
     ManglerServerConfig *server;
 
+    if (serverListServerNameEntry->get_text().empty()) {
+        mangler->errorDialog("Cannot save a server without a name");
+        return;
+    }
     while (iter != serverListTreeModel->children().end()) {
         row = *iter;
         int32_t rowId = row[serverListColumns.id];

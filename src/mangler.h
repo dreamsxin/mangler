@@ -97,6 +97,7 @@ class Mangler
         Glib::ustring getPasswordEntry(Glib::ustring title = "Password", Glib::ustring prompt = "Password");
         uint32_t getActiveServer(void);
         void setActiveServer(uint32_t row_number);
+        void errorDialog(Glib::ustring message);
         
     protected:
         // signal handlers
