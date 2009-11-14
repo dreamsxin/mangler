@@ -608,12 +608,7 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                 v3_free_channel(c);
                 break;/*}}}*/
             case V3_EVENT_ERROR_MSG:/*{{{*/
-                builder->get_widget("errorDialog", msgdialog);
-                msgdialog->set_icon(icons["tray_icon"]);
-                msgdialog->set_keep_above(true);
-                msgdialog->set_message(ev->error.message);
-                msgdialog->run();
-                msgdialog->hide();
+                errorDialog(ev->error.message);
                 break;/*}}}*/
             case V3_EVENT_USER_TALK_START:/*{{{*/
                 {
@@ -846,15 +841,22 @@ void Mangler::textStringChangeDialogCancelButton_clicked_cb(void) {/*{{{*/
 
 
 // Misc Functions
-uint32_t Mangler::getActiveServer(void) {
+uint32_t Mangler::getActiveServer(void) {/*{{{*/
     builder->get_widget("serverSelectComboBox", combobox);
     return combobox->get_active_row_number();
-}
-
-void Mangler::setActiveServer(uint32_t row_number) {
+}/*}}}*/
+void Mangler::setActiveServer(uint32_t row_number) {/*{{{*/
     builder->get_widget("serverSelectComboBox", combobox);
     combobox->set_active(row_number);
-}
+}/*}}}*/
+void Mangler::errorDialog(Glib::ustring message) {/*{{{*/
+    builder->get_widget("errorDialog", msgdialog);
+    msgdialog->set_icon(icons["tray_icon"]);
+    msgdialog->set_keep_above(true);
+    msgdialog->set_message(message);
+    msgdialog->run();
+    msgdialog->hide();
+}/*}}}*/
 
 ManglerError::ManglerError(uint32_t code, Glib::ustring message, Glib::ustring module) {/*{{{*/
     this->code = code;
