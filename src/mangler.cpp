@@ -416,19 +416,25 @@ bool Mangler::getNetworkEvent() {/*{{{*/
         v3_user *u;
         v3_channel *c;
         gdk_threads_enter();
+        // if we're not logged in, just ignore whatever messages we receive
+        // *unless* it's a disconnect message.  This prevents old messages in
+        // the queue from attempting to interact with the GUI after a
+        // disconnection
         switch (ev->type) {
             case V3_EVENT_PING:/*{{{*/
-                char buf[16];
-                builder->get_widget("pingLabel", label);
-                if (ev->ping != 65535) {
-                    snprintf(buf, 16, "%d", ev->ping);
+                if (v3_is_loggedin()) {
+                    char buf[16];
+                    builder->get_widget("pingLabel", label);
+                    if (ev->ping != 65535) {
+                        snprintf(buf, 16, "%d", ev->ping);
+                        label->set_text(buf);
+                    } else {
+                        label->set_text("checking...");
+                    }
+                    builder->get_widget("userCountLabel", label);
+                    snprintf(buf, 16, "%d/%d", v3_user_count(), v3_get_max_clients());
                     label->set_text(buf);
-                } else {
-                    label->set_text("checking...");
                 }
-                builder->get_widget("userCountLabel", label);
-                snprintf(buf, 16, "%d/%d", v3_user_count(), v3_get_max_clients());
-                label->set_text(buf);
                 break;/*}}}*/
             case V3_EVENT_STATUS:/*{{{*/
                 builder->get_widget("progressbar", progressbar);
@@ -457,40 +463,46 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                 v3_free_user(u);
                 break;/*}}}*/
             case V3_EVENT_USER_MODIFY:/*{{{*/
-                u = v3_get_user(ev->user.id);
-                if (!u) {
-                    fprintf(stderr, "couldn't retreive user id %d\n", ev->user.id);
-                    break;
+                if (v3_is_loggedin()) {
+                    u = v3_get_user(ev->user.id);
+                    if (!u) {
+                        fprintf(stderr, "couldn't retreive user id %d\n", ev->user.id);
+                        break;
+                    }
+                    //fprintf(stderr, "updating user id %d: %s in channel %d\n", ev->user.id, u->name, ev->channel.id);
+                    // we cannot remove the lobby user, so bail out when the server comment is updated. See ticket #30
+                    if (u->id == 0) {
+                        channelTree->updateLobby(c_to_ustring(u->name), c_to_ustring(u->comment), u->phonetic);
+                    } else {
+                        channelTree->updateUser(
+                                (uint32_t)u->id,
+                                (uint32_t)ev->channel.id,
+                                c_to_ustring(u->name),
+                                c_to_ustring(u->comment),
+                                u->phonetic,
+                                u->url,
+                                c_to_ustring(u->integration_text),
+                                (bool)u->guest);
+                    }
+                    v3_free_user(u);
                 }
-                //fprintf(stderr, "updating user id %d: %s in channel %d\n", ev->user.id, u->name, ev->channel.id);
-                // we cannot remove the lobby user, so bail out when the server comment is updated. See ticket #30
-                if (u->id == 0) {
-                    channelTree->updateLobby(c_to_ustring(u->name), c_to_ustring(u->comment), u->phonetic);
-                } else {
-                    channelTree->updateUser(
-                            (uint32_t)u->id,
-                            (uint32_t)ev->channel.id,
-                            c_to_ustring(u->name),
-                            c_to_ustring(u->comment),
-                            u->phonetic,
-                            u->url,
-                            c_to_ustring(u->integration_text),
-                            (bool)u->guest);
-                }
-                v3_free_user(u);
                 break;/*}}}*/
             case V3_EVENT_USER_LOGOUT:/*{{{*/
-                // can't get any user info... it's already gone by this point
-                //fprintf(stderr, "removing user id %d\n", ev->user.id);
-                channelTree->removeUser(ev->user.id);
+                if (v3_is_loggedin()) {
+                    // can't get any user info... it's already gone by this point
+                    //fprintf(stderr, "removing user id %d\n", ev->user.id);
+                    channelTree->removeUser(ev->user.id);
+                }
                 break;/*}}}*/
             case V3_EVENT_CHAN_REMOVE:/*{{{*/
-                // can't get any channel info... it's already gone by this point
-                //fprintf(stderr, "removing channel id %d\n", ev->channel.id);
-                channelTree->removeChannel(ev->channel.id);
+                if (v3_is_loggedin()) {
+                    // can't get any channel info... it's already gone by this point
+                    //fprintf(stderr, "removing channel id %d\n", ev->channel.id);
+                    channelTree->removeChannel(ev->channel.id);
+                }
                 break;/*}}}*/
             case V3_EVENT_LOGIN_COMPLETE:/*{{{*/
-                {
+                if (v3_is_loggedin()) {
                     const v3_codec *codec_info;
                     codec_info = v3_get_channel_codec(0);
                     builder->get_widget("codecLabel", label);
@@ -507,38 +519,40 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                 }
                 break;/*}}}*/
             case V3_EVENT_USER_CHAN_MOVE:/*{{{*/
-                u = v3_get_user(ev->user.id);
-                if (! u) {
-                    fprintf(stderr, "failed to retreive user information for user id %d", ev->user.id);
-                    break;;
-                }
-                if (ev->user.id == v3_get_user_id()) {
-                    // we're moving channels... update the codec label
-                    const v3_codec *codec_info;
-                    codec_info = v3_get_channel_codec(ev->channel.id);
-                    builder->get_widget("codecLabel", label);
-                    label->set_text(codec_info->name);
-                } else {
-                    if (ev->channel.id == v3_get_user_channel(v3_get_user_id())) {
-                        // they're joining our channel
-                        audioControl->playNotification("channelenter");
-                    } else if (channelTree->getUserChannelId(ev->user.id) == v3_get_user_channel(v3_get_user_id())) {
-                        // they're leaving our channel
-                        audioControl->playNotification("channelleave");
+                if (v3_is_loggedin()) {
+                    u = v3_get_user(ev->user.id);
+                    if (! u) {
+                        fprintf(stderr, "failed to retreive user information for user id %d", ev->user.id);
+                        break;;
                     }
+                    if (ev->user.id == v3_get_user_id()) {
+                        // we're moving channels... update the codec label
+                        const v3_codec *codec_info;
+                        codec_info = v3_get_channel_codec(ev->channel.id);
+                        builder->get_widget("codecLabel", label);
+                        label->set_text(codec_info->name);
+                    } else {
+                        if (ev->channel.id == v3_get_user_channel(v3_get_user_id())) {
+                            // they're joining our channel
+                            audioControl->playNotification("channelenter");
+                        } else if (channelTree->getUserChannelId(ev->user.id) == v3_get_user_channel(v3_get_user_id())) {
+                            // they're leaving our channel
+                            audioControl->playNotification("channelleave");
+                        }
+                    }
+                    //fprintf(stderr, "moving user id %d to channel id %d\n", ev->user.id, ev->channel.id);
+                    channelTree->removeUser((uint32_t)ev->user.id);
+                    channelTree->addUser(
+                            (uint32_t)u->id,
+                            (uint32_t)ev->channel.id,
+                            c_to_ustring(u->name),
+                            c_to_ustring(u->comment),
+                            u->phonetic,
+                            u->url,
+                            c_to_ustring(u->integration_text),
+                            (bool)u->guest);
+                    v3_free_user(u);
                 }
-                //fprintf(stderr, "moving user id %d to channel id %d\n", ev->user.id, ev->channel.id);
-                channelTree->removeUser((uint32_t)ev->user.id);
-                channelTree->addUser(
-                        (uint32_t)u->id,
-                        (uint32_t)ev->channel.id,
-                        c_to_ustring(u->name),
-                        c_to_ustring(u->comment),
-                        u->phonetic,
-                        u->url,
-                        c_to_ustring(u->integration_text),
-                        (bool)u->guest);
-                v3_free_user(u);
                 break;/*}}}*/
             case V3_EVENT_CHAN_ADD:/*{{{*/
                 c = v3_get_channel(ev->channel.id);
@@ -559,7 +573,7 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                 errorDialog(ev->error.message);
                 break;/*}}}*/
             case V3_EVENT_USER_TALK_START:/*{{{*/
-                {
+                if (v3_is_loggedin()) {
                     v3_user *me, *user;
                     me = v3_get_user(v3_get_user_id());
                     user = v3_get_user(ev->user.id);
@@ -578,26 +592,30 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                 }
                 break;/*}}}*/
             case V3_EVENT_USER_TALK_END:/*{{{*/
-                //fprintf(stderr, "user %d stopped talking\n", ev->user.id);
-                channelTree->userIsTalking(ev->user.id, false);
-                // TODO: this is bad, there must be a flag in the last audio
-                // packet saying that it's the last one.  Need to figure out
-                // what that flag is and close it in V3_EVENT_PLAY_AUDIO
-                if (outputAudio[ev->user.id]) {
-                    outputAudio[ev->user.id]->finish();
-                    outputAudio.erase(ev->user.id);
+                if (v3_is_loggedin()) {
+                    //fprintf(stderr, "user %d stopped talking\n", ev->user.id);
+                    channelTree->userIsTalking(ev->user.id, false);
+                    // TODO: this is bad, there must be a flag in the last audio
+                    // packet saying that it's the last one.  Need to figure out
+                    // what that flag is and close it in V3_EVENT_PLAY_AUDIO
+                    if (outputAudio[ev->user.id]) {
+                        outputAudio[ev->user.id]->finish();
+                        outputAudio.erase(ev->user.id);
+                    }
                 }
                 break;/*}}}*/
             case V3_EVENT_PLAY_AUDIO:/*{{{*/
-                // Open a stream if we don't have one for this user
-                channelTree->userIsTalking(ev->user.id, true);
-                if (!outputAudio[ev->user.id]) {
-                    outputAudio[ev->user.id] = new ManglerAudio("output");
-                    outputAudio[ev->user.id]->open(ev->pcm.rate, AUDIO_OUTPUT);
-                }
-                // And queue the audio
-                if (outputAudio[ev->user.id]) {
-                    outputAudio[ev->user.id]->queue(ev->pcm.length, (uint8_t *)ev->data.sample);
+                if (v3_is_loggedin()) {
+                    // Open a stream if we don't have one for this user
+                    channelTree->userIsTalking(ev->user.id, true);
+                    if (!outputAudio[ev->user.id]) {
+                        outputAudio[ev->user.id] = new ManglerAudio("output");
+                        outputAudio[ev->user.id]->open(ev->pcm.rate, AUDIO_OUTPUT);
+                    }
+                    // And queue the audio
+                    if (outputAudio[ev->user.id]) {
+                        outputAudio[ev->user.id]->queue(ev->pcm.length, (uint8_t *)ev->data.sample);
+                    }
                 }
                 break;/*}}}*/
             case V3_EVENT_DISPLAY_MOTD:/*{{{*/
@@ -655,6 +673,7 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                 break;/*}}}*/
             default:
                 fprintf(stderr, "******************************************************** got unknown event type %d\n", ev->type);
+                break;
         }
         channelTree->expand_all();
         free(ev);

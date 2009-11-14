@@ -206,9 +206,19 @@ ManglerAudio::output(void) {/*{{{*/
     usleep(500000); // buffer for 0.5 seconds
     for (;;) {
         stop_output = false;
+        if (! v3_is_loggedin()) {
+            // we were disconnected while playing the stream.  unref the queue
+            // and flush the audio buffers
+#ifdef HAVE_PULSE
+            pa_simple_flush(pulse_stream, &error);
+#endif
+            g_async_queue_unref(pcm_queue);
+            break;
+        }
         pcmdata = (ManglerPCM *)g_async_queue_pop(pcm_queue);
         // finish() queues a 0 length packet to notify us that we're done
         if (pcmdata->length == 0) {
+            g_async_queue_unref(pcm_queue);
             break;
         }
 #ifdef HAVE_PULSE
