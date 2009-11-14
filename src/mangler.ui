@@ -167,6 +167,7 @@
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
                         <property name="use_underline">True</property>
+                        <property name="focus_on_click">False</property>
                       </object>
                       <packing>
                         <property name="position">0</property>
@@ -179,6 +180,7 @@
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
                         <property name="use_underline">True</property>
+                        <property name="focus_on_click">False</property>
                       </object>
                       <packing>
                         <property name="expand">False</property>
@@ -192,6 +194,7 @@
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
                         <property name="use_underline">True</property>
+                        <property name="focus_on_click">False</property>
                       </object>
                       <packing>
                         <property name="expand">False</property>
@@ -205,6 +208,7 @@
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
                         <property name="use_underline">True</property>
+                        <property name="focus_on_click">False</property>
                       </object>
                       <packing>
                         <property name="expand">False</property>
@@ -217,6 +221,7 @@
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
                         <property name="use_underline">True</property>
+                        <property name="focus_on_click">False</property>
                       </object>
                       <packing>
                         <property name="expand">False</property>
@@ -229,6 +234,7 @@
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
                         <property name="use_underline">True</property>
+                        <property name="focus_on_click">False</property>
                       </object>
                       <packing>
                         <property name="expand">False</property>
@@ -254,6 +260,7 @@
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
                         <property name="use_underline">True</property>
+                        <property name="focus_on_click">False</property>
                       </object>
                       <packing>
                         <property name="expand">False</property>
@@ -286,6 +293,7 @@
                     <property name="can_focus">True</property>
                     <property name="receives_default">True</property>
                     <property name="use_underline">True</property>
+                    <property name="focus_on_click">False</property>
                   </object>
                   <packing>
                     <property name="expand">False</property>
@@ -331,6 +339,7 @@
                                 <property name="label">gtk-connect</property>
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
+                                <property name="has_focus">True</property>
                                 <property name="receives_default">True</property>
                                 <property name="use_stock">True</property>
                               </object>
@@ -533,6 +542,7 @@
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
                 <property name="use_underline">True</property>
+                <property name="focus_on_click">False</property>
               </object>
               <packing>
                 <property name="expand">False</property>
@@ -548,6 +558,7 @@
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
                 <property name="use_underline">True</property>
+                <property name="focus_on_click">False</property>
               </object>
               <packing>
                 <property name="expand">False</property>
@@ -562,6 +573,7 @@
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
                 <property name="use_underline">True</property>
+                <property name="focus_on_click">False</property>
               </object>
               <packing>
                 <property name="expand">False</property>
@@ -588,6 +600,7 @@
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
                 <property name="use_underline">True</property>
+                <property name="focus_on_click">False</property>
               </object>
               <packing>
                 <property name="expand">False</property>
@@ -958,6 +971,7 @@
                             <property name="can_default">True</property>
                             <property name="has_default">True</property>
                             <property name="receives_default">True</property>
+                            <property name="focus_on_click">False</property>
                           </object>
                           <packing>
                             <property name="expand">False</property>
@@ -973,6 +987,7 @@
                             <property name="sensitive">False</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">True</property>
+                            <property name="focus_on_click">False</property>
                           </object>
                           <packing>
                             <property name="expand">False</property>
