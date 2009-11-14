@@ -796,6 +796,18 @@ void Mangler::textStringChangeDialogCancelButton_clicked_cb(void) {/*{{{*/
     textStringChangeIntegrationEntry->set_text(integration_text);
 }/*}}}*/
 
+
+// Misc Functions
+uint32_t Mangler::getActiveServer(void) {
+    builder->get_widget("serverSelectComboBox", combobox);
+    return combobox->get_active_row_number();
+}
+
+void Mangler::setActiveServer(uint32_t row_number) {
+    builder->get_widget("serverSelectComboBox", combobox);
+    combobox->set_active(row_number);
+}
+
 ManglerError::ManglerError(uint32_t code, Glib::ustring message, Glib::ustring module) {/*{{{*/
     this->code = code;
     this->message = message;
