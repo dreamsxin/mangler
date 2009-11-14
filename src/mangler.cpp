@@ -637,6 +637,8 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                 {
                     channelTree->clear();
                     button->set_label("gtk-connect");
+                    builder->get_widget("serverSelectComboBox", combobox);
+                    combobox->set_sensitive(true);
                     builder->get_widget("progressbar", progressbar);
                     builder->get_widget("statusbar", statusbar);
                     progressbar->set_text("");

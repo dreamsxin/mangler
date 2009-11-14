@@ -62,6 +62,8 @@ ManglerNetwork::connect(Glib::ustring hostname, Glib::ustring port, Glib::ustrin
     button->set_label("gtk-disconnect");
     builder->get_widget("serverTabLabel", label);
     label->set_label(server);
+    builder->get_widget("serverSelectComboBox", combobox);
+    combobox->set_sensitive(false);
     mangler->statusIcon->set(mangler->icons["tray_icon_red"]);
     gdk_threads_leave();
     do {
