@@ -95,7 +95,8 @@ class Mangler
         Glib::Thread                        *networkThread;
 
         Glib::ustring getPasswordEntry(Glib::ustring title = "Password", Glib::ustring prompt = "Password");
-
+        uint32_t getActiveServer(void);
+        void setActiveServer(uint32_t row_number);
         
     protected:
         // signal handlers

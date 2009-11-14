@@ -285,6 +285,8 @@ uint32_t ManglerConfig::addserver(void) {/*{{{*/
     return serverlist.size() - 1;
 }/*}}}*/
 void ManglerConfig::removeserver(uint32_t id) {/*{{{*/
+    uint32_t active_server;
+    active_server = mangler->getActiveServer();
     delete serverlist[id];
     serverlist.erase(serverlist.begin() + id);
     // we need to rebuild the serverlist liststore since the ids are changed now
@@ -298,6 +300,7 @@ void ManglerConfig::removeserver(uint32_t id) {/*{{{*/
         row[mangler->serverList->serverListColumns.port] = server->port;
         row[mangler->serverList->serverListColumns.username] = server->username;
     }
+    mangler->setActiveServer(active_server);
     return;
 }/*}}}*/
 ManglerServerConfig *ManglerConfig::getserver(uint32_t id) {/*{{{*/
