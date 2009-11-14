@@ -233,7 +233,7 @@ void ManglerConfig::load() {/*{{{*/
         Glib::ustring base;
         snprintf(buf, 1023, "serverlist.%d.", ctr);
         base = buf;
-        if (get(base + "hostname") == "") {
+        if (get(base + "name") == "") {
             break;
         } else {
             ManglerServerConfig *server = new ManglerServerConfig();
