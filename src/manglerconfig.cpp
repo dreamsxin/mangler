@@ -232,7 +232,7 @@ void ManglerConfig::load() {/*{{{*/
     lv3_debuglevel                = atoi(get("lv3_debuglevel").c_str());
     windowWidth                   = atoi(get("window.width").c_str());
     windowHeight                  = atoi(get("window.height").c_str());
-    buttonsHidden                 = get("window.buttonsHidden") == "0" ? false : true;;
+    buttonsHidden                 = get("window.buttonsHidden") == "1" ? true : false; // reversed so default is not hidden
     lastConnectedServerId         = atoi(get("lastConnectedServerId").c_str());
     for (uint32_t ctr = 0; ctr < serverlist.size(); ctr++) {
         delete serverlist[ctr];
