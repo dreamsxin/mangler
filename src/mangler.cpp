@@ -199,7 +199,6 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
         manglerWindow->set_default_size(settings->config.windowWidth, settings->config.windowHeight);
     }
     builder->get_widget("buttonMenuItem", checkmenuitem);
-    fprintf(stderr, "buttons hidden: %d\n", settings->config.buttonsHidden);
     checkmenuitem->set_active(settings->config.buttonsHidden);
 
     // Create Server List Window
