@@ -458,7 +458,9 @@ _v3_put_0x48(void) {/*{{{*/
     memcpy(mc->handshake, v3_server.handshake, 16);
     strncpy(mc->client_version, V3_CLIENT_VERSION, 16);
     strncpy(mc->proto_version,  V3_PROTO_VERSION, 16);
-    _v3_hash_password((uint8_t *)v3_luser.password, (uint8_t *)mc->password_hash);
+    if (strlen(v3_luser.password)) {
+        _v3_hash_password((uint8_t *)v3_luser.password, (uint8_t *)mc->password_hash);
+    }
     strncpy(mc->username, v3_luser.name, 32);
     strncpy(mc->phonetic, v3_luser.phonetic, 32);
     strncpy(mc->os, "WIN32", 64);
