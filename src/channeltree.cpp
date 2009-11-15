@@ -411,6 +411,7 @@ void
 ManglerChannelTree::channelView_row_activated_cb(const Gtk::TreeModel::Path& path, Gtk::TreeViewColumn* column) {/*{{{*/
     v3_channel *channel;
     Glib::ustring password;
+    bool password_required = false;
 
     Gtk::TreeModel::iterator iter = channelStore->get_iter(path);
     Gtk::TreeModel::Row row = *iter;
@@ -454,13 +455,14 @@ ManglerChannelTree::channelView_row_activated_cb(const Gtk::TreeModel::Path& pat
             }
             if (v3_channel_requires_password(channel->id)) {  // Channel is password protected
                 password = mangler->getPasswordEntry("Channel Password");
+                password_required = true;
             }
             v3_free_channel(channel);
         }
-        bool isUser = row[channelRecord.isUser];
-        if (! isUser && !password.empty()) {
-            v3_change_channel(id, (char *)password.c_str());
+        if (password_required && password.empty()) {
+            return;
         }
+        v3_change_channel(id, (char *)password.c_str());
     }
 }/*}}}*/
 
