@@ -452,7 +452,7 @@ ManglerChannelTree::channelView_row_activated_cb(const Gtk::TreeModel::Path& pat
                 fprintf(stderr, "failed to retrieve channel information for channel id %d", id);
                 return;
             }
-            if (channel->protect_mode == 1) {  // Channel is password protected
+            if (v3_channel_requires_password(channel->id)) {  // Channel is password protected
                 password = mangler->getPasswordEntry("Channel Password");
             }
             v3_free_channel(channel);

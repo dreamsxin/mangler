@@ -2775,6 +2775,28 @@ v3_get_channel_codec(uint16_t channel_id) {/*{{{*/
     return codec_info;
 }/*}}}*/
 
+uint8_t
+v3_channel_requires_password(uint16_t channel_id) {/*{{{*/
+    uint16_t parent;
+    v3_channel *c;
+
+    _v3_func_enter("v3_channel_requires_password");
+    if (channel_id == 0) {
+        _v3_func_leave("v3_channel_requires_password");
+        return false;
+    }
+    c = v3_get_channel(channel_id);
+    if (c->protect_mode == 1) {
+        v3_free_channel(c);
+        _v3_func_leave("v3_channel_requires_password");
+        return true;
+    }
+    parent = c->parent;
+    v3_free_channel(c);
+    _v3_func_leave("v3_channel_requires_password");
+    return v3_channel_requires_password(parent);
+}/*}}}*/
+
 /*
  * Do not confuse v3_logout() with _v3_logout().  This is the external API
  * function that requests a disconnect via the pipe.  _v3_logout() responds by
