@@ -458,7 +458,7 @@ ManglerChannelTree::channelView_row_activated_cb(const Gtk::TreeModel::Path& pat
             v3_free_channel(channel);
         }
         bool isUser = row[channelRecord.isUser];
-        if (! isUser) {
+        if (! isUser && !password.empty()) {
             v3_change_channel(id, (char *)password.c_str());
         }
     }
