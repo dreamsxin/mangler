@@ -330,7 +330,12 @@ void Mangler::commentButton_clicked_cb(void) {/*{{{*/
 void Mangler::chatButton_clicked_cb(void) {/*{{{*/
     if (v3_is_loggedin()) {
         builder->get_widget("chatWindow", window);
-        window->show();
+        if(!window->get_visible()) {
+            window->set_icon(icons["tray_icon"]);
+            window->show();
+        } else {
+            window->present();
+        }
     }
 }/*}}}*/
 void Mangler::bindingsButton_clicked_cb(void) {/*{{{*/
