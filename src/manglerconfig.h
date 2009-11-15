@@ -82,6 +82,9 @@ class ManglerConfig {
                 bool            notificationChannelEnterLeave;
                 bool            notificationTransmitStartStop;
                 int32_t         lastConnectedServerId;
+                uint32_t        windowWidth;
+                uint32_t        windowHeight;
+                bool            buttonsHidden;
 
 		ManglerServerConfig   qc_lastserver;
 		std::vector<ManglerServerConfig *> serverlist;

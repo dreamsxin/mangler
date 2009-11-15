@@ -145,6 +145,9 @@ class Mangler
         // text string change dialog signal handlers
         void textStringChangeDialogOkButton_clicked_cb(void);
         void textStringChangeDialogCancelButton_clicked_cb(void);
+
+        // program quit callback
+        bool mangler_quit_cb(void);
 };
 
 struct _cli_options {

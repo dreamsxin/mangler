@@ -35,6 +35,9 @@
 
 ManglerConfig::ManglerConfig() {/*{{{*/
     lv3_debuglevel                  = 0;
+    windowWidth = 0;
+    windowHeight = 0;
+    buttonsHidden = false;
     PushToTalkKeyEnabled            = false;
     PushToTalkKeyValue              = "";
     PushToTalkMouseEnabled          = false;
@@ -78,6 +81,10 @@ bool ManglerConfig::save() {/*{{{*/
     put("qc_lastserver.comment", "");
     put("lastConnectedServerId", lastConnectedServerId);
     put("lv3_debuglevel", lv3_debuglevel);
+    put("window.width", windowWidth);
+    put("window.height", windowHeight);
+    put("window.buttonsHidden", buttonsHidden);
+
     for (uint32_t ctr = 0; ctr < serverlist.size(); ctr++) {
         put(ctr, *serverlist[ctr]);
     }
@@ -223,6 +230,9 @@ void ManglerConfig::load() {/*{{{*/
     qc_lastserver.phonetic        = get("qc_lastserver.phonetic");
     qc_lastserver.comment         = get("qc_lastserver.comment");
     lv3_debuglevel                = atoi(get("lv3_debuglevel").c_str());
+    windowWidth                   = atoi(get("window.width").c_str());
+    windowHeight                  = atoi(get("window.height").c_str());
+    buttonsHidden                 = get("window.buttonsHidden") == "0" ? false : true;;
     lastConnectedServerId         = atoi(get("lastConnectedServerId").c_str());
     for (uint32_t ctr = 0; ctr < serverlist.size(); ctr++) {
         delete serverlist[ctr];

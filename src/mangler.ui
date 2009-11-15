@@ -17,7 +17,7 @@
             <child>
               <object class="GtkMenuItem" id="serverMenuItem">
                 <property name="visible">True</property>
-                <property name="label" translatable="yes">_Server</property>
+                <property name="label" translatable="yes">Serve_r</property>
                 <property name="use_underline">True</property>
                 <child type="submenu">
                   <object class="GtkMenu" id="serverMenu">
@@ -143,6 +143,7 @@
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
+                        <property name="tooltip_text" translatable="yes">Connect to a server without adding it to your server list.</property>
                         <property name="use_underline">True</property>
                         <property name="focus_on_click">False</property>
                       </object>
@@ -156,6 +157,7 @@
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
+                        <property name="tooltip_text" translatable="yes">Edit the server list</property>
                         <property name="use_underline">True</property>
                         <property name="focus_on_click">False</property>
                       </object>
@@ -170,6 +172,7 @@
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
+                        <property name="tooltip_text" translatable="yes">Modify Settings</property>
                         <property name="use_underline">True</property>
                         <property name="focus_on_click">False</property>
                       </object>
@@ -184,6 +187,7 @@
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
+                        <property name="tooltip_text" translatable="yes">Change your user comment or URL</property>
                         <property name="use_underline">True</property>
                         <property name="focus_on_click">False</property>
                       </object>
@@ -198,6 +202,7 @@
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
+                        <property name="tooltip_text" translatable="yes">Open the public chat window</property>
                         <property name="use_underline">True</property>
                         <property name="focus_on_click">False</property>
                       </object>
@@ -319,6 +324,7 @@
                                 <property name="can_focus">True</property>
                                 <property name="has_focus">True</property>
                                 <property name="receives_default">True</property>
+                                <property name="tooltip_text" translatable="yes">Connect to the specified server </property>
                                 <property name="use_stock">True</property>
                               </object>
                               <packing>
@@ -519,6 +525,7 @@
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
+                <property name="tooltip_text" translatable="yes">Add a new server to the list</property>
                 <property name="use_underline">True</property>
                 <property name="focus_on_click">False</property>
               </object>
@@ -535,6 +542,7 @@
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
+                <property name="tooltip_text" translatable="yes">Remove the currently selected server</property>
                 <property name="use_underline">True</property>
                 <property name="focus_on_click">False</property>
               </object>
@@ -643,6 +651,7 @@
                         <property name="visible">True</property>
                         <property name="sensitive">False</property>
                         <property name="can_focus">True</property>
+                        <property name="tooltip_text" translatable="yes">The name of the server to be displayed in the server list drop down on the main window</property>
                         <property name="invisible_char">&#x25CF;</property>
                         <property name="activates_default">True</property>
                       </object>
@@ -717,6 +726,7 @@
                         <property name="visible">True</property>
                         <property name="sensitive">False</property>
                         <property name="can_focus">True</property>
+                        <property name="tooltip_text" translatable="yes">The port number for this server</property>
                         <property name="max_length">5</property>
                         <property name="invisible_char">&#x25CF;</property>
                         <property name="activates_default">True</property>
@@ -735,6 +745,7 @@
                         <property name="visible">True</property>
                         <property name="sensitive">False</property>
                         <property name="can_focus">True</property>
+                        <property name="tooltip_text" translatable="yes">The username to use when connecting</property>
                         <property name="max_length">31</property>
                         <property name="invisible_char">&#x25CF;</property>
                         <property name="activates_default">True</property>
@@ -752,6 +763,7 @@
                         <property name="visible">True</property>
                         <property name="sensitive">False</property>
                         <property name="can_focus">True</property>
+                        <property name="tooltip_text" translatable="yes">The password to send to the server for the specified account username.  If the account does not require a password, this is ignored.</property>
                         <property name="max_length">16</property>
                         <property name="visibility">False</property>
                         <property name="invisible_char">&#x25CF;</property>
@@ -771,6 +783,7 @@
                         <property name="visible">True</property>
                         <property name="sensitive">False</property>
                         <property name="can_focus">True</property>
+                        <property name="tooltip_text" translatable="yes">A phonetically spelled version of your username used by the text-to-speech engine.</property>
                         <property name="max_length">31</property>
                         <property name="invisible_char">&#x25CF;</property>
                         <property name="activates_default">True</property>
@@ -788,6 +801,7 @@
                         <property name="visible">True</property>
                         <property name="sensitive">False</property>
                         <property name="can_focus">True</property>
+                        <property name="tooltip_text" translatable="yes">The user comment to set immediately upon login</property>
                         <property name="max_length">127</property>
                         <property name="invisible_char">&#x25CF;</property>
                       </object>
@@ -816,6 +830,7 @@
                         <property name="visible">True</property>
                         <property name="sensitive">False</property>
                         <property name="can_focus">True</property>
+                        <property name="tooltip_text" translatable="yes">The hostname or IP address for this server</property>
                         <property name="invisible_char">&#x25CF;</property>
                         <property name="activates_default">True</property>
                       </object>
@@ -857,6 +872,7 @@
                                     <property name="sensitive">False</property>
                                     <property name="can_focus">True</property>
                                     <property name="receives_default">False</property>
+                                    <property name="tooltip_text" translatable="yes">If unchecked, other users will not be allowed to page you</property>
                                     <property name="draw_indicator">True</property>
                                   </object>
                                   <packing>
@@ -871,6 +887,7 @@
                                     <property name="sensitive">False</property>
                                     <property name="can_focus">True</property>
                                     <property name="receives_default">False</property>
+                                    <property name="tooltip_text" translatable="yes">If unchecked, you will not receive any user to user transmissions</property>
                                     <property name="draw_indicator">True</property>
                                   </object>
                                   <packing>
@@ -885,6 +902,7 @@
                                     <property name="sensitive">False</property>
                                     <property name="can_focus">True</property>
                                     <property name="receives_default">False</property>
+                                    <property name="tooltip_text" translatable="yes">If unchecked, users will not be able to send you a request for private chat</property>
                                     <property name="draw_indicator">True</property>
                                   </object>
                                   <packing>
@@ -899,6 +917,7 @@
                                     <property name="sensitive">False</property>
                                     <property name="can_focus">True</property>
                                     <property name="receives_default">False</property>
+                                    <property name="tooltip_text" translatable="yes">If checked, users will be able to record everything you transmit to the server.</property>
                                     <property name="draw_indicator">True</property>
                                   </object>
                                   <packing>
@@ -913,6 +932,7 @@
                                     <property name="sensitive">False</property>
                                     <property name="can_focus">True</property>
                                     <property name="receives_default">False</property>
+                                    <property name="tooltip_text" translatable="yes">If checked, when you change your comment using the comment window, the server list will automatically be updated with your new comment.</property>
                                     <property name="draw_indicator">True</property>
                                   </object>
                                   <packing>

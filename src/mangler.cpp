@@ -77,6 +77,8 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
         std::cerr << e.what() << std::endl;
         exit(0);
     }
+    //manglerWindow->signal_hide().connect(sigc::mem_fun(this, &Mangler::manglerWindow_hide_cb));
+    Gtk::Main::signal_quit().connect(sigc::mem_fun(this, &Mangler::mangler_quit_cb));
 
     /*
      * Retreive all buttons from builder and set their singal handler callbacks
@@ -193,6 +195,12 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
     isTransmitting = 0;
     Glib::signal_timeout().connect(sigc::mem_fun(this, &Mangler::checkPushToTalkKeys), 100);
     Glib::signal_timeout().connect(sigc::mem_fun(this, &Mangler::checkPushToTalkMouse), 100);
+    if (settings->config.windowWidth > 0 && settings->config.windowHeight > 0) {
+        manglerWindow->set_default_size(settings->config.windowWidth, settings->config.windowHeight);
+    }
+    builder->get_widget("buttonMenuItem", checkmenuitem);
+    fprintf(stderr, "buttons hidden: %d\n", settings->config.buttonsHidden);
+    checkmenuitem->set_active(settings->config.buttonsHidden);
 
     // Create Server List Window
     serverList = new ManglerServerList(builder);
@@ -288,6 +296,18 @@ void Mangler::connectButton_clicked_cb(void) {/*{{{*/
             Glib::ustring phonetic = server->phonetic;
             if (!server || server->hostname.empty() || server->port.empty() || server->username.empty()) {
                 channelTree->updateLobby("Not connected");
+                if (server->hostname.empty()) {
+                    errorDialog("You have not specified a hostname for this server.");
+                    return;
+                }
+                if (server->port.empty()) {
+                    errorDialog("You have not specified a port for this server.");
+                    return;
+                }
+                if (server->username.empty()) {
+                    errorDialog("You have not specified a username for this server.");
+                    return;
+                }
                 return;
             }
             settings->config.lastConnectedServerId = server_id;
@@ -364,9 +384,12 @@ void Mangler::buttonMenuItem_toggled_cb(void) {/*{{{*/
     builder->get_widget("mainWindowButtonVBox", vbox);
     if (checkmenuitem->get_active()) {
         vbox->set_visible(false);
+        settings->config.buttonsHidden = true;
     } else {
+        settings->config.buttonsHidden = false;
         vbox->set_visible(true);
     }
+    settings->config.save();
 }/*}}}*/
 void Mangler::quitMenuItem_activate_cb(void) {/*{{{*/
     Gtk::Main::quit();
@@ -387,6 +410,14 @@ void Mangler::statusIcon_activate_cb(void) {/*{{{*/
         manglerWindow->set_skip_taskbar_hint(true);
         iconified = true;
     }
+}/*}}}*/
+bool Mangler::mangler_quit_cb(void) {/*{{{*/
+    int w, h;
+    manglerWindow->get_size(w, h);
+    settings->config.windowWidth = w;
+    settings->config.windowHeight = h;
+    settings->config.save();
+    return true;
 }/*}}}*/
 
 void Mangler::startTransmit(void) {/*{{{*/
