@@ -63,4 +63,8 @@ void ManglerChat::chatWindowSendChat_clicked_cb() {
 void ManglerChat::AddMessage(Glib::ustring username, Glib::ustring message) {
     Glib::RefPtr<Gtk::TextBuffer> buffer = chatBox->get_buffer();
     buffer->set_text(buffer->get_text() + "[" + username + "]: " + message + "\n");
+    
+    Gtk::TextIter end = buffer->end();
+    Glib::RefPtr<Gtk::TextMark> end_mark = buffer->create_mark(end);
+    chatBox->scroll_to(end_mark, 0.0);
 }

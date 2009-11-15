@@ -1512,6 +1512,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                     if (ventrilo_read_keys(&v3_server.client_key, &v3_server.server_key, m->encryption_key, msg->len - 12) < 0) {
                         _v3_error("could not parse keys from the server");
                         free(m->encryption_key);
+                        _v3_func_leave("_v3_process_message");
                         return V3_FAILURE;
                     }
                     free(m->encryption_key);
@@ -1550,10 +1551,11 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                 } else {
                     // it's an informational message free it for now, may want
                     // to queue it as something else later
+                    _v3_func_leave("_v3_process_message");
+                    return V3_OK;
                 }
-                _v3_func_leave("_v3_process_message");
-            }
-            return V3_OK;/*}}}*/
+            }/*}}}*/
+            
         case 0x3b:/*{{{*/
             /*
              *  This is almost identical to 0x53, so whatever you do here probably
@@ -1587,8 +1589,8 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
             ventrilo3_algo_scramble(&v3_server.server_key, (uint8_t *)v3_server.handshake_key);
             _v3_destroy_packet(msg);
             _v3_user_loggedin = 1;
-            _v3_func_leave("_v3_process_message");
             _v3_unlock_server();
+            _v3_func_leave("_v3_process_message");
             return V3_OK;/*}}}*/
         case 0x37:/*{{{*/
             if (!_v3_get_0x37(msg)) {
@@ -1666,6 +1668,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                         break;
                 }
             }
+            _v3_func_leave("_v3_process_message");
             return V3_OK;
         case 0x46:/*{{{*/
             if (!_v3_get_0x46(msg)) {
@@ -1841,8 +1844,8 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                     v3_queue_event(ev);
                 }
                 _v3_destroy_packet(msg);
-                _v3_func_leave("_v3_process_message");
                 _v3_unlock_server();
+                _v3_func_leave("_v3_process_message");
                 return V3_MALFORMED;
             }
             return V3_OK;/*}}}*/
@@ -1893,8 +1896,8 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                                                 _v3_error("couldn't create gsm handle");
                                                 _v3_destroy_0x52(msg);
                                                 _v3_destroy_packet(msg);
-                                                _v3_func_leave("_v3_process_message");
                                                 free(ev);
+                                                _v3_func_leave("_v3_process_message");
                                                 return V3_MALFORMED; // it's not really a malformed packet...
                                             }
                                             gsm_option(v3_decoders[m->user_id].gsm, GSM_OPT_WAV49, &one);
@@ -1943,6 +1946,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                                                     _v3_destroy_0x52(msg);
                                                     _v3_destroy_packet(msg);
                                                     free(ev);
+                                                    _v3_func_leave("_v3_process_message");
                                                     return V3_MALFORMED;
                                             }
                                         }
