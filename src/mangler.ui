@@ -478,9 +478,18 @@
             <property name="width_request">50</property>
             <property name="visible">True</property>
             <child>
-              <object class="GtkProgressBar" id="progressbar">
-                <property name="width_request">100</property>
+              <object class="GtkAlignment" id="alignment8">
                 <property name="visible">True</property>
+                <property name="top_padding">5</property>
+                <property name="bottom_padding">5</property>
+                <property name="left_padding">5</property>
+                <property name="right_padding">5</property>
+                <child>
+                  <object class="GtkProgressBar" id="progressbar">
+                    <property name="width_request">100</property>
+                    <property name="visible">True</property>
+                  </object>
+                </child>
               </object>
               <packing>
                 <property name="expand">False</property>
@@ -506,6 +515,7 @@
     </child>
   </object>
   <object class="GtkWindow" id="serverListWindow">
+    <property name="border_width">5</property>
     <property name="title" translatable="yes">Mangler Server List</property>
     <property name="type_hint">dialog</property>
     <property name="skip_taskbar_hint">True</property>
