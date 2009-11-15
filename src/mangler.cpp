@@ -521,7 +521,12 @@ bool Mangler::getNetworkEvent() {/*{{{*/
             case V3_EVENT_STATUS:/*{{{*/
                 builder->get_widget("progressbar", progressbar);
                 builder->get_widget("statusbar", statusbar);
-                progressbar->set_fraction(ev->status.percent/(float)100);
+                if (ev->status.percent == 100) {
+                    progressbar->set_visible(false);
+                } else {
+                    progressbar->set_visible(true);
+                    progressbar->set_fraction(ev->status.percent/(float)100);
+                }
                 statusbar->pop();
                 statusbar->push(ev->status.message);
                 //fprintf(stderr, "got event type %d: %d %s\n", ev->type, ev->status.percent, ev->status.message);
