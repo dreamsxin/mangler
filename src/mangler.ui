@@ -481,7 +481,6 @@
               <object class="GtkProgressBar" id="progressbar">
                 <property name="width_request">100</property>
                 <property name="height_request">15</property>
-                <property name="visible">True</property>
               </object>
               <packing>
                 <property name="expand">False</property>
