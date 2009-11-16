@@ -94,6 +94,13 @@
                         <property name="label" translatable="yes">Hide Buttons</property>
                       </object>
                     </child>
+                    <child>
+                      <object class="GtkMenuItem" id="chatMenuItem">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">Global Chat</property>
+                        <property name="use_underline">True</property>
+                      </object>
+                    </child>
                   </object>
                 </child>
               </object>
