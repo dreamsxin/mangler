@@ -135,6 +135,9 @@ ManglerChannelTree::addUser(uint32_t id, uint32_t parent_id, Glib::ustring name,
     if (guest) {
         displayName = displayName + " (GUEST)";
     }
+    if (mangler->chat->isUserInChat(id)) {
+        displayName = "[C] " + displayName;
+    }
     if (! comment.empty()) {
         displayName = displayName + " (" + (url.empty() ? "" : "U: ") + comment + ")";
     }
