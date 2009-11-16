@@ -1555,7 +1555,6 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                     return V3_OK;
                 }
             }/*}}}*/
-            
         case 0x3b:/*{{{*/
             /*
              *  This is almost identical to 0x53, so whatever you do here probably
@@ -1625,7 +1624,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
             _v3_destroy_packet(msg);
             _v3_func_leave("_v3_process_message");
             return V3_OK;/*}}}*/
-        case 0x42:
+        case 0x42:/*{{{*/
             if(!_v3_get_0x42(msg)) {
                 _v3_destroy_packet(msg);
                 _v3_func_leave("_v3_process_message");
@@ -1669,7 +1668,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                 }
             }
             _v3_func_leave("_v3_process_message");
-            return V3_OK;
+            return V3_OK;/*}}}*/
         case 0x46:/*{{{*/
             if (!_v3_get_0x46(msg)) {
                 _v3_destroy_packet(msg);
@@ -2088,6 +2087,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                         for (ctr = 0; ctr < m->user_count; ctr++) {
                             v3_event *ev = _v3_create_event(V3_EVENT_USER_LOGOUT);
                             ev->user.id = m->user_list[ctr].id;
+                            ev->channel.id = m->user_list[ctr].channel;
                             _v3_debug(V3_DEBUG_INFO, "queuing event type %d for user %d", ev->type, ev->user.id);
                             _v3_remove_user(m->user_list[ctr].id);
                             v3_queue_event(ev);

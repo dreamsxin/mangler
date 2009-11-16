@@ -584,6 +584,9 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                 break;/*}}}*/
             case V3_EVENT_USER_LOGOUT:/*{{{*/
                 if (v3_is_loggedin()) {
+                    if (v3_get_user_channel(v3_get_user_id()) == ev->channel.id) {
+                        audioControl->playNotification("channelleave");
+                    }
                     // can't get any user info... it's already gone by this point
                     //fprintf(stderr, "removing user id %d\n", ev->user.id);
                     channelTree->removeUser(ev->user.id);
