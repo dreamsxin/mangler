@@ -65,26 +65,36 @@ void ManglerChat::chatWindowSendChat_clicked_cb() {
     }
 }
 
-void ManglerChat::addMessage(Glib::ustring username, Glib::ustring message) {
+void ManglerChat::addMessage(Glib::ustring message) {
     Glib::RefPtr<Gtk::TextBuffer> buffer = chatBox->get_buffer();
-    buffer->set_text(buffer->get_text() + "[" + username + "]: " + message + "\n");
+    buffer->set_text(buffer->get_text() + message + "\n");
 
     Gtk::TextIter end = buffer->end();
     Glib::RefPtr<Gtk::TextMark> end_mark = buffer->create_mark(end);
     chatBox->scroll_to(end_mark, 0.0);
 }
 
+Glib::ustring ManglerChat::nameFromId(uint16_t user_id) {
+    v3_user *u = v3_get_user(user_id);
+    Glib::ustring name = c_to_ustring(u->name);
+    v3_free_user(u);
+    return name;
+}
+
+void ManglerChat::addChatMessage(uint16_t user_id, Glib::ustring message) {
+    addMessage("[" + nameFromId(user_id) + "]: " + message);
+}
+
 void ManglerChat::addUser(uint16_t user_id) {
     if (isUserInChat(user_id)) {
         return;
     }
-    v3_user *u;
-    u = v3_get_user(user_id);
+    Glib::ustring name = nameFromId(user_id);
     chatUserIter = chatUserTreeModel->append();
     chatUserRow = *chatUserIter;
     chatUserRow[chatUserColumns.id] = user_id;
-    chatUserRow[chatUserColumns.name] = u->name;
-    v3_free_user(u);
+    chatUserRow[chatUserColumns.name] = name;
+    addMessage("* " + name + " has joined the chat.");
 }
 
 void ManglerChat::removeUser(uint16_t user_id) {
@@ -96,6 +106,8 @@ void ManglerChat::removeUser(uint16_t user_id) {
         uint32_t rowId = row[chatUserColumns.id];
         if (rowId == user_id) {
             chatUserTreeModel->erase(row);
+            addMessage("* " + nameFromId(user_id) + " has left the chat.");
+            return;
         }
         iter++;
     }

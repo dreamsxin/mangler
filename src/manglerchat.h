@@ -54,11 +54,13 @@ class ManglerChat {
         void chatWindow_hide_cb(void);
         void chatWindowSendChat_clicked_cb(void);
 
-        void addMessage(Glib::ustring username, Glib::ustring message);
+        void addChatMessage(uint16_t user_id, Glib::ustring message);
+        void addMessage(Glib::ustring message);
         void addUser(uint16_t user_id);
         void clear(void);
         void removeUser(uint16_t user_id);
         bool isUserInChat(uint16_t user_id);
+        Glib::ustring nameFromId(uint16_t user_id);
 
 };
 
