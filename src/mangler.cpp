@@ -764,8 +764,7 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                 }
                 break;/*}}}*/
             case V3_EVENT_CHAT_JOIN:/*{{{*/
-                if (v3_is_loggedin()) {
-                }
+                chat->addUser(ev->user.id);
                 break;/*}}}*/
             case V3_EVENT_CHAT_LEAVE:/*{{{*/
                 if (v3_is_loggedin()) {
@@ -775,7 +774,7 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                 if (v3_is_loggedin()) {
                     v3_user *user = v3_get_user(ev->user.id);
                     if(user) {
-                        chat->AddMessage(c_to_ustring(user->name), c_to_ustring(ev->data.chatmessage));
+                        chat->addMessage(c_to_ustring(user->name), c_to_ustring(ev->data.chatmessage));
                         v3_free_user(user);
                     } else {
                         fprintf(stderr, "couldn't find user for for user id %d\n", ev->user.id);

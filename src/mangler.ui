@@ -2482,17 +2482,17 @@ Notifications are the sound effects that are played when you login, logout, a us
     <property name="default_width">500</property>
     <property name="default_height">300</property>
     <child>
-      <object class="GtkVBox" id="vbox6">
+      <object class="GtkVBox" id="chatVBox">
         <property name="visible">True</property>
         <property name="orientation">vertical</property>
         <child>
-          <object class="GtkHPaned" id="hpaned1">
+          <object class="GtkHPaned" id="chatHPaned">
             <property name="visible">True</property>
             <property name="can_focus">True</property>
             <property name="position">375</property>
             <property name="position_set">True</property>
             <child>
-              <object class="GtkScrolledWindow" id="scrolledwindow1">
+              <object class="GtkScrolledWindow" id="chatBoxScrolledWindow">
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="hscrollbar_policy">never</property>
@@ -2512,15 +2512,16 @@ Notifications are the sound effects that are played when you login, logout, a us
               </packing>
             </child>
             <child>
-              <object class="GtkScrolledWindow" id="scrolledwindow3">
+              <object class="GtkScrolledWindow" id="chatUserListScrolledWindow">
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="hscrollbar_policy">automatic</property>
                 <property name="vscrollbar_policy">automatic</property>
                 <child>
-                  <object class="GtkTextView" id="userList">
+                  <object class="GtkTreeView" id="chatUserListTreeView">
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
+                    <property name="headers_visible">False</property>
                   </object>
                 </child>
               </object>
@@ -2535,7 +2536,7 @@ Notifications are the sound effects that are played when you login, logout, a us
           </packing>
         </child>
         <child>
-          <object class="GtkHBox" id="hbox9">
+          <object class="GtkHBox" id="chatTextEntryHBox">
             <property name="visible">True</property>
             <child>
               <object class="GtkEntry" id="chatMessage">

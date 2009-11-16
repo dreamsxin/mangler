@@ -29,18 +29,35 @@
 
 class ManglerChat {
     public:
-       ManglerChat(Glib::RefPtr<Gtk::Builder> builder); 
-       
-       Gtk::Window   *chatWindow;
-       Gtk::Button   *button;
-       Gtk::Entry    *chatMessage;
-       Gtk::TextView *chatBox;
-       
-       void chatWindow_show_cb(void);
-       void chatWindow_hide_cb(void);
-       void chatWindowSendChat_clicked_cb(void);
-       
-       void AddMessage(Glib::ustring username, Glib::ustring message);
+        ManglerChat(Glib::RefPtr<Gtk::Builder> builder); 
+
+        class chatUserModelColumns : public Gtk::TreeModel::ColumnRecord {
+            public:
+                chatUserModelColumns() { add(id); add(name); }
+                Gtk::TreeModelColumn<uint32_t>              id;
+                Gtk::TreeModelColumn<Glib::ustring>         name;
+        };
+        chatUserModelColumns            chatUserColumns;
+        Glib::RefPtr<Gtk::ListStore>    chatUserTreeModel;
+        Gtk::TreeView                   *chatUserListView;
+        Gtk::TreeModel::iterator        chatUserIter;
+        Gtk::TreeModel::Row             chatUserRow;
+
+        //Glib::RefPtr<Gtk::TreeSelection> chatUserSelection; // probably not needed for this
+
+        Gtk::Window   *chatWindow;
+        Gtk::Button   *button;
+        Gtk::Entry    *chatMessage;
+        Gtk::TextView *chatBox;
+
+        void chatWindow_show_cb(void);
+        void chatWindow_hide_cb(void);
+        void chatWindowSendChat_clicked_cb(void);
+
+        void addMessage(Glib::ustring username, Glib::ustring message);
+        void addUser(uint16_t user_id);
+        void removeUser(uint16_t user_id);
+
 };
 
 #endif

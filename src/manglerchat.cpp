@@ -31,13 +31,18 @@ ManglerChat::ManglerChat(Glib::RefPtr<Gtk::Builder> builder) {
     builder->get_widget("chatWindow", chatWindow);
     chatWindow->signal_show().connect(sigc::mem_fun(this, &ManglerChat::chatWindow_show_cb));
     chatWindow->signal_hide().connect(sigc::mem_fun(this, &ManglerChat::chatWindow_hide_cb));
-    
+
     builder->get_widget("sendChat", button);
     button->signal_clicked().connect(sigc::mem_fun(this, &ManglerChat::chatWindowSendChat_clicked_cb));
-    
+
     builder->get_widget("chatMessage", chatMessage);
     chatMessage->set_activates_default(true);
-    
+
+    builder->get_widget("chatUserListTreeView", chatUserListView);
+    chatUserTreeModel = Gtk::ListStore::create(chatUserColumns);
+    chatUserListView->set_model(chatUserTreeModel);
+    chatUserListView->append_column("Name", chatUserColumns.name);
+
     builder->get_widget("chatBox", chatBox);
 }
 
@@ -60,11 +65,25 @@ void ManglerChat::chatWindowSendChat_clicked_cb() {
     }
 }
 
-void ManglerChat::AddMessage(Glib::ustring username, Glib::ustring message) {
+void ManglerChat::addMessage(Glib::ustring username, Glib::ustring message) {
     Glib::RefPtr<Gtk::TextBuffer> buffer = chatBox->get_buffer();
     buffer->set_text(buffer->get_text() + "[" + username + "]: " + message + "\n");
-    
+
     Gtk::TextIter end = buffer->end();
     Glib::RefPtr<Gtk::TextMark> end_mark = buffer->create_mark(end);
     chatBox->scroll_to(end_mark, 0.0);
+}
+
+void ManglerChat::addUser(uint16_t user_id) {
+    fprintf(stderr, "adding user id %d\n", user_id);
+    v3_user *u;
+    u = v3_get_user(user_id);
+    chatUserIter = chatUserTreeModel->append();
+    chatUserRow = *chatUserIter;
+    chatUserRow[chatUserColumns.id] = user_id;
+    chatUserRow[chatUserColumns.name] = u->name;
+    v3_free_user(u);
+}
+
+void ManglerChat::removeUser(uint16_t user_id) {
 }
