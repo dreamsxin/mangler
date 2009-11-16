@@ -179,7 +179,6 @@ ManglerChannelTree::updateUser(uint32_t id, uint32_t parent_id, Glib::ustring na
     Glib::ustring displayName = "";
     Gtk::TreeModel::Row user;
 
-
     if (id == 0) {
         updateLobby(name, comment, phonetic);
         return;
@@ -192,6 +191,9 @@ ManglerChannelTree::updateUser(uint32_t id, uint32_t parent_id, Glib::ustring na
     displayName = name;
     if (guest) {
         displayName = displayName + " (GUEST)";
+    }
+    if (mangler->chat->isUserInChat(id)) {
+        displayName = "[C] " + displayName;
     }
     if (! comment.empty()) {
         displayName = displayName + " (" + (url.empty() ? "" : "U: ") + comment + ")";

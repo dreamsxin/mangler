@@ -765,10 +765,48 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                 }
                 break;/*}}}*/
             case V3_EVENT_CHAT_JOIN:/*{{{*/
-                chat->addUser(ev->user.id);
+                {
+                    chat->addUser(ev->user.id);
+                    u = v3_get_user(ev->user.id);
+                    if (!u) {
+                        fprintf(stderr, "couldn't retreive user id %d\n", ev->user.id);
+                        break;
+                    }
+                    if (u->id != 0) {
+                        channelTree->updateUser(
+                                (uint32_t)u->id,
+                                (uint32_t)ev->channel.id,
+                                c_to_ustring(u->name),
+                                c_to_ustring(u->comment),
+                                u->phonetic,
+                                u->url,
+                                c_to_ustring(u->integration_text),
+                                (bool)u->guest);
+                    }
+                    v3_free_user(u);
+                }
                 break;/*}}}*/
             case V3_EVENT_CHAT_LEAVE:/*{{{*/
-                chat->removeUser(ev->user.id);
+                {
+                    chat->removeUser(ev->user.id);
+                    u = v3_get_user(ev->user.id);
+                    if (!u) {
+                        fprintf(stderr, "couldn't retreive user id %d\n", ev->user.id);
+                        break;
+                    }
+                    if (u->id != 0) {
+                        channelTree->updateUser(
+                                (uint32_t)u->id,
+                                (uint32_t)ev->channel.id,
+                                c_to_ustring(u->name),
+                                c_to_ustring(u->comment),
+                                u->phonetic,
+                                u->url,
+                                c_to_ustring(u->integration_text),
+                                (bool)u->guest);
+                    }
+                    v3_free_user(u);
+                }
                 break;/*}}}*/
             case V3_EVENT_CHAT_MESSAGE:/*{{{*/
                 if (v3_is_loggedin()) {
