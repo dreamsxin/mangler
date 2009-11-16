@@ -105,8 +105,8 @@ void ManglerChat::removeUser(uint16_t user_id) {
         row = *iter;
         uint32_t rowId = row[chatUserColumns.id];
         if (rowId == user_id) {
+            addMessage("* " + row[chatUserColumns.name] + " has left the chat.");
             chatUserTreeModel->erase(row);
-            addMessage("* " + nameFromId(user_id) + " has left the chat.");
             return;
         }
         iter++;
