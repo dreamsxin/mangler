@@ -332,8 +332,7 @@ void Mangler::commentButton_clicked_cb(void) {/*{{{*/
 }/*}}}*/
 void Mangler::chatButton_clicked_cb(void) {/*{{{*/
     if (v3_is_loggedin()) {
-        builder->get_widget("chatWindow", window);
-        if(!window->get_visible()) {
+        if(!chat->isOpen) {
             window->set_icon(icons["tray_icon"]);
             window->show();
         } else {
@@ -390,11 +389,11 @@ void Mangler::buttonMenuItem_toggled_cb(void) {/*{{{*/
     builder->get_widget("buttonMenuItem", checkmenuitem);
     builder->get_widget("mainWindowButtonVBox", vbox);
     if (checkmenuitem->get_active()) {
-        vbox->set_visible(false);
+        vbox->hide();
         settings->config.buttonsHidden = true;
     } else {
         settings->config.buttonsHidden = false;
-        vbox->set_visible(true);
+        vbox->show();
     }
     settings->config.save();
 }/*}}}*/
@@ -530,9 +529,9 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                 builder->get_widget("progressbar", progressbar);
                 builder->get_widget("statusbar", statusbar);
                 if (ev->status.percent == 100) {
-                    progressbar->set_visible(false);
+                    progressbar->hide();
                 } else {
-                    progressbar->set_visible(true);
+                    progressbar->show();
                     progressbar->set_fraction(ev->status.percent/(float)100);
                 }
                 statusbar->pop();
@@ -620,7 +619,7 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                         v3_set_text((char *) ustring_to_c(server->comment).c_str(), (char *) ustring_to_c(server->url).c_str(), (char *) ustring_to_c(integration_text).c_str(), true);
                     }
                     builder->get_widget("chatWindow", window);
-                    if(window->get_visible()) {
+                    if(chat->isOpen) {
                         v3_join_chat();
                     }
                 }

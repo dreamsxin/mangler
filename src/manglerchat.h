@@ -49,6 +49,7 @@ class ManglerChat {
         Gtk::Button   *button;
         Gtk::Entry    *chatMessage;
         Gtk::TextView *chatBox;
+        bool          isOpen;
 
         void chatWindow_show_cb(void);
         void chatWindow_hide_cb(void);

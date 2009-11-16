@@ -44,15 +44,18 @@ ManglerChat::ManglerChat(Glib::RefPtr<Gtk::Builder> builder) {
     chatUserListView->append_column("Name", chatUserColumns.name);
 
     builder->get_widget("chatBox", chatBox);
+    isOpen = false;
 }
 
 void ManglerChat::chatWindow_show_cb() {
+    isOpen = true;
     if(v3_is_loggedin()) {
         v3_join_chat();
     }
 }
 
 void ManglerChat::chatWindow_hide_cb() {
+    isOpen = false;
     if(v3_is_loggedin()) {
         v3_leave_chat();
     }
