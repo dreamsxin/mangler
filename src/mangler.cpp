@@ -597,6 +597,7 @@ bool Mangler::getNetworkEvent() {/*{{{*/
             case V3_EVENT_LOGIN_COMPLETE:/*{{{*/
                 if (v3_is_loggedin()) {
                     const v3_codec *codec_info;
+
                     codec_info = v3_get_channel_codec(0);
                     builder->get_widget("codecLabel", label);
                     label->set_text(codec_info->name);
@@ -608,6 +609,32 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                         comment = server->comment;
                         url = server->url;
                         v3_set_text((char *) ustring_to_c(server->comment).c_str(), (char *) ustring_to_c(server->url).c_str(), (char *) ustring_to_c(integration_text).c_str(), true);
+                    }
+                    builder->get_widget("chatWindow", window);
+                    if(window->get_visible()) {
+                        window->show();
+                        chat->addUser(v3_get_user_id());
+                        u = v3_get_user(v3_get_user_id());
+                        if (!u) {
+                            fprintf(stderr, "couldn't retreive user id %d\n", ev->user.id);
+                            break;
+                        }
+                        //fprintf(stderr, "updating user id %d: %s in channel %d\n", ev->user.id, u->name, ev->channel.id);
+                        // we cannot remove the lobby user, so bail out when the server comment is updated. See ticket #30
+                        if (u->id == 0) {
+                            channelTree->updateLobby(c_to_ustring(u->name), c_to_ustring(u->comment), u->phonetic);
+                        } else {
+                            channelTree->updateUser(
+                                    (uint32_t)u->id,
+                                    (uint32_t)ev->channel.id,
+                                    c_to_ustring(u->name),
+                                    c_to_ustring(u->comment),
+                                    u->phonetic,
+                                    u->url,
+                                    c_to_ustring(u->integration_text),
+                                    (bool)u->guest);
+                        }
+                        v3_free_user(u);
                     }
                 }
                 break;/*}}}*/
