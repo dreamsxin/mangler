@@ -612,29 +612,7 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                     }
                     builder->get_widget("chatWindow", window);
                     if(window->get_visible()) {
-                        window->show();
-                        chat->addUser(v3_get_user_id());
-                        u = v3_get_user(v3_get_user_id());
-                        if (!u) {
-                            fprintf(stderr, "couldn't retreive user id %d\n", ev->user.id);
-                            break;
-                        }
-                        //fprintf(stderr, "updating user id %d: %s in channel %d\n", ev->user.id, u->name, ev->channel.id);
-                        // we cannot remove the lobby user, so bail out when the server comment is updated. See ticket #30
-                        if (u->id == 0) {
-                            channelTree->updateLobby(c_to_ustring(u->name), c_to_ustring(u->comment), u->phonetic);
-                        } else {
-                            channelTree->updateUser(
-                                    (uint32_t)u->id,
-                                    (uint32_t)ev->channel.id,
-                                    c_to_ustring(u->name),
-                                    c_to_ustring(u->comment),
-                                    u->phonetic,
-                                    u->url,
-                                    c_to_ustring(u->integration_text),
-                                    (bool)u->guest);
-                        }
-                        v3_free_user(u);
+                        v3_join_chat();
                     }
                 }
                 break;/*}}}*/
