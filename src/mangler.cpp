@@ -584,6 +584,7 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                     // can't get any user info... it's already gone by this point
                     //fprintf(stderr, "removing user id %d\n", ev->user.id);
                     channelTree->removeUser(ev->user.id);
+                    chat->removeUser(ev->user.id);
                 }
                 break;/*}}}*/
             case V3_EVENT_CHAN_REMOVE:/*{{{*/
@@ -767,8 +768,7 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                 chat->addUser(ev->user.id);
                 break;/*}}}*/
             case V3_EVENT_CHAT_LEAVE:/*{{{*/
-                if (v3_is_loggedin()) {
-                }
+                chat->removeUser(ev->user.id);
                 break;/*}}}*/
             case V3_EVENT_CHAT_MESSAGE:/*{{{*/
                 if (v3_is_loggedin()) {

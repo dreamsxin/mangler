@@ -56,7 +56,9 @@ class ManglerChat {
 
         void addMessage(Glib::ustring username, Glib::ustring message);
         void addUser(uint16_t user_id);
+        void clear(void);
         void removeUser(uint16_t user_id);
+        bool isUserInChat(uint16_t user_id);
 
 };
 

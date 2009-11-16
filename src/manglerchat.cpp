@@ -75,7 +75,9 @@ void ManglerChat::addMessage(Glib::ustring username, Glib::ustring message) {
 }
 
 void ManglerChat::addUser(uint16_t user_id) {
-    fprintf(stderr, "adding user id %d\n", user_id);
+    if (isUserInChat(user_id)) {
+        return;
+    }
     v3_user *u;
     u = v3_get_user(user_id);
     chatUserIter = chatUserTreeModel->append();
@@ -86,4 +88,35 @@ void ManglerChat::addUser(uint16_t user_id) {
 }
 
 void ManglerChat::removeUser(uint16_t user_id) {
+    Gtk::TreeModel::Row row;
+    Gtk::TreeModel::Children::iterator iter = chatUserTreeModel->children().begin();
+
+    while (iter != chatUserTreeModel->children().end()) {
+        row = *iter;
+        uint32_t rowId = row[chatUserColumns.id];
+        if (rowId == user_id) {
+            chatUserTreeModel->erase(row);
+        }
+        iter++;
+    }
+    return;
+}
+
+void ManglerChat::clear(void) {
+    chatUserTreeModel->clear();
+}
+
+bool ManglerChat::isUserInChat(uint16_t user_id) {
+    Gtk::TreeModel::Row row;
+    Gtk::TreeModel::Children::iterator iter = chatUserTreeModel->children().begin();
+
+    while (iter != chatUserTreeModel->children().end()) {
+        row = *iter;
+        uint32_t rowId = row[chatUserColumns.id];
+        if (rowId == user_id) {
+            return true;
+        }
+        iter++;
+    }
+    return false;
 }
