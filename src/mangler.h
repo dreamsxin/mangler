@@ -48,6 +48,8 @@ class Mangler
 {
     public:
         Mangler(struct _cli_options *options);
+        void startTransmit(void);
+        void stopTransmit(void);
         void initialize(void);
         Gtk::Window                         *manglerWindow;
         Glib::RefPtr<Gtk::Builder>          builder;
@@ -65,6 +67,7 @@ class Mangler
         Gtk::VBox                           *vbox;
         Gtk::CheckMenuItem                  *checkmenuitem;
         Gtk::MenuItem                       *menuitem;
+
         std::map<Glib::ustring, Glib::RefPtr<Gdk::Pixbuf> >  icons;
         Glib::RefPtr<Gtk::StatusIcon>       statusIcon;
         ManglerServerList                   *serverList;
@@ -128,8 +131,7 @@ class Mangler
         bool checkPushToTalkKeys(void);
         bool checkPushToTalkMouse(void);
 
-        void startTransmit(void);
-        void stopTransmit(void);
+
 
 
         // quick connect signal handlers
@@ -166,6 +168,7 @@ class ManglerError
 
 Glib::ustring c_to_ustring(char *input);
 std::string ustring_to_c(Glib::ustring input);
+GdkFilterReturn ptt_filter(GdkXEvent *gdk_xevent, GdkEvent *event, gpointer data);
 
 extern Mangler *mangler;
 

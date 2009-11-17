@@ -197,7 +197,7 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
     isTransmittingKey = 0;
     isTransmitting = 0;
     Glib::signal_timeout().connect(sigc::mem_fun(this, &Mangler::checkPushToTalkKeys), 100);
-    Glib::signal_timeout().connect(sigc::mem_fun(this, &Mangler::checkPushToTalkMouse), 100);
+    // mouse PTT is done with the gtk event filter
     if (settings->config.windowWidth > 0 && settings->config.windowHeight > 0) {
         manglerWindow->set_default_size(settings->config.windowWidth, settings->config.windowHeight);
     }
@@ -235,6 +235,12 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
     statusIcon->signal_activate().connect(sigc::mem_fun(this, &Mangler::statusIcon_activate_cb));
     iconified = false;
 
+    // Set up mouse push to talk
+    if (settings->config.PushToTalkMouseEnabled && settings->config.PushToTalkMouseValueInt) {
+        GdkWindow   *rootwin = gdk_get_default_root_window();
+        XGrabButton(GDK_WINDOW_XDISPLAY(rootwin), settings->config.PushToTalkMouseValueInt, AnyModifier, GDK_ROOT_WINDOW(), False, ButtonPressMask|ButtonReleaseMask, GrabModeAsync, GrabModeAsync, None, None);
+    }
+    gdk_window_add_filter (NULL, ptt_filter, NULL);
 }/*}}}*/
 
 /*
@@ -867,45 +873,26 @@ bool Mangler::checkPushToTalkKeys(void) {/*{{{*/
     return(true);
 
 }/*}}}*/
-bool Mangler::checkPushToTalkMouse(void) {/*{{{*/
-    GdkWindow   *rootwin = gdk_get_default_root_window();
+GdkFilterReturn ptt_filter(GdkXEvent *gdk_xevent, GdkEvent *event, gpointer data) {/*{{{*/
+    XEvent *xevent = (XEvent *)gdk_xevent;
 
-    Window root_return, child_return;
-    int root_x_return, root_y_return;
-    int win_x_return, win_y_return;
-    unsigned int mask_return;
-
-    bool        ptt_on = false;
-
-    if (! settings->config.PushToTalkMouseEnabled) {
-        isTransmittingKey = false;
-        return true;
+    if (! mangler) {
+        return GDK_FILTER_CONTINUE;
     }
-    XQueryPointer(GDK_WINDOW_XDISPLAY(rootwin), GDK_ROOT_WINDOW(), &root_return, &child_return, &root_x_return, &root_y_return, &win_x_return, &win_y_return, &mask_return);
-    if (settings->config.PushToTalkMouseValue == "Button1" &&  mask_return & Button1Mask) {
-        ptt_on = true;
-    } else if (settings->config.PushToTalkMouseValue == "Button2" &&  mask_return & Button2Mask) {
-        ptt_on = true;
-    } else if (settings->config.PushToTalkMouseValue == "Button3" &&  mask_return & Button3Mask) {
-        ptt_on = true;
-    } else if (settings->config.PushToTalkMouseValue == "Button4" &&  mask_return & Button4Mask) {
-        ptt_on = true;
-    } else if (settings->config.PushToTalkMouseValue == "Button5" &&  mask_return & Button5Mask) {
-        ptt_on = true;
-    } else {
-        ptt_on = false;
+    if (! mangler->settings->config.PushToTalkMouseEnabled) {
+        mangler->isTransmittingKey = false;
+        return GDK_FILTER_CONTINUE;
     }
-    if (ptt_on) {
-        isTransmittingMouse = true;
-        startTransmit();
-    } else {
-        isTransmittingMouse = false;
-        if (! isTransmittingButton && ! isTransmittingKey) {
-            stopTransmit();
-        }
+    if (xevent->type == ButtonPress && xevent->xbutton.button == mangler->settings->config.PushToTalkMouseValueInt) {
+        mangler->startTransmit();
+        mangler->isTransmittingMouse = true;
+        return GDK_FILTER_CONTINUE;
+    } else if ((xevent->type == ButtonRelease) && (xevent->xbutton.button == mangler->settings->config.PushToTalkMouseValueInt)) {
+        mangler->stopTransmit();
+        mangler->isTransmittingMouse = false;
+        return GDK_FILTER_CONTINUE;
     }
-    return(true);
-
+    return GDK_FILTER_CONTINUE;
 }/*}}}*/
 
 Glib::ustring Mangler::getPasswordEntry(Glib::ustring title, Glib::ustring prompt) {/*{{{*/
@@ -1100,3 +1087,4 @@ Glib::ustring iso_8859_1_to_utf8 (char *input) {/*{{{*/
     }
     return output;
 }/*}}}*/
+

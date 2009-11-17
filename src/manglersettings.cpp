@@ -92,6 +92,8 @@ ManglerSettings::ManglerSettings(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
 }/*}}}*/
 void ManglerSettings::applySettings(void) {/*{{{*/
     Gtk::TreeModel::iterator iter;
+    GdkWindow   *rootwin = gdk_get_default_root_window();
+
 
     // Push to Talk
     builder->get_widget("settingsEnablePTTKeyCheckButton", checkbutton);
@@ -105,6 +107,14 @@ void ManglerSettings::applySettings(void) {/*{{{*/
     config.PushToTalkMouseEnabled = checkbutton->get_active() ? true : false;
     builder->get_widget("settingsPTTMouseValueLabel", label);
     config.PushToTalkMouseValue = label->get_text();
+    if (config.PushToTalkMouseValue.length() > 6) {
+        config.PushToTalkMouseValueInt = atoi(config.PushToTalkMouseValue.substr(6).c_str());
+    }
+    XUngrabButton(GDK_WINDOW_XDISPLAY(rootwin), AnyButton, AnyModifier, GDK_ROOT_WINDOW());
+    XAllowEvents (GDK_WINDOW_XDISPLAY(rootwin), AsyncBoth, CurrentTime);
+    if (checkbutton->get_active()) {
+        XGrabButton(GDK_WINDOW_XDISPLAY(rootwin), config.PushToTalkMouseValueInt, AnyModifier, GDK_ROOT_WINDOW(), False, ButtonPressMask|ButtonReleaseMask, GrabModeAsync, GrabModeAsync, None, None);
+    }
 
     // Audio Player Integration
     builder->get_widget("settingsEnableAudioIntegrationCheckButton", checkbutton);
@@ -184,6 +194,7 @@ void ManglerSettings::applySettings(void) {/*{{{*/
     debuglevel |= checkbutton->get_active() ? V3_DEBUG_PACKET_ENCRYPTED : 0;
 
     config.lv3_debuglevel = debuglevel;
+
     v3_debuglevel(debuglevel);
     config.save();
 }/*}}}*/
@@ -507,6 +518,7 @@ ManglerSettings::settingsPTTMouseDetect(void) {/*{{{*/
     static bool grabbed = false;
     int flag = 0;
     int x, y;
+    int mousebutton;
     XEvent ev;
 
 
@@ -515,6 +527,7 @@ ManglerSettings::settingsPTTMouseDetect(void) {/*{{{*/
         return false;
     }
     if (! grabbed) {
+        XUngrabPointer(GDK_WINDOW_XDISPLAY(rootwin), CurrentTime);
         XGrabPointer(GDK_WINDOW_XDISPLAY(rootwin), GDK_ROOT_WINDOW(), False, ButtonPress, GrabModeAsync, GrabModeAsync, None, None, CurrentTime);
         grabbed = true;
     }
@@ -525,6 +538,7 @@ ManglerSettings::settingsPTTMouseDetect(void) {/*{{{*/
         XNextEvent(GDK_WINDOW_XDISPLAY(rootwin), &ev);
         switch (ev.type) {
             case ButtonPress:
+                mousebutton = ev.xbutton.button;
                 snprintf(buttonname, 31, "Button%d", ev.xbutton.button);
                 config.PushToTalkMouseValue = buttonname;
                 flag = 1;

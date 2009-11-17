@@ -73,6 +73,7 @@ class ManglerConfig {
                 std::vector<int>     PushToTalkXKeyCodes;
 		bool            PushToTalkMouseEnabled;
                 Glib::ustring   PushToTalkMouseValue;
+                int             PushToTalkMouseValueInt;
 		bool            AudioIntegrationEnabled;
                 Glib::ustring   AudioIntegrationPlayer;
                 Glib::ustring   inputDeviceName;
