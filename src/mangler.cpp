@@ -795,7 +795,7 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                     if (u->id != 0) {
                         channelTree->updateUser(
                                 (uint32_t)u->id,
-                                (uint32_t)ev->channel.id,
+                                (uint32_t)u->channel,
                                 c_to_ustring(u->name),
                                 c_to_ustring(u->comment),
                                 u->phonetic,
@@ -817,7 +817,7 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                     if (u->id != 0) {
                         channelTree->updateUser(
                                 (uint32_t)u->id,
-                                (uint32_t)ev->channel.id,
+                                (uint32_t)u->channel,
                                 c_to_ustring(u->name),
                                 c_to_ustring(u->comment),
                                 u->phonetic,
