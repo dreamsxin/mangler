@@ -1,6 +1,9 @@
 
 ACLOCAL_AMFLAGS = -I m4
 
+icondir = $(datadir)/pixmaps
+desktopdir = $(datadir)/applications
+
 manglerui:
 	echo -n "char ManglerUI[] = " > manglerui.h
 	cat mangler.ui  | sed 's/"/\\"/g' | sed 's/^/"/' | sed 's/$$/\\n"/' >> manglerui.h
@@ -8,16 +11,14 @@ manglerui:
 
 
 bin_PROGRAMS = mangler
+icon_DATA = ../icons/mangler_logo.svg 
+desktop_DATA = ../mangler.desktop
 
 mangler_SOURCES = manglerui.h mangler.cpp channeltree.cpp  mangleraudio.cpp  manglernetwork.cpp  manglerserverlist.cpp  manglersettings.cpp manglerconfig.cpp manglerchat.cpp
 
 mangler_LDADD = @top_srcdir@/libventrilo3/libventrilo3.la $(gtkmm_LIBS) $(gthread_LIBS) $(pulse_LIBS) $(speex_LIBS)
 
 INCLUDES = -I@top_srcdir@/libventrilo3/ -I@top_srcdir@/icons/ -I@top_srcdir@/sounds/ $(gtkmm_CFLAGS) $(gthread_CFLAGS) $(pulse_CFLAGS) $(speex_CFLAGS)
-
-install-data-hook:
-	../install-sh -m 644 ../icons/mangler_logo.svg /usr/share/pixmaps/mangler.svg
-	../install-sh -m 644 ../mangler.desktop /usr/share/applications/mangler.desktop
 
 dev:
 	cd ../libventrilo3 && make dev
