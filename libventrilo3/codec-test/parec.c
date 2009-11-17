@@ -57,7 +57,7 @@ int main(int argc, char*argv[]) {
     /* The sample type to use */
     static const pa_sample_spec ss = {
         .format = PA_SAMPLE_S16LE,
-        .rate = 44100,
+        .rate = 32000,
         .channels = 1
     };
     pa_simple *s = NULL;

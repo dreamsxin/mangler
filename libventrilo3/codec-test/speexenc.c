@@ -46,7 +46,8 @@ int main(int argc, char **argv)
 
       /*Write the size of the frame first. This is what sampledec expects but
        it's likely to be different in your own application*/
-      nbBytes = htons(nbBytes);
+      fprintf(stderr, "nbBytes sent: %d\n", nbBytes);
+      //nbBytes = htons(nbBytes);
       fwrite(&nbBytes, sizeof(short), 1, stdout);
       /*Write the compressed data*/
       fwrite(cbits, 1, nbBytes, stdout);
