@@ -208,6 +208,9 @@ void ManglerConfig::load() {/*{{{*/
     parsePushToTalkValue(PushToTalkKeyValue);
     PushToTalkMouseEnabled        = get("PushToTalkMouseEnabled") == "0" ? false : true;
     PushToTalkMouseValue          = get("PushToTalkMouseValue");
+    if (PushToTalkMouseValue.length() > 6) {
+        PushToTalkMouseValueInt = atoi(PushToTalkMouseValue.substr(6).c_str());
+    }
     AudioIntegrationEnabled       = get("AudioIntegrationEnabled") == "0" ? false : true;
     AudioIntegrationPlayer        = get("AudioIntegrationPlayer");
     inputDeviceName               = get("inputDeviceName");
