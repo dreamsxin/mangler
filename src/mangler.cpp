@@ -339,10 +339,10 @@ void Mangler::commentButton_clicked_cb(void) {/*{{{*/
 void Mangler::chatButton_clicked_cb(void) {/*{{{*/
     if (v3_is_loggedin()) {
         if(!chat->isOpen) {
-            window->set_icon(icons["tray_icon"]);
-            window->show();
+            chat->chatWindow->set_icon(icons["tray_icon"]);
+            chat->chatWindow->show();
         } else {
-            window->present();
+            chat->chatWindow->present();
         }
     }
 }/*}}}*/
