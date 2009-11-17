@@ -15,6 +15,10 @@ mangler_LDADD = @top_srcdir@/libventrilo3/libventrilo3.la $(gtkmm_LIBS) $(gthrea
 
 INCLUDES = -I@top_srcdir@/libventrilo3/ -I@top_srcdir@/icons/ -I@top_srcdir@/sounds/ $(gtkmm_CFLAGS) $(gthread_CFLAGS) $(pulse_CFLAGS) $(speex_CFLAGS)
 
+install-data-hook:
+	../install-sh -m 644 ../icons/mangler_logo.svg /usr/share/pixmaps/mangler.svg
+	../install-sh -m 644 ../mangler.desktop /usr/share/applications/mangler.desktop
+
 dev:
 	cd ../libventrilo3 && make dev
 	gcc -g -Wall -o mangler -I../ -I../libventrilo3/ -I../icons/ -I ../sounds/ -pthread \
