@@ -37,11 +37,13 @@ rm -rf $RPM_BUILD_ROOT
 %files
 %defattr(-,root,root,-)
 /usr/bin/mangler
-/usr/lib/libventrilo3.a
-/usr/lib/libventrilo3.la
-/usr/lib/libventrilo3.so
-/usr/lib/libventrilo3.so.0
-/usr/lib/libventrilo3.so.0.0.0
+/usr/lib64/libventrilo3.a
+/usr/lib64/libventrilo3.la
+/usr/lib64/libventrilo3.so
+/usr/lib64/libventrilo3.so.0
+/usr/lib64/libventrilo3.so.0.0.0
+/usr/share/applications/mangler.desktop
+/usr/share/pixmaps/mangler_logo.svg
 %doc
 
 
