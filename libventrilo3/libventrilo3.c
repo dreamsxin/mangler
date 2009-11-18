@@ -1964,6 +1964,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                             // don't waste resources if we don't need to deal with it
                             if (_v3_user_volumes[ev->user.id] != 79) {
                                 float multiplier = tan(_v3_user_volumes[ev->user.id]/100.0);
+                                _v3_debug(V3_DEBUG_INFO, "amplifying to level %d (%3.10f multiplier)", _v3_user_volumes[ev->user.id], multiplier);
                                 for (volumectr = 0; volumectr < ev->pcm.length / 2; volumectr++) {
                                     ev->data.sample16[volumectr] *= multiplier;
                                 }
