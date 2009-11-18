@@ -68,7 +68,7 @@ ManglerChannelTree::ManglerChannelTree(Glib::RefPtr<Gtk::Builder> builder)/*{{{*
      * We have to finish off our user settings window.  I can't find a way to
      * do this in builder, so let's pack our volume adjustment manually
      */
-    volumeAdjustment = new Gtk::Adjustment(79, 0, 138, 1, 10, 10);
+    volumeAdjustment = new Gtk::Adjustment(79, 0, 148, 1, 10, 10);
     volumevscale = new Gtk::VScale(*volumeAdjustment);
     volumevscale->add_mark(79, Gtk::POS_LEFT, "100%");
     volumevscale->set_inverted(true);
