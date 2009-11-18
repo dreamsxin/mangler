@@ -1,6 +1,9 @@
 
 ACLOCAL_AMFLAGS = -I m4
 
+icondir = $(datadir)/pixmaps
+desktopdir = $(datadir)/applications
+
 manglerui:
 	echo -n "char ManglerUI[] = " > manglerui.h
 	cat mangler.ui  | sed 's/"/\\"/g' | sed 's/^/"/' | sed 's/$$/\\n"/' >> manglerui.h
@@ -8,6 +11,8 @@ manglerui:
 
 
 bin_PROGRAMS = mangler
+icon_DATA = ../icons/mangler_logo.svg 
+desktop_DATA = ../mangler.desktop
 
 mangler_SOURCES = manglerui.h mangler.cpp channeltree.cpp  mangleraudio.cpp  manglernetwork.cpp  manglerserverlist.cpp  manglersettings.cpp manglerconfig.cpp
 
