@@ -6,6 +6,9 @@
     <property name="title" translatable="yes">Mangler</property>
     <property name="default_width">500</property>
     <property name="default_height">400</property>
+    <accel-groups>
+      <group name="accelGroupClose"/>
+    </accel-groups>
     <child>
       <object class="GtkVBox" id="vbox1">
         <property name="visible">True</property>
@@ -41,6 +44,7 @@
                         <property name="visible">True</property>
                         <property name="use_underline">True</property>
                         <property name="use_stock">True</property>
+                        <property name="accel_group">accelGroupClose</property>
                       </object>
                     </child>
                   </object>
@@ -160,7 +164,7 @@
                     </child>
                     <child>
                       <object class="GtkButton" id="serverConfigButton">
-                        <property name="label" translatable="yes">Server Config</property>
+                        <property name="label" translatable="yes">_Server Config</property>
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
@@ -175,7 +179,7 @@
                     </child>
                     <child>
                       <object class="GtkButton" id="settingsButton">
-                        <property name="label" translatable="yes">_Settings</property>
+                        <property name="label" translatable="yes">Se_ttings</property>
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
@@ -190,7 +194,7 @@
                     </child>
                     <child>
                       <object class="GtkButton" id="commentButton">
-                        <property name="label" translatable="yes">Comment</property>
+                        <property name="label" translatable="yes">Co_mment</property>
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
@@ -205,7 +209,7 @@
                     </child>
                     <child>
                       <object class="GtkButton" id="chatButton">
-                        <property name="label" translatable="yes">Chat</property>
+                        <property name="label" translatable="yes">_Chat</property>
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
@@ -245,7 +249,7 @@
                     </child>
                     <child>
                       <object class="GtkButton" id="aboutButton">
-                        <property name="label" translatable="yes">About</property>
+                        <property name="label" translatable="yes">Abo_ut</property>
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
@@ -1996,10 +2000,11 @@ Notifications are the sound effects that are played when you login, logout, a us
                 <property name="visible">True</property>
                 <child>
                   <object class="GtkButton" id="settingsCancelButton">
-                    <property name="label" translatable="yes">Cancel</property>
+                    <property name="label" translatable="yes">_Cancel</property>
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
                     <property name="receives_default">True</property>
+                    <property name="use_underline">True</property>
                   </object>
                   <packing>
                     <property name="expand">False</property>
@@ -2009,10 +2014,11 @@ Notifications are the sound effects that are played when you login, logout, a us
                 </child>
                 <child>
                   <object class="GtkButton" id="settingsApplyButton">
-                    <property name="label" translatable="yes">Apply</property>
+                    <property name="label" translatable="yes">_Apply</property>
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
                     <property name="receives_default">True</property>
+                    <property name="use_underline">True</property>
                   </object>
                   <packing>
                     <property name="expand">False</property>
@@ -2022,10 +2028,11 @@ Notifications are the sound effects that are played when you login, logout, a us
                 </child>
                 <child>
                   <object class="GtkButton" id="settingsOkButton">
-                    <property name="label" translatable="yes">OK</property>
+                    <property name="label" translatable="yes">_OK</property>
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
                     <property name="receives_default">True</property>
+                    <property name="use_underline">True</property>
                   </object>
                   <packing>
                     <property name="expand">False</property>
@@ -2595,4 +2602,5 @@ Notifications are the sound effects that are played when you login, logout, a us
     <property name="visible">True</property>
     <property name="stock">gtk-properties</property>
   </object>
+  <object class="GtkAccelGroup" id="accelGroupClose"/>
 </interface>
