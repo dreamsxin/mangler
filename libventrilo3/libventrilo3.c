@@ -2878,11 +2878,11 @@ v3_get_channel_codec(uint16_t channel_id) {/*{{{*/
     const v3_codec *codec_info;
 
     _v3_func_enter("v3_get_channel_codec");
-    if (channel_id == 0) { // the lobby is always the default codec
+    c = v3_get_channel(channel_id);
+    if (channel_id == 0 || c == NULL) { // the lobby is always the default codec
         _v3_func_leave("v3_get_channel_codec");
         return v3_get_codec(v3_server.codec, v3_server.codec_format);
     }
-    c = v3_get_channel(channel_id);
     _v3_debug(V3_DEBUG_INFO, "getting codec for %d/%d", c->channel_codec, c->channel_format);
     if (c->channel_codec == 65535 || c->channel_format == 65535) {
         _v3_debug(V3_DEBUG_INFO, "getting server default codec");
