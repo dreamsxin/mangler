@@ -1574,7 +1574,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                 v3_free_user(user);
                 v3_event *ev = _v3_create_event(V3_EVENT_USER_CHAN_MOVE);
                 ev->user.id = m->user_id;
-                ev->channel.id = v3_channel_count() ? m->channel_id : 0;
+                ev->channel.id = m->channel_id;
                 v3_queue_event(ev);
             }
             _v3_destroy_packet(msg);
@@ -1998,7 +1998,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                 v3_free_user(user);
                 v3_event *ev = _v3_create_event(V3_EVENT_USER_CHAN_MOVE);
                 ev->user.id = m->user_id;
-                ev->channel.id = v3_channel_count() ? m->channel_id : 0;
+                ev->channel.id = m->channel_id;
                 v3_queue_event(ev);
             }
             _v3_destroy_packet(msg);
@@ -2752,6 +2752,10 @@ v3_queue_event(v3_event *ev) {/*{{{*/
         return true;
     }
     pthread_mutex_lock(eventq_mutex);
+    // if we're not allowed to see channels, gui should think any channel is the lobby
+    if(!v3_luser.perms.see_chan_list || !v3_channel_count()) {
+        ev->channel.id = 0;    
+    }
     ev->next = NULL;
     ev->timestamp = time(NULL);
     // if this returns null, there's no events in the queue
