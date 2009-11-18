@@ -1553,7 +1553,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                 memset(ev, 0, sizeof(v3_event));
                 ev->type = V3_EVENT_USER_CHAN_MOVE;
                 ev->user.id = m->user_id;
-                ev->channel.id = m->channel_id;
+                ev->channel.id = v3_channel_count() ? m->channel_id : 0;
                 v3_queue_event(ev);
             }
             _v3_destroy_packet(msg);
@@ -1950,7 +1950,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                 memset(ev, 0, sizeof(v3_event));
                 ev->type = V3_EVENT_USER_CHAN_MOVE;
                 ev->user.id = m->user_id;
-                ev->channel.id = m->channel_id;
+                ev->channel.id = v3_channel_count() ? m->channel_id : 0;
                 v3_queue_event(ev);
             }
             _v3_destroy_packet(msg);
