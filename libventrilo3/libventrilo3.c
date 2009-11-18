@@ -1553,7 +1553,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                 memset(ev, 0, sizeof(v3_event));
                 ev->type = V3_EVENT_USER_CHAN_MOVE;
                 ev->user.id = m->user_id;
-                ev->channel.id = v3_channel_count() ? m->channel_id : 0;
+                ev->channel.id = m->channel_id;
                 v3_queue_event(ev);
             }
             _v3_destroy_packet(msg);
@@ -1950,7 +1950,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                 memset(ev, 0, sizeof(v3_event));
                 ev->type = V3_EVENT_USER_CHAN_MOVE;
                 ev->user.id = m->user_id;
-                ev->channel.id = v3_channel_count() ? m->channel_id : 0;
+                ev->channel.id = m->channel_id;
                 v3_queue_event(ev);
             }
             _v3_destroy_packet(msg);
@@ -2644,6 +2644,10 @@ v3_queue_event(v3_event *ev) {/*{{{*/
         return true;
     }
     pthread_mutex_lock(eventq_mutex);
+    // if we're not allowed to see channels, gui should think any channel is the lobby
+    if(!v3_luser.perms.see_chan_list || !v3_channel_count()) {
+        ev->channel.id = 0;    
+    }
     ev->next = NULL;
     ev->timestamp = time(NULL);
     // if this returns null, there's no events in the queue
@@ -2756,11 +2760,11 @@ v3_get_channel_codec(uint16_t channel_id) {/*{{{*/
     const v3_codec *codec_info;
 
     _v3_func_enter("v3_get_channel_codec");
-    if (channel_id == 0) { // the lobby is always the default codec
+    c = v3_get_channel(channel_id);
+    if (channel_id == 0 || c == NULL) { // the lobby is always the default codec
         _v3_func_leave("v3_get_channel_codec");
         return v3_get_codec(v3_server.codec, v3_server.codec_format);
     }
-    c = v3_get_channel(channel_id);
     _v3_debug(V3_DEBUG_INFO, "getting codec for %d/%d", c->channel_codec, c->channel_format);
     if (c->channel_codec == 65535 || c->channel_format == 65535) {
         _v3_debug(V3_DEBUG_INFO, "getting server default codec");
