@@ -665,13 +665,13 @@ _v3_get_0x52(_v3_net_message *msg) {/*{{{*/
                                 _v3_debug(V3_DEBUG_PACKET_PARSE, "received audio packet with zero frames");
                                 return false;
                             }
-                            _v3_debug(V3_DEBUG_PACKET_PARSE, "speex audio count: %d (%d byte frames)", data->frame_count, msub->data_length / data->frame_count);
+                            _v3_debug(V3_DEBUG_PACKET_PARSE, "speex audio count: %d (%d byte frames)", data->frame_count, (msub->data_length - 4) / data->frame_count);
                             _v3_debug(V3_DEBUG_PACKET_PARSE, "allocating %d bytes for pointers", data->frame_count * sizeof(uint8_t *));
                             data->frames = malloc(data->frame_count * sizeof(uint8_t *));
-                            for (ctr = 0, offset = 32; ctr < data->frame_count; ctr++, offset += msub->data_length / data->frame_count) {
-                                _v3_debug(V3_DEBUG_PACKET_PARSE, "allocating %d bytes for frame", msub->data_length / data->frame_count);
-                                data->frames[ctr] = malloc(msub->data_length / data->frame_count);
-                                memcpy(data->frames[ctr], msg->data+offset, msub->data_length / data->frame_count);
+                            for (ctr = 0, offset = 32; ctr < data->frame_count; ctr++, offset += (msub->data_length - 4) / data->frame_count) {
+                                _v3_debug(V3_DEBUG_PACKET_PARSE, "allocating %d bytes for frame", (msub->data_length - 4) / data->frame_count);
+                                data->frames[ctr] = malloc((msub->data_length - 4) / data->frame_count);
+                                memcpy(data->frames[ctr], msg->data+offset, (msub->data_length - 4) / data->frame_count);
                             }
 
                             msub->data = data;
@@ -738,11 +738,12 @@ _v3_put_0x52(uint8_t subtype, uint16_t codec, uint16_t codec_format, uint16_t se
             msgdata = malloc(sizeof(_v3_msg_0x52_0x01_out));
             memset(msgdata, 0, sizeof(_v3_msg_0x52_0x01_out));
             msg->len = sizeof(_v3_msg_0x52_0x01_out) - sizeof(void *) + length;
-            _v3_debug(V3_DEBUG_PACKET_PARSE, "setting unknown 2 to %d", length / 65 * 640 + 1000);
             // TODO: we really need to figure out what these values are
             if (codec == 0) {
+                _v3_debug(V3_DEBUG_PACKET_PARSE, "setting unknown 2 to %d", length / 65 * 640 + 1000);
                 msgdata->unknown_2 = length / 65 * 640 + 1000;
             } else if (codec == 3) {
+                _v3_debug(V3_DEBUG_PACKET_PARSE, "setting unknown 2 to %d", 9240 + 1000);
                 msgdata->unknown_2 = 10240;
             }
             msgdata->unknown_4 = htons(1);
