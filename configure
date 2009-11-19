@@ -887,6 +887,7 @@ enable_fast_install
 with_gnu_ld
 enable_libtool_lock
 enable_glibtest
+with_pulseaudio
 '
       ac_precious_vars='build_alias
 host_alias
@@ -1546,6 +1547,7 @@ Optional Packages:
   --with-pic              try to use only PIC/non-PIC objects [default=use
                           both]
   --with-gnu-ld           assume the C compiler uses GNU ld [default=no]
+  --without-pulseaudio    disable support for pulseaudio
 
 Some influential environment variables:
   CXX         C++ compiler command
@@ -5409,13 +5411,13 @@ if test "${lt_cv_nm_interface+set}" = set; then :
 else
   lt_cv_nm_interface="BSD nm"
   echo "int some_variable = 0;" > conftest.$ac_ext
-  (eval echo "\"\$as_me:5412: $ac_compile\"" >&5)
+  (eval echo "\"\$as_me:5414: $ac_compile\"" >&5)
   (eval "$ac_compile" 2>conftest.err)
   cat conftest.err >&5
-  (eval echo "\"\$as_me:5415: $NM \\\"conftest.$ac_objext\\\"\"" >&5)
+  (eval echo "\"\$as_me:5417: $NM \\\"conftest.$ac_objext\\\"\"" >&5)
   (eval "$NM \"conftest.$ac_objext\"" 2>conftest.err > conftest.out)
   cat conftest.err >&5
-  (eval echo "\"\$as_me:5418: output\"" >&5)
+  (eval echo "\"\$as_me:5420: output\"" >&5)
   cat conftest.out >&5
   if $GREP 'External.*some_variable' conftest.out > /dev/null; then
     lt_cv_nm_interface="MS dumpbin"
@@ -6610,7 +6612,7 @@ ia64-*-hpux*)
   ;;
 *-*-irix6*)
   # Find out which ABI we are using.
-  echo '#line 6613 "configure"' > conftest.$ac_ext
+  echo '#line 6615 "configure"' > conftest.$ac_ext
   if { { eval echo "\"\$as_me\":${as_lineno-$LINENO}: \"$ac_compile\""; } >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -8530,11 +8532,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:8533: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:8535: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:8537: \$? = $ac_status" >&5
+   echo "$as_me:8539: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -8869,11 +8871,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:8872: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:8874: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:8876: \$? = $ac_status" >&5
+   echo "$as_me:8878: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -8974,11 +8976,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:8977: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:8979: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:8981: \$? = $ac_status" >&5
+   echo "$as_me:8983: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -9029,11 +9031,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:9032: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:9034: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:9036: \$? = $ac_status" >&5
+   echo "$as_me:9038: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -11409,7 +11411,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<_LT_EOF
-#line 11412 "configure"
+#line 11414 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -11505,7 +11507,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<_LT_EOF
-#line 11508 "configure"
+#line 11510 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -13461,11 +13463,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:13464: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:13466: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:13468: \$? = $ac_status" >&5
+   echo "$as_me:13470: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -13560,11 +13562,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:13563: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:13565: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:13567: \$? = $ac_status" >&5
+   echo "$as_me:13569: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -13612,11 +13614,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:13615: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:13617: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:13619: \$? = $ac_status" >&5
+   echo "$as_me:13621: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -15749,6 +15751,17 @@ fi
 
 
 
+# Check whether --with-pulseaudio was given.
+if test "${with_pulseaudio+set}" = set; then :
+  withval=$with_pulseaudio;
+else
+  with_pulseaudio=yes
+fi
+
+
+if test "x$with_pulseaudio" != xno; then :
+
+
 pkg_failed=no
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for pulse" >&5
 $as_echo_n "checking for pulse... " >&6; }
@@ -15810,17 +15823,23 @@ fi
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 
-	echo "**************************************************************************"
-	echo "*** WARNING: compiling without pulse.  you will not have sound support ***"
-	echo "*** PulseAudio 0.9.14 or higher is required for audio support          ***"
-	echo "**************************************************************************"
+			echo "**************************************************************************"
+			echo "*** ERROR: pulse audio development libraries or headers were not found ***"
+			echo "*** on your system.  You can disable PulseAudio support with           ***"
+			echo "*** ./configre --without-pulseaudio                                    ***"
+			echo "*** but this will disable sound support                                ***"
+			echo "**************************************************************************"
+			exit 1
 
 elif test $pkg_failed = untried; then
 
-	echo "**************************************************************************"
-	echo "*** WARNING: compiling without pulse.  you will not have sound support ***"
-	echo "*** PulseAudio 0.9.14 or higher is required for audio support          ***"
-	echo "**************************************************************************"
+			echo "**************************************************************************"
+			echo "*** ERROR: pulse audio development libraries or headers were not found ***"
+			echo "*** on your system.  You can disable PulseAudio support with           ***"
+			echo "*** ./configre --without-pulseaudio                                    ***"
+			echo "*** but this will disable sound support                                ***"
+			echo "**************************************************************************"
+			exit 1
 
 else
 	pulse_CFLAGS=$pkg_cv_pulse_CFLAGS
@@ -15833,6 +15852,16 @@ $as_echo "#define HAVE_PULSE 1" >>confdefs.h
 fi
 
 
+
+else
+
+		echo "**************************************************************************"
+		echo "*** WARNING: compiling without pulse.  you will not have sound support ***"
+		echo "*** PulseAudio 0.9.14 or higher is required for audio support          ***"
+		echo "**************************************************************************"
+
+
+fi
 
 
 pkg_failed=no

@@ -60,14 +60,33 @@ PKG_CHECK_MODULES(gtkmm, gtkmm-2.4 >= 1.3.3)
 AC_SUBST(gtkmm_CFLAGS)
 AC_SUBST(gtkmm_LIBS)
 
-PKG_CHECK_MODULES(pulse, libpulse-simple >= 0.9.14, [AC_DEFINE(HAVE_PULSE, 1, [have pulse audio])], [
-	echo "**************************************************************************"
-	echo "*** WARNING: compiling without pulse.  you will not have sound support ***"
-	echo "*** PulseAudio 0.9.14 or higher is required for audio support          ***"
-	echo "**************************************************************************"
-])
-AC_SUBST(pulse_CFLAGS)
-AC_SUBST(pulse_LIBS)
+AC_ARG_WITH([pulseaudio],
+  [AS_HELP_STRING([--without-pulseaudio],
+    [disable support for pulseaudio])],
+  [],
+  [with_pulseaudio=yes])
+
+AS_IF(
+	[test "x$with_pulseaudio" != xno],
+	[
+		PKG_CHECK_MODULES(pulse, libpulse-simple >= 0.9.14, [AC_DEFINE(HAVE_PULSE, 1, [have pulse audio])], [
+			echo "**************************************************************************"
+			echo "*** ERROR: pulse audio development libraries or headers were not found ***"
+			echo "*** on your system.  You can disable PulseAudio support with           ***"
+			echo "*** ./configre --without-pulseaudio                                    ***"
+			echo "*** but this will disable sound support                                ***"
+			echo "**************************************************************************"
+			exit 1
+		])
+		AC_SUBST(pulse_CFLAGS)
+		AC_SUBST(pulse_LIBS)
+	],[
+		echo "**************************************************************************"
+		echo "*** WARNING: compiling without pulse.  you will not have sound support ***"
+		echo "*** PulseAudio 0.9.14 or higher is required for audio support          ***"
+		echo "**************************************************************************"
+	]
+)
 
 PKG_CHECK_MODULES(gthread, gthread-2.0 >= 2.20.1)
 AC_SUBST(gthread_CFLAGS)
