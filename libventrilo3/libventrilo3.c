@@ -632,7 +632,7 @@ _v3_recv(int block) {/*{{{*/
                                         uint8_t sample[codec->samplesize];
                                         SpeexBits bits;
                                         int encoded_size;
-                                        uint8_t tmp;
+                                        int tmp;
                                         static int rate = -1;
                                         static int format = -1;
                                         _v3_msg_0x52_speexdata *speexdata = malloc(sizeof(_v3_msg_0x52_speexdata));
