@@ -633,6 +633,8 @@ _v3_recv(int block) {/*{{{*/
                                         SpeexBits bits;
                                         int encoded_size;
                                         uint8_t tmp;
+                                        static int rate = -1;
+                                        static int format = -1;
                                         _v3_msg_0x52_speexdata *speexdata = malloc(sizeof(_v3_msg_0x52_speexdata));
 
                                         speexdata->frame_count = ev.pcm.length / codec->samplesize;
@@ -640,7 +642,10 @@ _v3_recv(int block) {/*{{{*/
 
                                         // TODO: we need to make sure the current band is correct in case the codec format
                                         // changes (i.e. per channel codecs)
-                                        if (!state) {
+                                        if (rate != codec->rate || format != codec->format) {
+                                            if (state != NULL) {
+                                                speex_encoder_destroy(state);
+                                            }
                                             /*Create a new encoder state in appropriate band*/
                                             switch (codec->rate) {
                                                 case 8000:
@@ -662,9 +667,12 @@ _v3_recv(int block) {/*{{{*/
                                                     send = false;
                                                     break;
                                             }
-                                            tmp = codec->quality;
-                                            speex_encoder_ctl(state, SPEEX_SET_QUALITY, &tmp);
-                                            if (send == false) {
+                                            if (send && state) {
+                                                rate = codec->rate;
+                                                format = codec->format;
+                                                tmp = codec->quality;
+                                                speex_encoder_ctl(state, SPEEX_SET_QUALITY, &tmp);
+                                            } else {
                                                 // just give up now...
                                                 break;
                                             }
@@ -3025,7 +3033,7 @@ v3_stop_audio(void) {/*{{{*/
  */
 void
 v3_set_volume_user(uint16_t id, int level) {/*{{{*/
-    if (level < 0 || level > 128) {
+    if (level < 0 || level > 148) {
         return;
     }
     _v3_user_volumes[id] = level;
