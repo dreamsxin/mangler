@@ -30,6 +30,7 @@
 #include "manglerui.h"
 #include "mangler-icons.h"
 #include <gdk/gdkx.h>
+#include <X11/extensions/XInput.h>
 
 
 Glib::ustring iso_8859_1_to_utf8(char *input);
@@ -166,6 +167,7 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
     isTransmittingKey = 0;
     isTransmitting = 0;
     Glib::signal_timeout().connect(sigc::mem_fun(this, &Mangler::checkPushToTalkKeys), 100);
+    Glib::signal_timeout().connect(sigc::mem_fun(this, &Mangler::checkPushToTalkMouse), 100);
 
     // Create Server List Window
     serverList = new ManglerServerList(builder);
@@ -196,11 +198,13 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
     iconified = false;
 
     // Set up mouse push to talk
+    /*
     if (settings->config.PushToTalkMouseEnabled && settings->config.PushToTalkMouseValueInt) {
         GdkWindow   *rootwin = gdk_get_default_root_window();
         XGrabButton(GDK_WINDOW_XDISPLAY(rootwin), settings->config.PushToTalkMouseValueInt, AnyModifier, GDK_ROOT_WINDOW(), False, ButtonPressMask|ButtonReleaseMask, GrabModeAsync, GrabModeAsync, None, None);
     }
     gdk_window_add_filter (NULL, ptt_filter, NULL);
+    */
 }/*}}}*/
 
 /*
@@ -717,7 +721,60 @@ bool Mangler::checkPushToTalkKeys(void) {/*{{{*/
     return(true);
 
 }/*}}}*/
-GdkFilterReturn ptt_filter(GdkXEvent *gdk_xevent, GdkEvent *event, gpointer data) {/*{{{*/
+bool Mangler::checkPushToTalkMouse(void) {/*{{{*/ 
+    GdkWindow   *rootwin = gdk_get_default_root_window(); 
+    XDevice *dev;
+    XDeviceInfo *xdev;
+    XDeviceState *xds;
+    XButtonState *xbs;
+    XID devid;
+    int ctr;
+    int ndevices_return;
+    int state = 1;
+    int byte = settings->config.PushToTalkMouseValueInt / 8;
+    int bit = settings->config.PushToTalkMouseValueInt % 8;
+    bool        ptt_on = false; 
+
+    if (! settings->config.PushToTalkMouseEnabled) { 
+        isTransmittingMouse = false; 
+        return true; 
+    } 
+    if (settings->config.mouseDeviceName.empty()) {
+        return true;
+    }
+
+    xdev = XListInputDevices(GDK_WINDOW_XDISPLAY(rootwin), &ndevices_return);
+    for (ctr = 0; ctr < ndevices_return; ctr++) {
+        Glib::ustring name = xdev[ctr].name;
+        if (name == settings->config.mouseDeviceName) {
+            break;
+        }
+    }
+    dev = XOpenDevice(GDK_WINDOW_XDISPLAY(rootwin), xdev[ctr].id);
+    xds = (XDeviceState *)XQueryDeviceState(GDK_WINDOW_XDISPLAY(rootwin), dev);
+    xbs = (XButtonState*) xds->data;
+    state = state << bit;
+    if ((xbs->buttons[byte] & state) >> bit) {
+        ptt_on = true;
+    }
+    XFreeDeviceState(xds);
+    XFreeDeviceList(xdev);
+    XCloseDevice(GDK_WINDOW_XDISPLAY(rootwin), dev);
+
+    if (ptt_on) { 
+        isTransmittingMouse = true; 
+        startTransmit(); 
+    } else { 
+        isTransmittingMouse = false; 
+        if (! isTransmittingButton && ! isTransmittingKey) { 
+            stopTransmit(); 
+        } 
+    } 
+    return(true); 
+}/*}}}*/
+/*
+GdkFilterReturn ptt_filter(GdkXEvent *gdk_xevent, GdkEvent *event, gpointer data) {
+    GdkWindow   *rootwin = gdk_get_default_root_window();
     XEvent *xevent = (XEvent *)gdk_xevent;
 
     if (! mangler) {
@@ -727,17 +784,36 @@ GdkFilterReturn ptt_filter(GdkXEvent *gdk_xevent, GdkEvent *event, gpointer data
         mangler->isTransmittingKey = false;
         return GDK_FILTER_CONTINUE;
     }
-    if (xevent->type == ButtonPress && xevent->xbutton.button == mangler->settings->config.PushToTalkMouseValueInt) {
+    if (xevent->type == ButtonPress && !mangler->isTransmittingMouse && xevent->xbutton.button == mangler->settings->config.PushToTalkMouseValueInt) {
+        fprintf(stderr, "press\n");
         mangler->startTransmit();
         mangler->isTransmittingMouse = true;
+        fprintf(stderr, "allow\n");
+        XAllowEvents(GDK_WINDOW_XDISPLAY(rootwin), AsyncPointer, CurrentTime);
+        fprintf(stderr, "ungrab pointer\n");
+        XUngrabPointer(GDK_WINDOW_XDISPLAY(rootwin), CurrentTime);
+        fprintf(stderr, "ungrab button\n");
+        XUngrabButton(GDK_WINDOW_XDISPLAY(rootwin), mangler->settings->config.PushToTalkMouseValueInt, AnyModifier, GDK_ROOT_WINDOW());
+        fprintf(stderr, "grab button\n");
+        XGrabButton(GDK_WINDOW_XDISPLAY(rootwin),   mangler->settings->config.PushToTalkMouseValueInt, AnyModifier, GDK_ROOT_WINDOW(), True, ButtonPressMask|ButtonReleaseMask, GrabModeAsync, GrabModeAsync, None, None);
         return GDK_FILTER_CONTINUE;
     } else if ((xevent->type == ButtonRelease) && (xevent->xbutton.button == mangler->settings->config.PushToTalkMouseValueInt)) {
+        fprintf(stderr, "release\n");
         mangler->stopTransmit();
         mangler->isTransmittingMouse = false;
+        fprintf(stderr, "allow\n");
+        XAllowEvents(GDK_WINDOW_XDISPLAY(rootwin), AsyncPointer, CurrentTime);
+        fprintf(stderr, "ungrab pointer\n");
+        XUngrabPointer(GDK_WINDOW_XDISPLAY(rootwin), CurrentTime);
+        fprintf(stderr, "ungrab button\n");
+        XUngrabButton(GDK_WINDOW_XDISPLAY(rootwin), mangler->settings->config.PushToTalkMouseValueInt, AnyModifier, GDK_ROOT_WINDOW());
+        fprintf(stderr, "grab button\n");
+        XGrabButton(GDK_WINDOW_XDISPLAY(rootwin), mangler->settings->config.PushToTalkMouseValueInt, AnyModifier, GDK_ROOT_WINDOW(), True, ButtonPressMask|ButtonReleaseMask, GrabModeAsync, GrabModeAsync, None, None);
         return GDK_FILTER_CONTINUE;
     }
     return GDK_FILTER_CONTINUE;
-}/*}}}*/
+}
+*/
 
 Glib::ustring Mangler::getPasswordEntry(Glib::ustring title, Glib::ustring prompt) {/*{{{*/
     password = "";
