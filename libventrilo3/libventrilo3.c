@@ -560,12 +560,10 @@ _v3_recv(int block) {/*{{{*/
                             channel.id = ev.channel.id;
                             _v3_debug(V3_DEBUG_INFO, "changing to channel id %d", channel.id);
                             msg = _v3_put_0x49(V3_CHANGE_CHANNEL, v3_get_user_id(), ev.text.password, &channel);
-                            if (_v3_send(msg)) {
-                                _v3_destroy_packet(msg);
-                            } else {
+                            if (!_v3_send(msg)) {
                                 _v3_debug(V3_DEBUG_SOCKET, "failed to send channel change message");
-                                _v3_destroy_packet(msg);
                             }
+                            _v3_destroy_packet(msg);
                         }
                         break;/*}}}*/
                     case V3_EVENT_USER_TALK_START:/*{{{*/
@@ -576,12 +574,10 @@ _v3_recv(int block) {/*{{{*/
                             codec = v3_get_channel_codec(v3_get_user_channel(v3_get_user_id()));
                             _v3_debug(V3_DEBUG_INFO, "got outbound audio event", codec->rate);
                             msg = _v3_put_0x52(V3_AUDIO_START, codec->codec, codec->format, ev.pcm.send_type, 0, NULL);
-                            if (_v3_send(msg)) {
-                                _v3_destroy_packet(msg);
-                            } else {
+                            if (!_v3_send(msg)) {
                                 _v3_debug(V3_DEBUG_SOCKET, "failed to send user talk start message");
-                                _v3_destroy_packet(msg);
                             }
+                            _v3_destroy_packet(msg);
                         }
                         break;/*}}}*/
                     case V3_EVENT_PLAY_AUDIO:/*{{{*/
@@ -732,12 +728,10 @@ _v3_recv(int block) {/*{{{*/
                                     break;
                             }
                             if (send) {
-                                if (_v3_send(msg)) {
-                                    _v3_destroy_packet(msg);
-                                } else {
+                                if (!_v3_send(msg)) {
                                     _v3_debug(V3_DEBUG_SOCKET, "failed to send audio message");
-                                    _v3_destroy_packet(msg);
                                 }
+                                _v3_destroy_packet(msg);
                             }
                         }
                         break;/*}}}*/
@@ -749,12 +743,10 @@ _v3_recv(int block) {/*{{{*/
                             codec = v3_get_channel_codec(v3_get_user_channel(v3_get_user_id()));
                             _v3_debug(V3_DEBUG_INFO, "got outbound audio event", codec->rate);
                             msg = _v3_put_0x52(V3_AUDIO_STOP, -1, -1, 0, 0, NULL);
-                            if (_v3_send(msg)) {
-                                _v3_destroy_packet(msg);
-                            } else {
-                                _v3_debug(V3_DEBUG_SOCKET, "failed to send channel change message");
-                                _v3_destroy_packet(msg);
+                            if (!_v3_send(msg)) {
+                                 _v3_debug(V3_DEBUG_SOCKET, "failed to send channel change message");
                             }
+                            _v3_destroy_packet(msg);
                         }
                         break;/*}}}*/
                     case V3_EVENT_USER_MODIFY:/*{{{*/
@@ -792,6 +784,7 @@ _v3_recv(int block) {/*{{{*/
                             } else {
                                 _v3_debug(V3_DEBUG_SOCKET, "failed to send join chat request message");
                             }
+                            _v3_destroy_packet(msg);
                         }
                         break;/*}}}*/
                     case V3_EVENT_CHAT_LEAVE:/*{{{*/
@@ -802,6 +795,7 @@ _v3_recv(int block) {/*{{{*/
                             } else {
                                 _v3_debug(V3_DEBUG_SOCKET, "failed to send leave chat request message");
                             }
+                            _v3_destroy_packet(msg);
                         }
                         break;/*}}}*/
                     case V3_EVENT_CHAT_MESSAGE:/*{{{*/
@@ -812,6 +806,7 @@ _v3_recv(int block) {/*{{{*/
                             } else {
                                 _v3_debug(V3_DEBUG_SOCKET, "failed to chat message message");
                             }
+                            _v3_destroy_packet(msg);
                         }/*}}}*/
                     default:
                         _v3_debug(V3_DEBUG_EVENT, "received unknown event type %d from queue", ev.type);
@@ -2886,8 +2881,7 @@ v3_get_channel_codec(uint16_t channel_id) {/*{{{*/
     const v3_codec *codec_info;
 
     _v3_func_enter("v3_get_channel_codec");
-    c = v3_get_channel(channel_id);
-    if (channel_id == 0 || c == NULL) { // the lobby is always the default codec
+    if (channel_id == 0 || (c = v3_get_channel(channel_id)) == NULL) { // the lobby is always the default codec
         _v3_func_leave("v3_get_channel_codec");
         return v3_get_codec(v3_server.codec, v3_server.codec_format);
     }

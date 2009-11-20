@@ -450,6 +450,7 @@ void Mangler::startTransmit(void) {/*{{{*/
         return;
     }
     if (isTransmitting) {
+        v3_free_user(user);
         return;
     }
     audioControl->playNotification("talkstart");
