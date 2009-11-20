@@ -215,7 +215,6 @@ ManglerChannelTree::updateUser(uint32_t id, uint32_t parent_id, Glib::ustring na
     user[channelRecord.phonetic]          = phonetic;
     user[channelRecord.url]               = url;
     user[channelRecord.integration_text]  = integration_text;
-    user[channelRecord.last_transmit]     = id != 0 ? "unknown" : "";
 }/*}}}*/
 
 /*
