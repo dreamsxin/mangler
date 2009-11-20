@@ -113,7 +113,6 @@ ManglerAudio::queue(uint32_t length, uint8_t *sample) {/*{{{*/
     }
     pcmdata = new ManglerPCM(length, sample);
     g_async_queue_push(pcm_queue, pcmdata);
-    delete pcmdata;
 }/*}}}*/
 
 void
@@ -228,12 +227,10 @@ ManglerAudio::output(void) {/*{{{*/
             g_async_queue_unref(pcm_queue);
             pa_simple_free(pulse_stream);
             stop_output = true;
-            delete pcmdata;
             //throw Glib::Thread::Exit();
             return;
         }
 #endif
-        delete pcmdata;
     }
 #ifdef HAVE_PULSE
     if (pa_simple_drain(pulse_stream, &error) < 0) {
