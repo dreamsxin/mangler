@@ -89,6 +89,12 @@ ManglerSettings::ManglerSettings(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
     notificationDeviceTreeModel = Gtk::ListStore::create(notificationColumns);
     notificationDeviceComboBox->set_model(notificationDeviceTreeModel);
     notificationDeviceComboBox->pack_start(notificationColumns.description);
+
+    mouseInputDevices = getInputDeviceList();
+    builder->get_widget("settingsMouseDeviceComboBox", mouseDeviceComboBox);
+    mouseDeviceTreeModel = Gtk::ListStore::create(mouseColumns);
+    mouseDeviceComboBox->set_model(mouseDeviceTreeModel);
+    mouseDeviceComboBox->pack_start(mouseColumns.name);
 }/*}}}*/
 void ManglerSettings::applySettings(void) {/*{{{*/
     Gtk::TreeModel::iterator iter;
@@ -103,6 +109,12 @@ void ManglerSettings::applySettings(void) {/*{{{*/
     config.parsePushToTalkValue(config.PushToTalkKeyValue);
 
     // Mouse to Talk
+    builder->get_widget("settingsMouseDeviceComboBox", combobox);
+    iter = combobox->get_active();
+    if (iter) {
+        Gtk::TreeModel::Row row = *iter;
+        config.mouseDeviceName = row[mouseColumns.name];
+    }
     builder->get_widget("settingsEnablePTTMouseCheckButton", checkbutton);
     config.PushToTalkMouseEnabled = checkbutton->get_active() ? true : false;
     builder->get_widget("settingsPTTMouseValueLabel", label);
@@ -112,9 +124,11 @@ void ManglerSettings::applySettings(void) {/*{{{*/
     }
     XUngrabButton(GDK_WINDOW_XDISPLAY(rootwin), AnyButton, AnyModifier, GDK_ROOT_WINDOW());
     XAllowEvents (GDK_WINDOW_XDISPLAY(rootwin), AsyncBoth, CurrentTime);
+    /*
     if (checkbutton->get_active()) {
         XGrabButton(GDK_WINDOW_XDISPLAY(rootwin), config.PushToTalkMouseValueInt, AnyModifier, GDK_ROOT_WINDOW(), False, ButtonPressMask|ButtonReleaseMask, GrabModeAsync, GrabModeAsync, None, None);
     }
+    */
 
     // Audio Player Integration
     builder->get_widget("settingsEnableAudioIntegrationCheckButton", checkbutton);
@@ -359,6 +373,35 @@ void ManglerSettings::settingsWindow_show_cb(void) {/*{{{*/
     }
     // TODO: get the currently selected item from settings object and select it
     notificationDeviceComboBox->set_active(notificationSelection);
+
+    // Clear the mouse device store and rebuild it from the audioControl vector
+    mouseDeviceTreeModel->clear();
+    int mouseSelection = 0;
+    int mouseCtr = 0;
+    for (
+            std::map<uint32_t, Glib::ustring>::iterator i = mouseInputDevices.begin();
+            i != mouseInputDevices.end();
+            i++, mouseCtr++) {
+        Gtk::TreeModel::Row row = *(mouseDeviceTreeModel->append());
+        row[mouseColumns.id] = (*i).first;
+        row[mouseColumns.name] = (*i).second;
+        if (config.mouseDeviceName == (*i).second) {
+            mouseSelection = mouseCtr;
+        }
+    }
+    if (!mouseSelection) {
+        int mouseCtr = 0;
+        for (
+                std::map<uint32_t, Glib::ustring>::iterator i = mouseInputDevices.begin();
+                i != mouseInputDevices.end();
+                i++, mouseCtr++) {
+            if ((*i).second.find("Mouse") != std::string::npos) {
+                mouseSelection = mouseCtr;
+            }
+        }
+    }
+    // TODO: get the currently selected item from settings object and select it
+    mouseDeviceComboBox->set_active(mouseSelection);
 }/*}}}*/
 void ManglerSettings::settingsWindow_hide_cb(void) {/*{{{*/
     isDetectingKey = false;
@@ -474,6 +517,23 @@ void ManglerSettings::settingsPTTMouseButton_clicked_cb(void) {/*{{{*/
     button->set_sensitive(false);
     Glib::signal_timeout().connect( sigc::mem_fun(*this, &ManglerSettings::settingsPTTMouseDetect), 100 );
 }/*}}}*/
+std::map<uint32_t, Glib::ustring> ManglerSettings::getInputDeviceList(void) {/*{{{*/
+    GdkWindow   *rootwin = gdk_get_default_root_window();
+    XDevice *dev;
+    XDeviceInfo *xdev;
+    XDeviceState *xds;
+    XButtonState *xbs;
+    int ndevices_return;
+    std::map<uint32_t, Glib::ustring> devicelist;
+    bool        ptt_on = false;
+
+    xdev = XListInputDevices(GDK_WINDOW_XDISPLAY(rootwin), &ndevices_return);
+    for (int ctr = 0; ctr < ndevices_return; ctr++) {
+        devicelist[xdev[ctr].id] = xdev[ctr].name;
+    }
+    XFreeDeviceList(xdev);
+    return(devicelist);
+}/*}}}*/
 
 bool
 ManglerSettings::settingsPTTKeyDetect(void) {/*{{{*/
@@ -576,3 +636,5 @@ ManglerSettings::settingsPTTMouseDetect(void) {/*{{{*/
 
     return(true);
 }/*}}}*/
+
+

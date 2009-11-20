@@ -1416,6 +1416,36 @@ out the encryption
                       </packing>
                     </child>
                     <child>
+                      <object class="GtkHBox" id="hbox9">
+                        <property name="visible">True</property>
+                        <child>
+                          <object class="GtkLabel" id="settingsMouseDeviceLabel">
+                            <property name="visible">True</property>
+                            <property name="xalign">0.05000000074505806</property>
+                            <property name="xpad">3</property>
+                            <property name="label" translatable="yes">Select Mouse:</property>
+                          </object>
+                          <packing>
+                            <property name="expand">False</property>
+                            <property name="position">0</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkComboBox" id="settingsMouseDeviceComboBox">
+                            <property name="visible">True</property>
+                          </object>
+                          <packing>
+                            <property name="padding">1</property>
+                            <property name="position">1</property>
+                          </packing>
+                        </child>
+                      </object>
+                      <packing>
+                        <property name="expand">False</property>
+                        <property name="position">2</property>
+                      </packing>
+                    </child>
+                    <child>
                       <object class="GtkCheckButton" id="settingsEnablePTTMouseCheckButton">
                         <property name="label" translatable="yes">Enable Mouse Button Push to Talk</property>
                         <property name="visible">True</property>
@@ -1425,7 +1455,7 @@ out the encryption
                       </object>
                       <packing>
                         <property name="expand">False</property>
-                        <property name="position">2</property>
+                        <property name="position">3</property>
                       </packing>
                     </child>
                     <child>
@@ -1467,7 +1497,7 @@ out the encryption
                       </object>
                       <packing>
                         <property name="expand">False</property>
-                        <property name="position">3</property>
+                        <property name="position">4</property>
                       </packing>
                     </child>
                     <child>
@@ -1479,7 +1509,7 @@ out the encryption
                       </object>
                       <packing>
                         <property name="expand">False</property>
-                        <property name="position">4</property>
+                        <property name="position">5</property>
                       </packing>
                     </child>
                     <child>
@@ -1505,7 +1535,7 @@ out the encryption
                       </object>
                       <packing>
                         <property name="expand">False</property>
-                        <property name="position">5</property>
+                        <property name="position">6</property>
                       </packing>
                     </child>
                   </object>

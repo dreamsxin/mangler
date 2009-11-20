@@ -47,6 +47,7 @@ ManglerConfig::ManglerConfig() {/*{{{*/
     notificationLoginLogout         = true;
     notificationChannelEnterLeave   = true;
     notificationTransmitStartStop   = true;
+    mouseDeviceName                 = "";
     ManglerServerConfig             qc_lastserver;
     std::vector<ManglerServerConfig> serverlist;
     load();
@@ -73,6 +74,7 @@ bool ManglerConfig::save() {/*{{{*/
     put("notification.loginLogout", notificationLoginLogout);
     put("notification.channelEnterLeave", notificationChannelEnterLeave);
     put("notification.transmitStartStop", notificationTransmitStartStop);
+    put("mouseDeviceName", mouseDeviceName);
     put("qc_lastserver.hostname", qc_lastserver.hostname);
     put("qc_lastserver.port", qc_lastserver.port);
     put("qc_lastserver.username", qc_lastserver.username);
@@ -226,6 +228,7 @@ void ManglerConfig::load() {/*{{{*/
     notificationLoginLogout       = get("notification.loginLogout") == "0" ? false : true;;
     notificationChannelEnterLeave = get("notification.channelEnterLeave") == "0" ? false : true;;
     notificationTransmitStartStop = get("notification.transmitStartStop") == "0" ? false : true;;
+    mouseDeviceName               = get("mouseDeviceName");
     qc_lastserver.hostname        = get("qc_lastserver.hostname");
     qc_lastserver.port            = get("qc_lastserver.port");
     qc_lastserver.username        = get("qc_lastserver.username");
