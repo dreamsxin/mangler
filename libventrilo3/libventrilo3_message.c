@@ -821,8 +821,14 @@ _v3_put_0x52(uint8_t subtype, uint16_t codec, uint16_t codec_format, uint16_t se
                         // Copy all frames in the array into the network packet
                         for (ctr = 0; ctr < speexdata->frame_count; ctr++) {
                             memcpy(offset, speexdata->frames[ctr], enc_frame_size);
+                            free(speexdata->frames[ctr]);
                             offset += enc_frame_size;
                         }
+                        // TODO: These, and the free in the loop above, are only temporary fixes.
+                        // We should construct _v3_destroy_0x52 in such a way that it can free outgoing audio packages;
+                        // or just write seperate functions for freeing incoming/outgoing audio.
+                        free(speexdata->frames);
+                        free(speexdata);
                     }
                     break;
             }
