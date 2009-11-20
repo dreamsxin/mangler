@@ -473,11 +473,24 @@ ManglerChannelTree::getUserChannelId(uint16_t userid) {/*{{{*/
 }/*}}}*/
 
 void
-ManglerChannelTree::volumeAdjustment_value_changed_cb(uint16_t id) {
+ManglerChannelTree::volumeAdjustment_value_changed_cb(uint16_t id) {/*{{{*/
     v3_set_volume_user(id, volumeAdjustment->get_value());
-}
+}/*}}}*/
 
-Glib::ustring getTimeString(void) {
+Glib::ustring
+ManglerChannelTree::getLastTransmit(uint16_t userid) {/*{{{*/
+    Gtk::TreeModel::Row user = getUser(userid, channelStore->children());
+    return(user[channelRecord.last_transmit]);
+}/*}}}*/
+
+void
+ManglerChannelTree::setLastTransmit(uint16_t userid, Glib::ustring last_transmit) {/*{{{*/
+    Gtk::TreeModel::Row user = getUser(userid, channelStore->children());
+    user[channelRecord.last_transmit] = last_transmit;
+}/*}}}*/
+
+Glib::ustring
+getTimeString(void) {/*{{{*/
     char buf[64];
     time_t t;
     struct tm *tmp;
@@ -494,5 +507,5 @@ Glib::ustring getTimeString(void) {
     }
     cppbuf = buf;
     return cppbuf;
-}
+}/*}}}*/
 

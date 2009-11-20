@@ -550,6 +550,7 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                         }
                     }
                     //fprintf(stderr, "moving user id %d to channel id %d\n", ev->user.id, ev->channel.id);
+                    Glib::ustring last_transmit = channelTree->getLastTransmit((uint32_t)ev->user.id);
                     channelTree->removeUser((uint32_t)ev->user.id);
                     channelTree->addUser(
                             (uint32_t)u->id,
@@ -560,6 +561,7 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                             u->url,
                             c_to_ustring(u->integration_text),
                             (bool)u->guest);
+                    channelTree->setLastTransmit(ev->user.id, last_transmit);
                     v3_free_user(u);
                 }
                 break;/*}}}*/
@@ -772,8 +774,7 @@ bool Mangler::checkPushToTalkMouse(void) {/*{{{*/
     } 
     return(true); 
 }/*}}}*/
-/*
-GdkFilterReturn ptt_filter(GdkXEvent *gdk_xevent, GdkEvent *event, gpointer data) {
+/* {{{ GdkFilterReturn ptt_filter(GdkXEvent *gdk_xevent, GdkEvent *event, gpointer data) {
     GdkWindow   *rootwin = gdk_get_default_root_window();
     XEvent *xevent = (XEvent *)gdk_xevent;
 
@@ -812,8 +813,7 @@ GdkFilterReturn ptt_filter(GdkXEvent *gdk_xevent, GdkEvent *event, gpointer data
         return GDK_FILTER_CONTINUE;
     }
     return GDK_FILTER_CONTINUE;
-}
-*/
+} }}} */
 
 Glib::ustring Mangler::getPasswordEntry(Glib::ustring title, Glib::ustring prompt) {/*{{{*/
     password = "";

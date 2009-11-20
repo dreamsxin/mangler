@@ -205,22 +205,22 @@ Glib::ustring ManglerConfig::get(Glib::ustring cfgname) {/*{{{*/
     return "";
 }/*}}}*/
 void ManglerConfig::load() {/*{{{*/
-    PushToTalkKeyEnabled          = get("PushToTalkKeyEnabled") == "0" ? false : true;
+    PushToTalkKeyEnabled          = get("PushToTalkKeyEnabled") == "1" ? true : false; // default false
     PushToTalkKeyValue            = get("PushToTalkKeyValue");
     parsePushToTalkValue(PushToTalkKeyValue);
-    PushToTalkMouseEnabled        = get("PushToTalkMouseEnabled") == "0" ? false : true;
+    PushToTalkMouseEnabled        = get("PushToTalkMouseEnabled") == "1" ? true : false; // default false
     PushToTalkMouseValue          = get("PushToTalkMouseValue");
     if (PushToTalkMouseValue.length() > 6) {
         PushToTalkMouseValueInt = atoi(PushToTalkMouseValue.substr(6).c_str());
     }
-    AudioIntegrationEnabled       = get("AudioIntegrationEnabled") == "0" ? false : true;
+    AudioIntegrationEnabled       = get("AudioIntegrationEnabled") == "1" ? true : false; // default false
     AudioIntegrationPlayer        = get("AudioIntegrationPlayer");
     inputDeviceName               = get("inputDeviceName");
     outputDeviceName              = get("outputDeviceName");
     notificationDeviceName        = get("notificationDeviceName");
-    notificationLoginLogout       = get("notification.loginLogout") == "0" ? false : true;;
-    notificationChannelEnterLeave = get("notification.channelEnterLeave") == "0" ? false : true;;
-    notificationTransmitStartStop = get("notification.transmitStartStop") == "0" ? false : true;;
+    notificationLoginLogout       = get("notification.loginLogout") == "0" ? false : true; // default true
+    notificationChannelEnterLeave = get("notification.channelEnterLeave") == "0" ? false : true; // default true
+    notificationTransmitStartStop = get("notification.transmitStartStop") == "0" ? false : true; // default true
     mouseDeviceName               = get("mouseDeviceName");
     qc_lastserver.hostname        = get("qc_lastserver.hostname");
     qc_lastserver.port            = get("qc_lastserver.port");
