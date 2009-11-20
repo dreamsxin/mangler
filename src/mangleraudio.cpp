@@ -231,7 +231,9 @@ ManglerAudio::output(void) {/*{{{*/
             return;
         }
 #endif
+        delete pcmdata;
     }
+    g_async_queue_unref(pcm_queue);
 #ifdef HAVE_PULSE
     if (pa_simple_drain(pulse_stream, &error) < 0) {
         fprintf(stderr, __FILE__": pa_simple_drain() failed: %s\n", pa_strerror(error));
