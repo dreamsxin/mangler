@@ -140,6 +140,8 @@ ManglerChannelTree::addUser(uint32_t id, uint32_t parent_id, Glib::ustring name,
     }
     if (! comment.empty()) {
         displayName = displayName + " (" + (url.empty() ? "" : "U: ") + comment + ")";
+    } else if (comment.empty() && !url.empty()) {
+        displayName = displayName + " (" + (url.empty() ? "" : "U: ") + url + ")";
     }
     if (! integration_text.empty()) {
         displayName = displayName + " {" + integration_text + "}";
@@ -200,7 +202,10 @@ ManglerChannelTree::updateUser(uint32_t id, uint32_t parent_id, Glib::ustring na
     }
     if (! comment.empty()) {
         displayName = displayName + " (" + (url.empty() ? "" : "U: ") + comment + ")";
+    } else if (comment.empty() && !url.empty()) {
+        displayName = displayName + " (" + (url.empty() ? "" : "U: ") + url + ")";
     }
+
     if (! integration_text.empty()) {
         displayName = displayName + " {" + integration_text + "}";
     }
