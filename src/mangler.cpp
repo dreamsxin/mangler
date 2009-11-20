@@ -199,12 +199,12 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
     isTransmitting = 0;
     Glib::signal_timeout().connect(sigc::mem_fun(this, &Mangler::checkPushToTalkKeys), 100);
     Glib::signal_timeout().connect(sigc::mem_fun(this, &Mangler::checkPushToTalkMouse), 100); 
-    // mouse PTT is done with the gtk event filter
-    /*
+
+    // set the default window size from the settings
     if (settings->config.windowWidth > 0 && settings->config.windowHeight > 0) {
         manglerWindow->set_default_size(settings->config.windowWidth, settings->config.windowHeight);
     }
-    */
+
     builder->get_widget("buttonMenuItem", checkmenuitem);
     checkmenuitem->set_active(settings->config.buttonsHidden);
 
