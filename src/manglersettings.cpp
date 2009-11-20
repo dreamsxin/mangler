@@ -465,6 +465,10 @@ void ManglerSettings::settingsPTTKeyButton_clicked_cb(void) {/*{{{*/
         button->set_sensitive(false);
         builder->get_widget("settingsOkButton", button);
         button->set_sensitive(false);
+        builder->get_widget("settingsMouseDeviceComboBox", combobox);
+        combobox->set_sensitive(false);
+        builder->get_widget("settingsPTTMouseButton", button);
+        button->set_sensitive(false);
         Glib::signal_timeout().connect( sigc::mem_fun(*this, &ManglerSettings::settingsPTTKeyDetect), 100 );
     } else {
         isDetectingKey = false;
@@ -474,6 +478,10 @@ void ManglerSettings::settingsPTTKeyButton_clicked_cb(void) {/*{{{*/
         builder->get_widget("settingsApplyButton", button);
         button->set_sensitive(true);
         builder->get_widget("settingsOkButton", button);
+        button->set_sensitive(true);
+        builder->get_widget("settingsMouseDeviceComboBox", combobox);
+        combobox->set_sensitive(true);
+        builder->get_widget("settingsPTTMouseButton", button);
         button->set_sensitive(true);
         builder->get_widget("settingsPTTKeyValueLabel", label);
         // if the text is as follows, the user pressed done without any keys
@@ -493,6 +501,8 @@ void ManglerSettings::settingsEnablePTTMouseCheckButton_toggled_cb(void) {/*{{{*
         label->set_sensitive(true);
         builder->get_widget("settingsPTTMouseButton", button);
         button->set_sensitive(true);
+        builder->get_widget("settingsMouseDeviceComboBox", combobox);
+        combobox->set_sensitive(true);
     } else {
         // box was unchecked
         builder->get_widget("settingsPTTMouseLabel", label);
@@ -501,6 +511,8 @@ void ManglerSettings::settingsEnablePTTMouseCheckButton_toggled_cb(void) {/*{{{*
         label->set_sensitive(false);
         builder->get_widget("settingsPTTMouseButton", button);
         button->set_sensitive(false);
+        builder->get_widget("settingsMouseDeviceComboBox", combobox);
+        combobox->set_sensitive(false);
     }
 }/*}}}*/
 void ManglerSettings::settingsPTTMouseButton_clicked_cb(void) {/*{{{*/
@@ -515,6 +527,10 @@ void ManglerSettings::settingsPTTMouseButton_clicked_cb(void) {/*{{{*/
     button->set_sensitive(false);
     builder->get_widget("settingsOkButton", button);
     button->set_sensitive(false);
+    builder->get_widget("settingsPTTKeyButton", button);
+    button->set_sensitive(false);
+    builder->get_widget("settingsMouseDeviceComboBox", combobox);
+    combobox->set_sensitive(false);
     Glib::signal_timeout().connect( sigc::mem_fun(*this, &ManglerSettings::settingsPTTMouseDetect), 100 );
 }/*}}}*/
 std::map<uint32_t, Glib::ustring> ManglerSettings::getInputDeviceList(void) {/*{{{*/
@@ -633,6 +649,12 @@ ManglerSettings::settingsPTTMouseDetect(void) {/*{{{*/
 
     builder->get_widget("settingsPTTMouseButton", button);
     button->set_sensitive(true);
+
+    builder->get_widget("settingsPTTKeyButton", button);
+    button->set_sensitive(true);
+
+    builder->get_widget("settingsMouseDeviceComboBox", combobox);
+    combobox->set_sensitive(true);
 
     return(true);
 }/*}}}*/
