@@ -573,7 +573,7 @@ _v3_recv(int block) {/*{{{*/
 
                             codec = v3_get_channel_codec(v3_get_user_channel(v3_get_user_id()));
                             _v3_debug(V3_DEBUG_INFO, "got outbound audio event", codec->rate);
-                            msg = _v3_put_0x52(V3_AUDIO_START, codec->codec, codec->format, ev.pcm.send_type, 0, NULL);
+                            msg = _v3_put_0x52(V3_AUDIO_START, codec->codec, codec->format, ev.pcm.send_type, 0, 0, NULL);
                             if (!_v3_send(msg)) {
                                 _v3_debug(V3_DEBUG_SOCKET, "failed to send user talk start message");
                             }
@@ -615,7 +615,7 @@ _v3_recv(int block) {/*{{{*/
                                             _v3_debug(V3_DEBUG_INFO, "encoding frame %d", ctr);
                                         }
                                         //gsm_destroy(handle);
-                                        msg = _v3_put_0x52(V3_AUDIO_DATA, codec->codec, codec->format, ev.pcm.send_type, ctr*65, frames);
+                                        msg = _v3_put_0x52(V3_AUDIO_DATA, codec->codec, codec->format, ev.pcm.send_type, ev.pcm.length, ctr*65, frames);
                                     }
                                     send = true;
                                     break;
@@ -712,7 +712,7 @@ _v3_recv(int block) {/*{{{*/
                                             // copy the frame data
                                             memcpy(speexdata->frames[ctr]+2, cbits, ntohs(encoded_size));
                                         }
-                                        msg = _v3_put_0x52(V3_AUDIO_DATA, codec->codec, codec->format, ev.pcm.send_type, nbBytes, speexdata);
+                                        msg = _v3_put_0x52(V3_AUDIO_DATA, codec->codec, codec->format, ev.pcm.send_type, ev.pcm.length, nbBytes, speexdata);
 
                                         // Destroy the encoder state
                                         // speex_encoder_destroy(state);
@@ -742,7 +742,7 @@ _v3_recv(int block) {/*{{{*/
 
                             codec = v3_get_channel_codec(v3_get_user_channel(v3_get_user_id()));
                             _v3_debug(V3_DEBUG_INFO, "got outbound audio event", codec->rate);
-                            msg = _v3_put_0x52(V3_AUDIO_STOP, -1, -1, 0, 0, NULL);
+                            msg = _v3_put_0x52(V3_AUDIO_STOP, -1, -1, 0, 0, 0, NULL);
                             if (!_v3_send(msg)) {
                                  _v3_debug(V3_DEBUG_SOCKET, "failed to send channel change message");
                             }
