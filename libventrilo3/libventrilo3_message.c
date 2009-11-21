@@ -854,6 +854,10 @@ _v3_destroy_0x52(_v3_net_message *msg) {/*{{{*/
 
     _v3_func_enter("_v3_destroy_0x52");
     m = msg->contents;
+    if (!m || || !msg->contents || !m->subtype)  {
+        // we're already free'd?
+        return true;
+    }
     switch (m->subtype) {
         case 0x01:
             msubin = (_v3_msg_0x52_0x01_in *)m;
