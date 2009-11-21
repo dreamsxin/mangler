@@ -59,11 +59,10 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
     icons.insert(std::make_pair("tray_icon_grey",               Gdk::Pixbuf::create_from_inline(-1, tray_icon_grey              )));
     icons.insert(std::make_pair("tray_icon_purple",             Gdk::Pixbuf::create_from_inline(-1, tray_icon_purple            )));
 
-    icons.insert(std::make_pair("user_icon_xmit",               Gdk::Pixbuf::create_from_inline(-1, user_icon_xmit              )));
-    icons.insert(std::make_pair("user_icon_noxmit",             Gdk::Pixbuf::create_from_inline(-1, user_icon_noxmit            )));
-
-    icons.insert(std::make_pair("user_icon_xmit_otherroom",     Gdk::Pixbuf::create_from_inline(-1, user_icon_xmit_otherroom    )));
-    icons.insert(std::make_pair("user_icon_noxmit_otherroom",   Gdk::Pixbuf::create_from_inline(-1, user_icon_noxmit_otherroom  )));
+    icons.insert(std::make_pair("user_icon_red",                Gdk::Pixbuf::create_from_inline(-1, user_icon_red               )));
+    icons.insert(std::make_pair("user_icon_yellow",             Gdk::Pixbuf::create_from_inline(-1, user_icon_yellow            )));
+    icons.insert(std::make_pair("user_icon_green",              Gdk::Pixbuf::create_from_inline(-1, user_icon_green             )));
+    icons.insert(std::make_pair("user_icon_orange",             Gdk::Pixbuf::create_from_inline(-1, user_icon_orange            )));
 
 
     try {
@@ -456,7 +455,7 @@ void Mangler::startTransmit(void) {/*{{{*/
     audioControl->playNotification("talkstart");
     statusIcon->set(icons["tray_icon_green"]);
     isTransmitting = true;
-    channelTree->userIsTalking(v3_get_user_id(), true);
+    channelTree->setUserIcon(v3_get_user_id(), "green");
     codec = v3_get_channel_codec(user->channel);
     //fprintf(stderr, "channel %d codec rate: %d at sample size %d\n", user->channel, codec->rate, codec->samplesize);
     v3_start_audio(V3_AUDIO_SENDTYPE_U2CCUR);
@@ -470,7 +469,7 @@ void Mangler::stopTransmit(void) {/*{{{*/
     }
     audioControl->playNotification("talkend");
     statusIcon->set(icons["tray_icon_red"]);
-    channelTree->userIsTalking(v3_get_user_id(), false);
+    channelTree->setUserIcon(v3_get_user_id(), "red");
     isTransmitting = false;
     if (inputAudio) {
         inputAudio->finish();
@@ -701,7 +700,7 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                     v3_user *me, *user;
                     me = v3_get_user(v3_get_user_id());
                     user = v3_get_user(ev->user.id);
-                    channelTree->userIsTalking(ev->user.id, true);
+                    channelTree->setUserIcon(ev->user.id, "orange");
                     if (me && user && me->channel == user->channel) {
                         v3_free_user(me);
                         v3_free_user(user);
@@ -718,7 +717,7 @@ bool Mangler::getNetworkEvent() {/*{{{*/
             case V3_EVENT_USER_TALK_END:/*{{{*/
                 if (v3_is_loggedin()) {
                     //fprintf(stderr, "user %d stopped talking\n", ev->user.id);
-                    channelTree->userIsTalking(ev->user.id, false);
+                    channelTree->setUserIcon(ev->user.id, "red");
                     // TODO: this is bad, there must be a flag in the last audio
                     // packet saying that it's the last one.  Need to figure out
                     // what that flag is and close it in V3_EVENT_PLAY_AUDIO
@@ -731,7 +730,7 @@ bool Mangler::getNetworkEvent() {/*{{{*/
             case V3_EVENT_PLAY_AUDIO:/*{{{*/
                 if (v3_is_loggedin()) {
                     // Open a stream if we don't have one for this user
-                    channelTree->userIsTalking(ev->user.id, true);
+                    channelTree->setUserIcon(ev->user.id, "green");
                     if (!outputAudio[ev->user.id]) {
                         outputAudio[ev->user.id] = new ManglerAudio("output");
                         outputAudio[ev->user.id]->open(ev->pcm.rate, AUDIO_OUTPUT);

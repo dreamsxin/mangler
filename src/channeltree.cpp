@@ -156,7 +156,7 @@ ManglerChannelTree::addUser(uint32_t id, uint32_t parent_id, Glib::ustring name,
     }
     channelRow                                  = *channelIter;
     channelRow[channelRecord.displayName]       = displayName;
-    channelRow[channelRecord.icon]              = mangler->icons["user_icon_noxmit"]->scale_simple(15, 15, Gdk::INTERP_BILINEAR);
+    channelRow[channelRecord.icon]              = mangler->icons["user_icon_red"]->scale_simple(15, 15, Gdk::INTERP_BILINEAR);
     channelRow[channelRecord.isUser]            = id == 0 ? false : true;
     channelRow[channelRecord.isGuest]           = guest;
     channelRow[channelRecord.id]                = id;
@@ -216,7 +216,7 @@ ManglerChannelTree::updateUser(uint32_t id, uint32_t parent_id, Glib::ustring na
         displayName = displayName + " {" + integration_text + "}";
     }
     user[channelRecord.displayName]       = displayName;
-    user[channelRecord.icon]              = mangler->icons["user_icon_noxmit"]->scale_simple(15, 15, Gdk::INTERP_BILINEAR);
+    user[channelRecord.icon]              = mangler->icons["user_icon_red"]->scale_simple(15, 15, Gdk::INTERP_BILINEAR);
     user[channelRecord.isUser]            = id == 0 ? false : true;
     user[channelRecord.isGuest]           = guest;
     user[channelRecord.id]                = id;
@@ -389,19 +389,15 @@ ManglerChannelTree::updateLobby(Glib::ustring name, Glib::ustring comment, Glib:
 }/*}}}*/
 
 void
-ManglerChannelTree::userIsTalking(uint16_t id, bool isTalking) {/*{{{*/
+ManglerChannelTree::setUserIcon(uint16_t id, Glib::ustring color) {/*{{{*/
     Gtk::TreeModel::Row user = getUser(id, channelStore->children());
     Gtk::TreeModel::Row me   = getUser(v3_get_user_id(), channelStore->children());
-    if (isTalking) {
-        if (me[channelRecord.parent_id] == user[channelRecord.parent_id]) {
-            user[channelRecord.icon]              = mangler->icons["user_icon_xmit"]->scale_simple(15, 15, Gdk::INTERP_BILINEAR);
-        } else {
-            user[channelRecord.icon]              = mangler->icons["user_icon_xmit_otherroom"]->scale_simple(15, 15, Gdk::INTERP_BILINEAR);
-        }
-        user[channelRecord.last_transmit]     = getTimeString();
-    } else {
-        user[channelRecord.icon]              = mangler->icons["user_icon_noxmit"]->scale_simple(15, 15, Gdk::INTERP_BILINEAR);
+    Glib::ustring iconname = "user_icon_" + color;
+    if (! mangler->icons[iconname]) {
+        iconname = "user_icon_red";
     }
+    user[channelRecord.icon] = mangler->icons[iconname]->scale_simple(15, 15, Gdk::INTERP_BILINEAR);
+    user[channelRecord.last_transmit]     = getTimeString();
 }/*}}}*/
 
 bool
