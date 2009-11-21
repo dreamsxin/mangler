@@ -640,7 +640,7 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                 }
                 break;/*}}}*/
             case V3_EVENT_USER_CHAN_MOVE:/*{{{*/
-                if (v3_is_loggedin()) {
+                {
                     u = v3_get_user(ev->user.id);
                     if (! u) {
                         fprintf(stderr, "failed to retreive user information for user id %d", ev->user.id);

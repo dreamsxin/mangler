@@ -755,7 +755,7 @@ _v3_get_0x52(_v3_net_message *msg) {/*{{{*/
 }/*}}}*/
 
 _v3_net_message *
-_v3_put_0x52(uint8_t subtype, uint16_t codec, uint16_t codec_format, uint16_t send_type, uint32_t length, void *data) {/*{{{*/
+_v3_put_0x52(uint8_t subtype, uint16_t codec, uint16_t codec_format, uint16_t send_type, uint32_t pcmlength, uint32_t length, void *data) {/*{{{*/
     _v3_net_message *msg;
     _v3_msg_0x52_0x01_out *msgdata;
     int ctr;
@@ -788,11 +788,11 @@ _v3_put_0x52(uint8_t subtype, uint16_t codec, uint16_t codec_format, uint16_t se
             msg->len = sizeof(_v3_msg_0x52_0x01_out) - sizeof(void *) + length;
             // TODO: we really need to figure out what these values are
             if (codec == 0) {
-                _v3_debug(V3_DEBUG_PACKET_PARSE, "setting unknown 2 to %d", length / 65 * 640 + 1000);
-                msgdata->unknown_2 = length / 65 * 640 + 1000;
+                _v3_debug(V3_DEBUG_PACKET_PARSE, "setting unknown 2 to %d", pcmlength);
+                msgdata->unknown_2 = pcmlength;
             } else if (codec == 3) {
-                _v3_debug(V3_DEBUG_PACKET_PARSE, "setting unknown 2 to %d", 9240 + 1000);
-                msgdata->unknown_2 = 10240;
+                _v3_debug(V3_DEBUG_PACKET_PARSE, "setting unknown 2 to %d", pcmlength);
+                msgdata->unknown_2 = pcmlength;
             }
             msgdata->unknown_4 = htons(1);
             msgdata->unknown_5 = htons(2);
