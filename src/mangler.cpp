@@ -730,7 +730,6 @@ bool Mangler::checkPushToTalkMouse(void) {/*{{{*/
     XDeviceInfo *xdev;
     XDeviceState *xds;
     XButtonState *xbs;
-    XID devid;
     int ctr;
     int ndevices_return;
     int state = 1;

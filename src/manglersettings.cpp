@@ -535,13 +535,9 @@ void ManglerSettings::settingsPTTMouseButton_clicked_cb(void) {/*{{{*/
 }/*}}}*/
 std::map<uint32_t, Glib::ustring> ManglerSettings::getInputDeviceList(void) {/*{{{*/
     GdkWindow   *rootwin = gdk_get_default_root_window();
-    XDevice *dev;
     XDeviceInfo *xdev;
-    XDeviceState *xds;
-    XButtonState *xbs;
     int ndevices_return;
     std::map<uint32_t, Glib::ustring> devicelist;
-    bool        ptt_on = false;
 
     xdev = XListInputDevices(GDK_WINDOW_XDISPLAY(rootwin), &ndevices_return);
     for (int ctr = 0; ctr < ndevices_return; ctr++) {
