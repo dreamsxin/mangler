@@ -259,52 +259,24 @@ typedef struct _v3_net_message_0x52 {/*{{{*/
     uint16_t send_type;         // 12
     uint16_t unknown_1;         // 14
     uint32_t data_length;       // 16
-    uint16_t unknown_2;         // 20
-    uint16_t unknown_3;         // 22
+    uint32_t pcm_length;        // 20
 } _v3_msg_0x52; /*}}}*/
 typedef struct _v3_net_message_0x52_0x00 {/*{{{*/
-    uint32_t type;              // 0
-    uint16_t subtype;           // 4
-    uint16_t user_id;           // 6
-    uint16_t codec;             // 8
-    uint16_t codec_format;      // 10
-    uint16_t send_type;         // 12
-    uint16_t unknown_1;         // 14
-    uint32_t data_length;       // 16
-    uint16_t unknown_2;         // 20
-    uint16_t unknown_3;         // 22
+    _v3_msg_0x52 header;        // 0
     uint16_t unknown_4;         // 24
     uint16_t unknown_5;         // 26
     uint16_t unknown_6;         // 28
     uint16_t unknown_7;         // 30
 } _v3_msg_0x52_0x00; /*}}}*/
 typedef struct _v3_net_message_0x52_0x01_in {/*{{{*/
-    uint16_t type;              // 0
-    uint16_t empty;             // 2
-    uint16_t subtype;           // 4
-    uint16_t user_id;           // 6
-    uint16_t codec;             // 8
-    uint16_t codec_format;      // 10
-    uint32_t send_type;         // 12
-    uint32_t data_length;       // 16
-    uint16_t unkonwn_2;         // 20
-    uint16_t unknown_3;         // 22
+    _v3_msg_0x52 header;        // 0
     uint16_t unknown_4;         // 24
     uint16_t unknown_5;         // 26
 
     void     *data;             // 28 - either gsmdata* or speexdata*
 } _v3_msg_0x52_0x01_in;/*}}}*/
 typedef struct _v3_net_message_0x52_0x01_out {/*{{{*/
-    uint16_t type;              // 0
-    uint16_t empty;             // 2
-    uint16_t subtype;           // 4
-    uint16_t user_id;           // 6
-    uint16_t codec;             // 8
-    uint16_t codec_format;      // 10
-    uint32_t send_type;         // 12
-    uint32_t data_length;       // 16
-    uint16_t unknown_2;         // 20
-    uint16_t unknown_3;         // 22
+    _v3_msg_0x52 header;        // 0
     uint16_t unknown_4;         // 24
     uint16_t unknown_5;         // 26
     uint16_t unknown_6;         // 28
@@ -321,30 +293,12 @@ typedef struct _v3_net_message_0x52_speexdata {/*{{{*/
     uint8_t  **frames;
 } _v3_msg_0x52_speexdata;/*}}}*/
 typedef struct _v3_net_message_0x52_0x02 {/*{{{*/
-    uint32_t type;              // 0
-    uint16_t subtype;           // 4
-    uint16_t user_id;           // 6
-    uint16_t codec;             // 8
-    uint16_t codec_format;      // 10
-    uint16_t sendtype;          // 12
-    uint16_t unknown_1;         // 14
-    uint32_t data_length;       // 16
-    uint16_t unknown_2;         // 20
-    uint16_t unknown_3;         // 22
+    _v3_msg_0x52 header;        // 0
     uint16_t unknown_4;         // 24
     uint16_t unknown_5;         // 26
 } _v3_msg_0x52_0x02; /*}}}*/
 typedef struct _v3_net_message_0x52_0x03 {/*{{{*/
-    uint32_t type;              // 0
-    uint16_t subtype;           // 4
-    uint16_t user_id;           // 6
-    uint16_t codec;             // 8
-    uint16_t codec_format;      // 10
-    uint16_t sendtype;          // 12
-    uint16_t unknown_1;         // 14
-    uint32_t data_length;       // 16
-    uint16_t unknown_2;         // 20
-    uint16_t unknown_3;         // 22
+    _v3_msg_0x52 header;        // 0
 } _v3_msg_0x52_0x03; /*}}}*/
 int _v3_get_0x52(_v3_net_message *msg);
 _v3_net_message *_v3_put_0x52(uint8_t subtype, uint16_t codec, uint16_t codec_format, uint16_t send_type, uint32_t pcmlength, uint32_t length, void *data);

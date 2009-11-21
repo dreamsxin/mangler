@@ -1882,32 +1882,32 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
             } else {
                 _v3_msg_0x52_0x01_in *m = (_v3_msg_0x52_0x01_in *)msg->contents;
                 v3_event *ev = _v3_create_event(0);
-                switch (m->subtype) {
+                switch (m->header.subtype) {
                     case 0x00:
                         {
                             ev->type = V3_EVENT_USER_TALK_START;
-                            ev->user.id = m->user_id;
-                            ev->pcm.send_type = m->send_type;
-                            ev->pcm.rate = v3_get_codec_rate(m->codec, m->codec_format);
+                            ev->user.id = m->header.user_id;
+                            ev->pcm.send_type = m->header.send_type;
+                            ev->pcm.rate = v3_get_codec_rate(m->header.codec, m->header.codec_format);
                         }
                         break;
                     case 0x02:
                         {
                             ev->type = V3_EVENT_USER_TALK_END;
-                            ev->user.id = m->user_id;
+                            ev->user.id = m->header.user_id;
                         }
                         break;
                     case 0x01:
                         {
                             _v3_msg_0x52_0x01_in *msub = (_v3_msg_0x52_0x01_in *)msg->contents;
                             ev->type = V3_EVENT_PLAY_AUDIO;
-                            ev->user.id = m->user_id;
-                            ev->pcm.send_type = m->send_type;
-                            ev->pcm.rate = v3_get_codec_rate(msub->codec, msub->codec_format);
+                            ev->user.id = m->header.user_id;
+                            ev->pcm.send_type = m->header.send_type;
+                            ev->pcm.rate = v3_get_codec_rate(msub->header.codec, msub->header.codec_format);
                             int volumectr;
 
                             // TODO: it's too messy to have this here.  Write a function that decodes
-                            switch (msub->codec) {
+                            switch (msub->header.codec) {
                                 case 0: // GSM
                                     {
                                         _v3_msg_0x52_gsmdata *gsmdata =  msub->data;
@@ -1916,8 +1916,8 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                                         int ctr;
                                         int one = 1; // used for codec settings
 
-                                        if (! v3_decoders[m->user_id].gsm) {
-                                            if (!(v3_decoders[m->user_id].gsm = gsm_create())) {
+                                        if (! v3_decoders[m->header.user_id].gsm) {
+                                            if (!(v3_decoders[m->header.user_id].gsm = gsm_create())) {
                                                 _v3_error("couldn't create gsm handle");
                                                 _v3_destroy_0x52(msg);
                                                 _v3_destroy_packet(msg);
@@ -1925,19 +1925,19 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                                                 _v3_func_leave("_v3_process_message");
                                                 return V3_MALFORMED; // it's not really a malformed packet...
                                             }
-                                            gsm_option(v3_decoders[m->user_id].gsm, GSM_OPT_WAV49, &one);
+                                            gsm_option(v3_decoders[m->header.user_id].gsm, GSM_OPT_WAV49, &one);
                                         }
                                         memset(sample, 0, 640);
-                                        for (ctr = 0; ctr < msub->data_length / 65; ctr++) {
+                                        for (ctr = 0; ctr < msub->header.data_length / 65; ctr++) {
                                             memcpy(buf, gsmdata->frames[ctr], 65);
-                                            if (gsm_decode(v3_decoders[m->user_id].gsm, buf, (int16_t *)sample) || gsm_decode(v3_decoders[m->user_id].gsm, buf+33, ((int16_t *)sample)+160)) {
+                                            if (gsm_decode(v3_decoders[m->header.user_id].gsm, buf, (int16_t *)sample) || gsm_decode(v3_decoders[m->header.user_id].gsm, buf+33, ((int16_t *)sample)+160)) {
                                                 _v3_debug(V3_DEBUG_INFO, "failed to decode gsm frame %d", ctr);
                                                 continue;
                                             }
                                             _v3_debug(V3_DEBUG_INFO, "copying 640 bytes of frame %d from %lu to %lu", ctr, sample, ev->data.sample+(ctr*640));
                                             memcpy(ev->data.sample+(ctr*640), sample, 640);
                                         }
-                                        ev->pcm.length = msub->data_length/65*640;
+                                        ev->pcm.length = msub->header.data_length/65*640;
                                         _v3_debug(V3_DEBUG_EVENT, "queueing pcm msg length %d", ev->pcm.length);
                                     }
                                     break;
@@ -1954,17 +1954,17 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                                         // The length of the data divided by the count
                                         // is the actual frame size in the packet.  Then
                                         // subtract two for extra int16 specifying length
-                                        frame_size = msub->data_length / speexdata->frame_count - 2;
-                                        if (v3_decoders[m->user_id].speex == NULL) {
+                                        frame_size = msub->header.data_length / speexdata->frame_count - 2;
+                                        if (v3_decoders[m->header.user_id].speex == NULL) {
                                             switch (ev->pcm.rate) {
                                                 case 8000:
-                                                    v3_decoders[m->user_id].speex = speex_decoder_init(&speex_nb_mode);
+                                                    v3_decoders[m->header.user_id].speex = speex_decoder_init(&speex_nb_mode);
                                                     break;
                                                 case 16000:
-                                                    v3_decoders[m->user_id].speex = speex_decoder_init(&speex_wb_mode);
+                                                    v3_decoders[m->header.user_id].speex = speex_decoder_init(&speex_wb_mode);
                                                     break;
                                                 case 32000:
-                                                    v3_decoders[m->user_id].speex = speex_decoder_init(&speex_uwb_mode);
+                                                    v3_decoders[m->header.user_id].speex = speex_decoder_init(&speex_uwb_mode);
                                                     break;
                                                 default:
                                                     _v3_debug(V3_DEBUG_INFO, "received unknown speex pcm rate %d", ev->pcm.rate);
@@ -1979,7 +1979,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                                         for (ctr = 0; ctr < speexdata->frame_count; ctr++) {
                                             memcpy(cbits, speexdata->frames[ctr] + 2, frame_size);
                                             speex_bits_read_from(&bits, cbits, frame_size);
-                                            speex_decode_int(v3_decoders[m->user_id].speex, &bits, ((int16_t *)ev->data.sample)+ctr*speexdata->sample_size);
+                                            speex_decode_int(v3_decoders[m->header.user_id].speex, &bits, ((int16_t *)ev->data.sample)+ctr*speexdata->sample_size);
                                         }
                                         ev->pcm.length  = speexdata->frame_count * speexdata->sample_size * sizeof(int16_t);
                                         _v3_debug(V3_DEBUG_EVENT, "queueing pcm msg length %d", ev->pcm.length);
