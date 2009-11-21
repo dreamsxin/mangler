@@ -1919,14 +1919,13 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                                     ev->data.sample16[volumectr] *= multiplier;
                                 }
                             }
-                            _v3_destroy_packet(msg);
+                            _v3_destroy_0x52(msg);
                         }
                         break;
                 }
+                _v3_destroy_packet(msg);
                 v3_queue_event(ev);
-                _v3_destroy_0x52(msg);
             }
-            _v3_destroy_packet(msg);
             _v3_func_leave("_v3_process_message");
             return V3_OK;/*}}}*/
         case 0x53:/*{{{*/
