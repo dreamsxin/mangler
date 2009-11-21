@@ -232,7 +232,7 @@ ManglerChannelTree::updateUser(uint32_t id, uint32_t parent_id, Glib::ustring na
  * Add a channel to the channel tree
  *
  * id                       user's ventrilo id
- * parent_id                the channel id of the channel the user is in
+ * parent_id                the channel id of the parent channel
  * name                     the user name
  * comment = ""
  * phonetic = ""
@@ -277,6 +277,50 @@ ManglerChannelTree::addChannel(uint8_t protect_mode, uint32_t id, uint32_t paren
     channelRow[channelRecord.phonetic]          = phonetic;
     channelRow[channelRecord.url]               = "";
     channelRow[channelRecord.integration_text]  = "";
+}/*}}}*/
+
+/*
+ * Add a channel to the channel tree
+ *
+ * id                       user's ventrilo id
+ * parent_id                the channel id of the parent channel
+ * name                     the user name
+ * comment = ""
+ * phonetic = ""
+ */
+void
+ManglerChannelTree::updateChannel(uint8_t protect_mode, uint32_t id, uint32_t parent_id, Glib::ustring name, Glib::ustring comment, Glib::ustring phonetic) {/*{{{*/
+    Glib::ustring displayName = "";
+    Gtk::TreeModel::Row channel;
+
+    if (! (channel = getChannel(id, channelStore->children())) && id > 0) {
+        fprintf(stderr, "channel missing: id: %d - name: %s - parent; %d\n", id, name.c_str(), parent_id);
+    }
+    displayName = name;
+    if (! comment.empty()) {
+        displayName = displayName + " (" + comment + ")";
+    }
+    channel[channelRecord.displayName]       = displayName;
+    switch (protect_mode) {
+        case 0:
+            channel[channelRecord.icon]              = mangler->icons["black_circle"]->scale_simple(9, 9, Gdk::INTERP_BILINEAR);;
+            break;
+        case 1:
+            channel[channelRecord.icon]              = mangler->icons["red_circle"]->scale_simple(9, 9, Gdk::INTERP_BILINEAR);;
+            break;
+        case 2:
+            channel[channelRecord.icon]              = mangler->icons["yellow_circle"]->scale_simple(9, 9, Gdk::INTERP_BILINEAR);;
+            break;
+    }
+    channel[channelRecord.isUser]            = false;
+    channel[channelRecord.isGuest]           = false;
+    channel[channelRecord.id]                = id;
+    channel[channelRecord.parent_id]         = parent_id;
+    channel[channelRecord.name]              = name;
+    channel[channelRecord.comment]           = comment;
+    channel[channelRecord.phonetic]          = phonetic;
+    channel[channelRecord.url]               = "";
+    channel[channelRecord.integration_text]  = "";
 }/*}}}*/
 
 /*

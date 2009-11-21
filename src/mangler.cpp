@@ -579,8 +579,6 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                         fprintf(stderr, "couldn't retreive user id %d\n", ev->user.id);
                         break;
                     }
-                    //fprintf(stderr, "updating user id %d: %s in channel %d\n", ev->user.id, u->name, ev->channel.id);
-                    // we cannot remove the lobby user, so bail out when the server comment is updated. See ticket #30
                     if (u->id == 0) {
                         channelTree->updateLobby(c_to_ustring(u->name), c_to_ustring(u->comment), u->phonetic);
                     } else {
@@ -596,6 +594,29 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                                 (bool)u->real_user_id);
                     }
                     v3_free_user(u);
+                }
+                break;/*}}}*/
+            case V3_EVENT_CHAN_MODIFY:/*{{{*/
+                if (v3_is_loggedin()) {
+                    const v3_codec *codec_info;
+                    c = v3_get_channel(ev->channel.id);
+                    if (!c) {
+                        fprintf(stderr, "couldn't retreive channel id %d\n", ev->user.id);
+                        break;
+                    }
+                    channelTree->updateChannel(
+                            (uint8_t)c->protect_mode,
+                            (uint32_t)c->id,
+                            (uint32_t)c->parent,
+                            c_to_ustring(c->name),
+                            c_to_ustring(c->comment),
+                            c->phonetic);
+                    if (ev->channel.id == v3_get_user_channel(v3_get_user_id())) {
+                        codec_info = v3_get_channel_codec(ev->channel.id);
+                        builder->get_widget("codecLabel", label);
+                        label->set_text(codec_info->name);
+                    }
+                    v3_free_channel(c);
                 }
                 break;/*}}}*/
             case V3_EVENT_USER_LOGOUT:/*{{{*/
