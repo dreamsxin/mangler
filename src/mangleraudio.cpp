@@ -195,6 +195,7 @@ ManglerAudio::input(void) {/*{{{*/
 void
 ManglerAudio::output(void) {/*{{{*/
     int ret, error;
+    ManglerPCM *queuedpcm;
 
     //fprintf(stderr, "playing audio\n");
     // If we don't have a pcm queue set up for us, something is very wrong
@@ -215,14 +216,15 @@ ManglerAudio::output(void) {/*{{{*/
             g_async_queue_unref(pcm_queue);
             break;
         }
-        pcmdata = (ManglerPCM *)g_async_queue_pop(pcm_queue);
+        queuedpcm = (ManglerPCM *)g_async_queue_pop(pcm_queue);
         // finish() queues a 0 length packet to notify us that we're done
-        if (pcmdata->length == 0) {
+        if (queuedpcm->length == 0) {
             g_async_queue_unref(pcm_queue);
+            delete queuedpcm;
             break;
         }
 #ifdef HAVE_PULSE
-        if ((ret = pa_simple_write(pulse_stream, pcmdata->sample, pcmdata->length, &error)) < 0) {
+        if ((ret = pa_simple_write(pulse_stream, queuedpcm->sample, queuedpcm->length, &error)) < 0) {
             fprintf(stderr, __FILE__": pa_simple_write() failed: %s\n", pa_strerror(error));
             g_async_queue_unref(pcm_queue);
             pa_simple_free(pulse_stream);
@@ -231,6 +233,7 @@ ManglerAudio::output(void) {/*{{{*/
             return;
         }
 #endif
+            delete queuedpcm;
     }
 #ifdef HAVE_PULSE
     if (pa_simple_drain(pulse_stream, &error) < 0) {
