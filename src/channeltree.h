@@ -85,6 +85,7 @@ class ManglerChannelTree
         void addUser(uint32_t id, uint32_t channel, Glib::ustring name, Glib::ustring comment = "", Glib::ustring phonetic = "", Glib::ustring url = "", Glib::ustring integration_text = "", bool guest = false);
         void updateLobby(Glib::ustring name, Glib::ustring comment = "", Glib::ustring phonetic = "");
         void updateUser(uint32_t id, uint32_t parent_id, Glib::ustring name, Glib::ustring comment, Glib::ustring phonetic, Glib::ustring url, Glib::ustring integration_text, bool guest);
+        void updateChannel(uint8_t protect_mode, uint32_t id, uint32_t parent_id, Glib::ustring name, Glib::ustring comment, Glib::ustring phonetic);
         Glib::ustring getLastTransmit(uint16_t userid);
         void setLastTransmit(uint16_t userid, Glib::ustring last_transmit);
         void removeUser(uint32_t id);
