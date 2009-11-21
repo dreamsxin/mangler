@@ -545,7 +545,9 @@ std::map<uint32_t, Glib::ustring> ManglerSettings::getInputDeviceList(void) {/*{
 
     xdev = XListInputDevices(GDK_WINDOW_XDISPLAY(rootwin), &ndevices_return);
     for (int ctr = 0; ctr < ndevices_return; ctr++) {
-        devicelist[xdev[ctr].id] = xdev[ctr].name;
+        if (xdev[ctr].use == IsXExtensionPointer) {
+            devicelist[xdev[ctr].id] = xdev[ctr].name;
+        }
     }
     XFreeDeviceList(xdev);
     return(devicelist);
