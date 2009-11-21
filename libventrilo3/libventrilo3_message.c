@@ -962,6 +962,64 @@ _v3_get_0x57(_v3_net_message *msg) {/*{{{*/
     return true;
 }/*}}}*/
 /*}}}*/
+// Message 0x58 (88) | PHANTOM /*{{{*/
+int
+_v3_get_0x58(_v3_net_message *msg) {/*{{{*/
+    _v3_msg_0x58 *m;
+
+    _v3_func_enter("_v3_get_0x58");
+    if (msg->len != sizeof(_v3_msg_0x58)) {
+        _v3_debug(V3_DEBUG_PACKET_PARSE, "expected %d bytes, but message is %d bytes", sizeof(_v3_msg_0x58), msg->len);
+        _v3_func_leave("_v3_get_0x58");
+        return false;
+    }
+
+     m = msg->contents = msg->data;
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "Phantom:");
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "subtype.............: %d", m->subtype);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "error_id............: %d", m->error_id);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "real_user_id........: %d", m->real_user_id);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "phantom_user_id.....: %d", m->phantom_user_id);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "channel_id..........: %d", m->channel_id);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "log_error...........: %d", m->log_error);
+
+    _v3_func_leave("_v3_get_0x58");
+    return true;
+}/*}}}*/
+_v3_net_message *
+_v3_put_0x58(uint16_t subtype, uint16_t channel, uint16_t phantom_user_id) {/*{{{*/
+    _v3_net_message *m;
+    _v3_msg_0x58 *mc;
+
+    _v3_func_enter("_v3_put_0x58");
+    // Build our message
+    m = malloc(sizeof(_v3_net_message));
+    memset(m, 0, sizeof(_v3_net_message));
+    m->type = 0x58;
+    m->len = sizeof(_v3_msg_0x58);
+
+    // Build our message contents
+    mc = malloc(sizeof(_v3_msg_0x58));
+    memset(mc, 0, sizeof(_v3_msg_0x58));
+    mc->type = 0x58;
+    mc->subtype = subtype;
+    mc->real_user_id = v3_luser.id;
+
+    switch(subtype) {
+        case V3_PHANTOM_ADD:
+            mc->channel_id = channel;
+            break;
+        case V3_PHANTOM_REMOVE:
+            mc->phantom_user_id = phantom_user_id;
+            break;
+    }
+
+    m->contents = mc;
+    m->data = (char *)mc;
+    _v3_func_leave("_v3_put_0x58");
+    return m;
+}/*}}}*/
+/*}}}*/
 // Message 0x59 (89) | ERROR MESSAGE /*{{{*/
 int
 _v3_get_0x59(_v3_net_message *msg) {/*{{{*/

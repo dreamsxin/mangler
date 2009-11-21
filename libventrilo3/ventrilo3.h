@@ -73,6 +73,9 @@
 #define V3_AUDIO_STOP               0x02
 #define V3_AUDIO_UNK                0x03
 
+#define V3_PHANTOM_ADD              0x00
+#define V3_PHANTOM_REMOVE           0x01 
+
 #define V3_DEBUG_NONE               0
 #define V3_DEBUG_STATUS             1
 #define V3_DEBUG_ERROR              1 << 2
@@ -193,6 +196,8 @@ enum _v3_events
 
     // outbound specific event types
     V3_EVENT_CHANGE_CHANNEL,
+    V3_EVENT_PHANTOM_ADD,
+    V3_EVENT_PHANTOM_REMOVE,
 
     // not implemented
     V3_EVENT_USER_PAGED,
@@ -289,6 +294,7 @@ typedef struct __v3_msg_user {/*{{{*/
     uint8_t  allow_recording;
     uint8_t  guest;
     void     *next;
+    uint16_t real_user_id; // used for phantom users
 } _v3_msg_user;/*}}}*/
 typedef struct __v3_msg_channel {/*{{{*/
     /*                           offset:   0  1  2  3  4  5  6  7  8  9  10
@@ -436,6 +442,8 @@ void        v3_leave_chat();
 void        v3_send_chat_message(char* message);
 void        v3_logout(void);
 void        v3_change_channel(uint16_t channel_id, char *password);
+void        v3_phantom_add(uint16_t channel_id);
+void        v3_phantom_remove(uint16_t channel_id);
 int         v3_debuglevel(uint32_t level);
 int         v3_is_loggedin(void);
 uint16_t    v3_get_user_id(void);

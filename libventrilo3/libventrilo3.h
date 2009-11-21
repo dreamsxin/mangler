@@ -124,6 +124,20 @@ char *_v3_server_disabled_errors[] = {
     "This server has been disabled by order of the United States Military."
 };
 
+char *_v3_phantom_errors[] = {
+    "Channel does not allow phantoms",
+    "Phantoms are restricted to USR file",
+    "Duplicate",
+    "Unknown channel",
+    "Not found",
+    "Not authenticated for specified channel",
+    "No slots available",
+    "Channel is full",
+    "Insufficient resources",
+    "Banned from channel",
+    "Insufficient access rights",
+};
+
 char *_v3_bitmasks[] = {
     "0.0.0.0",
     "128.0.0.0",

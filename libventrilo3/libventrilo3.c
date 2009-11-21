@@ -807,7 +807,30 @@ _v3_recv(int block) {/*{{{*/
                                 _v3_debug(V3_DEBUG_SOCKET, "failed to chat message message");
                             }
                             _v3_destroy_packet(msg);
-                        }/*}}}*/
+                        }
+                        break;/*}}}*/
+                    case V3_EVENT_PHANTOM_ADD:/*{{{*/
+                        {
+                            _v3_net_message *msg = _v3_put_0x58(V3_PHANTOM_ADD, ev.channel.id, 0);
+                            if (_v3_send(msg)) {
+                                _v3_debug(V3_DEBUG_SOCKET, "sent phantom add request to server (channel %d)", ev.channel.id);
+                            } else {
+                                _v3_debug(V3_DEBUG_SOCKET, "failed to send phantom add request");
+                            }
+                            _v3_destroy_packet(msg);
+                        }
+                        break;/*}}}*/
+                    case V3_EVENT_PHANTOM_REMOVE:/*{{{*/
+                        {
+                            _v3_net_message *msg = _v3_put_0x58(V3_PHANTOM_REMOVE, 0, ev.user.id);
+                            if (_v3_send(msg)) {
+                                _v3_debug(V3_DEBUG_SOCKET, "sent phantom remove request to server (userid %d)", ev.user.id);
+                            } else {
+                                _v3_debug(V3_DEBUG_SOCKET, "failed to send phantom remove request");
+                            }
+                            _v3_destroy_packet(msg);
+                        }
+                        break;/*}}}*/
                     default:
                         _v3_debug(V3_DEBUG_EVENT, "received unknown event type %d from queue", ev.type);
                         break;
@@ -2027,6 +2050,77 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
             _v3_destroy_packet(msg);
             _v3_func_leave("_v3_process_message");
             return V3_OK;/*}}}*/
+        case 0x58:/*{{{*/
+            if (!_v3_get_0x58(msg)) {
+                _v3_destroy_packet(msg);
+                _v3_func_leave("_v3_process_message");
+                return V3_MALFORMED;
+            } else {
+                _v3_msg_0x58 *m = msg->contents;
+
+                if (m->error_id) {
+                    char *error;
+
+                    if (m->error_id > (sizeof(_v3_phantom_errors) / sizeof(_v3_phantom_errors[0])))
+                        error = "Unknown";
+                    else
+                        error = _v3_phantom_errors[m->error_id - 1];
+
+                    v3_event *ev = _v3_create_event(V3_EVENT_ERROR_MSG);
+                    strncpy(ev->error.message, "Phantom error:\n", sizeof(ev->error.message));
+                    strncat(ev->error.message, error, sizeof(ev->error.message));
+                    v3_queue_event(ev);
+                } else {
+                    v3_user new_phantom_user = {0};
+                    v3_event *ev;
+
+                    switch (m->subtype) {
+                        case V3_PHANTOM_ADD:
+                            new_phantom_user.id = m->phantom_user_id;
+                            new_phantom_user.channel = m->channel_id;
+                            new_phantom_user.name = v3_get_user(m->real_user_id)->name;
+                            new_phantom_user.comment = "";
+                            new_phantom_user.phonetic = "";
+                            new_phantom_user.integration_text = "";
+                            new_phantom_user.url = "";
+                            new_phantom_user.real_user_id = m->real_user_id;
+
+                            _v3_lock_userlist();
+                            _v3_update_user(&new_phantom_user);
+                            _v3_unlock_userlist();
+
+                            ev = _v3_create_event(V3_EVENT_USER_LOGIN);
+                            ev->user.id = new_phantom_user.id;
+                            ev->channel.id = new_phantom_user.channel;
+                            _v3_debug(V3_DEBUG_INFO, "queuing event type %d for user %d", ev->type, ev->user.id);
+                            v3_queue_event(ev);
+                            break;
+
+                        case V3_PHANTOM_REMOVE:
+                            _v3_lock_userlist();
+                            _v3_remove_user(m->phantom_user_id);
+                            _v3_unlock_userlist();
+    
+                            ev = _v3_create_event(V3_EVENT_USER_LOGOUT);
+                            ev->user.id = m->phantom_user_id;
+                            ev->channel.id = m->channel_id;
+                            _v3_debug(V3_DEBUG_INFO, "queuing event type %d for user %d", ev->type, ev->user.id);
+    
+                            v3_queue_event(ev);
+                            break;
+
+                        default:
+                            _v3_error("bad phantom subtype");
+                            _v3_destroy_packet(msg);
+                            _v3_func_leave("_v3_process_message");
+                            return V3_MALFORMED;
+                    }
+
+                }
+            }
+            _v3_destroy_packet(msg);
+            _v3_func_leave("_v3_process_message");
+            return V3_OK;/*}}}*/
         case 0x59:/*{{{*/
             if (!_v3_get_0x59(msg)) {
                 _v3_destroy_packet(msg);
@@ -2078,7 +2172,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                 return V3_MALFORMED;
             } else {
                 _v3_msg_0x5d *m = msg->contents;
-                v3_user *ul;
+                v3_user *ul, *u;
                 int ctr;
 
                 _v3_lock_luser();
@@ -2095,6 +2189,18 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                             _v3_debug(V3_DEBUG_INFO, "queuing event type %d for user %d", ev->type, ev->user.id);
                             _v3_remove_user(m->user_list[ctr].id);
                             v3_queue_event(ev);
+
+                            // disconnect all user's phantoms
+                            for (u = v3_user_list; u != NULL; u = u->next) {
+                                if (u->real_user_id == m->user_list[ctr].id) {
+                                    v3_event *ev = _v3_create_event(V3_EVENT_USER_LOGOUT);
+                                    ev->user.id = u->id;
+                                    ev->channel.id = u->channel;
+                                    _v3_debug(V3_DEBUG_INFO, "queuing event type %d for user %d", ev->type, ev->user.id);
+                                    _v3_remove_user(u->id);
+                                    v3_queue_event(ev);
+                                }
+                            }
                         }
                         break;
                     case V3_MODIFY_USER:
@@ -2589,6 +2695,74 @@ v3_queue_size() {/*{{{*/
         msg = v3_server.queue->next;
     }
     return ctr;
+}/*}}}*/
+
+void
+v3_phantom_remove(uint16_t channel_id) {/*{{{*/
+    v3_event ev = {0};
+    v3_user *u;
+
+   _v3_func_enter("v3_phantom_remove");
+
+    if (!v3_is_loggedin()) {
+        _v3_func_leave("v3_remove_channel");
+        return;
+    }
+    
+    _v3_debug(V3_DEBUG_EVENT, "attempting to remove phantom from channel %d", channel_id);
+
+    _v3_lock_userlist();
+    for (u = v3_user_list; u != NULL; u = u->next) {
+        if (u->channel == channel_id && u->real_user_id == v3_luser.id) {
+            break;
+        }
+    }
+    _v3_unlock_userlist();
+
+    if (u == NULL) {
+        _v3_error("can't find a luser phantom in channel %d", channel_id);
+    } else {
+        ev.type = V3_EVENT_PHANTOM_REMOVE;
+        ev.user.id = u->id;
+    
+        _v3_lock_sendq();
+        _v3_debug(V3_DEBUG_EVENT, "sending %lu bytes to event pipe", sizeof(v3_event));
+        if (fwrite(&ev, sizeof(struct _v3_event), 1, v3_server.evoutstream) != 1) {
+            _v3_error("could not write to event pipe");
+        }
+
+        fflush(v3_server.evoutstream);
+        _v3_unlock_sendq();
+    }
+
+    _v3_func_leave("v3_phantom_remove");
+}
+
+void
+v3_phantom_add(uint16_t channel_id) {/*{{{*/
+    v3_event ev = {0};
+
+   _v3_func_enter("v3_phantom_add");
+
+    if (!v3_is_loggedin()) {
+        _v3_func_leave("v3_change_channel");
+        return;
+    }
+    
+    _v3_debug(V3_DEBUG_EVENT, "attempting to add phantom to channel %d", channel_id);
+
+    ev.type = V3_EVENT_PHANTOM_ADD;
+    ev.channel.id = channel_id;
+    
+    _v3_lock_sendq();
+    _v3_debug(V3_DEBUG_EVENT, "sending %lu bytes to event pipe", sizeof(v3_event));
+    if (fwrite(&ev, sizeof(struct _v3_event), 1, v3_server.evoutstream) != 1) {
+        _v3_error("could not write to event pipe");
+    }
+
+    fflush(v3_server.evoutstream);
+    _v3_unlock_sendq();
+    _v3_func_leave("v3_phantom_add");
 }/*}}}*/
 
 void

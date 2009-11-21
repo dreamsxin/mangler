@@ -356,6 +356,19 @@ typedef struct _v3_net_message_0x53 {/*{{{*/
     uint16_t channel_id;        // 4
 } _v3_msg_0x53;
 int _v3_get_0x53(_v3_net_message *msg);/*}}}*/
+typedef struct _v3_net_message_0x58 {/*{{{*/
+    uint32_t type;              // 0
+    uint16_t subtype;           // 4
+    uint16_t error_id;          // 6
+    uint16_t unknown1;          // 8
+    uint16_t real_user_id;      // 10
+    uint16_t phantom_user_id;   // 12
+    uint16_t channel_id;        // 14
+    uint16_t log_error;         // 16
+    uint16_t unknown2;          // 18
+} __attribute__ ((packed)) _v3_msg_0x58;
+int _v3_get_0x58(_v3_net_message *msg);
+_v3_net_message *_v3_put_0x58(uint16_t subtype, uint16_t channel, uint16_t phantom_user_id);/*}}}*/
 typedef struct _v3_net_message_0x57 {/*{{{*/
     uint32_t type;              // 0
     uint32_t unknown_1;         // 4
@@ -430,4 +443,3 @@ int      _v3_get_msg_channel(void *offset, _v3_msg_channel *channel);
 int      _v3_put_msg_channel(char *buf, _v3_msg_channel *channel);
 int      _v3_get_msg_user(void *offset, _v3_msg_user *user);
 int      _v3_put_msg_user(void *buf, _v3_msg_user *user);
-

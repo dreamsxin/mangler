@@ -569,7 +569,8 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                         u->phonetic,
                         u->url,
                         c_to_ustring(u->integration_text),
-                        (bool)u->guest);
+                        (bool)u->guest,
+                        (bool)u->real_user_id);
                 v3_free_user(u);
                 break;/*}}}*/
             case V3_EVENT_USER_MODIFY:/*{{{*/
@@ -592,7 +593,8 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                                 u->phonetic,
                                 u->url,
                                 c_to_ustring(u->integration_text),
-                                (bool)u->guest);
+                                (bool)u->guest,
+                                (bool)u->real_user_id);
                     }
                     v3_free_user(u);
                 }
@@ -670,7 +672,8 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                             u->phonetic,
                             u->url,
                             c_to_ustring(u->integration_text),
-                            (bool)u->guest);
+                            (bool)u->guest,
+                            (bool)u->real_user_id);
                     channelTree->setLastTransmit(ev->user.id, last_transmit);
                     v3_free_user(u);
                 }
@@ -810,7 +813,8 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                                 u->phonetic,
                                 u->url,
                                 c_to_ustring(u->integration_text),
-                                (bool)u->guest);
+                                (bool)u->guest,
+                                (bool)u->real_user_id);
                     }
                     v3_free_user(u);
                 }
@@ -832,7 +836,8 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                                 u->phonetic,
                                 u->url,
                                 c_to_ustring(u->integration_text),
-                                (bool)u->guest);
+                                (bool)u->guest,
+                                (bool)u->real_user_id);
                     }
                     v3_free_user(u);
                 }
