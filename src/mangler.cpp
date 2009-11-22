@@ -753,9 +753,13 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                     } else {
                         if (!me) {
                             fprintf(stderr, "couldn't find my own user info %d\n", v3_get_user_id());
+                        } else {
+                            v3_free_user(me);
                         }
                         if (!user) {
                             fprintf(stderr, "couldn't find user for for user id %d\n", ev->user.id);
+                        } else {
+                            v3_free_user(user);
                         }
                     }
                 }
