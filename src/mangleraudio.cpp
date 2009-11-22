@@ -174,7 +174,6 @@ ManglerAudio::input(void) {/*{{{*/
         if (! drop) {
             //fprintf(stderr, "sending audio %d bytes of audio\n", ctr * pcm_framesize);
             // TODO: hard coding user to channel for now, need to implement U2U
-            mangler->channelTree->setUserIcon(v3_get_user_id(), "green");
             v3_send_audio(V3_AUDIO_SENDTYPE_U2CCUR, rate, buf, ctr * pcm_framesize);
         }
         free(buf);
