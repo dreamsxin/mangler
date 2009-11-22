@@ -48,6 +48,8 @@ class ManglerServerList {
         Gtk::TreeView                *serverListView;
         Glib::RefPtr<Gtk::TreeSelection> serverListSelection;
 
+
+
         // Entry fields
         int32_t   editorId;
         Gtk::Entry *serverListServerNameEntry;
@@ -64,6 +66,18 @@ class ManglerServerList {
         Gtk::CheckButton *serverListPrivateChatCheckButton;
         Gtk::CheckButton *serverListRecordCheckButton;
         Gtk::CheckButton *serverListPersistentCommentsCheckButton;
+
+        // Character Set Combobox
+        Gtk::ComboBox *serverListCharsetComboBox;
+        class charsetModelColumns : public Gtk::TreeModel::ColumnRecord
+        {
+            public:
+                charsetModelColumns() { add(id); add(name); }
+                Gtk::TreeModelColumn<uint32_t>      id;
+                Gtk::TreeModelColumn<Glib::ustring> name;
+        };
+        charsetModelColumns  charsetColumns;
+        Glib::RefPtr<Gtk::ListStore> charsetTreeModel;
 
         // Editor Buttons
         Gtk::Button *serverListServerSaveButton;

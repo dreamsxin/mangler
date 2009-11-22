@@ -27,6 +27,8 @@
 #include "mangler.h"
 #include "manglerserverlist.h"
 
+extern const char *charsetslist[];
+
 ManglerServerList::ManglerServerList(Glib::RefPtr<Gtk::Builder> builder) {
     serverListTreeModel = Gtk::ListStore::create(serverListColumns);
     builder->get_widget("serverListWindow", serverListWindow);
@@ -85,6 +87,18 @@ ManglerServerList::ManglerServerList(Glib::RefPtr<Gtk::Builder> builder) {
     builder->get_widget("serverListRecordCheckButton",      serverListRecordCheckButton);
     builder->get_widget("serverListPersistentCommentsCheckButton", serverListPersistentCommentsCheckButton);
 
+    // Charset combobox
+    builder->get_widget("serverListCharsetComboBox",        serverListCharsetComboBox);
+    charsetTreeModel = Gtk::ListStore::create(charsetColumns);
+    serverListCharsetComboBox->set_model(charsetTreeModel);
+    serverListCharsetComboBox->pack_start(charsetColumns.name);
+    for (int ctr = 0; charsetslist[ctr] != NULL; ctr++) {
+        Gtk::TreeModel::Row charsetRow = *(charsetTreeModel->append());
+        charsetRow[charsetColumns.id] = ctr;
+        charsetRow[charsetColumns.name] = charsetslist[ctr];
+    }
+    serverListCharsetComboBox->set_active(0);
+
     editorId = -1;
 }
 
@@ -123,6 +137,7 @@ void ManglerServerList::serverListDeleteButton_clicked_cb(void) {
         serverListPrivateChatCheckButton->set_sensitive(false);
         serverListRecordCheckButton->set_sensitive(false);
         serverListPersistentCommentsCheckButton->set_sensitive(false);
+        serverListCharsetComboBox->set_sensitive(false);
         serverListServerSaveButton->set_sensitive(false);
     }
 }
@@ -194,6 +209,7 @@ void ManglerServerList::editRow(uint32_t id) {
     serverListPrivateChatCheckButton->set_sensitive(true);
     serverListRecordCheckButton->set_sensitive(true);
     serverListPersistentCommentsCheckButton->set_sensitive(true);
+    serverListCharsetComboBox->set_sensitive(true);
     serverListServerSaveButton->set_sensitive(true);
 
     serverListServerNameEntry->set_text(server->name);
@@ -208,6 +224,13 @@ void ManglerServerList::editRow(uint32_t id) {
     serverListPrivateChatCheckButton->set_active(server->acceptPrivateChat);
     serverListRecordCheckButton->set_active(server->allowRecording);
     serverListPersistentCommentsCheckButton->set_active(server->persistentComments);
+    serverListCharsetComboBox->set_active(0);
+    for (int ctr = 0; charsetslist[ctr] != NULL; ctr++) {
+        if (strcmp(charsetslist[ctr], server->charset.c_str()) == 0) {
+            serverListCharsetComboBox->set_active(ctr);
+            break;
+        }
+    }
 }
 
 void ManglerServerList::saveRow() {
@@ -240,6 +263,11 @@ void ManglerServerList::saveRow() {
     server->acceptPrivateChat = serverListPrivateChatCheckButton->get_active();
     server->allowRecording = serverListRecordCheckButton->get_active();
     server->persistentComments = serverListPersistentCommentsCheckButton->get_active();
+    iter = serverListCharsetComboBox->get_active();
+    if (iter) {
+        Gtk::TreeModel::Row row = *iter;
+        server->charset = row[charsetColumns.name];
+    }
 
     row[serverListColumns.name] = server->name;
     row[serverListColumns.hostname] = server->hostname;

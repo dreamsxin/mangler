@@ -969,47 +969,30 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkHBox" id="hbox5">
+                      <object class="GtkHBox" id="hbox10">
                         <property name="visible">True</property>
                         <child>
-                          <object class="GtkButton" id="serverListServerSaveButton">
-                            <property name="label" translatable="yes">Save</property>
-                            <property name="width_request">100</property>
+                          <object class="GtkLabel" id="serverListCharsetLabel">
                             <property name="visible">True</property>
-                            <property name="sensitive">False</property>
-                            <property name="can_focus">True</property>
-                            <property name="can_default">True</property>
-                            <property name="has_default">True</property>
-                            <property name="receives_default">True</property>
-                            <property name="focus_on_click">False</property>
+                            <property name="xalign">0.05000000074505806</property>
+                            <property name="label" translatable="yes">Character Set:</property>
                           </object>
                           <packing>
                             <property name="expand">False</property>
-                            <property name="fill">False</property>
-                            <property name="padding">10</property>
                             <property name="position">0</property>
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkButton" id="serverListServerClearButton">
-                            <property name="label" translatable="yes">Clear</property>
-                            <property name="width_request">100</property>
+                          <object class="GtkComboBox" id="serverListCharsetComboBox">
+                            <property name="visible">True</property>
                             <property name="sensitive">False</property>
-                            <property name="can_focus">True</property>
-                            <property name="receives_default">True</property>
-                            <property name="focus_on_click">False</property>
                           </object>
                           <packing>
-                            <property name="expand">False</property>
-                            <property name="fill">False</property>
-                            <property name="padding">10</property>
                             <property name="position">1</property>
                           </packing>
                         </child>
                       </object>
                       <packing>
-                        <property name="expand">False</property>
-                        <property name="fill">False</property>
                         <property name="position">1</property>
                       </packing>
                     </child>
@@ -1017,7 +1000,44 @@
                       <object class="GtkAlignment" id="alignment5">
                         <property name="visible">True</property>
                         <child>
-                          <placeholder/>
+                          <object class="GtkHBox" id="hbox5">
+                            <property name="visible">True</property>
+                            <child>
+                              <object class="GtkButton" id="serverListServerSaveButton">
+                                <property name="label" translatable="yes">Save</property>
+                                <property name="width_request">100</property>
+                                <property name="visible">True</property>
+                                <property name="sensitive">False</property>
+                                <property name="can_focus">True</property>
+                                <property name="can_default">True</property>
+                                <property name="has_default">True</property>
+                                <property name="receives_default">True</property>
+                                <property name="focus_on_click">False</property>
+                              </object>
+                              <packing>
+                                <property name="expand">False</property>
+                                <property name="fill">False</property>
+                                <property name="padding">10</property>
+                                <property name="position">0</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkButton" id="serverListServerClearButton">
+                                <property name="label" translatable="yes">Clear</property>
+                                <property name="width_request">100</property>
+                                <property name="sensitive">False</property>
+                                <property name="can_focus">True</property>
+                                <property name="receives_default">True</property>
+                                <property name="focus_on_click">False</property>
+                              </object>
+                              <packing>
+                                <property name="expand">False</property>
+                                <property name="fill">False</property>
+                                <property name="padding">10</property>
+                                <property name="position">1</property>
+                              </packing>
+                            </child>
+                          </object>
                         </child>
                       </object>
                       <packing>
