@@ -34,8 +34,30 @@
 
 
 Glib::ustring iso_8859_1_to_utf8(char *input);
+void set_charset(Glib::ustring charset);
 
 using namespace std;
+
+Glib::ustring serverCharset; // XXX this will only work in single-server mode
+const char *charsetslist[] = { // XXX this should go to server browser code
+    "System default",
+    "ISO-8859-15 (Western Europe)",
+    "ISO-8859-2 (Central Europe)",
+    "ISO-8859-5 (Ukrainian)",
+    "ISO-8859-7 (Greek)",
+    "ISO-8859-8 (Hebrew)",
+    "ISO-8859-9 (Turkish)",
+    "ISO-2022-JP (Japanese)",
+    "SJIS (Japanese)",
+    "CP949 (Korean)",
+    "CP1251 (Cyrillic)",
+    "KOI8-R (Cyrillic)",
+    "CP1256 (Arabic)",
+    "CP1257 (Baltic)",
+    "GB18030 (Chinese)",
+    "TIS-620 (Thai)",
+    NULL
+};
 
 Mangler *mangler;
 
@@ -323,6 +345,9 @@ void Mangler::connectButton_clicked_cb(void) {/*{{{*/
                 }
                 return;
             }
+            if (!server->charset.empty())
+                set_charset(server->charset);
+
             settings->config.lastConnectedServerId = server_id;
             settings->config.save();
             Glib::Thread::create(sigc::bind(sigc::mem_fun(this->network, &ManglerNetwork::connect), hostname, port, username, password, phonetic), FALSE);
@@ -1091,18 +1116,44 @@ main (int argc, char *argv[])
     gdk_threads_leave();
 }
 
-std::string ustring_to_c(Glib::ustring input) {/*{{{*/
-    std::string to_charset, converted;
-
-    if (Glib::get_charset(to_charset) == true)
-        to_charset = "ISO-8859-1";
+void set_charset(Glib::ustring charset) {/*{{{*/
+    charset = charset.uppercase();
+    if (charset.find(' ') != Glib::ustring::npos)
+        charset = charset.erase(charset.find(' '));
 
     try {
-        converted = Glib::convert_with_fallback(input, to_charset, "UTF-8", "?");
-    } catch (Glib::ConvertError &e) {
-        converted = input;
+        Glib::IConv test("UTF-8", charset);
+    } catch (...) {
+        fprintf(stderr, "Charset '%s' isn't supported by your system - using system locale\n", charset.c_str());
+        serverCharset.clear();
+        return;
     }
     
+    serverCharset = charset;
+}/*}}}*/
+std::string ustring_to_c(Glib::ustring input) {/*{{{*/
+    std::string to_charset, converted;
+    
+    // check if input is already 7-bit
+    if (input.is_ascii())
+        return input;
+
+    // try encoding using the selected charset, unless its some utf-8
+    if (!serverCharset.empty() && serverCharset.find("UTF-8") == Glib::ustring::npos) {
+        try {
+            return Glib::convert(input, serverCharset, "UTF-8");
+        } catch (...) {}
+    }
+
+    // try encoding using the locale charset, unless its some utf-8
+    if (Glib::get_charset(to_charset) == true)
+        to_charset = "ISO-8859-1";
+    
+    try {
+        converted = Glib::convert_with_fallback(input, to_charset, "UTF-8", "?");
+    } catch (...) {
+        converted = input;
+    }
     return converted;
 }/*}}}*/
 Glib::ustring c_to_ustring(char *input) {/*{{{*/
@@ -1111,15 +1162,21 @@ Glib::ustring c_to_ustring(char *input) {/*{{{*/
     // check if input is already valid UTF-8
     if (input_u.validate())
         return input_u;
-
-   // try to convert using the current locale
+  
+    // try to convert using the chosen charset
+    if (!serverCharset.empty()) {
+        try {
+            return Glib::convert(input, "UTF-8", serverCharset);
+        } catch (...) {}
+    }
+        
+    // try to convert using the current locale
     try {
         converted = Glib::locale_to_utf8(input);
-    } catch (Glib::ConvertError &e) {
+    } catch (...) {
         // locale conversion failed
         converted = iso_8859_1_to_utf8(input);
     }
-
     return converted;
 }/*}}}*/
 

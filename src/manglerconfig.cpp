@@ -138,6 +138,7 @@ bool ManglerConfig::put(uint16_t id, ManglerServerConfig server) {/*{{{*/
     snprintf(name, 1023, "serverlist.%d.phonetic",             id); if (!put(name, server.phonetic             ))  return false;
     snprintf(name, 1023, "serverlist.%d.comment",              id); if (!put(name, server.comment              ))  return false;
     snprintf(name, 1023, "serverlist.%d.url",                  id); if (!put(name, server.url                  ))  return false;
+    snprintf(name, 1023, "serverlist.%d.charset",              id); if (!put(name, server.charset              ))  return false;
     snprintf(name, 1023, "serverlist.%d.accept_u2u",           id); if (!put(name, server.acceptU2U            ))  return false;
     snprintf(name, 1023, "serverlist.%d.accept_pages",         id); if (!put(name, server.acceptPages          ))  return false;
     snprintf(name, 1023, "serverlist.%d.accept_privchat",      id); if (!put(name, server.acceptPrivateChat    ))  return false;
@@ -261,6 +262,7 @@ void ManglerConfig::load() {/*{{{*/
             server->phonetic = get(base + "phonetic");
             server->comment = get(base + "comment");
             server->url = get(base + "url");
+            server->charset = get(base + "charset");
             server->acceptU2U = get(base + "accept_u2u") == "0" ? false : true;
             server->acceptPages = get(base + "accept_pages") == "0" ? false : true;
             server->acceptPrivateChat = get(base + "accept_privchat") == "0" ? false : true;
