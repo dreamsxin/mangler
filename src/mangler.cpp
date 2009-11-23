@@ -268,8 +268,21 @@ void Mangler::connectButton_clicked_cb(void) {/*{{{*/
             Glib::ustring phonetic = server->phonetic;
             if (!server || server->hostname.empty() || server->port.empty() || server->username.empty()) {
                 channelTree->updateLobby("Not connected");
+                if (server->hostname.empty()) {
+                    errorDialog("You have not specified a hostname for this server.");
+                    return;
+                }
+                if (server->port.empty()) {
+                    errorDialog("You have not specified a port for this server.");
+                    return;
+                }
+                if (server->username.empty()) {
+                    errorDialog("You have not specified a username for this server.");
+                    return;
+                }
                 return;
             }
+
             settings->config.lastConnectedServerId = server_id;
             settings->config.save();
             Glib::Thread::create(sigc::bind(sigc::mem_fun(this->network, &ManglerNetwork::connect), hostname, port, username, password, phonetic), FALSE);
