@@ -67,6 +67,7 @@ class Mangler
         Gtk::VBox                           *vbox;
         Gtk::CheckMenuItem                  *checkmenuitem;
         Gtk::MenuItem                       *menuitem;
+        Gtk::Table                          *table;
 
         std::map<Glib::ustring, Glib::RefPtr<Gdk::Pixbuf> >  icons;
         Glib::RefPtr<Gtk::StatusIcon>       statusIcon;
@@ -124,6 +125,7 @@ class Mangler
 
         // menu bar signal handlers
         void buttonMenuItem_toggled_cb(void);
+        void hideServerInfoMenuItem_toggled_cb(void);
         void quitMenuItem_activate_cb(void);
 
 

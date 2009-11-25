@@ -89,6 +89,7 @@ class ManglerConfig {
                 uint32_t        windowWidth;
                 uint32_t        windowHeight;
                 bool            buttonsHidden;
+                bool            serverInfoHidden;
 
 		ManglerServerConfig   qc_lastserver;
 		std::vector<ManglerServerConfig *> serverlist;

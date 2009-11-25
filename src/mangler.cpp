@@ -165,6 +165,9 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
     builder->get_widget("buttonMenuItem", checkmenuitem);
     checkmenuitem->signal_toggled().connect(sigc::mem_fun(this, &Mangler::buttonMenuItem_toggled_cb));
 
+    builder->get_widget("hideServerInfoMenuItem", checkmenuitem);
+    checkmenuitem->signal_toggled().connect(sigc::mem_fun(this, &Mangler::hideServerInfoMenuItem_toggled_cb));
+
     builder->get_widget("serverListMenuItem", menuitem);
     menuitem->signal_activate().connect(sigc::mem_fun(this, &Mangler::serverConfigButton_clicked_cb));
 
@@ -228,6 +231,9 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
 
     builder->get_widget("buttonMenuItem", checkmenuitem);
     checkmenuitem->set_active(settings->config.buttonsHidden);
+
+    builder->get_widget("hideServerInfoMenuItem", checkmenuitem);
+    checkmenuitem->set_active(settings->config.serverInfoHidden);
 
     // Create Server List Window
     serverList = new ManglerServerList(builder);
@@ -430,6 +436,18 @@ void Mangler::buttonMenuItem_toggled_cb(void) {/*{{{*/
     } else {
         settings->config.buttonsHidden = false;
         vbox->show();
+    }
+    settings->config.save();
+}/*}}}*/
+void Mangler::hideServerInfoMenuItem_toggled_cb(void) {/*{{{*/
+    builder->get_widget("hideServerInfoMenuItem", checkmenuitem);
+    builder->get_widget("serverTable", table);
+    if (checkmenuitem->get_active()) {
+        table->hide();
+        settings->config.serverInfoHidden = true;
+    } else {
+        settings->config.serverInfoHidden = false;
+        table->show();
     }
     settings->config.save();
 }/*}}}*/
@@ -831,8 +849,8 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                     progressbar->set_fraction(0);
                     statusbar->pop();
                     statusbar->push("Not connected");
-                    builder->get_widget("serverTabLabel", label);
-                    label->set_label("Not Connected");
+                    //builder->get_widget("serverTabLabel", label);
+                    //label->set_label("Not Connected");
                     builder->get_widget("pingLabel", label);
                     label->set_label("N/A");
                     builder->get_widget("userCountLabel", label);
