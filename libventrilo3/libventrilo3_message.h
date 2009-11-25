@@ -325,15 +325,15 @@ int _v3_get_0x58(_v3_net_message *msg);
 _v3_net_message *_v3_put_0x58(uint16_t subtype, uint16_t channel, uint16_t phantom_user_id);/*}}}*/
 typedef struct _v3_net_message_0x57 {/*{{{*/
     uint32_t type;              // 0
-    uint32_t unknown_1;         // 4
+    uint16_t unknown_1;         // 4
+    uint16_t is_licensed;       // 6
     uint16_t port;              // 8
     uint16_t max_clients;       // 10
     uint16_t connected_clients; // 12
-    uint8_t  unknown_2[14];     // 14
-    char     name[32];          // 28
-    char     version[16];       // 60
-    uint8_t  unknown_3[32];     // 76
-
+    uint16_t unknown_2[3];      // 14
+    char     name[32];          // 26
+    char     version[16];       // 58
+    char     unknown_3[32];     // 74
 } _v3_msg_0x57;
 int _v3_get_0x57(_v3_net_message *msg);/*}}}*/
 typedef struct _v3_net_message_0x59 {/*{{{*/
