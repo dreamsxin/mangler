@@ -757,7 +757,7 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                 v3_free_channel(c);
                 break;/*}}}*/
             case V3_EVENT_ERROR_MSG:/*{{{*/
-                errorDialog(ev->error.message);
+                errorDialog(c_to_ustring(ev->error.message));
                 break;/*}}}*/
             case V3_EVENT_USER_TALK_START:/*{{{*/
                 if (v3_is_loggedin()) {
