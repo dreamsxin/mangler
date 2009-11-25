@@ -70,11 +70,13 @@ class ManglerChannelTree
         Gtk::TreeViewColumn                 *column;
         Gtk::CellRendererPixbuf             *pixrenderer;
         Gtk::CellRendererText               *textrenderer;
+        Gtk::MenuItem                       *menuitem;
         void renderCellData(Gtk::CellRenderer *cell, const Gtk::TreeModel::iterator& iter);
 
     public:
         ManglerChannelTree(Glib::RefPtr<Gtk::Builder> builder);
         Gtk::TreeView                       *channelView;
+        Gtk::Menu                           *rcmenu;
         Gtk::Window                         *window;
         Gtk::Label                          *label;
         Gtk::VScale                         *volumevscale;
@@ -99,6 +101,9 @@ class ManglerChannelTree
         void clear(void);
 
         void channelView_row_activated_cb(const Gtk::TreeModel::Path& path, Gtk::TreeViewColumn* column);
+        void channelView_buttonpress_event_cb(GdkEventButton* event);
+        void copyCommentMenuItem_activate_cb(void);
+        void copyURLMenuItem_activate_cb(void);
         void volumeAdjustment_value_changed_cb(uint16_t);
 
 };

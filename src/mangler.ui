@@ -999,6 +999,7 @@
                     <child>
                       <object class="GtkAlignment" id="alignment5">
                         <property name="visible">True</property>
+                        <property name="top_padding">8</property>
                         <child>
                           <object class="GtkHBox" id="hbox5">
                             <property name="visible">True</property>
@@ -2673,4 +2674,23 @@ Notifications are the sound effects that are played when you login, logout, a us
     <property name="stock">gtk-properties</property>
   </object>
   <object class="GtkAccelGroup" id="accelGroupClose"/>
+  <object class="GtkMenu" id="userRightClickMenu">
+    <property name="visible">True</property>
+    <child>
+      <object class="GtkMenuItem" id="copyComment">
+        <property name="visible">True</property>
+        <property name="tooltip_text" translatable="yes">Copy User's Comment to Clipboard</property>
+        <property name="label" translatable="yes">Copy Comment</property>
+        <property name="use_underline">True</property>
+      </object>
+    </child>
+    <child>
+      <object class="GtkMenuItem" id="copyURL">
+        <property name="visible">True</property>
+        <property name="tooltip_text" translatable="yes">Copy User's URL to Clipboard</property>
+        <property name="label" translatable="yes">Copy URL</property>
+        <property name="use_underline">True</property>
+      </object>
+    </child>
+  </object>
 </interface>

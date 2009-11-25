@@ -51,7 +51,14 @@ ManglerChannelTree::ManglerChannelTree(Glib::RefPtr<Gtk::Builder> builder)/*{{{*
 
     // connect our callbacks for clicking on rows
     channelView->signal_row_activated().connect(sigc::mem_fun(this, &ManglerChannelTree::channelView_row_activated_cb));
+    channelView->signal_button_press_event().connect_notify(sigc::mem_fun(this, &ManglerChannelTree::channelView_buttonpress_event_cb));
 
+    // create our right click context menu and connect its signal
+    builder->get_widget("userRightClickMenu", rcmenu);
+    builder->get_widget("copyComment", menuitem);
+    menuitem->signal_activate().connect(sigc::mem_fun(this, &ManglerChannelTree::copyCommentMenuItem_activate_cb));
+    builder->get_widget("copyURL", menuitem);
+    menuitem->signal_activate().connect(sigc::mem_fun(this, &ManglerChannelTree::copyURLMenuItem_activate_cb));
 
     //int colnum = channelView->append_column("Name", channelRecord.displayName) - 1;
     // TODO: Write a sort routine to make sure users are always immediately
@@ -70,7 +77,9 @@ ManglerChannelTree::ManglerChannelTree(Glib::RefPtr<Gtk::Builder> builder)/*{{{*
      */
     volumeAdjustment = new Gtk::Adjustment(79, 0, 148, 1, 10, 10);
     volumevscale = new Gtk::VScale(*volumeAdjustment);
+    volumevscale->add_mark(138, Gtk::POS_LEFT, "200%");
     volumevscale->add_mark(79, Gtk::POS_LEFT, "100%");
+    volumevscale->add_mark(0, Gtk::POS_LEFT, "0%");
     volumevscale->set_inverted(true);
     volumevscale->set_draw_value(false);
     builder->get_widget("userSettingsVolumeAdjustVBox", vbox);
@@ -518,6 +527,37 @@ ManglerChannelTree::channelView_row_activated_cb(const Gtk::TreeModel::Path& pat
             return;
         }
         v3_change_channel(id, (char *)password.c_str());
+    }
+}/*}}}*/
+
+void
+ManglerChannelTree::channelView_buttonpress_event_cb(GdkEventButton* event) {/*{{{*/
+    if ((event->type == GDK_BUTTON_PRESS) && (event->button == 3)) {
+        rcmenu->popup(event->button, event->time);
+    }
+}/*}}}*/
+
+void
+ManglerChannelTree::copyCommentMenuItem_activate_cb(void) {/*{{{*/
+    Glib::RefPtr<Gtk::Clipboard> clipboard = Gtk::Clipboard::get();
+    Glib::RefPtr<Gtk::TreeSelection> sel = channelView->get_selection();
+    Gtk::TreeModel::iterator iter = sel->get_selected();
+    if(iter) {
+        Gtk::TreeModel::Row row = *iter;
+        Glib::ustring comment = row[channelRecord.comment];
+        clipboard->set_text(comment);
+    }
+}/*}}}*/
+
+void
+ManglerChannelTree::copyURLMenuItem_activate_cb(void) {/*{{{*/
+    Glib::RefPtr<Gtk::Clipboard> clipboard = Gtk::Clipboard::get();
+    Glib::RefPtr<Gtk::TreeSelection> sel = channelView->get_selection();
+    Gtk::TreeModel::iterator iter = sel->get_selected();
+    if(iter) {
+        Gtk::TreeModel::Row row = *iter;
+        Glib::ustring url = row[channelRecord.url];
+        clipboard->set_text(url);
     }
 }/*}}}*/
 
