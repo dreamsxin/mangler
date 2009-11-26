@@ -903,7 +903,7 @@ _v3_recv_enc_msg(char *data) {/*{{{*/
     }
     _v3_debug(V3_DEBUG_PACKET, "======= receiving encrypted TCP packet ============================");
     if ((recvlen = recv(_v3_sockd, (uint8_t *)&len+1, 1, 0)) != 1) {
-        if (recvlen == 0) {
+        if (recvlen == 0 || recvlen == -1) {
             _v3_error("server closed connection");
             _v3_close_connection();
             _v3_func_leave("_v3_recv_enc_msg");
@@ -914,7 +914,7 @@ _v3_recv_enc_msg(char *data) {/*{{{*/
         return -1;
     }
     if ((recvlen = recv(_v3_sockd, (uint8_t *)&len, 1, 0)) != 1) {
-        if (recvlen == 0) {
+        if (recvlen == 0 || recvlen == -1) {
             _v3_error("server closed connection");
             _v3_close_connection();
             _v3_func_leave("_v3_recv_enc_msg");
@@ -1947,6 +1947,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                                         SpeexBits bits;
                                         int frame_size;
                                         int ctr;
+                                        static int currate = 0;
 
                                         _v3_msg_0x52_speexdata *speexdata = msub->data;
                                         // The frame size as a uint16_t is prepended to
@@ -1955,7 +1956,11 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                                         // is the actual frame size in the packet.  Then
                                         // subtract two for extra int16 specifying length
                                         frame_size = msub->header.data_length / speexdata->frame_count - 2;
-                                        if (v3_decoders[m->header.user_id].speex == NULL) {
+                                        if (v3_decoders[m->header.user_id].speex == NULL || (ev->pcm.rate != currate)) {
+                                            if (v3_decoders[m->header.user_id].speex) {
+                                                speex_decoder_destroy(v3_decoders[m->header.user_id].speex);
+                                            }
+                                            currate = ev->pcm.rate;
                                             switch (ev->pcm.rate) {
                                                 case 8000:
                                                     v3_decoders[m->header.user_id].speex = speex_decoder_init(&speex_nb_mode);
