@@ -141,7 +141,13 @@ ManglerAudio::input(void) {/*{{{*/
         seconds = 0.0;
         ctr = 0;
         // As best as I can tell, we're supposed to send ~0.11 seconds of audio in each packet
-        while (seconds < 0.115) {
+        for (;;) {
+            /*
+            if (seconds >= 0.115) {
+                //fprintf(stderr, "0.115 seconds of real time has elapsed\n", ctr);
+                break;
+            }
+            */
             if (pcm_framesize * ctr > rate * 0.115 * 2) {
                 //fprintf(stderr, "we have 0.115 seconds of audio in %d iterations\n", ctr);
                 break;
