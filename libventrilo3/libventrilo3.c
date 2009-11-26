@@ -1873,6 +1873,8 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                                         SpeexBits bits;
                                         int frame_size;
                                         int ctr;
+                                        static int currate = 0;
+
 
                                         _v3_msg_0x52_speexdata *speexdata = msub->data;
                                         // The frame size as a uint16_t is prepended to
@@ -1881,7 +1883,11 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                                         // is the actual frame size in the packet.  Then
                                         // subtract two for extra int16 specifying length
                                         frame_size = msub->data_length / speexdata->frame_count - 2;
-                                        if (v3_decoders[m->user_id].speex == NULL) {
+                                        if (v3_decoders[m->user_id].speex == NULL || (ev->pcm.rate != currate)) {
+                                            if (v3_decoders[m->user_id].speex) {
+                                                speex_decoder_destroy(v3_decoders[m->user_id].speex);
+                                            }
+                                            currate = ev->pcm.rate;
                                             switch (ev->pcm.rate) {
                                                 case 8000:
                                                     v3_decoders[m->user_id].speex = speex_decoder_init(&speex_nb_mode);
