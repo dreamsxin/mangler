@@ -215,6 +215,10 @@ void ManglerServerList::saveRow() {
     Gtk::TreeModel::Children::iterator iter = serverListTreeModel->children().begin();
     ManglerServerConfig *server;
 
+    if (serverListServerNameEntry->get_text().empty()) {
+        mangler->errorDialog("Cannot save a server without a name");
+        return;
+    }
     while (iter != serverListTreeModel->children().end()) {
         row = *iter;
         int32_t rowId = row[serverListColumns.id];
@@ -224,13 +228,13 @@ void ManglerServerList::saveRow() {
         iter++;
     }
     server = mangler->settings->config.getserver(editorId);
-    server->name = serverListServerNameEntry->get_text();
-    server->hostname = serverListHostnameEntry->get_text();
-    server->port = serverListPortEntry->get_text();
-    server->username = serverListUsernameEntry->get_text();
-    server->password = serverListPasswordEntry->get_text();
-    server->phonetic = serverListPhoneticEntry->get_text();
-    server->comment = serverListCommentEntry->get_text();
+    server->name = trim(serverListServerNameEntry->get_text());
+    server->hostname = trim(serverListHostnameEntry->get_text());
+    server->port = trim(serverListPortEntry->get_text());
+    server->username = trim(serverListUsernameEntry->get_text());
+    server->password = trim(serverListPasswordEntry->get_text());
+    server->phonetic = trim(serverListPhoneticEntry->get_text());
+    server->comment = trim(serverListCommentEntry->get_text());
     server->acceptPages = serverListPageCheckButton->get_active();
     server->acceptU2U = serverListUtUCheckButton->get_active();
     server->acceptPrivateChat = serverListPrivateChatCheckButton->get_active();
@@ -242,4 +246,13 @@ void ManglerServerList::saveRow() {
     row[serverListColumns.port] = server->port;
     row[serverListColumns.username] = server->username;
     mangler->settings->config.save();
+}
+
+Glib::ustring ManglerServerList::trim(Glib::ustring const& orig) {
+    char const blankChars[] = " \t\n\r";
+
+    Glib::ustring::size_type const first = orig.find_first_not_of(blankChars);
+    return ( first==Glib::ustring::npos )
+        ? Glib::ustring()
+        : orig.substr(first, orig.find_last_not_of(blankChars)-first+1);
 }

@@ -70,11 +70,13 @@ class ManglerChannelTree
         Gtk::TreeViewColumn                 *column;
         Gtk::CellRendererPixbuf             *pixrenderer;
         Gtk::CellRendererText               *textrenderer;
+        Gtk::MenuItem                       *menuitem;
         void renderCellData(Gtk::CellRenderer *cell, const Gtk::TreeModel::iterator& iter);
 
     public:
         ManglerChannelTree(Glib::RefPtr<Gtk::Builder> builder);
         Gtk::TreeView                       *channelView;
+        Gtk::Menu                           *rcmenu;
         Gtk::Window                         *window;
         Gtk::Label                          *label;
         Gtk::VScale                         *volumevscale;
@@ -85,6 +87,9 @@ class ManglerChannelTree
         void addUser(uint32_t id, uint32_t channel, Glib::ustring name, Glib::ustring comment = "", Glib::ustring phonetic = "", Glib::ustring url = "", Glib::ustring integration_text = "", bool guest = false);
         void updateLobby(Glib::ustring name, Glib::ustring comment = "", Glib::ustring phonetic = "");
         void updateUser(uint32_t id, uint32_t parent_id, Glib::ustring name, Glib::ustring comment, Glib::ustring phonetic, Glib::ustring url, Glib::ustring integration_text, bool guest);
+        void updateChannel(uint8_t protect_mode, uint32_t id, uint32_t parent_id, Glib::ustring name, Glib::ustring comment, Glib::ustring phonetic);
+        Glib::ustring getLastTransmit(uint16_t userid);
+        void setLastTransmit(uint16_t userid, Glib::ustring last_transmit);
         void removeUser(uint32_t id);
         void removeChannel(uint32_t id);
         void userIsTalking(uint16_t id, bool isTalking);
@@ -96,6 +101,9 @@ class ManglerChannelTree
         void clear(void);
 
         void channelView_row_activated_cb(const Gtk::TreeModel::Path& path, Gtk::TreeViewColumn* column);
+        void channelView_buttonpress_event_cb(GdkEventButton* event);
+        void copyCommentMenuItem_activate_cb(void);
+        void copyURLMenuItem_activate_cb(void);
         void volumeAdjustment_value_changed_cb(uint16_t);
 
 };

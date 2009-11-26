@@ -410,7 +410,9 @@ _v3_put_0x48(void) {/*{{{*/
     memcpy(mc->handshake, v3_server.handshake, 16);
     strncpy(mc->client_version, V3_CLIENT_VERSION, 16);
     strncpy(mc->proto_version,  V3_PROTO_VERSION, 16);
-    _v3_hash_password((uint8_t *)v3_luser.password, (uint8_t *)mc->password_hash);
+    if (strlen(v3_luser.password)) {
+        _v3_hash_password((uint8_t *)v3_luser.password, (uint8_t *)mc->password_hash);
+    }
     strncpy(mc->username, v3_luser.name, 32);
     strncpy(mc->phonetic, v3_luser.phonetic, 32);
     strncpy(mc->os, "WIN32", 64);
@@ -663,13 +665,13 @@ _v3_get_0x52(_v3_net_message *msg) {/*{{{*/
                                 _v3_debug(V3_DEBUG_PACKET_PARSE, "received audio packet with zero frames");
                                 return false;
                             }
-                            _v3_debug(V3_DEBUG_PACKET_PARSE, "speex audio count: %d (%d byte frames)", data->frame_count, msub->data_length / data->frame_count);
+                            _v3_debug(V3_DEBUG_PACKET_PARSE, "speex audio count: %d (%d byte frames)", data->frame_count, (msub->data_length - 4) / data->frame_count);
                             _v3_debug(V3_DEBUG_PACKET_PARSE, "allocating %d bytes for pointers", data->frame_count * sizeof(uint8_t *));
                             data->frames = malloc(data->frame_count * sizeof(uint8_t *));
-                            for (ctr = 0, offset = 32; ctr < data->frame_count; ctr++, offset += msub->data_length / data->frame_count) {
-                                _v3_debug(V3_DEBUG_PACKET_PARSE, "allocating %d bytes for frame", msub->data_length / data->frame_count);
-                                data->frames[ctr] = malloc(msub->data_length / data->frame_count);
-                                memcpy(data->frames[ctr], msg->data+offset, msub->data_length / data->frame_count);
+                            for (ctr = 0, offset = 32; ctr < data->frame_count; ctr++, offset += (msub->data_length - 4) / data->frame_count) {
+                                _v3_debug(V3_DEBUG_PACKET_PARSE, "allocating %d bytes for frame", (msub->data_length - 4) / data->frame_count);
+                                data->frames[ctr] = malloc((msub->data_length - 4) / data->frame_count);
+                                memcpy(data->frames[ctr], msg->data+offset, (msub->data_length - 4) / data->frame_count);
                             }
 
                             msub->data = data;
@@ -705,7 +707,7 @@ _v3_get_0x52(_v3_net_message *msg) {/*{{{*/
 }/*}}}*/
 
 _v3_net_message *
-_v3_put_0x52(uint8_t subtype, uint16_t codec, uint16_t codec_format, uint16_t send_type, uint32_t length, void *data) {/*{{{*/
+_v3_put_0x52(uint8_t subtype, uint16_t codec, uint16_t codec_format, uint16_t send_type, uint32_t pcmlength, uint32_t length, void *data) {/*{{{*/
     _v3_net_message *msg;
     _v3_msg_0x52_0x01_out *msgdata;
     int ctr;
@@ -736,12 +738,13 @@ _v3_put_0x52(uint8_t subtype, uint16_t codec, uint16_t codec_format, uint16_t se
             msgdata = malloc(sizeof(_v3_msg_0x52_0x01_out));
             memset(msgdata, 0, sizeof(_v3_msg_0x52_0x01_out));
             msg->len = sizeof(_v3_msg_0x52_0x01_out) - sizeof(void *) + length;
-            _v3_debug(V3_DEBUG_PACKET_PARSE, "setting unknown 2 to %d", length / 65 * 640 + 1000);
             // TODO: we really need to figure out what these values are
             if (codec == 0) {
-                msgdata->unknown_2 = length / 65 * 640 + 1000;
+                _v3_debug(V3_DEBUG_PACKET_PARSE, "setting unknown 2 to %d", pcmlength);
+                msgdata->unknown_2 = pcmlength;
             } else if (codec == 3) {
-                msgdata->unknown_2 = 10240;
+                _v3_debug(V3_DEBUG_PACKET_PARSE, "setting unknown 2 to %d", pcmlength);
+                msgdata->unknown_2 = pcmlength;
             }
             msgdata->unknown_4 = htons(1);
             msgdata->unknown_5 = htons(2);
@@ -818,8 +821,14 @@ _v3_put_0x52(uint8_t subtype, uint16_t codec, uint16_t codec_format, uint16_t se
                         // Copy all frames in the array into the network packet
                         for (ctr = 0; ctr < speexdata->frame_count; ctr++) {
                             memcpy(offset, speexdata->frames[ctr], enc_frame_size);
+                            free(speexdata->frames[ctr]);
                             offset += enc_frame_size;
                         }
+                        // TODO: These, and the free in the loop above, are only temporary fixes.
+                        // We should construct _v3_destroy_0x52 in such a way that it can free outgoing audio packages;
+                        // or just write seperate functions for freeing incoming/outgoing audio.
+                        free(speexdata->frames);
+                        free(speexdata);
                     }
                     break;
             }
@@ -845,6 +854,10 @@ _v3_destroy_0x52(_v3_net_message *msg) {/*{{{*/
 
     _v3_func_enter("_v3_destroy_0x52");
     m = msg->contents;
+    if (!m || !msg->contents || !m->subtype)  {
+        // we're already free'd?
+        return true;
+    }
     switch (m->subtype) {
         case 0x01:
             msubin = (_v3_msg_0x52_0x01_in *)m;

@@ -51,7 +51,14 @@ ManglerChannelTree::ManglerChannelTree(Glib::RefPtr<Gtk::Builder> builder)/*{{{*
 
     // connect our callbacks for clicking on rows
     channelView->signal_row_activated().connect(sigc::mem_fun(this, &ManglerChannelTree::channelView_row_activated_cb));
+    channelView->signal_button_press_event().connect_notify(sigc::mem_fun(this, &ManglerChannelTree::channelView_buttonpress_event_cb));
 
+    // create our right click context menu and connect its signal
+    builder->get_widget("userRightClickMenu", rcmenu);
+    builder->get_widget("copyComment", menuitem);
+    menuitem->signal_activate().connect(sigc::mem_fun(this, &ManglerChannelTree::copyCommentMenuItem_activate_cb));
+    builder->get_widget("copyURL", menuitem);
+    menuitem->signal_activate().connect(sigc::mem_fun(this, &ManglerChannelTree::copyURLMenuItem_activate_cb));
 
     //int colnum = channelView->append_column("Name", channelRecord.displayName) - 1;
     // TODO: Write a sort routine to make sure users are always immediately
@@ -70,7 +77,9 @@ ManglerChannelTree::ManglerChannelTree(Glib::RefPtr<Gtk::Builder> builder)/*{{{*
      */
     volumeAdjustment = new Gtk::Adjustment(79, 0, 138, 1, 10, 10);
     volumevscale = new Gtk::VScale(*volumeAdjustment);
+    volumevscale->add_mark(138, Gtk::POS_LEFT, "200%");
     volumevscale->add_mark(79, Gtk::POS_LEFT, "100%");
+    volumevscale->add_mark(0, Gtk::POS_LEFT, "0%");
     volumevscale->set_inverted(true);
     volumevscale->set_draw_value(false);
     builder->get_widget("userSettingsVolumeAdjustVBox", vbox);
@@ -137,6 +146,8 @@ ManglerChannelTree::addUser(uint32_t id, uint32_t parent_id, Glib::ustring name,
     }
     if (! comment.empty()) {
         displayName = displayName + " (" + (url.empty() ? "" : "U: ") + comment + ")";
+    } else if (comment.empty() && !url.empty()) {
+        displayName = displayName + " (" + (url.empty() ? "" : "U: ") + url + ")";
     }
     if (! integration_text.empty()) {
         displayName = displayName + " {" + integration_text + "}";
@@ -195,6 +206,8 @@ ManglerChannelTree::updateUser(uint32_t id, uint32_t parent_id, Glib::ustring na
     }
     if (! comment.empty()) {
         displayName = displayName + " (" + (url.empty() ? "" : "U: ") + comment + ")";
+    } else if (comment.empty() && !url.empty()) {
+        displayName = displayName + " (" + (url.empty() ? "" : "U: ") + url + ")";
     }
     if (! integration_text.empty()) {
         displayName = displayName + " {" + integration_text + "}";
@@ -210,14 +223,13 @@ ManglerChannelTree::updateUser(uint32_t id, uint32_t parent_id, Glib::ustring na
     user[channelRecord.phonetic]          = phonetic;
     user[channelRecord.url]               = url;
     user[channelRecord.integration_text]  = integration_text;
-    user[channelRecord.last_transmit]     = id != 0 ? "unknown" : "";
 }/*}}}*/
 
 /*
  * Add a channel to the channel tree
  *
  * id                       user's ventrilo id
- * parent_id                the channel id of the channel the user is in
+ * parent_id                the channel id of the parent channel
  * name                     the user name
  * comment = ""
  * phonetic = ""
@@ -262,6 +274,50 @@ ManglerChannelTree::addChannel(uint8_t protect_mode, uint32_t id, uint32_t paren
     channelRow[channelRecord.phonetic]          = phonetic;
     channelRow[channelRecord.url]               = "";
     channelRow[channelRecord.integration_text]  = "";
+}/*}}}*/
+
+/*
+ * Add a channel to the channel tree
+ *
+ * id                       user's ventrilo id
+ * parent_id                the channel id of the parent channel
+ * name                     the user name
+ * comment = ""
+ * phonetic = ""
+ */
+void
+ManglerChannelTree::updateChannel(uint8_t protect_mode, uint32_t id, uint32_t parent_id, Glib::ustring name, Glib::ustring comment, Glib::ustring phonetic) {/*{{{*/
+    Glib::ustring displayName = "";
+    Gtk::TreeModel::Row channel;
+
+    if (! (channel = getChannel(id, channelStore->children())) && id > 0) {
+        fprintf(stderr, "channel missing: id: %d - name: %s - parent; %d\n", id, name.c_str(), parent_id);
+    }
+    displayName = name;
+    if (! comment.empty()) {
+        displayName = displayName + " (" + comment + ")";
+    }
+    channel[channelRecord.displayName]       = displayName;
+    switch (protect_mode) {
+        case 0:
+            channel[channelRecord.icon]              = mangler->icons["black_circle"]->scale_simple(9, 9, Gdk::INTERP_BILINEAR);;
+            break;
+        case 1:
+            channel[channelRecord.icon]              = mangler->icons["red_circle"]->scale_simple(9, 9, Gdk::INTERP_BILINEAR);;
+            break;
+        case 2:
+            channel[channelRecord.icon]              = mangler->icons["yellow_circle"]->scale_simple(9, 9, Gdk::INTERP_BILINEAR);;
+            break;
+    }
+    channel[channelRecord.isUser]            = false;
+    channel[channelRecord.isGuest]           = false;
+    channel[channelRecord.id]                = id;
+    channel[channelRecord.parent_id]         = parent_id;
+    channel[channelRecord.name]              = name;
+    channel[channelRecord.comment]           = comment;
+    channel[channelRecord.phonetic]          = phonetic;
+    channel[channelRecord.url]               = "";
+    channel[channelRecord.integration_text]  = "";
 }/*}}}*/
 
 /*
@@ -411,6 +467,7 @@ void
 ManglerChannelTree::channelView_row_activated_cb(const Gtk::TreeModel::Path& path, Gtk::TreeViewColumn* column) {/*{{{*/
     v3_channel *channel;
     Glib::ustring password;
+    bool password_required = false;
 
     Gtk::TreeModel::iterator iter = channelStore->get_iter(path);
     Gtk::TreeModel::Row row = *iter;
@@ -452,15 +509,47 @@ ManglerChannelTree::channelView_row_activated_cb(const Gtk::TreeModel::Path& pat
                 fprintf(stderr, "failed to retrieve channel information for channel id %d", id);
                 return;
             }
-            if (channel->protect_mode == 1) {  // Channel is password protected
+            if (v3_channel_requires_password(channel->id)) {  // Channel is password protected
                 password = mangler->getPasswordEntry("Channel Password");
+                password_required = true;
             }
             v3_free_channel(channel);
         }
-        bool isUser = row[channelRecord.isUser];
-        if (! isUser) {
-            v3_change_channel(id, (char *)password.c_str());
+        if (password_required && password.empty()) {
+            return;
         }
+        v3_change_channel(id, (char *)password.c_str());
+    }
+}/*}}}*/
+
+void
+ManglerChannelTree::channelView_buttonpress_event_cb(GdkEventButton* event) {/*{{{*/
+    if ((event->type == GDK_BUTTON_PRESS) && (event->button == 3)) {
+        rcmenu->popup(event->button, event->time);
+    }
+}/*}}}*/
+
+void
+ManglerChannelTree::copyCommentMenuItem_activate_cb(void) {/*{{{*/
+    Glib::RefPtr<Gtk::Clipboard> clipboard = Gtk::Clipboard::get();
+    Glib::RefPtr<Gtk::TreeSelection> sel = channelView->get_selection();
+    Gtk::TreeModel::iterator iter = sel->get_selected();
+    if(iter) {
+        Gtk::TreeModel::Row row = *iter;
+        Glib::ustring comment = row[channelRecord.comment];
+        clipboard->set_text(comment);
+    }
+}/*}}}*/
+
+void
+ManglerChannelTree::copyURLMenuItem_activate_cb(void) {/*{{{*/
+    Glib::RefPtr<Gtk::Clipboard> clipboard = Gtk::Clipboard::get();
+    Glib::RefPtr<Gtk::TreeSelection> sel = channelView->get_selection();
+    Gtk::TreeModel::iterator iter = sel->get_selected();
+    if(iter) {
+        Gtk::TreeModel::Row row = *iter;
+        Glib::ustring url = row[channelRecord.url];
+        clipboard->set_text(url);
     }
 }/*}}}*/
 
@@ -471,11 +560,24 @@ ManglerChannelTree::getUserChannelId(uint16_t userid) {/*{{{*/
 }/*}}}*/
 
 void
-ManglerChannelTree::volumeAdjustment_value_changed_cb(uint16_t id) {
+ManglerChannelTree::volumeAdjustment_value_changed_cb(uint16_t id) {/*{{{*/
     v3_set_volume_user(id, volumeAdjustment->get_value());
-}
+}/*}}}*/
 
-Glib::ustring getTimeString(void) {
+Glib::ustring
+ManglerChannelTree::getLastTransmit(uint16_t userid) {/*{{{*/
+    Gtk::TreeModel::Row user = getUser(userid, channelStore->children());
+    return(user[channelRecord.last_transmit]);
+}/*}}}*/
+
+void
+ManglerChannelTree::setLastTransmit(uint16_t userid, Glib::ustring last_transmit) {/*{{{*/
+    Gtk::TreeModel::Row user = getUser(userid, channelStore->children());
+    user[channelRecord.last_transmit] = last_transmit;
+}/*}}}*/
+
+Glib::ustring
+getTimeString(void) {/*{{{*/
     char buf[64];
     time_t t;
     struct tm *tmp;
@@ -492,5 +594,5 @@ Glib::ustring getTimeString(void) {
     }
     cppbuf = buf;
     return cppbuf;
-}
+}/*}}}*/
 

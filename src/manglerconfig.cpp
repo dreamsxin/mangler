@@ -44,6 +44,7 @@ ManglerConfig::ManglerConfig() {/*{{{*/
     notificationLoginLogout         = true;
     notificationChannelEnterLeave   = true;
     notificationTransmitStartStop   = true;
+    mouseDeviceName                 = "";
     ManglerServerConfig             qc_lastserver;
     std::vector<ManglerServerConfig> serverlist;
     load();
@@ -70,6 +71,7 @@ bool ManglerConfig::save() {/*{{{*/
     put("notification.loginLogout", notificationLoginLogout);
     put("notification.channelEnterLeave", notificationChannelEnterLeave);
     put("notification.transmitStartStop", notificationTransmitStartStop);
+    put("mouseDeviceName", mouseDeviceName);
     put("qc_lastserver.hostname", qc_lastserver.hostname);
     put("qc_lastserver.port", qc_lastserver.port);
     put("qc_lastserver.username", qc_lastserver.username);
@@ -203,19 +205,23 @@ Glib::ustring ManglerConfig::get(Glib::ustring cfgname) {/*{{{*/
     return "";
 }/*}}}*/
 void ManglerConfig::load() {/*{{{*/
-    PushToTalkKeyEnabled          = get("PushToTalkKeyEnabled") == "0" ? false : true;
+    PushToTalkKeyEnabled          = get("PushToTalkKeyEnabled") == "1" ? true : false; // default false
     PushToTalkKeyValue            = get("PushToTalkKeyValue");
     parsePushToTalkValue(PushToTalkKeyValue);
-    PushToTalkMouseEnabled        = get("PushToTalkMouseEnabled") == "0" ? false : true;
+    PushToTalkMouseEnabled        = get("PushToTalkMouseEnabled") == "1" ? true : false; // default false
     PushToTalkMouseValue          = get("PushToTalkMouseValue");
-    AudioIntegrationEnabled       = get("AudioIntegrationEnabled") == "0" ? false : true;
+    if (PushToTalkMouseValue.length() > 6) {
+        PushToTalkMouseValueInt = atoi(PushToTalkMouseValue.substr(6).c_str());
+    }
+    AudioIntegrationEnabled       = get("AudioIntegrationEnabled") == "1" ? true : false; // default false
     AudioIntegrationPlayer        = get("AudioIntegrationPlayer");
     inputDeviceName               = get("inputDeviceName");
     outputDeviceName              = get("outputDeviceName");
     notificationDeviceName        = get("notificationDeviceName");
-    notificationLoginLogout       = get("notification.loginLogout") == "0" ? false : true;;
-    notificationChannelEnterLeave = get("notification.channelEnterLeave") == "0" ? false : true;;
-    notificationTransmitStartStop = get("notification.transmitStartStop") == "0" ? false : true;;
+    notificationLoginLogout       = get("notification.loginLogout") == "0" ? false : true; // default true
+    notificationChannelEnterLeave = get("notification.channelEnterLeave") == "0" ? false : true; // default true
+    notificationTransmitStartStop = get("notification.transmitStartStop") == "0" ? false : true; // default true
+    mouseDeviceName               = get("mouseDeviceName");
     qc_lastserver.hostname        = get("qc_lastserver.hostname");
     qc_lastserver.port            = get("qc_lastserver.port");
     qc_lastserver.username        = get("qc_lastserver.username");
@@ -233,7 +239,7 @@ void ManglerConfig::load() {/*{{{*/
         Glib::ustring base;
         snprintf(buf, 1023, "serverlist.%d.", ctr);
         base = buf;
-        if (get(base + "hostname") == "") {
+        if (get(base + "name") == "") {
             break;
         } else {
             ManglerServerConfig *server = new ManglerServerConfig();
@@ -285,6 +291,8 @@ uint32_t ManglerConfig::addserver(void) {/*{{{*/
     return serverlist.size() - 1;
 }/*}}}*/
 void ManglerConfig::removeserver(uint32_t id) {/*{{{*/
+    uint32_t active_server;
+    active_server = mangler->getActiveServer();
     delete serverlist[id];
     serverlist.erase(serverlist.begin() + id);
     // we need to rebuild the serverlist liststore since the ids are changed now
@@ -298,6 +306,7 @@ void ManglerConfig::removeserver(uint32_t id) {/*{{{*/
         row[mangler->serverList->serverListColumns.port] = server->port;
         row[mangler->serverList->serverListColumns.username] = server->username;
     }
+    mangler->setActiveServer(active_server);
     return;
 }/*}}}*/
 ManglerServerConfig *ManglerConfig::getserver(uint32_t id) {/*{{{*/

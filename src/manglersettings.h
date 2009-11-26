@@ -28,6 +28,7 @@
 #define _MANGLERSETTINGS_H
 
 #include "manglerconfig.h"
+#include <X11/extensions/XInput.h>
 
 class ManglerSettings
 {
@@ -37,10 +38,12 @@ class ManglerSettings
         Gtk::Window         *settingsWindow;
         Gtk::Button         *button;
         Gtk::Label          *label;
+        Gtk::ComboBox       *combobox;
         Gtk::Window         *window;
         Gtk::CheckButton    *checkbutton;
         bool                isDetectingKey;
         bool                isDetectingMouse;
+        std::map<uint32_t, Glib::ustring> mouseInputDevices;
         ManglerConfig       config;
 
         // Audio Player List Combo Box Setup
@@ -94,12 +97,26 @@ class ManglerSettings
         notificationDeviceModelColumns  notificationColumns;
         Glib::RefPtr<Gtk::ListStore> notificationDeviceTreeModel;
 
+        // Mouse Input Device Combo Box Setup
+        Gtk::ComboBox       *mouseDeviceComboBox;
+        class mouseDeviceModelColumns : public Gtk::TreeModel::ColumnRecord
+        {
+            public:
+                mouseDeviceModelColumns() { add(id); add(name); }
+                Gtk::TreeModelColumn<uint32_t>      id;
+                Gtk::TreeModelColumn<Glib::ustring> name;
+        };
+        mouseDeviceModelColumns  mouseColumns;
+        Glib::RefPtr<Gtk::ListStore> mouseDeviceTreeModel;
+
         // members functions
         void showSettingsWindow(void);
         bool settingsPTTKeyDetect(void);
         bool settingsPTTMouseDetect(void);
         void applySettings(void);
         void initSettings(void);
+
+        std::map<uint32_t, Glib::ustring> getInputDeviceList(void);
 
         // callbacks
         void settingsWindow_show_cb(void);

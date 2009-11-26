@@ -30,6 +30,7 @@
 #include "manglerui.h"
 #include "mangler-icons.h"
 #include <gdk/gdkx.h>
+#include <X11/extensions/XInput.h>
 
 
 Glib::ustring iso_8859_1_to_utf8(char *input);
@@ -196,6 +197,14 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
     statusIcon->signal_activate().connect(sigc::mem_fun(this, &Mangler::statusIcon_activate_cb));
     iconified = false;
 
+    // Set up mouse push to talk
+    /*
+    if (settings->config.PushToTalkMouseEnabled && settings->config.PushToTalkMouseValueInt) {
+        GdkWindow   *rootwin = gdk_get_default_root_window();
+        XGrabButton(GDK_WINDOW_XDISPLAY(rootwin), settings->config.PushToTalkMouseValueInt, AnyModifier, GDK_ROOT_WINDOW(), False, ButtonPressMask|ButtonReleaseMask, GrabModeAsync, GrabModeAsync, None, None);
+    }
+    gdk_window_add_filter (NULL, ptt_filter, NULL);
+    */
 }/*}}}*/
 
 /*
@@ -259,8 +268,21 @@ void Mangler::connectButton_clicked_cb(void) {/*{{{*/
             Glib::ustring phonetic = server->phonetic;
             if (!server || server->hostname.empty() || server->port.empty() || server->username.empty()) {
                 channelTree->updateLobby("Not connected");
+                if (server->hostname.empty()) {
+                    errorDialog("You have not specified a hostname for this server.");
+                    return;
+                }
+                if (server->port.empty()) {
+                    errorDialog("You have not specified a port for this server.");
+                    return;
+                }
+                if (server->username.empty()) {
+                    errorDialog("You have not specified a username for this server.");
+                    return;
+                }
                 return;
             }
+
             settings->config.lastConnectedServerId = server_id;
             settings->config.save();
             Glib::Thread::create(sigc::bind(sigc::mem_fun(this->network, &ManglerNetwork::connect), hostname, port, username, password, phonetic), FALSE);
@@ -349,6 +371,7 @@ void Mangler::startTransmit(void) {/*{{{*/
         return;
     }
     if (isTransmitting) {
+        v3_free_user(user);
         return;
     }
     audioControl->playNotification("talkstart");
@@ -416,19 +439,25 @@ bool Mangler::getNetworkEvent() {/*{{{*/
         v3_user *u;
         v3_channel *c;
         gdk_threads_enter();
+        // if we're not logged in, just ignore whatever messages we receive
+        // *unless* it's a disconnect message.  This prevents old messages in
+        // the queue from attempting to interact with the GUI after a
+        // disconnection
         switch (ev->type) {
             case V3_EVENT_PING:/*{{{*/
-                char buf[16];
-                builder->get_widget("pingLabel", label);
-                if (ev->ping != 65535) {
-                    snprintf(buf, 16, "%d", ev->ping);
+                if (v3_is_loggedin()) {
+                    char buf[16];
+                    builder->get_widget("pingLabel", label);
+                    if (ev->ping != 65535) {
+                        snprintf(buf, 16, "%d", ev->ping);
+                        label->set_text(buf);
+                    } else {
+                        label->set_text("checking...");
+                    }
+                    builder->get_widget("userCountLabel", label);
+                    snprintf(buf, 16, "%d/%d", v3_user_count(), v3_get_max_clients());
                     label->set_text(buf);
-                } else {
-                    label->set_text("checking...");
                 }
-                builder->get_widget("userCountLabel", label);
-                snprintf(buf, 16, "%d/%d", v3_user_count(), v3_get_max_clients());
-                label->set_text(buf);
                 break;/*}}}*/
             case V3_EVENT_STATUS:/*{{{*/
                 builder->get_widget("progressbar", progressbar);
@@ -457,40 +486,67 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                 v3_free_user(u);
                 break;/*}}}*/
             case V3_EVENT_USER_MODIFY:/*{{{*/
-                u = v3_get_user(ev->user.id);
-                if (!u) {
-                    fprintf(stderr, "couldn't retreive user id %d\n", ev->user.id);
-                    break;
+                if (v3_is_loggedin()) {
+                    u = v3_get_user(ev->user.id);
+                    if (!u) {
+                        fprintf(stderr, "couldn't retreive user id %d\n", ev->user.id);
+                        break;
+                    }
+                    if (u->id == 0) {
+                        channelTree->updateLobby(c_to_ustring(u->name), c_to_ustring(u->comment), u->phonetic);
+                    } else {
+                        channelTree->updateUser(
+                                (uint32_t)u->id,
+                                (uint32_t)ev->channel.id,
+                                c_to_ustring(u->name),
+                                c_to_ustring(u->comment),
+                                u->phonetic,
+                                u->url,
+                                c_to_ustring(u->integration_text),
+                                (bool)u->guest);
+                    }
+                    v3_free_user(u);
                 }
-                //fprintf(stderr, "updating user id %d: %s in channel %d\n", ev->user.id, u->name, ev->channel.id);
-                // we cannot remove the lobby user, so bail out when the server comment is updated. See ticket #30
-                if (u->id == 0) {
-                    channelTree->updateLobby(c_to_ustring(u->name), c_to_ustring(u->comment), u->phonetic);
-                } else {
-                    channelTree->updateUser(
-                            (uint32_t)u->id,
-                            (uint32_t)ev->channel.id,
-                            c_to_ustring(u->name),
-                            c_to_ustring(u->comment),
-                            u->phonetic,
-                            u->url,
-                            c_to_ustring(u->integration_text),
-                            (bool)u->guest);
+                break;/*}}}*/
+            case V3_EVENT_CHAN_MODIFY:/*{{{*/
+                if (v3_is_loggedin()) {
+                    const v3_codec *codec_info;
+                    c = v3_get_channel(ev->channel.id);
+                    if (!c) {
+                        fprintf(stderr, "couldn't retreive channel id %d\n", ev->user.id);
+                        break;
+                    }
+                    channelTree->updateChannel(
+                            (uint8_t)c->protect_mode,
+                            (uint32_t)c->id,
+                            (uint32_t)c->parent,
+                            c_to_ustring(c->name),
+                            c_to_ustring(c->comment),
+                            c->phonetic);
+                    if (ev->channel.id == v3_get_user_channel(v3_get_user_id())) {
+                        codec_info = v3_get_channel_codec(ev->channel.id);
+                        builder->get_widget("codecLabel", label);
+                        label->set_text(codec_info->name);
+                    }
+                    v3_free_channel(c);
                 }
-                v3_free_user(u);
                 break;/*}}}*/
             case V3_EVENT_USER_LOGOUT:/*{{{*/
-                // can't get any user info... it's already gone by this point
-                //fprintf(stderr, "removing user id %d\n", ev->user.id);
-                channelTree->removeUser(ev->user.id);
+                if (v3_is_loggedin()) {
+                    // can't get any user info... it's already gone by this point
+                    //fprintf(stderr, "removing user id %d\n", ev->user.id);
+                    channelTree->removeUser(ev->user.id);
+                }
                 break;/*}}}*/
             case V3_EVENT_CHAN_REMOVE:/*{{{*/
-                // can't get any channel info... it's already gone by this point
-                //fprintf(stderr, "removing channel id %d\n", ev->channel.id);
-                channelTree->removeChannel(ev->channel.id);
+                if (v3_is_loggedin()) {
+                    // can't get any channel info... it's already gone by this point
+                    //fprintf(stderr, "removing channel id %d\n", ev->channel.id);
+                    channelTree->removeChannel(ev->channel.id);
+                }
                 break;/*}}}*/
             case V3_EVENT_LOGIN_COMPLETE:/*{{{*/
-                {
+                if (v3_is_loggedin()) {
                     const v3_codec *codec_info;
                     codec_info = v3_get_channel_codec(0);
                     builder->get_widget("codecLabel", label);
@@ -507,38 +563,42 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                 }
                 break;/*}}}*/
             case V3_EVENT_USER_CHAN_MOVE:/*{{{*/
-                u = v3_get_user(ev->user.id);
-                if (! u) {
-                    fprintf(stderr, "failed to retreive user information for user id %d", ev->user.id);
-                    break;;
-                }
-                if (ev->user.id == v3_get_user_id()) {
-                    // we're moving channels... update the codec label
-                    const v3_codec *codec_info;
-                    codec_info = v3_get_channel_codec(ev->channel.id);
-                    builder->get_widget("codecLabel", label);
-                    label->set_text(codec_info->name);
-                } else {
-                    if (ev->channel.id == v3_get_user_channel(v3_get_user_id())) {
-                        // they're joining our channel
-                        audioControl->playNotification("channelenter");
-                    } else if (channelTree->getUserChannelId(ev->user.id) == v3_get_user_channel(v3_get_user_id())) {
-                        // they're leaving our channel
-                        audioControl->playNotification("channelleave");
+                {
+                    u = v3_get_user(ev->user.id);
+                    if (! u) {
+                        fprintf(stderr, "failed to retreive user information for user id %d", ev->user.id);
+                        break;;
                     }
+                    if (ev->user.id == v3_get_user_id()) {
+                        // we're moving channels... update the codec label
+                        const v3_codec *codec_info;
+                        codec_info = v3_get_channel_codec(ev->channel.id);
+                        builder->get_widget("codecLabel", label);
+                        label->set_text(codec_info->name);
+                    } else {
+                        if (ev->channel.id == v3_get_user_channel(v3_get_user_id())) {
+                            // they're joining our channel
+                            audioControl->playNotification("channelenter");
+                        } else if (channelTree->getUserChannelId(ev->user.id) == v3_get_user_channel(v3_get_user_id())) {
+                            // they're leaving our channel
+                            audioControl->playNotification("channelleave");
+                        }
+                    }
+                    //fprintf(stderr, "moving user id %d to channel id %d\n", ev->user.id, ev->channel.id);
+                    Glib::ustring last_transmit = channelTree->getLastTransmit((uint32_t)ev->user.id);
+                    channelTree->removeUser((uint32_t)ev->user.id);
+                    channelTree->addUser(
+                            (uint32_t)u->id,
+                            (uint32_t)ev->channel.id,
+                            c_to_ustring(u->name),
+                            c_to_ustring(u->comment),
+                            u->phonetic,
+                            u->url,
+                            c_to_ustring(u->integration_text),
+                            (bool)u->guest);
+                    channelTree->setLastTransmit(ev->user.id, last_transmit);
+                    v3_free_user(u);
                 }
-                //fprintf(stderr, "moving user id %d to channel id %d\n", ev->user.id, ev->channel.id);
-                channelTree->removeUser((uint32_t)ev->user.id);
-                channelTree->addUser(
-                        (uint32_t)u->id,
-                        (uint32_t)ev->channel.id,
-                        c_to_ustring(u->name),
-                        c_to_ustring(u->comment),
-                        u->phonetic,
-                        u->url,
-                        c_to_ustring(u->integration_text),
-                        (bool)u->guest);
-                v3_free_user(u);
                 break;/*}}}*/
             case V3_EVENT_CHAN_ADD:/*{{{*/
                 c = v3_get_channel(ev->channel.id);
@@ -556,15 +616,10 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                 v3_free_channel(c);
                 break;/*}}}*/
             case V3_EVENT_ERROR_MSG:/*{{{*/
-                builder->get_widget("errorDialog", msgdialog);
-                msgdialog->set_icon(icons["tray_icon"]);
-                msgdialog->set_keep_above(true);
-                msgdialog->set_message(ev->error.message);
-                msgdialog->run();
-                msgdialog->hide();
+                errorDialog(ev->error.message);
                 break;/*}}}*/
             case V3_EVENT_USER_TALK_START:/*{{{*/
-                {
+                if (v3_is_loggedin()) {
                     v3_user *me, *user;
                     me = v3_get_user(v3_get_user_id());
                     user = v3_get_user(ev->user.id);
@@ -575,34 +630,42 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                     } else {
                         if (!me) {
                             fprintf(stderr, "couldn't find my own user info %d\n", v3_get_user_id());
+                        } else {
+                            v3_free_user(me);
                         }
                         if (!user) {
                             fprintf(stderr, "couldn't find user for for user id %d\n", ev->user.id);
+                        } else {
+                            v3_free_user(user);
                         }
                     }
                 }
                 break;/*}}}*/
             case V3_EVENT_USER_TALK_END:/*{{{*/
-                //fprintf(stderr, "user %d stopped talking\n", ev->user.id);
-                channelTree->userIsTalking(ev->user.id, false);
-                // TODO: this is bad, there must be a flag in the last audio
-                // packet saying that it's the last one.  Need to figure out
-                // what that flag is and close it in V3_EVENT_PLAY_AUDIO
-                if (outputAudio[ev->user.id]) {
-                    outputAudio[ev->user.id]->finish();
-                    outputAudio.erase(ev->user.id);
+                if (v3_is_loggedin()) {
+                    //fprintf(stderr, "user %d stopped talking\n", ev->user.id);
+                    channelTree->userIsTalking(ev->user.id, false);
+                    // TODO: this is bad, there must be a flag in the last audio
+                    // packet saying that it's the last one.  Need to figure out
+                    // what that flag is and close it in V3_EVENT_PLAY_AUDIO
+                    if (outputAudio[ev->user.id]) {
+                        outputAudio[ev->user.id]->finish();
+                        outputAudio.erase(ev->user.id);
+                    }
                 }
                 break;/*}}}*/
             case V3_EVENT_PLAY_AUDIO:/*{{{*/
-                // Open a stream if we don't have one for this user
-                channelTree->userIsTalking(ev->user.id, true);
-                if (!outputAudio[ev->user.id]) {
-                    outputAudio[ev->user.id] = new ManglerAudio("output");
-                    outputAudio[ev->user.id]->open(ev->pcm.rate, AUDIO_OUTPUT);
-                }
-                // And queue the audio
-                if (outputAudio[ev->user.id]) {
-                    outputAudio[ev->user.id]->queue(ev->pcm.length, (uint8_t *)ev->data.sample);
+                if (v3_is_loggedin()) {
+                    // Open a stream if we don't have one for this user
+                    channelTree->userIsTalking(ev->user.id, true);
+                    if (!outputAudio[ev->user.id]) {
+                        outputAudio[ev->user.id] = new ManglerAudio("output");
+                        outputAudio[ev->user.id]->open(ev->pcm.rate, AUDIO_OUTPUT);
+                    }
+                    // And queue the audio
+                    if (outputAudio[ev->user.id]) {
+                        outputAudio[ev->user.id]->queue(ev->pcm.length, (uint8_t *)ev->data.sample);
+                    }
                 }
                 break;/*}}}*/
             case V3_EVENT_DISPLAY_MOTD:/*{{{*/
@@ -637,6 +700,8 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                 {
                     channelTree->clear();
                     button->set_label("gtk-connect");
+                    builder->get_widget("serverSelectComboBox", combobox);
+                    combobox->set_sensitive(true);
                     builder->get_widget("progressbar", progressbar);
                     builder->get_widget("statusbar", statusbar);
                     progressbar->set_text("");
@@ -658,6 +723,7 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                 break;/*}}}*/
             default:
                 fprintf(stderr, "******************************************************** got unknown event type %d\n", ev->type);
+                break;
         }
         channelTree->expand_all();
         free(ev);
@@ -696,46 +762,96 @@ bool Mangler::checkPushToTalkKeys(void) {/*{{{*/
     return(true);
 
 }/*}}}*/
-bool Mangler::checkPushToTalkMouse(void) {/*{{{*/
-    GdkWindow   *rootwin = gdk_get_default_root_window();
+bool Mangler::checkPushToTalkMouse(void) {/*{{{*/ 
+    GdkWindow   *rootwin = gdk_get_default_root_window(); 
+    XDevice *dev;
+    XDeviceInfo *xdev;
+    XDeviceState *xds;
+    XButtonState *xbs;
+    int ctr;
+    int ndevices_return;
+    int state = 1;
+    int byte = settings->config.PushToTalkMouseValueInt / 8;
+    int bit = settings->config.PushToTalkMouseValueInt % 8;
+    bool        ptt_on = false; 
 
-    Window root_return, child_return;
-    int root_x_return, root_y_return;
-    int win_x_return, win_y_return;
-    unsigned int mask_return;
-
-    bool        ptt_on = false;
-
-    if (! settings->config.PushToTalkMouseEnabled) {
-        isTransmittingKey = false;
+    if (! settings->config.PushToTalkMouseEnabled) { 
+        isTransmittingMouse = false; 
+        return true; 
+    } 
+    if (settings->config.mouseDeviceName.empty()) {
         return true;
     }
-    XQueryPointer(GDK_WINDOW_XDISPLAY(rootwin), GDK_ROOT_WINDOW(), &root_return, &child_return, &root_x_return, &root_y_return, &win_x_return, &win_y_return, &mask_return);
-    if (settings->config.PushToTalkMouseValue == "Button1" &&  mask_return & Button1Mask) {
-        ptt_on = true;
-    } else if (settings->config.PushToTalkMouseValue == "Button2" &&  mask_return & Button2Mask) {
-        ptt_on = true;
-    } else if (settings->config.PushToTalkMouseValue == "Button3" &&  mask_return & Button3Mask) {
-        ptt_on = true;
-    } else if (settings->config.PushToTalkMouseValue == "Button4" &&  mask_return & Button4Mask) {
-        ptt_on = true;
-    } else if (settings->config.PushToTalkMouseValue == "Button5" &&  mask_return & Button5Mask) {
-        ptt_on = true;
-    } else {
-        ptt_on = false;
-    }
-    if (ptt_on) {
-        isTransmittingMouse = true;
-        startTransmit();
-    } else {
-        isTransmittingMouse = false;
-        if (! isTransmittingButton && ! isTransmittingKey) {
-            stopTransmit();
+
+    xdev = XListInputDevices(GDK_WINDOW_XDISPLAY(rootwin), &ndevices_return);
+    for (ctr = 0; ctr < ndevices_return; ctr++) {
+        Glib::ustring name = xdev[ctr].name;
+        if (name == settings->config.mouseDeviceName) {
+            break;
         }
     }
-    return(true);
+    dev = XOpenDevice(GDK_WINDOW_XDISPLAY(rootwin), xdev[ctr].id);
+    xds = (XDeviceState *)XQueryDeviceState(GDK_WINDOW_XDISPLAY(rootwin), dev);
+    xbs = (XButtonState*) xds->data;
+    state = state << bit;
+    if ((xbs->buttons[byte] & state) >> bit) {
+        ptt_on = true;
+    }
+    XFreeDeviceState(xds);
+    XFreeDeviceList(xdev);
+    XCloseDevice(GDK_WINDOW_XDISPLAY(rootwin), dev);
 
+    if (ptt_on) { 
+        isTransmittingMouse = true; 
+        startTransmit(); 
+    } else { 
+        isTransmittingMouse = false; 
+        if (! isTransmittingButton && ! isTransmittingKey) { 
+            stopTransmit(); 
+        } 
+    } 
+    return(true); 
 }/*}}}*/
+/* {{{ GdkFilterReturn ptt_filter(GdkXEvent *gdk_xevent, GdkEvent *event, gpointer data) {
+    GdkWindow   *rootwin = gdk_get_default_root_window();
+    XEvent *xevent = (XEvent *)gdk_xevent;
+
+    if (! mangler) {
+        return GDK_FILTER_CONTINUE;
+    }
+    if (! mangler->settings->config.PushToTalkMouseEnabled) {
+        mangler->isTransmittingKey = false;
+        return GDK_FILTER_CONTINUE;
+    }
+    if (xevent->type == ButtonPress && !mangler->isTransmittingMouse && xevent->xbutton.button == mangler->settings->config.PushToTalkMouseValueInt) {
+        fprintf(stderr, "press\n");
+        mangler->startTransmit();
+        mangler->isTransmittingMouse = true;
+        fprintf(stderr, "allow\n");
+        XAllowEvents(GDK_WINDOW_XDISPLAY(rootwin), AsyncPointer, CurrentTime);
+        fprintf(stderr, "ungrab pointer\n");
+        XUngrabPointer(GDK_WINDOW_XDISPLAY(rootwin), CurrentTime);
+        fprintf(stderr, "ungrab button\n");
+        XUngrabButton(GDK_WINDOW_XDISPLAY(rootwin), mangler->settings->config.PushToTalkMouseValueInt, AnyModifier, GDK_ROOT_WINDOW());
+        fprintf(stderr, "grab button\n");
+        XGrabButton(GDK_WINDOW_XDISPLAY(rootwin),   mangler->settings->config.PushToTalkMouseValueInt, AnyModifier, GDK_ROOT_WINDOW(), True, ButtonPressMask|ButtonReleaseMask, GrabModeAsync, GrabModeAsync, None, None);
+        return GDK_FILTER_CONTINUE;
+    } else if ((xevent->type == ButtonRelease) && (xevent->xbutton.button == mangler->settings->config.PushToTalkMouseValueInt)) {
+        fprintf(stderr, "release\n");
+        mangler->stopTransmit();
+        mangler->isTransmittingMouse = false;
+        fprintf(stderr, "allow\n");
+        XAllowEvents(GDK_WINDOW_XDISPLAY(rootwin), AsyncPointer, CurrentTime);
+        fprintf(stderr, "ungrab pointer\n");
+        XUngrabPointer(GDK_WINDOW_XDISPLAY(rootwin), CurrentTime);
+        fprintf(stderr, "ungrab button\n");
+        XUngrabButton(GDK_WINDOW_XDISPLAY(rootwin), mangler->settings->config.PushToTalkMouseValueInt, AnyModifier, GDK_ROOT_WINDOW());
+        fprintf(stderr, "grab button\n");
+        XGrabButton(GDK_WINDOW_XDISPLAY(rootwin), mangler->settings->config.PushToTalkMouseValueInt, AnyModifier, GDK_ROOT_WINDOW(), True, ButtonPressMask|ButtonReleaseMask, GrabModeAsync, GrabModeAsync, None, None);
+        return GDK_FILTER_CONTINUE;
+    }
+    return GDK_FILTER_CONTINUE;
+} }}} */
 
 Glib::ustring Mangler::getPasswordEntry(Glib::ustring title, Glib::ustring prompt) {/*{{{*/
     password = "";
@@ -771,6 +887,25 @@ void Mangler::textStringChangeDialogCancelButton_clicked_cb(void) {/*{{{*/
     textStringChangeCommentEntry->set_text(comment);
     textStringChangeURLEntry->set_text(url);
     textStringChangeIntegrationEntry->set_text(integration_text);
+}/*}}}*/
+
+
+// Misc Functions
+uint32_t Mangler::getActiveServer(void) {/*{{{*/
+    builder->get_widget("serverSelectComboBox", combobox);
+    return combobox->get_active_row_number();
+}/*}}}*/
+void Mangler::setActiveServer(uint32_t row_number) {/*{{{*/
+    builder->get_widget("serverSelectComboBox", combobox);
+    combobox->set_active(row_number);
+}/*}}}*/
+void Mangler::errorDialog(Glib::ustring message) {/*{{{*/
+    builder->get_widget("errorDialog", msgdialog);
+    msgdialog->set_icon(icons["tray_icon"]);
+    msgdialog->set_keep_above(true);
+    msgdialog->set_message(message);
+    msgdialog->run();
+    msgdialog->hide();
 }/*}}}*/
 
 ManglerError::ManglerError(uint32_t code, Glib::ustring message, Glib::ustring module) {/*{{{*/
@@ -910,3 +1045,4 @@ Glib::ustring iso_8859_1_to_utf8 (char *input) {/*{{{*/
     }
     return output;
 }/*}}}*/
+

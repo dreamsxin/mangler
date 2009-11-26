@@ -81,6 +81,8 @@ class ManglerServerList {
         void saveRow();
         void clearEntries(void);
 
+        Glib::ustring trim(Glib::ustring const& orig);
+
         // generic types for builder
         Gtk::Button     *button;
 };

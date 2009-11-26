@@ -35,6 +35,7 @@ class ManglerNetwork
         void disconnect(void);
         Gtk::Button *button;
         Gtk::Label *label;
+        Gtk::ComboBox *combobox;
         Gtk::MessageDialog *msgdialog;
         Glib::RefPtr<Gtk::Builder> builder;
 };

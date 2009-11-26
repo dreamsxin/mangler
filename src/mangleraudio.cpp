@@ -141,7 +141,13 @@ ManglerAudio::input(void) {/*{{{*/
         seconds = 0.0;
         ctr = 0;
         // As best as I can tell, we're supposed to send ~0.11 seconds of audio in each packet
-        while (seconds < 0.115) {
+        for (;;) {
+            /*
+            if (seconds >= 0.115) {
+                //fprintf(stderr, "0.115 seconds of real time has elapsed\n", ctr);
+                break;
+            }
+            */
             if (pcm_framesize * ctr > rate * 0.115 * 2) {
                 //fprintf(stderr, "we have 0.115 seconds of audio in %d iterations\n", ctr);
                 break;
@@ -195,6 +201,7 @@ ManglerAudio::input(void) {/*{{{*/
 void
 ManglerAudio::output(void) {/*{{{*/
     int ret, error;
+    ManglerPCM *queuedpcm;
 
     //fprintf(stderr, "playing audio\n");
     // If we don't have a pcm queue set up for us, something is very wrong
@@ -206,13 +213,24 @@ ManglerAudio::output(void) {/*{{{*/
     usleep(500000); // buffer for 0.5 seconds
     for (;;) {
         stop_output = false;
-        pcmdata = (ManglerPCM *)g_async_queue_pop(pcm_queue);
+        if (! v3_is_loggedin()) {
+            // we were disconnected while playing the stream.  unref the queue
+            // and flush the audio buffers
+#ifdef HAVE_PULSE
+            pa_simple_flush(pulse_stream, &error);
+#endif
+            g_async_queue_unref(pcm_queue);
+            break;
+        }
+        queuedpcm = (ManglerPCM *)g_async_queue_pop(pcm_queue);
         // finish() queues a 0 length packet to notify us that we're done
-        if (pcmdata->length == 0) {
+        if (queuedpcm->length == 0) {
+            g_async_queue_unref(pcm_queue);
+            delete queuedpcm;
             break;
         }
 #ifdef HAVE_PULSE
-        if ((ret = pa_simple_write(pulse_stream, pcmdata->sample, pcmdata->length, &error)) < 0) {
+        if ((ret = pa_simple_write(pulse_stream, queuedpcm->sample, queuedpcm->length, &error)) < 0) {
             fprintf(stderr, __FILE__": pa_simple_write() failed: %s\n", pa_strerror(error));
             g_async_queue_unref(pcm_queue);
             pa_simple_free(pulse_stream);
@@ -221,6 +239,7 @@ ManglerAudio::output(void) {/*{{{*/
             return;
         }
 #endif
+            delete queuedpcm;
     }
 #ifdef HAVE_PULSE
     if (pa_simple_drain(pulse_stream, &error) < 0) {

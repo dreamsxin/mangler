@@ -560,12 +560,10 @@ _v3_recv(int block) {/*{{{*/
                             channel.id = ev.channel.id;
                             _v3_debug(V3_DEBUG_INFO, "changing to channel id %d", channel.id);
                             msg = _v3_put_0x49(V3_CHANGE_CHANNEL, v3_get_user_id(), ev.text.password, &channel);
-                            if (_v3_send(msg)) {
-                                _v3_destroy_packet(msg);
-                            } else {
+                            if (!_v3_send(msg)) {
                                 _v3_debug(V3_DEBUG_SOCKET, "failed to send channel change message");
-                                _v3_destroy_packet(msg);
                             }
+                            _v3_destroy_packet(msg);
                         }
                         break;/*}}}*/
                     case V3_EVENT_USER_TALK_START:/*{{{*/
@@ -575,13 +573,11 @@ _v3_recv(int block) {/*{{{*/
 
                             codec = v3_get_channel_codec(v3_get_user_channel(v3_get_user_id()));
                             _v3_debug(V3_DEBUG_INFO, "got outbound audio event", codec->rate);
-                            msg = _v3_put_0x52(V3_AUDIO_START, codec->codec, codec->format, ev.pcm.send_type, 0, NULL);
-                            if (_v3_send(msg)) {
-                                _v3_destroy_packet(msg);
-                            } else {
+                            msg = _v3_put_0x52(V3_AUDIO_START, codec->codec, codec->format, ev.pcm.send_type, 0, 0, NULL);
+                            if (!_v3_send(msg)) {
                                 _v3_debug(V3_DEBUG_SOCKET, "failed to send user talk start message");
-                                _v3_destroy_packet(msg);
                             }
+                            _v3_destroy_packet(msg);
                         }
                         break;/*}}}*/
                     case V3_EVENT_PLAY_AUDIO:/*{{{*/
@@ -619,7 +615,7 @@ _v3_recv(int block) {/*{{{*/
                                             _v3_debug(V3_DEBUG_INFO, "encoding frame %d", ctr);
                                         }
                                         //gsm_destroy(handle);
-                                        msg = _v3_put_0x52(V3_AUDIO_DATA, codec->codec, codec->format, ev.pcm.send_type, ctr*65, frames);
+                                        msg = _v3_put_0x52(V3_AUDIO_DATA, codec->codec, codec->format, ev.pcm.send_type, ev.pcm.length, ctr*65, frames);
                                     }
                                     send = true;
                                     break;
@@ -632,7 +628,9 @@ _v3_recv(int block) {/*{{{*/
                                         uint8_t sample[codec->samplesize];
                                         SpeexBits bits;
                                         int encoded_size;
-                                        uint8_t tmp;
+                                        int tmp;
+                                        static int rate = -1;
+                                        static int format = -1;
                                         _v3_msg_0x52_speexdata *speexdata = malloc(sizeof(_v3_msg_0x52_speexdata));
 
                                         speexdata->frame_count = ev.pcm.length / codec->samplesize;
@@ -640,7 +638,10 @@ _v3_recv(int block) {/*{{{*/
 
                                         // TODO: we need to make sure the current band is correct in case the codec format
                                         // changes (i.e. per channel codecs)
-                                        if (!state) {
+                                        if (rate != codec->rate || format != codec->format) {
+                                            if (state != NULL) {
+                                                speex_encoder_destroy(state);
+                                            }
                                             /*Create a new encoder state in appropriate band*/
                                             switch (codec->rate) {
                                                 case 8000:
@@ -662,9 +663,12 @@ _v3_recv(int block) {/*{{{*/
                                                     send = false;
                                                     break;
                                             }
-                                            tmp = codec->quality;
-                                            speex_encoder_ctl(state, SPEEX_SET_QUALITY, &tmp);
-                                            if (send == false) {
+                                            if (send && state) {
+                                                rate = codec->rate;
+                                                format = codec->format;
+                                                tmp = codec->quality;
+                                                speex_encoder_ctl(state, SPEEX_SET_QUALITY, &tmp);
+                                            } else {
                                                 // just give up now...
                                                 break;
                                             }
@@ -708,7 +712,7 @@ _v3_recv(int block) {/*{{{*/
                                             // copy the frame data
                                             memcpy(speexdata->frames[ctr]+2, cbits, ntohs(encoded_size));
                                         }
-                                        msg = _v3_put_0x52(V3_AUDIO_DATA, codec->codec, codec->format, ev.pcm.send_type, nbBytes, speexdata);
+                                        msg = _v3_put_0x52(V3_AUDIO_DATA, codec->codec, codec->format, ev.pcm.send_type, ev.pcm.length, nbBytes, speexdata);
 
                                         // Destroy the encoder state
                                         // speex_encoder_destroy(state);
@@ -724,12 +728,10 @@ _v3_recv(int block) {/*{{{*/
                                     break;
                             }
                             if (send) {
-                                if (_v3_send(msg)) {
-                                    _v3_destroy_packet(msg);
-                                } else {
+                                if (!_v3_send(msg)) {
                                     _v3_debug(V3_DEBUG_SOCKET, "failed to send audio message");
-                                    _v3_destroy_packet(msg);
                                 }
+                                _v3_destroy_packet(msg);
                             }
                         }
                         break;/*}}}*/
@@ -740,13 +742,11 @@ _v3_recv(int block) {/*{{{*/
 
                             codec = v3_get_channel_codec(v3_get_user_channel(v3_get_user_id()));
                             _v3_debug(V3_DEBUG_INFO, "got outbound audio event", codec->rate);
-                            msg = _v3_put_0x52(V3_AUDIO_STOP, -1, -1, 0, 0, NULL);
-                            if (_v3_send(msg)) {
-                                _v3_destroy_packet(msg);
-                            } else {
-                                _v3_debug(V3_DEBUG_SOCKET, "failed to send channel change message");
-                                _v3_destroy_packet(msg);
+                            msg = _v3_put_0x52(V3_AUDIO_STOP, -1, -1, 0, 0, 0, NULL);
+                            if (!_v3_send(msg)) {
+                                 _v3_debug(V3_DEBUG_SOCKET, "failed to send channel change message");
                             }
+                            _v3_destroy_packet(msg);
                         }
                         break;/*}}}*/
                     case V3_EVENT_USER_MODIFY:/*{{{*/
@@ -1873,6 +1873,8 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                                         SpeexBits bits;
                                         int frame_size;
                                         int ctr;
+                                        static int currate = 0;
+
 
                                         _v3_msg_0x52_speexdata *speexdata = msub->data;
                                         // The frame size as a uint16_t is prepended to
@@ -1881,7 +1883,11 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                                         // is the actual frame size in the packet.  Then
                                         // subtract two for extra int16 specifying length
                                         frame_size = msub->data_length / speexdata->frame_count - 2;
-                                        if (v3_decoders[m->user_id].speex == NULL) {
+                                        if (v3_decoders[m->user_id].speex == NULL || (ev->pcm.rate != currate)) {
+                                            if (v3_decoders[m->user_id].speex) {
+                                                speex_decoder_destroy(v3_decoders[m->user_id].speex);
+                                            }
+                                            currate = ev->pcm.rate;
                                             switch (ev->pcm.rate) {
                                                 case 8000:
                                                     v3_decoders[m->user_id].speex = speex_decoder_init(&speex_nb_mode);
@@ -1919,13 +1925,13 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                                     ev->data.sample16[volumectr] *= multiplier;
                                 }
                             }
+                            _v3_destroy_0x52(msg);
                         }
                         break;
                 }
+                _v3_destroy_packet(msg);
                 v3_queue_event(ev);
-                _v3_destroy_0x52(msg);
             }
-            _v3_destroy_packet(msg);
             _v3_func_leave("_v3_process_message");
             return V3_OK;/*}}}*/
         case 0x53:/*{{{*/
@@ -2644,6 +2650,10 @@ v3_queue_event(v3_event *ev) {/*{{{*/
         return true;
     }
     pthread_mutex_lock(eventq_mutex);
+    // if we're not allowed to see channels, gui should think any channel is the lobby
+    if(!v3_luser.perms.see_chan_list || !v3_channel_count()) {
+        ev->channel.id = 0;    
+    }
     ev->next = NULL;
     ev->timestamp = time(NULL);
     // if this returns null, there's no events in the queue
@@ -2756,11 +2766,10 @@ v3_get_channel_codec(uint16_t channel_id) {/*{{{*/
     const v3_codec *codec_info;
 
     _v3_func_enter("v3_get_channel_codec");
-    if (channel_id == 0) { // the lobby is always the default codec
+    if (channel_id == 0 || (c = v3_get_channel(channel_id)) == NULL) { // the lobby is always the default codec
         _v3_func_leave("v3_get_channel_codec");
         return v3_get_codec(v3_server.codec, v3_server.codec_format);
     }
-    c = v3_get_channel(channel_id);
     _v3_debug(V3_DEBUG_INFO, "getting codec for %d/%d", c->channel_codec, c->channel_format);
     if (c->channel_codec == 65535 || c->channel_format == 65535) {
         _v3_debug(V3_DEBUG_INFO, "getting server default codec");
@@ -2773,6 +2782,28 @@ v3_get_channel_codec(uint16_t channel_id) {/*{{{*/
     _v3_debug(V3_DEBUG_INFO, "channel codec is %d/%d %s", codec_info->codec, codec_info->format, codec_info->name);
     _v3_func_leave("v3_get_channel_codec");
     return codec_info;
+}/*}}}*/
+
+uint8_t
+v3_channel_requires_password(uint16_t channel_id) {/*{{{*/
+    uint16_t parent;
+    v3_channel *c;
+
+    _v3_func_enter("v3_channel_requires_password");
+    if (channel_id == 0) {
+        _v3_func_leave("v3_channel_requires_password");
+        return false;
+    }
+    c = v3_get_channel(channel_id);
+    if (c->protect_mode == 1) {
+        v3_free_channel(c);
+        _v3_func_leave("v3_channel_requires_password");
+        return true;
+    }
+    parent = c->parent;
+    v3_free_channel(c);
+    _v3_func_leave("v3_channel_requires_password");
+    return v3_channel_requires_password(parent);
 }/*}}}*/
 
 /*
@@ -2881,7 +2912,7 @@ v3_stop_audio(void) {/*{{{*/
  */
 void
 v3_set_volume_user(uint16_t id, int level) {/*{{{*/
-    if (level < 0 || level > 128) {
+    if (level < 0 || level > 148) {
         return;
     }
     _v3_user_volumes[id] = level;

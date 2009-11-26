@@ -342,7 +342,7 @@ typedef struct _v3_net_message_0x52_0x03 {/*{{{*/
     uint16_t unknown_3;         // 22
 } _v3_msg_0x52_0x03; /*}}}*/
 int _v3_get_0x52(_v3_net_message *msg);
-_v3_net_message *_v3_put_0x52(uint8_t subtype, uint16_t codec, uint16_t codec_format, uint16_t send_type, uint32_t length, void *data);
+_v3_net_message *_v3_put_0x52(uint8_t subtype, uint16_t codec, uint16_t codec_format, uint16_t send_type, uint32_t pcmlength, uint32_t length, void *data);
 int _v3_destroy_0x52(_v3_net_message *msg);
 
 typedef struct _v3_net_message_0x53 {/*{{{*/

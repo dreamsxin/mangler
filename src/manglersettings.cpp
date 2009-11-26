@@ -89,9 +89,17 @@ ManglerSettings::ManglerSettings(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
     notificationDeviceTreeModel = Gtk::ListStore::create(notificationColumns);
     notificationDeviceComboBox->set_model(notificationDeviceTreeModel);
     notificationDeviceComboBox->pack_start(notificationColumns.description);
+
+    mouseInputDevices = getInputDeviceList();
+    builder->get_widget("settingsMouseDeviceComboBox", mouseDeviceComboBox);
+    mouseDeviceTreeModel = Gtk::ListStore::create(mouseColumns);
+    mouseDeviceComboBox->set_model(mouseDeviceTreeModel);
+    mouseDeviceComboBox->pack_start(mouseColumns.name);
 }/*}}}*/
 void ManglerSettings::applySettings(void) {/*{{{*/
     Gtk::TreeModel::iterator iter;
+    GdkWindow   *rootwin = gdk_get_default_root_window();
+
 
     // Push to Talk
     builder->get_widget("settingsEnablePTTKeyCheckButton", checkbutton);
@@ -101,10 +109,26 @@ void ManglerSettings::applySettings(void) {/*{{{*/
     config.parsePushToTalkValue(config.PushToTalkKeyValue);
 
     // Mouse to Talk
+    builder->get_widget("settingsMouseDeviceComboBox", combobox);
+    iter = combobox->get_active();
+    if (iter) {
+        Gtk::TreeModel::Row row = *iter;
+        config.mouseDeviceName = row[mouseColumns.name];
+    }
     builder->get_widget("settingsEnablePTTMouseCheckButton", checkbutton);
     config.PushToTalkMouseEnabled = checkbutton->get_active() ? true : false;
     builder->get_widget("settingsPTTMouseValueLabel", label);
     config.PushToTalkMouseValue = label->get_text();
+    if (config.PushToTalkMouseValue.length() > 6) {
+        config.PushToTalkMouseValueInt = atoi(config.PushToTalkMouseValue.substr(6).c_str());
+    }
+    XUngrabButton(GDK_WINDOW_XDISPLAY(rootwin), AnyButton, AnyModifier, GDK_ROOT_WINDOW());
+    XAllowEvents (GDK_WINDOW_XDISPLAY(rootwin), AsyncBoth, CurrentTime);
+    /*
+    if (checkbutton->get_active()) {
+        XGrabButton(GDK_WINDOW_XDISPLAY(rootwin), config.PushToTalkMouseValueInt, AnyModifier, GDK_ROOT_WINDOW(), False, ButtonPressMask|ButtonReleaseMask, GrabModeAsync, GrabModeAsync, None, None);
+    }
+    */
 
     // Audio Player Integration
     builder->get_widget("settingsEnableAudioIntegrationCheckButton", checkbutton);
@@ -184,6 +208,7 @@ void ManglerSettings::applySettings(void) {/*{{{*/
     debuglevel |= checkbutton->get_active() ? V3_DEBUG_PACKET_ENCRYPTED : 0;
 
     config.lv3_debuglevel = debuglevel;
+
     v3_debuglevel(debuglevel);
     config.save();
 }/*}}}*/
@@ -348,6 +373,35 @@ void ManglerSettings::settingsWindow_show_cb(void) {/*{{{*/
     }
     // TODO: get the currently selected item from settings object and select it
     notificationDeviceComboBox->set_active(notificationSelection);
+
+    // Clear the mouse device store and rebuild it from the audioControl vector
+    mouseDeviceTreeModel->clear();
+    int mouseSelection = 0;
+    int mouseCtr = 0;
+    for (
+            std::map<uint32_t, Glib::ustring>::iterator i = mouseInputDevices.begin();
+            i != mouseInputDevices.end();
+            i++, mouseCtr++) {
+        Gtk::TreeModel::Row row = *(mouseDeviceTreeModel->append());
+        row[mouseColumns.id] = (*i).first;
+        row[mouseColumns.name] = (*i).second;
+        if (config.mouseDeviceName == (*i).second) {
+            mouseSelection = mouseCtr;
+        }
+    }
+    if (!mouseSelection) {
+        int mouseCtr = 0;
+        for (
+                std::map<uint32_t, Glib::ustring>::iterator i = mouseInputDevices.begin();
+                i != mouseInputDevices.end();
+                i++, mouseCtr++) {
+            if ((*i).second.find("Mouse") != std::string::npos) {
+                mouseSelection = mouseCtr;
+            }
+        }
+    }
+    // TODO: get the currently selected item from settings object and select it
+    mouseDeviceComboBox->set_active(mouseSelection);
 }/*}}}*/
 void ManglerSettings::settingsWindow_hide_cb(void) {/*{{{*/
     isDetectingKey = false;
@@ -411,6 +465,10 @@ void ManglerSettings::settingsPTTKeyButton_clicked_cb(void) {/*{{{*/
         button->set_sensitive(false);
         builder->get_widget("settingsOkButton", button);
         button->set_sensitive(false);
+        builder->get_widget("settingsMouseDeviceComboBox", combobox);
+        combobox->set_sensitive(false);
+        builder->get_widget("settingsPTTMouseButton", button);
+        button->set_sensitive(false);
         Glib::signal_timeout().connect( sigc::mem_fun(*this, &ManglerSettings::settingsPTTKeyDetect), 100 );
     } else {
         isDetectingKey = false;
@@ -420,6 +478,10 @@ void ManglerSettings::settingsPTTKeyButton_clicked_cb(void) {/*{{{*/
         builder->get_widget("settingsApplyButton", button);
         button->set_sensitive(true);
         builder->get_widget("settingsOkButton", button);
+        button->set_sensitive(true);
+        builder->get_widget("settingsMouseDeviceComboBox", combobox);
+        combobox->set_sensitive(true);
+        builder->get_widget("settingsPTTMouseButton", button);
         button->set_sensitive(true);
         builder->get_widget("settingsPTTKeyValueLabel", label);
         // if the text is as follows, the user pressed done without any keys
@@ -439,6 +501,8 @@ void ManglerSettings::settingsEnablePTTMouseCheckButton_toggled_cb(void) {/*{{{*
         label->set_sensitive(true);
         builder->get_widget("settingsPTTMouseButton", button);
         button->set_sensitive(true);
+        builder->get_widget("settingsMouseDeviceComboBox", combobox);
+        combobox->set_sensitive(true);
     } else {
         // box was unchecked
         builder->get_widget("settingsPTTMouseLabel", label);
@@ -447,6 +511,8 @@ void ManglerSettings::settingsEnablePTTMouseCheckButton_toggled_cb(void) {/*{{{*
         label->set_sensitive(false);
         builder->get_widget("settingsPTTMouseButton", button);
         button->set_sensitive(false);
+        builder->get_widget("settingsMouseDeviceComboBox", combobox);
+        combobox->set_sensitive(false);
     }
 }/*}}}*/
 void ManglerSettings::settingsPTTMouseButton_clicked_cb(void) {/*{{{*/
@@ -461,7 +527,26 @@ void ManglerSettings::settingsPTTMouseButton_clicked_cb(void) {/*{{{*/
     button->set_sensitive(false);
     builder->get_widget("settingsOkButton", button);
     button->set_sensitive(false);
+    builder->get_widget("settingsPTTKeyButton", button);
+    button->set_sensitive(false);
+    builder->get_widget("settingsMouseDeviceComboBox", combobox);
+    combobox->set_sensitive(false);
     Glib::signal_timeout().connect( sigc::mem_fun(*this, &ManglerSettings::settingsPTTMouseDetect), 100 );
+}/*}}}*/
+std::map<uint32_t, Glib::ustring> ManglerSettings::getInputDeviceList(void) {/*{{{*/
+    GdkWindow   *rootwin = gdk_get_default_root_window();
+    XDeviceInfo *xdev;
+    int ndevices_return;
+    std::map<uint32_t, Glib::ustring> devicelist;
+
+    xdev = XListInputDevices(GDK_WINDOW_XDISPLAY(rootwin), &ndevices_return);
+    for (int ctr = 0; ctr < ndevices_return; ctr++) {
+        if (xdev[ctr].use == IsXExtensionPointer) {
+            devicelist[xdev[ctr].id] = xdev[ctr].name;
+        }
+    }
+    XFreeDeviceList(xdev);
+    return(devicelist);
 }/*}}}*/
 
 bool
@@ -507,6 +592,7 @@ ManglerSettings::settingsPTTMouseDetect(void) {/*{{{*/
     static bool grabbed = false;
     int flag = 0;
     int x, y;
+    int mousebutton;
     XEvent ev;
 
 
@@ -515,6 +601,7 @@ ManglerSettings::settingsPTTMouseDetect(void) {/*{{{*/
         return false;
     }
     if (! grabbed) {
+        XUngrabPointer(GDK_WINDOW_XDISPLAY(rootwin), CurrentTime);
         XGrabPointer(GDK_WINDOW_XDISPLAY(rootwin), GDK_ROOT_WINDOW(), False, ButtonPress, GrabModeAsync, GrabModeAsync, None, None, CurrentTime);
         grabbed = true;
     }
@@ -525,6 +612,7 @@ ManglerSettings::settingsPTTMouseDetect(void) {/*{{{*/
         XNextEvent(GDK_WINDOW_XDISPLAY(rootwin), &ev);
         switch (ev.type) {
             case ButtonPress:
+                mousebutton = ev.xbutton.button;
                 snprintf(buttonname, 31, "Button%d", ev.xbutton.button);
                 config.PushToTalkMouseValue = buttonname;
                 flag = 1;
@@ -560,5 +648,13 @@ ManglerSettings::settingsPTTMouseDetect(void) {/*{{{*/
     builder->get_widget("settingsPTTMouseButton", button);
     button->set_sensitive(true);
 
+    builder->get_widget("settingsPTTKeyButton", button);
+    button->set_sensitive(true);
+
+    builder->get_widget("settingsMouseDeviceComboBox", combobox);
+    combobox->set_sensitive(true);
+
     return(true);
 }/*}}}*/
+
+
