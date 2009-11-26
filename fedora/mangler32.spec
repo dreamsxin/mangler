@@ -1,5 +1,5 @@
 Name:		mangler
-Version:	1.0rc3
+Version:	1.0rc4
 Release:	1%{?dist}
 Summary:	Mangler is a Ventrilo compatible client for Linux
 
