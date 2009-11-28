@@ -176,6 +176,7 @@ ManglerChannelTree::addUser(uint32_t id, uint32_t parent_id, Glib::ustring name,
     channelRow[channelRecord.url]               = url;
     channelRow[channelRecord.integration_text]  = integration_text;
     channelRow[channelRecord.last_transmit]     = id != 0 ? "unknown" : "";
+    channelRow[channelRecord.password]          = "";
 }/*}}}*/
 
 /*
@@ -286,6 +287,7 @@ ManglerChannelTree::addChannel(uint8_t protect_mode, uint32_t id, uint32_t paren
     channelRow[channelRecord.phonetic]          = phonetic;
     channelRow[channelRecord.url]               = "";
     channelRow[channelRecord.integration_text]  = "";
+    channelRow[channelRecord.password]          = "";
 }/*}}}*/
 
 /*
@@ -330,6 +332,7 @@ ManglerChannelTree::updateChannel(uint8_t protect_mode, uint32_t id, uint32_t pa
     channel[channelRecord.phonetic]          = phonetic;
     channel[channelRecord.url]               = "";
     channel[channelRecord.integration_text]  = "";
+    channel[channelRecord.password]          = "";
 }/*}}}*/
 
 /*
@@ -507,6 +510,9 @@ ManglerChannelTree::channelView_row_activated_cb(const Gtk::TreeModel::Path& pat
         // double clicked a channel
         Gtk::TreeModel::Row user = getUser(v3_get_user_id(), channelStore->children());
         int curchannel = user[channelRecord.parent_id];
+        uint16_t pw_cid;
+        Gtk::TreeModel::Row pwrow;
+
         if (id == curchannel) {
             // we're already in this channel
             return;
@@ -517,9 +523,14 @@ ManglerChannelTree::channelView_row_activated_cb(const Gtk::TreeModel::Path& pat
                 fprintf(stderr, "failed to retrieve channel information for channel id %d", id);
                 return;
             }
-            if (v3_channel_requires_password(channel->id)) {  // Channel is password protected
-                password = mangler->getPasswordEntry("Channel Password");
+            if ((pw_cid = v3_channel_requires_password(channel->id))) {  // Channel is password protected
                 password_required = true;
+                password = getChannelSavedPassword(pw_cid);
+                // if we didn't find a saved password, prompt the user
+                if (password.empty()) {
+                    password = mangler->getPasswordEntry("Channel Password");
+                }
+                setChannelSavedPassword(pw_cid, password);
             }
             v3_free_channel(channel);
         }
@@ -565,6 +576,25 @@ uint16_t
 ManglerChannelTree::getUserChannelId(uint16_t userid) {/*{{{*/
     Gtk::TreeModel::Row user = getUser(userid, channelStore->children());
     return(user[channelRecord.parent_id]);
+}/*}}}*/
+
+Glib::ustring
+ManglerChannelTree::getChannelSavedPassword(uint16_t channel_id) {/*{{{*/
+    Gtk::TreeModel::Row channel = getChannel(channel_id, channelStore->children());
+    return(channel[channelRecord.password]);
+}/*}}}*/
+
+void
+ManglerChannelTree::setChannelSavedPassword(uint16_t channel_id, Glib::ustring password) {/*{{{*/
+    Gtk::TreeModel::Row channel = getChannel(channel_id, channelStore->children());
+    channel[channelRecord.password] = password;
+    return;
+}/*}}}*/
+
+void
+ManglerChannelTree::forgetChannelSavedPassword(uint16_t channel_id) {/*{{{*/
+    setChannelSavedPassword(channel_id, "");
+    return;
 }/*}}}*/
 
 void

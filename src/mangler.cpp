@@ -756,6 +756,10 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                         c->phonetic);
                 v3_free_channel(c);
                 break;/*}}}*/
+            case V3_EVENT_CHAN_BADPASS:/*{{{*/
+                channelTree->forgetChannelSavedPassword(ev->channel.id);
+                errorDialog(c_to_ustring(ev->error.message));
+                break;/*}}}*/
             case V3_EVENT_ERROR_MSG:/*{{{*/
                 errorDialog(c_to_ustring(ev->error.message));
                 break;/*}}}*/

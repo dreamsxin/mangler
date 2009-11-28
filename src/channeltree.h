@@ -44,6 +44,7 @@ class channelModelColumns : public Gtk::TreeModelColumnRecord/*{{{*/
             add(url);
             add(integration_text);
             add(last_transmit);
+            add(password);
         }
 
         Gtk::TreeModelColumn<Glib::ustring>                 displayName;
@@ -58,6 +59,7 @@ class channelModelColumns : public Gtk::TreeModelColumnRecord/*{{{*/
         Gtk::TreeModelColumn<Glib::ustring>                 url;
         Gtk::TreeModelColumn<Glib::ustring>                 integration_text;
         Gtk::TreeModelColumn<Glib::ustring>                 last_transmit;
+        Gtk::TreeModelColumn<Glib::ustring>                 password;
 };/*}}}*/
 class ManglerChannelTree
 {
@@ -96,6 +98,9 @@ class ManglerChannelTree
         Gtk::TreeModel::Row getChannel(uint32_t id, Gtk::TreeModel::Children children);
         Gtk::TreeModel::Row getUser(uint32_t id, Gtk::TreeModel::Children children);
         uint16_t getUserChannelId(uint16_t userid);
+        Glib::ustring getChannelSavedPassword(uint16_t channel_id);
+        void setChannelSavedPassword(uint16_t channel_id, Glib::ustring password);
+        void forgetChannelSavedPassword(uint16_t channel_id);
         bool expand_all(void);
         bool collapse_all(void);
         void clear(void);
