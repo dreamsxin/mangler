@@ -956,7 +956,7 @@ bool Mangler::checkPushToTalkKeys(void) {/*{{{*/
 }/*}}}*/
 bool Mangler::checkPushToTalkMouse(void) {/*{{{*/ 
     GdkWindow   *rootwin = gdk_get_default_root_window(); 
-    XDevice *dev;
+    XDevice *dev = NULL;
     XDeviceInfo *xdev;
     XDeviceState *xds;
     XButtonState *xbs;
@@ -984,6 +984,9 @@ bool Mangler::checkPushToTalkMouse(void) {/*{{{*/
         }
     }
     dev = XOpenDevice(GDK_WINDOW_XDISPLAY(rootwin), xdev[ctr].id);
+    if (! dev) {
+        return true;
+    }
     xds = (XDeviceState *)XQueryDeviceState(GDK_WINDOW_XDISPLAY(rootwin), dev);
     xbs = (XButtonState*) xds->data;
     state = state << bit;
