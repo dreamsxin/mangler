@@ -183,6 +183,7 @@ enum _v3_events
     V3_EVENT_CHAN_ADD,
     V3_EVENT_CHAN_MODIFY,
     V3_EVENT_CHAN_REMOVE,
+    V3_EVENT_CHAN_BADPASS,
     V3_EVENT_ERROR_MSG,
     V3_EVENT_USER_TALK_START,
     V3_EVENT_USER_TALK_END,
@@ -458,7 +459,7 @@ uint32_t    v3_get_codec_rate(uint16_t codec, uint16_t format);
 const v3_codec *v3_get_codec(uint16_t codec, uint16_t format);
 const v3_codec *v3_get_channel_codec(uint16_t channel_id);
 uint16_t    v3_get_user_channel(uint16_t id);
-uint8_t     v3_channel_requires_password(uint16_t channel_id);
+uint16_t    v3_channel_requires_password(uint16_t channel_id);
 void        v3_start_audio(uint16_t send_type);
 void        v3_send_audio(uint16_t send_type, uint32_t rate, uint8_t *pcm, uint32_t length);
 void        v3_stop_audio(void);

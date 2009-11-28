@@ -1819,7 +1819,8 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                         break;
                     case V3_AUTHFAIL_CHANNEL:
                         {
-                            v3_event *ev = _v3_create_event(V3_EVENT_ERROR_MSG);
+                            v3_event *ev = _v3_create_event(V3_EVENT_CHAN_BADPASS);
+                            ev->channel.id = m->channel->id;
                             strncpy(ev->error.message, "Error switching to channel.  The password you entered is wrong or you do not have permission", 511);
                             v3_queue_event(ev);
                         }
@@ -3078,7 +3079,9 @@ v3_get_channel_codec(uint16_t channel_id) {/*{{{*/
     return codec_info;
 }/*}}}*/
 
-uint8_t
+// Return the channel id of the channel that requires the password (possibly a
+// parent channel)
+uint16_t
 v3_channel_requires_password(uint16_t channel_id) {/*{{{*/
     uint16_t parent;
     v3_channel *c;
@@ -3092,7 +3095,7 @@ v3_channel_requires_password(uint16_t channel_id) {/*{{{*/
     if (c->protect_mode == 1) {
         v3_free_channel(c);
         _v3_func_leave("v3_channel_requires_password");
-        return true;
+        return channel_id;
     }
     parent = c->parent;
     v3_free_channel(c);
