@@ -979,7 +979,7 @@ bool Mangler::checkPushToTalkMouse(void) {/*{{{*/
     xdev = XListInputDevices(GDK_WINDOW_XDISPLAY(rootwin), &ndevices_return);
     for (ctr = 0; ctr < ndevices_return; ctr++) {
         Glib::ustring name = xdev[ctr].name;
-        if (name == settings->config.mouseDeviceName) {
+        if (name == settings->config.mouseDeviceName && xdev[ctr].use == IsXExtensionPointer) {
             break;
         }
     }
@@ -987,6 +987,16 @@ bool Mangler::checkPushToTalkMouse(void) {/*{{{*/
     xds = (XDeviceState *)XQueryDeviceState(GDK_WINDOW_XDISPLAY(rootwin), dev);
     xbs = (XButtonState*) xds->data;
     state = state << bit;
+    /* debug mouse state buttons
+    for (int ctr = 1; ctr < 10; ctr++) {
+        int byte = ctr / 8;
+        int bit = ctr % 8;
+        state = 1 << bit;
+        fprintf(stderr, "(%d/%d)", byte, bit);
+        fprintf(stderr, "b%d: %d -- ", ctr, (xbs->buttons[byte] & state) >> bit);
+    }
+    fprintf(stderr, "\n");
+    */
     if ((xbs->buttons[byte] & state) >> bit) {
         ptt_on = true;
     }

@@ -2647,6 +2647,20 @@ Notifications are the sound effects that are played when you login, logout, a us
                     <property name="position">1</property>
                   </packing>
                 </child>
+                <child>
+                  <object class="GtkButton" id="chatClose">
+                    <property name="label">gtk-close</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                    <property name="use_stock">True</property>
+                    <accelerator key="w" signal="activate" modifiers="GDK_CONTROL_MASK"/>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="position">2</property>
+                  </packing>
+                </child>
               </object>
               <packing>
                 <property name="expand">False</property>
@@ -2691,4 +2705,5 @@ Notifications are the sound effects that are played when you login, logout, a us
       </object>
     </child>
   </object>
+  <object class="GtkAction" id="action1"/>
 </interface>

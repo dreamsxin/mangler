@@ -35,6 +35,9 @@ ManglerChat::ManglerChat(Glib::RefPtr<Gtk::Builder> builder) {
     builder->get_widget("sendChat", button);
     button->signal_clicked().connect(sigc::mem_fun(this, &ManglerChat::chatWindowSendChat_clicked_cb));
 
+    builder->get_widget("chatClose", button);
+    button->signal_clicked().connect(sigc::mem_fun(this, &ManglerChat::chatClose_clicked_cb));
+
     builder->get_widget("chatMessage", chatMessage);
     chatMessage->set_activates_default(true);
 
@@ -66,6 +69,10 @@ void ManglerChat::chatWindowSendChat_clicked_cb() {
         v3_send_chat_message((char *)ustring_to_c(chatMessage->get_text()).c_str());
         chatMessage->set_text("");
     }
+}
+
+void ManglerChat::chatClose_clicked_cb() {
+    chatWindow->hide();
 }
 
 void ManglerChat::addMessage(Glib::ustring message) {

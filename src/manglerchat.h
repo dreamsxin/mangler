@@ -54,6 +54,7 @@ class ManglerChat {
         void chatWindow_show_cb(void);
         void chatWindow_hide_cb(void);
         void chatWindowSendChat_clicked_cb(void);
+        void chatClose_clicked_cb(void);
 
         void addChatMessage(uint16_t user_id, Glib::ustring message);
         void addMessage(Glib::ustring message);
