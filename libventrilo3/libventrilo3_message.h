@@ -56,12 +56,15 @@
  * http://www.mangler.org/trac/wiki/ProtocolDocumentation
  */
 
+#pragma pack(push)
+#pragma pack(1)
+
 typedef struct _v3_net_message_0x00 {/*{{{*/
     uint32_t type;
     char version[16];
     char salt1[32];
     char salt2[32];
-} __attribute__ ((packed)) _v3_msg_0x00;
+} _v3_msg_0x00;
 _v3_net_message *_v3_put_0x00();/*}}}*/
 typedef struct _v3_net_message_0x06 {/*{{{*/
     uint32_t type;              // 0
@@ -71,7 +74,7 @@ typedef struct _v3_net_message_0x06 {/*{{{*/
 
     uint8_t  unknown_2;         // 12 - variable length starts here
     uint8_t* encryption_key;
-} __attribute__ ((packed)) _v3_msg_0x06;
+} _v3_msg_0x06;
 int _v3_get_0x06(_v3_net_message *msg);/*}}}*/
 typedef struct _v3_net_message_0x37 {/*{{{*/
     uint32_t type;              // 0
@@ -79,7 +82,7 @@ typedef struct _v3_net_message_0x37 {/*{{{*/
     uint16_t sequence;          // 6
     uint16_t ping;              // 8
     uint16_t inactivity;        // 10
-} __attribute__ ((packed)) _v3_msg_0x37;
+} _v3_msg_0x37;
 int _v3_get_0x37(_v3_net_message *msg);
 _v3_net_message *_v3_put_0x37(int sequence);/*}}}*/
 typedef struct _v3_net_message_0x3a {/*{{{*/
@@ -88,13 +91,13 @@ typedef struct _v3_net_message_0x3a {/*{{{*/
     uint16_t msglen;            // 6
 
     char *   msg;               // 8 - variable length starts here
-} __attribute__ ((packed)) _v3_msg_0x3a;/*}}}*/
+} _v3_msg_0x3a;/*}}}*/
 typedef struct _v3_net_message_0x3b {/*{{{*/
     uint32_t type;              // 0
     uint16_t user_id;           // 4
     uint16_t channel_id;        // 6
     uint32_t error_id;          // 8
-} __attribute__ ((packed)) _v3_msg_0x3b;
+} _v3_msg_0x3b;
 int _v3_get_0x3b(_v3_net_message *msg);/*}}}*/
 typedef struct _v3_net_message_0x3c {/*{{{*/
     uint32_t type;              // 0
@@ -102,7 +105,7 @@ typedef struct _v3_net_message_0x3c {/*{{{*/
     uint16_t codec;
     uint16_t codec_format;
     uint8_t  unknown2[12];
-} __attribute__ ((packed)) _v3_msg_0x3c;
+} _v3_msg_0x3c;
 int _v3_get_0x3c(_v3_net_message *msg);/*}}}*/
 typedef struct _v3_net_message_0x3f {/*{{{*/
     uint32_t type;              // 0
@@ -110,7 +113,7 @@ typedef struct _v3_net_message_0x3f {/*{{{*/
     uint16_t pathlen;           // 6
 
     char *   filepath;          // 8 - variable length starts here
-} __attribute__ ((packed)) _v3_msg_0x3f;/*}}}*/
+} _v3_msg_0x3f;/*}}}*/
 typedef struct _v3_net_message_0x42 {/*{{{*/
     uint32_t type;              // 0
     uint16_t user_id;           // 4
@@ -119,7 +122,7 @@ typedef struct _v3_net_message_0x42 {/*{{{*/
     
     uint16_t msglen;            // 12 - variable length starts here
     char *   msg;               // 14
-} __attribute__ ((packed)) _v3_msg_0x42;/*}}}*/
+} _v3_msg_0x42;/*}}}*/
 int _v3_get_0x42(_v3_net_message *msg);
 _v3_net_message *_v3_put_0x42(uint16_t subtype, uint16_t user_id, char* message);
 typedef struct _v3_net_message_0x46 {/*{{{*/
@@ -128,7 +131,7 @@ typedef struct _v3_net_message_0x46 {/*{{{*/
     uint16_t setting;           // 6
     uint16_t value;             // 8
     uint16_t unknown_1;         // 10
-} __attribute__ ((packed)) _v3_msg_0x46;
+} _v3_msg_0x46;
 int _v3_get_0x46(_v3_net_message *msg);
 _v3_net_message *_v3_put_0x46(uint16_t setting, uint16_t value);/*}}}*/
 typedef struct _v3_net_message_0x48 {/*{{{*/
@@ -148,7 +151,7 @@ typedef struct _v3_net_message_0x48 {/*{{{*/
     char     username[32];      // 152
     char     phonetic[32];      // 184
     char     os[64];            // 216
-} __attribute__ ((packed)) _v3_msg_0x48;
+} _v3_msg_0x48;
 int _v3_get_0x48(_v3_net_message *msg);
 _v3_net_message *_v3_put_0x48(void);/*}}}*/
 typedef struct _v3_net_message_0x49 {/*{{{*/
@@ -158,7 +161,7 @@ typedef struct _v3_net_message_0x49 {/*{{{*/
     uint8_t  hash_password[32]; // 8
 
     v3_channel *channel;        // 40 - variable lenghth starts here
-} __attribute__ ((packed)) _v3_msg_0x49;
+} _v3_msg_0x49;
 int _v3_get_0x49(_v3_net_message *msg);
 _v3_net_message *_v3_put_0x49(uint16_t subtype, uint16_t user_id, char *channel_password, _v3_msg_channel *channel);/*}}}*/
 typedef struct _v3_net_message_0x4a {/*{{{*/
@@ -231,13 +234,13 @@ typedef struct _v3_net_message_0x4a {/*{{{*/
     uint8_t see_chan_comment;
     uint8_t see_user_comment;
     uint8_t unknown_perm_15;
-} __attribute__ ((packed)) _v3_msg_0x4a;
+} _v3_msg_0x4a;
 int _v3_get_0x4a(_v3_net_message *msg);/*}}}*/
 typedef struct _v3_net_message_0x4b {/*{{{*/
     uint32_t type;              // 0
     uint32_t timestamp;         // 4
     uint32_t empty;             // 8
-} __attribute__ ((packed)) _v3_msg_0x4b;
+} _v3_msg_0x4b;
 _v3_net_message *_v3_put_0x4b(void);/*}}}*/
 typedef struct _v3_net_message_0x50 {/*{{{*/
     uint32_t type;              // 0
@@ -247,7 +250,7 @@ typedef struct _v3_net_message_0x50 {/*{{{*/
     uint16_t message_id;        // 12
     uint16_t message_size;      // 14
     uint8_t  message[256];      // 16
-} __attribute__ ((packed)) _v3_msg_0x50;
+} _v3_msg_0x50;
 int _v3_get_0x50(_v3_net_message *msg);/*}}}*/
 
 typedef struct _v3_net_message_0x52 {/*{{{*/
@@ -260,21 +263,21 @@ typedef struct _v3_net_message_0x52 {/*{{{*/
     uint16_t unknown_1;         // 14
     uint32_t data_length;       // 16
     uint32_t pcm_length;        // 20
-} __attribute__ ((packed)) _v3_msg_0x52; /*}}}*/
+} _v3_msg_0x52; /*}}}*/
 typedef struct _v3_net_message_0x52_0x00 {/*{{{*/
     _v3_msg_0x52 header;        // 0
     uint16_t unknown_4;         // 24
     uint16_t unknown_5;         // 26
     uint16_t unknown_6;         // 28
     uint16_t unknown_7;         // 30
-} __attribute__ ((packed)) _v3_msg_0x52_0x00; /*}}}*/
+} _v3_msg_0x52_0x00; /*}}}*/
 typedef struct _v3_net_message_0x52_0x01_in {/*{{{*/
     _v3_msg_0x52 header;        // 0
     uint16_t unknown_4;         // 24
     uint16_t unknown_5;         // 26
 
     void     *data;             // 28 - either gsmdata* or speexdata*
-} __attribute__ ((packed)) _v3_msg_0x52_0x01_in;/*}}}*/
+} _v3_msg_0x52_0x01_in;/*}}}*/
 typedef struct _v3_net_message_0x52_0x01_out {/*{{{*/
     _v3_msg_0x52 header;        // 0
     uint16_t unknown_4;         // 24
@@ -283,23 +286,23 @@ typedef struct _v3_net_message_0x52_0x01_out {/*{{{*/
     uint16_t unknown_7;         // 30
 
     void     *data;             // 28 - either gsmdata* or speexdata*
-} __attribute__ ((packed)) _v3_msg_0x52_0x01_out;/*}}}*/
+} _v3_msg_0x52_0x01_out;/*}}}*/
 typedef struct _v3_net_message_0x52_gsmdata {/*{{{*/
     uint8_t  **frames;
-} __attribute__ ((packed)) _v3_msg_0x52_gsmdata;/*}}}*/
+} _v3_msg_0x52_gsmdata;/*}}}*/
 typedef struct _v3_net_message_0x52_speexdata {/*{{{*/
     uint16_t frame_count;
     uint16_t sample_size;
     uint8_t  **frames;
-} __attribute__ ((packed)) _v3_msg_0x52_speexdata;/*}}}*/
+} _v3_msg_0x52_speexdata;/*}}}*/
 typedef struct _v3_net_message_0x52_0x02 {/*{{{*/
     _v3_msg_0x52 header;        // 0
     uint16_t unknown_4;         // 24
     uint16_t unknown_5;         // 26
-} __attribute__ ((packed)) _v3_msg_0x52_0x02; /*}}}*/
+} _v3_msg_0x52_0x02; /*}}}*/
 typedef struct _v3_net_message_0x52_0x03 {/*{{{*/
     _v3_msg_0x52 header;        // 0
-} __attribute__ ((packed)) _v3_msg_0x52_0x03; /*}}}*/
+} _v3_msg_0x52_0x03; /*}}}*/
 int _v3_get_0x52(_v3_net_message *msg);
 _v3_net_message *_v3_put_0x52(uint8_t subtype, uint16_t codec, uint16_t codec_format, uint16_t send_type, uint32_t pcmlength, uint32_t length, void *data);
 int _v3_destroy_0x52(_v3_net_message *msg);
@@ -308,7 +311,7 @@ typedef struct _v3_net_message_0x53 {/*{{{*/
     uint32_t type;              // 0
     uint16_t user_id;           // 2
     uint16_t channel_id;        // 4
-} __attribute__ ((packed)) _v3_msg_0x53;
+} _v3_msg_0x53;
 int _v3_get_0x53(_v3_net_message *msg);/*}}}*/
 typedef struct _v3_net_message_0x57 {/*{{{*/
     uint32_t type;              // 0
@@ -322,7 +325,7 @@ typedef struct _v3_net_message_0x57 {/*{{{*/
     char     name[32];          // 28
     char     version[16];       // 60
     char     unknown_3[32];     // 76
-} __attribute__ ((packed)) _v3_msg_0x57;
+} _v3_msg_0x57;
 int _v3_get_0x57(_v3_net_message *msg);/*}}}*/
 typedef struct _v3_net_message_0x58 {/*{{{*/
     uint32_t type;              // 0
@@ -334,7 +337,7 @@ typedef struct _v3_net_message_0x58 {/*{{{*/
     uint16_t channel_id;        // 14
     uint16_t log_error;         // 16
     uint16_t unknown2;          // 18
-} __attribute__ ((packed)) _v3_msg_0x58;
+} _v3_msg_0x58;
 int _v3_get_0x58(_v3_net_message *msg);
 _v3_net_message *_v3_put_0x58(uint16_t subtype, uint16_t channel, uint16_t phantom_user_id);/*}}}*/
 typedef struct _v3_net_message_0x59 {/*{{{*/
@@ -346,14 +349,14 @@ typedef struct _v3_net_message_0x59 {/*{{{*/
     uint16_t unknown_[4];       // 12
     char *   message;           // 20
 
-} __attribute__ ((packed)) _v3_msg_0x59;
+} _v3_msg_0x59;
 int _v3_get_0x59(_v3_net_message *msg);/*}}}*/
 typedef struct _v3_net_message_0x5c {/*{{{*/
     uint32_t type;              // 0
     uint16_t subtype;           // 4
     uint16_t sum_1;             // 6
     uint32_t sum_2;             // 8
-} __attribute__ ((packed)) _v3_msg_0x5c;
+} _v3_msg_0x5c;
 int _v3_get_0x5c(_v3_net_message *msg);
 _v3_net_message *_v3_put_0x5c(uint8_t subtype);
 uint32_t _v3_msg5c_scramble(uint8_t* in);
@@ -364,7 +367,7 @@ typedef struct _v3_net_message_0x5d {/*{{{*/
     uint16_t user_count;        // 6
     _v3_msg_user *lobby;        // 8 - variable length starts here
     _v3_msg_user *user_list;
-} __attribute__ ((packed)) _v3_msg_0x5d;
+} _v3_msg_0x5d;
 _v3_net_message *_v3_put_0x5d(uint16_t subtype, uint16_t count, v3_user *user);
 int _v3_get_0x5d(_v3_net_message *msg);
 int _v3_destroy_0x5d(_v3_net_message *msg);/*}}}*/
@@ -372,7 +375,7 @@ typedef struct _v3_net_message_0x60 {/*{{{*/
     uint32_t type;              // 0
     uint32_t channel_count;     // 4
     _v3_msg_channel *channel_list; // 8 - variable length stats here
-} __attribute__ ((packed)) _v3_msg_0x60;
+} _v3_msg_0x60;
 int _v3_get_0x60(_v3_net_message *msg);
 int _v3_destroy_0x60(_v3_net_message *msg);/*}}}*/
 typedef struct _v3_net_message_0x61 {/*{{{*/
@@ -385,13 +388,15 @@ typedef struct _v3_net_message_0x61 {/*{{{*/
     uint8_t  banned_user[32];   // 20
     uint8_t  banned_by[32];     // 52
     uint8_t  ban_msg[128];      // 84
-} __attribute__ ((packed)) _v3_msg_0x61;/*}}}*/
+} _v3_msg_0x61;/*}}}*/
 typedef struct _v3_net_message_0x62 {/*{{{*/
     uint32_t type;              // 0
     uint16_t from;              // 4
     uint16_t to;                // 6
     uint32_t error_id;          // 8
-} __attribute__ ((packed)) _v3_msg_0x62;/*}}}*/
+} _v3_msg_0x62;/*}}}*/
+
+#pragma pack(pop)
 
 char *   _v3_get_msg_string(void *offset, uint16_t *len);
 int      _v3_get_msg_channel(void *offset, _v3_msg_channel *channel);
