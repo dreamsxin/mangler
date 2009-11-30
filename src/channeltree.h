@@ -79,6 +79,7 @@ class ManglerChannelTree
         ManglerChannelTree(Glib::RefPtr<Gtk::Builder> builder);
         Gtk::TreeView                       *channelView;
         Gtk::Menu                           *rcmenu_user;
+        Gtk::Menu                           *rcmenu_channel;
         Gtk::Window                         *window;
         Gtk::Label                          *label;
         Gtk::VScale                         *volumevscale;
@@ -109,6 +110,8 @@ class ManglerChannelTree
         void channelView_buttonpress_event_cb(GdkEventButton* event);
         void copyCommentMenuItem_activate_cb(void);
         void copyURLMenuItem_activate_cb(void);
+        void addPhantomMenuItem_activate_cb(void);
+        void removePhantomMenuItem_activate_cb(void);
         void volumeAdjustment_value_changed_cb(uint16_t);
 
 };

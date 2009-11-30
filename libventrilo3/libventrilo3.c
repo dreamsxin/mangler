@@ -2711,7 +2711,7 @@ v3_phantom_remove(uint16_t channel_id) {/*{{{*/
    _v3_func_enter("v3_phantom_remove");
 
     if (!v3_is_loggedin()) {
-        _v3_func_leave("v3_remove_channel");
+        _v3_func_leave("v3_phantom_remove");
         return;
     }
     

@@ -53,12 +53,18 @@ ManglerChannelTree::ManglerChannelTree(Glib::RefPtr<Gtk::Builder> builder)/*{{{*
     channelView->signal_row_activated().connect(sigc::mem_fun(this, &ManglerChannelTree::channelView_row_activated_cb));
     channelView->signal_button_press_event().connect_notify(sigc::mem_fun(this, &ManglerChannelTree::channelView_buttonpress_event_cb));
 
-    // create our right click context menu and connect its signal
+    // create our right click context menu for users and connect its signal
     builder->get_widget("userRightClickMenu", rcmenu_user);
     builder->get_widget("copyComment", menuitem);
     menuitem->signal_activate().connect(sigc::mem_fun(this, &ManglerChannelTree::copyCommentMenuItem_activate_cb));
     builder->get_widget("copyURL", menuitem);
     menuitem->signal_activate().connect(sigc::mem_fun(this, &ManglerChannelTree::copyURLMenuItem_activate_cb));
+
+    builder->get_widget("channelRightClickMenu", rcmenu_channel);
+    builder->get_widget("addPhantom", menuitem);
+    menuitem->signal_activate().connect(sigc::mem_fun(this, &ManglerChannelTree::addPhantomMenuItem_activate_cb));
+    builder->get_widget("removePhantom", menuitem);
+    menuitem->signal_activate().connect(sigc::mem_fun(this, &ManglerChannelTree::removePhantomMenuItem_activate_cb));
 
     //int colnum = channelView->append_column("Name", channelRecord.displayName) - 1;
     // TODO: Write a sort routine to make sure users are always immediately
@@ -541,6 +547,9 @@ ManglerChannelTree::channelView_row_activated_cb(const Gtk::TreeModel::Path& pat
     }
 }/*}}}*/
 
+/*
+ * Right-click menu is handled here
+ */
 void
 ManglerChannelTree::channelView_buttonpress_event_cb(GdkEventButton* event) {/*{{{*/
     Gtk::TreeModel::Path path;
@@ -551,15 +560,29 @@ ManglerChannelTree::channelView_buttonpress_event_cb(GdkEventButton* event) {/*{
             iter = channelStore->get_iter(path);
             row = *iter;
             bool isUser = row[channelRecord.isUser];
+            uint16_t id = row[channelRecord.id];
             Glib::ustring comment = row[channelRecord.comment];
             Glib::ustring url = row[channelRecord.url];
 
             if (isUser) {
+                v3_user *user = v3_get_user(id);
                 builder->get_widget("copyComment", menuitem);
                 menuitem->set_sensitive(comment.empty() ? false : true);
                 builder->get_widget("copyURL", menuitem);
                 menuitem->set_sensitive(url.empty() ? false : true);
+                builder->get_widget("removePhantom", menuitem);
+                menuitem->hide();
+                if (user->id == v3_get_user_id()) {
+                    // we clicked ourself
+                }
+                if (user->real_user_id == v3_get_user_id()) {
+                    // we clicked on one of our own phantoms
+                    menuitem->show();
+                }
                 rcmenu_user->popup(event->button, event->time);
+                v3_free_user(user);
+            } else {
+                rcmenu_channel->popup(event->button, event->time);
             }
         }
     }
@@ -586,6 +609,34 @@ ManglerChannelTree::copyURLMenuItem_activate_cb(void) {/*{{{*/
         Gtk::TreeModel::Row row = *iter;
         Glib::ustring url = row[channelRecord.url];
         clipboard->set_text(url);
+    }
+}/*}}}*/
+
+void
+ManglerChannelTree::addPhantomMenuItem_activate_cb(void) {/*{{{*/
+    Glib::RefPtr<Gtk::TreeSelection> sel = channelView->get_selection();
+    Gtk::TreeModel::iterator iter = sel->get_selected();
+    if(iter) {
+        Gtk::TreeModel::Row row = *iter;
+        bool isUser = row[channelRecord.isUser];
+        uint16_t id = row[channelRecord.id];
+        Glib::ustring name = row[channelRecord.name];
+        if (!isUser) {
+            v3_phantom_add(id);
+        }
+    }
+}/*}}}*/
+
+void
+ManglerChannelTree::removePhantomMenuItem_activate_cb(void) {/*{{{*/
+    Glib::RefPtr<Gtk::TreeSelection> sel = channelView->get_selection();
+    Gtk::TreeModel::iterator iter = sel->get_selected();
+    if(iter) {
+        Gtk::TreeModel::Row row = *iter;
+        uint16_t id = row[channelRecord.id];
+        uint16_t parent_id = row[channelRecord.parent_id];
+        fprintf(stderr, "removing phantom id %d\n", parent_id);
+        v3_phantom_remove(parent_id);
     }
 }/*}}}*/
 
