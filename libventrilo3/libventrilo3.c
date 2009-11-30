@@ -2559,7 +2559,7 @@ v3_login(char *server, char *username, char *password, char *phonetic) {/*{{{*/
 }/*}}}*/
 
 void
-v3_join_chat() {/*{{{*/
+v3_join_chat(void) {/*{{{*/
     v3_event ev;
 
     _v3_func_enter("v3_join_chat");

@@ -438,8 +438,8 @@ void    _v3_print_channel_list(void);   // testing function -- will be deleted
  * External functions that are used by a program linking to the library
  */
 int         v3_login(char *server, char *username, char *password, char *phonetic);
-void        v3_join_chat();
-void        v3_leave_chat();
+void        v3_join_chat(void);
+void        v3_leave_chat(void);
 void        v3_send_chat_message(char* message);
 void        v3_logout(void);
 void        v3_change_channel(uint16_t channel_id, char *password);

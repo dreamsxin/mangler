@@ -78,7 +78,7 @@ class ManglerChannelTree
     public:
         ManglerChannelTree(Glib::RefPtr<Gtk::Builder> builder);
         Gtk::TreeView                       *channelView;
-        Gtk::Menu                           *rcmenu;
+        Gtk::Menu                           *rcmenu_user;
         Gtk::Window                         *window;
         Gtk::Label                          *label;
         Gtk::VScale                         *volumevscale;

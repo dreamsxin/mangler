@@ -54,7 +54,7 @@ ManglerChannelTree::ManglerChannelTree(Glib::RefPtr<Gtk::Builder> builder)/*{{{*
     channelView->signal_button_press_event().connect_notify(sigc::mem_fun(this, &ManglerChannelTree::channelView_buttonpress_event_cb));
 
     // create our right click context menu and connect its signal
-    builder->get_widget("userRightClickMenu", rcmenu);
+    builder->get_widget("userRightClickMenu", rcmenu_user);
     builder->get_widget("copyComment", menuitem);
     menuitem->signal_activate().connect(sigc::mem_fun(this, &ManglerChannelTree::copyCommentMenuItem_activate_cb));
     builder->get_widget("copyURL", menuitem);
@@ -543,8 +543,25 @@ ManglerChannelTree::channelView_row_activated_cb(const Gtk::TreeModel::Path& pat
 
 void
 ManglerChannelTree::channelView_buttonpress_event_cb(GdkEventButton* event) {/*{{{*/
+    Gtk::TreeModel::Path path;
+    Gtk::TreeModel::Row row;
+    Gtk::TreeModel::iterator iter;
     if ((event->type == GDK_BUTTON_PRESS) && (event->button == 3)) {
-        rcmenu->popup(event->button, event->time);
+        if (channelView->get_path_at_pos((int)event->x, (int)event->y, path)) {
+            iter = channelStore->get_iter(path);
+            row = *iter;
+            bool isUser = row[channelRecord.isUser];
+            Glib::ustring comment = row[channelRecord.comment];
+            Glib::ustring url = row[channelRecord.url];
+
+            if (isUser) {
+                builder->get_widget("copyComment", menuitem);
+                menuitem->set_sensitive(comment.empty() ? false : true);
+                builder->get_widget("copyURL", menuitem);
+                menuitem->set_sensitive(url.empty() ? false : true);
+                rcmenu_user->popup(event->button, event->time);
+            }
+        }
     }
 }/*}}}*/
 
