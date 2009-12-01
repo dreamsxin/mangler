@@ -633,7 +633,6 @@ ManglerChannelTree::removePhantomMenuItem_activate_cb(void) {/*{{{*/
     Gtk::TreeModel::iterator iter = sel->get_selected();
     if(iter) {
         Gtk::TreeModel::Row row = *iter;
-        uint16_t id = row[channelRecord.id];
         uint16_t parent_id = row[channelRecord.parent_id];
         fprintf(stderr, "removing phantom id %d\n", parent_id);
         v3_phantom_remove(parent_id);
