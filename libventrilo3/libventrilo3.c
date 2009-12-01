@@ -2996,6 +2996,7 @@ _v3_create_event(uint16_t event) {/*{{{*/
     if(event) {
         ev->type = event;
     }
+    return ev;
 }/*}}}*/
 
 v3_event *
