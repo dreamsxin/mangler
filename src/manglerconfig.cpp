@@ -35,6 +35,10 @@
 
 ManglerConfig::ManglerConfig() {/*{{{*/
     lv3_debuglevel                  = 0;
+    windowWidth = 0;
+    windowHeight = 0;
+    buttonsHidden = false;
+    serverInfoHidden = false;
     PushToTalkKeyEnabled            = false;
     PushToTalkKeyValue              = "";
     PushToTalkMouseEnabled          = false;
@@ -80,6 +84,11 @@ bool ManglerConfig::save() {/*{{{*/
     put("qc_lastserver.comment", "");
     put("lastConnectedServerId", lastConnectedServerId);
     put("lv3_debuglevel", lv3_debuglevel);
+    put("window.width", windowWidth);
+    put("window.height", windowHeight);
+    put("window.buttonsHidden", buttonsHidden);
+    put("window.serverInfoHidden", serverInfoHidden);
+
     for (uint32_t ctr = 0; ctr < serverlist.size(); ctr++) {
         put(ctr, *serverlist[ctr]);
     }
@@ -131,6 +140,7 @@ bool ManglerConfig::put(uint16_t id, ManglerServerConfig server) {/*{{{*/
     snprintf(name, 1023, "serverlist.%d.phonetic",             id); if (!put(name, server.phonetic             ))  return false;
     snprintf(name, 1023, "serverlist.%d.comment",              id); if (!put(name, server.comment              ))  return false;
     snprintf(name, 1023, "serverlist.%d.url",                  id); if (!put(name, server.url                  ))  return false;
+    snprintf(name, 1023, "serverlist.%d.charset",              id); if (!put(name, server.charset              ))  return false;
     snprintf(name, 1023, "serverlist.%d.accept_u2u",           id); if (!put(name, server.acceptU2U            ))  return false;
     snprintf(name, 1023, "serverlist.%d.accept_pages",         id); if (!put(name, server.acceptPages          ))  return false;
     snprintf(name, 1023, "serverlist.%d.accept_privchat",      id); if (!put(name, server.acceptPrivateChat    ))  return false;
@@ -229,6 +239,10 @@ void ManglerConfig::load() {/*{{{*/
     qc_lastserver.phonetic        = get("qc_lastserver.phonetic");
     qc_lastserver.comment         = get("qc_lastserver.comment");
     lv3_debuglevel                = atoi(get("lv3_debuglevel").c_str());
+    windowWidth                   = atoi(get("window.width").c_str());
+    windowHeight                  = atoi(get("window.height").c_str());
+    buttonsHidden                 = get("window.buttonsHidden") == "1" ? true : false; // default false
+    serverInfoHidden                 = get("window.serverInfoHidden") == "1" ? true : false; // default false
     lastConnectedServerId         = atoi(get("lastConnectedServerId").c_str());
     for (uint32_t ctr = 0; ctr < serverlist.size(); ctr++) {
         delete serverlist[ctr];
@@ -251,6 +265,7 @@ void ManglerConfig::load() {/*{{{*/
             server->phonetic = get(base + "phonetic");
             server->comment = get(base + "comment");
             server->url = get(base + "url");
+            server->charset = get(base + "charset");
             server->acceptU2U = get(base + "accept_u2u") == "0" ? false : true;
             server->acceptPages = get(base + "accept_pages") == "0" ? false : true;
             server->acceptPrivateChat = get(base + "accept_privchat") == "0" ? false : true;

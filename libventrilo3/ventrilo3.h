@@ -57,6 +57,12 @@
 #define V3_MODIFY_CHANNEL           0x05
 #define V3_AUTHFAIL_CHANNEL         0x07
 
+#define V3_JOIN_CHAT                0x00
+#define V3_LEAVE_CHAT               0x01
+#define V3_TALK_CHAT                0x02
+#define V3_RCON_CHAT                0x03
+#define V3_JOINFAIL_CHAT            0x04
+
 #define V3_REMOVE_USER              0x00
 #define V3_ADD_USER                 0x01
 #define V3_MODIFY_USER              0x02
@@ -66,6 +72,9 @@
 #define V3_AUDIO_DATA               0x01
 #define V3_AUDIO_STOP               0x02
 #define V3_AUDIO_UNK                0x03
+
+#define V3_PHANTOM_ADD              0x00
+#define V3_PHANTOM_REMOVE           0x01 
 
 #define V3_DEBUG_NONE               0
 #define V3_DEBUG_STATUS             1
@@ -164,7 +173,7 @@ struct _v3_permissions {/*{{{*/
 enum _v3_events
 {
     // inbound or outbound event types
-    V3_EVENT_STATUS,
+    V3_EVENT_STATUS = 1,
     V3_EVENT_PING,
     V3_EVENT_USER_LOGIN,
     V3_EVENT_USER_LOGOUT,
@@ -174,6 +183,7 @@ enum _v3_events
     V3_EVENT_CHAN_ADD,
     V3_EVENT_CHAN_MODIFY,
     V3_EVENT_CHAN_REMOVE,
+    V3_EVENT_CHAN_BADPASS,
     V3_EVENT_ERROR_MSG,
     V3_EVENT_USER_TALK_START,
     V3_EVENT_USER_TALK_END,
@@ -181,9 +191,14 @@ enum _v3_events
     V3_EVENT_DISPLAY_MOTD,
     V3_EVENT_DISCONNECT,
     V3_EVENT_USER_MODIFY,
+    V3_EVENT_CHAT_JOIN,
+    V3_EVENT_CHAT_LEAVE,
+    V3_EVENT_CHAT_MESSAGE,
 
     // outbound specific event types
     V3_EVENT_CHANGE_CHANNEL,
+    V3_EVENT_PHANTOM_ADD,
+    V3_EVENT_PHANTOM_REMOVE,
 
     // not implemented
     V3_EVENT_USER_PAGED,
@@ -239,6 +254,7 @@ struct _v3_event {
         int16_t sample16[8192];
         uint8_t sample[16384];
         char    motd[2048]; 
+        char    chatmessage[256];
     } data;
     v3_event *next;
 };
@@ -279,6 +295,7 @@ typedef struct __v3_msg_user {/*{{{*/
     uint8_t  allow_recording;
     uint8_t  guest;
     void     *next;
+    uint16_t real_user_id; // used for phantom users
 } _v3_msg_user;/*}}}*/
 typedef struct __v3_msg_channel {/*{{{*/
     /*                           offset:   0  1  2  3  4  5  6  7  8  9  10
@@ -421,8 +438,13 @@ void    _v3_print_channel_list(void);   // testing function -- will be deleted
  * External functions that are used by a program linking to the library
  */
 int         v3_login(char *server, char *username, char *password, char *phonetic);
+void        v3_join_chat(void);
+void        v3_leave_chat(void);
+void        v3_send_chat_message(char* message);
 void        v3_logout(void);
 void        v3_change_channel(uint16_t channel_id, char *password);
+void        v3_phantom_add(uint16_t channel_id);
+void        v3_phantom_remove(uint16_t channel_id);
 int         v3_debuglevel(uint32_t level);
 int         v3_is_loggedin(void);
 uint16_t    v3_get_user_id(void);
@@ -437,7 +459,7 @@ uint32_t    v3_get_codec_rate(uint16_t codec, uint16_t format);
 const v3_codec *v3_get_codec(uint16_t codec, uint16_t format);
 const v3_codec *v3_get_channel_codec(uint16_t channel_id);
 uint16_t    v3_get_user_channel(uint16_t id);
-uint8_t     v3_channel_requires_password(uint16_t channel_id);
+uint16_t    v3_channel_requires_password(uint16_t channel_id);
 void        v3_start_audio(uint16_t send_type);
 void        v3_send_audio(uint16_t send_type, uint32_t rate, uint8_t *pcm, uint32_t length);
 void        v3_stop_audio(void);

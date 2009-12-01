@@ -34,6 +34,7 @@
 #include "mangleraudio.h"
 #include "manglersettings.h"
 #include "manglerserverlist.h"
+#include "manglerchat.h"
 #include "locale.h"
 
 extern "C" {
@@ -63,9 +64,15 @@ class Mangler
         Gtk::Entry                          *entry;
         Gtk::ComboBox                       *combobox;
         Gtk::TextView                       *textview;
+        Gtk::VBox                           *vbox;
+        Gtk::CheckMenuItem                  *checkmenuitem;
+        Gtk::MenuItem                       *menuitem;
+        Gtk::Table                          *table;
+
         std::map<Glib::ustring, Glib::RefPtr<Gdk::Pixbuf> >  icons;
         Glib::RefPtr<Gtk::StatusIcon>       statusIcon;
         ManglerServerList                   *serverList;
+        ManglerChat                         *chat;
         ManglerChannelTree                  *channelTree;
         ManglerNetwork                      *network;
         int32_t                             connectedServerId;
@@ -102,7 +109,7 @@ class Mangler
         void errorDialog(Glib::ustring message);
         
     protected:
-        // signal handlers
+        // button signal handlers
         void quickConnectButton_clicked_cb(void);
         void serverConfigButton_clicked_cb(void);
         void connectButton_clicked_cb(void);
@@ -115,6 +122,11 @@ class Mangler
         void xmitButton_pressed_cb(void);
         void xmitButton_released_cb(void);
         void statusIcon_activate_cb(void);
+
+        // menu bar signal handlers
+        void buttonMenuItem_toggled_cb(void);
+        void hideServerInfoMenuItem_toggled_cb(void);
+        void quitMenuItem_activate_cb(void);
 
 
         bool getNetworkEvent(void);
@@ -137,6 +149,9 @@ class Mangler
         // text string change dialog signal handlers
         void textStringChangeDialogOkButton_clicked_cb(void);
         void textStringChangeDialogCancelButton_clicked_cb(void);
+
+        // program quit callback
+        bool mangler_quit_cb(void);
 };
 
 struct _cli_options {

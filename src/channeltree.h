@@ -44,6 +44,7 @@ class channelModelColumns : public Gtk::TreeModelColumnRecord/*{{{*/
             add(url);
             add(integration_text);
             add(last_transmit);
+            add(password);
         }
 
         Gtk::TreeModelColumn<Glib::ustring>                 displayName;
@@ -58,6 +59,7 @@ class channelModelColumns : public Gtk::TreeModelColumnRecord/*{{{*/
         Gtk::TreeModelColumn<Glib::ustring>                 url;
         Gtk::TreeModelColumn<Glib::ustring>                 integration_text;
         Gtk::TreeModelColumn<Glib::ustring>                 last_transmit;
+        Gtk::TreeModelColumn<Glib::ustring>                 password;
 };/*}}}*/
 class ManglerChannelTree
 {
@@ -76,7 +78,8 @@ class ManglerChannelTree
     public:
         ManglerChannelTree(Glib::RefPtr<Gtk::Builder> builder);
         Gtk::TreeView                       *channelView;
-        Gtk::Menu                           *rcmenu;
+        Gtk::Menu                           *rcmenu_user;
+        Gtk::Menu                           *rcmenu_channel;
         Gtk::Window                         *window;
         Gtk::Label                          *label;
         Gtk::VScale                         *volumevscale;
@@ -84,18 +87,21 @@ class ManglerChannelTree
         sigc::connection                    volumeAdjustSignalConnection;
         Gtk::VBox                           *vbox;
         void addChannel(uint8_t protect_mode, uint32_t id, uint32_t parent_id, Glib::ustring name, Glib::ustring comment = "", Glib::ustring phonetic = "");
-        void addUser(uint32_t id, uint32_t channel, Glib::ustring name, Glib::ustring comment = "", Glib::ustring phonetic = "", Glib::ustring url = "", Glib::ustring integration_text = "", bool guest = false);
+        void addUser(uint32_t id, uint32_t channel, Glib::ustring name, Glib::ustring comment = "", Glib::ustring phonetic = "", Glib::ustring url = "", Glib::ustring integration_text = "", bool guest = false, bool phantom = false);
         void updateLobby(Glib::ustring name, Glib::ustring comment = "", Glib::ustring phonetic = "");
-        void updateUser(uint32_t id, uint32_t parent_id, Glib::ustring name, Glib::ustring comment, Glib::ustring phonetic, Glib::ustring url, Glib::ustring integration_text, bool guest);
+        void updateUser(uint32_t id, uint32_t parent_id, Glib::ustring name, Glib::ustring comment, Glib::ustring phonetic, Glib::ustring url, Glib::ustring integration_text, bool guest, bool phantom);
         void updateChannel(uint8_t protect_mode, uint32_t id, uint32_t parent_id, Glib::ustring name, Glib::ustring comment, Glib::ustring phonetic);
         Glib::ustring getLastTransmit(uint16_t userid);
         void setLastTransmit(uint16_t userid, Glib::ustring last_transmit);
         void removeUser(uint32_t id);
         void removeChannel(uint32_t id);
-        void userIsTalking(uint16_t id, bool isTalking);
+        void setUserIcon(uint16_t id, Glib::ustring color);
         Gtk::TreeModel::Row getChannel(uint32_t id, Gtk::TreeModel::Children children);
         Gtk::TreeModel::Row getUser(uint32_t id, Gtk::TreeModel::Children children);
         uint16_t getUserChannelId(uint16_t userid);
+        Glib::ustring getChannelSavedPassword(uint16_t channel_id);
+        void setChannelSavedPassword(uint16_t channel_id, Glib::ustring password);
+        void forgetChannelSavedPassword(uint16_t channel_id);
         bool expand_all(void);
         bool collapse_all(void);
         void clear(void);
@@ -104,6 +110,8 @@ class ManglerChannelTree
         void channelView_buttonpress_event_cb(GdkEventButton* event);
         void copyCommentMenuItem_activate_cb(void);
         void copyURLMenuItem_activate_cb(void);
+        void addPhantomMenuItem_activate_cb(void);
+        void removePhantomMenuItem_activate_cb(void);
         void volumeAdjustment_value_changed_cb(uint16_t);
 
 };

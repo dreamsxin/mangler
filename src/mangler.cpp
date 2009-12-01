@@ -34,8 +34,30 @@
 
 
 Glib::ustring iso_8859_1_to_utf8(char *input);
+void set_charset(Glib::ustring charset);
 
 using namespace std;
+
+Glib::ustring serverCharset; // XXX this will only work in single-server mode
+const char *charsetslist[] = { // XXX this should go to server browser code
+    "System default",
+    "ISO-8859-15 (Western Europe)",
+    "ISO-8859-2 (Central Europe)",
+    "ISO-8859-5 (Ukrainian)",
+    "ISO-8859-7 (Greek)",
+    "ISO-8859-8 (Hebrew)",
+    "ISO-8859-9 (Turkish)",
+    "ISO-2022-JP (Japanese)",
+    "SJIS (Japanese)",
+    "CP949 (Korean)",
+    "CP1251 (Cyrillic)",
+    "KOI8-R (Cyrillic)",
+    "CP1256 (Arabic)",
+    "CP1257 (Baltic)",
+    "GB18030 (Chinese)",
+    "TIS-620 (Thai)",
+    NULL
+};
 
 Mangler *mangler;
 
@@ -59,11 +81,10 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
     icons.insert(std::make_pair("tray_icon_grey",               Gdk::Pixbuf::create_from_inline(-1, tray_icon_grey              )));
     icons.insert(std::make_pair("tray_icon_purple",             Gdk::Pixbuf::create_from_inline(-1, tray_icon_purple            )));
 
-    icons.insert(std::make_pair("user_icon_xmit",               Gdk::Pixbuf::create_from_inline(-1, user_icon_xmit              )));
-    icons.insert(std::make_pair("user_icon_noxmit",             Gdk::Pixbuf::create_from_inline(-1, user_icon_noxmit            )));
-
-    icons.insert(std::make_pair("user_icon_xmit_otherroom",     Gdk::Pixbuf::create_from_inline(-1, user_icon_xmit_otherroom    )));
-    icons.insert(std::make_pair("user_icon_noxmit_otherroom",   Gdk::Pixbuf::create_from_inline(-1, user_icon_noxmit_otherroom  )));
+    icons.insert(std::make_pair("user_icon_red",                Gdk::Pixbuf::create_from_inline(-1, user_icon_red               )));
+    icons.insert(std::make_pair("user_icon_yellow",             Gdk::Pixbuf::create_from_inline(-1, user_icon_yellow            )));
+    icons.insert(std::make_pair("user_icon_green",              Gdk::Pixbuf::create_from_inline(-1, user_icon_green             )));
+    icons.insert(std::make_pair("user_icon_orange",             Gdk::Pixbuf::create_from_inline(-1, user_icon_orange            )));
 
 
     try {
@@ -78,7 +99,12 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
         std::cerr << e.what() << std::endl;
         exit(0);
     }
+    //manglerWindow->signal_hide().connect(sigc::mem_fun(this, &Mangler::manglerWindow_hide_cb));
+    Gtk::Main::signal_quit().connect(sigc::mem_fun(this, &Mangler::mangler_quit_cb));
 
+    /*
+     * Retreive all buttons from builder and set their singal handler callbacks
+     */
     // Quick Connect Button
     builder->get_widget("quickConnectButton", button);
     button->signal_clicked().connect(sigc::mem_fun(this, &Mangler::quickConnectButton_clicked_cb));
@@ -131,6 +157,35 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
     builder->get_widget("motdOkButton", button);
     button->signal_clicked().connect(sigc::mem_fun(this, &Mangler::motdOkButton_clicked_cb));
 
+    /*
+     * Retreive all menu bar items from builder and set their singal handler
+     * callbacks.  Most of these can use the same callback as their
+     * corresponding button
+     */
+    builder->get_widget("buttonMenuItem", checkmenuitem);
+    checkmenuitem->signal_toggled().connect(sigc::mem_fun(this, &Mangler::buttonMenuItem_toggled_cb));
+
+    builder->get_widget("hideServerInfoMenuItem", checkmenuitem);
+    checkmenuitem->signal_toggled().connect(sigc::mem_fun(this, &Mangler::hideServerInfoMenuItem_toggled_cb));
+
+    builder->get_widget("serverListMenuItem", menuitem);
+    menuitem->signal_activate().connect(sigc::mem_fun(this, &Mangler::serverConfigButton_clicked_cb));
+
+    builder->get_widget("settingsMenuItem", menuitem);
+    menuitem->signal_activate().connect(sigc::mem_fun(this, &Mangler::settingsButton_clicked_cb));
+    
+    builder->get_widget("chatMenuItem", menuitem);
+    menuitem->signal_activate().connect(sigc::mem_fun(this, &Mangler::chatButton_clicked_cb));
+
+    builder->get_widget("commentMenuItem", menuitem);
+    menuitem->signal_activate().connect(sigc::mem_fun(this, &Mangler::commentButton_clicked_cb));
+
+    builder->get_widget("quitMenuItem", menuitem);
+    menuitem->signal_activate().connect(sigc::mem_fun(this, &Mangler::quitMenuItem_activate_cb));
+
+    builder->get_widget("aboutMenuItem", menuitem);
+    menuitem->signal_activate().connect(sigc::mem_fun(this, &Mangler::aboutButton_clicked_cb));
+
     // Set up our generic password dialog box
     builder->get_widget("passwordDialog", passwordDialog);
     builder->get_widget("passwordEntry", passwordEntry);
@@ -167,10 +222,24 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
     isTransmittingKey = 0;
     isTransmitting = 0;
     Glib::signal_timeout().connect(sigc::mem_fun(this, &Mangler::checkPushToTalkKeys), 100);
-    Glib::signal_timeout().connect(sigc::mem_fun(this, &Mangler::checkPushToTalkMouse), 100);
+    Glib::signal_timeout().connect(sigc::mem_fun(this, &Mangler::checkPushToTalkMouse), 100); 
+
+    // set the default window size from the settings
+    if (settings->config.windowWidth > 0 && settings->config.windowHeight > 0) {
+        manglerWindow->set_default_size(settings->config.windowWidth, settings->config.windowHeight);
+    }
+
+    builder->get_widget("buttonMenuItem", checkmenuitem);
+    checkmenuitem->set_active(settings->config.buttonsHidden);
+
+    builder->get_widget("hideServerInfoMenuItem", checkmenuitem);
+    checkmenuitem->set_active(settings->config.serverInfoHidden);
 
     // Create Server List Window
     serverList = new ManglerServerList(builder);
+    
+    // Create Chat Window
+    chat = new ManglerChat(builder);
 
     // Add our servers to the main window drop down
     builder->get_widget("serverSelectComboBox", combobox);
@@ -208,7 +277,7 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
 }/*}}}*/
 
 /*
- * Signal handler callbacks
+ * Button signal handler callbacks
  */
 void Mangler::quickConnectButton_clicked_cb(void) {/*{{{*/
     Gtk::Dialog *dialog;
@@ -282,6 +351,8 @@ void Mangler::connectButton_clicked_cb(void) {/*{{{*/
                 }
                 return;
             }
+            if (!server->charset.empty())
+                set_charset(server->charset);
 
             settings->config.lastConnectedServerId = server_id;
             settings->config.save();
@@ -302,7 +373,14 @@ void Mangler::commentButton_clicked_cb(void) {/*{{{*/
     textStringChangeDialog->hide();
 }/*}}}*/
 void Mangler::chatButton_clicked_cb(void) {/*{{{*/
-    //fprintf(stderr, "chat button clicked\n");
+    if (v3_is_loggedin()) {
+        if(!chat->isOpen) {
+            chat->chatWindow->set_icon(icons["tray_icon"]);
+            chat->chatWindow->show();
+        } else {
+            chat->chatWindow->present();
+        }
+    }
 }/*}}}*/
 void Mangler::bindingsButton_clicked_cb(void) {/*{{{*/
     //fprintf(stderr, "bindings button clicked\n");
@@ -345,6 +423,41 @@ void Mangler::xmitButton_released_cb(void) {/*{{{*/
         stopTransmit();
     }
 }/*}}}*/
+
+/*
+ * Menu bar signal handler callbacks
+ */
+void Mangler::buttonMenuItem_toggled_cb(void) {/*{{{*/
+    builder->get_widget("buttonMenuItem", checkmenuitem);
+    builder->get_widget("mainWindowButtonVBox", vbox);
+    if (checkmenuitem->get_active()) {
+        vbox->hide();
+        settings->config.buttonsHidden = true;
+    } else {
+        settings->config.buttonsHidden = false;
+        vbox->show();
+    }
+    settings->config.save();
+}/*}}}*/
+void Mangler::hideServerInfoMenuItem_toggled_cb(void) {/*{{{*/
+    builder->get_widget("hideServerInfoMenuItem", checkmenuitem);
+    builder->get_widget("serverTable", table);
+    if (checkmenuitem->get_active()) {
+        table->hide();
+        settings->config.serverInfoHidden = true;
+    } else {
+        settings->config.serverInfoHidden = false;
+        table->show();
+    }
+    settings->config.save();
+}/*}}}*/
+void Mangler::quitMenuItem_activate_cb(void) {/*{{{*/
+    Gtk::Main::quit();
+}/*}}}*/
+
+/*
+ * Other signal handler callbacks
+ */
 void Mangler::statusIcon_activate_cb(void) {/*{{{*/
     if (iconified == true) {
         manglerWindow->deiconify();
@@ -357,6 +470,14 @@ void Mangler::statusIcon_activate_cb(void) {/*{{{*/
         manglerWindow->set_skip_taskbar_hint(true);
         iconified = true;
     }
+}/*}}}*/
+bool Mangler::mangler_quit_cb(void) {/*{{{*/
+    int w, h;
+    manglerWindow->get_size(w, h);
+    settings->config.windowWidth = w;
+    settings->config.windowHeight = h;
+    settings->config.save();
+    return true;
 }/*}}}*/
 
 void Mangler::startTransmit(void) {/*{{{*/
@@ -377,7 +498,7 @@ void Mangler::startTransmit(void) {/*{{{*/
     audioControl->playNotification("talkstart");
     statusIcon->set(icons["tray_icon_green"]);
     isTransmitting = true;
-    channelTree->userIsTalking(v3_get_user_id(), true);
+    channelTree->setUserIcon(v3_get_user_id(), "green");
     codec = v3_get_channel_codec(user->channel);
     //fprintf(stderr, "channel %d codec rate: %d at sample size %d\n", user->channel, codec->rate, codec->samplesize);
     v3_start_audio(V3_AUDIO_SENDTYPE_U2CCUR);
@@ -391,7 +512,7 @@ void Mangler::stopTransmit(void) {/*{{{*/
     }
     audioControl->playNotification("talkend");
     statusIcon->set(icons["tray_icon_red"]);
-    channelTree->userIsTalking(v3_get_user_id(), false);
+    channelTree->setUserIcon(v3_get_user_id(), "red");
     isTransmitting = false;
     if (inputAudio) {
         inputAudio->finish();
@@ -462,7 +583,12 @@ bool Mangler::getNetworkEvent() {/*{{{*/
             case V3_EVENT_STATUS:/*{{{*/
                 builder->get_widget("progressbar", progressbar);
                 builder->get_widget("statusbar", statusbar);
-                progressbar->set_fraction(ev->status.percent/(float)100);
+                if (ev->status.percent == 100) {
+                    progressbar->hide();
+                } else {
+                    progressbar->show();
+                    progressbar->set_fraction(ev->status.percent/(float)100);
+                }
                 statusbar->pop();
                 statusbar->push(ev->status.message);
                 //fprintf(stderr, "got event type %d: %d %s\n", ev->type, ev->status.percent, ev->status.message);
@@ -473,6 +599,9 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                     fprintf(stderr, "couldn't retreive user id %d\n", ev->user.id);
                     break;
                 }
+                if (v3_get_user_channel(v3_get_user_id()) == 0) {
+                    audioControl->playNotification("channelenter");
+                }
                 //fprintf(stderr, "adding user id %d: %s to channel %d\n", ev->user.id, u->name, ev->channel.id);
                 channelTree->addUser(
                         (uint32_t)u->id,
@@ -482,7 +611,8 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                         u->phonetic,
                         u->url,
                         c_to_ustring(u->integration_text),
-                        (bool)u->guest);
+                        (bool)u->guest,
+                        (bool)u->real_user_id);
                 v3_free_user(u);
                 break;/*}}}*/
             case V3_EVENT_USER_MODIFY:/*{{{*/
@@ -503,7 +633,8 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                                 u->phonetic,
                                 u->url,
                                 c_to_ustring(u->integration_text),
-                                (bool)u->guest);
+                                (bool)u->guest,
+                                (bool)u->real_user_id);
                     }
                     v3_free_user(u);
                 }
@@ -533,9 +664,13 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                 break;/*}}}*/
             case V3_EVENT_USER_LOGOUT:/*{{{*/
                 if (v3_is_loggedin()) {
+                    if (v3_get_user_channel(v3_get_user_id()) == ev->channel.id) {
+                        audioControl->playNotification("channelleave");
+                    }
                     // can't get any user info... it's already gone by this point
                     //fprintf(stderr, "removing user id %d\n", ev->user.id);
                     channelTree->removeUser(ev->user.id);
+                    chat->removeUser(ev->user.id);
                 }
                 break;/*}}}*/
             case V3_EVENT_CHAN_REMOVE:/*{{{*/
@@ -548,6 +683,7 @@ bool Mangler::getNetworkEvent() {/*{{{*/
             case V3_EVENT_LOGIN_COMPLETE:/*{{{*/
                 if (v3_is_loggedin()) {
                     const v3_codec *codec_info;
+
                     codec_info = v3_get_channel_codec(0);
                     builder->get_widget("codecLabel", label);
                     label->set_text(codec_info->name);
@@ -559,6 +695,10 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                         comment = server->comment;
                         url = server->url;
                         v3_set_text((char *) ustring_to_c(server->comment).c_str(), (char *) ustring_to_c(server->url).c_str(), (char *) ustring_to_c(integration_text).c_str(), true);
+                    }
+                    builder->get_widget("chatWindow", window);
+                    if(chat->isOpen) {
+                        v3_join_chat();
                     }
                 }
                 break;/*}}}*/
@@ -595,7 +735,8 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                             u->phonetic,
                             u->url,
                             c_to_ustring(u->integration_text),
-                            (bool)u->guest);
+                            (bool)u->guest,
+                            (bool)u->real_user_id);
                     channelTree->setLastTransmit(ev->user.id, last_transmit);
                     v3_free_user(u);
                 }
@@ -615,15 +756,19 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                         c->phonetic);
                 v3_free_channel(c);
                 break;/*}}}*/
+            case V3_EVENT_CHAN_BADPASS:/*{{{*/
+                channelTree->forgetChannelSavedPassword(ev->channel.id);
+                errorDialog(c_to_ustring(ev->error.message));
+                break;/*}}}*/
             case V3_EVENT_ERROR_MSG:/*{{{*/
-                errorDialog(ev->error.message);
+                errorDialog(c_to_ustring(ev->error.message));
                 break;/*}}}*/
             case V3_EVENT_USER_TALK_START:/*{{{*/
                 if (v3_is_loggedin()) {
                     v3_user *me, *user;
                     me = v3_get_user(v3_get_user_id());
                     user = v3_get_user(ev->user.id);
-                    channelTree->userIsTalking(ev->user.id, true);
+                    channelTree->setUserIcon(ev->user.id, "orange");
                     if (me && user && me->channel == user->channel) {
                         v3_free_user(me);
                         v3_free_user(user);
@@ -644,7 +789,7 @@ bool Mangler::getNetworkEvent() {/*{{{*/
             case V3_EVENT_USER_TALK_END:/*{{{*/
                 if (v3_is_loggedin()) {
                     //fprintf(stderr, "user %d stopped talking\n", ev->user.id);
-                    channelTree->userIsTalking(ev->user.id, false);
+                    channelTree->setUserIcon(ev->user.id, "red");
                     // TODO: this is bad, there must be a flag in the last audio
                     // packet saying that it's the last one.  Need to figure out
                     // what that flag is and close it in V3_EVENT_PLAY_AUDIO
@@ -657,7 +802,7 @@ bool Mangler::getNetworkEvent() {/*{{{*/
             case V3_EVENT_PLAY_AUDIO:/*{{{*/
                 if (v3_is_loggedin()) {
                     // Open a stream if we don't have one for this user
-                    channelTree->userIsTalking(ev->user.id, true);
+                    channelTree->setUserIcon(ev->user.id, "green");
                     if (!outputAudio[ev->user.id]) {
                         outputAudio[ev->user.id] = new ManglerAudio("output");
                         outputAudio[ev->user.id]->open(ev->pcm.rate, AUDIO_OUTPUT);
@@ -708,8 +853,8 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                     progressbar->set_fraction(0);
                     statusbar->pop();
                     statusbar->push("Not connected");
-                    builder->get_widget("serverTabLabel", label);
-                    label->set_label("Not Connected");
+                    //builder->get_widget("serverTabLabel", label);
+                    //label->set_label("Not Connected");
                     builder->get_widget("pingLabel", label);
                     label->set_label("N/A");
                     builder->get_widget("userCountLabel", label);
@@ -719,11 +864,62 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                     mangler->statusIcon->set(icons["tray_icon_grey"]);
                     audioControl->playNotification("logout");
                     connectedServerId = -1;
+                    chat->clear();
+                }
+                break;/*}}}*/
+            case V3_EVENT_CHAT_JOIN:/*{{{*/
+                {
+                    chat->addUser(ev->user.id);
+                    u = v3_get_user(ev->user.id);
+                    if (!u) {
+                        fprintf(stderr, "couldn't retreive user id %d\n", ev->user.id);
+                        break;
+                    }
+                    if (u->id != 0) {
+                        channelTree->updateUser(
+                                (uint32_t)u->id,
+                                (uint32_t)u->channel,
+                                c_to_ustring(u->name),
+                                c_to_ustring(u->comment),
+                                u->phonetic,
+                                u->url,
+                                c_to_ustring(u->integration_text),
+                                (bool)u->guest,
+                                (bool)u->real_user_id);
+                    }
+                    v3_free_user(u);
+                }
+                break;/*}}}*/
+            case V3_EVENT_CHAT_LEAVE:/*{{{*/
+                {
+                    chat->removeUser(ev->user.id);
+                    u = v3_get_user(ev->user.id);
+                    if (!u) {
+                        fprintf(stderr, "couldn't retreive user id %d\n", ev->user.id);
+                        break;
+                    }
+                    if (u->id != 0) {
+                        channelTree->updateUser(
+                                (uint32_t)u->id,
+                                (uint32_t)u->channel,
+                                c_to_ustring(u->name),
+                                c_to_ustring(u->comment),
+                                u->phonetic,
+                                u->url,
+                                c_to_ustring(u->integration_text),
+                                (bool)u->guest,
+                                (bool)u->real_user_id);
+                    }
+                    v3_free_user(u);
+                }
+                break;/*}}}*/
+            case V3_EVENT_CHAT_MESSAGE:/*{{{*/
+                if (v3_is_loggedin()) {
+                    chat->addChatMessage(ev->user.id, c_to_ustring(ev->data.chatmessage));
                 }
                 break;/*}}}*/
             default:
                 fprintf(stderr, "******************************************************** got unknown event type %d\n", ev->type);
-                break;
         }
         channelTree->expand_all();
         free(ev);
@@ -764,7 +960,7 @@ bool Mangler::checkPushToTalkKeys(void) {/*{{{*/
 }/*}}}*/
 bool Mangler::checkPushToTalkMouse(void) {/*{{{*/ 
     GdkWindow   *rootwin = gdk_get_default_root_window(); 
-    XDevice *dev;
+    XDevice *dev = NULL;
     XDeviceInfo *xdev;
     XDeviceState *xds;
     XButtonState *xbs;
@@ -786,14 +982,27 @@ bool Mangler::checkPushToTalkMouse(void) {/*{{{*/
     xdev = XListInputDevices(GDK_WINDOW_XDISPLAY(rootwin), &ndevices_return);
     for (ctr = 0; ctr < ndevices_return; ctr++) {
         Glib::ustring name = xdev[ctr].name;
-        if (name == settings->config.mouseDeviceName) {
+        if (name == settings->config.mouseDeviceName && xdev[ctr].use == IsXExtensionPointer) {
             break;
         }
     }
     dev = XOpenDevice(GDK_WINDOW_XDISPLAY(rootwin), xdev[ctr].id);
+    if (! dev) {
+        return true;
+    }
     xds = (XDeviceState *)XQueryDeviceState(GDK_WINDOW_XDISPLAY(rootwin), dev);
     xbs = (XButtonState*) xds->data;
     state = state << bit;
+    /* debug mouse state buttons
+    for (int ctr = 1; ctr < 10; ctr++) {
+        int byte = ctr / 8;
+        int bit = ctr % 8;
+        state = 1 << bit;
+        fprintf(stderr, "(%d/%d)", byte, bit);
+        fprintf(stderr, "b%d: %d -- ", ctr, (xbs->buttons[byte] & state) >> bit);
+    }
+    fprintf(stderr, "\n");
+    */
     if ((xbs->buttons[byte] & state) >> bit) {
         ptt_on = true;
     }
@@ -945,18 +1154,44 @@ main (int argc, char *argv[])
     gdk_threads_leave();
 }
 
-std::string ustring_to_c(Glib::ustring input) {/*{{{*/
-    std::string to_charset, converted;
-
-    if (Glib::get_charset(to_charset) == true)
-        to_charset = "ISO-8859-1";
+void set_charset(Glib::ustring charset) {/*{{{*/
+    charset = charset.uppercase();
+    if (charset.find(' ') != Glib::ustring::npos)
+        charset = charset.erase(charset.find(' '));
 
     try {
-        converted = Glib::convert_with_fallback(input, to_charset, "UTF-8", "?");
-    } catch (Glib::ConvertError &e) {
-        converted = input;
+        Glib::IConv test("UTF-8", charset);
+    } catch (...) {
+        fprintf(stderr, "Charset '%s' isn't supported by your system - using system locale\n", charset.c_str());
+        serverCharset.clear();
+        return;
     }
     
+    serverCharset = charset;
+}/*}}}*/
+std::string ustring_to_c(Glib::ustring input) {/*{{{*/
+    std::string to_charset, converted;
+    
+    // check if input is already 7-bit
+    if (input.is_ascii())
+        return input;
+
+    // try encoding using the selected charset, unless its some utf-8
+    if (!serverCharset.empty() && serverCharset.find("UTF-8") == Glib::ustring::npos) {
+        try {
+            return Glib::convert(input, serverCharset, "UTF-8");
+        } catch (...) {}
+    }
+
+    // try encoding using the locale charset, unless its some utf-8
+    if (Glib::get_charset(to_charset) == true)
+        to_charset = "ISO-8859-1";
+    
+    try {
+        converted = Glib::convert_with_fallback(input, to_charset, "UTF-8", "?");
+    } catch (...) {
+        converted = input;
+    }
     return converted;
 }/*}}}*/
 Glib::ustring c_to_ustring(char *input) {/*{{{*/
@@ -965,15 +1200,21 @@ Glib::ustring c_to_ustring(char *input) {/*{{{*/
     // check if input is already valid UTF-8
     if (input_u.validate())
         return input_u;
-
-   // try to convert using the current locale
+  
+    // try to convert using the chosen charset
+    if (!serverCharset.empty()) {
+        try {
+            return Glib::convert(input, "UTF-8", serverCharset);
+        } catch (...) {}
+    }
+        
+    // try to convert using the current locale
     try {
         converted = Glib::locale_to_utf8(input);
-    } catch (Glib::ConvertError &e) {
+    } catch (...) {
         // locale conversion failed
         converted = iso_8859_1_to_utf8(input);
     }
-
     return converted;
 }/*}}}*/
 

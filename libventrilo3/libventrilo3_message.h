@@ -56,6 +56,9 @@
  * http://www.mangler.org/trac/wiki/ProtocolDocumentation
  */
 
+#pragma pack(push)
+#pragma pack(1)
+
 typedef struct _v3_net_message_0x00 {/*{{{*/
     uint32_t type;
     char version[16];
@@ -114,9 +117,14 @@ typedef struct _v3_net_message_0x3f {/*{{{*/
 typedef struct _v3_net_message_0x42 {/*{{{*/
     uint32_t type;              // 0
     uint16_t user_id;           // 4
-    uint32_t subtype;           // 6
-    uint16_t unknown;           // 10
+    uint16_t subtype;           // 6
+    uint32_t unknown;           // 8
+    
+    uint16_t msglen;            // 12 - variable length starts here
+    char *   msg;               // 14
 } _v3_msg_0x42;/*}}}*/
+int _v3_get_0x42(_v3_net_message *msg);
+_v3_net_message *_v3_put_0x42(uint16_t subtype, uint16_t user_id, char* message);
 typedef struct _v3_net_message_0x46 {/*{{{*/
     uint32_t type;              // 0
     uint16_t user_id;           // 4
@@ -254,52 +262,24 @@ typedef struct _v3_net_message_0x52 {/*{{{*/
     uint16_t send_type;         // 12
     uint16_t unknown_1;         // 14
     uint32_t data_length;       // 16
-    uint16_t unknown_2;         // 20
-    uint16_t unknown_3;         // 22
+    uint32_t pcm_length;        // 20
 } _v3_msg_0x52; /*}}}*/
 typedef struct _v3_net_message_0x52_0x00 {/*{{{*/
-    uint32_t type;              // 0
-    uint16_t subtype;           // 4
-    uint16_t user_id;           // 6
-    uint16_t codec;             // 8
-    uint16_t codec_format;      // 10
-    uint16_t send_type;         // 12
-    uint16_t unknown_1;         // 14
-    uint32_t data_length;       // 16
-    uint16_t unknown_2;         // 20
-    uint16_t unknown_3;         // 22
+    _v3_msg_0x52 header;        // 0
     uint16_t unknown_4;         // 24
     uint16_t unknown_5;         // 26
     uint16_t unknown_6;         // 28
     uint16_t unknown_7;         // 30
 } _v3_msg_0x52_0x00; /*}}}*/
 typedef struct _v3_net_message_0x52_0x01_in {/*{{{*/
-    uint16_t type;              // 0
-    uint16_t empty;             // 2
-    uint16_t subtype;           // 4
-    uint16_t user_id;           // 6
-    uint16_t codec;             // 8
-    uint16_t codec_format;      // 10
-    uint32_t send_type;         // 12
-    uint32_t data_length;       // 16
-    uint16_t unkonwn_2;         // 20
-    uint16_t unknown_3;         // 22
+    _v3_msg_0x52 header;        // 0
     uint16_t unknown_4;         // 24
     uint16_t unknown_5;         // 26
 
     void     *data;             // 28 - either gsmdata* or speexdata*
 } _v3_msg_0x52_0x01_in;/*}}}*/
 typedef struct _v3_net_message_0x52_0x01_out {/*{{{*/
-    uint16_t type;              // 0
-    uint16_t empty;             // 2
-    uint16_t subtype;           // 4
-    uint16_t user_id;           // 6
-    uint16_t codec;             // 8
-    uint16_t codec_format;      // 10
-    uint32_t send_type;         // 12
-    uint32_t data_length;       // 16
-    uint16_t unknown_2;         // 20
-    uint16_t unknown_3;         // 22
+    _v3_msg_0x52 header;        // 0
     uint16_t unknown_4;         // 24
     uint16_t unknown_5;         // 26
     uint16_t unknown_6;         // 28
@@ -316,30 +296,12 @@ typedef struct _v3_net_message_0x52_speexdata {/*{{{*/
     uint8_t  **frames;
 } _v3_msg_0x52_speexdata;/*}}}*/
 typedef struct _v3_net_message_0x52_0x02 {/*{{{*/
-    uint32_t type;              // 0
-    uint16_t subtype;           // 4
-    uint16_t user_id;           // 6
-    uint16_t codec;             // 8
-    uint16_t codec_format;      // 10
-    uint16_t sendtype;          // 12
-    uint16_t unknown_1;         // 14
-    uint32_t data_length;       // 16
-    uint16_t unknown_2;         // 20
-    uint16_t unknown_3;         // 22
+    _v3_msg_0x52 header;        // 0
     uint16_t unknown_4;         // 24
     uint16_t unknown_5;         // 26
 } _v3_msg_0x52_0x02; /*}}}*/
 typedef struct _v3_net_message_0x52_0x03 {/*{{{*/
-    uint32_t type;              // 0
-    uint16_t subtype;           // 4
-    uint16_t user_id;           // 6
-    uint16_t codec;             // 8
-    uint16_t codec_format;      // 10
-    uint16_t sendtype;          // 12
-    uint16_t unknown_1;         // 14
-    uint32_t data_length;       // 16
-    uint16_t unknown_2;         // 20
-    uint16_t unknown_3;         // 22
+    _v3_msg_0x52 header;        // 0
 } _v3_msg_0x52_0x03; /*}}}*/
 int _v3_get_0x52(_v3_net_message *msg);
 _v3_net_message *_v3_put_0x52(uint8_t subtype, uint16_t codec, uint16_t codec_format, uint16_t send_type, uint32_t pcmlength, uint32_t length, void *data);
@@ -353,17 +315,31 @@ typedef struct _v3_net_message_0x53 {/*{{{*/
 int _v3_get_0x53(_v3_net_message *msg);/*}}}*/
 typedef struct _v3_net_message_0x57 {/*{{{*/
     uint32_t type;              // 0
-    uint32_t unknown_1;         // 4
+    uint16_t unknown_1;         // 4
+    uint16_t is_licensed;       // 6
     uint16_t port;              // 8
     uint16_t max_clients;       // 10
     uint16_t connected_clients; // 12
-    uint8_t  unknown_2[14];     // 14
+    uint16_t unknown_2[3];      // 14
+    uint8_t  _pad[8];           // 20
     char     name[32];          // 28
     char     version[16];       // 60
-    uint8_t  unknown_3[32];     // 76
-
+    char     unknown_3[32];     // 76
 } _v3_msg_0x57;
 int _v3_get_0x57(_v3_net_message *msg);/*}}}*/
+typedef struct _v3_net_message_0x58 {/*{{{*/
+    uint32_t type;              // 0
+    uint16_t subtype;           // 4
+    uint16_t error_id;          // 6
+    uint16_t unknown1;          // 8
+    uint16_t real_user_id;      // 10
+    uint16_t phantom_user_id;   // 12
+    uint16_t channel_id;        // 14
+    uint16_t log_error;         // 16
+    uint16_t unknown2;          // 18
+} _v3_msg_0x58;
+int _v3_get_0x58(_v3_net_message *msg);
+_v3_net_message *_v3_put_0x58(uint16_t subtype, uint16_t channel, uint16_t phantom_user_id);/*}}}*/
 typedef struct _v3_net_message_0x59 {/*{{{*/
     uint32_t type;              // 0
     uint16_t error;             // 4
@@ -373,7 +349,7 @@ typedef struct _v3_net_message_0x59 {/*{{{*/
     uint16_t unknown_[4];       // 12
     char *   message;           // 20
 
-} __attribute__ ((packed)) _v3_msg_0x59;
+} _v3_msg_0x59;
 int _v3_get_0x59(_v3_net_message *msg);/*}}}*/
 typedef struct _v3_net_message_0x5c {/*{{{*/
     uint32_t type;              // 0
@@ -420,9 +396,10 @@ typedef struct _v3_net_message_0x62 {/*{{{*/
     uint32_t error_id;          // 8
 } _v3_msg_0x62;/*}}}*/
 
+#pragma pack(pop)
+
 char *   _v3_get_msg_string(void *offset, uint16_t *len);
 int      _v3_get_msg_channel(void *offset, _v3_msg_channel *channel);
 int      _v3_put_msg_channel(char *buf, _v3_msg_channel *channel);
 int      _v3_get_msg_user(void *offset, _v3_msg_user *user);
 int      _v3_put_msg_user(void *buf, _v3_msg_user *user);
-

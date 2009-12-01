@@ -124,6 +124,20 @@ char *_v3_server_disabled_errors[] = {
     "This server has been disabled by order of the United States Military."
 };
 
+char *_v3_phantom_errors[] = {
+    "Channel does not allow phantoms",
+    "Phantoms are restricted to USR file",
+    "Duplicate",
+    "Unknown channel",
+    "Not found",
+    "Not authenticated for specified channel",
+    "No slots available",
+    "Channel is full",
+    "Insufficient resources",
+    "Banned from channel",
+    "Insufficient access rights",
+};
+
 char *_v3_bitmasks[] = {
     "0.0.0.0",
     "128.0.0.0",
@@ -425,5 +439,6 @@ void                    _v3_lock_sendq(void);
 void                    _v3_unlock_sendq(void);
 int                     v3_queue_event(v3_event *ev);
 v3_event                *_v3_get_last_event(int *len);
+v3_event                *_v3_create_event(uint16_t event);
 
 #endif // _VENTRILO3_H

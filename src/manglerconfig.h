@@ -39,6 +39,7 @@ class ManglerServerConfig/*{{{*/
         Glib::ustring         phonetic;
         Glib::ustring         comment;
         Glib::ustring         url;
+        Glib::ustring         charset;
         bool                  acceptU2U;
         bool                  acceptPages;
         bool                  acceptPrivateChat;
@@ -56,6 +57,7 @@ class ManglerServerConfig/*{{{*/
             phonetic = "";
             comment = "";
             url = "";
+            charset = "";
             motdhash = 0;
             acceptU2U = true;
             acceptPages = true;
@@ -84,6 +86,10 @@ class ManglerConfig {
                 bool            notificationChannelEnterLeave;
                 bool            notificationTransmitStartStop;
                 int32_t         lastConnectedServerId;
+                uint32_t        windowWidth;
+                uint32_t        windowHeight;
+                bool            buttonsHidden;
+                bool            serverInfoHidden;
 
 		ManglerServerConfig   qc_lastserver;
 		std::vector<ManglerServerConfig *> serverlist;
