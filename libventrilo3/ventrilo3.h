@@ -216,6 +216,9 @@ enum _v3_events
 #define V3_AUDIO_SENDTYPE_U2U    0x05  // user to user
 #define V3_AUDIO_SENDTYPE_U2TARG 0x06  // user to voice target
 
+// v3_event.flags values for V3_EVENT_USER_LOGIN
+#define V3_LOGIN_FLAGS_EXISTING (1 << 0)    // user was added from userlist sent at login (existing user)
+
 typedef struct _v3_event v3_event;
 struct _v3_event {
     uint16_t type;

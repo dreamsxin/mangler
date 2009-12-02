@@ -2262,6 +2262,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                             v3_event *ev = _v3_create_event(V3_EVENT_USER_LOGIN);
                             ev->user.id = m->user_list[ctr].id;
                             ev->channel.id = m->user_list[ctr].channel;
+                            ev->flags |= V3_LOGIN_FLAGS_EXISTING;
                             _v3_debug(V3_DEBUG_INFO, "queuing event type %d for user %d to channel %d", ev->type, ev->user.id, ev->channel.id);
                             v3_queue_event(ev);
                         }

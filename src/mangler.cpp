@@ -599,7 +599,7 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                     fprintf(stderr, "couldn't retreive user id %d\n", ev->user.id);
                     break;
                 }
-                if (v3_get_user_channel(v3_get_user_id()) == 0) {
+                if (!(ev->flags & V3_LOGIN_FLAGS_EXISTING) && (v3_get_user_channel(v3_get_user_id()) == ev->channel.id)) {
                     audioControl->playNotification("channelenter");
                 }
                 //fprintf(stderr, "adding user id %d: %s to channel %d\n", ev->user.id, u->name, ev->channel.id);
