@@ -73,7 +73,7 @@ AS_IF(
 			echo "**************************************************************************"
 			echo "*** ERROR: pulse audio development libraries or headers were not found ***"
 			echo "*** on your system.  You can disable PulseAudio support with           ***"
-			echo "*** ./configre --without-pulseaudio                                    ***"
+			echo "*** ./configure --without-pulseaudio                                   ***"
 			echo "*** but this will disable sound support                                ***"
 			echo "**************************************************************************"
 			exit 1
