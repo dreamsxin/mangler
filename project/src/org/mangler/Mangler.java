@@ -15,13 +15,14 @@ public class Mangler extends Activity
 	    VentriloInterface.startprocessing();
 	    
 	    // TODO: Thread this.
+	    EventData ev = new EventData();
 	    int event_id;
-	    while((event_id = VentriloInterface.getevent()) != 0) 
+	    while((event_id = VentriloInterface.getevent(ev)) != 0) 
 	    {
 	    	switch(event_id) 
 	    	{
 	    	case VentriloEvents.V3_EVENT_PING:
-	    			Log.v("Mangler", "Received a ping event.");
+	    			Log.v("Mangler", "Received a ping event: " + ev.ping + "ms");
 	    		break;
 	    	
 	    		default:

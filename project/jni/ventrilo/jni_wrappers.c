@@ -110,10 +110,20 @@ JNIEXPORT void JNICALL Java_org_mangler_VentriloInterface_settext(JNIEnv* env, j
 	(*env)->ReleaseStringUTFChars(env, integrationtext, _integrationtext);
 }
 
-JNIEXPORT jint JNICALL Java_org_mangler_VentriloInterface_getevent(JNIEnv* env, jobject obj) {
+JNIEXPORT jint JNICALL Java_org_mangler_VentriloInterface_getevent(JNIEnv* env, jobject obj, jobject eventdata) {
 	v3_event *ev = v3_get_event(V3_BLOCK);
 	if(ev != NULL) {
-		// copy our data into an object here
+		jclass  event_class = (*env)->GetObjectClass(env, eventdata);
+		
+		/*
+		// Get data object & class name.
+		jobject data = (*env)->GetFieldID(env, event_class, "data", "L"); 
+		jclass object_class = (*env)->GetObjectClass(env, data); 
+		*/
+		
+		jfieldID _field = (*env)->GetFieldID(env, event_class, "ping", "S");
+		(*env)->SetShortField(env, eventdata, _field, ev->ping);
+
 		jint type = ev->type;
 		free(ev);
 		return type;

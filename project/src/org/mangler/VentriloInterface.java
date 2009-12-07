@@ -26,5 +26,5 @@ public class VentriloInterface {
 	public static native int 	channelcount();
 	public static native void	startprocessing();
 	
-	public static native int	getevent();
+	public static native int	getevent(EventData ev);
 }

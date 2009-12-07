@@ -24,7 +24,7 @@
  * along with Mangler.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifdef ANDROID
+#if defined(ANDROID)
 #include <android/log.h>
 #else
 #include "config.h"
