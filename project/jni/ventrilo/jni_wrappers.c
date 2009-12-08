@@ -113,13 +113,16 @@ JNIEXPORT void JNICALL Java_org_mangler_VentriloInterface_settext(JNIEnv* env, j
 JNIEXPORT jint JNICALL Java_org_mangler_VentriloInterface_getevent(JNIEnv* env, jobject obj, jobject eventdata) {
 	v3_event *ev = v3_get_event(V3_BLOCK);
 	if(ev != NULL) {
-		jclass  event_class = (*env)->GetObjectClass(env, eventdata);
 		
-		/*
-		// Get data object & class name.
-		jobject data = (*env)->GetFieldID(env, event_class, "data", "L"); 
+		jclass event_class = (*env)->GetObjectClass(env, eventdata);
+		jfieldID _data = (*env)->GetFieldID(env, event_class, "data", "Lorg/mangler/EventData$_data;");
+		
+		// Returning NULL when it shouldn't.
+		jobject data  = (*env)->GetObjectField(env, eventdata, _data);
 		jclass object_class = (*env)->GetObjectClass(env, data); 
-		*/
+		
+		jfieldID _sample = (*env)->GetFieldID(env, object_class, "sample", "[B");
+		jbyteArray sample = (*env)->GetObjectField(env, data, _sample);
 		
 		jfieldID _field = (*env)->GetFieldID(env, event_class, "ping", "S");
 		(*env)->SetShortField(env, eventdata, _field, ev->ping);

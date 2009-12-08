@@ -39,7 +39,7 @@ public class EventData
 	}
 	
 	private class _data {
-		ByteBuffer sample;
+		byte[]	sample = new byte[16384];
 	}
 	
 	public short 	type;
