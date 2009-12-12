@@ -567,7 +567,11 @@ ManglerSettings::settingsPTTKeyDetect(void) {/*{{{*/
     XQueryKeymap(GDK_WINDOW_XDISPLAY(rootwin), pressed_keys);
     for (int ctr = 0; ctr < 256; ctr++) {
         if ((pressed_keys[ctr >> 3] >> (ctr & 0x07)) & 0x01) {
-            std::string keyname = XKeysymToString(XKeycodeToKeysym(GDK_WINDOW_XDISPLAY(rootwin), ctr, 0));
+            char *keystring = XKeysymToString(XKeycodeToKeysym(GDK_WINDOW_XDISPLAY(rootwin), ctr, 0));
+            if (keystring == NULL)
+                continue;
+            std::string keyname = keystring;
+
             if (keyname.length() > 1) {
                 ptt_keylist.insert(0, "<" + keyname + ">" + (ptt_keylist.empty() ? "" : "+"));
             } else {
