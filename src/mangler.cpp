@@ -32,32 +32,7 @@
 #include <gdk/gdkx.h>
 #include <X11/extensions/XInput.h>
 
-
-Glib::ustring iso_8859_1_to_utf8(char *input);
-void set_charset(Glib::ustring charset);
-
 using namespace std;
-
-Glib::ustring serverCharset; // XXX this will only work in single-server mode
-const char *charsetslist[] = { // XXX this should go to server browser code
-    "System default",
-    "ISO-8859-15 (Western Europe)",
-    "ISO-8859-2 (Central Europe)",
-    "ISO-8859-5 (Ukrainian)",
-    "ISO-8859-7 (Greek)",
-    "ISO-8859-8 (Hebrew)",
-    "ISO-8859-9 (Turkish)",
-    "ISO-2022-JP (Japanese)",
-    "SJIS (Japanese)",
-    "CP949 (Korean)",
-    "CP1251 (Cyrillic)",
-    "KOI8-R (Cyrillic)",
-    "CP1256 (Arabic)",
-    "CP1257 (Baltic)",
-    "GB18030 (Chinese)",
-    "TIS-620 (Thai)",
-    NULL
-};
 
 Mangler *mangler;
 
@@ -351,8 +326,7 @@ void Mangler::connectButton_clicked_cb(void) {/*{{{*/
                 }
                 return;
             }
-            if (!server->charset.empty())
-                set_charset(server->charset);
+            set_charset(server->charset);
 
             settings->config.lastConnectedServerId = server_id;
             settings->config.save();
@@ -538,6 +512,7 @@ void Mangler::qcConnectButton_clicked_cb(void) {/*{{{*/
     settings->config.qc_lastserver.username = username;
     settings->config.qc_lastserver.password = password;
     settings->config.save();
+    set_charset("");
     connectedServerId = -1;
     Glib::Thread::create(sigc::bind(sigc::mem_fun(this->network, &ManglerNetwork::connect), server, port, username, password, ""), FALSE);
     // TODO: move this into a thread and use blocking waits
@@ -1153,137 +1128,4 @@ main (int argc, char *argv[])
     Gtk::Main::run(*mangler->manglerWindow);
     gdk_threads_leave();
 }
-
-void set_charset(Glib::ustring charset) {/*{{{*/
-    charset = charset.uppercase();
-    if (charset.find(' ') != Glib::ustring::npos)
-        charset = charset.erase(charset.find(' '));
-
-    try {
-        Glib::IConv test("UTF-8", charset);
-    } catch (...) {
-        fprintf(stderr, "Charset '%s' isn't supported by your system - using system locale\n", charset.c_str());
-        serverCharset.clear();
-        return;
-    }
-    
-    serverCharset = charset;
-}/*}}}*/
-std::string ustring_to_c(Glib::ustring input) {/*{{{*/
-    std::string to_charset, converted;
-    
-    // check if input is already 7-bit
-    if (input.is_ascii())
-        return input;
-
-    // try encoding using the selected charset, unless its some utf-8
-    if (!serverCharset.empty() && serverCharset.find("UTF-8") == Glib::ustring::npos) {
-        try {
-            return Glib::convert(input, serverCharset, "UTF-8");
-        } catch (...) {}
-    }
-
-    // try encoding using the locale charset, unless its some utf-8
-    if (Glib::get_charset(to_charset) == true)
-        to_charset = "ISO-8859-1";
-    
-    try {
-        converted = Glib::convert_with_fallback(input, to_charset, "UTF-8", "?");
-    } catch (...) {
-        converted = input;
-    }
-    return converted;
-}/*}}}*/
-Glib::ustring c_to_ustring(char *input) {/*{{{*/
-    Glib::ustring converted, input_u = input;
-
-    // check if input is already valid UTF-8
-    if (input_u.validate())
-        return input_u;
-  
-    // try to convert using the chosen charset
-    if (!serverCharset.empty()) {
-        try {
-            return Glib::convert(input, "UTF-8", serverCharset);
-        } catch (...) {}
-    }
-        
-    // try to convert using the current locale
-    try {
-        converted = Glib::locale_to_utf8(input);
-    } catch (...) {
-        // locale conversion failed
-        converted = iso_8859_1_to_utf8(input);
-    }
-    return converted;
-}/*}}}*/
-
-/* converts a CP1252/ISO-8859-1(5) hybrid to UTF-8                           */
-/* Features: 1. It never fails, all 00-FF chars are converted to valid UTF-8 */
-/*           2. Uses CP1252 in the range 80-9f because ISO doesn't have any- */
-/*              thing useful in this range and it helps us receive from mIRC */
-/*           3. The five undefined chars in CP1252 80-9f are replaced with   */
-/*              ISO-8859-15 control codes.                                   */
-/*           4. Handles 0xa4 as a Euro symbol ala ISO-8859-15.               */
-/*           5. Uses ISO-8859-1 (which matches CP1252) for everything else.  */
-/*           6. This routine measured 3x faster than g_convert :)            */
-Glib::ustring iso_8859_1_to_utf8 (char *input) {/*{{{*/
-    Glib::ustring output;
-    unsigned char *text = (unsigned char *)input;
-    int len = strlen(input);
-    static const gunichar lowtable[] = /* 74 byte table for 80-a4 */
-    {
-    /* compressed utf-8 table */
-        0x20ac, /* 80 Euro. CP1252 from here on... */
-        0x81,   /* 81 NA */
-        0x201a, /* 82 */
-        0x192,  /* 83 */
-        0x201e, /* 84 */
-        0x2026, /* 85 */
-        0x2020, /* 86 */
-        0x2021, /* 87 */
-        0x2c6,  /* 88 */
-        0x2030, /* 89 */
-        0x160,  /* 8a */
-        0x2039, /* 8b */
-        0x152,  /* 8c */
-        0x8d,   /* 8d NA */
-        0x17d,  /* 8e */
-        0x8f,   /* 8f NA */
-        0x90,   /* 90 NA */
-        0x2018, /* 91 */
-        0x2019, /* 92 */
-        0x201c, /* 93 */
-        0x201d, /* 94 */
-        0x2022, /* 95 */
-        0x2013, /* 96 */
-        0x2014, /* 97 */
-        0x2dc,  /* 98 */
-        0x2122, /* 99 */
-        0x161,  /* 9a */
-        0x203a, /* 9b */
-        0x153,  /* 9c */
-        0x9d,   /* 9d NA */
-        0x17e,  /* 9e */
-        0x178,  /* 9f */
-        0xa0,   /* a0 */
-        0xa1,   /* a1 */
-        0xa2,   /* a2 */
-        0xa3,   /* a3 */
-        0x20ac  /* a4 ISO-8859-15 Euro. */
-    };
-
-    while (len) {
-        if (G_UNLIKELY(*text >= 0x80) && G_UNLIKELY(*text <= 0xa4)) {
-            int idx = *text - 0x80;
-            output += lowtable[idx];
-        } else {
-            output += (gunichar)*text;    /* ascii/iso88591 maps directly */
-        }
-
-        text++;
-        len--;
-    }
-    return output;
-}/*}}}*/
 

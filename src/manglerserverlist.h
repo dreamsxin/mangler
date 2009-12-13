@@ -68,12 +68,11 @@ class ManglerServerList {
         Gtk::CheckButton *serverListPersistentCommentsCheckButton;
 
         // Character Set Combobox
-        Gtk::ComboBox *serverListCharsetComboBox;
+        Gtk::ComboBoxEntry *serverListCharsetComboBox;
         class charsetModelColumns : public Gtk::TreeModel::ColumnRecord
         {
             public:
-                charsetModelColumns() { add(id); add(name); }
-                Gtk::TreeModelColumn<uint32_t>      id;
+                charsetModelColumns() { add(name); }
                 Gtk::TreeModelColumn<Glib::ustring> name;
         };
         charsetModelColumns  charsetColumns;

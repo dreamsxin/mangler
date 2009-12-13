@@ -27,8 +27,6 @@
 #include "mangler.h"
 #include "manglerserverlist.h"
 
-extern const char *charsetslist[];
-
 ManglerServerList::ManglerServerList(Glib::RefPtr<Gtk::Builder> builder) {
     serverListTreeModel = Gtk::ListStore::create(serverListColumns);
     builder->get_widget("serverListWindow", serverListWindow);
@@ -91,13 +89,12 @@ ManglerServerList::ManglerServerList(Glib::RefPtr<Gtk::Builder> builder) {
     builder->get_widget("serverListCharsetComboBox",        serverListCharsetComboBox);
     charsetTreeModel = Gtk::ListStore::create(charsetColumns);
     serverListCharsetComboBox->set_model(charsetTreeModel);
-    serverListCharsetComboBox->pack_start(charsetColumns.name);
+    serverListCharsetComboBox->set_text_column(charsetColumns.name);
     for (int ctr = 0; charsetslist[ctr] != NULL; ctr++) {
         Gtk::TreeModel::Row charsetRow = *(charsetTreeModel->append());
-        charsetRow[charsetColumns.id] = ctr;
         charsetRow[charsetColumns.name] = charsetslist[ctr];
     }
-    serverListCharsetComboBox->set_active(0);
+    serverListCharsetComboBox->get_entry()->set_text("");
 
     editorId = -1;
 }
@@ -224,19 +221,14 @@ void ManglerServerList::editRow(uint32_t id) {
     serverListPrivateChatCheckButton->set_active(server->acceptPrivateChat);
     serverListRecordCheckButton->set_active(server->allowRecording);
     serverListPersistentCommentsCheckButton->set_active(server->persistentComments);
-    serverListCharsetComboBox->set_active(0);
-    for (int ctr = 0; charsetslist[ctr] != NULL; ctr++) {
-        if (strcmp(charsetslist[ctr], server->charset.c_str()) == 0) {
-            serverListCharsetComboBox->set_active(ctr);
-            break;
-        }
-    }
+    serverListCharsetComboBox->get_entry()->set_text(server->charset.empty() ? charsetslist[0] : server->charset);
 }
 
 void ManglerServerList::saveRow() {
     Gtk::TreeModel::Row row;
     Gtk::TreeModel::Children::iterator iter = serverListTreeModel->children().begin();
     ManglerServerConfig *server;
+    Glib::ustring charset;
 
     if (serverListServerNameEntry->get_text().empty()) {
         mangler->errorDialog("Cannot save a server without a name");
@@ -263,11 +255,7 @@ void ManglerServerList::saveRow() {
     server->acceptPrivateChat = serverListPrivateChatCheckButton->get_active();
     server->allowRecording = serverListRecordCheckButton->get_active();
     server->persistentComments = serverListPersistentCommentsCheckButton->get_active();
-    iter = serverListCharsetComboBox->get_active();
-    if (iter) {
-        Gtk::TreeModel::Row row = *iter;
-        server->charset = row[charsetColumns.name];
-    }
+    server->charset = serverListCharsetComboBox->get_active_text();
 
     row[serverListColumns.name] = server->name;
     row[serverListColumns.hostname] = server->hostname;

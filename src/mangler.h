@@ -35,6 +35,7 @@
 #include "manglersettings.h"
 #include "manglerserverlist.h"
 #include "manglerchat.h"
+#include "manglercharset.h"
 #include "locale.h"
 
 extern "C" {
@@ -168,8 +169,6 @@ class ManglerError
         ManglerError(uint32_t code, Glib::ustring message, Glib::ustring module = "");
 };
 
-Glib::ustring c_to_ustring(char *input);
-std::string ustring_to_c(Glib::ustring input);
 GdkFilterReturn ptt_filter(GdkXEvent *gdk_xevent, GdkEvent *event, gpointer data);
 
 extern Mangler *mangler;
