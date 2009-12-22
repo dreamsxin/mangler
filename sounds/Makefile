@@ -2,7 +2,7 @@
 all: mangler-sounds.h
 
 bin2h: bin2h.c
-	gcc -o bin2h bin2h.c
+	gcc -Wall -o bin2h bin2h.c
 
 mangler-sounds.h: bin2h channelenter.h channelleave.h login.h logout.h talkend.h talkstart.h
 	cat channelenter.h channelleave.h login.h logout.h talkend.h talkstart.h > mangler-sounds.h
