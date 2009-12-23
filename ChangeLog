@@ -1,0 +1,12 @@
+mangler (1.0.1) stable; urgency=low
+
+  * Updating license documentation and distribution for compliance
+
+ -- eric kilfoil <ekilfoil@gmail.com>  Tue, 22 Dec 2009 21:42:48 -0800
+
+mangler (1.0.0) stable; urgency=low
+
+  * Initial release
+
+ -- eric kilfoil <ekilfoil@gmail.com>  Tue, 01 Dec 2009 06:43:59 -0700
+

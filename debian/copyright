@@ -1,9 +1,9 @@
-This package was debianized by eric <ekilfoil@gmail.com> on
+This package was debianized by eric kilfoil <ekilfoil@gmail.com> on
 Mon, 12 Oct 2009 06:43:59 -0700.
 
 It was downloaded from http://www.mangler.org/
 
-Upstream Author(s):
+Upstream Authors:
 
     Eric Kilfoil
     Daniel Sloof
@@ -29,8 +29,8 @@ License:
     along with Mangler.  If not, see <http://www.gnu.org/licenses/>.
 
 
-The Debian packaging is copyright 2009, eric <ekilfoil@gmail.com> and
-is licensed under the GPL, see `/usr/share/common-licenses/GPL'.
+The Debian packaging is copyright 2009, eric kilfoil <ekilfoil@gmail.com>
+and is licensed under the GPL, see `/usr/share/common-licenses/GPL'.
 
 --------------------------------------------------------------------------
 
