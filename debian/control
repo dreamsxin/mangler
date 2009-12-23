@@ -11,4 +11,7 @@ Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Description: A VOIP client for connecting to Ventrilo 3.x servers
  Mangler is an open source implementation of a client for connecting to
- Ventrilo 3.x servers.
+ Ventrilo 3.x servers.  It supports keyboard and mouse button push to talk,
+ GSM and Speex codecs, per-user volume control, a full featured server
+ phonebook, the ability to connect to server without adding it to your
+ phonebook, and native PulseAudio support.
