@@ -1994,9 +1994,16 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                                     break;
                             }
                             // don't waste resources if we don't need to deal with it
+                            if (_v3_master_volume != 79) {
+                                float multiplier = tan(_v3_master_volume/100.0);
+                                _v3_debug(V3_DEBUG_INFO, "master: amplifying to level %d (%3.10f multiplier)", _v3_master_volume, multiplier);
+                                for (volumectr = 0; volumectr < ev->pcm.length / 2; volumectr++) {
+                                    ev->data.sample16[volumectr] *= multiplier;
+                                }
+                            }
                             if (_v3_user_volumes[ev->user.id] != 79) {
                                 float multiplier = tan(_v3_user_volumes[ev->user.id]/100.0);
-                                _v3_debug(V3_DEBUG_INFO, "amplifying to level %d (%3.10f multiplier)", _v3_user_volumes[ev->user.id], multiplier);
+                                _v3_debug(V3_DEBUG_INFO, "user: amplifying to level %d (%3.10f multiplier)", _v3_user_volumes[ev->user.id], multiplier);
                                 for (volumectr = 0; volumectr < ev->pcm.length / 2; volumectr++) {
                                     ev->data.sample16[volumectr] *= multiplier;
                                 }
@@ -3209,6 +3216,14 @@ v3_stop_audio(void) {/*{{{*/
  * Using these functions may chew up CPU since they perform mathmetical
  * operations on every 16 bit pcm sample.
  */
+void
+v3_set_volume_master(int level) {/*{{{*/
+    if (level < 0 || level > 148) {
+        return;
+    }
+    _v3_master_volume = level;
+}/*}}}*/
+
 void
 v3_set_volume_user(uint16_t id, int level) {/*{{{*/
     if (level < 0 || level > 148) {

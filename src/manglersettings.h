@@ -41,6 +41,11 @@ class ManglerSettings
         Gtk::ComboBox       *combobox;
         Gtk::Window         *window;
         Gtk::CheckButton    *checkbutton;
+        Gtk::VBox           *vbox;
+        Gtk::HScale         *volumehscale;
+        Gtk::Adjustment     *volumeAdjustment;
+        sigc::connection    volumeAdjustSignalConnection;
+
         bool                isDetectingKey;
         bool                isDetectingMouse;
         std::map<uint32_t, Glib::ustring> mouseInputDevices;

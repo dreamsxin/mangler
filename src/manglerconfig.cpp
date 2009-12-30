@@ -35,6 +35,7 @@
 
 ManglerConfig::ManglerConfig() {/*{{{*/
     lv3_debuglevel                  = 0;
+    masterVolumeLevel               = 79;
     windowWidth = 0;
     windowHeight = 0;
     buttonsHidden = false;
@@ -84,6 +85,7 @@ bool ManglerConfig::save() {/*{{{*/
     put("qc_lastserver.comment", "");
     put("lastConnectedServerId", lastConnectedServerId);
     put("lv3_debuglevel", lv3_debuglevel);
+    put("masterVolumeLevel", masterVolumeLevel);
     put("window.width", windowWidth);
     put("window.height", windowHeight);
     put("window.buttonsHidden", buttonsHidden);
@@ -239,6 +241,7 @@ void ManglerConfig::load() {/*{{{*/
     qc_lastserver.phonetic        = get("qc_lastserver.phonetic");
     qc_lastserver.comment         = get("qc_lastserver.comment");
     lv3_debuglevel                = atoi(get("lv3_debuglevel").c_str());
+    masterVolumeLevel             = atoi(get("masterVolumeLevel").c_str());
     windowWidth                   = atoi(get("window.width").c_str());
     windowHeight                  = atoi(get("window.height").c_str());
     buttonsHidden                 = get("window.buttonsHidden") == "1" ? true : false; // default false

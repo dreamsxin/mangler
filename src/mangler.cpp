@@ -204,6 +204,9 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
         manglerWindow->set_default_size(settings->config.windowWidth, settings->config.windowHeight);
     }
 
+    // set the master volume
+    v3_set_volume_master(settings->config.masterVolumeLevel);
+
     builder->get_widget("buttonMenuItem", checkmenuitem);
     checkmenuitem->set_active(settings->config.buttonsHidden);
 

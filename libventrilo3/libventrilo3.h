@@ -388,6 +388,7 @@ typedef struct __v3_decoders {
 _v3_decoders v3_decoders[65535];
 
 uint8_t _v3_user_volumes[65535];
+uint8_t _v3_master_volume = 79;
 
 
 /*

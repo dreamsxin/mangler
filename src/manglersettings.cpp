@@ -95,6 +95,17 @@ ManglerSettings::ManglerSettings(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
     mouseDeviceTreeModel = Gtk::ListStore::create(mouseColumns);
     mouseDeviceComboBox->set_model(mouseDeviceTreeModel);
     mouseDeviceComboBox->pack_start(mouseColumns.name);
+
+    volumeAdjustment = new Gtk::Adjustment(79, 0, 148, 1, 10, 10);
+    volumehscale = new Gtk::HScale(*volumeAdjustment);
+    volumehscale->add_mark(138, Gtk::POS_LEFT, "200%");
+    volumehscale->add_mark(79, Gtk::POS_LEFT, "100%");
+    volumehscale->add_mark(0, Gtk::POS_LEFT, "0%");
+    volumehscale->set_inverted(false);
+    volumehscale->set_draw_value(false);
+    builder->get_widget("masterVolumeVbox", vbox);
+    vbox->pack_start(*volumehscale);
+    volumehscale->show();
 }/*}}}*/
 void ManglerSettings::applySettings(void) {/*{{{*/
     Gtk::TreeModel::iterator iter;
@@ -155,6 +166,10 @@ void ManglerSettings::applySettings(void) {/*{{{*/
         Gtk::TreeModel::Row row = *iter;
         config.notificationDeviceName = row[notificationColumns.name];
     }
+
+    // Master Volume
+    config.masterVolumeLevel = volumeAdjustment->get_value();
+    v3_set_volume_master(config.masterVolumeLevel);
 
     // Notification sounds
     builder->get_widget("notificationLoginLogoutCheckButton", checkbutton);
@@ -288,6 +303,7 @@ void ManglerSettings::initSettings(void) {/*{{{*/
     builder->get_widget("debugEncryptedPacket", checkbutton);
     checkbutton->set_active(config.lv3_debuglevel & V3_DEBUG_PACKET_ENCRYPTED ? 1 : 0);
 
+    volumeAdjustment->set_value(config.masterVolumeLevel);
 }/*}}}*/
 
 // Settings Window Callbacks

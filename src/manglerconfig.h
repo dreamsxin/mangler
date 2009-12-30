@@ -70,6 +70,7 @@ class ManglerConfig {
 	public:
 		Glib::Mutex     mutex;
 		uint32_t        lv3_debuglevel;
+		uint8_t         masterVolumeLevel;
 		bool            PushToTalkKeyEnabled;
                 Glib::ustring   PushToTalkKeyValue;
                 std::vector<int>     PushToTalkXKeyCodes;

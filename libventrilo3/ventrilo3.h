@@ -478,6 +478,7 @@ void        v3_free_channel(v3_channel *channel);
 v3_channel  *v3_get_channel(uint16_t id);
 
 // audio effects
+void v3_set_volume_master(int level);
 void v3_set_volume_user(uint16_t id, int level);
 void v3_set_volume_luser(int level);
 uint8_t v3_get_volume_user(uint16_t id);
