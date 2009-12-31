@@ -65,9 +65,11 @@ install: build
 	# Add here commands to install the package into debian/mangler.
 	$(MAKE) DESTDIR=$(CURDIR)/debian/mangler install
 
+#	install -m 644 debian/mangler.lintian-override $(CURDIR)/debian/mangler/usr/share/lintian/overrides/mangler
+
 
 # Build architecture-independent files here.
-binary-indep: install
+binary-indep: install 
 # We have nothing to do by default.
 
 # Build architecture-dependent files here.
@@ -77,24 +79,23 @@ binary-arch: install
 	dh_installchangelogs ChangeLog
 	dh_installdocs
 	dh_installexamples
-#	dh_install
-#	dh_installmenu
-#	dh_installdebconf
-#	dh_installlogrotate
-#	dh_installemacsen
-#	dh_installpam
-#	dh_installmime
-#	dh_python
-#	dh_installinit
-#	dh_installcron
-#	dh_installinfo
-	dh_installman
+	dh_install
+	dh_installmenu
+	dh_installdebconf
+	dh_installlogrotate
+	dh_installemacsen
+	dh_installpam
+	dh_installmime
+	dh_installinit
+	dh_installcron
+	dh_installinfo
+	dh_installman debian/mangler.1
 	dh_link
-#	dh_strip
+	dh_strip
 	dh_compress
 	dh_fixperms
-#	dh_perl
-#	dh_makeshlibs
+	dh_perl
+	dh_makeshlibs
 	dh_installdeb
 	dh_shlibdeps
 	dh_gencontrol

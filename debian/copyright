@@ -1,4 +1,4 @@
-This package was debianized by eric <ekilfoil@gmail.com> on
+This package was debianized by Eric Kilfoil <ekilfoil@gmail.com> on
 Mon, 12 Oct 2009 06:43:59 -0700.
 
 It was downloaded from http://www.mangler.org/
@@ -29,7 +29,7 @@ License:
     along with Mangler.  If not, see <http://www.gnu.org/licenses/>.
 
 
-The Debian packaging is copyright 2009, eric <ekilfoil@gmail.com> and
+The Debian packaging is copyright 2009, Eric Kilfoil <ekilfoil@gmail.com> and
 is licensed under the GPL, see `/usr/share/common-licenses/GPL'.
 
 --------------------------------------------------------------------------
@@ -54,8 +54,7 @@ libventrilo3/codec-test/parec.c
 
   You should have received a copy of the GNU Lesser General Public License
   along with PulseAudio; if not, write to the Free Software
-  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-  USA.
+  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.
 
   http://www.gnu.org/licenses/lgpl-2.1.txt
 
@@ -81,6 +80,6 @@ libventrilo3/ventrilo3_algo.h
 
     You should have received a copy of the GNU General Public License
     along with this program; if not, write to the Free Software
-    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
+    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.
 
     http://www.gnu.org/licenses/gpl-2.0.txt
