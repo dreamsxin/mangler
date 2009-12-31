@@ -96,9 +96,9 @@ ManglerSettings::ManglerSettings(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
     mouseDeviceComboBox->set_model(mouseDeviceTreeModel);
     mouseDeviceComboBox->pack_start(mouseColumns.name);
 
-    volumeAdjustment = new Gtk::Adjustment(79, 0, 148, 1, 10, 10);
+    volumeAdjustment = new Gtk::Adjustment(79, 0, 158, 1, 10, 10);
     volumehscale = new Gtk::HScale(*volumeAdjustment);
-    volumehscale->add_mark(138, Gtk::POS_LEFT, "200%");
+    volumehscale->add_mark(148, Gtk::POS_LEFT, "200%");
     volumehscale->add_mark(79, Gtk::POS_LEFT, "100%");
     volumehscale->add_mark(0, Gtk::POS_LEFT, "0%");
     volumehscale->set_inverted(false);

@@ -635,7 +635,7 @@
                     <property name="n_rows">7</property>
                     <property name="n_columns">2</property>
                     <child>
-                      <object class="GtkLabel" id="label8">
+                      <object class="GtkLabel" id="serverListserverNameLabel">
                         <property name="visible">True</property>
                         <property name="xalign">1</property>
                         <property name="label" translatable="yes">Server Name:</property>
@@ -652,6 +652,9 @@
                         <property name="tooltip_text" translatable="yes">The name of the server to be displayed in the server list drop down on the main window</property>
                         <property name="invisible_char">&#x25CF;</property>
                         <property name="activates_default">True</property>
+                        <accessibility>
+                          <relation type="labelled-by" target="serverListserverNameLabel"/>
+                        </accessibility>
                       </object>
                       <packing>
                         <property name="left_attach">1</property>
@@ -660,7 +663,7 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkLabel" id="label5">
+                      <object class="GtkLabel" id="serverListPortLabel">
                         <property name="visible">True</property>
                         <property name="xalign">1</property>
                         <property name="label" translatable="yes">Port:</property>
@@ -672,7 +675,7 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkLabel" id="label4">
+                      <object class="GtkLabel" id="serverListUsernameLabel">
                         <property name="visible">True</property>
                         <property name="xalign">1</property>
                         <property name="label" translatable="yes">Username:</property>
@@ -684,7 +687,7 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkLabel" id="label6">
+                      <object class="GtkLabel" id="serverListPasswordLabel">
                         <property name="visible">True</property>
                         <property name="xalign">1</property>
                         <property name="label" translatable="yes">Password:</property>
@@ -696,7 +699,7 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkLabel" id="label22">
+                      <object class="GtkLabel" id="serverListPhoneticLabel">
                         <property name="visible">True</property>
                         <property name="xalign">1</property>
                         <property name="label" translatable="yes">Phonetic:</property>
@@ -708,7 +711,7 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkLabel" id="label23">
+                      <object class="GtkLabel" id="serverListCommentLabel">
                         <property name="visible">True</property>
                         <property name="xalign">1</property>
                         <property name="label" translatable="yes">Comment:</property>
@@ -729,6 +732,9 @@
                         <property name="invisible_char">&#x25CF;</property>
                         <property name="activates_default">True</property>
                         <property name="width_chars">6</property>
+                        <accessibility>
+                          <relation type="labelled-by" target="serverListPortLabel"/>
+                        </accessibility>
                       </object>
                       <packing>
                         <property name="left_attach">1</property>
@@ -747,6 +753,9 @@
                         <property name="max_length">31</property>
                         <property name="invisible_char">&#x25CF;</property>
                         <property name="activates_default">True</property>
+                        <accessibility>
+                          <relation type="labelled-by" target="serverListUsernameLabel"/>
+                        </accessibility>
                       </object>
                       <packing>
                         <property name="left_attach">1</property>
@@ -767,6 +776,9 @@
                         <property name="invisible_char">&#x25CF;</property>
                         <property name="activates_default">True</property>
                         <property name="invisible_char_set">True</property>
+                        <accessibility>
+                          <relation type="labelled-by" target="serverListPasswordLabel"/>
+                        </accessibility>
                       </object>
                       <packing>
                         <property name="left_attach">1</property>
@@ -785,6 +797,9 @@
                         <property name="max_length">31</property>
                         <property name="invisible_char">&#x25CF;</property>
                         <property name="activates_default">True</property>
+                        <accessibility>
+                          <relation type="labelled-by" target="serverListPhoneticLabel"/>
+                        </accessibility>
                       </object>
                       <packing>
                         <property name="left_attach">1</property>
@@ -802,6 +817,9 @@
                         <property name="tooltip_text" translatable="yes">The user comment to set immediately upon login</property>
                         <property name="max_length">127</property>
                         <property name="invisible_char">&#x25CF;</property>
+                        <accessibility>
+                          <relation type="labelled-by" target="serverListCommentLabel"/>
+                        </accessibility>
                       </object>
                       <packing>
                         <property name="left_attach">1</property>
@@ -812,7 +830,7 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkLabel" id="serverListHostname">
+                      <object class="GtkLabel" id="serverListHostnameLabel">
                         <property name="visible">True</property>
                         <property name="xalign">1</property>
                         <property name="label" translatable="yes">Hostname/IP:</property>
@@ -831,6 +849,9 @@
                         <property name="tooltip_text" translatable="yes">The hostname or IP address for this server</property>
                         <property name="invisible_char">&#x25CF;</property>
                         <property name="activates_default">True</property>
+                        <accessibility>
+                          <relation type="labelled-by" target="serverListHostnameLabel"/>
+                        </accessibility>
                       </object>
                       <packing>
                         <property name="left_attach">1</property>
@@ -972,6 +993,9 @@
                           <object class="GtkComboBoxEntry" id="serverListCharsetComboBox">
                             <property name="visible">True</property>
                             <property name="sensitive">False</property>
+                            <accessibility>
+                              <relation type="labelled-by" target="serverListCharsetLabel"/>
+                            </accessibility>
                           </object>
                           <packing>
                             <property name="position">1</property>
@@ -1238,6 +1262,9 @@ out the encryption
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="invisible_char">&#x25CF;</property>
+                <accessibility>
+                  <relation type="labelled-by" target="qcServerNameLabel"/>
+                </accessibility>
               </object>
               <packing>
                 <property name="left_attach">1</property>
@@ -1249,6 +1276,9 @@ out the encryption
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="invisible_char">&#x25CF;</property>
+                <accessibility>
+                  <relation type="labelled-by" target="qcPortLabel"/>
+                </accessibility>
               </object>
               <packing>
                 <property name="left_attach">1</property>
@@ -1262,6 +1292,9 @@ out the encryption
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="invisible_char">&#x25CF;</property>
+                <accessibility>
+                  <relation type="labelled-by" target="qcUsernameLabel"/>
+                </accessibility>
               </object>
               <packing>
                 <property name="left_attach">1</property>
@@ -1276,6 +1309,9 @@ out the encryption
                 <property name="can_focus">True</property>
                 <property name="visibility">False</property>
                 <property name="invisible_char">&#x25CF;</property>
+                <accessibility>
+                  <relation type="labelled-by" target="qcPasswordLabel"/>
+                </accessibility>
               </object>
               <packing>
                 <property name="left_attach">1</property>
@@ -2185,6 +2221,9 @@ Notifications are the sound effects that are played when you login, logout, a us
                 <property name="visibility">False</property>
                 <property name="invisible_char">&#x25CF;</property>
                 <property name="activates_default">True</property>
+                <accessibility>
+                  <relation type="labelled-by" target="passwordLabel"/>
+                </accessibility>
               </object>
               <packing>
                 <property name="position">1</property>
@@ -2497,6 +2536,9 @@ Notifications are the sound effects that are played when you login, logout, a us
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="invisible_char">&#x25CF;</property>
+                <accessibility>
+                  <relation type="labelled-by" target="textStringChangeCommentLabel"/>
+                </accessibility>
               </object>
               <packing>
                 <property name="left_attach">1</property>
@@ -2509,6 +2551,9 @@ Notifications are the sound effects that are played when you login, logout, a us
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="invisible_char">&#x25CF;</property>
+                <accessibility>
+                  <relation type="labelled-by" target="textStringChangeURLLabel"/>
+                </accessibility>
               </object>
               <packing>
                 <property name="left_attach">1</property>
@@ -2523,6 +2568,9 @@ Notifications are the sound effects that are played when you login, logout, a us
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="invisible_char">&#x25CF;</property>
+                <accessibility>
+                  <relation type="labelled-by" target="textStringChangeIntegrationLabel"/>
+                </accessibility>
               </object>
               <packing>
                 <property name="left_attach">1</property>
