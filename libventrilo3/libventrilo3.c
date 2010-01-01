@@ -2544,7 +2544,7 @@ v3_login(char *server, char *username, char *password, char *phonetic) {/*{{{*/
         _v3_send(response);
         _v3_destroy_packet(response);
 
-        response = _v3_put_0x46(V3_USER_ACCEPT_U2U, 1);
+        response = _v3_put_0x46(V3_USER_ACCEPT_U2U, v3_luser.accept_u2u);
         _v3_send(response);
         _v3_destroy_packet(response);
 
@@ -3251,5 +3251,23 @@ v3_get_volume_user(uint16_t id) {/*{{{*/
 uint8_t
 v3_get_volume_luser(void) {/*{{{*/
     return v3_get_volume_user(v3_get_user_id());
+}/*}}}*/
+
+void
+v3_set_server_opts(uint8_t type, uint8_t value) {/*{{{*/
+    switch (type) {
+        case V3_USER_ACCEPT_PAGES:
+            v3_luser.accept_pages = value;
+            break;
+        case V3_USER_ACCEPT_U2U:
+            v3_luser.accept_u2u = value;
+            break;
+        case V3_USER_ALLOW_RECORD:
+            v3_luser.allow_recording = value;
+            break;
+        case V3_USER_ACCEPT_CHAT:
+            v3_luser.accept_chat = value;
+            break;
+    }
 }/*}}}*/
 
