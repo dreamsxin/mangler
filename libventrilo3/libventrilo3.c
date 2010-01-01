@@ -3033,16 +3033,16 @@ v3_queue_event(v3_event *ev) {/*{{{*/
     // if this returns null, there's no events in the queue
     if ((last = _v3_get_last_event(&len)) == NULL) {
         _v3_eventq = ev;
+        _v3_debug(V3_DEBUG_EVENT, "queued event type %d.  now have 1 event in queue", ev->type);
         pthread_cond_signal(eventq_cond);
         pthread_mutex_unlock(eventq_mutex);
-        _v3_debug(V3_DEBUG_EVENT, "queued event type %d.  now have 1 event in queue", ev->type);
         _v3_func_leave("v3_queue_event");
         return true;
     }
     // otherwise, tack it on to the end
     last->next = ev;
-    pthread_mutex_unlock(eventq_mutex);
     _v3_debug(V3_DEBUG_EVENT, "queued event type %d.  now have %d events in queue", ev->type, len);
+    pthread_mutex_unlock(eventq_mutex);
     _v3_func_leave("v3_queue_event");
     return true;
 }/*}}}*/
