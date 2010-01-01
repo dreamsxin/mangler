@@ -285,6 +285,10 @@ void Mangler::connectButton_clicked_cb(void) {/*{{{*/
 
             settings->config.lastConnectedServerId = server_id;
             settings->config.save();
+            v3_set_server_opts(V3_USER_ACCEPT_PAGES, server->acceptPages);
+            v3_set_server_opts(V3_USER_ACCEPT_U2U, server->acceptU2U);
+            v3_set_server_opts(V3_USER_ACCEPT_CHAT, server->acceptPrivateChat);
+            v3_set_server_opts(V3_USER_ALLOW_RECORD, server->allowRecording);
             Glib::Thread::create(sigc::bind(sigc::mem_fun(this->network, &ManglerNetwork::connect), hostname, port, username, password, phonetic), FALSE);
             // TODO: move this into a thread and use blocking waits
             Glib::signal_timeout().connect( sigc::mem_fun(*this, &Mangler::getNetworkEvent), 10 );
@@ -418,6 +422,10 @@ void Mangler::qcConnectButton_clicked_cb(void) {/*{{{*/
     settings->config.qc_lastserver.password = password;
     settings->config.save();
     connectedServerId = -1;
+    v3_set_server_opts(V3_USER_ACCEPT_PAGES, 1);
+    v3_set_server_opts(V3_USER_ACCEPT_U2U, 1);
+    v3_set_server_opts(V3_USER_ACCEPT_CHAT, 1);
+    v3_set_server_opts(V3_USER_ALLOW_RECORD, 1);
     Glib::Thread::create(sigc::bind(sigc::mem_fun(this->network, &ManglerNetwork::connect), server, port, username, password, ""), FALSE);
     // TODO: move this into a thread and use blocking waits
     Glib::signal_timeout().connect( sigc::mem_fun(*this, &Mangler::getNetworkEvent), 10 );

@@ -441,6 +441,8 @@ uint8_t     v3_channel_requires_password(uint16_t channel_id);
 void        v3_start_audio(uint16_t send_type);
 void        v3_send_audio(uint16_t send_type, uint32_t rate, uint8_t *pcm, uint32_t length);
 void        v3_stop_audio(void);
+void        v3_set_server_opts(uint8_t type, uint8_t value);
+
 
 // User list functions
 int         v3_user_count(void);
