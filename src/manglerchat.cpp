@@ -95,6 +95,10 @@ void ManglerChat::addChatMessage(uint16_t user_id, Glib::ustring message) {
     addMessage("[" + nameFromId(user_id) + "]: " + message);
 }
 
+void ManglerChat::addRconMessage(Glib::ustring message) {
+    addMessage("[RCON]: " + message);
+}
+
 void ManglerChat::addUser(uint16_t user_id) {
     if (isUserInChat(user_id)) {
         return;

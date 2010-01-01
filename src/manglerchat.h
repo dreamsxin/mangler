@@ -57,6 +57,7 @@ class ManglerChat {
         void chatClose_clicked_cb(void);
 
         void addChatMessage(uint16_t user_id, Glib::ustring message);
+        void addRconMessage(Glib::ustring message);
         void addMessage(Glib::ustring message);
         void addUser(uint16_t user_id);
         void clear(void);

@@ -1681,7 +1681,14 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                             v3_queue_event(ev);
                         }
                         break;
-                    case V3_RCON_CHAT: // rcon, deal with it later
+                    case V3_RCON_CHAT:
+                        {
+                            v3_event *ev = _v3_create_event(V3_EVENT_CHAT_MESSAGE);
+                            ev->user.id = 0;
+                            strncpy(ev->data.chatmessage, m->msg, sizeof(ev->data.chatmessage) - 1);
+                            free(m->msg);
+                            v3_queue_event(ev);
+                        }
                         free(m->msg);
                         break;
                     case V3_JOINFAIL_CHAT:

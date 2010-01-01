@@ -901,7 +901,10 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                 break;/*}}}*/
             case V3_EVENT_CHAT_MESSAGE:/*{{{*/
                 if (v3_is_loggedin()) {
-                    chat->addChatMessage(ev->user.id, c_to_ustring(ev->data.chatmessage));
+                    if (ev->user.id == 0)
+                        chat->addRconMessage(c_to_ustring(ev->data.chatmessage));
+                    else
+                        chat->addChatMessage(ev->user.id, c_to_ustring(ev->data.chatmessage));
                 }
                 break;/*}}}*/
             default:
