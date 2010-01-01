@@ -403,7 +403,7 @@ typedef struct _v3_net_message_0x63 {/*{{{*/
     union {                     // 12
         uint8_t password_hash[0x20];
         uint8_t reason[0x80];
-    };
+    } t;
 } _v3_msg_0x63;
 _v3_net_message *_v3_put_0x63(uint16_t subtype, uint16_t user_id, uint8_t *string);/*}}}*/
 

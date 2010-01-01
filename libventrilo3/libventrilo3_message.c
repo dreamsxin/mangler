@@ -1306,7 +1306,7 @@ _v3_put_0x63(uint16_t subtype, uint16_t user_id, uint8_t *string) {/*{{{*/
     
     switch (subtype) {
         case V3_ADMIN_LOGIN:
-            _v3_hash_password(string, mc->password_hash);
+            _v3_hash_password(string, mc->t.password_hash);
             break;
         case V3_ADMIN_LOGOUT:
             break;
@@ -1314,7 +1314,7 @@ _v3_put_0x63(uint16_t subtype, uint16_t user_id, uint8_t *string) {/*{{{*/
         case V3_ADMIN_BAN:
         case V3_ADMIN_CHANNEL_BAN:
             mc->user_id = user_id;
-            strncpy(mc->reason, string, sizeof(mc->reason));
+            strncpy(mc->t.reason, string, sizeof(mc->t.reason));
             break;
     }
 
