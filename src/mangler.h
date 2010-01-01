@@ -86,6 +86,7 @@ class Mangler
         bool                                isTransmittingKey;
         bool                                isTransmittingMouse;
         bool                                iconified;
+        bool                                isAdmin;
 
         // These are used by the password entry dialog
         Gtk::Dialog                         *passwordDialog;

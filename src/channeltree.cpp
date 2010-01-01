@@ -436,6 +436,9 @@ ManglerChannelTree::updateLobby(Glib::ustring name, Glib::ustring comment, Glib:
         lobby                                       = *channelIter;
     }
     displayName = name;
+    if (mangler->isAdmin) {
+        displayName = displayName + " [ADMIN]";
+    }
     if (! comment.empty()) {
         displayName = displayName + " (" + comment + ")";
     }

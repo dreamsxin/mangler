@@ -338,6 +338,7 @@ void Mangler::connectButton_clicked_cb(void) {/*{{{*/
             v3_set_server_opts(V3_USER_ACCEPT_CHAT, server->acceptPrivateChat);
             v3_set_server_opts(V3_USER_ALLOW_RECORD, server->allowRecording);
             Glib::Thread::create(sigc::bind(sigc::mem_fun(this->network, &ManglerNetwork::connect), hostname, port, username, password, phonetic), FALSE);
+            isAdmin = false;
             // TODO: move this into a thread and use blocking waits
             Glib::signal_timeout().connect( sigc::mem_fun(*this, &Mangler::getNetworkEvent), 10 );
         }
@@ -381,7 +382,23 @@ void Mangler::bindingsButton_clicked_cb(void) {/*{{{*/
     }
 }/*}}}*/
 void Mangler::adminButton_clicked_cb(void) {/*{{{*/
-    //fprintf(stderr, "admin button clicked\n");
+    Glib::ustring password;
+    if (! isAdmin) {
+        password = mangler->getPasswordEntry("Admin Password");
+        if (password.length()) {
+            v3_admin_login((char *)password.c_str());
+            // if we tried sending a password, the only options are either
+            // success or get booted from the server
+            isAdmin = true;
+            v3_user *u = v3_get_user(0);
+            if (!u) {
+                fprintf(stderr, "couldn't retreive lobby user\n");
+                return;
+            }
+            channelTree->updateLobby(c_to_ustring(u->name), c_to_ustring(u->comment), u->phonetic);
+            v3_free_user(u);
+        }
+    }
 }/*}}}*/
 void Mangler::settingsButton_clicked_cb(void) {/*{{{*/
     settings->settingsWindow->show();
@@ -521,6 +538,7 @@ void Mangler::qcConnectButton_clicked_cb(void) {/*{{{*/
     settings->config.save();
     set_charset("");
     connectedServerId = -1;
+    isAdmin = false;
     v3_set_server_opts(V3_USER_ACCEPT_PAGES, 1);
     v3_set_server_opts(V3_USER_ACCEPT_U2U, 1);
     v3_set_server_opts(V3_USER_ACCEPT_CHAT, 1);
