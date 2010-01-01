@@ -149,6 +149,14 @@ bool ManglerConfig::put(uint16_t id, ManglerServerConfig server) {/*{{{*/
     snprintf(name, 1023, "serverlist.%d.allow_recording",      id); if (!put(name, server.allowRecording       ))  return false;
     snprintf(name, 1023, "serverlist.%d.persistent_comments",  id); if (!put(name, server.persistentComments   ))  return false;
     snprintf(name, 1023, "serverlist.%d.motdhash",             id); if (!put(name, server.motdhash             ))  return false;
+
+    std::map<Glib::ustring,uint8_t>::iterator it;
+    for (it = server.uservolumes.begin(); it != server.uservolumes.end(); it++) {
+        snprintf(name, 1023, "serverlist.%d.volume.%s", id, (char *)(*it).first.c_str());
+        if (!put(name, (*it).second)) {
+            return false;
+        }
+    }
     return true;
 }/*}}}*/
 Glib::ustring ManglerConfig::get(Glib::ustring cfgname) {/*{{{*/
@@ -216,6 +224,73 @@ Glib::ustring ManglerConfig::get(Glib::ustring cfgname) {/*{{{*/
     mutex.unlock();
     return "";
 }/*}}}*/
+std::map <Glib::ustring, uint8_t> ManglerConfig::get_volumes(Glib::ustring serverbase) {/*{{{*/
+    // We're going to do this in one in C too...
+    struct stat cfgstat;
+    static bool notified = false;
+    char buf[1024];
+    int ctr = 0;
+    std::map <Glib::ustring, uint8_t> volumes;
+
+    mutex.lock();
+    Glib::ustring     cfgfilename = getenv("HOME");
+    cfgfilename += "/.manglerrc";
+    // check to see if the file exists
+    if (stat(cfgfilename.c_str(), &cfgstat)) {
+        // if not create it
+        if (! (this->cfgstream = fopen(cfgfilename.c_str(), "w"))) {
+            // if creation fails, print error
+            if (!notified) {
+                fprintf(stderr, "could not create settings file: %s\n", (char *)cfgfilename.c_str());
+                notified = true;
+            }
+            mutex.unlock();
+            return volumes;
+        } else {
+            fclose(this->cfgstream);
+        }
+    }
+    if (! (this->cfgstream = fopen(cfgfilename.c_str(), "r"))) {
+        if (!notified) {
+            fprintf(stderr, "could not open settings file for reading: %s\n", (char *)cfgfilename.c_str());
+            notified = true;
+        }
+        mutex.unlock();
+    }
+
+    while (! feof(this->cfgstream)) {
+        char *name, *value;
+        if (! fgets(buf, 1024, this->cfgstream)) {
+            fclose(this->cfgstream);
+            mutex.unlock();
+            return volumes;
+        }
+        ctr++;
+        if (buf[strlen(buf)-1] != '\n') {
+            fprintf(stderr, "error in settings file: line %d is longer than 1024 characters\n", ctr);
+            fclose(this->cfgstream);
+            mutex.unlock();
+            return volumes;
+        }
+        buf[strlen(buf)-1] = '\0';
+        name = buf;
+        if ((value = strchr(buf, '=')) == NULL) {
+            continue;
+        }
+        *value = '\0';
+        value++;
+        // see if our string is for the requested server index, get the
+        // username, and populate the map
+        Glib::ustring volbase = serverbase + "volume.";
+        if (strncmp((char *)volbase.c_str(), name, strlen((char *)volbase.c_str())) == 0) {
+            //fprintf(stderr, "volume for user: '%s' = '%s'\n", name+strlen((char *)volbase.c_str()), value);
+            volumes[name+strlen((char *)volbase.c_str())] = atoi(value);
+        }
+    }
+    fclose(this->cfgstream);
+    mutex.unlock();
+    return volumes;
+}/*}}}*/
 void ManglerConfig::load() {/*{{{*/
     PushToTalkKeyEnabled          = get("PushToTalkKeyEnabled") == "1" ? true : false; // default false
     PushToTalkKeyValue            = get("PushToTalkKeyValue");
@@ -275,6 +350,7 @@ void ManglerConfig::load() {/*{{{*/
             server->allowRecording = get(base + "allow_recording") == "0" ? false : true;
             server->persistentComments = get(base + "persistent_comments") == "0" ? false : true;
             server->motdhash = atoi(get(base + "motdhash").c_str());
+            server->uservolumes = get_volumes(base);
             serverlist.push_back(server);
         }
     }

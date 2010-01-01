@@ -666,6 +666,15 @@ ManglerChannelTree::forgetChannelSavedPassword(uint16_t channel_id) {/*{{{*/
 
 void
 ManglerChannelTree::volumeAdjustment_value_changed_cb(uint16_t id) {/*{{{*/
+    if (mangler->connectedServerId != -1) {
+        ManglerServerConfig *server;
+        server = mangler->settings->config.getserver(mangler->connectedServerId);
+        v3_user *u;
+        if ((u = v3_get_user(id)) != NULL) {
+            server->uservolumes[u->name] = volumeAdjustment->get_value();
+            mangler->settings->config.save();
+        }
+    }
     v3_set_volume_user(id, volumeAdjustment->get_value());
 }/*}}}*/
 

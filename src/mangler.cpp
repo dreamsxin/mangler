@@ -599,6 +599,16 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                         c_to_ustring(u->integration_text),
                         (bool)u->guest,
                         (bool)u->real_user_id);
+                // If we have a per user volume set for this user name, set it now
+                if (connectedServerId != -1) {
+                    ManglerServerConfig *server;
+                    server = settings->config.getserver(connectedServerId);
+                    std::map<Glib::ustring, uint8_t>::iterator it;
+                    it = server->uservolumes.find(u->name);
+                    if (it != server->uservolumes.end()) {
+                        v3_set_volume_user(u->id, server->uservolumes[u->name]);
+                    }
+                }
                 v3_free_user(u);
                 break;/*}}}*/
             case V3_EVENT_USER_MODIFY:/*{{{*/
