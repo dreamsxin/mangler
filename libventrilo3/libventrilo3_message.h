@@ -45,7 +45,7 @@
  * To parse a packet, a smaller structure (i.e. a "type") will be recast as a
  * larger structure depending on the subtype.
  *
- * In cases where a particular value is known, it is marked by a name of
+ * In cases where a particular value is unknown, it is marked by a name of
  * (unknown_#).  The number is arbitrary and subject to change.  If an unknown
  * value is identified, it should be pulled out of the unknown pool and named
  * appropriately.
@@ -395,6 +395,17 @@ typedef struct _v3_net_message_0x62 {/*{{{*/
     uint16_t to;                // 6
     uint32_t error_id;          // 8
 } _v3_msg_0x62;/*}}}*/
+typedef struct _v3_net_message_0x63 {/*{{{*/
+    uint32_t type;              // 0
+    uint16_t subtype;           // 4
+    uint16_t user_id;           // 6
+    uint8_t unused[4];          // 8
+    union {                     // 12
+        uint8_t password_hash[0x20];
+        uint8_t reason[0x80];
+    };
+} _v3_msg_0x63;
+_v3_net_message *_v3_put_0x63(uint16_t subtype, uint16_t user_id, uint8_t *string);/*}}}*/
 
 #pragma pack(pop)
 

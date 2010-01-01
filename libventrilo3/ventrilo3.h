@@ -76,6 +76,12 @@
 #define V3_PHANTOM_ADD              0x00
 #define V3_PHANTOM_REMOVE           0x01 
 
+#define V3_ADMIN_LOGIN              0x00
+#define V3_ADMIN_KICK               0x01
+#define V3_ADMIN_BAN                0x03
+#define V3_ADMIN_LOGOUT             0x04
+#define V3_ADMIN_CHANNEL_BAN        0x05
+
 #define V3_DEBUG_NONE               0
 #define V3_DEBUG_STATUS             1
 #define V3_DEBUG_ERROR              1 << 2
@@ -199,6 +205,8 @@ enum _v3_events
     V3_EVENT_CHANGE_CHANNEL,
     V3_EVENT_PHANTOM_ADD,
     V3_EVENT_PHANTOM_REMOVE,
+    V3_EVENT_ADMIN_LOGIN,
+    V3_EVENT_ADMIN_LOGOUT,
 
     // not implemented
     V3_EVENT_USER_PAGED,
@@ -446,6 +454,8 @@ void        v3_leave_chat(void);
 void        v3_send_chat_message(char* message);
 void        v3_logout(void);
 void        v3_change_channel(uint16_t channel_id, char *password);
+void        v3_admin_login(char *password);
+void        v3_admin_logout(void);
 void        v3_phantom_add(uint16_t channel_id);
 void        v3_phantom_remove(uint16_t channel_id);
 int         v3_debuglevel(uint32_t level);

@@ -831,6 +831,28 @@ _v3_recv(int block) {/*{{{*/
                             _v3_destroy_packet(msg);
                         }
                         break;/*}}}*/
+                    case V3_EVENT_ADMIN_LOGIN:/*{{{*/
+                        {
+                            _v3_net_message *msg = _v3_put_0x63(V3_ADMIN_LOGIN, 0, ev.text.password);
+                            if (_v3_send(msg)) {
+                                _v3_debug(V3_DEBUG_SOCKET, "sent admin login request to server");
+                            } else {
+                                _v3_debug(V3_DEBUG_SOCKET, "failed to send admin login request");
+                            }
+                            _v3_destroy_packet(msg);
+                        }
+                        break;/*}}}*/
+                    case V3_EVENT_ADMIN_LOGOUT:/*{{{*/
+                        {
+                            _v3_net_message *msg = _v3_put_0x63(V3_ADMIN_LOGOUT, 0, NULL); 
+                            if (_v3_send(msg)) {
+                                _v3_debug(V3_DEBUG_SOCKET, "sent admin logout request to server");
+                            } else {
+                                _v3_debug(V3_DEBUG_SOCKET, "failed to send admin logout request");
+                            }
+                            _v3_destroy_packet(msg);
+                        }
+                        break;/*}}}*/
                     default:
                         _v3_debug(V3_DEBUG_EVENT, "received unknown event type %d from queue", ev.type);
                         break;
@@ -1689,7 +1711,6 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                             free(m->msg);
                             v3_queue_event(ev);
                         }
-                        free(m->msg);
                         break;
                     case V3_JOINFAIL_CHAT:
                         {
@@ -2818,6 +2839,53 @@ v3_change_channel(uint16_t channel_id, char *password) {/*{{{*/
     fflush(v3_server.evoutstream);
     _v3_unlock_sendq();
     _v3_func_leave("v3_change_channel");
+    return;
+}/*}}}*/
+
+void
+v3_admin_login(char *password) {/*{{{*/
+    v3_event ev;
+
+    _v3_func_enter("v3_admin_login");
+    if (!v3_is_loggedin() || password == NULL || !password[0]) {
+        _v3_func_leave("v3_admin_login");
+        return;
+    }
+    memset(&ev, 0, sizeof(v3_event));
+    ev.type = V3_EVENT_ADMIN_LOGIN;
+    strncpy(ev.text.password, password, sizeof(ev.text.password));
+
+    _v3_lock_sendq();
+    _v3_debug(V3_DEBUG_EVENT, "sending %lu bytes to event pipe", sizeof(v3_event));
+    if (fwrite(&ev, sizeof(struct _v3_event), 1, v3_server.evoutstream) != 1) {
+        _v3_error("could not write to event pipe");
+    }
+    fflush(v3_server.evoutstream);
+    _v3_unlock_sendq();
+    _v3_func_leave("v3_admin_login");
+    return;
+}/*}}}*/
+
+void
+v3_admin_logout(void) {/*{{{*/
+    v3_event ev;
+
+    _v3_func_enter("v3_admin_logout");
+    if (!v3_is_loggedin()) {
+        _v3_func_leave("v3_admin_logout");
+        return;
+    }
+    memset(&ev, 0, sizeof(v3_event));
+    ev.type = V3_EVENT_ADMIN_LOGOUT;
+
+    _v3_lock_sendq();
+    _v3_debug(V3_DEBUG_EVENT, "sending %lu bytes to event pipe", sizeof(v3_event));
+    if (fwrite(&ev, sizeof(struct _v3_event), 1, v3_server.evoutstream) != 1) {
+        _v3_error("could not write to event pipe");
+    }
+    fflush(v3_server.evoutstream);
+    _v3_unlock_sendq();
+    _v3_func_leave("v3_admin_logout");
     return;
 }/*}}}*/
 

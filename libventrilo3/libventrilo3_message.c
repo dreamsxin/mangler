@@ -1284,4 +1284,43 @@ _v3_destroy_0x60(_v3_net_message *msg) {/*{{{*/
     return true;
 }/*}}}*/
 /*}}}*/
+// Message 0x63 (99) | ADMIN /*{{{*/
+_v3_net_message *
+_v3_put_0x63(uint16_t subtype, uint16_t user_id, uint8_t *string) {/*{{{*/
+    _v3_net_message *m;
+    _v3_msg_0x63 *mc;
 
+    _v3_func_enter("_v3_put_0x63");
+    // Build our message
+    m = malloc(sizeof(_v3_net_message));
+    memset(m, 0, sizeof(_v3_net_message));
+    m->type = 0x63;
+    m->len = sizeof(_v3_msg_0x63);
+
+    // Build our message contents
+    mc = malloc(sizeof(_v3_msg_0x63));
+    memset(mc, 0, sizeof(_v3_msg_0x63));
+
+    mc->type = 0x63;
+    mc->subtype = subtype;
+    
+    switch (subtype) {
+        case V3_ADMIN_LOGIN:
+            _v3_hash_password(string, mc->password_hash);
+            break;
+        case V3_ADMIN_LOGOUT:
+            break;
+        case V3_ADMIN_KICK:
+        case V3_ADMIN_BAN:
+        case V3_ADMIN_CHANNEL_BAN:
+            mc->user_id = user_id;
+            strncpy(mc->reason, string, sizeof(mc->reason));
+            break;
+    }
+
+    m->contents = mc;
+    m->data = (char *)mc;
+    _v3_func_leave("_v3_put_0x63");
+    return m;
+}/*}}}*/
+/*}}}*/
