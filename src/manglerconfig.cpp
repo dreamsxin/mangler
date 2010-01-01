@@ -150,9 +150,14 @@ bool ManglerConfig::put(uint16_t id, ManglerServerConfig server) {/*{{{*/
     snprintf(name, 1023, "serverlist.%d.persistent_comments",  id); if (!put(name, server.persistentComments   ))  return false;
     snprintf(name, 1023, "serverlist.%d.motdhash",             id); if (!put(name, server.motdhash             ))  return false;
 
-    std::map<Glib::ustring,uint8_t>::iterator it;
-    for (it = server.uservolumes.begin(); it != server.uservolumes.end(); it++) {
+    for (std::map<Glib::ustring,uint8_t>::iterator it = server.uservolumes.begin(); it != server.uservolumes.end(); it++) {
         snprintf(name, 1023, "serverlist.%d.volume.%s", id, (char *)(*it).first.c_str());
+        if (!put(name, (*it).second)) {
+            return false;
+        }
+    }
+    for (std::map<uint16_t, Glib::ustring>::iterator it = server.channelpass.begin(); it != server.channelpass.end(); it++) {
+        snprintf(name, 1023, "serverlist.%d.channelpass.%d", id, (*it).first);
         if (!put(name, (*it).second)) {
             return false;
         }
@@ -224,7 +229,7 @@ Glib::ustring ManglerConfig::get(Glib::ustring cfgname) {/*{{{*/
     mutex.unlock();
     return "";
 }/*}}}*/
-std::map <Glib::ustring, uint8_t> ManglerConfig::get_volumes(Glib::ustring serverbase) {/*{{{*/
+std::map <Glib::ustring, uint8_t> ManglerConfig::get_user_volumes(Glib::ustring serverbase) {/*{{{*/
     // We're going to do this in one in C too...
     struct stat cfgstat;
     static bool notified = false;
@@ -291,6 +296,71 @@ std::map <Glib::ustring, uint8_t> ManglerConfig::get_volumes(Glib::ustring serve
     mutex.unlock();
     return volumes;
 }/*}}}*/
+std::map <uint16_t, Glib::ustring> ManglerConfig::get_channel_passwords(Glib::ustring serverbase) {/*{{{*/
+    // We're going to do this in one in C too...
+    struct stat cfgstat;
+    static bool notified = false;
+    char buf[1024];
+    int ctr = 0;
+    std::map <uint16_t, Glib::ustring> channelpass;
+
+    mutex.lock();
+    Glib::ustring     cfgfilename = getenv("HOME");
+    cfgfilename += "/.manglerrc";
+    // check to see if the file exists
+    if (stat(cfgfilename.c_str(), &cfgstat)) {
+        // if not create it
+        if (! (this->cfgstream = fopen(cfgfilename.c_str(), "w"))) {
+            // if creation fails, print error
+            if (!notified) {
+                fprintf(stderr, "could not create settings file: %s\n", (char *)cfgfilename.c_str());
+                notified = true;
+            }
+            mutex.unlock();
+            return channelpass;
+        } else {
+            fclose(this->cfgstream);
+        }
+    }
+    if (! (this->cfgstream = fopen(cfgfilename.c_str(), "r"))) {
+        if (!notified) {
+            fprintf(stderr, "could not open settings file for reading: %s\n", (char *)cfgfilename.c_str());
+            notified = true;
+        }
+        mutex.unlock();
+    }
+
+    while (! feof(this->cfgstream)) {
+        char *name, *value;
+        if (! fgets(buf, 1024, this->cfgstream)) {
+            fclose(this->cfgstream);
+            mutex.unlock();
+            return channelpass;
+        }
+        ctr++;
+        if (buf[strlen(buf)-1] != '\n') {
+            fprintf(stderr, "error in settings file: line %d is longer than 1024 characters\n", ctr);
+            fclose(this->cfgstream);
+            mutex.unlock();
+            return channelpass;
+        }
+        buf[strlen(buf)-1] = '\0';
+        name = buf;
+        if ((value = strchr(buf, '=')) == NULL) {
+            continue;
+        }
+        *value = '\0';
+        value++;
+        Glib::ustring chanpassbase = serverbase + "channelpass.";
+        if (strncmp((char *)chanpassbase.c_str(), name, strlen((char *)chanpassbase.c_str())) == 0) {
+            //fprintf(stderr, "channel password for %d: '%s'\n", atoi(name+strlen((char *)chanpassbase.c_str())), value);
+            channelpass[atoi(name+strlen((char *)chanpassbase.c_str()))] = value;
+        }
+    }
+    fclose(this->cfgstream);
+    mutex.unlock();
+    return channelpass;
+}/*}}}*/
 void ManglerConfig::load() {/*{{{*/
     PushToTalkKeyEnabled          = get("PushToTalkKeyEnabled") == "1" ? true : false; // default false
     PushToTalkKeyValue            = get("PushToTalkKeyValue");
@@ -350,7 +420,8 @@ void ManglerConfig::load() {/*{{{*/
             server->allowRecording = get(base + "allow_recording") == "0" ? false : true;
             server->persistentComments = get(base + "persistent_comments") == "0" ? false : true;
             server->motdhash = atoi(get(base + "motdhash").c_str());
-            server->uservolumes = get_volumes(base);
+            server->uservolumes = get_user_volumes(base);
+            server->channelpass = get_channel_passwords(base);
             serverlist.push_back(server);
         }
     }

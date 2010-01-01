@@ -537,6 +537,11 @@ ManglerChannelTree::channelView_row_activated_cb(const Gtk::TreeModel::Path& pat
                     password = mangler->getPasswordEntry("Channel Password");
                 }
                 setChannelSavedPassword(pw_cid, password);
+                if (mangler->connectedServerId != -1) {
+                    ManglerServerConfig *server;
+                    server = mangler->settings->config.getserver(mangler->connectedServerId);
+                    server->channelpass[pw_cid] = password;
+                }
             }
             v3_free_channel(channel);
         }
@@ -648,13 +653,27 @@ ManglerChannelTree::getUserChannelId(uint16_t userid) {/*{{{*/
 Glib::ustring
 ManglerChannelTree::getChannelSavedPassword(uint16_t channel_id) {/*{{{*/
     Gtk::TreeModel::Row channel = getChannel(channel_id, channelStore->children());
-    return(channel[channelRecord.password]);
+    Glib::ustring pw = channel[channelRecord.password];
+    if (pw.length() == 0) {
+        if (mangler->connectedServerId != -1) {
+            ManglerServerConfig *server;
+            server = mangler->settings->config.getserver(mangler->connectedServerId);
+            pw = server->channelpass[channel_id];
+        }
+    }
+    return(pw);
 }/*}}}*/
 
 void
 ManglerChannelTree::setChannelSavedPassword(uint16_t channel_id, Glib::ustring password) {/*{{{*/
     Gtk::TreeModel::Row channel = getChannel(channel_id, channelStore->children());
     channel[channelRecord.password] = password;
+    if (mangler->connectedServerId != -1) {
+        ManglerServerConfig *server;
+        server = mangler->settings->config.getserver(mangler->connectedServerId);
+        server->channelpass[channel_id] = password;
+        mangler->settings->config.save();
+    }
     return;
 }/*}}}*/
 

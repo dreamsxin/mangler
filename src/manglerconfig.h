@@ -47,6 +47,7 @@ class ManglerServerConfig/*{{{*/
         bool                  persistentComments;
         uint32_t              motdhash;
         std::map <Glib::ustring, uint8_t> uservolumes;
+        std::map <uint16_t, Glib::ustring> channelpass;
 
         ManglerServerConfig() {
             name = "";
@@ -99,7 +100,8 @@ class ManglerConfig {
 		ManglerConfig();
 		bool save();
                 Glib::ustring get(Glib::ustring cfgname);
-                std::map <Glib::ustring, uint8_t> get_volumes(Glib::ustring serverbase);
+                std::map <Glib::ustring, uint8_t> get_user_volumes(Glib::ustring serverbase);
+                std::map <uint16_t, Glib::ustring> get_channel_passwords(Glib::ustring serverbase);
                 bool put(Glib::ustring name, bool value);
                 bool put(Glib::ustring name, Glib::ustring value);
                 bool put(Glib::ustring name, uint32_t value);
