@@ -1664,13 +1664,15 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                 if (!m->error_id) {
                     _v3_debug(V3_DEBUG_INFO, "user %d force moved to channel %d", m->user_id, m->channel_id);
                     user = v3_get_user(m->user_id);
-                    user->channel = m->channel_id;
-                    _v3_update_user(user);
-                    v3_free_user(user);
-                    v3_event *ev = _v3_create_event(V3_EVENT_USER_CHAN_MOVE);
-                    ev->user.id = m->user_id;
-                    ev->channel.id = m->channel_id;
-                    v3_queue_event(ev);
+                    if (user) {
+                        user->channel = m->channel_id;
+                        _v3_update_user(user);
+                        v3_free_user(user);
+                        v3_event *ev = _v3_create_event(V3_EVENT_USER_CHAN_MOVE);
+                        ev->user.id = m->user_id;
+                        ev->channel.id = m->channel_id;
+                        v3_queue_event(ev);
+                    }
                 }
             }
             _v3_destroy_packet(msg);
@@ -2108,13 +2110,15 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                 v3_user *user;
                 _v3_debug(V3_DEBUG_INFO, "user %d moved to channel %d", m->user_id, m->channel_id);
                 user = v3_get_user(m->user_id);
-                user->channel = m->channel_id;
-                _v3_update_user(user);
-                v3_free_user(user);
-                v3_event *ev = _v3_create_event(V3_EVENT_USER_CHAN_MOVE);
-                ev->user.id = m->user_id;
-                ev->channel.id = m->channel_id;
-                v3_queue_event(ev);
+                if (user) {
+                    user->channel = m->channel_id;
+                    _v3_update_user(user);
+                    v3_free_user(user);
+                    v3_event *ev = _v3_create_event(V3_EVENT_USER_CHAN_MOVE);
+                    ev->user.id = m->user_id;
+                    ev->channel.id = m->channel_id;
+                    v3_queue_event(ev);
+                }
             }
             _v3_destroy_packet(msg);
             _v3_func_leave("_v3_process_message");
