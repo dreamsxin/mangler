@@ -207,6 +207,9 @@ enum _v3_events
     V3_EVENT_PHANTOM_REMOVE,
     V3_EVENT_ADMIN_LOGIN,
     V3_EVENT_ADMIN_LOGOUT,
+    V3_EVENT_ADMIN_KICK,
+    V3_EVENT_ADMIN_BAN,
+    V3_EVENT_ADMIN_CHANNEL_BAN,
 
     // not implemented
     V3_EVENT_USER_PAGED,
@@ -214,6 +217,13 @@ enum _v3_events
     V3_EVENT_CHAN_REMOVED,
     V3_EVENT_CHAN_MODIFIED,
     V3_EVENT_RECV_AUDIO,
+};
+
+// different boot types for api function v3_admin_boot
+enum _v3_boot_types {
+    V3_BOOT_KICK,
+    V3_BOOT_BAN,
+    V3_BOOT_CHANNEL_BAN,
 };
 
 #define V3_AUDIO_SENDTYPE_UNK0   0x00  // possibly broadcast?
@@ -266,6 +276,7 @@ struct _v3_event {
         uint8_t sample[16384];
         char    motd[2048]; 
         char    chatmessage[256];
+        char    reason[128];
     } data;
     v3_event *next;
 };
@@ -456,6 +467,7 @@ void        v3_logout(void);
 void        v3_change_channel(uint16_t channel_id, char *password);
 void        v3_admin_login(char *password);
 void        v3_admin_logout(void);
+void        v3_admin_boot(enum _v3_boot_types type, uint16_t user_id, char *reason);
 void        v3_phantom_add(uint16_t channel_id);
 void        v3_phantom_remove(uint16_t channel_id);
 int         v3_debuglevel(uint32_t level);

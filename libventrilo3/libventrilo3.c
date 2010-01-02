@@ -853,6 +853,39 @@ _v3_recv(int block) {/*{{{*/
                             _v3_destroy_packet(msg);
                         }
                         break;/*}}}*/
+                    case V3_EVENT_ADMIN_KICK:/*{{{*/
+                        {
+                            _v3_net_message *msg = _v3_put_0x63(V3_ADMIN_KICK, ev.user.id, ev.data.reason); 
+                            if (_v3_send(msg)) {
+                                _v3_debug(V3_DEBUG_SOCKET, "sent admin kick request to server");
+                            } else {
+                                _v3_debug(V3_DEBUG_SOCKET, "failed to send admin kick request");
+                            }
+                            _v3_destroy_packet(msg);
+                        }
+                        break;/*}}}*/
+                    case V3_EVENT_ADMIN_BAN:/*{{{*/
+                        {
+                            _v3_net_message *msg = _v3_put_0x63(V3_ADMIN_BAN, ev.user.id, ev.data.reason); 
+                            if (_v3_send(msg)) {
+                                _v3_debug(V3_DEBUG_SOCKET, "sent admin ban request to server");
+                            } else {
+                                _v3_debug(V3_DEBUG_SOCKET, "failed to send admin ban request");
+                            }
+                            _v3_destroy_packet(msg);
+                        }
+                        break;/*}}}*/
+                    case V3_EVENT_ADMIN_CHANNEL_BAN:/*{{{*/
+                        {
+                            _v3_net_message *msg = _v3_put_0x63(V3_ADMIN_CHANNEL_BAN, ev.user.id, ev.data.reason); 
+                            if (_v3_send(msg)) {
+                                _v3_debug(V3_DEBUG_SOCKET, "sent admin channel ban request to server");
+                            } else {
+                                _v3_debug(V3_DEBUG_SOCKET, "failed to send admin channel ban request");
+                            }
+                            _v3_destroy_packet(msg);
+                        }
+                        break;/*}}}*/
                     default:
                         _v3_debug(V3_DEBUG_EVENT, "received unknown event type %d from queue", ev.type);
                         break;
@@ -2886,6 +2919,42 @@ v3_admin_logout(void) {/*{{{*/
     fflush(v3_server.evoutstream);
     _v3_unlock_sendq();
     _v3_func_leave("v3_admin_logout");
+    return;
+}/*}}}*/
+
+void
+v3_admin_boot(enum _v3_boot_types type, uint16_t user_id, char *reason) {/*{{{*/
+    v3_event ev = {0};
+
+    _v3_func_enter("v3_admin_boot");
+    if (!v3_is_loggedin()) {
+        _v3_func_leave("v3_admin_boot");
+        return;
+    }
+            
+    ev.user.id = user_id;
+    strncpy(ev.data.reason, reason ? reason : "", sizeof(ev.data.reason));
+    
+    switch (type) {
+        case V3_BOOT_KICK:
+            ev.type = V3_EVENT_ADMIN_KICK;
+            break;
+        case V3_BOOT_BAN:
+            ev.type = V3_EVENT_ADMIN_BAN;
+            break;
+        case V3_BOOT_CHANNEL_BAN:
+            ev.type = V3_EVENT_ADMIN_CHANNEL_BAN;
+            break;
+    }
+
+    _v3_lock_sendq();
+    _v3_debug(V3_DEBUG_EVENT, "sending %lu bytes to event pipe", sizeof(v3_event));
+    if (fwrite(&ev, sizeof(struct _v3_event), 1, v3_server.evoutstream) != 1) {
+        _v3_error("could not write to event pipe");
+    }
+    fflush(v3_server.evoutstream);
+    _v3_unlock_sendq();
+    _v3_func_leave("v3_admin_boot");
     return;
 }/*}}}*/
 
