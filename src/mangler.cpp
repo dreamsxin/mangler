@@ -1014,6 +1014,10 @@ bool Mangler::checkPushToTalkMouse(void) {/*{{{*/
             break;
         }
     }
+    if (ctr == ndevices_return) {
+        return true;
+    }
+
     dev = XOpenDevice(GDK_WINDOW_XDISPLAY(rootwin), xdev[ctr].id);
     if (! dev) {
         return true;
