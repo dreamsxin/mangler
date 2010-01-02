@@ -936,6 +936,11 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                         chat->addChatMessage(ev->user.id, c_to_ustring(ev->data.chatmessage));
                 }
                 break;/*}}}*/
+            case V3_EVENT_ADMIN_AUTH:/*{{{*/
+                if (v3_is_loggedin()) {
+                    isAdmin = true;
+                }
+                break;/*}}}*/
             default:
                 fprintf(stderr, "******************************************************** got unknown event type %d\n", ev->type);
         }

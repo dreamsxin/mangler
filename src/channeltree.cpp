@@ -56,7 +56,6 @@ ManglerChannelTree::ManglerChannelTree(Glib::RefPtr<Gtk::Builder> builder)/*{{{*
     // setup drag and drop 
     channelView->enable_model_drag_source();
     channelView->enable_model_drag_dest();
-    channelView->signal_drag_drop().connect(sigc::mem_fun(this, &ManglerChannelTree::channelView_drag_drop_cb));
 
     // create our right click context menu for users and connect its signal
     builder->get_widget("userRightClickMenu", rcmenu_user);
@@ -64,6 +63,10 @@ ManglerChannelTree::ManglerChannelTree(Glib::RefPtr<Gtk::Builder> builder)/*{{{*
     menuitem->signal_activate().connect(sigc::mem_fun(this, &ManglerChannelTree::copyCommentMenuItem_activate_cb));
     builder->get_widget("copyURL", menuitem);
     menuitem->signal_activate().connect(sigc::mem_fun(this, &ManglerChannelTree::copyURLMenuItem_activate_cb));
+    builder->get_widget("kickUser", menuitem);
+    menuitem->signal_activate().connect(sigc::mem_fun(this, &ManglerChannelTree::kickUserMenuItem_activate_cb));
+    builder->get_widget("banUser", menuitem);
+    menuitem->signal_activate().connect(sigc::mem_fun(this, &ManglerChannelTree::banUserMenuItem_activate_cb));
 
     builder->get_widget("channelRightClickMenu", rcmenu_channel);
     builder->get_widget("addPhantom", menuitem);
@@ -576,6 +579,7 @@ ManglerChannelTree::channelView_buttonpress_event_cb(GdkEventButton* event) {/*{
             uint16_t id = row[channelRecord.id];
             Glib::ustring comment = row[channelRecord.comment];
             Glib::ustring url = row[channelRecord.url];
+            _v3_permissions *perms = v3_get_permissions();
 
             if (isUser) {
                 v3_user *user = v3_get_user(id);
@@ -584,13 +588,31 @@ ManglerChannelTree::channelView_buttonpress_event_cb(GdkEventButton* event) {/*{
                 builder->get_widget("copyURL", menuitem);
                 menuitem->set_sensitive(url.empty() ? false : true);
                 builder->get_widget("removePhantom", menuitem);
-                menuitem->hide();
-                if (user->id == v3_get_user_id()) {
-                    // we clicked ourself
-                }
                 if (user->real_user_id == v3_get_user_id()) {
                     // we clicked on one of our own phantoms
                     menuitem->show();
+                } else {
+                    menuitem->hide();
+                }
+                if (user->id == v3_get_user_id()) {
+                    // we clicked ourself
+                    builder->get_widget("kickUser", menuitem);
+                    menuitem->hide();
+                    builder->get_widget("banUser", menuitem);
+                    menuitem->hide();
+                } else {
+                    builder->get_widget("kickUser", menuitem);
+                    if (perms->kick_user) {
+                        menuitem->show();
+                    } else {
+                        menuitem->hide();
+                    }
+                    builder->get_widget("banUser", menuitem);
+                    if (perms->ban_user) {
+                        menuitem->show();
+                    } else {
+                        menuitem->hide();
+                    }
                 }
                 rcmenu_user->popup(event->button, event->time);
                 v3_free_user(user);
@@ -600,12 +622,6 @@ ManglerChannelTree::channelView_buttonpress_event_cb(GdkEventButton* event) {/*{
         }
     }
 }/*}}}*/
-
-bool
-ManglerChannelTree::channelView_drag_drop_cb(const Glib::RefPtr<Gdk::DragContext>& context, int x, int y, guint time) {
-    fprintf(stderr, "we're here\n");
-}
-
 
 void
 ManglerChannelTree::copyCommentMenuItem_activate_cb(void) {/*{{{*/
@@ -655,6 +671,36 @@ ManglerChannelTree::removePhantomMenuItem_activate_cb(void) {/*{{{*/
         uint16_t parent_id = row[channelRecord.parent_id];
         fprintf(stderr, "removing phantom id %d\n", parent_id);
         v3_phantom_remove(parent_id);
+    }
+}/*}}}*/
+
+void
+ManglerChannelTree::kickUserMenuItem_activate_cb(void) {/*{{{*/
+    Glib::RefPtr<Gtk::TreeSelection> sel = channelView->get_selection();
+    Gtk::TreeModel::iterator iter = sel->get_selected();
+    if(iter) {
+        Gtk::TreeModel::Row row = *iter;
+        bool isUser = row[channelRecord.isUser];
+        uint16_t id = row[channelRecord.id];
+        Glib::ustring name = row[channelRecord.name];
+        if (isUser) {
+            v3_admin_boot(V3_BOOT_KICK, id, NULL);
+        }
+    }
+}/*}}}*/
+
+void
+ManglerChannelTree::banUserMenuItem_activate_cb(void) {/*{{{*/
+    Glib::RefPtr<Gtk::TreeSelection> sel = channelView->get_selection();
+    Gtk::TreeModel::iterator iter = sel->get_selected();
+    if(iter) {
+        Gtk::TreeModel::Row row = *iter;
+        bool isUser = row[channelRecord.isUser];
+        uint16_t id = row[channelRecord.id];
+        Glib::ustring name = row[channelRecord.name];
+        if (isUser) {
+            v3_admin_boot(V3_BOOT_BAN, id, NULL);
+        }
     }
 }/*}}}*/
 
@@ -750,6 +796,10 @@ Glib::RefPtr<ManglerChannelStore> ManglerChannelStore::create() {
 bool
 ManglerChannelStore::row_draggable_vfunc(const Gtk::TreeModel::Path& path) const
 {
+    _v3_permissions *perms = v3_get_permissions();
+    if (! perms->move_user) {
+        return false;
+    }
     ManglerChannelStore* unconstThis = const_cast<ManglerChannelStore*>(this);
     const_iterator iter = unconstThis->get_iter(path);
     if(iter) {
@@ -793,7 +843,7 @@ ManglerChannelStore::drag_data_received_vfunc(const Gtk::TreeModel::Path& dest, 
     Gtk::TreeModel::Row srcrow = *srciter;
     int srcid = srcrow[c.id];
     Glib::ustring srcname = srcrow[c.name];
-    fprintf(stderr, "moving user %d - %s to ", srcid, (char *)srcname.c_str());
+    //fprintf(stderr, "moving user %d - %s to ", srcid, (char *)srcname.c_str());
 
     // The dest path will always be the where the channel would end up as a
     // child, so first thing is to go up a node in the tree and see if it's a
@@ -811,8 +861,11 @@ ManglerChannelStore::drag_data_received_vfunc(const Gtk::TreeModel::Path& dest, 
     }
     int destid = destrow[c.id];
     Glib::ustring destname = destrow[c.name];
-    fprintf(stderr, " %d - %s\n", destid, (char *)destname.c_str());
+    //fprintf(stderr, " %d - %s\n", destid, (char *)destname.c_str());
 
     v3_force_channel_move(srcid, destid);
+
+    // we always return false... if the move succeeds, we'll get an event
+    // telling us to move the user
     return false;
 }

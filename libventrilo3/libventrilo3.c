@@ -1598,7 +1598,8 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                     _v3_logout();
                 }
                 if(m->subtype & 0x02) {
-                    _v3_debug(V3_DEBUG_INTERNAL, "FIXME: Authenticated as administrator.");
+                    v3_event *ev = _v3_create_event(V3_EVENT_ADMIN_AUTH);
+                    v3_queue_event(ev);
                 }
                 if(m->subtype & 0x04) {
                     if (ventrilo_read_keys(&v3_server.client_key, &v3_server.server_key, m->encryption_key, msg->len - 12) < 0) {
@@ -3448,5 +3449,9 @@ v3_set_server_opts(uint8_t type, uint8_t value) {/*{{{*/
             v3_luser.accept_chat = value;
             break;
     }
+}/*}}}*/
+
+struct _v3_permissions *v3_get_permissions(void) {/*{{{*/
+    return &v3_luser.perms;
 }/*}}}*/
 

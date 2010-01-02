@@ -200,6 +200,7 @@ enum _v3_events
     V3_EVENT_CHAT_JOIN,
     V3_EVENT_CHAT_LEAVE,
     V3_EVENT_CHAT_MESSAGE,
+    V3_EVENT_ADMIN_AUTH,
 
     // outbound specific event types
     V3_EVENT_CHANGE_CHANNEL,
@@ -490,6 +491,8 @@ void        v3_start_audio(uint16_t send_type);
 void        v3_send_audio(uint16_t send_type, uint32_t rate, uint8_t *pcm, uint32_t length);
 void        v3_stop_audio(void);
 void        v3_set_server_opts(uint8_t type, uint8_t value);
+struct _v3_permissions *v3_get_permissions(void);
+
 
 
 // User list functions

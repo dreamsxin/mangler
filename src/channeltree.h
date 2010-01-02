@@ -123,11 +123,12 @@ class ManglerChannelTree
 
         void channelView_row_activated_cb(const Gtk::TreeModel::Path& path, Gtk::TreeViewColumn* column);
         void channelView_buttonpress_event_cb(GdkEventButton* event);
-        bool channelView_drag_drop_cb(const Glib::RefPtr<Gdk::DragContext>& context, int x, int y, guint time);
         void copyCommentMenuItem_activate_cb(void);
         void copyURLMenuItem_activate_cb(void);
         void addPhantomMenuItem_activate_cb(void);
         void removePhantomMenuItem_activate_cb(void);
+        void kickUserMenuItem_activate_cb(void);
+        void banUserMenuItem_activate_cb(void);
         void volumeAdjustment_value_changed_cb(uint16_t);
 
 };
