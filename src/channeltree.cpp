@@ -815,22 +815,12 @@ ManglerChannelStore::row_draggable_vfunc(const Gtk::TreeModel::Path& path) const
 bool
 ManglerChannelStore::row_drop_possible_vfunc(const Gtk::TreeModel::Path& dest, const Gtk::SelectionData& selection_data) const
 {
-    //fprintf(stderr, "test: %s %d\n", (char *)dest.to_string().c_str(), dest.get_depth());
     Gtk::TreeModel::Path dest_parent = dest;
     bool dest_is_not_top_level = dest_parent.up();
     if(!dest_is_not_top_level || dest_parent.empty()) {
         return false;
-    } else {
-        if (dest.to_string() == "0:0") {
-            return true;
-        }
-        if (dest[dest.get_depth()-1] == 0) {
-            //fprintf(stderr, "test: %d\n", dest[dest.get_depth()-1]);
-            return true;
-        }
-        return false;
     }
-    return false;
+    return true;
 }
 
 bool
@@ -846,10 +836,20 @@ ManglerChannelStore::drag_data_received_vfunc(const Gtk::TreeModel::Path& dest, 
     Glib::ustring srcname = srcrow[c.name];
     //fprintf(stderr, "moving user %d - %s to ", srcid, (char *)srcname.c_str());
 
-    // The dest path will always be the where the channel would end up as a
-    // child, so first thing is to go up a node in the tree and see if it's a
-    // channel
+    // because GTK allows you to drop things in places that don't really make
+    // sense in terms of ventrilo, we need to modify the drop path to make sense
+    // basically, if the path doesn't end in a 0, it's either in between users
+    // or in between channels.  Instead of adding to the parrent channel, tack
+    // a 0 on to the end of the path and decrement the destination to give us
+    // the previous channel/user
     Gtk::TreeModel::Path dest_parent = dest;
+    if (dest_parent[dest_parent.get_depth()-1] != 0) {
+        dest_parent[dest_parent.get_depth()-1]--;
+        dest_parent.push_back(0);
+    }
+    // The dest path will always be the where the channel would end up as a
+    // child, so next is to go up a node in the tree and see if it's a
+    // channel
     dest_parent.up();
     Gtk::TreeModel::iterator destiter = get_iter(dest_parent);
     Gtk::TreeModel::Row destrow = *destiter;
