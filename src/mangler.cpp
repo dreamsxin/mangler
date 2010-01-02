@@ -937,8 +937,13 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                 }
                 break;/*}}}*/
             case V3_EVENT_ADMIN_AUTH:/*{{{*/
-                if (v3_is_loggedin()) {
-                    isAdmin = true;
+                isAdmin = true;
+                {
+                    v3_user *lobby = v3_get_user(0);
+                    if (lobby) {
+                        channelTree->updateLobby(c_to_ustring(lobby->name), c_to_ustring(lobby->comment), lobby->phonetic);
+                        v3_free_user(lobby);
+                    }
                 }
                 break;/*}}}*/
             default:
