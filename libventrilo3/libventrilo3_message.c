@@ -82,6 +82,26 @@ _v3_get_msg_string(void *offset, uint16_t *len) {/*{{{*/
     return s;
 }/*}}}*/
 
+uint16_t *
+_v3_get_msg_uint16_array(void *offset, uint16_t *len) {/*{{{*/
+    uint16_t *s;
+    uint16_t ctr;
+
+    _v3_func_enter("_v3_get_msg_string");
+    memcpy(len, offset, 2);
+    *len = ntohs(*len);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "getting %d (0x%04X) 16 bit elements", *len, *len);
+    s = malloc(*len*2);
+    memset(s, 0, *len*2);
+    memcpy(s, offset+2, *len*2);
+    for (ctr = 0; ctr < *len; ctr++) {
+        s[ctr] = ntohs(s[ctr]);
+    } 
+    *len = (*len*2)+2;
+    _v3_func_leave("_v3_get_msg_string");
+    return s;
+}/*}}}*/
+
 int
 _v3_put_msg_string(void *buffer, char *string) {/*{{{*/
     int len;
@@ -198,6 +218,42 @@ _v3_get_0x06(_v3_net_message *msg) {/*{{{*/
     return true;
 }/*}}}*/
 
+/*}}}*/
+// Message 0x33 (51) | CHANNEL ADMIN INFO (?)/*{{{*/
+int
+_v3_get_0x33(_v3_net_message *msg) {/*{{{*/
+    _v3_msg_0x33 *m;
+    uint16_t len, ctr;
+    void *offset;
+
+    m = malloc(sizeof(_v3_msg_0x33));
+    _v3_func_enter("_v3_get_0x33");
+    memcpy(m, msg->data, 52);
+    offset = (void *)msg->data + 52;
+    m->channel_ids = (uint16_t *)_v3_get_msg_uint16_array(offset, &len);
+    offset+=len;
+    // len is the byte length in the packet.  the number of elements in the
+    // array (the channel count) is (len - 2) / 2
+    m->channel_id_count = (len - 2) / 2;
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "Channel Admin for %d channels", m->channel_id_count);
+    for (ctr = 0; ctr < m->channel_id_count; ctr++) {
+        _v3_debug(V3_DEBUG_PACKET_PARSE, " * channel %d", m->channel_ids[ctr]);
+    }
+    _v3_func_leave("_v3_get_0x33");
+    msg->contents = m;
+    return true;
+}/*}}}*/
+int
+_v3_destroy_0x33(_v3_net_message *msg) {/*{{{*/
+    _v3_msg_0x33 *m;
+
+    m = msg->contents;
+    _v3_func_enter("_v3_destroy_0x33");
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "freeing resources channel admin list packet");
+    free(m->channel_ids);
+    _v3_func_leave("_v3_destroy_0x33");
+    return true;
+}/*}}}*/
 /*}}}*/
 // Message 0x37 (55) | PING /*{{{*/
 int

@@ -557,6 +557,9 @@ void Mangler::motdOkButton_clicked_cb(void) {/*{{{*/
 }/*}}}*/
 
 // Timeout Callbacks
+/*
+ * Inbound event processing happens here
+ */
 bool Mangler::getNetworkEvent() {/*{{{*/
     v3_event *ev;
 
@@ -945,6 +948,9 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                         v3_free_user(lobby);
                     }
                 }
+                break;/*}}}*/
+            case V3_EVENT_CHAN_ADMIN_UPDATED:/*{{{*/
+                channelTree->refreshAllChannels();
                 break;/*}}}*/
             default:
                 fprintf(stderr, "******************************************************** got unknown event type %d\n", ev->type);

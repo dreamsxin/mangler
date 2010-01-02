@@ -1649,6 +1649,25 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                     return V3_OK;
                 }
             }/*}}}*/
+        case 0x33:/*{{{*/
+            if (!_v3_get_0x33(msg)) {
+                _v3_destroy_packet(msg);
+                _v3_func_leave("_v3_process_message");
+                return V3_MALFORMED;
+            } else {
+                int ctr;
+                _v3_msg_0x33 *m = msg->contents;
+                memset(v3_luser.channel_admin, 0, 65535);
+                for (ctr = 0; ctr < m->channel_id_count; ctr++) {
+                    v3_luser.channel_admin[m->channel_ids[ctr]] = 1;
+                }
+                v3_event *ev = _v3_create_event(V3_EVENT_CHAN_ADMIN_UPDATED);
+                v3_queue_event(ev);
+            }
+            _v3_destroy_0x33(msg);
+            _v3_destroy_packet(msg);
+            _v3_func_leave("_v3_process_message");
+            return V3_OK;/*}}}*/
         case 0x3b:/*{{{*/
             /*
              *  This is almost identical to 0x53, so whatever you do here probably
@@ -3404,6 +3423,33 @@ v3_stop_audio(void) {/*{{{*/
     return;
 }/*}}}*/
 
+void
+v3_set_server_opts(uint8_t type, uint8_t value) {/*{{{*/
+    switch (type) {
+        case V3_USER_ACCEPT_PAGES:
+            v3_luser.accept_pages = value;
+            break;
+        case V3_USER_ACCEPT_U2U:
+            v3_luser.accept_u2u = value;
+            break;
+        case V3_USER_ALLOW_RECORD:
+            v3_luser.allow_recording = value;
+            break;
+        case V3_USER_ACCEPT_CHAT:
+            v3_luser.accept_chat = value;
+            break;
+    }
+}/*}}}*/
+
+struct _v3_permissions *
+v3_get_permissions(void) {/*{{{*/
+    return &v3_luser.perms;
+}/*}}}*/
+
+uint8_t
+v3_is_channel_admin(uint16_t channel_id) {/*{{{*/
+    return v3_luser.channel_admin[channel_id];
+}/*}}}*/
 
 /*
  * Using these functions may chew up CPU since they perform mathmetical
@@ -3438,27 +3484,5 @@ v3_get_volume_user(uint16_t id) {/*{{{*/
 uint8_t
 v3_get_volume_luser(void) {/*{{{*/
     return v3_get_volume_user(v3_get_user_id());
-}/*}}}*/
-
-void
-v3_set_server_opts(uint8_t type, uint8_t value) {/*{{{*/
-    switch (type) {
-        case V3_USER_ACCEPT_PAGES:
-            v3_luser.accept_pages = value;
-            break;
-        case V3_USER_ACCEPT_U2U:
-            v3_luser.accept_u2u = value;
-            break;
-        case V3_USER_ALLOW_RECORD:
-            v3_luser.allow_recording = value;
-            break;
-        case V3_USER_ACCEPT_CHAT:
-            v3_luser.accept_chat = value;
-            break;
-    }
-}/*}}}*/
-
-struct _v3_permissions *v3_get_permissions(void) {/*{{{*/
-    return &v3_luser.perms;
 }/*}}}*/
 

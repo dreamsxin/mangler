@@ -270,6 +270,9 @@ ManglerChannelTree::addChannel(uint8_t protect_mode, uint32_t id, uint32_t paren
         fprintf(stderr, "orphaned channel: id %d: %s is supposed to be a child of %d\n", id, name.c_str(), parent_id);
     }
     displayName = name;
+    if (v3_is_channel_admin(id)) {
+        displayName = "[A] " + displayName;
+    }
     if (! comment.empty()) {
         displayName = displayName + " (" + comment + ")";
     }
@@ -322,6 +325,9 @@ ManglerChannelTree::updateChannel(uint8_t protect_mode, uint32_t id, uint32_t pa
         fprintf(stderr, "channel missing: id: %d - name: %s - parent; %d\n", id, name.c_str(), parent_id);
     }
     displayName = name;
+    if (v3_is_channel_admin(id)) {
+        displayName = "[A] " + displayName;
+    }
     if (! comment.empty()) {
         displayName = displayName + " (" + comment + ")";
     }
@@ -347,6 +353,53 @@ ManglerChannelTree::updateChannel(uint8_t protect_mode, uint32_t id, uint32_t pa
     channel[channelRecord.url]               = "";
     channel[channelRecord.integration_text]  = "";
     channel[channelRecord.password]          = "";
+}/*}}}*/
+
+void
+ManglerChannelTree::refreshChannel(uint32_t id) {/*{{{*/
+    Glib::ustring displayName = "";
+    Gtk::TreeModel::Row channel;
+    Glib::ustring name;
+    Glib::ustring phonetic;
+    Glib::ustring comment;
+
+    if (! (channel = getChannel(id, channelStore->children())) && id > 0) {
+        fprintf(stderr, "channel missing: id: %d\n", id);
+    }
+    name = channel[channelRecord.name];
+    comment = channel[channelRecord.comment];
+    phonetic = channel[channelRecord.phonetic];
+    displayName = name;
+    if (v3_is_channel_admin(id)) {
+        displayName = "[A] " + displayName;
+    }
+    if (! comment.empty()) {
+        displayName = displayName + " (" + comment + ")";
+    }
+    channel[channelRecord.displayName]       = displayName;
+}/*}}}*/
+
+void
+ManglerChannelTree::refreshAllChannels(void) {/*{{{*/
+    _refreshAllChannels(channelStore->children());
+}
+
+void
+ManglerChannelTree::_refreshAllChannels(Gtk::TreeModel::Children children) {/*{{{*/
+    Gtk::TreeModel::Children::iterator iter = children.begin();
+    while (iter != children.end()) {
+        Gtk::TreeModel::Row row = *iter;
+        uint32_t id = row[channelRecord.id];
+        uint32_t isUser = row[channelRecord.isUser];
+        if (!isUser) {
+            refreshChannel(id);
+        }
+        if (row.children().size()) {
+            _refreshAllChannels(row.children());
+        }
+        iter++;
+    }
+    return;
 }/*}}}*/
 
 /*

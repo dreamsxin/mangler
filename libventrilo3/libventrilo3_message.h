@@ -76,6 +76,14 @@ typedef struct _v3_net_message_0x06 {/*{{{*/
     uint8_t* encryption_key;
 } _v3_msg_0x06;
 int _v3_get_0x06(_v3_net_message *msg);/*}}}*/
+typedef struct _v3_net_message_0x33 {/*{{{*/
+    uint32_t type;              // 0
+    uint8_t  unkonwn[48];       // 4
+    uint16_t channel_id_count;  // 52
+    uint16_t *channel_ids;      // 54 - array of uint16_t - variable length starts list  
+} _v3_msg_0x33;
+int _v3_get_0x33(_v3_net_message *msg);
+int _v3_destroy_0x33(_v3_net_message *msg);/*}}}*/
 typedef struct _v3_net_message_0x37 {/*{{{*/
     uint32_t type;              // 0
     uint16_t user_id;           // 4
