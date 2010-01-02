@@ -797,7 +797,8 @@ bool
 ManglerChannelStore::row_draggable_vfunc(const Gtk::TreeModel::Path& path) const
 {
     _v3_permissions *perms = v3_get_permissions();
-    if (! perms->move_user || !perms->srv_admin) {
+    //if (! perms->move_user || !perms->srv_admin) {
+    if (! perms->move_user) {
         return false;
     }
     ManglerChannelStore* unconstThis = const_cast<ManglerChannelStore*>(this);
