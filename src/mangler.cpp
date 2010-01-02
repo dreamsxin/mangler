@@ -878,6 +878,7 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                     mangler->statusIcon->set(icons["tray_icon_grey"]);
                     audioControl->playNotification("logout");
                     connectedServerId = -1;
+                    isAdmin = false;
                     chat->clear();
                 }
                 break;/*}}}*/

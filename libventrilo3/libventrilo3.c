@@ -831,6 +831,17 @@ _v3_recv(int block) {/*{{{*/
                             _v3_destroy_packet(msg);
                         }
                         break;/*}}}*/
+                    case V3_EVENT_FORCE_CHAN_MOVE:/*{{{*/
+                        {
+                            _v3_net_message *msg = _v3_put_0x3b(ev.user.id, ev.channel.id);
+                            if (_v3_send(msg)) {
+                                _v3_debug(V3_DEBUG_SOCKET, "sent force channel move request to server (userid %d to chan %d)", ev.user.id, ev.channel.id);
+                            } else {
+                                _v3_debug(V3_DEBUG_SOCKET, "failed to send force channel move request");
+                            }
+                            _v3_destroy_packet(msg);
+                        }
+                        break;/*}}}*/
                     case V3_EVENT_ADMIN_LOGIN:/*{{{*/
                         {
                             _v3_net_message *msg = _v3_put_0x63(V3_ADMIN_LOGIN, 0, ev.text.password);
@@ -1648,7 +1659,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
             } else {
                 _v3_msg_0x3b *m = msg->contents;
                 v3_user *user;
-                _v3_debug(V3_DEBUG_INFO, "user %d moved to channel %d", m->user_id, m->channel_id);
+                _v3_debug(V3_DEBUG_INFO, "user %d force moved to channel %d", m->user_id, m->channel_id);
                 user = v3_get_user(m->user_id);
                 user->channel = m->channel_id;
                 _v3_update_user(user);
@@ -2844,6 +2855,30 @@ v3_phantom_add(uint16_t channel_id) {/*{{{*/
     fflush(v3_server.evoutstream);
     _v3_unlock_sendq();
     _v3_func_leave("v3_phantom_add");
+}/*}}}*/
+
+void
+v3_force_channel_move(uint16_t user_id, uint16_t channel_id) {/*{{{*/
+    v3_event ev;
+
+    _v3_func_enter("v3_force_channel_move");
+    if (!v3_is_loggedin()) {
+        _v3_func_leave("v3_force_channel_move");
+        return;
+    }
+    memset(&ev, 0, sizeof(v3_event));
+    ev.type = V3_EVENT_FORCE_CHAN_MOVE;
+    ev.channel.id = channel_id;
+    ev.user.id = user_id;
+    _v3_lock_sendq();
+    _v3_debug(V3_DEBUG_EVENT, "sending %lu bytes to event pipe", sizeof(v3_event));
+    if (fwrite(&ev, sizeof(struct _v3_event), 1, v3_server.evoutstream) != 1) {
+        _v3_error("could not write to event pipe");
+    }
+    fflush(v3_server.evoutstream);
+    _v3_unlock_sendq();
+    _v3_func_leave("v3_force_channel_move");
+    return;
 }/*}}}*/
 
 void

@@ -210,10 +210,10 @@ enum _v3_events
     V3_EVENT_ADMIN_KICK,
     V3_EVENT_ADMIN_BAN,
     V3_EVENT_ADMIN_CHANNEL_BAN,
+    V3_EVENT_FORCE_CHAN_MOVE,
 
     // not implemented
     V3_EVENT_USER_PAGED,
-    V3_EVENT_LUSER_FORCE_CHAN_MOVE,
     V3_EVENT_CHAN_REMOVED,
     V3_EVENT_CHAN_MODIFIED,
     V3_EVENT_RECV_AUDIO,
@@ -470,6 +470,7 @@ void        v3_admin_logout(void);
 void        v3_admin_boot(enum _v3_boot_types type, uint16_t user_id, char *reason);
 void        v3_phantom_add(uint16_t channel_id);
 void        v3_phantom_remove(uint16_t channel_id);
+void        v3_force_channel_move(uint16_t user_id, uint16_t channel_id);
 int         v3_debuglevel(uint32_t level);
 int         v3_is_loggedin(void);
 uint16_t    v3_get_user_id(void);

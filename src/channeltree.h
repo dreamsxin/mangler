@@ -28,7 +28,7 @@
 #define _CHANNELTREE_H
 #include <sys/types.h>
 
-class channelModelColumns : public Gtk::TreeModelColumnRecord/*{{{*/
+class channelModelColumns : public Gtk::TreeModel::ColumnRecord/*{{{*/
 {
     public:
         channelModelColumns() {
@@ -61,12 +61,27 @@ class channelModelColumns : public Gtk::TreeModelColumnRecord/*{{{*/
         Gtk::TreeModelColumn<Glib::ustring>                 last_transmit;
         Gtk::TreeModelColumn<Glib::ustring>                 password;
 };/*}}}*/
+class ManglerChannelStore : public Gtk::TreeStore
+{
+    public:
+        static Glib::RefPtr<ManglerChannelStore> create();
+        channelModelColumns                 c;
+
+    protected:
+        ManglerChannelStore() {
+            set_column_types(c);
+        }
+        virtual bool row_draggable_vfunc(const Gtk::TreeModel::Path& path) const;
+        virtual bool row_drop_possible_vfunc(const Gtk::TreeModel::Path& dest, const Gtk::SelectionData& selection_data) const;
+        virtual bool drag_data_received_vfunc(const Gtk::TreeModel::Path& dest, const Gtk::SelectionData& selection_data);
+};
+
 class ManglerChannelTree
 {
     private:
         Glib::RefPtr<Gtk::Builder>          builder;
         channelModelColumns                 channelRecord;
-        Glib::RefPtr<Gtk::TreeStore>        channelStore;
+        Glib::RefPtr<ManglerChannelStore>   channelStore;
         Gtk::TreeModel::iterator            channelIter;
         Gtk::TreeModel::Row                 channelRow;
         Gtk::TreeViewColumn                 *column;
@@ -108,6 +123,7 @@ class ManglerChannelTree
 
         void channelView_row_activated_cb(const Gtk::TreeModel::Path& path, Gtk::TreeViewColumn* column);
         void channelView_buttonpress_event_cb(GdkEventButton* event);
+        bool channelView_drag_drop_cb(const Glib::RefPtr<Gdk::DragContext>& context, int x, int y, guint time);
         void copyCommentMenuItem_activate_cb(void);
         void copyURLMenuItem_activate_cb(void);
         void addPhantomMenuItem_activate_cb(void);

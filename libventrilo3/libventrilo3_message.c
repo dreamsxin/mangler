@@ -294,6 +294,30 @@ _v3_get_0x3b(_v3_net_message *msg) {/*{{{*/
     _v3_func_leave("_v3_get_0x3b");
     return true;
 }/*}}}*/
+_v3_net_message *
+_v3_put_0x3b(uint16_t userid, uint16_t channelid) {/*{{{*/
+    _v3_net_message *m;
+    _v3_msg_0x3b *mc;
+
+    _v3_func_enter("_v3_put_0x3b");
+    // Build our message
+    m = malloc(sizeof(_v3_net_message));
+    memset(m, 0, sizeof(_v3_net_message));
+    m->type = 0x3b;
+    m->len = sizeof(_v3_msg_0x3b);
+
+    // Build our message contents
+    mc = malloc(sizeof(_v3_msg_0x3b));
+    memset(mc, 0, sizeof(_v3_msg_0x3b));
+
+    mc->type = 0x3b;
+    mc->user_id = userid;
+    mc->channel_id = channelid;
+    m->contents = mc;
+    m->data = (char *)mc;
+    _v3_func_leave("_v3_put_0x3b");
+    return m;
+}/*}}}*/
 /*}}}*/
 // Message 0x3c (60) | CODEC INFORMATION /*{{{*/
 int
@@ -314,34 +338,9 @@ _v3_get_0x3c(_v3_net_message *msg) {/*{{{*/
     return true;
 }/*}}}*/
 /*}}}*/
-// Message 0x4b (75) | TIMESTAMP /*{{{*/
-
-_v3_net_message *_v3_put_0x4b(void) {/*{{{*/
-    _v3_net_message *m;
-    _v3_msg_0x4b *mc;
-
-    _v3_func_enter("_v3_put_0x4b");
-    // Build our message
-    m = malloc(sizeof(_v3_net_message));
-    memset(m, 0, sizeof(_v3_net_message));
-    m->type = 0x4b;
-    m->len = sizeof(_v3_msg_0x4b);
-
-    // Build our message contents
-    mc = malloc(sizeof(_v3_msg_0x4b));
-    memset(mc, 0, sizeof(_v3_msg_0x4b));
-
-    mc->type = 0x4b;
-    mc->timestamp = time(NULL);
-    m->contents = mc;
-    m->data = (char *)mc;
-    _v3_func_leave("_v3_put_0x4b");
-    return m;
-}/*}}}*/
-/*}}}*/
-
+// Message 0x42 (66) | CHAT/RCON /*{{{*/
 int 
-_v3_get_0x42(_v3_net_message *msg) {
+_v3_get_0x42(_v3_net_message *msg) {/*{{{*/
     _v3_msg_0x42 *m;
     _v3_func_enter("_v3_get_0x42");
     m = msg->contents = msg->data;
@@ -353,9 +352,8 @@ _v3_get_0x42(_v3_net_message *msg) {
     }
     _v3_func_leave("_v3_get_0x42");
     return true;
-}
-
-_v3_net_message *_v3_put_0x42(uint16_t subtype, uint16_t user_id, char* message) {
+}/*}}}*/
+_v3_net_message *_v3_put_0x42(uint16_t subtype, uint16_t user_id, char* message) {/*{{{*/
     _v3_net_message *m;
     _v3_msg_0x42 *mc;
 
@@ -385,8 +383,8 @@ _v3_net_message *_v3_put_0x42(uint16_t subtype, uint16_t user_id, char* message)
     m->len = len;
     _v3_func_leave("_v3_put_0x42");
     return m;
-}
-
+}/*}}}*/
+/*}}}*/
 // Message 0x46 (70) | USER OPTIONS /*{{{*/
 int
 _v3_get_0x46(_v3_net_message *msg) {/*{{{*/
@@ -623,6 +621,31 @@ _v3_get_0x4a(_v3_net_message *msg) {/*{{{*/
     _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown_perm_15.....: %d",   m->unknown_perm_15);
     _v3_func_leave("_v3_get_0x4a");
     return true;
+}/*}}}*/
+/*}}}*/
+// Message 0x4b (75) | TIMESTAMP /*{{{*/
+
+_v3_net_message *_v3_put_0x4b(void) {/*{{{*/
+    _v3_net_message *m;
+    _v3_msg_0x4b *mc;
+
+    _v3_func_enter("_v3_put_0x4b");
+    // Build our message
+    m = malloc(sizeof(_v3_net_message));
+    memset(m, 0, sizeof(_v3_net_message));
+    m->type = 0x4b;
+    m->len = sizeof(_v3_msg_0x4b);
+
+    // Build our message contents
+    mc = malloc(sizeof(_v3_msg_0x4b));
+    memset(mc, 0, sizeof(_v3_msg_0x4b));
+
+    mc->type = 0x4b;
+    mc->timestamp = time(NULL);
+    m->contents = mc;
+    m->data = (char *)mc;
+    _v3_func_leave("_v3_put_0x4b");
+    return m;
 }/*}}}*/
 /*}}}*/
 // Message 0x50 (80) | MOTD /*{{{*/

@@ -35,7 +35,7 @@ ManglerChannelTree::ManglerChannelTree(Glib::RefPtr<Gtk::Builder> builder)/*{{{*
 {
     this->builder = builder;
     // Create the Channel Store
-    channelStore = Gtk::TreeStore::create(channelRecord);
+    channelStore = ManglerChannelStore::create();
 
     // Create the Channel View
     builder->get_widget("channelView", channelView);
@@ -52,6 +52,11 @@ ManglerChannelTree::ManglerChannelTree(Glib::RefPtr<Gtk::Builder> builder)/*{{{*
     // connect our callbacks for clicking on rows
     channelView->signal_row_activated().connect(sigc::mem_fun(this, &ManglerChannelTree::channelView_row_activated_cb));
     channelView->signal_button_press_event().connect_notify(sigc::mem_fun(this, &ManglerChannelTree::channelView_buttonpress_event_cb));
+
+    // setup drag and drop 
+    channelView->enable_model_drag_source();
+    channelView->enable_model_drag_dest();
+    channelView->signal_drag_drop().connect(sigc::mem_fun(this, &ManglerChannelTree::channelView_drag_drop_cb));
 
     // create our right click context menu for users and connect its signal
     builder->get_widget("userRightClickMenu", rcmenu_user);
@@ -596,6 +601,12 @@ ManglerChannelTree::channelView_buttonpress_event_cb(GdkEventButton* event) {/*{
     }
 }/*}}}*/
 
+bool
+ManglerChannelTree::channelView_drag_drop_cb(const Glib::RefPtr<Gdk::DragContext>& context, int x, int y, guint time) {
+    fprintf(stderr, "we're here\n");
+}
+
+
 void
 ManglerChannelTree::copyCommentMenuItem_activate_cb(void) {/*{{{*/
     Glib::RefPtr<Gtk::Clipboard> clipboard = Gtk::Clipboard::get();
@@ -732,3 +743,76 @@ getTimeString(void) {/*{{{*/
     return cppbuf;
 }/*}}}*/
 
+Glib::RefPtr<ManglerChannelStore> ManglerChannelStore::create() {
+    return Glib::RefPtr<ManglerChannelStore>( new ManglerChannelStore() );
+}
+
+bool
+ManglerChannelStore::row_draggable_vfunc(const Gtk::TreeModel::Path& path) const
+{
+    ManglerChannelStore* unconstThis = const_cast<ManglerChannelStore*>(this);
+    const_iterator iter = unconstThis->get_iter(path);
+    if(iter) {
+        Row row = *iter;
+        bool is_draggable = row[c.isUser];
+        return is_draggable;
+    }
+
+    return Gtk::TreeStore::row_draggable_vfunc(path);
+}
+
+bool
+ManglerChannelStore::row_drop_possible_vfunc(const Gtk::TreeModel::Path& dest, const Gtk::SelectionData& selection_data) const
+{
+    //fprintf(stderr, "test: %s %d\n", (char *)dest.to_string().c_str(), dest.get_depth());
+    Gtk::TreeModel::Path dest_parent = dest;
+    bool dest_is_not_top_level = dest_parent.up();
+    if(!dest_is_not_top_level || dest_parent.empty()) {
+        return false;
+    } else {
+        if (dest.to_string() == "0:0") {
+            return true;
+        }
+        if (dest[dest.get_depth()-1] == 0) {
+            //fprintf(stderr, "test: %d\n", dest[dest.get_depth()-1]);
+            return true;
+        }
+        return false;
+    }
+    return false;
+}
+
+bool
+ManglerChannelStore::drag_data_received_vfunc(const Gtk::TreeModel::Path& dest, const Gtk::SelectionData& selection_data)
+{
+    // This is confusing... i'll try to explain
+    // First, let's find out who we're moving
+    Gtk::TreeModel::Path path_dragged_row;
+    Gtk::TreeModel::Path::get_from_selection_data(selection_data, path_dragged_row);
+    Gtk::TreeModel::iterator srciter = get_iter(path_dragged_row);
+    Gtk::TreeModel::Row srcrow = *srciter;
+    int srcid = srcrow[c.id];
+    Glib::ustring srcname = srcrow[c.name];
+    fprintf(stderr, "moving user %d - %s to ", srcid, (char *)srcname.c_str());
+
+    // The dest path will always be the where the channel would end up as a
+    // child, so first thing is to go up a node in the tree and see if it's a
+    // channel
+    Gtk::TreeModel::Path dest_parent = dest;
+    dest_parent.up();
+    Gtk::TreeModel::iterator destiter = get_iter(dest_parent);
+    Gtk::TreeModel::Row destrow = *destiter;
+    bool isUser = destrow[c.isUser];
+    if (isUser) {
+        // If it's a user, go up another node to get that user's channel
+        dest_parent.up();
+        destiter = get_iter(dest_parent);
+        destrow = *destiter;
+    }
+    int destid = destrow[c.id];
+    Glib::ustring destname = destrow[c.name];
+    fprintf(stderr, " %d - %s\n", destid, (char *)destname.c_str());
+
+    v3_force_channel_move(srcid, destid);
+    return false;
+}
