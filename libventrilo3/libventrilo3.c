@@ -2140,6 +2140,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                 v3_event *ev = _v3_create_event(0);
                 switch (m->header.subtype) {
                     case 0x00:
+                    case 0x04:
                         {
                             ev->type = V3_EVENT_USER_TALK_START;
                             ev->user.id = m->header.user_id;

@@ -814,25 +814,23 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                 errorDialog(c_to_ustring(ev->error.message));
                 break;/*}}}*/
             case V3_EVENT_USER_TALK_START:/*{{{*/
-                if (v3_is_loggedin()) {
-                    v3_user *me, *user;
-                    me = v3_get_user(v3_get_user_id());
-                    user = v3_get_user(ev->user.id);
-                    channelTree->setUserIcon(ev->user.id, "orange");
-                    if (me && user && me->channel == user->channel) {
-                        v3_free_user(me);
-                        v3_free_user(user);
+                v3_user *me, *user;
+                me = v3_get_user(v3_get_user_id());
+                user = v3_get_user(ev->user.id);
+                channelTree->setUserIcon(ev->user.id, "orange");
+                if (me && user && me->channel == user->channel) {
+                    v3_free_user(me);
+                    v3_free_user(user);
+                } else {
+                    if (!me) {
+                        fprintf(stderr, "couldn't find my own user info %d\n", v3_get_user_id());
                     } else {
-                        if (!me) {
-                            fprintf(stderr, "couldn't find my own user info %d\n", v3_get_user_id());
-                        } else {
-                            v3_free_user(me);
-                        }
-                        if (!user) {
-                            fprintf(stderr, "couldn't find user for for user id %d\n", ev->user.id);
-                        } else {
-                            v3_free_user(user);
-                        }
+                        v3_free_user(me);
+                    }
+                    if (!user) {
+                        fprintf(stderr, "couldn't find user for for user id %d\n", ev->user.id);
+                    } else {
+                        v3_free_user(user);
                     }
                 }
                 break;/*}}}*/

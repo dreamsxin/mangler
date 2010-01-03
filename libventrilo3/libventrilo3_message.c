@@ -795,6 +795,7 @@ _v3_get_0x52(_v3_net_message *msg) {/*{{{*/
     _v3_debug(V3_DEBUG_PACKET_PARSE, "pcm length....: %d", m->pcm_length);
     switch (m->subtype) {
         case 0x00:
+        case 0x04:
             {
                 _v3_msg_0x52_0x00 *msub = (_v3_msg_0x52_0x00 *)m;
                 msub = realloc(m, sizeof(_v3_msg_0x52_0x00));
@@ -1316,16 +1317,15 @@ _v3_get_0x5d(_v3_net_message *msg) {/*{{{*/
     m->user_list = calloc(m->user_count, sizeof(_v3_msg_user));
     for (ctr = 0, offset = msg->data + 8; ctr < m->user_count; ctr++) {
         offset += _v3_get_msg_user(offset, &m->user_list[ctr]);
-        _v3_debug(V3_DEBUG_PACKET_PARSE, "got user: id: %d | chan: %d | name: %s | phonetic: %s | comment: %s | int: %s | url: %s | guest %d",
-                m->user_list[ctr].id,
-                m->user_list[ctr].channel,
-                m->user_list[ctr].name,
-                m->user_list[ctr].phonetic,
-                m->user_list[ctr].comment,
-                m->user_list[ctr].integration_text,
-                m->user_list[ctr].url
-                );
-
+        _v3_debug(V3_DEBUG_PACKET_PARSE, "got user: id              : %d", m->user_list[ctr].id);
+        _v3_debug(V3_DEBUG_PACKET_PARSE, "          channel         : %d", m->user_list[ctr].channel);
+        _v3_debug(V3_DEBUG_PACKET_PARSE, "          name            : %s", m->user_list[ctr].name);
+        _v3_debug(V3_DEBUG_PACKET_PARSE, "          phonetic        : %s", m->user_list[ctr].phonetic);
+        _v3_debug(V3_DEBUG_PACKET_PARSE, "          comment         : %s", m->user_list[ctr].comment);
+        _v3_debug(V3_DEBUG_PACKET_PARSE, "          integration_text: %s", m->user_list[ctr].integration_text);
+        _v3_debug(V3_DEBUG_PACKET_PARSE, "          url             : %s", m->user_list[ctr].url);
+        _v3_debug(V3_DEBUG_PACKET_PARSE, "          flags           : %d", m->user_list[ctr].bitfield);
+        _v3_debug(V3_DEBUG_PACKET_PARSE, "          rank id         : %d", m->user_list[ctr].rank_id);
     }
     m->lobby = &m->user_list[0];
     msg->contents = m;
