@@ -858,19 +858,15 @@ Glib::RefPtr<ManglerChannelStore> ManglerChannelStore::create() {/*{{{*/
 bool
 ManglerChannelStore::row_draggable_vfunc(const Gtk::TreeModel::Path& path) const {/*{{{*/
     _v3_permissions *perms = v3_get_permissions();
-    //if (! perms->move_user || !perms->srv_admin) {
-    if (! perms->move_user) {
-        return false;
-    }
     ManglerChannelStore* unconstThis = const_cast<ManglerChannelStore*>(this);
     const_iterator iter = unconstThis->get_iter(path);
-    if(iter) {
-        Row row = *iter;
-        bool is_draggable = row[c.isUser];
-        return is_draggable;
-    }
-
-    return Gtk::TreeStore::row_draggable_vfunc(path);
+    if (!iter) 
+        return Gtk::TreeStore::row_draggable_vfunc(path);
+    
+    Row row = *iter;
+    if (row[c.isUser] && perms->move_user && (perms->srv_admin || v3_is_channel_admin(v3_get_user_channel(row[c.id]))))
+        return true;
+    return false;
 }/*}}}*/
 
 bool

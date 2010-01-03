@@ -326,7 +326,7 @@ _v3_get_0x37(_v3_net_message *msg) {/*{{{*/
 
     _v3_func_enter("_v3_get_0x37");
     if (msg->len != sizeof(_v3_msg_0x37)) {
-        _v3_debug(V3_DEBUG_PACKET_PARSE, "expected %d bytes, but message is %d bytes", sizeof(_v3_msg_0x4a), msg->len);
+        _v3_debug(V3_DEBUG_PACKET_PARSE, "expected %d bytes, but message is %d bytes", sizeof(_v3_msg_0x37), msg->len);
         _v3_func_leave("_v3_get_0x37");
         return false;
     }
@@ -512,7 +512,7 @@ _v3_get_0x46(_v3_net_message *msg) {/*{{{*/
 
     _v3_func_enter("_v3_get_0x46");
     if (msg->len != sizeof(_v3_msg_0x46)) {
-        _v3_debug(V3_DEBUG_PACKET_PARSE, "expected %d bytes, but message is %d bytes", sizeof(_v3_msg_0x4a), msg->len);
+        _v3_debug(V3_DEBUG_PACKET_PARSE, "expected %d bytes, but message is %d bytes", sizeof(_v3_msg_0x46), msg->len);
         _v3_func_leave("_v3_get_0x46");
         return false;
     }
