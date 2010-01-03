@@ -766,6 +766,13 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                             audioControl->playNotification("channelleave");
                         }
                     }
+                    if (u->rank_id) {
+                        v3_rank *r;
+                        if ((r = v3_get_rank(u->rank_id))) {
+                            rank = c_to_ustring(r->name);
+                            v3_free_rank(r);
+                        }
+                    }
                     //fprintf(stderr, "moving user id %d to channel id %d\n", ev->user.id, ev->channel.id);
                     Glib::ustring last_transmit = channelTree->getLastTransmit((uint32_t)ev->user.id);
                     channelTree->removeUser((uint32_t)ev->user.id);
@@ -778,7 +785,8 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                             u->url,
                             c_to_ustring(u->integration_text),
                             (bool)u->guest,
-                            (bool)u->real_user_id);
+                            (bool)u->real_user_id,
+                            rank);
                     channelTree->setLastTransmit(ev->user.id, last_transmit);
                     v3_free_user(u);
                 }
@@ -919,6 +927,13 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                         break;
                     }
                     if (u->id != 0) {
+                        if (u->rank_id) {
+                            v3_rank *r;
+                            if ((r = v3_get_rank(u->rank_id))) {
+                                rank = c_to_ustring(r->name);
+                                v3_free_rank(r);
+                            }
+                        }
                         channelTree->updateUser(
                                 (uint32_t)u->id,
                                 (uint32_t)u->channel,
@@ -928,7 +943,8 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                                 u->url,
                                 c_to_ustring(u->integration_text),
                                 (bool)u->guest,
-                                (bool)u->real_user_id);
+                                (bool)u->real_user_id,
+                                rank);
                     }
                     v3_free_user(u);
                 }
@@ -942,6 +958,13 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                         break;
                     }
                     if (u->id != 0) {
+                        if (u->rank_id) {
+                            v3_rank *r;
+                            if ((r = v3_get_rank(u->rank_id))) {
+                                rank = c_to_ustring(r->name);
+                                v3_free_rank(r);
+                            }
+                        }
                         channelTree->updateUser(
                                 (uint32_t)u->id,
                                 (uint32_t)u->channel,
@@ -951,7 +974,8 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                                 u->url,
                                 c_to_ustring(u->integration_text),
                                 (bool)u->guest,
-                                (bool)u->real_user_id);
+                                (bool)u->real_user_id,
+                                rank);
                     }
                     v3_free_user(u);
                 }
