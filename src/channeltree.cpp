@@ -67,6 +67,10 @@ ManglerChannelTree::ManglerChannelTree(Glib::RefPtr<Gtk::Builder> builder)/*{{{*
     menuitem->signal_activate().connect(sigc::mem_fun(this, &ManglerChannelTree::kickUserMenuItem_activate_cb));
     builder->get_widget("banUser", menuitem);
     menuitem->signal_activate().connect(sigc::mem_fun(this, &ManglerChannelTree::banUserMenuItem_activate_cb));
+    builder->get_widget("muteUser", menuitem);
+    menuitem->signal_activate().connect(sigc::mem_fun(this, &ManglerChannelTree::muteUserMenuItem_activate_cb));
+    builder->get_widget("muteUserGlobal", menuitem);
+    menuitem->signal_activate().connect(sigc::mem_fun(this, &ManglerChannelTree::muteUserGlobalMenuItem_activate_cb));
 
     builder->get_widget("channelRightClickMenu", rcmenu_channel);
     builder->get_widget("addPhantom", menuitem);
@@ -635,8 +639,9 @@ ManglerChannelTree::channelView_buttonpress_event_cb(GdkEventButton* event) {/*{
         if (channelView->get_path_at_pos((int)event->x, (int)event->y, path)) {
             iter = channelStore->get_iter(path);
             row = *iter;
-            bool isUser = row[channelRecord.isUser];
             uint16_t id = row[channelRecord.id];
+            bool isUser = row[channelRecord.isUser];
+            bool muted = row[channelRecord.muted];
             Glib::ustring comment = row[channelRecord.comment];
             Glib::ustring url = row[channelRecord.url];
             const v3_permissions *perms = v3_get_permissions();
@@ -660,6 +665,10 @@ ManglerChannelTree::channelView_buttonpress_event_cb(GdkEventButton* event) {/*{
                     menuitem->hide();
                     builder->get_widget("banUser", menuitem);
                     menuitem->hide();
+                    builder->get_widget("muteUser", menuitem);
+                    menuitem->hide();
+                    builder->get_widget("muteUserGlobal", menuitem);
+                    menuitem->hide();
                 } else {
                     builder->get_widget("kickUser", menuitem);
                     if (perms->kick_user) {
@@ -669,6 +678,20 @@ ManglerChannelTree::channelView_buttonpress_event_cb(GdkEventButton* event) {/*{
                     }
                     builder->get_widget("banUser", menuitem);
                     if (perms->ban_user) {
+                        menuitem->show();
+                    } else {
+                        menuitem->hide();
+                    }
+                    builder->get_widget("muteUser", menuitem);
+                    if (muted) {
+                        menuitem->set_label("Unmute");
+                    } else {
+                        menuitem->set_label("Mute");
+                    }
+                    menuitem->show();
+                    builder->get_widget("muteUserGlobal", menuitem);
+                    if (perms->mute_glbl) {
+                        menuitem->set_sensitive(false);
                         menuitem->show();
                     } else {
                         menuitem->hide();
@@ -766,6 +789,25 @@ ManglerChannelTree::banUserMenuItem_activate_cb(void) {/*{{{*/
     }
 }/*}}}*/
 
+void
+ManglerChannelTree::muteUserMenuItem_activate_cb(void) {/*{{{*/
+    Glib::RefPtr<Gtk::TreeSelection> sel = channelView->get_selection();
+    Gtk::TreeModel::iterator iter = sel->get_selected();
+    if(iter) {
+        Gtk::TreeModel::Row row = *iter;
+        bool muted = row[channelRecord.muted];
+        if (muted) {
+            row[channelRecord.muted] = false;
+        } else {
+            row[channelRecord.muted] = true;
+        }
+    }
+}/*}}}*/
+
+void
+ManglerChannelTree::muteUserGlobalMenuItem_activate_cb(void) {/*{{{*/
+}/*}}}*/
+
 uint16_t
 ManglerChannelTree::getUserChannelId(uint16_t userid) {/*{{{*/
     Gtk::TreeModel::Row user = getUser(userid, channelStore->children());
@@ -823,6 +865,12 @@ Glib::ustring
 ManglerChannelTree::getLastTransmit(uint16_t userid) {/*{{{*/
     Gtk::TreeModel::Row user = getUser(userid, channelStore->children());
     return(user[channelRecord.last_transmit]);
+}/*}}}*/
+
+bool
+ManglerChannelTree::isMuted(uint16_t userid) {/*{{{*/
+    Gtk::TreeModel::Row user = getUser(userid, channelStore->children());
+    return(user[channelRecord.muted]);
 }/*}}}*/
 
 void

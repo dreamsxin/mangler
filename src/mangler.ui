@@ -2810,6 +2810,20 @@ Notifications are the sound effects that are played when you login, logout, a us
         <property name="use_underline">True</property>
       </object>
     </child>
+    <child>
+      <object class="GtkMenuItem" id="muteUser">
+        <property name="visible">True</property>
+        <property name="label" translatable="yes">Mute</property>
+        <property name="use_underline">True</property>
+      </object>
+    </child>
+    <child>
+      <object class="GtkMenuItem" id="muteUserGlobal">
+        <property name="visible">True</property>
+        <property name="label" translatable="yes">Global Mute</property>
+        <property name="use_underline">True</property>
+      </object>
+    </child>
   </object>
   <object class="GtkAction" id="action1"/>
   <object class="GtkMenu" id="channelRightClickMenu">

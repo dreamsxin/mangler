@@ -45,6 +45,7 @@ class channelModelColumns : public Gtk::TreeModel::ColumnRecord/*{{{*/
             add(integration_text);
             add(last_transmit);
             add(password);
+            add(muted);
         }
 
         Gtk::TreeModelColumn<Glib::ustring>                 displayName;
@@ -60,6 +61,7 @@ class channelModelColumns : public Gtk::TreeModel::ColumnRecord/*{{{*/
         Gtk::TreeModelColumn<Glib::ustring>                 integration_text;
         Gtk::TreeModelColumn<Glib::ustring>                 last_transmit;
         Gtk::TreeModelColumn<Glib::ustring>                 password;
+        Gtk::TreeModelColumn<bool>                          muted;
 };/*}}}*/
 class ManglerChannelStore : public Gtk::TreeStore
 {
@@ -120,6 +122,7 @@ class ManglerChannelTree
         Glib::ustring getChannelSavedPassword(uint16_t channel_id);
         void setChannelSavedPassword(uint16_t channel_id, Glib::ustring password);
         void forgetChannelSavedPassword(uint16_t channel_id);
+        bool isMuted(uint16_t userid);
         bool expand_all(void);
         bool collapse_all(void);
         void clear(void);
@@ -132,6 +135,8 @@ class ManglerChannelTree
         void removePhantomMenuItem_activate_cb(void);
         void kickUserMenuItem_activate_cb(void);
         void banUserMenuItem_activate_cb(void);
+        void muteUserMenuItem_activate_cb(void);
+        void muteUserGlobalMenuItem_activate_cb(void);
         void volumeAdjustment_value_changed_cb(uint16_t);
         int  on_sort_compare(const Gtk::TreeModel::iterator& a_, const Gtk::TreeModel::iterator& b_);
 
