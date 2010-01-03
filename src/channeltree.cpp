@@ -639,7 +639,7 @@ ManglerChannelTree::channelView_buttonpress_event_cb(GdkEventButton* event) {/*{
             uint16_t id = row[channelRecord.id];
             Glib::ustring comment = row[channelRecord.comment];
             Glib::ustring url = row[channelRecord.url];
-            _v3_permissions *perms = v3_get_permissions();
+            const v3_permissions *perms = v3_get_permissions();
 
             if (isUser) {
                 v3_user *user = v3_get_user(id);
@@ -857,7 +857,7 @@ Glib::RefPtr<ManglerChannelStore> ManglerChannelStore::create() {/*{{{*/
 
 bool
 ManglerChannelStore::row_draggable_vfunc(const Gtk::TreeModel::Path& path) const {/*{{{*/
-    _v3_permissions *perms = v3_get_permissions();
+    const v3_permissions *perms = v3_get_permissions();
     ManglerChannelStore* unconstThis = const_cast<ManglerChannelStore*>(this);
     const_iterator iter = unconstThis->get_iter(path);
     if (!iter) 

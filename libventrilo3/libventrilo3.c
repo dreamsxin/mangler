@@ -3648,7 +3648,7 @@ v3_set_server_opts(uint8_t type, uint8_t value) {/*{{{*/
     }
 }/*}}}*/
 
-struct _v3_permissions *
+const v3_permissions *
 v3_get_permissions(void) {/*{{{*/
     return &v3_luser.perms;
 }/*}}}*/

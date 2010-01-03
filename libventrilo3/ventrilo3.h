@@ -177,6 +177,7 @@ struct _v3_permissions {/*{{{*/
     uint8_t see_user_comment;
     uint8_t unknown_perm_15;
 };/*}}}*/
+typedef struct _v3_permissions v3_permissions;
 
 /*
    Define event types to be used by the caller's event handler
@@ -455,7 +456,7 @@ typedef struct __v3_luser {
     uint8_t  accept_u2u;
     uint8_t  accept_chat;
     uint8_t  allow_recording;
-    struct _v3_permissions perms;
+    v3_permissions perms;
     uint16_t channel_admin[65535];
 } _v3_luser;
 
@@ -511,9 +512,8 @@ void        v3_start_audio(uint16_t send_type);
 void        v3_send_audio(uint16_t send_type, uint32_t rate, uint8_t *pcm, uint32_t length);
 void        v3_stop_audio(void);
 void        v3_set_server_opts(uint8_t type, uint8_t value);
-struct _v3_permissions *v3_get_permissions(void);
+const v3_permissions *v3_get_permissions(void);
 uint8_t     v3_is_channel_admin(uint16_t channel_id);
-
 
 
 // User list functions
