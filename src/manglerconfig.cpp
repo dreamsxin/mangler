@@ -176,6 +176,10 @@ Glib::ustring ManglerConfig::get(Glib::ustring cfgname) {/*{{{*/
     cfgfilename += "/.manglerrc";
     // check to see if the file exists
     if (stat(cfgfilename.c_str(), &cfgstat)) {
+        mutex.unlock();
+        save();
+        mutex.lock();
+        /*
         // if not create it
         if (! (this->cfgstream = fopen(cfgfilename.c_str(), "w"))) {
             // if creation fails, print error
@@ -183,11 +187,11 @@ Glib::ustring ManglerConfig::get(Glib::ustring cfgname) {/*{{{*/
                 fprintf(stderr, "could not create settings file: %s\n", (char *)cfgfilename.c_str());
                 notified = true;
             }
-            mutex.unlock();
             return "";
         } else {
             fclose(this->cfgstream);
         }
+        */
     }
     if (! (this->cfgstream = fopen(cfgfilename.c_str(), "r"))) {
         if (!notified) {
