@@ -159,6 +159,24 @@ _v3_get_msg_user(void *offset, _v3_msg_user *user) {/*{{{*/
 }/*}}}*/
 
 int
+_v3_get_msg_rank(void *offset, _v3_msg_rank *rank) {/*{{{*/
+    uint16_t len;
+    void *start_offset = offset;
+
+    _v3_func_enter("_v3_get_msg_rank");
+    // get the rank information
+    memcpy(rank, offset, 4);
+    offset+=4;
+
+    rank->name = (char *)_v3_get_msg_string(offset, &len);
+    offset+=len;
+    rank->description = (char *)_v3_get_msg_string(offset, &len);
+    offset+=len;
+    _v3_func_leave("_v3_get_msg_rank");
+    return(offset-start_offset);
+}/*}}}*/
+
+int
 _v3_put_msg_user(void *buffer, v3_user *user) {/*{{{*/
     void *start_buffer = buffer;
 

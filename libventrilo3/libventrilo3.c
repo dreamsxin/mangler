@@ -1238,6 +1238,50 @@ _v3_update_user(v3_user *user) {/*{{{*/
     return true;
 }/*}}}*/
 
+int
+_v3_update_rank(v3_rank *rank) {/*{{{*/
+    v3_rank *r, *last;
+
+    _v3_func_enter("_v3_update_rank");
+    _v3_lock_ranklist();
+    if (v3_rank_list == NULL) { // no ranks in list... create the first
+        r = malloc(sizeof(v3_rank));
+        memset(r, 0, sizeof(v3_rank));
+        memcpy(r, rank, sizeof(v3_rank));
+        r->name             = strdup(rank->name);
+        r->description      = strdup(rank->description);
+        r->next             = NULL;
+        v3_rank_list = r;
+    } else {
+        for (r = v3_rank_list; r != NULL; r = r->next) { // search for existing ranks
+            if (r->id == rank->id) {
+                void *tmp;
+                free(r->name);
+                free(r->description);
+                tmp = r->next;
+                memcpy(r, rank, sizeof(v3_rank));
+                r->name             = strdup(rank->name);
+                r->description      = strdup(rank->description);
+                r->next             = tmp;
+                _v3_debug(V3_DEBUG_INFO, "updated rank %s",  r->name);
+                _v3_unlock_ranklist();
+                _v3_func_leave("_v3_update_rank");
+                return true;
+            }
+            last = r;
+        } // add a new rank
+        r = last->next = malloc(sizeof(v3_rank));
+        memset(r, 0, sizeof(v3_rank));
+        memcpy(r, rank, sizeof(v3_rank));
+        r->name             = strdup(rank->name);
+        r->description      = strdup(rank->description);
+        r->next             = NULL;
+    }
+    _v3_unlock_ranklist();
+    _v3_func_leave("_v3_update_rank");
+    return true;
+}/*}}}*/
+
 void
 _v3_print_channel_list(void) {/*{{{*/
     v3_channel *c;
@@ -1440,6 +1484,39 @@ _v3_unlock_channellist(void) {/*{{{*/
     }
     _v3_debug(V3_DEBUG_MUTEX, "unlocking channellist");
     pthread_mutex_unlock(channellist_mutex);
+}/*}}}*/
+
+void
+_v3_lock_ranklist(void) {/*{{{*/
+    // TODO: PTHREAD: check if threads are enabled, possibly use semaphores as a compile time option
+    if (ranklist_mutex == NULL) {
+        pthread_mutexattr_t mta;
+        pthread_mutexattr_init(&mta);
+        pthread_mutexattr_settype(&mta, PTHREAD_MUTEX_ERRORCHECK);
+
+        _v3_debug(V3_DEBUG_MUTEX, "initializing ranklist mutex");
+        ranklist_mutex = malloc(sizeof(pthread_mutex_t));
+        pthread_mutex_init(ranklist_mutex, &mta);
+    }
+    _v3_debug(V3_DEBUG_MUTEX, "locking ranklist");
+    pthread_mutex_lock(ranklist_mutex);
+    pthread_mutex_lock(ranklist_mutex);
+}/*}}}*/
+
+void
+_v3_unlock_ranklist(void) {/*{{{*/
+    // TODO: PTHREAD: check if threads are enabled, possibly use semaphores as a compile time option
+    if (ranklist_mutex == NULL) {
+        pthread_mutexattr_t mta;
+        pthread_mutexattr_init(&mta);
+        pthread_mutexattr_settype(&mta, PTHREAD_MUTEX_ERRORCHECK);
+
+        _v3_debug(V3_DEBUG_MUTEX, "initializing ranklist mutex");
+        ranklist_mutex = malloc(sizeof(pthread_mutex_t));
+        pthread_mutex_init(ranklist_mutex, &mta);
+    }
+    _v3_debug(V3_DEBUG_MUTEX, "unlocking ranklist");
+    pthread_mutex_unlock(ranklist_mutex);
 }/*}}}*/
 
 void
@@ -3138,6 +3215,55 @@ v3_free_channel(v3_channel *channel) {/*{{{*/
     free(channel->phonetic);
     free(channel->comment);
     free(channel);
+}/*}}}*/
+
+v3_rank *
+v3_get_rank(uint16_t id) {/*{{{*/
+    v3_rank *rank, *ret_rank;
+
+    _v3_lock_ranklist();
+    for (rank = v3_rank_list; rank != NULL; rank = rank->next) {
+        if (rank->id == id) {
+            ret_rank = malloc(sizeof(v3_rank));
+            _v3_copy_rank(ret_rank, rank);
+            _v3_unlock_ranklist();
+            return ret_rank;
+        }
+    }
+    _v3_unlock_ranklist();
+    return NULL;
+}/*}}}*/
+
+void
+v3_free_rank(v3_rank *rank) {/*{{{*/
+    free(rank->name);
+    free(rank->description);
+    free(rank);
+}/*}}}*/
+
+void
+_v3_copy_rank(v3_rank *dest, v3_rank *src) {/*{{{*/
+    memcpy(dest, src, sizeof(v3_rank));
+    dest->name              = strdup(src->name);
+    dest->description       = strdup(src->description);
+    dest->next              = NULL;
+}/*}}}*/
+
+void
+_v3_destroy_ranklist(void) {/*{{{*/
+    v3_rank *rank, *next;
+
+    _v3_func_enter("_v3_destroy_ranklist");
+    rank = v3_rank_list;
+    while (rank != NULL) {
+        free(rank->name);
+        free(rank->description);
+        next = rank->next;
+        free(rank);
+        rank = next;
+    }
+    v3_rank_list = NULL;
+    _v3_func_leave("_v3_destroy_ranklist");
 }/*}}}*/
 
 int

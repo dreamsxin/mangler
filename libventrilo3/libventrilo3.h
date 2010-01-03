@@ -321,6 +321,9 @@ int                     _v3_channel_count;
 v3_user                 *v3_user_list = NULL;
 int                     _v3_user_count;
 
+v3_rank                 *v3_rank_list = NULL;
+int                     _v3_rank_count;
+
 
 char                    _v3_error_text[256];
 char                    _v3_status_text[256];
@@ -330,6 +333,7 @@ uint32_t                _v3_user_loggedin = 0;
 
 pthread_mutex_t         *userlist_mutex = NULL;
 pthread_mutex_t         *channellist_mutex = NULL;
+pthread_mutex_t         *ranklist_mutex = NULL;
 pthread_mutex_t         *server_mutex = NULL;
 pthread_mutex_t         *luser_mutex = NULL;
 pthread_mutex_t         *sendq_mutex = NULL;
@@ -427,13 +431,20 @@ int                     _v3_recv_enc_msg(char *data);
 int                     _v3_process_message(_v3_net_message *msg);
 int                     _v3_destroy_packet(_v3_net_message *msg);
 int                     _v3_update_channel(v3_channel *channel);
+void                    _v3_copy_channel(v3_channel *dest, v3_channel *src);
 int                     _v3_update_user(v3_user *user);
+void                    _v3_copy_user(v3_user *dest, v3_user *src);
+int                     _v3_update_rank(v3_rank *rank);
+void                    _v3_copy_rank(v3_rank *dest, v3_rank *src);
 void                    _v3_destroy_userlist(void);
 void                    _v3_destroy_channellist(void);
+void                    _v3_destroy_ranklist(void);
 void                    _v3_lock_userlist(void);
 void                    _v3_unlock_userlist(void);
 void                    _v3_lock_channellist(void);
 void                    _v3_unlock_channellist(void);
+void                    _v3_lock_ranklist(void);
+void                    _v3_unlock_ranklist(void);
 void                    _v3_lock_luser(void);
 void                    _v3_unlock_luser(void);
 void                    _v3_lock_sendq(void);

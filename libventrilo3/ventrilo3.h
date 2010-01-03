@@ -302,7 +302,8 @@ typedef struct __v3_msg_user {/*{{{*/
     uint16_t id;
     uint16_t channel;
 
-    uint32_t bitfield;
+    uint16_t bitfield;
+    uint16_t rank_id;
     char *name;
     char *phonetic;
     char *comment;
@@ -362,8 +363,20 @@ typedef struct __v3_msg_channel {/*{{{*/
      */
     void     *next;
 } _v3_msg_channel;/*}}}*/
+typedef struct __v3_msg_rank {/*{{{*/
+    uint16_t id;
+    uint16_t level;
+    char *name;
+    char *description;
+
+    /*
+     * Put internal variables here
+     */
+    void     *next;
+} _v3_msg_rank;/*}}}*/
 typedef _v3_msg_user     v3_user;
 typedef _v3_msg_channel  v3_channel;
+typedef _v3_msg_rank     v3_rank;
 
 /*
    This structure defines the bit number of each permission setting, the
@@ -507,6 +520,10 @@ v3_user     *v3_get_user(uint16_t id);
 int         v3_channel_count(void);
 void        v3_free_channel(v3_channel *channel);
 v3_channel  *v3_get_channel(uint16_t id);
+
+// Rank list functions
+v3_rank     *v3_get_rank(uint16_t id);
+void        v3_free_rank(v3_rank *rank);
 
 // audio effects
 void v3_set_volume_master(int level);
