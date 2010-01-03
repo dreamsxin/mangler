@@ -77,13 +77,14 @@ ManglerChannelTree::ManglerChannelTree(Glib::RefPtr<Gtk::Builder> builder)/*{{{*
     //int colnum = channelView->append_column("Name", channelRecord.displayName) - 1;
     // TODO: Write a sort routine to make sure users are always immediately
     // below the channel, otherwise users get sorted within the subchannels
-    //channelStore->set_sort_column(channelRecord.displayName, Gtk::SORT_ASCENDING);
+    channelStore->set_sort_column(channelRecord.name, Gtk::SORT_ASCENDING);
     /*
     channelView->get_column(colnum)->set_cell_data_func(
                 *channelView->get_column_cell_renderer(colnum),
                 sigc::mem_fun(*this, &ManglerChannelTree::renderCellData)
                 );
      */
+    channelStore->set_sort_func(channelRecord.name, sigc::mem_fun (*this, &ManglerChannelTree::on_sort_compare));
 
     /*
      * We have to finish off our user settings window.  I can't find a way to
@@ -850,13 +851,12 @@ getTimeString(void) {/*{{{*/
     return cppbuf;
 }/*}}}*/
 
-Glib::RefPtr<ManglerChannelStore> ManglerChannelStore::create() {
+Glib::RefPtr<ManglerChannelStore> ManglerChannelStore::create() {/*{{{*/
     return Glib::RefPtr<ManglerChannelStore>( new ManglerChannelStore() );
-}
+}/*}}}*/
 
 bool
-ManglerChannelStore::row_draggable_vfunc(const Gtk::TreeModel::Path& path) const
-{
+ManglerChannelStore::row_draggable_vfunc(const Gtk::TreeModel::Path& path) const {/*{{{*/
     _v3_permissions *perms = v3_get_permissions();
     //if (! perms->move_user || !perms->srv_admin) {
     if (! perms->move_user) {
@@ -871,22 +871,20 @@ ManglerChannelStore::row_draggable_vfunc(const Gtk::TreeModel::Path& path) const
     }
 
     return Gtk::TreeStore::row_draggable_vfunc(path);
-}
+}/*}}}*/
 
 bool
-ManglerChannelStore::row_drop_possible_vfunc(const Gtk::TreeModel::Path& dest, const Gtk::SelectionData& selection_data) const
-{
+ManglerChannelStore::row_drop_possible_vfunc(const Gtk::TreeModel::Path& dest, const Gtk::SelectionData& selection_data) const {/*{{{*/
     Gtk::TreeModel::Path dest_parent = dest;
     bool dest_is_not_top_level = dest_parent.up();
     if(!dest_is_not_top_level || dest_parent.empty()) {
         return false;
     }
     return true;
-}
+}/*}}}*/
 
 bool
-ManglerChannelStore::drag_data_received_vfunc(const Gtk::TreeModel::Path& dest, const Gtk::SelectionData& selection_data)
-{
+ManglerChannelStore::drag_data_received_vfunc(const Gtk::TreeModel::Path& dest, const Gtk::SelectionData& selection_data) {/*{{{*/
     // This is confusing... i'll try to explain
     // First, let's find out who we're moving
     Gtk::TreeModel::Path path_dragged_row;
@@ -930,4 +928,26 @@ ManglerChannelStore::drag_data_received_vfunc(const Gtk::TreeModel::Path& dest, 
     // we always return false... if the move succeeds, we'll get an event
     // telling us to move the user
     return false;
-}
+}/*}}}*/
+
+int
+ManglerChannelTree::on_sort_compare(const Gtk::TreeModel::iterator& a_, const Gtk::TreeModel::iterator& b_) {/*{{{*/
+    Gtk::TreeModel::Row row1 = *a_;
+    Gtk::TreeModel::Row row2 = *b_;
+    Glib::ustring row1_name = row1[channelRecord.name];
+    Glib::ustring row2_name = row2[channelRecord.name];
+    //fprintf(stderr, "%s == %s\n", (char *)row1_name.c_str(), (char *)row2_name.c_str());
+    bool row1_isUser = row1[channelRecord.isUser];
+    bool row2_isUser = row2[channelRecord.isUser];
+    if (row1_isUser && row2_isUser) {
+        if (row1_name == row2_name) {
+            return 0;
+        }
+        if (row1_name < row2_name) {
+            return -1;
+        }
+        return 1;
+    }
+    return 0;
+}/*}}}*/
+

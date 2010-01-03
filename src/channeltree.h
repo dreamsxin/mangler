@@ -133,6 +133,7 @@ class ManglerChannelTree
         void kickUserMenuItem_activate_cb(void);
         void banUserMenuItem_activate_cb(void);
         void volumeAdjustment_value_changed_cb(uint16_t);
+        int  on_sort_compare(const Gtk::TreeModel::iterator& a_, const Gtk::TreeModel::iterator& b_);
 
 };
 
