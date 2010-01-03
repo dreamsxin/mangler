@@ -169,6 +169,14 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
     builder->get_widget("passwordCancelButton", button);
     button->signal_clicked().connect(sigc::mem_fun(this, &Mangler::passwordDialogCancelButton_clicked_cb));
 
+    // Set up our kick/ban reason entry dialog box
+    builder->get_widget("reasonDialog", reasonDialog);
+    builder->get_widget("reasonEntry", reasonEntry);
+    builder->get_widget("reasonOkButton", button);
+    button->signal_clicked().connect(sigc::mem_fun(this, &Mangler::reasonDialogOkButton_clicked_cb));
+    builder->get_widget("reasonCancelButton", button);
+    button->signal_clicked().connect(sigc::mem_fun(this, &Mangler::reasonDialogCancelButton_clicked_cb));
+
     // Set up the text string change dialog box
     builder->get_widget("textStringChangeDialog", textStringChangeDialog);
     builder->get_widget("textStringChangeCommentEntry", textStringChangeCommentEntry);
@@ -1131,6 +1139,22 @@ void Mangler::passwordDialogOkButton_clicked_cb(void) {/*{{{*/
 }/*}}}*/
 void Mangler::passwordDialogCancelButton_clicked_cb(void) {/*{{{*/
     password = "";
+}/*}}}*/
+
+Glib::ustring Mangler::getReasonEntry(Glib::ustring title, Glib::ustring prompt) {/*{{{*/
+    reason = "";
+    reasonEntry->set_text("");
+    reasonDialog->set_keep_above(true);
+    reasonDialog->set_title(title);
+    reasonDialog->run();
+    reasonDialog->hide();
+    return(reason);
+}/*}}}*/
+void Mangler::reasonDialogOkButton_clicked_cb(void) {/*{{{*/
+    reason = reasonEntry->get_text();
+}/*}}}*/
+void Mangler::reasonDialogCancelButton_clicked_cb(void) {/*{{{*/
+    reason = "";
 }/*}}}*/
 
 void Mangler::textStringChangeDialogOkButton_clicked_cb(void) {/*{{{*/

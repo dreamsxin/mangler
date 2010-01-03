@@ -94,6 +94,12 @@ class Mangler
         Glib::ustring                       password;
         bool                                passwordStatus;
 
+        // These are used by the kick/ban reason entry dialog
+        Gtk::Dialog                         *reasonDialog;
+        Gtk::Entry                          *reasonEntry;
+        Glib::ustring                       reason;
+        bool                                reasonStatus;
+
         // These are used by the text string entry dialog
         Gtk::Dialog                         *textStringChangeDialog;
         Gtk::Entry                          *textStringChangeCommentEntry;
@@ -106,6 +112,7 @@ class Mangler
         Glib::Thread                        *networkThread;
 
         Glib::ustring getPasswordEntry(Glib::ustring title = "Password", Glib::ustring prompt = "Password");
+        Glib::ustring getReasonEntry(Glib::ustring title = "Reason", Glib::ustring prompt = "Reason");
         uint32_t getActiveServer(void);
         void setActiveServer(uint32_t row_number);
         void errorDialog(Glib::ustring message);
@@ -147,6 +154,10 @@ class Mangler
         // password dialog signal handlers
         void passwordDialogOkButton_clicked_cb(void);
         void passwordDialogCancelButton_clicked_cb(void);
+
+        // kick/ban reason dialog signal handlers
+        void reasonDialogOkButton_clicked_cb(void);
+        void reasonDialogCancelButton_clicked_cb(void);
 
         // text string change dialog signal handlers
         void textStringChangeDialogOkButton_clicked_cb(void);
