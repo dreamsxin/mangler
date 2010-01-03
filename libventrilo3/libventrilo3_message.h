@@ -84,6 +84,18 @@ typedef struct _v3_net_message_0x33 {/*{{{*/
 } _v3_msg_0x33;
 int _v3_get_0x33(_v3_net_message *msg);
 int _v3_destroy_0x33(_v3_net_message *msg);/*}}}*/
+typedef struct _v3_net_message_0x36 {/*{{{*/
+    uint32_t type;              // 0
+    uint16_t subtype;           // 4
+    uint16_t unknown_1;         // 6
+    uint16_t unknown_2;         // 8
+    uint16_t rank_count;        // 10
+    uint16_t unknown_3;         // 12
+    uint16_t unknown_4;         // 14
+    _v3_msg_rank *rank_list;
+} _v3_msg_0x36;
+int _v3_get_0x36(_v3_net_message *msg);
+int _v3_destroy_0x36(_v3_net_message *msg);/*}}}*/
 typedef struct _v3_net_message_0x37 {/*{{{*/
     uint32_t type;              // 0
     uint16_t user_id;           // 4

@@ -141,7 +141,7 @@ ManglerChannelTree::renderCellData(Gtk::CellRenderer *cell, const Gtk::TreeModel
  * this calculates the display name automatically
  */
 void
-ManglerChannelTree::addUser(uint32_t id, uint32_t parent_id, Glib::ustring name, Glib::ustring comment, Glib::ustring phonetic, Glib::ustring url, Glib::ustring integration_text, bool guest, bool phantom) {/*{{{*/
+ManglerChannelTree::addUser(uint32_t id, uint32_t parent_id, Glib::ustring name, Glib::ustring comment, Glib::ustring phonetic, Glib::ustring url, Glib::ustring integration_text, bool guest, bool phantom, Glib::ustring rank) {/*{{{*/
     Glib::ustring displayName = "";
     Gtk::TreeModel::Row parent;
 
@@ -155,6 +155,9 @@ ManglerChannelTree::addUser(uint32_t id, uint32_t parent_id, Glib::ustring name,
     }
     
     displayName = name;
+    if (!rank.empty()) {
+        displayName = "[" + rank + "] " + displayName; 
+    }
     if (phantom) {
         displayName = "\"P\" " + displayName; 
     }
@@ -207,7 +210,7 @@ ManglerChannelTree::addUser(uint32_t id, uint32_t parent_id, Glib::ustring name,
  * this calculates the display name automatically
  */
 void
-ManglerChannelTree::updateUser(uint32_t id, uint32_t parent_id, Glib::ustring name, Glib::ustring comment, Glib::ustring phonetic, Glib::ustring url, Glib::ustring integration_text, bool guest, bool phantom) {/*{{{*/
+ManglerChannelTree::updateUser(uint32_t id, uint32_t parent_id, Glib::ustring name, Glib::ustring comment, Glib::ustring phonetic, Glib::ustring url, Glib::ustring integration_text, bool guest, bool phantom, Glib::ustring rank) {/*{{{*/
     Glib::ustring displayName = "";
     Gtk::TreeModel::Row user;
 
@@ -221,6 +224,9 @@ ManglerChannelTree::updateUser(uint32_t id, uint32_t parent_id, Glib::ustring na
     }
     
     displayName = name;
+    if (!rank.empty()) {
+        displayName = "[" + rank + "] " + displayName; 
+    }
     if (phantom) {
         displayName = "\"P\" " + displayName; 
     }
@@ -382,7 +388,7 @@ ManglerChannelTree::refreshChannel(uint32_t id) {/*{{{*/
 void
 ManglerChannelTree::refreshAllChannels(void) {/*{{{*/
     _refreshAllChannels(channelStore->children());
-}
+}/*}}}*/
 
 void
 ManglerChannelTree::_refreshAllChannels(Gtk::TreeModel::Children children) {/*{{{*/

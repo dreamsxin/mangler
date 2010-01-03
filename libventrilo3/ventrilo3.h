@@ -63,6 +63,11 @@
 #define V3_RCON_CHAT                0x03
 #define V3_JOINFAIL_CHAT            0x04
 
+#define V3_RANK_LIST                0x00
+#define V3_ADD_RANK                 0x03
+#define V3_REMOVE_RANK              0x04
+#define V3_MODIFY_RANK              0x05
+
 #define V3_REMOVE_USER              0x00
 #define V3_ADD_USER                 0x01
 #define V3_MODIFY_USER              0x02

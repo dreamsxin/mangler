@@ -1362,6 +1362,29 @@ _v3_remove_channel(uint16_t id) {/*{{{*/
     return false;
 }/*}}}*/
 
+int
+_v3_remove_rank(uint16_t id) {/*{{{*/
+    v3_rank *r, *last;
+
+    _v3_lock_ranklist();
+    _v3_func_enter("_v3_remove_rank");
+    last = v3_rank_list;
+    for (r = v3_rank_list; r != NULL; r = r->next) {
+        if (r->id == id) {
+            last->next = r->next;
+            _v3_debug(V3_DEBUG_INFO, "removed rank %s",  r->name);
+            v3_free_rank(r);
+            _v3_func_leave("_v3_remove_rank");
+            _v3_unlock_ranklist();
+            return true;
+        }
+        last = r;
+    }
+    _v3_func_leave("_v3_remove_rank");
+    _v3_unlock_ranklist();
+    return false;
+}/*}}}*/
+
 void
 _v3_print_user_list(void) {/*{{{*/
     v3_user *u;
@@ -1783,6 +1806,64 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
             _v3_destroy_packet(msg);
             _v3_user_loggedin = 1;
             _v3_unlock_server();
+            _v3_func_leave("_v3_process_message");
+            return V3_OK;/*}}}*/
+        case 0x36:/*{{{*/
+            if (!_v3_get_0x36(msg)) {
+                _v3_destroy_packet(msg);
+                _v3_func_leave("_v3_process_message");
+                return V3_MALFORMED;
+            } else {
+                _v3_msg_0x36 *m = msg->contents;
+                v3_rank *rl, *r;
+                int ctr;
+
+                _v3_lock_ranklist();
+
+                rl = calloc(m->rank_count, sizeof(v3_user));
+                switch (m->subtype) {
+                    case V3_REMOVE_RANK:
+                        _v3_debug(V3_DEBUG_INFO, "removing %d ranks from user list",  m->rank_count);
+                        for (ctr = 0; ctr < m->rank_count; ctr++) {
+                            // do we need to queue an event?
+                            //v3_event *ev = _v3_create_event(V3_EVENT_RANK_REMOVE);
+                            //ev->rank.id = m->rank_list[ctr].id;
+                            //_v3_debug(V3_DEBUG_INFO, "queuing event type %d for user %d", ev->type, ev->user.id);
+                            _v3_remove_rank(m->rank_list[ctr].id);
+                            //v3_queue_event(ev);
+                        }
+                        break;
+                    case V3_MODIFY_RANK:
+                    case V3_ADD_RANK:
+                        _v3_debug(V3_DEBUG_INFO, "adding %d ranks on rank list",  m->rank_count);
+                        for (ctr = 0; ctr < m->rank_count; ctr++) {
+                            _v3_update_rank(&m->rank_list[ctr]);
+                            //v3_event *ev = _v3_create_event(m->subtype == V3_ADD_RANK ? V3_EVENT_RANK_ADD : V3_EVENT_RANK_MODIFY);
+                            //ev->user.id = m->user_list[ctr].id;
+                            //ev->channel.id = m->user_list[ctr].channel;
+                            //_v3_debug(V3_DEBUG_INFO, "queuing event type %d for user %d", ev->type, ev->user.id);
+                            //v3_queue_event(ev);
+                        }
+                        break;
+                    case V3_RANK_LIST:
+                        // <strke>user 1 is always ourself in this subtype</strike>
+                        // TODO: this is a bad assumption... the userlist can span multiple 0x5d packets
+                        _v3_debug(V3_DEBUG_INFO, "adding %d ranks to rank list",  m->rank_count);
+                        for (ctr = 0; ctr < m->rank_count; ctr++) {
+                            _v3_update_rank(&m->rank_list[ctr]);
+                            //v3_event *ev = _v3_create_event(V3_EVENT_RANK_LOGIN);
+                            //ev->rank.id = m->rank_list[ctr].id;
+                            //ev->channel.id = m->rank_list[ctr].channel;
+                            //_v3_debug(V3_DEBUG_INFO, "queuing event type %d for rank %d", ev->type, ev->rank.id);
+                            //v3_queue_event(ev);
+                        }
+                        break;
+                }
+                free(rl);
+                _v3_unlock_ranklist();
+            }
+            _v3_destroy_0x36(msg);
+            _v3_destroy_packet(msg);
             _v3_func_leave("_v3_process_message");
             return V3_OK;/*}}}*/
         case 0x37:/*{{{*/
