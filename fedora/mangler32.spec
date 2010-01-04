@@ -1,5 +1,5 @@
 Name:		mangler
-Version:	1.0.0
+Version:	1.0.1
 Release:	1%{?dist}
 Summary:	Mangler is a Ventrilo compatible client for Linux
 
@@ -49,4 +49,12 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
+mangler (1.0.1) stable; urgency=low
+
+  * Updating license documentation and distribution for compliance
+  * Properly set server options (allow recording, pages, etc) when logging in
+  * Rewrote bin2h.c to comply with GPL
+  * Fixed a crash caused when the configured PTT mouse is removed
+
+ -- eric kilfoil <ekilfoil@gmail.com>  Sun, 03 Jan 2010 16:15:14 -0800
 
