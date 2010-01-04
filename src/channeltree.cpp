@@ -768,7 +768,7 @@ ManglerChannelTree::kickUserMenuItem_activate_cb(void) {/*{{{*/
         Glib::ustring name = row[channelRecord.name];
         if (isUser) {
             Glib::ustring reason = mangler->getReasonEntry("Kick Reason");
-            v3_admin_boot(V3_BOOT_KICK, id, (char *)reason.c_str());
+            v3_admin_boot(V3_BOOT_KICK, id, (char *)ustring_to_c(reason).c_str());
         }
     }
 }/*}}}*/
@@ -784,7 +784,7 @@ ManglerChannelTree::banUserMenuItem_activate_cb(void) {/*{{{*/
         Glib::ustring name = row[channelRecord.name];
         if (isUser) {
             Glib::ustring reason = mangler->getReasonEntry("Ban Reason");
-            v3_admin_boot(V3_BOOT_BAN, id, (char *)reason.c_str());
+            v3_admin_boot(V3_BOOT_BAN, id, (char *)ustring_to_c(reason).c_str());
         }
     }
 }/*}}}*/

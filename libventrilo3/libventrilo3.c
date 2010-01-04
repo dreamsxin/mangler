@@ -2926,6 +2926,7 @@ _v3_logout(void) {/*{{{*/
     _v3_destroy_decoders();
     _v3_destroy_channellist();
     _v3_destroy_userlist();
+    memset(v3_luser.channel_admin, 0, 65535);
     v3_luser.id = -1;
     fclose(v3_server.evinstream);
     fclose(v3_server.evoutstream);
