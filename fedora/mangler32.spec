@@ -49,7 +49,3 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
-* Updating license documentation and distribution for compliance
-* Properly set server options (allow recording, pages, etc) when logging in
-* Rewrote bin2h.c to comply with GPL
-* Fixed a crash caused when the configured PTT mouse is removed
