@@ -30,10 +30,13 @@
 #include "config.h"
 
 #ifdef HAVE_PULSE
-#include <pulse/pulseaudio.h>
-#include <pulse/simple.h>
-#include <pulse/error.h>
-#include <pulse/gccmacro.h>
+# include <pulse/pulseaudio.h>
+# include <pulse/simple.h>
+# include <pulse/error.h>
+# include <pulse/gccmacro.h>
+#elif HAVE_ALSA
+#  include <alsa/asoundlib.h>
+#  define ALSA_BUF 640
 #endif
 #include <stdlib.h>
 #include <string.h>
@@ -91,6 +94,9 @@ class ManglerAudio
 #ifdef HAVE_PULSE
         pa_sample_spec  pulse_samplespec;
         pa_simple       *pulse_stream;
+#elif HAVE_ALSA
+        snd_pcm_sframes_t alsa_frames;
+        snd_pcm_t       *alsa_stream;
 #endif
         ManglerPCM      *pcmdata;
 

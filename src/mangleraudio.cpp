@@ -69,6 +69,33 @@ ManglerAudio::open(uint32_t rate, bool type, uint32_t pcm_framesize) {/*{{{*/
             fprintf(stderr, __FILE__": pa_simple_new() failed: %s\n", pa_strerror(error));
             return;
         }
+#elif HAVE_ALSA
+        if ((error = snd_pcm_open(&alsa_stream,
+                                  (mangler->settings->config.outputDeviceName == "Default" || 
+                                      mangler->settings->config.outputDeviceName == "" 
+                                      ? "default" 
+                                      : (char *)mangler->settings->config.outputDeviceName.c_str()),
+                                  SND_PCM_STREAM_PLAYBACK,
+                                  0)) < 0) {
+            fprintf(stderr, "snd_pcm_open() failed: %s\n", snd_strerror(error));
+            return;
+        }
+        if ((error = snd_pcm_set_params(alsa_stream,                   // pcm handle
+                                        SND_PCM_FORMAT_S16_LE,         // format
+                                        SND_PCM_ACCESS_RW_INTERLEAVED, // access
+                                        1,                             // channels
+                                        rate,                          // rate
+                                        true,                          // soft_resample
+                                        500000)) < 0) {                // latency in usec (0.5 sec)
+            fprintf(stderr, "snd_pcm_set_params() failed: %s\n", snd_strerror(error));
+            snd_pcm_close(alsa_stream);
+            return;
+        }
+        if ((error = snd_pcm_prepare(alsa_stream)) < 0) {
+            fprintf(stderr, "snd_pcm_prepare() failed: %s\n", snd_strerror(error));
+            snd_pcm_close(alsa_stream);
+            return;
+        }
 #endif
         outputStreamOpen = true;
         inputStreamOpen = false;
@@ -95,6 +122,33 @@ ManglerAudio::open(uint32_t rate, bool type, uint32_t pcm_framesize) {/*{{{*/
                         &buffer_attr,
                         &error))) {
             fprintf(stderr, __FILE__": pa_simple_new() failed: %s\n", pa_strerror(error));
+            return;
+        }
+#elif HAVE_ALSA
+        if ((error = snd_pcm_open(&alsa_stream,
+                                  (mangler->settings->config.inputDeviceName == "Default" || 
+                                      mangler->settings->config.inputDeviceName == "" 
+                                      ? "default" 
+                                      : (char *)mangler->settings->config.inputDeviceName.c_str()),
+                                  SND_PCM_STREAM_CAPTURE,
+                                  0)) < 0) {
+            fprintf(stderr, "snd_pcm_open() failed: %s\n", snd_strerror(error));
+            return;
+        }
+        if ((error = snd_pcm_set_params(alsa_stream,                   // pcm handle
+                                        SND_PCM_FORMAT_S16_LE,         // format
+                                        SND_PCM_ACCESS_RW_INTERLEAVED, // access
+                                        1,                             // channels
+                                        rate,                          // rate
+                                        true,                          // soft_resample
+                                        0)) < 0) {                     // latency in usec
+            fprintf(stderr, "snd_pcm_set_params() failed: %s\n", snd_strerror(error));
+            snd_pcm_close(alsa_stream);
+            return;
+        }
+        if ((error = snd_pcm_prepare(alsa_stream)) < 0) {
+            fprintf(stderr, "snd_pcm_prepare() failed: %s\n", snd_strerror(error));
+            snd_pcm_close(alsa_stream);
             return;
         }
 #endif
@@ -170,6 +224,17 @@ ManglerAudio::input(void) {/*{{{*/
                 //throw Glib::Thread::Exit();
                 return;
             }
+#elif HAVE_ALSA
+            if ((alsa_frames = snd_pcm_readi(alsa_stream, buf+(pcm_framesize*ctr), pcm_framesize / sizeof(int16_t))) < 0) {
+                if (alsa_frames == -EPIPE) {
+                    snd_pcm_prepare(alsa_stream);
+                } else if ((error = snd_pcm_recover(alsa_stream, alsa_frames, 0)) < 0) {
+                    fprintf(stderr, "snd_pcm_readi() failed: %s\n", snd_strerror(error));
+                    snd_pcm_close(alsa_stream);
+                    stop_input = true;
+                    return;
+                }
+            }
 #endif
             gettimeofday(&now, NULL);
             timeval_subtract(&diff, &now, &start);
@@ -192,6 +257,9 @@ ManglerAudio::input(void) {/*{{{*/
     v3_stop_audio();
 #ifdef HAVE_PULSE
     pa_simple_free(pulse_stream);
+#elif HAVE_ALSA
+    snd_pcm_drain(alsa_stream);
+    snd_pcm_close(alsa_stream);
 #endif
     outputStreamOpen = false;
     //throw Glib::Thread::Exit();
@@ -218,6 +286,8 @@ ManglerAudio::output(void) {/*{{{*/
             // and flush the audio buffers
 #ifdef HAVE_PULSE
             pa_simple_flush(pulse_stream, &error);
+#elif HAVE_ALSA
+            snd_pcm_drain(alsa_stream);
 #endif
             g_async_queue_unref(pcm_queue);
             break;
@@ -238,14 +308,38 @@ ManglerAudio::output(void) {/*{{{*/
             //throw Glib::Thread::Exit();
             return;
         }
+#elif HAVE_ALSA
+        uint32_t pcmlen = queuedpcm->length;
+        uint8_t *pcmptr = queuedpcm->sample;
+        uint8_t alsa_buf[ALSA_BUF];
+        size_t  buflen;
+        while ((buflen = pcmlen >= sizeof(alsa_buf) ? sizeof(alsa_buf) : pcmlen)) {
+            memcpy(&alsa_buf, pcmptr, buflen);
+            pcmlen -= buflen;
+            pcmptr += buflen;
+            if ((alsa_frames = snd_pcm_writei(alsa_stream, &alsa_buf, buflen / sizeof(int16_t))) < 0) {
+                if (alsa_frames == -EPIPE) {
+                    snd_pcm_prepare(alsa_stream);
+                } else if ((error = snd_pcm_recover(alsa_stream, alsa_frames, 0)) < 0) {
+                    fprintf(stderr, "snd_pcm_writei() failed: %s\n", snd_strerror(error));
+                    g_async_queue_unref(pcm_queue);
+                    snd_pcm_close(alsa_stream);
+                    stop_output = true;
+                    return;
+                }
+            }
+        }
 #endif
-            delete queuedpcm;
+        delete queuedpcm;
     }
 #ifdef HAVE_PULSE
     if (pa_simple_drain(pulse_stream, &error) < 0) {
         fprintf(stderr, __FILE__": pa_simple_drain() failed: %s\n", pa_strerror(error));
     }
     pa_simple_free(pulse_stream);
+#elif HAVE_ALSA
+    snd_pcm_drain(alsa_stream);
+    snd_pcm_close(alsa_stream);
 #endif
     stop_output = true;
     outputStreamOpen = true;
@@ -278,7 +372,7 @@ ManglerAudio::getDeviceList(void) {/*{{{*/
     pa_devicelist_t pa_output_devicelist[16];
 
     if (pa_get_devicelist(pa_input_devicelist, pa_output_devicelist) < 0) {
-        fprintf(stderr, "failed to get device list\n");
+        fprintf(stderr, "pulseaudio: failed to get device list; make sure 'pulseaudio' is running\n");
         return;
     }
 
@@ -306,6 +400,83 @@ ManglerAudio::getDeviceList(void) {/*{{{*/
                 );
     }
     return;
+#elif HAVE_ALSA
+    snd_pcm_stream_t stream[2] = { SND_PCM_STREAM_PLAYBACK, SND_PCM_STREAM_CAPTURE };
+    
+    for (ctr = 0; ctr < 2; ctr++) { // the rest is just copypasta
+        snd_ctl_t *handle;
+        int card, err, dev, 
+            idx_p = 0, idx_c = 0;
+        snd_ctl_card_info_t *info;
+        snd_pcm_info_t *pcminfo;
+        snd_ctl_card_info_alloca(&info);
+        snd_pcm_info_alloca(&pcminfo);
+        
+        card = -1;
+        if (snd_card_next(&card) < 0 || card < 0) {
+            fputs("alsa: no sound cards found...", stderr);
+            return;
+        }
+        while (card >= 0) {
+            char hw[32];
+            sprintf(hw, "hw:%i", card);
+            if ((err = snd_ctl_open(&handle, hw, 0)) < 0) {
+                fprintf(stderr, "alsa: control open (%i): %s", card, snd_strerror(err));
+                goto next_card;
+            }
+            if ((err = snd_ctl_card_info(handle, info)) < 0) {
+                fprintf(stderr, "alsa: control hardware info (%i): %s", card, snd_strerror(err));
+                snd_ctl_close(handle);
+                goto next_card;
+            }
+            dev = -1;
+            for (;;) {
+                if (snd_ctl_pcm_next_device(handle, &dev) < 0)
+                    fprintf(stderr, "alsa: snd_ctl_pcm_next_device");
+                if (dev < 0)
+                    break;
+                snd_pcm_info_set_device(pcminfo, dev);
+                snd_pcm_info_set_subdevice(pcminfo, 0);
+                snd_pcm_info_set_stream(pcminfo, stream[ctr]);
+                if ((err = snd_ctl_pcm_info(handle, pcminfo)) < 0) {
+                    if (err != -ENOENT)
+                        fprintf(stderr, "alsa: control digital audio info (%i): %s", card, snd_strerror(err));
+                    continue;
+                }
+                char name[32], desc[64];
+                sprintf(name, "hw:%i,%i", card, dev);
+                sprintf(desc, "%s: %s (%s)",
+                    snd_ctl_card_info_get_name(info),
+                    snd_pcm_info_get_name(pcminfo),
+                    name
+                );
+                switch (stream[ctr]) {
+                  case SND_PCM_STREAM_PLAYBACK:
+                    outputDevices.push_back(
+                        new ManglerAudioDevice(
+                            idx_p++,
+                            name,
+                            desc)
+                    );
+                    break;
+                  case SND_PCM_STREAM_CAPTURE:
+                    inputDevices.push_back(
+                        new ManglerAudioDevice(
+                            idx_c++,
+                            name,
+                            desc)
+                    );
+                    break;
+                }
+            }
+            snd_ctl_close(handle);
+        next_card:
+            if (snd_card_next(&card) < 0) {
+                fprintf(stderr, "alsa: snd_card_next");
+                break;
+            }
+        }
+    }
 #endif
 }/*}}}*/
 
@@ -370,6 +541,55 @@ ManglerAudio::playNotification_thread(Glib::ustring name) {
     }
 
     pa_simple_free(s);
+#elif HAVE_ALSA
+    snd_pcm_sframes_t ret;
+    snd_pcm_t         *s;
+    if ((error = snd_pcm_open(&s,
+                              (mangler->settings->config.notificationDeviceName == "Default" || 
+                                  mangler->settings->config.notificationDeviceName == "" 
+                                  ? "default" 
+                                  : (char *)mangler->settings->config.notificationDeviceName.c_str()),
+                              SND_PCM_STREAM_PLAYBACK,
+                              0)) < 0) {
+        fprintf(stderr, "snd_pcm_open() failed: %s\n", snd_strerror(error));
+        return;
+    }
+    if ((error = snd_pcm_set_params(s,                             // pcm handle
+                                    SND_PCM_FORMAT_S16_LE,         // format
+                                    SND_PCM_ACCESS_RW_INTERLEAVED, // access
+                                    1,                             // channels
+                                    44100,                         // rate
+                                    true,                          // soft_resample
+                                    500000)) < 0) {                // latency in usec (0.5 sec)
+        fprintf(stderr, "snd_pcm_set_params() failed: %s\n", snd_strerror(error));
+        snd_pcm_close(s);
+        return;
+    }
+    if ((error = snd_pcm_prepare(s)) < 0) {
+        fprintf(stderr, "snd_pcm_prepare() failed: %s\n", snd_strerror(error));
+        snd_pcm_close(s);
+        return;
+    }
+    uint32_t pcmlen = sounds[name]->length;
+    uint8_t *pcmptr = sounds[name]->sample;
+    uint8_t alsa_buf[ALSA_BUF];
+    size_t  buflen;
+    while ((buflen = pcmlen >= sizeof(alsa_buf) ? sizeof(alsa_buf) : pcmlen)) {
+        memcpy(&alsa_buf, pcmptr, buflen);
+        pcmlen -= buflen;
+        pcmptr += buflen;
+        if ((ret = snd_pcm_writei(s, &alsa_buf, buflen / sizeof(int16_t))) < 0) {
+            if (ret == -EPIPE) {
+                snd_pcm_prepare(s);
+            } else if ((error = snd_pcm_recover(s, ret, 0)) < 0) {
+                fprintf(stderr, "snd_pcm_writei() failed: %s\n", snd_strerror(error));
+                snd_pcm_close(s);
+                return;
+            }
+        }
+    }
+    snd_pcm_drain(s);
+    snd_pcm_close(s);
 #endif
     //throw Glib::Thread::Exit();
     return;
