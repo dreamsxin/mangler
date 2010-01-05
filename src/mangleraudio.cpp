@@ -141,7 +141,7 @@ ManglerAudio::open(uint32_t rate, bool type, uint32_t pcm_framesize) {/*{{{*/
                                         1,                             // channels
                                         rate,                          // rate
                                         true,                          // soft_resample
-                                        0)) < 0) {                     // latency in usec
+                                        150000)) < 0) {                // latency in usec (0.15 sec)
             fprintf(stderr, "snd_pcm_set_params() failed: %s\n", snd_strerror(error));
             snd_pcm_close(alsa_stream);
             return;

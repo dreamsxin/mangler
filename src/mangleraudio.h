@@ -35,8 +35,8 @@
 # include <pulse/error.h>
 # include <pulse/gccmacro.h>
 #elif HAVE_ALSA
-#  include <alsa/asoundlib.h>
-#  define ALSA_BUF 640
+# include <alsa/asoundlib.h>
+# define ALSA_BUF 640
 #endif
 #include <stdlib.h>
 #include <string.h>
