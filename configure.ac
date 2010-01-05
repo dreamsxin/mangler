@@ -61,32 +61,71 @@ PKG_CHECK_MODULES(gtkmm, gtkmm-2.4 >= 1.3.3)
 AC_SUBST(gtkmm_CFLAGS)
 AC_SUBST(gtkmm_LIBS)
 
-AC_ARG_WITH([pulseaudio],
-  [AS_HELP_STRING([--without-pulseaudio],
-    [disable support for pulseaudio])],
-  [],
-  [with_pulseaudio=yes])
+AC_ARG_ENABLE(pulseaudio, [  --disable-pulseaudio    disable PulseAudio support], [disable_pulse=yes])
+AC_ARG_ENABLE(alsa,       [  --enable-alsa           enable ALSA support], [enable_alsa=yes])
+
+if test -z "$enable_pulseaudio" -a -z "$enable_alsa" ; then
+	pulseaudio=yes
+	alsa=no
+elif  test "$enable_pulseaudio" = "yes" -a "$enable_alsa" = "yes" ; then
+	echo "error: you cannot enable support for both ALSA and PulseAudio"
+	exit
+elif  test "$enable_pulseaudio" = "no" -a "$enable_alsa" = "no" ; then
+	echo "**************************************************************************"
+	echo "*** WARNING: You have disabled support for both PulseAudio and ALSA.   ***"
+	echo "***          You can compile and use Mangler without an audio          ***"
+	echo "***          subsystem, but you will not have any sound, which more    ***"
+	echo "***          more or less makes the program useless.                   ***"
+	echo "**************************************************************************"
+	pulseaudio=no
+	alsa=no
+elif  test "$enable_pulseaudio" = "no" -a "$enable_alsa" != "yes" ; then
+	echo "**************************************************************************"
+	echo "*** WARNING: You have disabled support for both PulseAudio, but you    ***"
+	echo "***          did not enable ALSA support.  Enabling ALSA by default.   ***"
+	echo "**************************************************************************"
+	pulseaudio=no
+	alsa=yes
+	exit
+elif  test "$enable_pulseaudio" = "yes" ; then
+	echo "Enabling PulseAudio support and disabling ALSA support"
+	pulseaudio=yes
+	alsa=no
+elif  test "$enable_alsa" = "yes" ; then
+	echo "Enabling ALSA support and disabling PulseAudio support"
+	pulseaudio=no
+	alsa=yes
+fi
 
 AS_IF(
-	[test "x$with_pulseaudio" != xno],
+	[test "$pulseaudio" = "yes"],
 	[
 		PKG_CHECK_MODULES(pulse, libpulse-simple >= 0.9.14, [AC_DEFINE(HAVE_PULSE, 1, [have pulse audio])], [
 			echo "**************************************************************************"
 			echo "*** ERROR: pulse audio development libraries or headers were not found ***"
 			echo "*** on your system.  You can disable PulseAudio support with           ***"
 			echo "*** ./configure --without-pulseaudio                                   ***"
-			echo "*** but this will disable sound support                                ***"
 			echo "**************************************************************************"
 			exit 1
 		])
 		AC_SUBST(pulse_CFLAGS)
 		AC_SUBST(pulse_LIBS)
-	],[
-		echo "**************************************************************************"
-		echo "*** WARNING: compiling without pulse.  you will not have sound support ***"
-		echo "*** PulseAudio 0.9.14 or higher is required for audio support          ***"
-		echo "**************************************************************************"
-	]
+	],[]
+)
+AS_IF(
+	[test "$alsa" = "yes"],
+	[
+		PKG_CHECK_MODULES(alsa, alsa >= 1.0.0, [AC_DEFINE(HAVE_ALSA, 1, [have alsa])], [
+			echo "**************************************************************************"
+			echo "*** ERROR: ALSA audio development libraries or headers were not found  ***"
+			echo "*** on your system.  You can disable ALSA support with                 ***"
+			echo "*** ./configure --without-alsa                                         ***"
+			echo "**************************************************************************"
+			exit 1
+		])
+		AC_SUBST(alsa_CFLAGS)
+		AC_SUBST(alsa_LIBS)
+	],[]
 )
 
 PKG_CHECK_MODULES(gthread, gthread-2.0 >= 2.20.1)
