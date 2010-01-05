@@ -414,25 +414,25 @@ ManglerAudio::getDeviceList(void) {/*{{{*/
         
         card = -1;
         if (snd_card_next(&card) < 0 || card < 0) {
-            fputs("alsa: no sound cards found...", stderr);
+            fputs("alsa: no sound cards found...\n", stderr);
             return;
         }
         while (card >= 0) {
             char hw[32];
             sprintf(hw, "hw:%i", card);
             if ((err = snd_ctl_open(&handle, hw, 0)) < 0) {
-                fprintf(stderr, "alsa: control open (%i): %s", card, snd_strerror(err));
+                fprintf(stderr, "alsa: control open (%i): %s\n", card, snd_strerror(err));
                 goto next_card;
             }
             if ((err = snd_ctl_card_info(handle, info)) < 0) {
-                fprintf(stderr, "alsa: control hardware info (%i): %s", card, snd_strerror(err));
+                fprintf(stderr, "alsa: control hardware info (%i): %s\n", card, snd_strerror(err));
                 snd_ctl_close(handle);
                 goto next_card;
             }
             dev = -1;
             for (;;) {
                 if (snd_ctl_pcm_next_device(handle, &dev) < 0)
-                    fprintf(stderr, "alsa: snd_ctl_pcm_next_device");
+                    fprintf(stderr, "alsa: snd_ctl_pcm_next_device\n");
                 if (dev < 0)
                     break;
                 snd_pcm_info_set_device(pcminfo, dev);
@@ -440,7 +440,7 @@ ManglerAudio::getDeviceList(void) {/*{{{*/
                 snd_pcm_info_set_stream(pcminfo, stream[ctr]);
                 if ((err = snd_ctl_pcm_info(handle, pcminfo)) < 0) {
                     if (err != -ENOENT)
-                        fprintf(stderr, "alsa: control digital audio info (%i): %s", card, snd_strerror(err));
+                        fprintf(stderr, "alsa: control digital audio info (%i): %s\n", card, snd_strerror(err));
                     continue;
                 }
                 char name[32], desc[64];
@@ -472,7 +472,7 @@ ManglerAudio::getDeviceList(void) {/*{{{*/
             snd_ctl_close(handle);
         next_card:
             if (snd_card_next(&card) < 0) {
-                fprintf(stderr, "alsa: snd_card_next");
+                fprintf(stderr, "alsa: snd_card_next\n");
                 break;
             }
         }
