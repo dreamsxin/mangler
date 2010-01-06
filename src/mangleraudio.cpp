@@ -403,7 +403,7 @@ ManglerAudio::getDeviceList(void) {/*{{{*/
 #elif HAVE_ALSA
     snd_pcm_stream_t stream[2] = { SND_PCM_STREAM_PLAYBACK, SND_PCM_STREAM_CAPTURE };
     
-    for (ctr = 0; ctr < 2; ctr++) { // the rest is just copypasta
+    for (ctr = 0; ctr < 2; ctr++) { // the rest is just copypasta, with bad code from alsa
         snd_ctl_t *handle;
         int card, err, dev, 
             idx_p = 0, idx_c = 0;
@@ -418,16 +418,24 @@ ManglerAudio::getDeviceList(void) {/*{{{*/
             return;
         }
         while (card >= 0) {
-            char hw[32];
-            sprintf(hw, "hw:%i", card);
+            char hw[256] = "";
+            snprintf(hw, 256, "hw:%i", card);
             if ((err = snd_ctl_open(&handle, hw, 0)) < 0) {
                 fprintf(stderr, "alsa: control open (%i): %s\n", card, snd_strerror(err));
-                goto next_card;
+                if (snd_card_next(&card) < 0) {
+                    fprintf(stderr, "alsa: snd_ctl_open: snd_card_next\n");
+                    break;
+                }
+                continue;
             }
             if ((err = snd_ctl_card_info(handle, info)) < 0) {
                 fprintf(stderr, "alsa: control hardware info (%i): %s\n", card, snd_strerror(err));
                 snd_ctl_close(handle);
-                goto next_card;
+                if (snd_card_next(&card) < 0) {
+                    fprintf(stderr, "alsa: snd_ctl_card_info: snd_card_next\n");
+                    break;
+                }
+                continue;
             }
             dev = -1;
             for (;;) {
@@ -443,9 +451,9 @@ ManglerAudio::getDeviceList(void) {/*{{{*/
                         fprintf(stderr, "alsa: control digital audio info (%i): %s\n", card, snd_strerror(err));
                     continue;
                 }
-                char name[32], desc[64];
-                sprintf(name, "hw:%i,%i", card, dev);
-                sprintf(desc, "%s: %s (%s)",
+                char name[256] = "", desc[512] = "";
+                snprintf(name, 256, "hw:%i,%i", card, dev);
+                snprintf(desc, 512, "%s: %s (%s)",
                     snd_ctl_card_info_get_name(info),
                     snd_pcm_info_get_name(pcminfo),
                     name
@@ -470,7 +478,6 @@ ManglerAudio::getDeviceList(void) {/*{{{*/
                 }
             }
             snd_ctl_close(handle);
-        next_card:
             if (snd_card_next(&card) < 0) {
                 fprintf(stderr, "alsa: snd_card_next\n");
                 break;
