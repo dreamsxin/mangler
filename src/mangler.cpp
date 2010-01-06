@@ -818,7 +818,7 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                 v3_user *me, *user;
                 me = v3_get_user(v3_get_user_id());
                 user = v3_get_user(ev->user.id);
-                channelTree->setUserIcon(ev->user.id, "orange");
+                channelTree->setUserIcon(ev->user.id, "yellow");
                 if (me && user && me->channel == user->channel) {
                     v3_free_user(me);
                     v3_free_user(user);

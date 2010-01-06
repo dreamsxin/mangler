@@ -4,7 +4,7 @@ all: mangler-icons.h
 mangler-icons.h: black_circle.png blue_circle.png cyan_circle.png green_circle.png \
 		 grey_circle.png purple_circle.png red_circle.png yellow_circle.png \
 		 mangler_logo.svg \
-		 user_icon_red.png  user_icon_yellow.png  user_icon_green.png  user_icon_orange.png \
+		 user_icon_red.svg  user_icon_yellow.svg  user_icon_green.svg  user_icon_orange.svg \
 		 tray_icon_blue.svg tray_icon_red.svg tray_icon_yellow.svg tray_icon_green.svg tray_icon_grey.svg tray_icon_purple.svg
 	list=""
 	for f in *.png *.svg ; do \
