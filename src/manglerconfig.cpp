@@ -372,7 +372,7 @@ void ManglerConfig::load() {/*{{{*/
     PushToTalkMouseEnabled        = get("PushToTalkMouseEnabled") == "1" ? true : false; // default false
     PushToTalkMouseValue          = get("PushToTalkMouseValue");
     if (PushToTalkMouseValue.length() > 6) {
-        PushToTalkMouseValueInt = atoi(PushToTalkMouseValue.substr(6).c_str());
+        PushToTalkMouseValueInt   = atoi(PushToTalkMouseValue.substr(6).c_str());
     }
     AudioIntegrationEnabled       = get("AudioIntegrationEnabled") == "1" ? true : false; // default false
     AudioIntegrationPlayer        = get("AudioIntegrationPlayer");
@@ -390,11 +390,13 @@ void ManglerConfig::load() {/*{{{*/
     qc_lastserver.phonetic        = get("qc_lastserver.phonetic");
     qc_lastserver.comment         = get("qc_lastserver.comment");
     lv3_debuglevel                = atoi(get("lv3_debuglevel").c_str());
-    masterVolumeLevel             = atoi(get("masterVolumeLevel").c_str());
+    if (get("masterVolumeLevel").length()) {
+        masterVolumeLevel         = atoi(get("masterVolumeLevel").c_str());
+    }
     windowWidth                   = atoi(get("window.width").c_str());
     windowHeight                  = atoi(get("window.height").c_str());
     buttonsHidden                 = get("window.buttonsHidden") == "1" ? true : false; // default false
-    serverInfoHidden                 = get("window.serverInfoHidden") == "1" ? true : false; // default false
+    serverInfoHidden              = get("window.serverInfoHidden") == "1" ? true : false; // default false
     lastConnectedServerId         = atoi(get("lastConnectedServerId").c_str());
     for (uint32_t ctr = 0; ctr < serverlist.size(); ctr++) {
         delete serverlist[ctr];
