@@ -107,6 +107,7 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
     // Admin Button
     builder->get_widget("adminButton", button);
     button->signal_clicked().connect(sigc::mem_fun(this, &Mangler::adminButton_clicked_cb));
+    isAdmin = false;
 
     // Settings Button
     builder->get_widget("settingsButton", button);

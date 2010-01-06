@@ -239,7 +239,7 @@ ManglerAudio::input(void) {/*{{{*/
             gettimeofday(&now, NULL);
             timeval_subtract(&diff, &now, &start);
             seconds = (float)diff.tv_sec + ((float)diff.tv_usec / (float)1000000);
-            //fprintf(stderr, "iteration after %f seconds\n", seconds);
+            //fprintf(stderr, "iteration after %f seconds with %d bytes\n", seconds, pcm_framesize*ctr);
             ctr++;
         }
         if (! drop) {
