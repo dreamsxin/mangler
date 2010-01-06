@@ -419,7 +419,7 @@ ManglerAudio::getDeviceList(void) {/*{{{*/
         }
         while (card >= 0) {
             char hw[256] = "";
-            snprintf(hw, 256, "hw:%i", card);
+            snprintf(hw, 255, "hw:%i", card);
             if ((err = snd_ctl_open(&handle, hw, 0)) < 0) {
                 fprintf(stderr, "alsa: control open (%i): %s\n", card, snd_strerror(err));
                 if (snd_card_next(&card) < 0) {
@@ -452,8 +452,8 @@ ManglerAudio::getDeviceList(void) {/*{{{*/
                     continue;
                 }
                 char name[256] = "", desc[512] = "";
-                snprintf(name, 256, "hw:%i,%i", card, dev);
-                snprintf(desc, 512, "%s: %s (%s)",
+                snprintf(name, 255, "hw:%i,%i", card, dev);
+                snprintf(desc, 511, "%s: %s (%s)",
                     snd_ctl_card_info_get_name(info),
                     snd_pcm_info_get_name(pcminfo),
                     name
