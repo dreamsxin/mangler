@@ -253,14 +253,7 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
     statusIcon->signal_activate().connect(sigc::mem_fun(this, &Mangler::statusIcon_activate_cb));
     iconified = false;
 
-    // Set up mouse push to talk
-    /*
-    if (settings->config.PushToTalkMouseEnabled && settings->config.PushToTalkMouseValueInt) {
-        GdkWindow   *rootwin = gdk_get_default_root_window();
-        XGrabButton(GDK_WINDOW_XDISPLAY(rootwin), settings->config.PushToTalkMouseValueInt, AnyModifier, GDK_ROOT_WINDOW(), False, ButtonPressMask|ButtonReleaseMask, GrabModeAsync, GrabModeAsync, None, None);
-    }
-    gdk_window_add_filter (NULL, ptt_filter, NULL);
-    */
+    Glib::signal_timeout().connect(sigc::mem_fun(*this, &Mangler::updateXferAmounts), 500); 
 }/*}}}*/
 
 /*
@@ -349,7 +342,7 @@ void Mangler::connectButton_clicked_cb(void) {/*{{{*/
             Glib::Thread::create(sigc::bind(sigc::mem_fun(this->network, &ManglerNetwork::connect), hostname, port, username, password, phonetic), FALSE);
             isAdmin = false;
             // TODO: move this into a thread and use blocking waits
-            Glib::signal_timeout().connect( sigc::mem_fun(*this, &Mangler::getNetworkEvent), 10 );
+            Glib::signal_timeout().connect(sigc::mem_fun(*this, &Mangler::getNetworkEvent), 10 );
         }
     } else {
         v3_logout();
@@ -1107,6 +1100,40 @@ bool Mangler::checkPushToTalkMouse(void) {/*{{{*/
             stopTransmit(); 
         } 
     } 
+    return(true); 
+}/*}}}*/
+bool Mangler::updateXferAmounts(void) {/*{{{*/ 
+    uint32_t packets, bytes;
+    char buf[1024];
+
+    builder->get_widget("sentLabel", label);
+    bytes = v3_get_bytes_sent();
+    packets = v3_get_packets_sent();
+    if (bytes > 1024*1024) {
+        snprintf(buf, 1023, "%2.2f megabytes / %d packets", (float)bytes/1024/1024, packets);
+    } else if (bytes > 1024) {
+        snprintf(buf, 1023, "%2.2f kilobytes / %d packets", (float)bytes/1024, packets);
+    } else if (bytes) {
+        snprintf(buf, 1023, "%d bytes / %d packets", bytes, packets);
+    } else {
+        snprintf(buf, 1023, "N/A");
+    }
+    label->set_text(buf);
+
+    builder->get_widget("recvLabel", label);
+    bytes = v3_get_bytes_recv();
+    packets = v3_get_packets_recv();
+    if (bytes > 1024*1024) {
+        snprintf(buf, 1023, "%2.2f megabytes / %d packets", (float)bytes/1024/1024, packets);
+    } else if (bytes > 1024) {
+        snprintf(buf, 1023, "%2.2f kilobytes / %d packets", (float)bytes/1024, packets);
+    } else if (bytes) {
+        snprintf(buf, 1023, "%d bytes / %d packets", bytes, packets);
+    } else {
+        snprintf(buf, 1023, "N/A");
+    }
+    label->set_text(buf);
+
     return(true); 
 }/*}}}*/
 /* {{{ GdkFilterReturn ptt_filter(GdkXEvent *gdk_xevent, GdkEvent *event, gpointer data) {

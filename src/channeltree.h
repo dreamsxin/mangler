@@ -99,6 +99,7 @@ class ManglerChannelTree
         Gtk::Menu                           *rcmenu_channel;
         Gtk::Window                         *window;
         Gtk::Label                          *label;
+        Gtk::LinkButton                     *linkbutton;
         Gtk::VScale                         *volumevscale;
         Gtk::Adjustment                     *volumeAdjustment;
         sigc::connection                    volumeAdjustSignalConnection;

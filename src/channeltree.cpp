@@ -570,21 +570,47 @@ ManglerChannelTree::channelView_row_activated_cb(const Gtk::TreeModel::Path& pat
         if (id == v3_get_user_id()) {
             // clicked on ourself
         } else {
+            v3_user *u;
+            uint16_t id = row[channelRecord.id];
             Glib::ustring name = row[channelRecord.name];
+            Glib::ustring comment = row[channelRecord.comment];
+            Glib::ustring url = row[channelRecord.url];
+            bool  accept_pages = false, accept_u2u = false, accept_chat = false, allow_recording = false;
+            if ((u = v3_get_user(id)) != NULL) {
+                accept_pages = u->accept_pages;
+                accept_u2u = u->accept_u2u;
+                accept_chat = u->accept_chat;
+                allow_recording = u->allow_recording;
+                v3_free_user(u);
+            }
 
             // disconnect whatever was connected before and reconnect
             volumeAdjustSignalConnection.disconnect();
             volumeAdjustSignalConnection = volumeAdjustment->signal_value_changed().connect(sigc::bind(sigc::mem_fun(this, &ManglerChannelTree::volumeAdjustment_value_changed_cb), id));
 
-            // set the user name
+            // set the value label
             builder->get_widget("userSettingsNameValueLabel", label);
             label->set_text(name);
+            builder->get_widget("userSettingsCommentValue", label);
+            label->set_text(comment);
+            builder->get_widget("userSettingsURLValue", linkbutton);
+            linkbutton->set_uri(url);
+            linkbutton->set_label(url);
+            builder->get_widget("userSettingsU2UValue", label);
+            label->set_text(accept_u2u ? "Yes" : "No");
+            builder->get_widget("userSettingsRecordValue", label);
+            label->set_text(allow_recording ? "Yes" : "No");
+            builder->get_widget("userSettingsPageValue", label);
+            label->set_text(accept_pages ? "Yes" : "No");
+            builder->get_widget("userSettingsChatValue", label);
+            label->set_text(accept_chat ? "Yes" : "No");
 
             // set the current volume level for this user
             volumeAdjustment->set_value(v3_get_volume_user(id));
 
             builder->get_widget("userSettingsWindow", window);
             window->show_all();
+            window->queue_resize();
             window->present();
         }
     } else {

@@ -505,8 +505,10 @@ _v3_send_enc_msg(char *data, int len) {/*{{{*/
     uint8_t buf[len+2];
 
     _v3_func_enter("_v3_send_enc_msg");
-    _v3_debug(V3_DEBUG_PACKET, "======= sending encrypted TCP packet ============================");
+    _v3_debug(V3_DEBUG_PACKET_ENCRYPTED, "======= sending encrypted TCP packet ============================");
     _v3_net_message_dump_raw(data, len);
+    v3_server.sent_packet_count++;
+    v3_server.sent_byte_count += len + 2;
     lenptr = htons(len);
     memcpy(buf, &lenptr, 2);
     memcpy(buf+2, data, len);
@@ -930,12 +932,12 @@ _v3_recv(int block) {/*{{{*/
                 _v3_func_leave("_v3_recv");
                 return NULL;
             } else {
-                v3_server.packet_count++;
-                v3_server.byte_count += msg->len;
+                v3_server.recv_packet_count++;
+                v3_server.recv_byte_count += msg->len;
                 _v3_debug(V3_DEBUG_SOCKET, "received %d bytes", msg->len);
             }
 
-            if(v3_server.packet_count == 1) {
+            if(v3_server.recv_packet_count == 1) {
                 ventrilo_first_dec((uint8_t *)msgdata, msg->len);
             } else {
                 ventrilo_dec(&v3_server.server_key, (uint8_t *)msgdata, msg->len);
@@ -1194,26 +1196,29 @@ _v3_update_user(v3_user *user) {/*{{{*/
     } else {
         for (u = v3_user_list; u != NULL; u = u->next) { // search for existing users
             if (u->id == user->id) {
-                void *tmp;
-                char *nametmp;
+                v3_user tmpuser;
+                memcpy(&tmpuser, u, sizeof(v3_user));
                 // Users cannot change their name
                 // free(u->name);
-                nametmp = u->name;
                 free(u->phonetic);
                 free(u->comment);
                 free(u->integration_text);
                 free(u->url);
-                tmp = u->next;
                 memcpy(u, user, sizeof(v3_user));
                 // Users cannot change their name
                 // u->name          = strdup(user->name);
-                u->name             = nametmp;
+                u->name             = tmpuser.name;
                 u->comment          = strdup(user->comment);
                 u->phonetic         = strdup(user->phonetic);
                 u->integration_text = strdup(user->integration_text);
                 u->url              = strdup(user->url);
                 u->guest            = user->bitfield & 0x400 ? 1 : 0;
-                u->next             = tmp;
+                u->accept_pages     = tmpuser.accept_pages;
+                u->accept_u2u       = tmpuser.accept_u2u;
+                u->accept_chat      = tmpuser.accept_chat;
+                u->allow_recording  = tmpuser.allow_recording;
+                u->global_mute      = tmpuser.global_mute;
+                u->next             = tmpuser.next;
                 _v3_debug(V3_DEBUG_INFO, "updated user %s",  u->name);
                 _v3_unlock_userlist();
                 _v3_func_leave("_v3_update_user");
@@ -1956,9 +1961,36 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                 _v3_func_leave("_v3_process_message");
                 return V3_MALFORMED;
             } else {
+                v3_user *u;
                 _v3_lock_userlist();
-                //_v3_msg_0x46 *m = msg->contents;
-                // TODO: update the user list
+                _v3_msg_0x46 *m = msg->contents;
+                if ((u = _v3_get_user(m->user_id)) != NULL) {
+                    switch (m->setting) {
+                        case V3_USER_ACCEPT_PAGES:
+                            _v3_debug(V3_DEBUG_INFO, "setting user %d as accepting pages = %d", m->user_id, m->value);
+                            u->accept_pages = m->value;
+                            break;
+                        case V3_USER_ACCEPT_U2U:
+                            _v3_debug(V3_DEBUG_INFO, "setting user %d as accepting u2u = %d", m->user_id, m->value);
+                            u->accept_u2u = m->value;
+                            break;
+                        case V3_USER_ALLOW_RECORD:
+                            _v3_debug(V3_DEBUG_INFO, "setting user %d as allowing recording = %d", m->user_id, m->value);
+                            u->allow_recording = m->value;
+                            break;
+                        case V3_USER_ACCEPT_CHAT:
+                            _v3_debug(V3_DEBUG_INFO, "setting user %d as accepting priv chat = %d", m->user_id, m->value);
+                            u->accept_chat = m->value;
+                            break;
+                        case V3_USER_GLOBAL_MUTE:
+                            _v3_debug(V3_DEBUG_INFO, "setting user %d as globally muted = %d", m->user_id, m->value);
+                            u->global_mute = m->value;
+                            break;
+                        default:
+                            _v3_debug(V3_DEBUG_INFO, "unknown setting for user %d setting: %d = %d", m->user_id, m->setting, m->value);
+                            break;
+                    }
+                }
                 _v3_unlock_userlist();
             }
             _v3_destroy_packet(msg);
@@ -2596,8 +2628,10 @@ v3_login(char *server, char *username, char *password, char *phonetic) {/*{{{*/
         _v3_debug(V3_DEBUG_INTERNAL, "freeing up resources from previous login");
         v3_server.port = 0;
         v3_server.max_clients = 0;
-        v3_server.byte_count = 0;
-        v3_server.packet_count = 0;
+        v3_server.recv_byte_count = 0;
+        v3_server.recv_packet_count = 0;
+        v3_server.sent_byte_count = 0;
+        v3_server.sent_packet_count = 0;
         v3_server.connected_clients = 0;
         free(v3_server.name);
         free(v3_server.version);
@@ -3228,22 +3262,46 @@ v3_user_count(void) {/*{{{*/
 
 }/*}}}*/
 
+/*
+ * This function returns a COPY of the user structure 
+ */
 v3_user *
 v3_get_user(uint16_t id) {/*{{{*/
     v3_user *u, *ret_user;
 
     _v3_lock_userlist();
+    u = _v3_get_user(id);
+    if (!u) {
+        ret_user = NULL;
+    } else {
+        ret_user = malloc(sizeof(v3_user));
+        _v3_copy_user(ret_user, u);
+        return ret_user;
+    }
+    _v3_unlock_userlist();
+    return ret_user;
+}/*}}}*/
+
+/*
+ * This function provides a pointer to the user in the INTERNAL linked list.
+ * This does not return copy of the structure.  The caller is responsible for
+ * locking this structure if they will be making updates.
+ */
+v3_user *
+_v3_get_user(uint16_t id) {/*{{{*/
+    v3_user *u, *ret_user;
+
+    _v3_lock_userlist();
     for (u = v3_user_list; u != NULL; u = u->next) {
         if (u->id == id) {
-            ret_user = malloc(sizeof(v3_user));
-            _v3_copy_user(ret_user, u);
             _v3_unlock_userlist();
-            return ret_user;
+            return u;
         }
     }
     _v3_unlock_userlist();
     return NULL;
 }/*}}}*/
+
 
 uint16_t
 v3_get_user_channel(uint16_t id) {/*{{{*/
@@ -3460,6 +3518,26 @@ int
 v3_get_max_clients(void) {/*{{{*/
     // - 1 for the lobby user
     return v3_server.max_clients;
+}/*}}}*/
+
+uint32_t
+v3_get_bytes_recv(void) {/*{{{*/
+    return v3_server.recv_byte_count;
+}/*}}}*/
+
+uint32_t
+v3_get_bytes_sent(void) {/*{{{*/
+    return v3_server.sent_byte_count;
+}/*}}}*/
+
+uint32_t
+v3_get_packets_recv(void) {/*{{{*/
+    return v3_server.recv_packet_count;
+}/*}}}*/
+
+uint32_t
+v3_get_packets_sent(void) {/*{{{*/
+    return v3_server.sent_packet_count;
 }/*}}}*/
 
 uint32_t

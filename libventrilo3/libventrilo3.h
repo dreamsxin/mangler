@@ -312,7 +312,7 @@ uint32_t _v3_hash_table[] =
  * Global Variables
  */
 
-_v3_server  v3_server  = { 0, 0, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, -1, { 0, 0 }, NULL, NULL, 0, 0, { "", 0, 0 }, { "", 0, 0 }, NULL, NULL, {0, 0},  0, 0 };
+_v3_server  v3_server  = { 0, 0, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, -1, { 0, 0 }, NULL, NULL, 0, 0, { "", 0, 0 }, { "", 0, 0 }, NULL, NULL, {0, 0},  0, 0, 0, 0};
 _v3_luser   v3_luser   = { -1, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, 0, {  } };
 
 v3_channel              *v3_channel_list = NULL;
@@ -434,6 +434,7 @@ int                     _v3_update_channel(v3_channel *channel);
 void                    _v3_copy_channel(v3_channel *dest, v3_channel *src);
 int                     _v3_update_user(v3_user *user);
 void                    _v3_copy_user(v3_user *dest, v3_user *src);
+v3_user *               _v3_get_user(uint16_t id);
 int                     _v3_update_rank(v3_rank *rank);
 void                    _v3_copy_rank(v3_rank *dest, v3_rank *src);
 void                    _v3_destroy_userlist(void);

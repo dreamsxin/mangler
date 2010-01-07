@@ -324,6 +324,7 @@ typedef struct __v3_msg_user {/*{{{*/
     uint8_t  accept_u2u;
     uint8_t  accept_chat;
     uint8_t  allow_recording;
+    uint8_t  global_mute;
     uint8_t  guest;
     void     *next;
     uint16_t real_user_id; // used for phantom users
@@ -436,8 +437,10 @@ typedef struct __v3_server {
     _v3_net_message *_queue;          // This queue (linked list) is used internally
     _v3_net_message *queue;           // This queue (linked list) stores messages that need to be processed by the client
     struct timeval last_timestamp;    // The time() of the last timestamp, a timestamp is sent every 10 seconds
-    uint32_t packet_count;			  // Total amount of packets received from server.
-    uint32_t byte_count;			  // Total amount of bytes received from server.
+    uint32_t recv_packet_count;            // Total amount of packets received from server.
+    uint32_t recv_byte_count;              // Total amount of bytes received from server.
+    uint32_t sent_packet_count;            // Total amount of packets received from server.
+    uint32_t sent_byte_count;              // Total amount of bytes received from server.
 } _v3_server;
 
 /*
@@ -502,6 +505,10 @@ uint16_t    *v3_get_soundq(uint32_t *len);
 uint32_t    v3_get_soundq_length(void);
 v3_event    *v3_get_event(int block);
 int         v3_get_max_clients(void);
+uint32_t    v3_get_bytes_recv(void);
+uint32_t    v3_get_bytes_sent(void);
+uint32_t    v3_get_packets_recv(void);
+uint32_t    v3_get_packets_sent(void);
 void        v3_clear_events(void);
 uint32_t    v3_get_codec_rate(uint16_t codec, uint16_t format);
 const v3_codec *v3_get_codec(uint16_t codec, uint16_t format);
