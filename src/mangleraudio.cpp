@@ -309,15 +309,11 @@ ManglerAudio::output(void) {/*{{{*/
             return;
         }
 #elif HAVE_ALSA
+        uint32_t buflen;
         uint32_t pcmlen = queuedpcm->length;
         uint8_t *pcmptr = queuedpcm->sample;
-        uint8_t alsa_buf[ALSA_BUF];
-        size_t  buflen;
-        while ((buflen = pcmlen >= sizeof(alsa_buf) ? sizeof(alsa_buf) : pcmlen)) {
-            memcpy(&alsa_buf, pcmptr, buflen);
-            pcmlen -= buflen;
-            pcmptr += buflen;
-            if ((alsa_frames = snd_pcm_writei(alsa_stream, &alsa_buf, buflen / sizeof(int16_t))) < 0) {
+        while ((buflen = pcmlen >= ALSA_BUF ? ALSA_BUF : pcmlen)) {
+            if ((alsa_frames = snd_pcm_writei(alsa_stream, pcmptr, buflen / sizeof(int16_t))) < 0) {
                 if (alsa_frames == -EPIPE) {
                     snd_pcm_prepare(alsa_stream);
                 } else if ((error = snd_pcm_recover(alsa_stream, alsa_frames, 0)) < 0) {
@@ -328,6 +324,8 @@ ManglerAudio::output(void) {/*{{{*/
                     return;
                 }
             }
+            pcmlen -= buflen;
+            pcmptr += buflen;
         }
 #endif
         delete queuedpcm;
@@ -577,15 +575,11 @@ ManglerAudio::playNotification_thread(Glib::ustring name) {
         snd_pcm_close(s);
         return;
     }
+    uint32_t buflen;
     uint32_t pcmlen = sounds[name]->length;
     uint8_t *pcmptr = sounds[name]->sample;
-    uint8_t alsa_buf[ALSA_BUF];
-    size_t  buflen;
-    while ((buflen = pcmlen >= sizeof(alsa_buf) ? sizeof(alsa_buf) : pcmlen)) {
-        memcpy(&alsa_buf, pcmptr, buflen);
-        pcmlen -= buflen;
-        pcmptr += buflen;
-        if ((ret = snd_pcm_writei(s, &alsa_buf, buflen / sizeof(int16_t))) < 0) {
+    while ((buflen = pcmlen >= ALSA_BUF ? ALSA_BUF : pcmlen)) {
+        if ((ret = snd_pcm_writei(s, pcmptr, buflen / sizeof(int16_t))) < 0) {
             if (ret == -EPIPE) {
                 snd_pcm_prepare(s);
             } else if ((error = snd_pcm_recover(s, ret, 0)) < 0) {
@@ -594,6 +588,8 @@ ManglerAudio::playNotification_thread(Glib::ustring name) {
                 return;
             }
         }
+        pcmlen -= buflen;
+        pcmptr += buflen;
     }
     snd_pcm_drain(s);
     snd_pcm_close(s);
