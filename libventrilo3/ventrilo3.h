@@ -63,6 +63,12 @@
 #define V3_RCON_CHAT                0x03
 #define V3_JOINFAIL_CHAT            0x04
 
+#define V3_START_PRIV_CHAT          0x00
+#define V3_END_PRIV_CHAT            0x01
+#define V3_TALK_PRIV_CHAT           0x02
+#define V3_BACK_PRIV_CHAT           0x03
+#define V3_AWAY_PRIV_CHAT           0x04
+
 #define V3_RANK_LIST                0x00
 #define V3_ADD_RANK                 0x03
 #define V3_REMOVE_RANK              0x04
@@ -208,6 +214,11 @@ enum _v3_events
     V3_EVENT_CHAT_MESSAGE,
     V3_EVENT_ADMIN_AUTH,
     V3_EVENT_CHAN_ADMIN_UPDATED,
+    V3_EVENT_PRIVATE_CHAT_MESSAGE,
+    V3_EVENT_PRIVATE_CHAT_START,
+    V3_EVENT_PRIVATE_CHAT_END,
+    V3_EVENT_PRIVATE_CHAT_AWAY,
+    V3_EVENT_PRIVATE_CHAT_BACK,
 
     // outbound specific event types
     V3_EVENT_CHANGE_CHANNEL,
@@ -488,6 +499,11 @@ int         v3_login(char *server, char *username, char *password, char *phoneti
 void        v3_join_chat(void);
 void        v3_leave_chat(void);
 void        v3_send_chat_message(char* message);
+void        v3_start_privchat(uint16_t userid);
+void        v3_end_privchat(uint16_t userid);
+void        v3_send_privchat_message(uint16_t userid, char* message);
+void        v3_send_privchat_away(uint16_t userid);
+void        v3_send_privchat_back(uint16_t userid);
 void        v3_logout(void);
 void        v3_change_channel(uint16_t channel_id, char *password);
 void        v3_admin_login(char *password);

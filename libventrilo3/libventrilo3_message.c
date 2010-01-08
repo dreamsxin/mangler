@@ -1178,6 +1178,54 @@ _v3_get_0x59(_v3_net_message *msg) {/*{{{*/
     return true;
 }/*}}}*/
 /*}}}*/
+// Message 0x5a (90) | PRIVATE CHAT /*{{{*/
+int 
+_v3_get_0x5a(_v3_net_message *msg) {/*{{{*/
+    _v3_msg_0x5a *m;
+    _v3_func_enter("_v3_get_0x5a");
+    m = msg->contents = msg->data;
+    switch(m->subtype) {
+        case 2:
+            m->msg = _v3_get_msg_string(msg->data + 12, &m->msglen);
+            _v3_debug(V3_DEBUG_PACKET_PARSE, "recieved privchat msg: %s", m->msg);
+            break;
+    }
+    _v3_func_leave("_v3_get_0x5a");
+    return true;
+}/*}}}*/
+_v3_net_message *_v3_put_0x5a(uint16_t subtype, uint16_t user1, uint16_t user2, char* message) {/*{{{*/
+    _v3_net_message *m;
+    _v3_msg_0x5a *mc;
+
+    _v3_func_enter("_v3_put_0x5a");
+    // Build our message
+    m = malloc(sizeof(_v3_net_message));
+    memset(m, 0, sizeof(_v3_net_message));
+    m->type = 0x5a;
+    
+    // Build our message contents
+    uint16_t base = sizeof(_v3_msg_0x5a) - (sizeof(char *) + sizeof(uint16_t)); 
+    uint16_t len  = base;
+    mc = malloc(base);
+    memset(mc, 0, base);
+    mc->type = 0x5a;
+    mc->subtype = subtype;
+    mc->user1 = user1;
+    mc->user2 = user2;
+    
+    if (message) {
+        len += strlen(message) + 2;
+        mc = realloc(mc, len);
+        _v3_put_msg_string((char *)mc + base, message);   
+    }
+    
+    m->contents = mc;
+    m->data = (char *)mc;
+    m->len = len;
+    _v3_func_leave("_v3_put_0x5a");
+    return m;
+}/*}}}*/
+/*}}}*/
 // Message 0x5c (92) | HASH TABLE SCRAMBLE  /*{{{*/
 int
 _v3_get_0x5c(_v3_net_message *msg) {/*{{{*/

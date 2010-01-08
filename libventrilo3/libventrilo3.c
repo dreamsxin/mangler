@@ -1952,6 +1952,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                         }
                         break;
                 }
+                _v3_destroy_packet(msg);
             }
             _v3_func_leave("_v3_process_message");
             return V3_OK;/*}}}*/
@@ -2451,6 +2452,68 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
             _v3_destroy_packet(msg);
             _v3_func_leave("_v3_process_message");
             return V3_OK;/*}}}*/
+        case 0x5a:/*{{{*/
+            if(!_v3_get_0x5a(msg)) {
+                _v3_destroy_packet(msg);
+                _v3_func_leave("_v3_process_message");
+                return V3_MALFORMED;
+            } else {
+                _v3_msg_0x5a *m = msg->contents;
+                switch(m->subtype) {
+                    case V3_START_PRIV_CHAT:
+                        {
+                            // for some reason, the server responds to us to tell us that we started chat?
+                            // this condition checks to make sure a remote user has requested chat with us
+                            if (m->user2 != v3_get_user_id()) {
+                                v3_event *ev = _v3_create_event(V3_EVENT_PRIVATE_CHAT_START);
+                                ev->user.id = m->user2;
+                                _v3_debug(V3_DEBUG_INFO, "recieved chat start from user id %d", m->user2);
+                                v3_queue_event(ev);
+                            }
+                        }
+                        break;
+                    case V3_END_PRIV_CHAT:
+                        {
+                            v3_event *ev = _v3_create_event(V3_EVENT_PRIVATE_CHAT_END);
+                            ev->user.id = m->user2;
+                            _v3_debug(V3_DEBUG_INFO, "recieved chat end from user id %d", m->user2);
+                            v3_queue_event(ev);
+                        }
+                        break;
+                    case V3_TALK_PRIV_CHAT:
+                        {   
+                            v3_event *ev = _v3_create_event(V3_EVENT_PRIVATE_CHAT_MESSAGE);
+                            ev->user.id = m->user2;
+                            strncpy(ev->data.chatmessage, m->msg, sizeof(ev->data.chatmessage) - 1);
+                            _v3_debug(V3_DEBUG_INFO, "recieved chat message from user id %d: %s", m->user2, m->msg);
+                            free(m->msg);
+                            v3_queue_event(ev);
+                        }
+                        break;
+                    case V3_BACK_PRIV_CHAT:
+                        {
+                            v3_event *ev = _v3_create_event(V3_EVENT_PRIVATE_CHAT_BACK);
+                            ev->user.id = m->user2;
+                            _v3_debug(V3_DEBUG_INFO, "recieved chat back from user id %d");
+                            v3_queue_event(ev);
+                        }
+                        break;
+                    case V3_AWAY_PRIV_CHAT:
+                        {
+                            v3_event *ev = _v3_create_event(V3_EVENT_PRIVATE_CHAT_AWAY);
+                            ev->user.id = m->user2;
+                            _v3_debug(V3_DEBUG_INFO, "recieved chat away from user id %d");
+                            v3_queue_event(ev);
+                        }
+                        break;
+                    default:
+                        _v3_debug(V3_DEBUG_INFO, "recieved unknown subtype %d", m->subtype);
+                        break;
+                }
+                _v3_destroy_packet(msg);
+            }
+            _v3_func_leave("_v3_process_message");
+            return V3_OK;/*}}}*/
         case 0x5c:/*{{{*/
             if (!_v3_get_0x5c(msg)) {
                 _v3_destroy_packet(msg);
@@ -2934,6 +2997,132 @@ v3_send_chat_message(char* message) {/*{{{*/
     fflush(v3_server.evoutstream);
     _v3_unlock_sendq();
     _v3_func_leave("v3_send_chat_message");
+    return;
+}/*}}}*/
+
+void
+v3_start_privchat(uint16_t userid) {/*{{{*/
+    v3_event ev;
+
+    _v3_func_enter("v3_start_privchat");
+    if (!v3_is_loggedin()) {
+        _v3_func_leave("v3_start_privchat");
+        return;
+    }
+    memset(&ev, 0, sizeof(v3_event));
+    ev.type = V3_EVENT_PRIVATE_CHAT_START;
+    ev.user.id = userid;
+    _v3_lock_sendq();
+    _v3_debug(V3_DEBUG_EVENT, "sending %lu bytes to event pipe", sizeof(v3_event));
+    if (fwrite(&ev, sizeof(struct _v3_event), 1, v3_server.evoutstream) != 1) {
+        _v3_error("could not write to event pipe");
+        _v3_func_leave("v3_start_privchat");
+        return;
+    }
+    fflush(v3_server.evoutstream);
+    _v3_unlock_sendq();
+    _v3_func_leave("v3_start_privchat");
+    return;
+}/*}}}*/
+
+void
+v3_end_privchat(uint16_t userid) {/*{{{*/
+    v3_event ev;
+
+    _v3_func_enter("v3_end_privchat");
+    if (!v3_is_loggedin()) {
+        _v3_func_leave("v3_end_privchat");
+        return;
+    }
+    memset(&ev, 0, sizeof(v3_event));
+    ev.type = V3_EVENT_PRIVATE_CHAT_END;
+    ev.user.id = userid;
+    _v3_lock_sendq();
+    _v3_debug(V3_DEBUG_EVENT, "sending %lu bytes to event pipe", sizeof(v3_event));
+    if (fwrite(&ev, sizeof(struct _v3_event), 1, v3_server.evoutstream) != 1) {
+        _v3_error("could not write to event pipe");
+        _v3_func_leave("v3_end_privchat");
+        return;
+    }
+    fflush(v3_server.evoutstream);
+    _v3_unlock_sendq();
+    _v3_func_leave("v3_end_privchat");
+    return;
+}/*}}}*/
+
+void
+v3_send_privchat_message(uint16_t userid, char* message) {/*{{{*/
+    v3_event ev;
+
+    _v3_func_enter("v3_send_privchat_message");
+    if (!v3_is_loggedin()) {
+        _v3_func_leave("v3_send_privchat_message");
+        return;
+    }
+    memset(&ev, 0, sizeof(v3_event));
+    ev.type = V3_EVENT_PRIVATE_CHAT_MESSAGE;
+    ev.user.id = userid;
+    strncpy(ev.data.chatmessage, message, sizeof(ev.data.chatmessage)-1);
+    _v3_lock_sendq();
+    _v3_debug(V3_DEBUG_EVENT, "sending %lu bytes to event pipe", sizeof(v3_event));
+    if (fwrite(&ev, sizeof(struct _v3_event), 1, v3_server.evoutstream) != 1) {
+        _v3_error("could not write to event pipe");
+        _v3_func_leave("v3_send_privchat_message");
+        return;
+    }
+    fflush(v3_server.evoutstream);
+    _v3_unlock_sendq();
+    _v3_func_leave("v3_send_privchat_message");
+    return;
+}/*}}}*/
+
+void
+v3_send_privchat_away(uint16_t userid) {/*{{{*/
+    v3_event ev;
+
+    _v3_func_enter("v3_send_privchat_away");
+    if (!v3_is_loggedin()) {
+        _v3_func_leave("v3_send_privchat_away");
+        return;
+    }
+    memset(&ev, 0, sizeof(v3_event));
+    ev.type = V3_EVENT_PRIVATE_CHAT_AWAY;
+    ev.user.id = userid;
+    _v3_lock_sendq();
+    _v3_debug(V3_DEBUG_EVENT, "sending %lu bytes to event pipe", sizeof(v3_event));
+    if (fwrite(&ev, sizeof(struct _v3_event), 1, v3_server.evoutstream) != 1) {
+        _v3_error("could not write to event pipe");
+        _v3_func_leave("v3_send_privchat_away");
+        return;
+    }
+    fflush(v3_server.evoutstream);
+    _v3_unlock_sendq();
+    _v3_func_leave("v3_send_privchat_away");
+    return;
+}/*}}}*/
+
+void
+v3_send_privchat_back(uint16_t userid) {/*{{{*/
+    v3_event ev;
+
+    _v3_func_enter("v3_send_privchat_back");
+    if (!v3_is_loggedin()) {
+        _v3_func_leave("v3_send_privchat_back");
+        return;
+    }
+    memset(&ev, 0, sizeof(v3_event));
+    ev.type = V3_EVENT_PRIVATE_CHAT_BACK;
+    ev.user.id = userid;
+    _v3_lock_sendq();
+    _v3_debug(V3_DEBUG_EVENT, "sending %lu bytes to event pipe", sizeof(v3_event));
+    if (fwrite(&ev, sizeof(struct _v3_event), 1, v3_server.evoutstream) != 1) {
+        _v3_error("could not write to event pipe");
+        _v3_func_leave("v3_send_privchat_back");
+        return;
+    }
+    fflush(v3_server.evoutstream);
+    _v3_unlock_sendq();
+    _v3_func_leave("v3_send_privchat_back");
     return;
 }/*}}}*/
 
