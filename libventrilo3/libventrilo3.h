@@ -138,6 +138,23 @@ char *_v3_phantom_errors[] = {
     "Insufficient access rights",
 };
 
+char *_v3_permissions_errors[] = {
+    "Specified ID is no longer valid.",
+    "Duplicate name.",
+    "Server reported an error.",
+    "All user accounts must have a valid password.",
+    "Missing required fields.",
+    "Not allowed to delete Guest account.",
+    "The specified login name is not allowed.",
+    "The specified login name contains characters that are not allowed.",
+    "Insufficient access rights to complete the request.",
+    NULL,
+    "Specified alternate ID is not valid.",
+    "Specified new owner does not have 'Add Users' rights.",
+    "The user account database is full. You must delete an existing account before you can add a new one.",
+    "The Guest account can not be locked without having at least one other account defined and is not locked it self. Otherwise, you would be locking everyone out of the server.",
+};
+
 char *_v3_bitmasks[] = {
     "0.0.0.0",
     "128.0.0.0",
@@ -324,6 +341,8 @@ int                     _v3_user_count;
 v3_rank                 *v3_rank_list = NULL;
 int                     _v3_rank_count;
 
+v3_account              *v3_account_list = NULL;
+int                     _v3_account_count;
 
 char                    _v3_error_text[256];
 char                    _v3_status_text[256];
@@ -334,6 +353,7 @@ uint32_t                _v3_user_loggedin = 0;
 pthread_mutex_t         *userlist_mutex = NULL;
 pthread_mutex_t         *channellist_mutex = NULL;
 pthread_mutex_t         *ranklist_mutex = NULL;
+pthread_mutex_t         *accountlist_mutex = NULL;
 pthread_mutex_t         *server_mutex = NULL;
 pthread_mutex_t         *luser_mutex = NULL;
 pthread_mutex_t         *sendq_mutex = NULL;
@@ -424,6 +444,7 @@ int                     _v3_send(_v3_net_message *);
 _v3_net_message *       _v3_recv(int block);
 _v3_net_message *       _v3_create_message(_v3_net_message *msg, uint16_t type, uint16_t len, char *data);
 void                    _v3_net_message_dump(_v3_net_message *msg);
+void                    _v3_print_permissions(v3_permissions *perms);
 
 int                     _v3_server_key_exchange(void);
 int                     _v3_send_enc_msg(char *data, int len);
@@ -437,15 +458,20 @@ void                    _v3_copy_user(v3_user *dest, v3_user *src);
 v3_user *               _v3_get_user(uint16_t id);
 int                     _v3_update_rank(v3_rank *rank);
 void                    _v3_copy_rank(v3_rank *dest, v3_rank *src);
+int                     _v3_update_account(v3_account *account);
+void                    _v3_copy_account(v3_account *dest, v3_account *src);
 void                    _v3_destroy_userlist(void);
 void                    _v3_destroy_channellist(void);
 void                    _v3_destroy_ranklist(void);
+void                    _v3_destroy_accountlist(void);
 void                    _v3_lock_userlist(void);
 void                    _v3_unlock_userlist(void);
 void                    _v3_lock_channellist(void);
 void                    _v3_unlock_channellist(void);
 void                    _v3_lock_ranklist(void);
 void                    _v3_unlock_ranklist(void);
+void                    _v3_lock_accountlist(void);
+void                    _v3_unlock_accountlist(void);
 void                    _v3_lock_luser(void);
 void                    _v3_unlock_luser(void);
 void                    _v3_lock_sendq(void);

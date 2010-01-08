@@ -333,6 +333,77 @@ _v3_net_message_dump(_v3_net_message *msg) {/*{{{*/
     return;
 }/*}}}*/
 
+void
+_v3_print_permissions(v3_permissions *perms) {/*{{{*/
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "account_id..........: %d",   perms->account_id);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown_perm_1......: %d",   perms->unknown_perm_1);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "rank_id.............: %d",   perms->rank_id);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown_perm_2......: %d",   perms->unknown_perm_2);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "lock_acct...........: %d",   perms->lock_acct);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "in_reserve_list.....: %d",   perms->in_reserve_list);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "dupe_ip.............: %d",   perms->dupe_ip);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "switch_chan.........: %d",   perms->switch_chan);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "dfl_chan............: %d",   perms->dfl_chan);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown_perm_3......: %d",   perms->unknown_perm_3);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown_perm_4......: %d",   perms->unknown_perm_4);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "recv_bcast..........: %d",   perms->recv_bcast);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "add_phantom.........: %d",   perms->add_phantom);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "record..............: %d",   perms->record);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "recv_complaint......: %d",   perms->recv_complaint);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "send_complaint......: %d",   perms->send_complaint);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "inactive_exempt.....: %d",   perms->inactive_exempt);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown_perm_5......: %d",   perms->unknown_perm_5);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown_perm_6......: %d",   perms->unknown_perm_6);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "srv_admin...........: %d",   perms->srv_admin);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "add_user............: %d",   perms->add_user);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "del_user............: %d",   perms->del_user);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "ban_user............: %d",   perms->ban_user);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "kick_user...........: %d",   perms->kick_user);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "move_user...........: %d",   perms->move_user);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "assign_chan_admin...: %d",   perms->assign_chan_admin);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "edit_rank...........: %d",   perms->edit_rank);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "edit_motd...........: %d",   perms->edit_motd);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "edit_guest_motd.....: %d",   perms->edit_guest_motd);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "issue_rcon_cmd......: %d",   perms->issue_rcon_cmd);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "edit_voice_target; .: %d",   perms->edit_voice_target);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "edit_command_target.: %d",   perms->edit_command_target);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "assign_rank.........: %d",   perms->assign_rank);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "assign_reserved.....: %d",   perms->assign_reserved);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown_perm_7......: %d",   perms->unknown_perm_7);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown_perm_8......: %d",   perms->unknown_perm_8);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown_perm_9......: %d",   perms->unknown_perm_9);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown_perm_10.....: %d",   perms->unknown_perm_10);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown_perm_11.....: %d",   perms->unknown_perm_11);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "bcast...............: %d",   perms->bcast);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "bcast_lobby.........: %d",   perms->bcast_lobby);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "bcast_user..........: %d",   perms->bcast_user);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "bcast_x_chan........: %d",   perms->bcast_x_chan);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "send_tts_bind.......: %d",   perms->send_tts_bind);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "send_wav_bind.......: %d",   perms->send_wav_bind);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "send_page...........: %d",   perms->send_page);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "send_comment........: %d",   perms->send_comment);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "set_phon_name.......: %d",   perms->set_phon_name);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "gen_comment_snds....: %d",   perms->gen_comment_snds);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "event_snds..........: %d",   perms->event_snds);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "mute_glbl...........: %d",   perms->mute_glbl);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "mute_other..........: %d",   perms->mute_other);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "glbl_chat...........: %d",   perms->glbl_chat);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "start_priv_chat.....: %d",   perms->start_priv_chat);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown_perm_12.....: %d",   perms->unknown_perm_12);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "eq_out..............: %d",   perms->eq_out);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown_perm_13.....: %d",   perms->unknown_perm_13);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown_perm_14.....: %d",   perms->unknown_perm_14);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown_perm_15.....: %d",   perms->unknown_perm_15);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "see_guest...........: %d",   perms->see_guest);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "see_nonguest........: %d",   perms->see_nonguest);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "see_motd............: %d",   perms->see_motd);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "see_srv_comment; ...: %d",   perms->see_srv_comment);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "see_chan_list.......: %d",   perms->see_chan_list);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "see_chan_comment....: %d",   perms->see_chan_comment);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "see_user_comment....: %d",   perms->see_user_comment);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown_perm_16.....: %d",   perms->unknown_perm_16);
+}/*}}}*/
+
 int
 _v3_destroy_packet(_v3_net_message *msg) {/*{{{*/
     _v3_func_enter("_v3_destroy_packet");
@@ -932,6 +1003,28 @@ _v3_recv(int block) {/*{{{*/
                             _v3_destroy_packet(msg);
                         }
                         break;/*}}}*/
+                    case V3_EVENT_USERLIST_OPEN:/*{{{*/
+                        {
+                            _v3_net_message *msg = _v3_put_0x4a(V3_USERLIST_OPEN);
+                            if (_v3_send(msg)) {
+                                _v3_debug(V3_DEBUG_SOCKET, "sent userlist open request to server");
+                            } else {
+                                _v3_debug(V3_DEBUG_SOCKET, "failed to send userlist open request");
+                            }
+                            _v3_destroy_packet(msg);
+                        }
+                        break;/*}}}*/
+                    case V3_EVENT_USERLIST_CLOSE:/*{{{*/
+                        {
+                            _v3_net_message *msg = _v3_put_0x4a(V3_USERLIST_CLOSE);
+                            if (_v3_send(msg)) {
+                                _v3_debug(V3_DEBUG_SOCKET, "sent userlist close request to server");
+                            } else {
+                                _v3_debug(V3_DEBUG_SOCKET, "failed to send userlist close request");
+                            }
+                            _v3_destroy_packet(msg);
+                        }
+                        break;/*}}}*/
                     default:
                         _v3_debug(V3_DEBUG_EVENT, "received unknown event type %d from queue", ev.type);
                         break;
@@ -1338,7 +1431,7 @@ void
 _v3_destroy_channellist(void) {/*{{{*/
     v3_channel *c, *next;
 
-    _v3_func_enter("_v3_destroy_channel");
+    _v3_func_enter("_v3_destroy_channellist");
     _v3_lock_channellist();
     c = v3_channel_list;
     while (c != NULL) {
@@ -1351,7 +1444,7 @@ _v3_destroy_channellist(void) {/*{{{*/
     }
     v3_channel_list = NULL;
     _v3_unlock_channellist();
-    _v3_func_leave("_v3_destroy_channel");
+    _v3_func_leave("_v3_destroy_channellist");
 }/*}}}*/
 
 int
@@ -2036,74 +2129,55 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                 _v3_func_leave("_v3_process_message");
                 return V3_MALFORMED;
             } else {
-                _v3_lock_luser();
                 _v3_msg_0x4a *m = msg->contents;
-                v3_luser.perms.lock_acct             = m->lock_acct;
-                v3_luser.perms.dfl_chan              = m->dfl_chan;
-                v3_luser.perms.dupe_ip               = m->dupe_ip;
-                v3_luser.perms.switch_chan           = m->switch_chan;
-                v3_luser.perms.in_reserve_list       = m->in_reserve_list;
-                v3_luser.perms.unknown_perm_1        = m->unknown_perm_1;
-                v3_luser.perms.unknown_perm_2        = m->unknown_perm_2;
-                v3_luser.perms.unknown_perm_3        = m->unknown_perm_3;
-                v3_luser.perms.recv_bcast            = m->recv_bcast;
-                v3_luser.perms.add_phantom           = m->add_phantom;
-                v3_luser.perms.record                = m->record;
-                v3_luser.perms.recv_complaint        = m->recv_complaint;
-                v3_luser.perms.send_complaint        = m->send_complaint;
-                v3_luser.perms.inactive_exempt       = m->inactive_exempt;
-                v3_luser.perms.unknown_perm_4        = m->unknown_perm_4;
-                v3_luser.perms.unknown_perm_5        = m->unknown_perm_5;
-                v3_luser.perms.srv_admin             = m->srv_admin;
-                v3_luser.perms.add_user              = m->add_user;
-                v3_luser.perms.del_user              = m->del_user;
-                v3_luser.perms.ban_user              = m->ban_user;
-                v3_luser.perms.kick_user             = m->kick_user;
-                v3_luser.perms.move_user             = m->move_user;
-                v3_luser.perms.assign_chan_admin     = m->assign_chan_admin;
-                v3_luser.perms.edit_rank             = m->edit_rank;
-                v3_luser.perms.edit_motd             = m->edit_motd;
-                v3_luser.perms.edit_guest_motd       = m->edit_guest_motd;
-                v3_luser.perms.issue_rcon_cmd        = m->issue_rcon_cmd;
-                v3_luser.perms.edit_voice_target     = m->edit_voice_target;
-                v3_luser.perms.edit_command_target   = m->edit_command_target;
-                v3_luser.perms.assign_rank           = m->assign_rank;
-                v3_luser.perms.assign_reserved       = m->assign_reserved;
-                v3_luser.perms.unknown_perm_6        = m->unknown_perm_6;
-                v3_luser.perms.unknown_perm_7        = m->unknown_perm_7;
-                v3_luser.perms.unknown_perm_8        = m->unknown_perm_8;
-                v3_luser.perms.unknown_perm_9        = m->unknown_perm_9;
-                v3_luser.perms.unknown_perm_10       = m->unknown_perm_10;
-                v3_luser.perms.bcast                 = m->bcast;
-                v3_luser.perms.bcast_lobby           = m->bcast_lobby;
-                v3_luser.perms.bcast_user            = m->bcast_user;
-                v3_luser.perms.bcast_x_chan          = m->bcast_x_chan;
-                v3_luser.perms.send_tts_bind         = m->send_tts_bind;
-                v3_luser.perms.send_wav_bind         = m->send_wav_bind;
-                v3_luser.perms.send_page             = m->send_page;
-                v3_luser.perms.send_comment          = m->send_comment;
-                v3_luser.perms.set_phon_name         = m->set_phon_name;
-                v3_luser.perms.gen_comment_snds      = m->gen_comment_snds;
-                v3_luser.perms.event_snds            = m->event_snds;
-                v3_luser.perms.mute_glbl             = m->mute_glbl;
-                v3_luser.perms.mute_other            = m->mute_other;
-                v3_luser.perms.glbl_chat             = m->glbl_chat;
-                v3_luser.perms.start_priv_chat       = m->start_priv_chat;
-                v3_luser.perms.unknown_perm_11       = m->unknown_perm_11;
-                v3_luser.perms.eq_out                = m->eq_out;
-                v3_luser.perms.unknown_perm_12       = m->unknown_perm_12;
-                v3_luser.perms.unknown_perm_13       = m->unknown_perm_13;
-                v3_luser.perms.unknown_perm_14       = m->unknown_perm_14;
-                v3_luser.perms.see_guest             = m->see_guest;
-                v3_luser.perms.see_nonguest          = m->see_nonguest;
-                v3_luser.perms.see_motd              = m->see_motd;
-                v3_luser.perms.see_srv_comment       = m->see_srv_comment;
-                v3_luser.perms.see_chan_list         = m->see_chan_list;
-                v3_luser.perms.see_chan_comment      = m->see_chan_comment;
-                v3_luser.perms.see_user_comment      = m->see_user_comment;
-                v3_luser.perms.unknown_perm_15       = m->unknown_perm_15;
-                _v3_unlock_luser();
+                
+                if (m->error_id) {
+                    if (m->error_id != 10) {
+                        char *error;
+
+                        if (m->error_id > (sizeof(_v3_permissions_errors) / sizeof(_v3_permissions_errors[0])))
+                            error = "Unknown";
+                        else
+                            error = _v3_permissions_errors[m->error_id - 1];
+
+                        v3_event *ev = _v3_create_event(V3_EVENT_ERROR_MSG);
+                        strncpy(ev->error.message, "User editor error:\n", sizeof(ev->error.message));
+                        strncat(ev->error.message, error, sizeof(ev->error.message));
+                        v3_queue_event(ev);
+                    }
+
+                    _v3_destroy_packet(msg);
+                    _v3_func_leave("_v3_process_message");
+                    return V3_OK;
+                }
+
+                switch (m->subtype) {
+                    case V3_USERLIST_OPEN:
+                        {
+                        int i;
+                        _v3_msg_0x4a_0x00 *msub = msg->contents;
+                        _v3_debug(V3_DEBUG_INFO, "received %d user accounts", msub->acct_list_count);
+                        for (i = 0; i < msub->acct_list_count; i++) {
+                            _v3_update_account(msub->acct_list[i]);
+                            v3_event *ev = _v3_create_event(V3_EVENT_USERLIST_ADD);
+                            ev->account.id = msub->acct_list[i]->perms.account_id;
+                            _v3_debug(V3_DEBUG_INFO, "queuing event type %d for account id %d", ev->type, ev->account.id);
+                            v3_queue_event(ev);
+                        }
+                        }
+                        break;
+                    case V3_USERLIST_LUSER:
+                        {
+                        _v3_msg_0x4a_0x05 *msub = msg->contents;
+                        _v3_debug(V3_DEBUG_INFO, "received local user permissions");
+                        _v3_lock_luser();
+                        v3_luser.perms = msub->perms;
+                        _v3_unlock_luser();
+                        }
+                        break;
+                }
             }
+            _v3_destroy_0x4a(msg);
             _v3_destroy_packet(msg);
             _v3_func_leave("_v3_process_message");
             return V3_OK;/*}}}*/
@@ -3188,6 +3262,7 @@ _v3_logout(void) {/*{{{*/
     _v3_destroy_decoders();
     _v3_destroy_channellist();
     _v3_destroy_userlist();
+    _v3_destroy_accountlist();
     memset(v3_luser.channel_admin, 0, 65535);
     v3_luser.id = -1;
     fclose(v3_server.evinstream);
@@ -3443,6 +3518,55 @@ v3_admin_boot(enum _v3_boot_types type, uint16_t user_id, char *reason) {/*{{{*/
 }/*}}}*/
 
 void
+v3_userlist_open(void) {/*{{{*/
+    v3_event ev;
+
+    _v3_func_enter("v3_userlist_open");
+    if (!v3_is_loggedin()) {
+        _v3_func_leave("v3_userlist_open");
+        return;
+    }
+    memset(&ev, 0, sizeof(v3_event));
+    ev.type = V3_EVENT_USERLIST_OPEN;
+
+    _v3_lock_sendq();
+    _v3_debug(V3_DEBUG_EVENT, "sending %lu bytes to event pipe", sizeof(v3_event));
+    if (fwrite(&ev, sizeof(struct _v3_event), 1, v3_server.evoutstream) != 1) {
+        _v3_error("could not write to event pipe");
+    }
+    fflush(v3_server.evoutstream);
+    _v3_unlock_sendq();
+    _v3_func_leave("v3_userlist_open");
+    return;
+}/*}}}*/
+
+void
+v3_userlist_close(void) {/*{{{*/
+    v3_event ev;
+
+    _v3_func_enter("v3_userlist_close");
+    if (!v3_is_loggedin()) {
+        _v3_func_leave("v3_userlist_close");
+        return;
+    }
+    
+    _v3_destroy_accountlist();
+
+    memset(&ev, 0, sizeof(v3_event));
+    ev.type = V3_EVENT_USERLIST_CLOSE;
+
+    _v3_lock_sendq();
+    _v3_debug(V3_DEBUG_EVENT, "sending %lu bytes to event pipe", sizeof(v3_event));
+    if (fwrite(&ev, sizeof(struct _v3_event), 1, v3_server.evoutstream) != 1) {
+        _v3_error("could not write to event pipe");
+    }
+    fflush(v3_server.evoutstream);
+    _v3_unlock_sendq();
+    _v3_func_leave("v3_userlist_close");
+    return;
+}/*}}}*/
+
+void
 v3_set_text(char *comment, char *url, char *integration_text, uint8_t silent) {/*{{{*/
     v3_event ev;
 
@@ -3633,6 +3757,234 @@ _v3_destroy_ranklist(void) {/*{{{*/
     }
     v3_rank_list = NULL;
     _v3_func_leave("_v3_destroy_ranklist");
+}/*}}}*/
+
+int
+_v3_update_account(v3_account *account) {/*{{{*/
+    v3_account *a, *last;
+
+    _v3_func_enter("_v3_update_account");
+    _v3_lock_accountlist();
+    if (v3_account_list == NULL) {
+        a = malloc(sizeof(v3_account));
+        memset(a, 0, sizeof(v3_account));
+        memcpy(a, account, sizeof(v3_account));
+
+        a->username     = strdup(account->username);
+        a->owner        = strdup(account->owner);
+        a->notes        = strdup(account->notes);
+        a->lock_reason  = strdup(account->lock_reason);
+        a->chan_admin   = malloc(account->chan_admin_count);
+        memcpy(a->chan_admin, account->chan_admin, account->chan_admin_count * 2);
+        a->chan_auth    = malloc(account->chan_auth_count);
+        memcpy(a->chan_auth, account->chan_auth, account->chan_auth_count * 2);
+
+        a->next        = NULL;
+        v3_account_list = a;
+        _v3_debug(V3_DEBUG_INFO, "added first account %s (id %d)",  a->username, a->perms.account_id);
+    } else {
+        for (a = v3_account_list; a != NULL; a = a->next) {
+            if (a->perms.account_id == account->perms.account_id) {
+                void *tmp;
+                _v3_debug(V3_DEBUG_INFO, "updating account %s",  a->username);
+                free(a->username);
+                free(a->owner);
+                free(a->notes);
+                free(a->lock_reason);
+                free(a->chan_admin);
+                free(a->chan_auth);
+                tmp = a->next;
+
+                memcpy(a, account, sizeof(v3_account));
+                a->username     = strdup(account->username);
+                a->owner        = strdup(account->owner);
+                a->notes        = strdup(account->notes);
+                a->lock_reason  = strdup(account->lock_reason);
+                a->chan_admin   = malloc(account->chan_admin_count);
+                memcpy(a->chan_admin, account->chan_admin, account->chan_admin_count * 2);
+                a->chan_auth    = malloc(account->chan_auth_count);
+                memcpy(a->chan_auth, account->chan_auth, account->chan_auth_count * 2);
+
+                a->next = tmp;
+                _v3_debug(V3_DEBUG_INFO, "updated account %s (id %d)",  a->username, a->perms.account_id);
+                _v3_unlock_accountlist();
+                _v3_func_leave("_v3_update_account");
+                return true;
+            }
+            last = a;
+        }
+        a = last->next = malloc(sizeof(v3_account));
+        memset(a, 0, sizeof(v3_account));
+        memcpy(a, account, sizeof(v3_account));
+
+        a->username     = strdup(account->username);
+        a->owner        = strdup(account->owner);
+        a->notes        = strdup(account->notes);
+        a->lock_reason  = strdup(account->lock_reason);
+        a->chan_admin   = malloc(account->chan_admin_count);
+        memcpy(a->chan_admin, account->chan_admin, account->chan_admin_count * 2);
+        a->chan_auth    = malloc(account->chan_auth_count);
+        memcpy(a->chan_auth, account->chan_auth, account->chan_auth_count * 2);
+        a->next           = NULL;
+
+        _v3_debug(V3_DEBUG_INFO, "added account %s (id %d)",  a->username, a->perms.account_id);
+    }
+    _v3_unlock_accountlist();
+    _v3_func_leave("_v3_update_account");
+    return true;
+}/*}}}*/
+
+
+void
+_v3_print_account_list(void) {/*{{{*/
+    v3_account *c;
+    int ctr=0;
+
+    _v3_lock_accountlist();
+    for (c = v3_account_list; c != NULL; c = c->next) {
+        _v3_debug(V3_DEBUG_INFO, "=====[ account %d ]====================================================================", ctr++);
+        _v3_debug(V3_DEBUG_INFO, "account id      : %d", c->perms.account_id);
+        _v3_debug(V3_DEBUG_INFO, "account name    : %s", c->username);
+        _v3_debug(V3_DEBUG_INFO, "account owner   : %s", c->owner);
+        _v3_debug(V3_DEBUG_INFO, "account notes   : %s", c->notes);
+    }
+    _v3_unlock_accountlist();
+}/*}}}*/
+
+void
+v3_free_account(v3_account *account) {/*{{{*/
+    free(account->username);
+    free(account->owner);
+    free(account->notes);
+    free(account->lock_reason);
+    free(account->chan_admin);
+    free(account->chan_auth);
+    free(account);
+}/*}}}*/
+
+void
+_v3_destroy_accountlist(void) {/*{{{*/
+    v3_account *a, *next;
+
+    _v3_func_enter("_v3_destroy_accountlist");
+    _v3_lock_accountlist();
+    a = v3_account_list;
+    while (a != NULL) {
+        free(a->username);
+        free(a->owner);
+        free(a->notes);
+        free(a->lock_reason);
+        free(a->chan_admin);
+        free(a->chan_auth);
+        next = a->next;
+        free(a);
+        a = next;
+    }
+    v3_account_list = NULL;
+    _v3_unlock_accountlist();
+    _v3_func_leave("_v3_destroy_accountlist");
+}/*}}}*/
+
+int
+_v3_remove_account(uint16_t id) {/*{{{*/
+    v3_account *a, *last;
+
+    _v3_lock_accountlist();
+    _v3_func_enter("_v3_remove_account");
+    last = v3_account_list;
+    for (a = v3_account_list; a != NULL; a = a->next) {
+        if (a->perms.account_id == id) {
+            last->next = a->next;
+            _v3_debug(V3_DEBUG_INFO, "removed account %s", a->username);
+            v3_free_account(a);
+            _v3_func_leave("_v3_remove_account");
+            _v3_unlock_accountlist();
+            return true;
+        }
+        last = a;
+    }
+    _v3_func_leave("_v3_remove_account");
+    _v3_unlock_accountlist();
+    return false;
+}/*}}}*/
+
+int
+v3_account_count(void) {/*{{{*/
+    v3_account *a;
+    int ctr=0;
+    
+    _v3_lock_accountlist();
+    for (a = v3_account_list; a != NULL; a = a->next, ctr++);
+    _v3_unlock_accountlist();
+
+    return ctr;
+
+}/*}}}*/
+
+v3_account *
+v3_get_account(uint16_t id) {/*{{{*/
+    v3_account *a, *ret_account;
+
+    _v3_func_enter("v3_get_account");
+    _v3_lock_accountlist();
+    ret_account = malloc(sizeof(v3_account));
+    for (a = v3_account_list; a != NULL; a = a->next) {
+        if (a->perms.account_id == id) {
+            _v3_copy_account(ret_account, a);
+            _v3_unlock_accountlist();
+            _v3_func_leave("v3_get_account");
+            return ret_account;
+        }
+    }
+    _v3_unlock_accountlist();
+    _v3_func_leave("v3_get_account");
+    return NULL;
+}/*}}}*/
+
+void
+_v3_copy_account(v3_account *dest, v3_account *src) {/*{{{*/
+    memcpy(dest, src, sizeof(v3_account));
+    dest->username     = strdup(src->username);
+    dest->owner        = strdup(src->owner);
+    dest->notes        = strdup(src->notes);
+    dest->lock_reason  = strdup(src->lock_reason);
+    dest->chan_admin   = malloc(src->chan_admin_count);
+    memcpy(dest->chan_admin, src->chan_admin, src->chan_admin_count * 2);
+    dest->chan_auth    = malloc(src->chan_auth_count);
+    memcpy(dest->chan_auth, src->chan_auth, src->chan_auth_count * 2);
+    dest->next           = NULL;
+}/*}}}*/
+
+void
+_v3_lock_accountlist(void) {/*{{{*/
+    // TODO: PTHREAD: check if threads are enabled, possibly use semaphores as a compile time option
+    if (accountlist_mutex == NULL) {
+        pthread_mutexattr_t mta;
+        pthread_mutexattr_init(&mta);
+        pthread_mutexattr_settype(&mta, PTHREAD_MUTEX_ERRORCHECK);
+
+        _v3_debug(V3_DEBUG_MUTEX, "initializing accountlist mutex");
+        accountlist_mutex = malloc(sizeof(pthread_mutex_t));
+        pthread_mutex_init(accountlist_mutex, &mta);
+    }
+    _v3_debug(V3_DEBUG_MUTEX, "locking accountlist");
+    pthread_mutex_lock(accountlist_mutex);
+}/*}}}*/
+
+void
+_v3_unlock_accountlist(void) {/*{{{*/
+    // TODO: PTHREAD: check if threads are enabled, possibly use semaphores as a compile time option
+    if (accountlist_mutex == NULL) {
+        pthread_mutexattr_t mta;
+        pthread_mutexattr_init(&mta);
+        pthread_mutexattr_settype(&mta, PTHREAD_MUTEX_ERRORCHECK);
+
+        _v3_debug(V3_DEBUG_MUTEX, "initializing accountlist mutex");
+        accountlist_mutex = malloc(sizeof(pthread_mutex_t));
+        pthread_mutex_init(accountlist_mutex, &mta);
+    }
+    _v3_debug(V3_DEBUG_MUTEX, "unlocking accountlist");
+    pthread_mutex_unlock(accountlist_mutex);
 }/*}}}*/
 
 int

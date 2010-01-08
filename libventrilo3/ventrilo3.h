@@ -93,6 +93,14 @@
 #define V3_ADMIN_LOGOUT             0x04
 #define V3_ADMIN_CHANNEL_BAN        0x05
 
+#define V3_USERLIST_OPEN            0x00
+#define V3_USERLIST_ADD             0x01
+#define V3_USERLIST_REMOVE          0x02
+#define V3_USERLIST_MODIFY          0x03
+#define V3_USERLIST_CLOSE           0x04
+#define V3_USERLIST_LUSER           0x05
+#define V3_USERLIST_CHANGE_OWNER    0x06
+
 #define V3_DEBUG_NONE               0
 #define V3_DEBUG_STATUS             1
 #define V3_DEBUG_ERROR              1 << 2
@@ -117,23 +125,29 @@ typedef struct __v3_net_message {/*{{{*/
     int (* destroy)(struct __v3_net_message *msg);
     struct __v3_net_message *next;
 } _v3_net_message;/*}}}*/
+#pragma pack(push)
+#pragma pack(1)
 struct _v3_permissions {/*{{{*/
+    uint16_t account_id;
+    uint16_t unknown_perm_1;
+    uint8_t hash_password[32];
+    uint16_t rank_id;
+    uint16_t unknown_perm_2;
     uint8_t lock_acct;
-    uint8_t dfl_chan;
+    uint8_t in_reserve_list;
     uint8_t dupe_ip;
     uint8_t switch_chan;
-    uint8_t in_reserve_list;
-    uint8_t unknown_perm_1;
-    uint8_t unknown_perm_2;
+    uint16_t dfl_chan;
     uint8_t unknown_perm_3;
+    uint8_t unknown_perm_4;
     uint8_t recv_bcast;
     uint8_t add_phantom;
     uint8_t record;
     uint8_t recv_complaint;
     uint8_t send_complaint;
     uint8_t inactive_exempt;
-    uint8_t unknown_perm_4;
     uint8_t unknown_perm_5;
+    uint8_t unknown_perm_6;
     uint8_t srv_admin;
     uint8_t add_user;
     uint8_t del_user;
@@ -149,11 +163,11 @@ struct _v3_permissions {/*{{{*/
     uint8_t edit_command_target;
     uint8_t assign_rank;
     uint8_t assign_reserved;
-    uint8_t unknown_perm_6;
     uint8_t unknown_perm_7;
     uint8_t unknown_perm_8;
     uint8_t unknown_perm_9;
     uint8_t unknown_perm_10;
+    uint8_t unknown_perm_11;
     uint8_t bcast;
     uint8_t bcast_lobby;
     uint8_t bcast_user;
@@ -169,11 +183,11 @@ struct _v3_permissions {/*{{{*/
     uint8_t mute_other;
     uint8_t glbl_chat;
     uint8_t start_priv_chat;
-    uint8_t unknown_perm_11;
-    uint8_t eq_out;
     uint8_t unknown_perm_12;
+    uint8_t eq_out;
     uint8_t unknown_perm_13;
     uint8_t unknown_perm_14;
+    uint8_t unknown_perm_15;
     uint8_t see_guest;
     uint8_t see_nonguest;
     uint8_t see_motd;
@@ -181,8 +195,9 @@ struct _v3_permissions {/*{{{*/
     uint8_t see_chan_list;
     uint8_t see_chan_comment;
     uint8_t see_user_comment;
-    uint8_t unknown_perm_15;
+    uint8_t unknown_perm_16;
 };/*}}}*/
+#pragma pack(pop)
 typedef struct _v3_permissions v3_permissions;
 
 /*
@@ -219,6 +234,9 @@ enum _v3_events
     V3_EVENT_PRIVATE_CHAT_END,
     V3_EVENT_PRIVATE_CHAT_AWAY,
     V3_EVENT_PRIVATE_CHAT_BACK,
+    V3_EVENT_USERLIST_ADD,
+    V3_EVENT_USERLIST_REMOVE,
+    V3_EVENT_USERLIST_MODIFY,
 
     // outbound specific event types
     V3_EVENT_CHANGE_CHANNEL,
@@ -230,6 +248,8 @@ enum _v3_events
     V3_EVENT_ADMIN_BAN,
     V3_EVENT_ADMIN_CHANNEL_BAN,
     V3_EVENT_FORCE_CHAN_MOVE,
+    V3_EVENT_USERLIST_OPEN,
+    V3_EVENT_USERLIST_CLOSE,
 
     // not implemented
     V3_EVENT_USER_PAGED,
@@ -278,6 +298,9 @@ struct _v3_event {
     struct {
         uint16_t id;
     } channel;
+    struct {
+        uint16_t id;
+    } account;
     struct {
         char name[32];
         char password[32];
@@ -394,6 +417,23 @@ typedef struct __v3_msg_rank {/*{{{*/
      */
     void     *next;
 } _v3_msg_rank;/*}}}*/
+typedef struct __v3_msg_account {/*{{{*/
+    v3_permissions perms;
+    char *username;
+    char *owner;
+    char *notes;
+    char *lock_reason;
+    int chan_admin_count;
+    uint16_t *chan_admin;
+    int chan_auth_count;
+    uint16_t *chan_auth;
+    
+    /*
+     * Put internal variables here
+     */
+    void     *next;
+} _v3_msg_account;/*}}}*/
+typedef _v3_msg_account  v3_account;
 typedef _v3_msg_user     v3_user;
 typedef _v3_msg_channel  v3_channel;
 typedef _v3_msg_rank     v3_rank;
@@ -514,6 +554,8 @@ void        v3_admin_boot(enum _v3_boot_types type, uint16_t user_id, char *reas
 void        v3_phantom_add(uint16_t channel_id);
 void        v3_phantom_remove(uint16_t channel_id);
 void        v3_force_channel_move(uint16_t user_id, uint16_t channel_id);
+void        v3_userlist_open(void);
+void        v3_userlist_close(void);
 int         v3_debuglevel(uint32_t level);
 int         v3_is_loggedin(void);
 uint16_t    v3_get_user_id(void);

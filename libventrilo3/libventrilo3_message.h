@@ -187,76 +187,26 @@ int _v3_get_0x49(_v3_net_message *msg);
 _v3_net_message *_v3_put_0x49(uint16_t subtype, uint16_t user_id, char *channel_password, _v3_msg_channel *channel);/*}}}*/
 typedef struct _v3_net_message_0x4a {/*{{{*/
     uint32_t type;              // 0
-    uint32_t subtype;           // 4
-    uint8_t unknown_1[16];      // 8
-    uint8_t hash_password[32];  // 24
-    uint32_t unknown_2;         // 56
-    uint8_t lock_acct;          // 60
-    uint8_t dfl_chan;
-    uint8_t dupe_ip;
-    uint8_t switch_chan;
-    uint8_t in_reserve_list;
-    uint8_t unknown_perm_1;
-    uint8_t unknown_perm_2;
-    uint8_t unknown_perm_3;
-    uint8_t recv_bcast;
-    uint8_t add_phantom;
-    uint8_t record;
-    uint8_t recv_complaint;
-    uint8_t send_complaint;
-    uint8_t inactive_exempt;
-    uint8_t unknown_perm_4;
-    uint8_t unknown_perm_5;
-    uint8_t srv_admin;
-    uint8_t add_user;
-    uint8_t del_user;
-    uint8_t ban_user;
-    uint8_t kick_user;
-    uint8_t move_user;
-    uint8_t assign_chan_admin;
-    uint8_t edit_rank;
-    uint8_t edit_motd;
-    uint8_t edit_guest_motd;
-    uint8_t issue_rcon_cmd;
-    uint8_t edit_voice_target;
-    uint8_t edit_command_target;
-    uint8_t assign_rank;
-    uint8_t assign_reserved;
-    uint8_t unknown_perm_6;
-    uint8_t unknown_perm_7;
-    uint8_t unknown_perm_8;
-    uint8_t unknown_perm_9;
-    uint8_t unknown_perm_10;
-    uint8_t bcast;
-    uint8_t bcast_lobby;
-    uint8_t bcast_user;
-    uint8_t bcast_x_chan;
-    uint8_t send_tts_bind;
-    uint8_t send_wav_bind;
-    uint8_t send_page;
-    uint8_t send_comment;
-    uint8_t set_phon_name;
-    uint8_t gen_comment_snds;
-    uint8_t event_snds;
-    uint8_t mute_glbl;
-    uint8_t mute_other;
-    uint8_t glbl_chat;
-    uint8_t start_priv_chat;
-    uint8_t unknown_perm_11;
-    uint8_t eq_out;
-    uint8_t unknown_perm_12;
-    uint8_t unknown_perm_13;
-    uint8_t unknown_perm_14;
-    uint8_t see_guest;
-    uint8_t see_nonguest;
-    uint8_t see_motd;
-    uint8_t see_srv_comment;
-    uint8_t see_chan_list;
-    uint8_t see_chan_comment;
-    uint8_t see_user_comment;
-    uint8_t unknown_perm_15;
+    uint16_t subtype;           // 4
+    uint16_t error_id;          // 6
+    uint16_t unknown_1;         // 8
+    uint16_t count;             // 10
+    uint16_t unknown_2;         // 12
+    uint16_t unknown_3;         // 14
+    uint32_t unknown_4;         // 16
 } _v3_msg_0x4a;
-int _v3_get_0x4a(_v3_net_message *msg);/*}}}*/
+typedef struct _v3_net_message_0x4a_0x00 {
+    _v3_msg_0x4a header;        // 0
+    int acct_list_count;
+    v3_account **acct_list;
+} _v3_msg_0x4a_0x00;
+typedef struct _v3_net_message_0x4a_0x05 {
+    _v3_msg_0x4a header;        // 0
+    v3_permissions perms;       // 20
+} _v3_msg_0x4a_0x05;
+int _v3_get_0x4a(_v3_net_message *msg);
+_v3_net_message *_v3_put_0x4a(uint8_t subtype);
+int _v3_destroy_0x4a(_v3_net_message *msg);/*}}}*/
 typedef struct _v3_net_message_0x4b {/*{{{*/
     uint32_t type;              // 0
     uint32_t timestamp;         // 4

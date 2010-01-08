@@ -666,80 +666,155 @@ _v3_get_0x49(_v3_net_message *msg) {/*{{{*/
 int
 _v3_get_0x4a(_v3_net_message *msg) {/*{{{*/
     _v3_msg_0x4a *m;
+    void *offset;
 
     _v3_func_enter("_v3_get_0x4a");
-    if (msg->len != sizeof(_v3_msg_0x4a)) {
-        _v3_debug(V3_DEBUG_PACKET_PARSE, "expected %d bytes, but message is %d bytes", sizeof(_v3_msg_0x4a), msg->len);
-        _v3_func_leave("_v3_get_0x4a");
-        return false;
-    }
+    
     m = msg->contents = msg->data;
-    _v3_debug(V3_DEBUG_PACKET_PARSE, "User Permissions:");
-    _v3_debug(V3_DEBUG_PACKET_PARSE, "lock_acct...........: %d",   m->lock_acct);
-    _v3_debug(V3_DEBUG_PACKET_PARSE, "dfl_chan............: %d",   m->dfl_chan);
-    _v3_debug(V3_DEBUG_PACKET_PARSE, "dupe_ip.............: %d",   m->dupe_ip);
-    _v3_debug(V3_DEBUG_PACKET_PARSE, "switch_chan.........: %d",   m->switch_chan);
-    _v3_debug(V3_DEBUG_PACKET_PARSE, "in_reserve_list.....: %d",   m->in_reserve_list);
-    _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown_perm_1......: %d",   m->unknown_perm_1);
-    _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown_perm_2......: %d",   m->unknown_perm_2);
-    _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown_perm_3......: %d",   m->unknown_perm_3);
-    _v3_debug(V3_DEBUG_PACKET_PARSE, "recv_bcast..........: %d",   m->recv_bcast);
-    _v3_debug(V3_DEBUG_PACKET_PARSE, "add_phantom.........: %d",   m->add_phantom);
-    _v3_debug(V3_DEBUG_PACKET_PARSE, "record..............: %d",   m->record);
-    _v3_debug(V3_DEBUG_PACKET_PARSE, "recv_complaint......: %d",   m->recv_complaint);
-    _v3_debug(V3_DEBUG_PACKET_PARSE, "send_complaint......: %d",   m->send_complaint);
-    _v3_debug(V3_DEBUG_PACKET_PARSE, "inactive_exempt.....: %d",   m->inactive_exempt);
-    _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown_perm_4......: %d",   m->unknown_perm_4);
-    _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown_perm_5......: %d",   m->unknown_perm_5);
-    _v3_debug(V3_DEBUG_PACKET_PARSE, "srv_admin...........: %d",   m->srv_admin);
-    _v3_debug(V3_DEBUG_PACKET_PARSE, "add_user............: %d",   m->add_user);
-    _v3_debug(V3_DEBUG_PACKET_PARSE, "del_user............: %d",   m->del_user);
-    _v3_debug(V3_DEBUG_PACKET_PARSE, "ban_user............: %d",   m->ban_user);
-    _v3_debug(V3_DEBUG_PACKET_PARSE, "kick_user...........: %d",   m->kick_user);
-    _v3_debug(V3_DEBUG_PACKET_PARSE, "move_user...........: %d",   m->move_user);
-    _v3_debug(V3_DEBUG_PACKET_PARSE, "assign_chan_admin...: %d",   m->assign_chan_admin);
-    _v3_debug(V3_DEBUG_PACKET_PARSE, "edit_rank...........: %d",   m->edit_rank);
-    _v3_debug(V3_DEBUG_PACKET_PARSE, "edit_motd...........: %d",   m->edit_motd);
-    _v3_debug(V3_DEBUG_PACKET_PARSE, "edit_guest_motd.....: %d",   m->edit_guest_motd);
-    _v3_debug(V3_DEBUG_PACKET_PARSE, "issue_rcon_cmd......: %d",   m->issue_rcon_cmd);
-    _v3_debug(V3_DEBUG_PACKET_PARSE, "edit_voice_target; .: %d",   m->edit_voice_target);
-    _v3_debug(V3_DEBUG_PACKET_PARSE, "edit_command_target.: %d",   m->edit_command_target);
-    _v3_debug(V3_DEBUG_PACKET_PARSE, "assign_rank.........: %d",   m->assign_rank);
-    _v3_debug(V3_DEBUG_PACKET_PARSE, "assign_reserved.....: %d",   m->assign_reserved);
-    _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown_perm_6......: %d",   m->unknown_perm_6);
-    _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown_perm_7......: %d",   m->unknown_perm_7);
-    _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown_perm_8......: %d",   m->unknown_perm_8);
-    _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown_perm_9......: %d",   m->unknown_perm_9);
-    _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown_perm_10.....: %d",   m->unknown_perm_10);
-    _v3_debug(V3_DEBUG_PACKET_PARSE, "bcast...............: %d",   m->bcast);
-    _v3_debug(V3_DEBUG_PACKET_PARSE, "bcast_lobby.........: %d",   m->bcast_lobby);
-    _v3_debug(V3_DEBUG_PACKET_PARSE, "bcast_user..........: %d",   m->bcast_user);
-    _v3_debug(V3_DEBUG_PACKET_PARSE, "bcast_x_chan........: %d",   m->bcast_x_chan);
-    _v3_debug(V3_DEBUG_PACKET_PARSE, "send_tts_bind.......: %d",   m->send_tts_bind);
-    _v3_debug(V3_DEBUG_PACKET_PARSE, "send_wav_bind.......: %d",   m->send_wav_bind);
-    _v3_debug(V3_DEBUG_PACKET_PARSE, "send_page...........: %d",   m->send_page);
-    _v3_debug(V3_DEBUG_PACKET_PARSE, "send_comment........: %d",   m->send_comment);
-    _v3_debug(V3_DEBUG_PACKET_PARSE, "set_phon_name.......: %d",   m->set_phon_name);
-    _v3_debug(V3_DEBUG_PACKET_PARSE, "gen_comment_snds....: %d",   m->gen_comment_snds);
-    _v3_debug(V3_DEBUG_PACKET_PARSE, "event_snds..........: %d",   m->event_snds);
-    _v3_debug(V3_DEBUG_PACKET_PARSE, "mute_glbl...........: %d",   m->mute_glbl);
-    _v3_debug(V3_DEBUG_PACKET_PARSE, "mute_other..........: %d",   m->mute_other);
-    _v3_debug(V3_DEBUG_PACKET_PARSE, "glbl_chat...........: %d",   m->glbl_chat);
-    _v3_debug(V3_DEBUG_PACKET_PARSE, "start_priv_chat.....: %d",   m->start_priv_chat);
-    _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown_perm_11.....: %d",   m->unknown_perm_11);
-    _v3_debug(V3_DEBUG_PACKET_PARSE, "eq_out..............: %d",   m->eq_out);
-    _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown_perm_12.....: %d",   m->unknown_perm_12);
-    _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown_perm_13.....: %d",   m->unknown_perm_13);
-    _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown_perm_14.....: %d",   m->unknown_perm_14);
-    _v3_debug(V3_DEBUG_PACKET_PARSE, "see_guest...........: %d",   m->see_guest);
-    _v3_debug(V3_DEBUG_PACKET_PARSE, "see_nonguest........: %d",   m->see_nonguest);
-    _v3_debug(V3_DEBUG_PACKET_PARSE, "see_motd............: %d",   m->see_motd);
-    _v3_debug(V3_DEBUG_PACKET_PARSE, "see_srv_comment; ...: %d",   m->see_srv_comment);
-    _v3_debug(V3_DEBUG_PACKET_PARSE, "see_chan_list.......: %d",   m->see_chan_list);
-    _v3_debug(V3_DEBUG_PACKET_PARSE, "see_chan_comment....: %d",   m->see_chan_comment);
-    _v3_debug(V3_DEBUG_PACKET_PARSE, "see_user_comment....: %d",   m->see_user_comment);
-    _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown_perm_15.....: %d",   m->unknown_perm_15);
+
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "subtype.......: %d", m->subtype);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "error_id......: %d", m->error_id);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown 1.....: %d", m->unknown_1);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "count.........: %d", m->count);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown 2.....: %d", m->unknown_2);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown 3.....: %d", m->unknown_3);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown 4.....: %d", m->unknown_4);
+
+    if ((m->error_id != 0) || (m->count == 0)) {
+        _v3_func_leave("_v3_get_0x4a");
+        return true;
+    }
+ 
+    switch (m->subtype) {
+        case V3_USERLIST_OPEN:
+            {
+            int i, j;
+            _v3_msg_0x4a_0x00 *msub = malloc(sizeof(_v3_msg_0x4a_0x00));
+            memcpy(msub, m, sizeof(*m));
+            msg->contents = msub;
+
+            msub->acct_list_count = msub->header.count;
+            msub->acct_list = calloc(msub->header.count, sizeof(msub->acct_list[0]));
+
+            for (i = 0, offset = msg->data + sizeof(msub->header);i < msub->header.count; i++) {
+                uint16_t len;
+                v3_account *acct = msub->acct_list[i] = malloc(sizeof(v3_account));
+
+                memcpy(&(acct->perms), offset, sizeof(acct->perms));
+                _v3_debug(V3_DEBUG_PACKET_PARSE, "start user acct parsing");
+                _v3_print_permissions(&acct->perms);
+                offset += sizeof(acct->perms);
+
+                acct->username = _v3_get_msg_string(offset, &len);
+                _v3_debug(V3_DEBUG_PACKET_PARSE, "name: %s", acct->username);
+                offset += len;
+                acct->owner = _v3_get_msg_string(offset, &len);
+                _v3_debug(V3_DEBUG_PACKET_PARSE, "owner: %s", acct->owner);
+                offset += len;
+                acct->notes = _v3_get_msg_string(offset, &len);
+                _v3_debug(V3_DEBUG_PACKET_PARSE, "notes: %s", acct->notes);
+                offset += len;
+                acct->lock_reason = _v3_get_msg_string(offset, &len);
+                _v3_debug(V3_DEBUG_PACKET_PARSE, "lock reason: %s", acct->lock_reason);
+                offset += len;
+                
+                acct->chan_admin = _v3_get_msg_uint16_array(offset, &len);
+                for (j=0;j<(len-2)/2;j++)
+                    _v3_debug(V3_DEBUG_PACKET_PARSE, "chanadmin: 0x%x", acct->chan_admin[j]);
+                acct->chan_admin_count = (len - 2) / 2;
+                offset += len;
+                acct->chan_auth = _v3_get_msg_uint16_array(offset, &len);
+                for (j=0;j<(len-2)/2;j++)
+                    _v3_debug(V3_DEBUG_PACKET_PARSE, "chanauth: 0x%x", acct->chan_auth[j]);
+                acct->chan_auth_count = (len - 2) / 2;
+                offset += len;
+
+                _v3_debug(V3_DEBUG_PACKET_PARSE, "end user acct parsing");
+            }
+            }
+            break;
+
+        case V3_USERLIST_LUSER:
+            {
+            if (msg->len != sizeof(_v3_msg_0x4a_0x05)) {
+                _v3_debug(V3_DEBUG_PACKET_PARSE, "expected %d bytes, but message is %d bytes", sizeof(_v3_msg_0x4a_0x05), msg->len);
+               _v3_func_leave("_v3_get_0x4a");
+               return false;
+            }
+            _v3_msg_0x4a_0x05 *msub = (_v3_msg_0x4a_0x05 *)m;
+            msub = realloc(m, sizeof(_v3_msg_0x4a_0x05));
+            memcpy(msub, msg->data, sizeof(_v3_msg_0x4a_0x05));
+            msg->contents = msub;
+
+            _v3_debug(V3_DEBUG_PACKET_PARSE, "User Permissions:");
+            _v3_print_permissions(&msub->perms);
+            }
+            break;
+
+        default:
+            _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown 0x4a subtype %02x", m->subtype);
+            _v3_func_leave("_v3_get_0x4a");
+            return false;
+    }
+
     _v3_func_leave("_v3_get_0x4a");
+    return true;
+}/*}}}*/
+_v3_net_message *_v3_put_0x4a(uint8_t subtype) {/*{{{*/
+    _v3_net_message *m;
+    _v3_msg_0x4a *mc;
+
+    _v3_func_enter("_v3_put_0x4a");
+    // Build our message
+    m = malloc(sizeof(_v3_net_message));
+    memset(m, 0, sizeof(_v3_net_message));
+    m->type = 0x4a;
+    m->len = sizeof(_v3_msg_0x4a);
+
+    switch (subtype) {
+        case V3_USERLIST_OPEN:
+        case V3_USERLIST_CLOSE:
+            mc = malloc(sizeof(_v3_msg_0x4a));
+            memset(mc, 0, sizeof(_v3_msg_0x4a));
+            break;
+        default:
+            break;
+    }
+
+    mc->type = 0x4a;
+    mc->subtype = subtype;
+
+    m->contents = mc;
+    m->data = (char *)mc;
+    _v3_func_leave("_v3_put_0x4a");
+    return m;
+}/*}}}*/
+int
+_v3_destroy_0x4a(_v3_net_message *msg) {/*{{{*/
+    _v3_msg_0x4a *m;
+    int i;
+
+    _v3_func_enter("_v3_destroy_0x4a");
+    m = msg->contents;
+
+    switch (m->subtype) {
+        case V3_USERLIST_OPEN:
+            {
+            _v3_msg_0x4a_0x00 *msub = (_v3_msg_0x4a_0x00 *)m;
+
+            for (i = 0; i < msub->acct_list_count; i++) {
+                v3_account *acct = msub->acct_list[i];
+                _v3_debug(V3_DEBUG_PACKET_PARSE, "freeing resources for account %d: %s", acct->perms.account_id, acct->username);
+                v3_free_account(acct);
+            }
+            free(msub->acct_list);
+            }
+            break;
+        default:
+            break;
+    }
+
+    _v3_func_leave("_v3_destroy_0x4a");
     return true;
 }/*}}}*/
 /*}}}*/
