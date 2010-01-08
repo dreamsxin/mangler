@@ -993,7 +993,14 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                     if (privateChatWindows[remote]) {
                         privateChatWindows[remote]->remoteReopened();
                     } else {
+                        v3_user *u;
+                        Glib::ustring name = "unknown";
+                        if ((u = v3_get_user(remote)) != NULL) {
+                            name = c_to_ustring(u->name);
+                            v3_free_user(u);
+                        }
                         privateChatWindows[remote] = new ManglerPrivChat(remote);
+                        privateChatWindows[remote]->addMessage("*** opened private chat with " + name);
                     }
                 }
                 break;/*}}}*/
@@ -1027,7 +1034,11 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                         remote = ev->user.privchat_user1;
                     }
                     if (privateChatWindows[remote]) {
-                        privateChatWindows[remote]->addChatMessage(ev->user.privchat_user1, c_to_ustring(ev->data.chatmessage));
+                        if (!ev->flags) { // set to true on error
+                            privateChatWindows[remote]->addChatMessage(ev->user.privchat_user1, c_to_ustring(ev->data.chatmessage));
+                        } else {
+                            privateChatWindows[remote]->addMessage("*** error sending message to remote user");
+                        }
                     }
                 }
                 break;/*}}}*/

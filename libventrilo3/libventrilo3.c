@@ -2520,6 +2520,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                             v3_event *ev = _v3_create_event(V3_EVENT_PRIVATE_CHAT_MESSAGE);
                             ev->user.privchat_user1 = m->user1;
                             ev->user.privchat_user2 = m->user2;
+                            ev->flags = m->error;
                             strncpy(ev->data.chatmessage, m->msg, sizeof(ev->data.chatmessage) - 1);
                             _v3_debug(V3_DEBUG_INFO, "recieved chat message from user id %d: %s", m->user2, m->msg);
                             free(m->msg);

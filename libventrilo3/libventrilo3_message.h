@@ -375,7 +375,7 @@ int _v3_get_0x59(_v3_net_message *msg);/*}}}*/
 typedef struct _v3_net_message_0x5a {/*{{{*/
     uint32_t type;              // 0
     uint16_t subtype;           // 4
-    uint16_t unknown;           // 6
+    uint16_t error;             // 6
     uint16_t user1;             // 8
     uint16_t user2;             // 8
     uint16_t msglen;            // 12 - variable length starts here
