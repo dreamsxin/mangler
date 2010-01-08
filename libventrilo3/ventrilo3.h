@@ -272,6 +272,8 @@ struct _v3_event {
     uint16_t ping;
     struct {
         uint16_t id;
+        uint16_t privchat_user1;
+        uint16_t privchat_user2;
     } user;
     struct {
         uint16_t id;

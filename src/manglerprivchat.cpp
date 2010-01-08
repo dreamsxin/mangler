@@ -30,12 +30,15 @@ extern const char ManglerUI[];
 
 ManglerPrivChat::ManglerPrivChat(uint16_t userid) {
     // We instantiate a new builder object here to get a completely new window (hopefully)
-    builder = Gtk::Builder::create_from_string(ManglerUI);
+    builder = Gtk::Builder::create_from_string(ManglerUI, "privChatWindow");
     builder->get_widget("privChatWindow", chatWindow);
     this->remoteUserId = userid;
 
     builder->get_widget("privSendChat", sendButton);
     sendButton->signal_clicked().connect(sigc::mem_fun(this, &ManglerPrivChat::chatWindowSendChat_clicked_cb));
+
+    builder->get_widget("privChatClose", closeButton);
+    closeButton->signal_clicked().connect(sigc::mem_fun(this, &ManglerPrivChat::chatWindowCloseChat_clicked_cb));
 
     builder->get_widget("privChatBox", chatBox);
     builder->get_widget("privChatMessage", chatMessage);
@@ -51,6 +54,11 @@ void ManglerPrivChat::chatWindowSendChat_clicked_cb(void) {
     }
 }
 
+void ManglerPrivChat::chatWindowCloseChat_clicked_cb(void) {
+    v3_end_privchat(remoteUserId);
+    chatWindow->hide();
+}
+
 void ManglerPrivChat::addMessage(Glib::ustring message) {
     Glib::RefPtr<Gtk::TextBuffer> buffer = chatBox->get_buffer();
     buffer->set_text(buffer->get_text() + message + "\n");
@@ -58,6 +66,23 @@ void ManglerPrivChat::addMessage(Glib::ustring message) {
     Gtk::TextIter end = buffer->end();
     Glib::RefPtr<Gtk::TextMark> end_mark = buffer->create_mark(end);
     chatBox->scroll_to(end_mark, 0.0);
+}
+
+void ManglerPrivChat::remoteClosed() {
+    addMessage("\n*** remote user closed connection");
+    sendButton->set_sensitive(false);
+}
+
+void ManglerPrivChat::remoteAway() {
+    addMessage("\n*** remote user is now away");
+}
+
+void ManglerPrivChat::remoteBack() {
+    addMessage("\n*** remote user is back");
+}
+
+void ManglerPrivChat::remoteReopened() {
+    addMessage("\n*** remote user has reopened chat window");
 }
 
 void ManglerPrivChat::addChatMessage(uint16_t id, Glib::ustring message) {

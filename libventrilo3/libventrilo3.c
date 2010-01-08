@@ -2499,7 +2499,8 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                             // this condition checks to make sure a remote user has requested chat with us
                             if (m->user2 != v3_get_user_id()) {
                                 v3_event *ev = _v3_create_event(V3_EVENT_PRIVATE_CHAT_START);
-                                ev->user.id = m->user2;
+                                ev->user.privchat_user1 = m->user1;
+                                ev->user.privchat_user2 = m->user2;
                                 _v3_debug(V3_DEBUG_INFO, "recieved chat start from user id %d", m->user2);
                                 v3_queue_event(ev);
                             }
@@ -2508,7 +2509,8 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                     case V3_END_PRIV_CHAT:
                         {
                             v3_event *ev = _v3_create_event(V3_EVENT_PRIVATE_CHAT_END);
-                            ev->user.id = m->user2;
+                            ev->user.privchat_user1 = m->user1;
+                            ev->user.privchat_user2 = m->user2;
                             _v3_debug(V3_DEBUG_INFO, "recieved chat end from user id %d", m->user2);
                             v3_queue_event(ev);
                         }
@@ -2516,11 +2518,8 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                     case V3_TALK_PRIV_CHAT:
                         {   
                             v3_event *ev = _v3_create_event(V3_EVENT_PRIVATE_CHAT_MESSAGE);
-                            if (m->user2 == v3_get_user_id()) {
-                                ev->user.id = m->user1;
-                            } else {
-                                ev->user.id = m->user2;
-                            }
+                            ev->user.privchat_user1 = m->user1;
+                            ev->user.privchat_user2 = m->user2;
                             strncpy(ev->data.chatmessage, m->msg, sizeof(ev->data.chatmessage) - 1);
                             _v3_debug(V3_DEBUG_INFO, "recieved chat message from user id %d: %s", m->user2, m->msg);
                             free(m->msg);
@@ -2530,7 +2529,8 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                     case V3_BACK_PRIV_CHAT:
                         {
                             v3_event *ev = _v3_create_event(V3_EVENT_PRIVATE_CHAT_BACK);
-                            ev->user.id = m->user2;
+                            ev->user.privchat_user1 = m->user1;
+                            ev->user.privchat_user2 = m->user2;
                             _v3_debug(V3_DEBUG_INFO, "recieved chat back from user id %d");
                             v3_queue_event(ev);
                         }
@@ -2538,7 +2538,8 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                     case V3_AWAY_PRIV_CHAT:
                         {
                             v3_event *ev = _v3_create_event(V3_EVENT_PRIVATE_CHAT_AWAY);
-                            ev->user.id = m->user2;
+                            ev->user.privchat_user1 = m->user1;
+                            ev->user.privchat_user2 = m->user2;
                             _v3_debug(V3_DEBUG_INFO, "recieved chat away from user id %d");
                             v3_queue_event(ev);
                         }

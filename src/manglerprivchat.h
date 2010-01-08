@@ -41,11 +41,15 @@ class ManglerPrivChat {
 
         void chatWindow_show_cb(void);
         void chatWindow_hide_cb(void);
-        void chatClose_clicked_cb(void);
 
         void addMessage(Glib::ustring message);
         void addChatMessage(uint16_t id, Glib::ustring message);
+        void remoteClosed(void);
+        void remoteAway(void);
+        void remoteBack(void);
+        void remoteReopened(void);
         void chatWindowSendChat_clicked_cb(void);
+        void chatWindowCloseChat_clicked_cb(void);
         void clear(void);
         Glib::ustring nameFromId(uint16_t user_id);
 };

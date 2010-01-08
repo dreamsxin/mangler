@@ -982,15 +982,53 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                         chat->addChatMessage(ev->user.id, c_to_ustring(ev->data.chatmessage));
                 }
                 break;/*}}}*/
+            case V3_EVENT_PRIVATE_CHAT_START:/*{{{*/
+                {
+                    uint16_t remote;
+                    if (ev->user.privchat_user1 == v3_get_user_id()) {
+                        remote = ev->user.privchat_user2;
+                    } else {
+                        remote = ev->user.privchat_user1;
+                    }
+                    if (privateChatWindows[remote]) {
+                        privateChatWindows[remote]->remoteReopened();
+                    } else {
+                        privateChatWindows[remote] = new ManglerPrivChat(remote);
+                    }
+                }
+                break;/*}}}*/
+            case V3_EVENT_PRIVATE_CHAT_END:/*{{{*/
+                {
+                    if (privateChatWindows[ev->user.privchat_user2]) {
+                        privateChatWindows[ev->user.privchat_user2]->remoteClosed();
+                    }
+                }
+                break;/*}}}*/
+            case V3_EVENT_PRIVATE_CHAT_AWAY:/*{{{*/
+                {
+                    if (privateChatWindows[ev->user.privchat_user2]) {
+                        privateChatWindows[ev->user.privchat_user2]->remoteAway();
+                    }
+                }
+                break;/*}}}*/
+            case V3_EVENT_PRIVATE_CHAT_BACK:/*{{{*/
+                {
+                    if (privateChatWindows[ev->user.privchat_user2]) {
+                        privateChatWindows[ev->user.privchat_user2]->remoteBack();
+                    }
+                }
+                break;/*}}}*/
             case V3_EVENT_PRIVATE_CHAT_MESSAGE:/*{{{*/
                 {
-                    u = v3_get_user(ev->user.id);
-                    if (!u) {
-                        fprintf(stderr, "couldn't retreive user id %d\n", ev->user.id);
-                        break;
+                    uint16_t remote;
+                    if (ev->user.privchat_user1 == v3_get_user_id()) {
+                        remote = ev->user.privchat_user2;
+                    } else {
+                        remote = ev->user.privchat_user1;
                     }
-                    privateChatWindows[u->id]->addChatMessage(u->id, c_to_ustring(ev->data.chatmessage));
-                    v3_free_user(u);
+                    if (privateChatWindows[remote]) {
+                        privateChatWindows[remote]->addChatMessage(ev->user.privchat_user1, c_to_ustring(ev->data.chatmessage));
+                    }
                 }
                 break;/*}}}*/
             case V3_EVENT_ADMIN_AUTH:/*{{{*/
