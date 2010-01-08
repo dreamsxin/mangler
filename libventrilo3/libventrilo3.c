@@ -2516,7 +2516,11 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                     case V3_TALK_PRIV_CHAT:
                         {   
                             v3_event *ev = _v3_create_event(V3_EVENT_PRIVATE_CHAT_MESSAGE);
-                            ev->user.id = m->user2;
+                            if (m->user2 == v3_get_user_id()) {
+                                ev->user.id = m->user1;
+                            } else {
+                                ev->user.id = m->user2;
+                            }
                             strncpy(ev->data.chatmessage, m->msg, sizeof(ev->data.chatmessage) - 1);
                             _v3_debug(V3_DEBUG_INFO, "recieved chat message from user id %d: %s", m->user2, m->msg);
                             free(m->msg);
