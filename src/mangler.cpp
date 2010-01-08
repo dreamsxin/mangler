@@ -118,9 +118,8 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
     button->signal_clicked().connect(sigc::mem_fun(this, &Mangler::aboutButton_clicked_cb));
 
     // Settings Button
-    builder->get_widget("xmitButton", button);
-    button->signal_pressed().connect(sigc::mem_fun(this, &Mangler::xmitButton_pressed_cb));
-    button->signal_released().connect(sigc::mem_fun(this, &Mangler::xmitButton_released_cb));
+    builder->get_widget("xmitButton", togglebutton);
+    togglebutton->signal_toggled().connect(sigc::mem_fun(this, &Mangler::xmitButton_toggled_cb));
 
     // Quick Connect Dialog Buttons
     builder->get_widget("qcConnectButton", button);
@@ -412,14 +411,13 @@ void Mangler::aboutButton_clicked_cb(void) {/*{{{*/
     aboutdialog->run();
     aboutdialog->hide();
 }/*}}}*/
-void Mangler::xmitButton_pressed_cb(void) {/*{{{*/
-    //fprintf(stderr, "xmit clicked\n");
-    isTransmittingButton = true;
-    startTransmit();
-}/*}}}*/
-void Mangler::xmitButton_released_cb(void) {/*{{{*/
-    isTransmittingButton = false;
-    if (! isTransmittingKey && ! isTransmittingMouse) {
+void Mangler::xmitButton_toggled_cb(void) {/*{{{*/
+    builder->get_widget("xmitButton", togglebutton);
+    if (togglebutton->get_active()) {
+        isTransmittingButton = true;
+        startTransmit();
+    } else {
+        isTransmittingButton = false;
         stopTransmit();
     }
 }/*}}}*/

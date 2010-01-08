@@ -56,6 +56,7 @@ class Mangler
         Gtk::Window                         *manglerWindow;
         Glib::RefPtr<Gtk::Builder>          builder;
         Gtk::Button                         *button;
+        Gtk::ToggleButton                   *togglebutton;
         Gtk::Dialog                         *dialog;
         Gtk::AboutDialog                    *aboutdialog;
         Gtk::MessageDialog                  *msgdialog;
@@ -130,8 +131,7 @@ class Mangler
         void adminButton_clicked_cb(void);
         void settingsButton_clicked_cb(void);
         void aboutButton_clicked_cb(void);
-        void xmitButton_pressed_cb(void);
-        void xmitButton_released_cb(void);
+        void xmitButton_toggled_cb(void);
         void statusIcon_activate_cb(void);
 
         // menu bar signal handlers
