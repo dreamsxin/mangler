@@ -811,6 +811,39 @@ _v3_recv(int block) {/*{{{*/
                             _v3_destroy_packet(msg);
                         }
                         break;/*}}}*/
+                    case V3_EVENT_PRIVATE_CHAT_START:/*{{{*/
+                        {
+                            _v3_net_message *msg = _v3_put_0x5a(V3_START_PRIV_CHAT, ev.user.id, v3_luser.id, NULL);
+                            if (_v3_send(msg)) {
+                                _v3_debug(V3_DEBUG_SOCKET, "sent priv chat start request to server for user %d", ev.user.id);
+                            } else {
+                                _v3_debug(V3_DEBUG_SOCKET, "failed to send priv chat start request message");
+                            }
+                            _v3_destroy_packet(msg);
+                        }
+                        break;/*}}}*/
+                    case V3_EVENT_PRIVATE_CHAT_END:/*{{{*/
+                        {
+                            _v3_net_message *msg = _v3_put_0x5a(V3_END_PRIV_CHAT, ev.user.id, v3_luser.id, NULL);
+                            if (_v3_send(msg)) {
+                                _v3_debug(V3_DEBUG_SOCKET, "sent priv chat end request to server for user %d", ev.user.id);
+                            } else {
+                                _v3_debug(V3_DEBUG_SOCKET, "failed to send priv end start request message");
+                            }
+                            _v3_destroy_packet(msg);
+                        }
+                        break;/*}}}*/
+                    case V3_EVENT_PRIVATE_CHAT_MESSAGE:/*{{{*/
+                        {
+                            _v3_net_message *msg = _v3_put_0x5a(V3_TALK_PRIV_CHAT, ev.user.id, v3_luser.id, ev.data.chatmessage);   
+                            if (_v3_send(msg)) {
+                                _v3_debug(V3_DEBUG_SOCKET, "sent private chat message to server for user %d", ev.user.id);
+                            } else {
+                                _v3_debug(V3_DEBUG_SOCKET, "failed to private chat message message");
+                            }
+                            _v3_destroy_packet(msg);
+                        }
+                        break;/*}}}*/
                     case V3_EVENT_PHANTOM_ADD:/*{{{*/
                         {
                             _v3_net_message *msg = _v3_put_0x58(V3_PHANTOM_ADD, ev.channel.id, 0);

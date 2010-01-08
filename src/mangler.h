@@ -35,6 +35,7 @@
 #include "manglersettings.h"
 #include "manglerserverlist.h"
 #include "manglerchat.h"
+#include "manglerprivchat.h"
 #include "manglercharset.h"
 #include "locale.h"
 
@@ -78,6 +79,7 @@ class Mangler
         ManglerNetwork                      *network;
         int32_t                             connectedServerId;
         std::map<uint32_t, ManglerAudio* >  outputAudio;
+        std::map<uint16_t, ManglerPrivChat *> privateChatWindows;
         ManglerAudio                        *inputAudio;
         ManglerAudio                        *audioControl;
         ManglerSettings                     *settings;

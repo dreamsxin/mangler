@@ -982,6 +982,17 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                         chat->addChatMessage(ev->user.id, c_to_ustring(ev->data.chatmessage));
                 }
                 break;/*}}}*/
+            case V3_EVENT_PRIVATE_CHAT_MESSAGE:/*{{{*/
+                {
+                    u = v3_get_user(ev->user.id);
+                    if (!u) {
+                        fprintf(stderr, "couldn't retreive user id %d\n", ev->user.id);
+                        break;
+                    }
+                    privateChatWindows[u->id]->addChatMessage(u->id, c_to_ustring(ev->data.chatmessage));
+                    v3_free_user(u);
+                }
+                break;/*}}}*/
             case V3_EVENT_ADMIN_AUTH:/*{{{*/
                 isAdmin = true;
                 {

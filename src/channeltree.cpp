@@ -61,6 +61,8 @@ ManglerChannelTree::ManglerChannelTree(Glib::RefPtr<Gtk::Builder> builder)/*{{{*
     builder->get_widget("userRightClickMenu", rcmenu_user);
     builder->get_widget("copyComment", menuitem);
     menuitem->signal_activate().connect(sigc::mem_fun(this, &ManglerChannelTree::copyCommentMenuItem_activate_cb));
+    builder->get_widget("privateChat", menuitem);
+    menuitem->signal_activate().connect(sigc::mem_fun(this, &ManglerChannelTree::privateChatMenuItem_activate_cb));
     builder->get_widget("copyURL", menuitem);
     menuitem->signal_activate().connect(sigc::mem_fun(this, &ManglerChannelTree::copyURLMenuItem_activate_cb));
     builder->get_widget("kickUser", menuitem);
@@ -741,6 +743,19 @@ ManglerChannelTree::copyCommentMenuItem_activate_cb(void) {/*{{{*/
         Gtk::TreeModel::Row row = *iter;
         Glib::ustring comment = row[channelRecord.comment];
         clipboard->set_text(comment);
+    }
+}/*}}}*/
+
+void
+ManglerChannelTree::privateChatMenuItem_activate_cb(void) {/*{{{*/
+    Glib::RefPtr<Gtk::TreeSelection> sel = channelView->get_selection();
+    Gtk::TreeModel::iterator iter = sel->get_selected();
+    if(iter) {
+        Gtk::TreeModel::Row row = *iter;
+        uint16_t id = row[channelRecord.id];
+        fprintf(stderr, "opening chat with %d\n", id);
+        mangler->privateChatWindows[id] = new ManglerPrivChat(id);
+        fprintf(stderr, "opened chat window with %d\n", mangler->privateChatWindows[id]->remoteUserId);
     }
 }/*}}}*/
 

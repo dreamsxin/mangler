@@ -132,6 +132,7 @@ class ManglerChannelTree
         void channelView_buttonpress_event_cb(GdkEventButton* event);
         void copyCommentMenuItem_activate_cb(void);
         void copyURLMenuItem_activate_cb(void);
+        void privateChatMenuItem_activate_cb(void);
         void addPhantomMenuItem_activate_cb(void);
         void removePhantomMenuItem_activate_cb(void);
         void kickUserMenuItem_activate_cb(void);

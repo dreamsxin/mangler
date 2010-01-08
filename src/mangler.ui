@@ -3085,6 +3085,13 @@ Notifications are the sound effects that are played when you login, logout, a us
       </object>
     </child>
     <child>
+      <object class="GtkMenuItem" id="privateChat">
+        <property name="visible">True</property>
+        <property name="label" translatable="yes">Private Chat</property>
+        <property name="use_underline">True</property>
+      </object>
+    </child>
+    <child>
       <object class="GtkMenuItem" id="removePhantom">
         <property name="visible">True</property>
         <property name="label" translatable="yes">Remove Phantom</property>
