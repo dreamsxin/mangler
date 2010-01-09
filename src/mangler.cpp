@@ -497,12 +497,13 @@ void Mangler::startTransmit(void) {/*{{{*/
     statusIcon->set(icons["tray_icon_green"]);
     isTransmitting = true;
     channelTree->setUserIcon(v3_get_user_id(), "green");
-    codec = v3_get_channel_codec(user->channel);
-    //fprintf(stderr, "channel %d codec rate: %d at sample size %d\n", user->channel, codec->rate, codec->samplesize);
-    v3_start_audio(V3_AUDIO_SENDTYPE_U2CCUR);
-    v3_free_user(user);
-    inputAudio = new ManglerAudio("input");
-    inputAudio->open(codec->rate, AUDIO_INPUT, codec->samplesize);
+    if ((codec = v3_get_channel_codec(user->channel))) {
+        //fprintf(stderr, "channel %d codec rate: %d at sample size %d\n", user->channel, codec->rate, codec->samplesize);
+        v3_start_audio(V3_AUDIO_SENDTYPE_U2CCUR);
+        v3_free_user(user);
+        inputAudio = new ManglerAudio("input");
+        inputAudio->open(codec->rate, AUDIO_INPUT, codec->samplesize);
+    }
 }/*}}}*/
 void Mangler::stopTransmit(void) {/*{{{*/
     if (!isTransmitting) {
@@ -689,9 +690,12 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                             c_to_ustring(c->comment),
                             c->phonetic);
                     if (ev->channel.id == v3_get_user_channel(v3_get_user_id())) {
-                        codec_info = v3_get_channel_codec(ev->channel.id);
                         builder->get_widget("codecLabel", label);
-                        label->set_text(codec_info->name);
+                        if ((codec_info = v3_get_channel_codec(ev->channel.id))) {
+                            label->set_text(codec_info->name);
+                        } else {
+                            label->set_text("Unsupported Codec");
+                        }
                     }
                     v3_free_channel(c);
                 }
@@ -718,9 +722,12 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                 if (v3_is_loggedin()) {
                     const v3_codec *codec_info;
 
-                    codec_info = v3_get_channel_codec(0);
                     builder->get_widget("codecLabel", label);
-                    label->set_text(codec_info->name);
+                    if ((codec_info = v3_get_channel_codec(0))) {
+                        label->set_text(codec_info->name);
+                    } else {
+                        label->set_text("Unsupported Codec");
+                    }
                     channelTree->expand_all();
                     audioControl->playNotification("login");
                     if (connectedServerId != -1) {
@@ -746,9 +753,12 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                     if (ev->user.id == v3_get_user_id()) {
                         // we're moving channels... update the codec label
                         const v3_codec *codec_info;
-                        codec_info = v3_get_channel_codec(ev->channel.id);
                         builder->get_widget("codecLabel", label);
-                        label->set_text(codec_info->name);
+                        if ((codec_info = v3_get_channel_codec(ev->channel.id))) {
+                            label->set_text(codec_info->name);
+                        } else {
+                            label->set_text("Unsupported Codec");
+                        }
                     } else {
                         if (ev->channel.id == v3_get_user_channel(v3_get_user_id())) {
                             // they're joining our channel

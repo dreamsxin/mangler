@@ -4138,7 +4138,7 @@ uint32_t
 v3_get_codec_rate(uint16_t codec, uint16_t format) {/*{{{*/
     int ctr;
 
-    for (ctr = 0; v3_codecs[ctr].codec != -1; ctr++) {
+    for (ctr = 0; v3_codecs[ctr].codec != (uint8_t)-1; ctr++) {
         if (v3_codecs[ctr].codec == codec && v3_codecs[ctr].format == format) {
             return v3_codecs[ctr].rate;
         }
@@ -4149,7 +4149,7 @@ const v3_codec*
 v3_get_codec(uint16_t codec, uint16_t format) {/*{{{*/
     int ctr;
 
-    for (ctr = 0; v3_codecs[ctr].codec != -1; ctr++) {
+    for (ctr = 0; v3_codecs[ctr].codec != (uint8_t)-1; ctr++) {
         if (v3_codecs[ctr].codec == codec && v3_codecs[ctr].format == format) {
             return &v3_codecs[ctr];
         }
@@ -4176,7 +4176,11 @@ v3_get_channel_codec(uint16_t channel_id) {/*{{{*/
         codec_info = v3_get_codec(c->channel_codec, c->channel_format);
     }
     v3_free_channel(c);
-    _v3_debug(V3_DEBUG_INFO, "channel codec is %d/%d %s", codec_info->codec, codec_info->format, codec_info->name);
+    if (codec_info) {
+        _v3_debug(V3_DEBUG_INFO, "channel codec is %d/%d %s", codec_info->codec, codec_info->format, codec_info->name);
+    } else {
+        _v3_debug(V3_DEBUG_INFO, "unknown codec for channel %d", channel_id);
+    }
     _v3_func_leave("v3_get_channel_codec");
     return codec_info;
 }/*}}}*/
