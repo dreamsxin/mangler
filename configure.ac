@@ -36,24 +36,38 @@ AC_CHECK_LIB([m], [tan], [], [
 AC_CHECK_HEADER([mpd/client.h],
 	[AC_CHECK_LIB([mpdclient], [mpd_run_status])]
 )
-AC_CHECK_LIB([gsm], [gsm_create], [], [
-	echo "error: cannot find libgsm: Is it installed? Also make sure you have the"
-	echo "       libgsm development packages installed"
-	exit -1
-	])
-AC_CHECK_HEADER([gsm.h], [AC_DEFINE(HAVE_GSM_H, 1, [location of gsm.h])], [
-	AC_CHECK_HEADER([gsm/gsm.h], [], [
-		echo "error: found gsm libraries, but headers are missing or corrupt. are you"
-		echo "       missing a libgsm development package?"
+
+AC_ARG_ENABLE(gsm,   [  --disable-gsm           disable GSM codec support], [disable_gsm=yes])
+AC_ARG_ENABLE(speex, [  --disable-speex         disable Speex codec support], [disable_speex=yes])
+
+if test "$enable_gsm" != "no" ; then
+	AC_CHECK_LIB([gsm], [gsm_create], [], [
+		echo "error: cannot find libgsm: Is it installed? Also make sure you have the"
+		echo "       libgsm development packages installed"
 		exit -1
 		])
-	])
+	AC_CHECK_HEADER([gsm.h], [AC_DEFINE(HAVE_GSM_H, 1, [location of gsm.h])], [
+		AC_CHECK_HEADER([gsm/gsm.h], AC_DEFINE(HAVE_GSM_GSM_H, 1, [location of gsm.h]),[
+			echo "error: found gsm libraries, but headers are missing or corrupt. are you"
+			echo "       missing a libgsm development package?"
+			exit -1
+			])
+		])
+	AC_DEFINE(HAVE_GSM, 1, [have gsm])
+else
+	AC_DEFINE(HAVE_GSM, 0, [have gsm])
+fi
 
 
 # Checks for header files.
-PKG_CHECK_MODULES(speex, speex >= 1.2)
-AC_SUBST(speex_CFLAGS)
-AC_SUBST(speex_LIBS)
+if test "$enable_speex" != "no" ; then
+	PKG_CHECK_MODULES(speex, speex >= 1.2)
+	AC_SUBST(speex_CFLAGS)
+	AC_SUBST(speex_LIBS)
+	AC_DEFINE(HAVE_SPEEX, 1, [have speex])
+else
+	AC_DEFINE(HAVE_SPEEX, 0, [have speex])
+fi
 
 PKG_CHECK_MODULES(gtk, gtk+-2.0 >= 2.16.0)
 

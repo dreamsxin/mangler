@@ -27,6 +27,7 @@
 #ifndef _LIBVENTRILO3_H
 #define _LIBVENTRILO3_H
 
+#include "config.h"
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -364,10 +365,13 @@ pthread_cond_t          *eventq_cond = NULL;
 v3_event                *_v3_eventq = NULL;
 
 v3_codec v3_codecs[] = {
+#if HAVE_GSM
     { 0, 0, 640, 8000, -1, "GSM 6.10 8kHz" },
     { 0, 1, 640, 11025, -1, "GSM 6.10 11kHz" },
     { 0, 2, 640, 22050, -1, "GSM 6.10 22kHz" },
     { 0, 3, 640, 44100, -1, "GSM 6.10 44kHz" },
+#endif
+#if HAVE_SPEEX
     { 3, 0, 320, 8000, 0, "Speex 8kHz Quality 0" },
     { 3, 1, 320, 8000, 1, "Speex 8kHz Quality 1" },
     { 3, 2, 320, 8000, 2, "Speex 8kHz Quality 2" },
@@ -401,11 +405,14 @@ v3_codec v3_codecs[] = {
     { 3, 30, 1280, 32000, 8, "Speex 32kHz Quality 8" },
     { 3, 31, 1280, 32000, 9, "Speex 32kHz Quality 9" },
     { 3, 32, 1280, 32000, 10, "Speex 32kHz Quality 10" },
+#endif
     { -1, -1, -1, -1, -1, "" },
 };
 
 typedef struct __v3_decoders {
+#if HAVE_GSM
     gsm gsm;
+#endif
     void *speex;
 } _v3_decoders;
 

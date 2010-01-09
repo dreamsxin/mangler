@@ -38,11 +38,13 @@
 #include <netdb.h>
 #include <errno.h>
 #include <unistd.h>
-#include <speex/speex.h>
+#if HAVE_SPEEX
+# include <speex/speex.h>
+#endif
 #include <math.h>
 #ifdef HAVE_GSM_H
 #include <gsm.h>
-#else
+#elif HAVE_GSM_GSM_H
 #include <gsm/gsm.h>
 #endif
 
@@ -665,6 +667,7 @@ _v3_recv(int block) {/*{{{*/
                             // TODO: this is too messy to do here, make it a function
                             switch (codec->codec) {
                                 case 0:
+#if HAVE_GSM
                                     {
                                         uint8_t **frames;
                                         static gsm handle = NULL;
@@ -691,8 +694,10 @@ _v3_recv(int block) {/*{{{*/
                                         msg = _v3_put_0x52(V3_AUDIO_DATA, codec->codec, codec->format, ev.pcm.send_type, ev.pcm.length, ctr*65, frames);
                                     }
                                     send = true;
+#endif
                                     break;
                                 case 3:
+#if HAVE_SPEEX
                                     {
                                         _v3_debug(V3_DEBUG_INFO, "encoding %d bytes of PCM to SPEEX @ %lu", codec->samplesize, codec->rate);
                                         char cbits[200];
@@ -793,6 +798,7 @@ _v3_recv(int block) {/*{{{*/
                                         // Destroy the bit-packing struct
                                         speex_bits_destroy(&bits);
                                     }
+#endif
                                     send = true;
                                     break;
                                 default:
@@ -1782,12 +1788,16 @@ _v3_destroy_decoders(void) {/*{{{*/
 
     _v3_func_enter("_v3_destroy_decoders");
     for (ctr = 0; ctr < 65535; ctr++) {
+#if HAVE_GSM
         if (v3_decoders[ctr].gsm != NULL) {
             gsm_destroy(v3_decoders[ctr].gsm);
         }
+#endif
+#if HAVE_SPEEX
         if (v3_decoders[ctr].speex != NULL) {
             speex_decoder_destroy(v3_decoders[ctr].speex);
         }
+#endif
     }
     _v3_func_leave("_v3_destroy_decoders");
 }/*}}}*/
@@ -2306,6 +2316,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                             // TODO: it's too messy to have this here.  Write a function that decodes
                             switch (msub->header.codec) {
                                 case 0: // GSM
+#if HAVE_GSM
                                     {
                                         _v3_msg_0x52_gsmdata *gsmdata =  msub->data;
                                         uint8_t buf[65];
@@ -2337,8 +2348,10 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                                         ev->pcm.length = msub->header.data_length/65*640;
                                         _v3_debug(V3_DEBUG_EVENT, "queueing pcm msg length %d", ev->pcm.length);
                                     }
+#endif
                                     break;
                                 case 3: // SPEEX
+#if HAVE_SPEEX
                                     {
                                         char  cbits[200];
                                         SpeexBits bits;
@@ -2387,6 +2400,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                                         _v3_debug(V3_DEBUG_EVENT, "queueing pcm msg length %d", ev->pcm.length);
                                         speex_bits_destroy(&bits);
                                     }
+#endif
                                     break;
                             }
                             // don't waste resources if we don't need to deal with it

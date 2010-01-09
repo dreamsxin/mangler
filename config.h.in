@@ -21,6 +21,12 @@
 /* Define to 1 if you have the `gettimeofday' function. */
 #undef HAVE_GETTIMEOFDAY
 
+/* have gsm */
+#undef HAVE_GSM
+
+/* location of gsm.h */
+#undef HAVE_GSM_GSM_H
+
 /* location of gsm.h */
 #undef HAVE_GSM_H
 
@@ -70,6 +76,9 @@
 
 /* Define to 1 if you have the `socket' function. */
 #undef HAVE_SOCKET
+
+/* have speex */
+#undef HAVE_SPEEX
 
 /* Define to 1 if stdbool.h conforms to C99. */
 #undef HAVE_STDBOOL_H
