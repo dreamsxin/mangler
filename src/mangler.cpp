@@ -1033,7 +1033,7 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                     }
                     if (privateChatWindows[remote]) {
                         if (!ev->flags) { // set to true on error
-                            privateChatWindows[remote]->addChatMessage(ev->user.privchat_user1, c_to_ustring(ev->data.chatmessage));
+                            privateChatWindows[remote]->addChatMessage(ev->user.privchat_user2, c_to_ustring(ev->data.chatmessage));
                         } else {
                             privateChatWindows[remote]->addMessage("*** error sending message to remote user");
                         }
