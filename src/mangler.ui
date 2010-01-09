@@ -3002,6 +3002,7 @@ Notifications are the sound effects that are played when you login, logout, a us
                   <object class="GtkEntry" id="chatMessage">
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
+                    <property name="has_focus">True</property>
                     <property name="max_length">255</property>
                     <property name="invisible_char">&#x25CF;</property>
                     <property name="activates_default">True</property>
@@ -4228,6 +4229,7 @@ Notifications are the sound effects that are played when you login, logout, a us
                   <object class="GtkEntry" id="privChatMessage">
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
+                    <property name="has_focus">True</property>
                     <property name="max_length">255</property>
                     <property name="invisible_char">&#x25CF;</property>
                     <property name="activates_default">True</property>
