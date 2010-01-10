@@ -3192,7 +3192,6 @@ Notifications are the sound effects that are played when you login, logout, a us
             <child>
               <object class="GtkButton" id="reasonCancelButton">
                 <property name="label">gtk-cancel</property>
-                <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
                 <property name="use_stock">True</property>
