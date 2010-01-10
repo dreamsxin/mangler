@@ -151,6 +151,11 @@ ManglerAudio::open(uint32_t rate, bool type, uint32_t pcm_framesize) {/*{{{*/
             snd_pcm_close(alsa_stream);
             return;
         }
+        if ((error = snd_pcm_start(alsa_stream)) < 0) {
+            fprintf(stderr, "snd_pcm_start() failed: %s\n", snd_strerror(error));
+            snd_pcm_close(alsa_stream);
+            return;
+        }
 #endif
         stop_input = false;
         outputStreamOpen = false;
