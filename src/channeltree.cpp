@@ -759,8 +759,10 @@ ManglerChannelTree::privateChatMenuItem_activate_cb(void) {/*{{{*/
                 v3_free_user(u);
                 return;
             }
+            v3_free_user(u);
+        } else {
+            return;
         }
-        v3_free_user(u);
         Glib::ustring name = row[channelRecord.name];
         fprintf(stderr, "opening chat with %d\n", id);
         mangler->privateChatWindows[id] = new ManglerPrivChat(id);
