@@ -1261,20 +1261,22 @@ void Mangler::passwordDialogCancelButton_clicked_cb(void) {/*{{{*/
     password = "";
 }/*}}}*/
 
-Glib::ustring Mangler::getReasonEntry(Glib::ustring title, Glib::ustring prompt) {/*{{{*/
+bool Mangler::getReasonEntry(Glib::ustring title, Glib::ustring prompt) {/*{{{*/
     reason = "";
+    reasonValid = false;
     reasonEntry->set_text("");
     reasonDialog->set_keep_above(true);
     reasonDialog->set_title(title);
     reasonDialog->run();
     reasonDialog->hide();
-    return(reason);
+    return(reasonValid);
 }/*}}}*/
 void Mangler::reasonDialogOkButton_clicked_cb(void) {/*{{{*/
     reason = reasonEntry->get_text();
+    reasonValid = true;
 }/*}}}*/
 void Mangler::reasonDialogCancelButton_clicked_cb(void) {/*{{{*/
-    reason = "";
+    reasonValid = false;
 }/*}}}*/
 
 void Mangler::textStringChangeDialogOkButton_clicked_cb(void) {/*{{{*/

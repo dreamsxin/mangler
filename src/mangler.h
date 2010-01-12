@@ -102,6 +102,7 @@ class Mangler
         Gtk::Entry                          *reasonEntry;
         Glib::ustring                       reason;
         bool                                reasonStatus;
+        bool                                reasonValid;
 
         // These are used by the text string entry dialog
         Gtk::Dialog                         *textStringChangeDialog;
@@ -115,7 +116,7 @@ class Mangler
         Glib::Thread                        *networkThread;
 
         Glib::ustring getPasswordEntry(Glib::ustring title = "Password", Glib::ustring prompt = "Password");
-        Glib::ustring getReasonEntry(Glib::ustring title = "Reason", Glib::ustring prompt = "Reason");
+        bool getReasonEntry(Glib::ustring title = "Reason", Glib::ustring prompt = "Reason");
         uint32_t getActiveServer(void);
         void setActiveServer(uint32_t row_number);
         void errorDialog(Glib::ustring message);
