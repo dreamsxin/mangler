@@ -92,6 +92,7 @@ class ManglerConfig {
                 uint32_t        windowHeight;
                 bool            buttonsHidden;
                 bool            serverInfoHidden;
+                bool            chatTimestamps;
 
 		ManglerServerConfig   qc_lastserver;
 		std::vector<ManglerServerConfig *> serverlist;

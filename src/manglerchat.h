@@ -30,6 +30,7 @@
 class ManglerChat {
     public:
         ManglerChat(Glib::RefPtr<Gtk::Builder> builder); 
+        Glib::RefPtr<Gtk::Builder>          builder;
 
         class chatUserModelColumns : public Gtk::TreeModel::ColumnRecord {
             public:
@@ -48,9 +49,11 @@ class ManglerChat {
         Gtk::Window   *chatWindow;
         Gtk::Button   *button;
         Gtk::Entry    *chatMessage;
+        Gtk::CheckButton   *checkbutton;        
         Gtk::TextView *chatBox;
         bool          isOpen;
 
+        void chatTimestamp_toggled_cb();
         void chatWindow_show_cb(void);
         void chatWindow_hide_cb(void);
         void chatWindowSendChat_clicked_cb(void);

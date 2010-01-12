@@ -40,6 +40,7 @@ ManglerConfig::ManglerConfig() {/*{{{*/
     windowHeight = 0;
     buttonsHidden = false;
     serverInfoHidden = false;
+    chatTimestamps = false;
     PushToTalkKeyEnabled            = false;
     PushToTalkKeyValue              = "";
     PushToTalkMouseEnabled          = false;
@@ -90,6 +91,7 @@ bool ManglerConfig::save() {/*{{{*/
     put("window.height", windowHeight);
     put("window.buttonsHidden", buttonsHidden);
     put("window.serverInfoHidden", serverInfoHidden);
+    put("chatTimestamps", chatTimestamps);
 
     for (uint32_t ctr = 0; ctr < serverlist.size(); ctr++) {
         put(ctr, *serverlist[ctr]);
@@ -397,6 +399,7 @@ void ManglerConfig::load() {/*{{{*/
     windowHeight                  = atoi(get("window.height").c_str());
     buttonsHidden                 = get("window.buttonsHidden") == "1" ? true : false; // default false
     serverInfoHidden              = get("window.serverInfoHidden") == "1" ? true : false; // default false
+    chatTimestamps                = get("chatTimestamps") == "1" ? true : false; // default false
     lastConnectedServerId         = atoi(get("lastConnectedServerId").c_str());
     for (uint32_t ctr = 0; ctr < serverlist.size(); ctr++) {
         delete serverlist[ctr];

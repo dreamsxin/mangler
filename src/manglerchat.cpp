@@ -26,8 +26,13 @@
 
 #include "mangler.h"
 #include "manglerchat.h"
+#include "manglersettings.h"
+#include "manglerconfig.h"
+
 
 ManglerChat::ManglerChat(Glib::RefPtr<Gtk::Builder> builder) {
+    this->builder = builder;
+
     builder->get_widget("chatWindow", chatWindow);
     chatWindow->signal_show().connect(sigc::mem_fun(this, &ManglerChat::chatWindow_show_cb));
     chatWindow->signal_hide().connect(sigc::mem_fun(this, &ManglerChat::chatWindow_hide_cb));
@@ -45,16 +50,30 @@ ManglerChat::ManglerChat(Glib::RefPtr<Gtk::Builder> builder) {
     chatUserTreeModel = Gtk::ListStore::create(chatUserColumns);
     chatUserListView->set_model(chatUserTreeModel);
     chatUserListView->append_column("Name", chatUserColumns.name);
-
+    
     builder->get_widget("chatBox", chatBox);
     isOpen = false;
 }
 
+void ManglerChat::chatTimestamp_toggled_cb() {
+    builder->get_widget("chatTimestampCheckButton", checkbutton);
+    if (checkbutton->get_active()) {
+        mangler->settings->config.chatTimestamps = true;
+    } else {
+        mangler->settings->config.chatTimestamps = false;
+    }
+    mangler->settings->config.save();
+}
+
 void ManglerChat::chatWindow_show_cb() {
     isOpen = true;
+
     if(v3_is_loggedin()) {
         v3_join_chat();
     }
+    builder->get_widget("chatTimestampCheckButton", checkbutton);
+    checkbutton->set_active(mangler->settings->config.chatTimestamps ? true : false);
+    checkbutton->signal_toggled().connect(sigc::mem_fun(this, &ManglerChat::chatTimestamp_toggled_cb));
 }
 
 void ManglerChat::chatWindow_hide_cb() {
@@ -76,7 +95,20 @@ void ManglerChat::chatClose_clicked_cb() {
 }
 
 void ManglerChat::addMessage(Glib::ustring message) {
+    char timestamp[200];
+    time_t t;
+    struct tm *tmp;
+    struct timeval tv;
+
     Glib::RefPtr<Gtk::TextBuffer> buffer = chatBox->get_buffer();
+    if(mangler->settings->config.chatTimestamps == true) {
+        gettimeofday(&tv, NULL);
+        t = tv.tv_sec;
+        tmp = localtime(&t);
+        if (strftime(timestamp, sizeof(timestamp), "%T", tmp) != 0) {
+            message = "[" + (Glib::ustring)timestamp + "] " + message;
+        }
+    }
     buffer->set_text(buffer->get_text() + message + "\n");
 
     Gtk::TextIter end = buffer->end();
