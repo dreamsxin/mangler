@@ -51,17 +51,16 @@ ManglerChat::ManglerChat(Glib::RefPtr<Gtk::Builder> builder) {
     chatUserListView->set_model(chatUserTreeModel);
     chatUserListView->append_column("Name", chatUserColumns.name);
     
+    builder->get_widget("chatTimestampCheckButton", checkbutton);
+    checkbutton->signal_toggled().connect(sigc::mem_fun(this, &ManglerChat::chatTimestampCheckButton_toggled_cb));
+
     builder->get_widget("chatBox", chatBox);
     isOpen = false;
 }
 
-void ManglerChat::chatTimestamp_toggled_cb() {
+void ManglerChat::chatTimestampCheckButton_toggled_cb() {
     builder->get_widget("chatTimestampCheckButton", checkbutton);
-    if (checkbutton->get_active()) {
-        mangler->settings->config.chatTimestamps = true;
-    } else {
-        mangler->settings->config.chatTimestamps = false;
-    }
+    mangler->settings->config.chatTimestamps = checkbutton->get_active();
     mangler->settings->config.save();
 }
 
@@ -72,8 +71,7 @@ void ManglerChat::chatWindow_show_cb() {
         v3_join_chat();
     }
     builder->get_widget("chatTimestampCheckButton", checkbutton);
-    checkbutton->set_active(mangler->settings->config.chatTimestamps ? true : false);
-    checkbutton->signal_toggled().connect(sigc::mem_fun(this, &ManglerChat::chatTimestamp_toggled_cb));
+    checkbutton->set_active(mangler->settings->config.chatTimestamps);
 }
 
 void ManglerChat::chatWindow_hide_cb() {

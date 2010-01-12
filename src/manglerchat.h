@@ -53,7 +53,7 @@ class ManglerChat {
         Gtk::TextView *chatBox;
         bool          isOpen;
 
-        void chatTimestamp_toggled_cb();
+        void chatTimestampCheckButton_toggled_cb();
         void chatWindow_show_cb(void);
         void chatWindow_hide_cb(void);
         void chatWindowSendChat_clicked_cb(void);
