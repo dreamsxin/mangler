@@ -299,13 +299,13 @@ ManglerChannelTree::addChannel(uint8_t protect_mode, uint32_t id, uint32_t paren
     channelRow[channelRecord.displayName]       = displayName;
     switch (protect_mode) {
         case 0:
-            channelRow[channelRecord.icon]              = mangler->icons["black_circle"]->scale_simple(9, 9, Gdk::INTERP_BILINEAR);;
+            channelRow[channelRecord.icon]              = mangler->icons["black_circle"]->scale_simple(12, 12, Gdk::INTERP_BILINEAR);;
             break;
         case 1:
-            channelRow[channelRecord.icon]              = mangler->icons["red_circle"]->scale_simple(9, 9, Gdk::INTERP_BILINEAR);;
+            channelRow[channelRecord.icon]              = mangler->icons["red_circle"]->scale_simple(12, 12, Gdk::INTERP_BILINEAR);;
             break;
         case 2:
-            channelRow[channelRecord.icon]              = mangler->icons["yellow_circle"]->scale_simple(9, 9, Gdk::INTERP_BILINEAR);;
+            channelRow[channelRecord.icon]              = mangler->icons["yellow_circle"]->scale_simple(12, 12, Gdk::INTERP_BILINEAR);;
             break;
     }
     channelRow[channelRecord.isUser]            = false;
@@ -347,13 +347,13 @@ ManglerChannelTree::updateChannel(uint8_t protect_mode, uint32_t id, uint32_t pa
     channel[channelRecord.displayName]       = displayName;
     switch (protect_mode) {
         case 0:
-            channel[channelRecord.icon]              = mangler->icons["black_circle"]->scale_simple(9, 9, Gdk::INTERP_BILINEAR);;
+            channel[channelRecord.icon]              = mangler->icons["black_circle"]->scale_simple(12, 12, Gdk::INTERP_BILINEAR);;
             break;
         case 1:
-            channel[channelRecord.icon]              = mangler->icons["red_circle"]->scale_simple(9, 9, Gdk::INTERP_BILINEAR);;
+            channel[channelRecord.icon]              = mangler->icons["red_circle"]->scale_simple(12, 12, Gdk::INTERP_BILINEAR);;
             break;
         case 2:
-            channel[channelRecord.icon]              = mangler->icons["yellow_circle"]->scale_simple(9, 9, Gdk::INTERP_BILINEAR);;
+            channel[channelRecord.icon]              = mangler->icons["yellow_circle"]->scale_simple(12, 12, Gdk::INTERP_BILINEAR);;
             break;
     }
     channel[channelRecord.isUser]            = false;

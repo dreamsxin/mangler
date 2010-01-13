@@ -1,13 +1,12 @@
 
 all: mangler-icons.h
 
-mangler-icons.h: black_circle.png blue_circle.png cyan_circle.png green_circle.png \
-		 grey_circle.png purple_circle.png red_circle.png yellow_circle.png \
+mangler-icons.h: black_circle.svg blue_circle.svg cyan_circle.svg green_circle.svg purple_circle.svg red_circle.svg yellow_circle.svg \
 		 mangler_logo.svg \
 		 user_icon_red.svg  user_icon_yellow.svg  user_icon_green.svg  user_icon_orange.svg \
 		 tray_icon_blue.svg tray_icon_red.svg tray_icon_yellow.svg tray_icon_green.svg tray_icon_grey.svg tray_icon_purple.svg
 	list=""
-	for f in *.png *.svg ; do \
+	for f in *.svg ; do \
 		id=`echo $$f | perl -pe 's/^(.*)\..*$$/$$1/'`;  \
 		list="$$list $$id $$f";  \
 	done ; \
