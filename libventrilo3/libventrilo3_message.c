@@ -103,6 +103,22 @@ _v3_get_msg_uint16_array(void *offset, uint16_t *len) {/*{{{*/
 }/*}}}*/
 
 int
+_v3_put_msg_uint16_array(void *buffer, uint16_t len, uint16_t *array) {/*{{{*/
+    uint16_t *s;
+    int i;
+    
+    _v3_func_enter("_v3_put_msg_uint16_array");
+
+    memcpy(buffer, &len, 2);
+    if (len)
+        memcpy(buffer, array, len * 2);
+
+    _v3_func_leave("_v3_put_msg_uint16_array");
+
+    return len + 2;
+}/*}}}*/
+
+int
 _v3_put_msg_string(void *buffer, char *string) {/*{{{*/
     int len;
     
@@ -174,6 +190,77 @@ _v3_get_msg_rank(void *offset, _v3_msg_rank *rank) {/*{{{*/
     offset+=len;
     _v3_func_leave("_v3_get_msg_rank");
     return(offset-start_offset);
+}/*}}}*/
+
+int
+_v3_get_msg_account(void *offset, _v3_msg_account *account) {/*{{{*/
+    void *start_offset = offset;
+    uint16_t len;
+    int j;
+
+    _v3_func_enter("_v3_get_msg_account");
+
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "start user acct parsing");
+
+    memcpy(&(account->perms), offset, sizeof(account->perms));
+    _v3_print_permissions(&account->perms);
+    offset += sizeof(account->perms);
+
+    account->username = _v3_get_msg_string(offset, &len);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "name: %s", account->username);
+    offset += len;
+    account->owner = _v3_get_msg_string(offset, &len);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "owner: %s", account->owner);
+    offset += len;
+    account->notes = _v3_get_msg_string(offset, &len);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "notes: %s", account->notes);
+    offset += len;
+    account->lock_reason = _v3_get_msg_string(offset, &len);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "lock reason: %s", account->lock_reason);
+    offset += len;
+                
+    account->chan_admin = _v3_get_msg_uint16_array(offset, &len);
+    for (j=0;j<(len-2)/2;j++)
+        _v3_debug(V3_DEBUG_PACKET_PARSE, "chanadmin: 0x%x", account->chan_admin[j]);
+    account->chan_admin_count = (len - 2) / 2;
+    offset += len;
+    account->chan_auth = _v3_get_msg_uint16_array(offset, &len);
+    for (j=0;j<(len-2)/2;j++)
+        _v3_debug(V3_DEBUG_PACKET_PARSE, "chanauth: 0x%x", account->chan_auth[j]);
+    account->chan_auth_count = (len - 2) / 2;
+    offset += len;
+
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "end user acct parsing");
+
+    _v3_func_leave("_v3_get_msg_account");
+
+    return (offset - start_offset);
+}/*}}}*/
+
+int
+_v3_put_msg_account(void *buf, v3_account *account) {/*{{{*/
+    void *start_buffer = buf;
+
+    _v3_func_enter("_v3_put_msg_account");
+
+    // put the account perms
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "putting account id: %d", account->perms.account_id);
+    memcpy(buf, &account->perms, sizeof(account->perms));
+    buf += sizeof(account->perms);
+
+    // put the account strings
+    buf += _v3_put_msg_string(buf, account->username);
+    buf += _v3_put_msg_string(buf, account->owner);
+    buf += _v3_put_msg_string(buf, account->notes);
+    buf += _v3_put_msg_string(buf, account->lock_reason);
+
+    // put the account channels
+    buf += _v3_put_msg_uint16_array(buf, account->chan_admin_count, account->chan_admin);
+    buf += _v3_put_msg_uint16_array(buf, account->chan_auth_count, account->chan_auth);
+
+    _v3_func_leave("_v3_put_msg_account");
+
+    return (buf - start_buffer);
 }/*}}}*/
 
 int
@@ -687,9 +774,11 @@ _v3_get_0x4a(_v3_net_message *msg) {/*{{{*/
  
     switch (m->subtype) {
         case V3_USERLIST_OPEN:
+        case V3_USERLIST_ADD:
+        case V3_USERLIST_MODIFY:
             {
-            int i, j;
-            _v3_msg_0x4a_0x00 *msub = malloc(sizeof(_v3_msg_0x4a_0x00));
+            int i;
+            _v3_msg_0x4a_account *msub = malloc(sizeof(_v3_msg_0x4a_account));
             memcpy(msub, m, sizeof(*m));
             msg->contents = msub;
 
@@ -697,60 +786,26 @@ _v3_get_0x4a(_v3_net_message *msg) {/*{{{*/
             msub->acct_list = calloc(msub->header.count, sizeof(msub->acct_list[0]));
 
             for (i = 0, offset = msg->data + sizeof(msub->header);i < msub->header.count; i++) {
-                uint16_t len;
-                v3_account *acct = msub->acct_list[i] = malloc(sizeof(v3_account));
-
-                memcpy(&(acct->perms), offset, sizeof(acct->perms));
-                _v3_debug(V3_DEBUG_PACKET_PARSE, "start user acct parsing");
-                _v3_print_permissions(&acct->perms);
-                offset += sizeof(acct->perms);
-
-                acct->username = _v3_get_msg_string(offset, &len);
-                _v3_debug(V3_DEBUG_PACKET_PARSE, "name: %s", acct->username);
-                offset += len;
-                acct->owner = _v3_get_msg_string(offset, &len);
-                _v3_debug(V3_DEBUG_PACKET_PARSE, "owner: %s", acct->owner);
-                offset += len;
-                acct->notes = _v3_get_msg_string(offset, &len);
-                _v3_debug(V3_DEBUG_PACKET_PARSE, "notes: %s", acct->notes);
-                offset += len;
-                acct->lock_reason = _v3_get_msg_string(offset, &len);
-                _v3_debug(V3_DEBUG_PACKET_PARSE, "lock reason: %s", acct->lock_reason);
-                offset += len;
-                
-                acct->chan_admin = _v3_get_msg_uint16_array(offset, &len);
-                for (j=0;j<(len-2)/2;j++)
-                    _v3_debug(V3_DEBUG_PACKET_PARSE, "chanadmin: 0x%x", acct->chan_admin[j]);
-                acct->chan_admin_count = (len - 2) / 2;
-                offset += len;
-                acct->chan_auth = _v3_get_msg_uint16_array(offset, &len);
-                for (j=0;j<(len-2)/2;j++)
-                    _v3_debug(V3_DEBUG_PACKET_PARSE, "chanauth: 0x%x", acct->chan_auth[j]);
-                acct->chan_auth_count = (len - 2) / 2;
-                offset += len;
-
-                _v3_debug(V3_DEBUG_PACKET_PARSE, "end user acct parsing");
+                v3_account *account = msub->acct_list[i] = malloc(sizeof(v3_account));
+                offset += _v3_get_msg_account(offset, account);
             }
             }
             break;
-
+        case V3_USERLIST_REMOVE:
         case V3_USERLIST_LUSER:
+        case V3_USERLIST_CHANGE_OWNER:
             {
-            if (msg->len != sizeof(_v3_msg_0x4a_0x05)) {
-                _v3_debug(V3_DEBUG_PACKET_PARSE, "expected %d bytes, but message is %d bytes", sizeof(_v3_msg_0x4a_0x05), msg->len);
+            if (msg->len != sizeof(_v3_msg_0x4a_perms)) {
+                _v3_debug(V3_DEBUG_PACKET_PARSE, "expected %d bytes, but message is %d bytes", sizeof(_v3_msg_0x4a_perms), msg->len);
                _v3_func_leave("_v3_get_0x4a");
                return false;
             }
-            _v3_msg_0x4a_0x05 *msub = (_v3_msg_0x4a_0x05 *)m;
-            msub = realloc(m, sizeof(_v3_msg_0x4a_0x05));
-            memcpy(msub, msg->data, sizeof(_v3_msg_0x4a_0x05));
+            _v3_msg_0x4a_perms *msub = (_v3_msg_0x4a_perms *)m;
+            msub = realloc(m, sizeof(_v3_msg_0x4a_perms));
+            memcpy(msub, msg->data, sizeof(_v3_msg_0x4a_perms));
             msg->contents = msub;
-
-            _v3_debug(V3_DEBUG_PACKET_PARSE, "User Permissions:");
-            _v3_print_permissions(&msub->perms);
             }
             break;
-
         default:
             _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown 0x4a subtype %02x", m->subtype);
             _v3_func_leave("_v3_get_0x4a");
@@ -760,22 +815,47 @@ _v3_get_0x4a(_v3_net_message *msg) {/*{{{*/
     _v3_func_leave("_v3_get_0x4a");
     return true;
 }/*}}}*/
-_v3_net_message *_v3_put_0x4a(uint8_t subtype) {/*{{{*/
+_v3_net_message *_v3_put_0x4a(uint8_t subtype, v3_account *account, v3_account *account2) {/*{{{*/
     _v3_net_message *m;
     _v3_msg_0x4a *mc;
+    void *offset;
 
     _v3_func_enter("_v3_put_0x4a");
     // Build our message
     m = malloc(sizeof(_v3_net_message));
     memset(m, 0, sizeof(_v3_net_message));
     m->type = 0x4a;
-    m->len = sizeof(_v3_msg_0x4a);
 
     switch (subtype) {
         case V3_USERLIST_OPEN:
         case V3_USERLIST_CLOSE:
-            mc = malloc(sizeof(_v3_msg_0x4a));
-            memset(mc, 0, sizeof(_v3_msg_0x4a));
+            m->len = sizeof(_v3_msg_0x4a);
+            mc = malloc(m->len);
+            memset(mc, 0, m->len);
+            break;
+        case V3_USERLIST_ADD:
+        case V3_USERLIST_MODIFY:
+            m->len = sizeof(_v3_msg_0x4a) + sizeof(account->perms) + strlen(account->username) + strlen(account->owner) + strlen(account->notes) + strlen(account->lock_reason) + ((account->chan_admin_count * 2) + 2) +  ((account->chan_auth_count * 2));
+            mc = malloc(m->len);
+            memset(mc, 0, m->len);
+            ((_v3_msg_0x4a_account *)mc)->header.count = 1;
+
+            _v3_put_msg_account(mc, account);
+            break;
+        case V3_USERLIST_REMOVE:
+            m->len = sizeof(_v3_msg_0x4a_perms);
+            mc = malloc(m->len);
+            memset(mc, 0, m->len);
+            ((_v3_msg_0x4a_perms *)mc)->header.count = 1;
+            ((_v3_msg_0x4a_perms *)mc)->perms.account_id = account->perms.account_id;
+            break;
+        case V3_USERLIST_CHANGE_OWNER:
+            m->len = sizeof(_v3_msg_0x4a_perms);
+            mc = malloc(m->len);
+            memset(mc, 0, m->len);
+            ((_v3_msg_0x4a_perms *)mc)->header.count = 1;
+            ((_v3_msg_0x4a_perms *)mc)->perms.account_id = account->perms.account_id;
+            ((_v3_msg_0x4a_perms *)mc)->perms.replace_owner_id = account2->perms.account_id;
             break;
         default:
             break;
@@ -800,7 +880,7 @@ _v3_destroy_0x4a(_v3_net_message *msg) {/*{{{*/
     switch (m->subtype) {
         case V3_USERLIST_OPEN:
             {
-            _v3_msg_0x4a_0x00 *msub = (_v3_msg_0x4a_0x00 *)m;
+            _v3_msg_0x4a_account *msub = (_v3_msg_0x4a_account *)m;
 
             for (i = 0; i < msub->acct_list_count; i++) {
                 v3_account *acct = msub->acct_list[i];

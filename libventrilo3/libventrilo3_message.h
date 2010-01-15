@@ -195,17 +195,17 @@ typedef struct _v3_net_message_0x4a {/*{{{*/
     uint16_t unknown_3;         // 14
     uint32_t unknown_4;         // 16
 } _v3_msg_0x4a;
-typedef struct _v3_net_message_0x4a_0x00 {
+typedef struct _v3_net_message_0x4a_account {
     _v3_msg_0x4a header;        // 0
     int acct_list_count;
     v3_account **acct_list;
-} _v3_msg_0x4a_0x00;
-typedef struct _v3_net_message_0x4a_0x05 {
+} _v3_msg_0x4a_account;
+typedef struct _v3_net_message_0x4a_perms {
     _v3_msg_0x4a header;        // 0
     v3_permissions perms;       // 20
-} _v3_msg_0x4a_0x05;
+} _v3_msg_0x4a_perms;
 int _v3_get_0x4a(_v3_net_message *msg);
-_v3_net_message *_v3_put_0x4a(uint8_t subtype);
+_v3_net_message *_v3_put_0x4a(uint8_t subtype, v3_account *account, v3_account *account2);
 int _v3_destroy_0x4a(_v3_net_message *msg);/*}}}*/
 typedef struct _v3_net_message_0x4b {/*{{{*/
     uint32_t type;              // 0
@@ -391,8 +391,13 @@ _v3_net_message *_v3_put_0x63(uint16_t subtype, uint16_t user_id, uint8_t *strin
 
 #pragma pack(pop)
 
-char *   _v3_get_msg_string(void *offset, uint16_t *len);
-int      _v3_get_msg_channel(void *offset, _v3_msg_channel *channel);
-int      _v3_put_msg_channel(char *buf, _v3_msg_channel *channel);
-int      _v3_get_msg_user(void *offset, _v3_msg_user *user);
-int      _v3_put_msg_user(void *buf, _v3_msg_user *user);
+char *      _v3_get_msg_string(void *offset, uint16_t *len);
+int         _v3_put_msg_string(void *buffer, char *string);
+uint16_t *  _v3_get_msg_uint16_array(void *offset, uint16_t *len);
+int         _v3_put_msg_uint16_array(void *buffer, uint16_t len, uint16_t *array);
+int         _v3_get_msg_channel(void *offset, _v3_msg_channel *channel);
+int         _v3_put_msg_channel(char *buf, _v3_msg_channel *channel);
+int         _v3_get_msg_user(void *offset, _v3_msg_user *user);
+int         _v3_put_msg_user(void *buf, _v3_msg_user *user);
+int         _v3_get_msg_account(void *offset, _v3_msg_account *account);
+int         _v3_put_msg_account(void *buf, _v3_msg_account *account);

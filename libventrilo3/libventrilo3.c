@@ -337,25 +337,26 @@ _v3_net_message_dump(_v3_net_message *msg) {/*{{{*/
 
 void
 _v3_print_permissions(v3_permissions *perms) {/*{{{*/
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "User Permissions:");
     _v3_debug(V3_DEBUG_PACKET_PARSE, "account_id..........: %d",   perms->account_id);
-    _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown_perm_1......: %d",   perms->unknown_perm_1);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "replace_owner_id....: %d",   perms->replace_owner_id);
     _v3_debug(V3_DEBUG_PACKET_PARSE, "rank_id.............: %d",   perms->rank_id);
-    _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown_perm_2......: %d",   perms->unknown_perm_2);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown_perm_1......: %d",   perms->unknown_perm_1);
     _v3_debug(V3_DEBUG_PACKET_PARSE, "lock_acct...........: %d",   perms->lock_acct);
     _v3_debug(V3_DEBUG_PACKET_PARSE, "in_reserve_list.....: %d",   perms->in_reserve_list);
     _v3_debug(V3_DEBUG_PACKET_PARSE, "dupe_ip.............: %d",   perms->dupe_ip);
     _v3_debug(V3_DEBUG_PACKET_PARSE, "switch_chan.........: %d",   perms->switch_chan);
     _v3_debug(V3_DEBUG_PACKET_PARSE, "dfl_chan............: %d",   perms->dfl_chan);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown_perm_2......: %d",   perms->unknown_perm_2);
     _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown_perm_3......: %d",   perms->unknown_perm_3);
-    _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown_perm_4......: %d",   perms->unknown_perm_4);
     _v3_debug(V3_DEBUG_PACKET_PARSE, "recv_bcast..........: %d",   perms->recv_bcast);
     _v3_debug(V3_DEBUG_PACKET_PARSE, "add_phantom.........: %d",   perms->add_phantom);
     _v3_debug(V3_DEBUG_PACKET_PARSE, "record..............: %d",   perms->record);
     _v3_debug(V3_DEBUG_PACKET_PARSE, "recv_complaint......: %d",   perms->recv_complaint);
     _v3_debug(V3_DEBUG_PACKET_PARSE, "send_complaint......: %d",   perms->send_complaint);
     _v3_debug(V3_DEBUG_PACKET_PARSE, "inactive_exempt.....: %d",   perms->inactive_exempt);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown_perm_4......: %d",   perms->unknown_perm_4);
     _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown_perm_5......: %d",   perms->unknown_perm_5);
-    _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown_perm_6......: %d",   perms->unknown_perm_6);
     _v3_debug(V3_DEBUG_PACKET_PARSE, "srv_admin...........: %d",   perms->srv_admin);
     _v3_debug(V3_DEBUG_PACKET_PARSE, "add_user............: %d",   perms->add_user);
     _v3_debug(V3_DEBUG_PACKET_PARSE, "del_user............: %d",   perms->del_user);
@@ -371,11 +372,11 @@ _v3_print_permissions(v3_permissions *perms) {/*{{{*/
     _v3_debug(V3_DEBUG_PACKET_PARSE, "edit_command_target.: %d",   perms->edit_command_target);
     _v3_debug(V3_DEBUG_PACKET_PARSE, "assign_rank.........: %d",   perms->assign_rank);
     _v3_debug(V3_DEBUG_PACKET_PARSE, "assign_reserved.....: %d",   perms->assign_reserved);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown_perm_6......: %d",   perms->unknown_perm_6);
     _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown_perm_7......: %d",   perms->unknown_perm_7);
     _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown_perm_8......: %d",   perms->unknown_perm_8);
     _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown_perm_9......: %d",   perms->unknown_perm_9);
     _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown_perm_10.....: %d",   perms->unknown_perm_10);
-    _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown_perm_11.....: %d",   perms->unknown_perm_11);
     _v3_debug(V3_DEBUG_PACKET_PARSE, "bcast...............: %d",   perms->bcast);
     _v3_debug(V3_DEBUG_PACKET_PARSE, "bcast_lobby.........: %d",   perms->bcast_lobby);
     _v3_debug(V3_DEBUG_PACKET_PARSE, "bcast_user..........: %d",   perms->bcast_user);
@@ -391,11 +392,11 @@ _v3_print_permissions(v3_permissions *perms) {/*{{{*/
     _v3_debug(V3_DEBUG_PACKET_PARSE, "mute_other..........: %d",   perms->mute_other);
     _v3_debug(V3_DEBUG_PACKET_PARSE, "glbl_chat...........: %d",   perms->glbl_chat);
     _v3_debug(V3_DEBUG_PACKET_PARSE, "start_priv_chat.....: %d",   perms->start_priv_chat);
-    _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown_perm_12.....: %d",   perms->unknown_perm_12);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown_perm_11.....: %d",   perms->unknown_perm_11);
     _v3_debug(V3_DEBUG_PACKET_PARSE, "eq_out..............: %d",   perms->eq_out);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown_perm_1r.....: %d",   perms->unknown_perm_12);
     _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown_perm_13.....: %d",   perms->unknown_perm_13);
     _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown_perm_14.....: %d",   perms->unknown_perm_14);
-    _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown_perm_15.....: %d",   perms->unknown_perm_15);
     _v3_debug(V3_DEBUG_PACKET_PARSE, "see_guest...........: %d",   perms->see_guest);
     _v3_debug(V3_DEBUG_PACKET_PARSE, "see_nonguest........: %d",   perms->see_nonguest);
     _v3_debug(V3_DEBUG_PACKET_PARSE, "see_motd............: %d",   perms->see_motd);
@@ -403,7 +404,7 @@ _v3_print_permissions(v3_permissions *perms) {/*{{{*/
     _v3_debug(V3_DEBUG_PACKET_PARSE, "see_chan_list.......: %d",   perms->see_chan_list);
     _v3_debug(V3_DEBUG_PACKET_PARSE, "see_chan_comment....: %d",   perms->see_chan_comment);
     _v3_debug(V3_DEBUG_PACKET_PARSE, "see_user_comment....: %d",   perms->see_user_comment);
-    _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown_perm_16.....: %d",   perms->unknown_perm_16);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown_perm_15.....: %d",   perms->unknown_perm_15);
 }/*}}}*/
 
 int
@@ -1011,7 +1012,7 @@ _v3_recv(int block) {/*{{{*/
                         break;/*}}}*/
                     case V3_EVENT_USERLIST_OPEN:/*{{{*/
                         {
-                            _v3_net_message *msg = _v3_put_0x4a(V3_USERLIST_OPEN);
+                            _v3_net_message *msg = _v3_put_0x4a(V3_USERLIST_OPEN, NULL, NULL);
                             if (_v3_send(msg)) {
                                 _v3_debug(V3_DEBUG_SOCKET, "sent userlist open request to server");
                             } else {
@@ -1022,12 +1023,40 @@ _v3_recv(int block) {/*{{{*/
                         break;/*}}}*/
                     case V3_EVENT_USERLIST_CLOSE:/*{{{*/
                         {
-                            _v3_net_message *msg = _v3_put_0x4a(V3_USERLIST_CLOSE);
+                            _v3_net_message *msg = _v3_put_0x4a(V3_USERLIST_CLOSE, NULL, NULL);
                             if (_v3_send(msg)) {
                                 _v3_debug(V3_DEBUG_SOCKET, "sent userlist close request to server");
                             } else {
                                 _v3_debug(V3_DEBUG_SOCKET, "failed to send userlist close request");
                             }
+                            _v3_destroy_packet(msg);
+                        }
+                        break;/*}}}*/
+                    case V3_EVENT_USERLIST_REMOVE:/*{{{*/
+                        {
+                            v3_account *a = v3_get_account(ev.account.id);
+                            _v3_net_message *msg = _v3_put_0x4a((ev.type == V3_EVENT_USERLIST_ADD) ? V3_USERLIST_ADD : (ev.type == V3_EVENT_USERLIST_REMOVE) ? V3_USERLIST_REMOVE : V3_USERLIST_MODIFY, a, NULL);
+                            if (_v3_send(msg)) {
+                                _v3_debug(V3_DEBUG_SOCKET, "sent userlist request to server");
+                            } else {
+                                _v3_debug(V3_DEBUG_SOCKET, "failed to send userlist request");
+                            }
+                            v3_free_account(a);
+                            _v3_destroy_packet(msg);
+                        }
+                        break;/*}}}*/
+                    case V3_EVENT_USERLIST_CHANGE_OWNER:/*{{{*/
+                        {
+                            v3_account *a = v3_get_account(ev.account.id);
+                            v3_account *b = v3_get_account(ev.account.id2);
+                            _v3_net_message *msg = _v3_put_0x4a(V3_USERLIST_CHANGE_OWNER, a, b);
+                            if (_v3_send(msg)) {
+                                _v3_debug(V3_DEBUG_SOCKET, "sent userlist change owner request to server");
+                            } else {
+                                _v3_debug(V3_DEBUG_SOCKET, "failed to send userlist change owner request");
+                            }
+                            v3_free_account(a);
+                            v3_free_account(b);
                             _v3_destroy_packet(msg);
                         }
                         break;/*}}}*/
@@ -2133,64 +2162,6 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
             _v3_destroy_packet(msg);
             _v3_func_leave("_v3_process_message");
             return V3_OK;/*}}}*/
-        case 0x4a:/*{{{*/
-            if (!_v3_get_0x4a(msg)) {
-                _v3_destroy_packet(msg);
-                _v3_func_leave("_v3_process_message");
-                return V3_MALFORMED;
-            } else {
-                _v3_msg_0x4a *m = msg->contents;
-                
-                if (m->error_id) {
-                    if (m->error_id != 10) {
-                        char *error;
-
-                        if (m->error_id > (sizeof(_v3_permissions_errors) / sizeof(_v3_permissions_errors[0])))
-                            error = "Unknown";
-                        else
-                            error = _v3_permissions_errors[m->error_id - 1];
-
-                        v3_event *ev = _v3_create_event(V3_EVENT_ERROR_MSG);
-                        strncpy(ev->error.message, "User editor error:\n", sizeof(ev->error.message));
-                        strncat(ev->error.message, error, sizeof(ev->error.message));
-                        v3_queue_event(ev);
-                    }
-
-                    _v3_destroy_packet(msg);
-                    _v3_func_leave("_v3_process_message");
-                    return V3_OK;
-                }
-
-                switch (m->subtype) {
-                    case V3_USERLIST_OPEN:
-                        {
-                        int i;
-                        _v3_msg_0x4a_0x00 *msub = msg->contents;
-                        _v3_debug(V3_DEBUG_INFO, "received %d user accounts", msub->acct_list_count);
-                        for (i = 0; i < msub->acct_list_count; i++) {
-                            _v3_update_account(msub->acct_list[i]);
-                            v3_event *ev = _v3_create_event(V3_EVENT_USERLIST_ADD);
-                            ev->account.id = msub->acct_list[i]->perms.account_id;
-                            _v3_debug(V3_DEBUG_INFO, "queuing event type %d for account id %d", ev->type, ev->account.id);
-                            v3_queue_event(ev);
-                        }
-                        }
-                        break;
-                    case V3_USERLIST_LUSER:
-                        {
-                        _v3_msg_0x4a_0x05 *msub = msg->contents;
-                        _v3_debug(V3_DEBUG_INFO, "received local user permissions");
-                        _v3_lock_luser();
-                        v3_luser.perms = msub->perms;
-                        _v3_unlock_luser();
-                        }
-                        break;
-                }
-            }
-            _v3_destroy_0x4a(msg);
-            _v3_destroy_packet(msg);
-            _v3_func_leave("_v3_process_message");
-            return V3_OK;/*}}}*/
         case 0x49:/*{{{*/
             if (!_v3_get_0x49(msg)) {
                 _v3_destroy_packet(msg);
@@ -2234,6 +2205,126 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                 _v3_unlock_channellist();
             }
             // TODO: _v3_destroy_0x49(msg);
+            _v3_destroy_packet(msg);
+            _v3_func_leave("_v3_process_message");
+            return V3_OK;/*}}}*/
+        case 0x4a:/*{{{*/
+            if (!_v3_get_0x4a(msg)) {
+                _v3_destroy_packet(msg);
+                _v3_func_leave("_v3_process_message");
+                return V3_MALFORMED;
+            } else {
+                _v3_msg_0x4a *m = msg->contents;
+                
+                if (m->error_id) {
+                    if (m->error_id != 10) {
+                        char *error;
+
+                        if (m->error_id > (sizeof(_v3_permissions_errors) / sizeof(_v3_permissions_errors[0])))
+                            error = "Unknown";
+                        else
+                            error = _v3_permissions_errors[m->error_id - 1];
+
+                        v3_event *ev = _v3_create_event(V3_EVENT_ERROR_MSG);
+                        strncpy(ev->error.message, "User editor error:\n", sizeof(ev->error.message));
+                        strncat(ev->error.message, error, sizeof(ev->error.message));
+                        v3_queue_event(ev);
+                    }
+
+                    _v3_destroy_packet(msg);
+                    _v3_func_leave("_v3_process_message");
+                    return V3_OK;
+                }
+
+                switch (m->subtype) {
+                    case V3_USERLIST_OPEN:
+                    case V3_USERLIST_MODIFY:
+                    case V3_USERLIST_ADD:
+                        {
+                        int i;
+                        _v3_msg_0x4a_account *msub = msg->contents;
+                        _v3_debug(V3_DEBUG_INFO, "received %d user accounts", msub->acct_list_count);
+                        for (i = 0; i < msub->acct_list_count; i++) {
+                            _v3_update_account(msub->acct_list[i]);
+                            v3_event *ev = _v3_create_event((msub->header.subtype == V3_USERLIST_MODIFY) ? V3_EVENT_USERLIST_MODIFY : V3_EVENT_USERLIST_ADD);
+                            ev->account.id = msub->acct_list[i]->perms.account_id;
+                            _v3_debug(V3_DEBUG_INFO, "queuing event type %d for account id %d", ev->type, ev->account.id);
+                            v3_queue_event(ev);
+                        }
+                        }
+                        break;
+                    case V3_USERLIST_REMOVE:
+                        {
+                        _v3_msg_0x4a_perms *msub = msg->contents;
+                        _v3_debug(V3_DEBUG_INFO, "received remove account for %d", msub->perms.account_id);
+                        _v3_remove_account(msub->perms.account_id);
+
+                        v3_event *ev = _v3_create_event(V3_EVENT_USERLIST_REMOVE);
+                        ev->account.id = msub->perms.account_id;
+                        _v3_debug(V3_DEBUG_INFO, "queuing event type %d for account id %d", ev->type, ev->account.id);
+                        v3_queue_event(ev);
+                        }
+                        break;
+                    case V3_USERLIST_LUSER:
+                        {
+                        _v3_msg_0x4a_perms *msub = msg->contents;
+                        _v3_debug(V3_DEBUG_INFO, "received local user permissions");
+                        _v3_print_permissions(&msub->perms);
+
+                        _v3_lock_luser();
+                        v3_luser.perms = msub->perms;
+                        _v3_unlock_luser();
+                        }
+                        break;
+                    case V3_USERLIST_CHANGE_OWNER:
+                        {
+                        v3_account *a;
+                        char *old_owner, *new_owner;
+                        _v3_msg_0x4a_perms *msub = msg->contents;
+
+                        _v3_debug(V3_DEBUG_INFO, "received change owner (%d => %d)", msub->perms.account_id, msub->perms.replace_owner_id);
+                       
+                        a = v3_get_account(msub->perms.account_id);
+                        if (a == NULL) {
+                            _v3_debug(V3_DEBUG_INFO, "can't find account id %d", msub->perms.account_id);
+                            break;
+                        }
+                        old_owner = strdup(a->username);
+                        v3_free_account(a);
+
+                        a = v3_get_account(msub->perms.replace_owner_id);
+                        if (new_owner == NULL) {
+                            _v3_debug(V3_DEBUG_INFO, "can't find account id %d", msub->perms.replace_owner_id);
+                            free(old_owner);
+                            break;
+                        }
+                        new_owner = strdup(a->username);
+                        v3_free_account(a);
+                        
+                        _v3_lock_accountlist();
+                        for (a = v3_account_list; a != NULL; a = a->next) {
+                            if (strcmp(a->owner, old_owner))
+                                continue;
+
+                            free(a->owner);
+                            a->owner = strdup(new_owner);
+
+                            v3_event *ev = _v3_create_event(V3_EVENT_USERLIST_MODIFY);
+                            ev->account.id = a->perms.account_id;
+                            _v3_debug(V3_DEBUG_INFO, "queuing event type %d for account id %d", ev->type, ev->account.id);
+                            v3_queue_event(ev);
+                        }
+                        _v3_unlock_accountlist();
+
+                        free(old_owner);
+                        free(new_owner);
+                        }
+                        break;
+                    default:
+                        break;
+                }
+            }
+            _v3_destroy_0x4a(msg);
             _v3_destroy_packet(msg);
             _v3_func_leave("_v3_process_message");
             return V3_OK;/*}}}*/
@@ -3587,6 +3678,30 @@ v3_userlist_close(void) {/*{{{*/
     fflush(v3_server.evoutstream);
     _v3_unlock_sendq();
     _v3_func_leave("v3_userlist_close");
+    return;
+}/*}}}*/
+
+void
+v3_userlist_remove(uint16_t id) {/*{{{*/
+    v3_event ev;
+
+    _v3_func_enter("v3_userlist_remove");
+    if (!v3_is_loggedin()) {
+        _v3_func_leave("v3_userlist_remove");
+        return;
+    }
+    memset(&ev, 0, sizeof(v3_event));
+    ev.type = V3_EVENT_USERLIST_REMOVE;
+    ev.account.id = id;
+
+    _v3_lock_sendq();
+    _v3_debug(V3_DEBUG_EVENT, "sending %lu bytes to event pipe", sizeof(v3_event));
+    if (fwrite(&ev, sizeof(struct _v3_event), 1, v3_server.evoutstream) != 1) {
+        _v3_error("could not write to event pipe");
+    }
+    fflush(v3_server.evoutstream);
+    _v3_unlock_sendq();
+    _v3_func_leave("v3_userlist_remove");
     return;
 }/*}}}*/
 

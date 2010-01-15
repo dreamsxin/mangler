@@ -466,6 +466,7 @@ v3_user *               _v3_get_user(uint16_t id);
 int                     _v3_update_rank(v3_rank *rank);
 void                    _v3_copy_rank(v3_rank *dest, v3_rank *src);
 int                     _v3_update_account(v3_account *account);
+int                     _v3_remove_account(uint16_t id);
 void                    _v3_copy_account(v3_account *dest, v3_account *src);
 void                    _v3_destroy_userlist(void);
 void                    _v3_destroy_channellist(void);

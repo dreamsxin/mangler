@@ -129,25 +129,25 @@ typedef struct __v3_net_message {/*{{{*/
 #pragma pack(1)
 struct _v3_permissions {/*{{{*/
     uint16_t account_id;
-    uint16_t unknown_perm_1;
+    uint16_t replace_owner_id;
     uint8_t hash_password[32];
     uint16_t rank_id;
-    uint16_t unknown_perm_2;
+    uint16_t unknown_perm_1;
     uint8_t lock_acct;
     uint8_t in_reserve_list;
     uint8_t dupe_ip;
     uint8_t switch_chan;
     uint16_t dfl_chan;
+    uint8_t unknown_perm_2;
     uint8_t unknown_perm_3;
-    uint8_t unknown_perm_4;
     uint8_t recv_bcast;
     uint8_t add_phantom;
     uint8_t record;
     uint8_t recv_complaint;
     uint8_t send_complaint;
     uint8_t inactive_exempt;
+    uint8_t unknown_perm_4;
     uint8_t unknown_perm_5;
-    uint8_t unknown_perm_6;
     uint8_t srv_admin;
     uint8_t add_user;
     uint8_t del_user;
@@ -163,11 +163,11 @@ struct _v3_permissions {/*{{{*/
     uint8_t edit_command_target;
     uint8_t assign_rank;
     uint8_t assign_reserved;
+    uint8_t unknown_perm_6;
     uint8_t unknown_perm_7;
     uint8_t unknown_perm_8;
     uint8_t unknown_perm_9;
     uint8_t unknown_perm_10;
-    uint8_t unknown_perm_11;
     uint8_t bcast;
     uint8_t bcast_lobby;
     uint8_t bcast_user;
@@ -183,11 +183,11 @@ struct _v3_permissions {/*{{{*/
     uint8_t mute_other;
     uint8_t glbl_chat;
     uint8_t start_priv_chat;
-    uint8_t unknown_perm_12;
+    uint8_t unknown_perm_11;
     uint8_t eq_out;
+    uint8_t unknown_perm_12;
     uint8_t unknown_perm_13;
     uint8_t unknown_perm_14;
-    uint8_t unknown_perm_15;
     uint8_t see_guest;
     uint8_t see_nonguest;
     uint8_t see_motd;
@@ -195,7 +195,7 @@ struct _v3_permissions {/*{{{*/
     uint8_t see_chan_list;
     uint8_t see_chan_comment;
     uint8_t see_user_comment;
-    uint8_t unknown_perm_16;
+    uint8_t unknown_perm_15;
 };/*}}}*/
 #pragma pack(pop)
 typedef struct _v3_permissions v3_permissions;
@@ -250,6 +250,7 @@ enum _v3_events
     V3_EVENT_FORCE_CHAN_MOVE,
     V3_EVENT_USERLIST_OPEN,
     V3_EVENT_USERLIST_CLOSE,
+    V3_EVENT_USERLIST_CHANGE_OWNER,
 
     // not implemented
     V3_EVENT_USER_PAGED,
@@ -300,6 +301,7 @@ struct _v3_event {
     } channel;
     struct {
         uint16_t id;
+        uint16_t id2;
     } account;
     struct {
         char name[32];
@@ -596,6 +598,11 @@ v3_channel  *v3_get_channel(uint16_t id);
 // Rank list functions
 v3_rank     *v3_get_rank(uint16_t id);
 void        v3_free_rank(v3_rank *rank);
+
+// Account list functions
+v3_account *v3_get_account(uint16_t id);
+int         v3_account_count(void);
+void        v3_free_account(v3_account *account);
 
 // audio effects
 void v3_set_volume_master(int level);
