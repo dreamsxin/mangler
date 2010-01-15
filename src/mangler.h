@@ -71,6 +71,7 @@ class Mangler
         Gtk::CheckMenuItem                  *checkmenuitem;
         Gtk::MenuItem                       *menuitem;
         Gtk::Table                          *table;
+        Gtk::CheckButton                    *checkbutton;
 
         std::map<Glib::ustring, Glib::RefPtr<Gdk::Pixbuf> >  icons;
         Glib::RefPtr<Gtk::StatusIcon>       statusIcon;
@@ -90,6 +91,8 @@ class Mangler
         bool                                isTransmittingMouse;
         bool                                iconified;
         bool                                isAdmin;
+        bool                                muteSound;
+        bool                                muteMic;
 
         // These are used by the password entry dialog
         Gtk::Dialog                         *passwordDialog;
@@ -147,7 +150,9 @@ class Mangler
         bool updateXferAmounts(void);
 
 
-
+        // quick mute options
+        void muteSoundCheckButton_toggled_cb(void);
+        void muteMicCheckButton_toggled_cb(void);
 
         // quick connect signal handlers
         void qcConnectButton_clicked_cb(void);

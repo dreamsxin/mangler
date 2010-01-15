@@ -131,6 +131,14 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
     builder->get_widget("motdOkButton", button);
     button->signal_clicked().connect(sigc::mem_fun(this, &Mangler::motdOkButton_clicked_cb));
 
+    // Quick mute options
+    muteMic   = false;
+    muteSound = false;
+    builder->get_widget("muteMicCheckButton", checkbutton);
+    checkbutton->signal_toggled().connect(sigc::mem_fun(this, &Mangler::muteMicCheckButton_toggled_cb));
+    builder->get_widget("muteSoundCheckButton", checkbutton);
+    checkbutton->signal_toggled().connect(sigc::mem_fun(this, &Mangler::muteSoundCheckButton_toggled_cb));
+
     /*
      * Retreive all menu bar items from builder and set their singal handler
      * callbacks.  Most of these can use the same callback as their
@@ -517,6 +525,18 @@ void Mangler::stopTransmit(void) {/*{{{*/
     }
 }/*}}}*/
 
+// Quick Sound Mute
+void Mangler::muteSoundCheckButton_toggled_cb(void) {/*{{{*/
+    builder->get_widget("muteSoundCheckButton", checkbutton);
+    muteSound = checkbutton->get_active();
+}/*}}}*/
+
+// Quick Mic Mute
+void Mangler::muteMicCheckButton_toggled_cb(void) {/*{{{*/
+    builder->get_widget("muteMicCheckButton", checkbutton);
+    muteMic = checkbutton->get_active();
+}/*}}}*/
+
 // Quick Connect callbacks
 void Mangler::qcConnectButton_clicked_cb(void) {/*{{{*/
     Gtk::Entry *textbox;
@@ -850,7 +870,7 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                 break;/*}}}*/
             case V3_EVENT_PLAY_AUDIO:/*{{{*/
                 if (v3_is_loggedin()) {
-                    if (!channelTree->isMuted(ev->user.id)) {
+                    if (!channelTree->isMuted(ev->user.id) && !muteSound) {
                         // Open a stream if we don't have one for this user
                         channelTree->setUserIcon(ev->user.id, "green");
                         if (!outputAudio[ev->user.id]) {
@@ -1077,7 +1097,7 @@ bool Mangler::checkPushToTalkKeys(void) {/*{{{*/
     vector<int>::iterator i;
     bool        ptt_on = true;;
 
-    if (! settings->config.PushToTalkKeyEnabled) {
+    if (! settings->config.PushToTalkKeyEnabled || muteMic) {
         isTransmittingKey = false;
         return true;
     }
@@ -1115,7 +1135,7 @@ bool Mangler::checkPushToTalkMouse(void) {/*{{{*/
     int bit = settings->config.PushToTalkMouseValueInt % 8;
     bool        ptt_on = false; 
 
-    if (! settings->config.PushToTalkMouseEnabled) { 
+    if (! settings->config.PushToTalkMouseEnabled || muteMic) { 
         isTransmittingMouse = false; 
         return true; 
     } 

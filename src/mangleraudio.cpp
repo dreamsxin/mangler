@@ -282,6 +282,12 @@ ManglerAudio::output(void) {/*{{{*/
         //throw Glib::Thread::Exit();
         return;
     }
+
+    //short circuit if we are muted
+    if(mangler->muteSound) {
+        return;    
+    }
+
     g_async_queue_ref(pcm_queue);
     usleep(500000); // buffer for 0.5 seconds
     for (;;) {
@@ -492,6 +498,9 @@ ManglerAudio::getDeviceList(void) {/*{{{*/
 
 void
 ManglerAudio::playNotification(Glib::ustring name) {
+    if (mangler->muteSound) {
+        return;
+    }
     if ((name == "talkstart" || name == "talkend") && ! mangler->settings->config.notificationTransmitStartStop) {
         return;
     }
