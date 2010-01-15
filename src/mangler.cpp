@@ -492,6 +492,9 @@ void Mangler::startTransmit(void) {/*{{{*/
     if (! v3_is_loggedin()) {
         return;
     }
+    if (muteMic) {
+        return;
+    }
     user = v3_get_user(v3_get_user_id());
     if (! user) {
         return;
@@ -1097,7 +1100,7 @@ bool Mangler::checkPushToTalkKeys(void) {/*{{{*/
     vector<int>::iterator i;
     bool        ptt_on = true;;
 
-    if (! settings->config.PushToTalkKeyEnabled || muteMic) {
+    if (! settings->config.PushToTalkKeyEnabled) {
         isTransmittingKey = false;
         return true;
     }
@@ -1135,7 +1138,7 @@ bool Mangler::checkPushToTalkMouse(void) {/*{{{*/
     int bit = settings->config.PushToTalkMouseValueInt % 8;
     bool        ptt_on = false; 
 
-    if (! settings->config.PushToTalkMouseEnabled || muteMic) { 
+    if (! settings->config.PushToTalkMouseEnabled) { 
         isTransmittingMouse = false; 
         return true; 
     } 
