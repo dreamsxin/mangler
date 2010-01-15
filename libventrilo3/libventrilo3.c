@@ -824,7 +824,7 @@ _v3_recv(int block) {/*{{{*/
                             _v3_debug(V3_DEBUG_INFO, "got outbound audio event", codec->rate);
                             msg = _v3_put_0x52(V3_AUDIO_STOP, -1, -1, 0, 0, 0, NULL);
                             if (!_v3_send(msg)) {
-                                 _v3_debug(V3_DEBUG_SOCKET, "failed to send channel change message");
+                                 _v3_debug(V3_DEBUG_SOCKET, "failed to send user talk end message");
                             }
                             _v3_destroy_packet(msg);
                         }
@@ -2397,12 +2397,18 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                             ev->user.id = m->header.user_id;
                             ev->pcm.send_type = m->header.send_type;
                             ev->pcm.rate = v3_get_codec_rate(m->header.codec, m->header.codec_format);
+                            _v3_lock_userlist();
+                            _v3_get_user(m->header.user_id)->is_transmitting = true;
+                            _v3_unlock_userlist();
                         }
                         break;
                     case 0x02:
                         {
                             ev->type = V3_EVENT_USER_TALK_END;
                             ev->user.id = m->header.user_id;
+                            _v3_lock_userlist();
+                            _v3_get_user(m->header.user_id)->is_transmitting = false;
+                            _v3_unlock_userlist();
                         }
                         break;
                     case 0x01:
@@ -3476,7 +3482,7 @@ v3_phantom_add(uint16_t channel_id) {/*{{{*/
    _v3_func_enter("v3_phantom_add");
 
     if (!v3_is_loggedin()) {
-        _v3_func_leave("v3_change_channel");
+        _v3_func_leave("v3_phantom_add");
         return;
     }
     

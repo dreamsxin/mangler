@@ -771,7 +771,7 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                     u = v3_get_user(ev->user.id);
                     if (! u) {
                         fprintf(stderr, "failed to retreive user information for user id %d", ev->user.id);
-                        break;;
+                        break;
                     }
                     if (ev->user.id == v3_get_user_id()) {
                         // we're moving channels... update the codec label
@@ -781,6 +781,10 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                             label->set_text(codec_info->name);
                         } else {
                             label->set_text("Unsupported Codec");
+                        }
+                        //TODO: need to find out what is causing the time bans while still xmitting
+                        if (isTransmitting) {
+                            stopTransmit();
                         }
                     } else {
                         if (ev->channel.id == v3_get_user_channel(v3_get_user_id())) {
@@ -813,6 +817,20 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                             (bool)u->real_user_id,
                             rank);
                     channelTree->setLastTransmit(ev->user.id, last_transmit);
+                    // if there was an audio stream open for this user, close it
+                    if (outputAudio[ev->user.id]) {
+                        outputAudio[ev->user.id]->finish();
+                        outputAudio.erase(ev->user.id);
+                    }
+                    // if user is still xmitting, set icon
+                    if (u->is_transmitting) {
+                        channelTree->setUserIcon(ev->user.id, "yellow");
+                    }
+                    // if we changed channels while other users in previous channel were xmitting, set icons
+                    if (ev->user.id == v3_get_user_id()) {
+                        //fprintf(stderr, "prev chan id: %i | new chan id: %i\n", ev->channel.prev_id, ev->channel.id);
+                        //TODO: implement this
+                    }
                     v3_free_user(u);
                 }
                 break;/*}}}*/
