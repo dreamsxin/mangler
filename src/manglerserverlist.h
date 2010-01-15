@@ -85,6 +85,7 @@ class ManglerServerList {
         void serverListSelection_changed_cb(void);
         void serverListAddButton_clicked_cb(void);
         void serverListDeleteButton_clicked_cb(void);
+        void serverListCloneButton_clicked_cb(void);
         void serverListSetDefaultButton_clicked_cb(void);
         void serverListCloseButton_clicked_cb(void);
         void serverListServerSaveButton_clicked_cb(void);

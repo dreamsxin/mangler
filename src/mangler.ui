@@ -649,6 +649,19 @@
               </packing>
             </child>
             <child>
+              <object class="GtkButton" id="serverListCloneButton">
+                <property name="label" translatable="yes">Clone Server</property>
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="receives_default">True</property>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="padding">10</property>
+                <property name="position">2</property>
+              </packing>
+            </child>
+            <child>
               <object class="GtkButton" id="serverListSetDefaultButton">
                 <property name="label" translatable="yes">_Set as Default</property>
                 <property name="can_focus">True</property>
@@ -660,7 +673,7 @@
                 <property name="expand">False</property>
                 <property name="fill">False</property>
                 <property name="padding">10</property>
-                <property name="position">2</property>
+                <property name="position">3</property>
               </packing>
             </child>
             <child>
@@ -671,7 +684,7 @@
                 </child>
               </object>
               <packing>
-                <property name="position">3</property>
+                <property name="position">4</property>
               </packing>
             </child>
             <child>
@@ -686,7 +699,7 @@
               <packing>
                 <property name="expand">False</property>
                 <property name="padding">5</property>
-                <property name="position">4</property>
+                <property name="position">5</property>
               </packing>
             </child>
           </object>

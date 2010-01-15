@@ -64,6 +64,9 @@ ManglerServerList::ManglerServerList(Glib::RefPtr<Gtk::Builder> builder) {
     builder->get_widget("serverListDeleteButton", button);
     button->signal_clicked().connect(sigc::mem_fun(this, &ManglerServerList::serverListDeleteButton_clicked_cb));
 
+    builder->get_widget("serverListCloneButton", button);
+    button->signal_clicked().connect(sigc::mem_fun(this, &ManglerServerList::serverListCloneButton_clicked_cb));
+
     builder->get_widget("serverListCloseButton", button);
     button->signal_clicked().connect(sigc::mem_fun(this, &ManglerServerList::serverListCloseButton_clicked_cb));
 
@@ -136,6 +139,41 @@ void ManglerServerList::serverListDeleteButton_clicked_cb(void) {
         serverListPersistentCommentsCheckButton->set_sensitive(false);
         serverListCharsetComboBox->set_sensitive(false);
         serverListServerSaveButton->set_sensitive(false);
+    }
+}
+
+// TODO: ManglerServerConfig needs an overloaded = operator
+void ManglerServerList::serverListCloneButton_clicked_cb(void) {
+    uint32_t id;
+    Gtk::TreeModel::Row row;
+    ManglerServerConfig *oldserver, *server;
+    if(editorId >= 0) {
+        oldserver = mangler->settings->config.getserver(editorId);
+        id = mangler->settings->config.addserver();
+        server = mangler->settings->config.getserver(id);
+        row = *(serverListTreeModel->append());
+        server->name = "New Server";
+        server->hostname = oldserver->hostname;
+        server->port = oldserver->port;
+        server->username = oldserver->username;
+        server->password = oldserver->password;
+        server->phonetic = oldserver->phonetic;
+        server->comment = oldserver->comment;
+        server->url = oldserver->url;
+        server->charset = oldserver->charset;
+        server->motdhash = oldserver->motdhash;
+        server->acceptU2U = oldserver->acceptU2U;
+        server->acceptPages = oldserver->acceptPages;
+        server->acceptPrivateChat = oldserver->acceptPrivateChat;
+        server->allowRecording = oldserver->allowRecording;
+        server->persistentComments = oldserver->persistentComments;
+        row[serverListColumns.id] = id;
+        row[serverListColumns.name] = "New Server";
+        row[serverListColumns.hostname] = server->hostname;
+        row[serverListColumns.port] = server->port;
+        row[serverListColumns.username] = server->username;
+        serverListSelection->select(row);
+        editRow(id);
     }
 }
 
