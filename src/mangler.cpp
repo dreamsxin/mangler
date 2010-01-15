@@ -493,6 +493,7 @@ void Mangler::startTransmit(void) {/*{{{*/
         return;
     }
     if (muteMic) {
+        stopTransmit();
         return;
     }
     user = v3_get_user(v3_get_user_id());
