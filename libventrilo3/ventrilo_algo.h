@@ -30,7 +30,7 @@ Georg Hofstetter (http://www.g3gg0.de)
 
 LICENSE
 =======
-    Copyright 2004,2005,2006,2007,2008 Luigi Auriemma
+    Copyright 2004,2005,2006,2007,2008,2009,2010 Luigi Auriemma
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
