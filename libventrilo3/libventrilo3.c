@@ -431,6 +431,7 @@ _v3_destroy_packet(_v3_net_message *msg) {/*{{{*/
         free(msg);
         msg = NULL;
     }
+
     _v3_func_leave("_v3_destroy_packet");
     return true;
 }/*}}}*/
@@ -1035,13 +1036,37 @@ _v3_recv(int block) {/*{{{*/
                     case V3_EVENT_USERLIST_REMOVE:/*{{{*/
                         {
                             v3_account *a = v3_get_account(ev.account.id);
-                            _v3_net_message *msg = _v3_put_0x4a((ev.type == V3_EVENT_USERLIST_ADD) ? V3_USERLIST_ADD : (ev.type == V3_EVENT_USERLIST_REMOVE) ? V3_USERLIST_REMOVE : V3_USERLIST_MODIFY, a, NULL);
+                            _v3_net_message *msg = _v3_put_0x4a(V3_USERLIST_REMOVE, a, NULL);
                             if (_v3_send(msg)) {
-                                _v3_debug(V3_DEBUG_SOCKET, "sent userlist request to server");
+                                _v3_debug(V3_DEBUG_SOCKET, "sent userlist remove request to server");
                             } else {
-                                _v3_debug(V3_DEBUG_SOCKET, "failed to send userlist request");
+                                _v3_debug(V3_DEBUG_SOCKET, "failed to send userlist remove request");
                             }
                             v3_free_account(a);
+                            _v3_destroy_packet(msg);
+                        }
+                        break;/*}}}*/
+                    case V3_EVENT_USERLIST_ADD:
+                    case V3_EVENT_USERLIST_MODIFY:/*{{{*/
+                        {
+                            v3_account a = {0};
+                            a.perms = ev.data.account.perms;
+                            a.username = strdup(ev.data.account.username);
+                            a.owner = strdup(ev.data.account.owner);
+                            a.notes = strdup(ev.data.account.notes);
+                            a.lock_reason = strdup(ev.data.account.lock_reason);
+                            a.chan_admin = malloc(ev.data.account.chan_admin_count);
+                            memcpy(a.chan_admin, ev.data.account.chan_admin, ev.data.account.chan_admin_count * 2);
+                            a.chan_auth = malloc(ev.data.account.chan_auth_count);
+                            memcpy(a.chan_auth, ev.data.account.chan_auth, ev.data.account.chan_auth_count * 2);
+                            a.next = NULL;
+
+                            _v3_net_message *msg = _v3_put_0x4a(ev.type == V3_EVENT_USERLIST_ADD ? V3_USERLIST_ADD : V3_USERLIST_MODIFY, &a, NULL);
+                            if (_v3_send(msg)) {
+                                _v3_debug(V3_DEBUG_SOCKET, "sent userlist add/modify request to server");
+                            } else {
+                                _v3_debug(V3_DEBUG_SOCKET, "failed to send userlist add/modify request");
+                            }
                             _v3_destroy_packet(msg);
                         }
                         break;/*}}}*/
@@ -3688,7 +3713,7 @@ v3_userlist_close(void) {/*{{{*/
 }/*}}}*/
 
 void
-v3_userlist_remove(uint16_t id) {/*{{{*/
+v3_userlist_remove(uint16_t account_id) {/*{{{*/
     v3_event ev;
 
     _v3_func_enter("v3_userlist_remove");
@@ -3698,7 +3723,7 @@ v3_userlist_remove(uint16_t id) {/*{{{*/
     }
     memset(&ev, 0, sizeof(v3_event));
     ev.type = V3_EVENT_USERLIST_REMOVE;
-    ev.account.id = id;
+    ev.account.id = account_id;
 
     _v3_lock_sendq();
     _v3_debug(V3_DEBUG_EVENT, "sending %lu bytes to event pipe", sizeof(v3_event));
@@ -3708,6 +3733,69 @@ v3_userlist_remove(uint16_t id) {/*{{{*/
     fflush(v3_server.evoutstream);
     _v3_unlock_sendq();
     _v3_func_leave("v3_userlist_remove");
+    return;
+}/*}}}*/
+
+void
+v3_userlist_update(v3_account *account) {/*{{{*/
+    v3_event ev;
+
+    _v3_func_enter("v3_userlist_update");
+    if (!v3_is_loggedin()) {
+        _v3_func_leave("v3_userlist_update");
+        return;
+    }
+
+    memset(&ev, 0, sizeof(v3_event));
+
+    if (ev.data.account.perms.account_id != 0)
+        ev.type = V3_EVENT_USERLIST_MODIFY;
+    else    
+        ev.type = V3_EVENT_USERLIST_ADD;
+
+    ev.data.account.perms = account->perms;
+    strncpy(ev.data.account.username, account->username, sizeof(ev.data.account.username) - 1);
+    strncpy(ev.data.account.owner, account->owner, sizeof(ev.data.account.owner) - 1);
+    strncpy(ev.data.account.notes, account->notes, sizeof(ev.data.account.notes) - 1);
+    strncpy(ev.data.account.lock_reason, account->lock_reason, sizeof(ev.data.account.lock_reason) - 1);
+    ev.data.account.chan_admin_count = account->chan_admin_count;
+    memcpy(ev.data.account.chan_admin, account->chan_admin, ev.data.account.chan_admin_count * 2);
+    ev.data.account.chan_auth_count = account->chan_auth_count;
+    memcpy(ev.data.account.chan_auth, account->chan_auth, ev.data.account.chan_auth_count * 2);
+
+    _v3_lock_sendq();
+    _v3_debug(V3_DEBUG_EVENT, "sending %lu bytes to event pipe", sizeof(v3_event));
+    if (fwrite(&ev, sizeof(struct _v3_event), 1, v3_server.evoutstream) != 1) {
+        _v3_error("could not write to event pipe");
+    }
+    fflush(v3_server.evoutstream);
+    _v3_unlock_sendq();
+    _v3_func_leave("v3_userlist_update");
+    return;
+}/*}}}*/
+
+void
+v3_userlist_change_owner(uint16_t old_owner_id, uint16_t new_owner_id) {/*{{{*/
+    v3_event ev;
+
+    _v3_func_enter("v3_userlist_change_owner");
+    if (!v3_is_loggedin()) {
+        _v3_func_leave("v3_userlist_change_owner");
+        return;
+    }
+    memset(&ev, 0, sizeof(v3_event));
+    ev.type = V3_EVENT_USERLIST_CHANGE_OWNER;
+    ev.account.id = old_owner_id;
+    ev.account.id2 = new_owner_id;
+
+    _v3_lock_sendq();
+    _v3_debug(V3_DEBUG_EVENT, "sending %lu bytes to event pipe", sizeof(v3_event));
+    if (fwrite(&ev, sizeof(struct _v3_event), 1, v3_server.evoutstream) != 1) {
+        _v3_error("could not write to event pipe");
+    }
+    fflush(v3_server.evoutstream);
+    _v3_unlock_sendq();
+    _v3_func_leave("v3_userlist_change_owner");
     return;
 }/*}}}*/
 

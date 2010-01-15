@@ -235,8 +235,9 @@ enum _v3_events
     V3_EVENT_PRIVATE_CHAT_AWAY,
     V3_EVENT_PRIVATE_CHAT_BACK,
     V3_EVENT_USERLIST_ADD,
-    V3_EVENT_USERLIST_REMOVE,
     V3_EVENT_USERLIST_MODIFY,
+    V3_EVENT_USERLIST_REMOVE,
+    V3_EVENT_USERLIST_CHANGE_OWNER,
 
     // outbound specific event types
     V3_EVENT_CHANGE_CHANNEL,
@@ -250,7 +251,6 @@ enum _v3_events
     V3_EVENT_FORCE_CHAN_MOVE,
     V3_EVENT_USERLIST_OPEN,
     V3_EVENT_USERLIST_CLOSE,
-    V3_EVENT_USERLIST_CHANGE_OWNER,
 
     // not implemented
     V3_EVENT_USER_PAGED,
@@ -318,6 +318,17 @@ struct _v3_event {
         uint32_t rate;
     } pcm;
     union {
+        struct {
+            v3_permissions perms;
+            char username[32];
+            char owner[32];
+            char notes[256];
+            char lock_reason[128];
+            int chan_admin_count;
+            uint16_t chan_admin[32];
+            int chan_auth_count;
+            uint16_t chan_auth[32];
+        } account;
         int16_t sample16[8192];
         uint8_t sample[16384];
         char    motd[2048]; 
@@ -558,6 +569,9 @@ void        v3_phantom_remove(uint16_t channel_id);
 void        v3_force_channel_move(uint16_t user_id, uint16_t channel_id);
 void        v3_userlist_open(void);
 void        v3_userlist_close(void);
+void        v3_userlist_remove(uint16_t account_id);
+void        v3_userlist_update(v3_account *account);
+void        v3_userlist_change_owner(uint16_t old_owner_id, uint16_t new_owner_id);
 int         v3_debuglevel(uint32_t level);
 int         v3_is_loggedin(void);
 uint16_t    v3_get_user_id(void);

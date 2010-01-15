@@ -835,12 +835,11 @@ _v3_net_message *_v3_put_0x4a(uint8_t subtype, v3_account *account, v3_account *
             break;
         case V3_USERLIST_ADD:
         case V3_USERLIST_MODIFY:
-            m->len = sizeof(_v3_msg_0x4a) + sizeof(account->perms) + strlen(account->username) + strlen(account->owner) + strlen(account->notes) + strlen(account->lock_reason) + ((account->chan_admin_count * 2) + 2) +  ((account->chan_auth_count * 2));
+            m->len = sizeof(_v3_msg_0x4a) + sizeof(account->perms) + strlen(account->username) + 2 + strlen(account->owner) + 2 + strlen(account->notes) + 2 + strlen(account->lock_reason) + 2 + ((account->chan_admin_count * 2) + 2) + ((account->chan_auth_count * 2) + 2);
             mc = malloc(m->len);
             memset(mc, 0, m->len);
             ((_v3_msg_0x4a_account *)mc)->header.count = 1;
-
-            _v3_put_msg_account(mc, account);
+            _v3_put_msg_account((uint8_t *)mc + sizeof(_v3_msg_0x4a), account);
             break;
         case V3_USERLIST_REMOVE:
             m->len = sizeof(_v3_msg_0x4a_perms);
