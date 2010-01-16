@@ -85,7 +85,7 @@ ManglerAudio::open(uint32_t rate, bool type, uint32_t pcm_framesize) {/*{{{*/
 
 bool
 ManglerAudio::openOutput(uint32_t rate) {/*{{{*/
-    closeOutput(); // close any existing output streams
+    closeOutput(true); // close any existing output streams
 #ifdef HAVE_PULSE
     if (mangler->settings->config.audioSubsystem == "pulse") {
         pulse_samplespec.rate = rate;
@@ -104,6 +104,7 @@ ManglerAudio::openOutput(uint32_t rate) {/*{{{*/
                         NULL,
                         &pulse_error))) {
             fprintf(stderr, __FILE__": pa_simple_new() failed: %s\n", pa_strerror(pulse_error));
+            pulse_stream = NULL;
             return false;
         }
     }
@@ -118,6 +119,7 @@ ManglerAudio::openOutput(uint32_t rate) {/*{{{*/
                         SND_PCM_STREAM_PLAYBACK,
                         0)) < 0) {
             fprintf(stderr, "snd_pcm_open() failed: %s\n", snd_strerror(alsa_error));
+            alsa_stream = NULL;
             return false;
         }
         if ((alsa_error = snd_pcm_set_params(alsa_stream, // pcm handle
@@ -128,12 +130,12 @@ ManglerAudio::openOutput(uint32_t rate) {/*{{{*/
                         true,                             // soft_resample
                         150000)) < 0) {                   // latency in usec (0.15 sec)
             fprintf(stderr, "snd_pcm_set_params() failed: %s\n", snd_strerror(alsa_error));
-            snd_pcm_close(alsa_stream);
+            closeOutput(false);
             return false;
         }
         if ((alsa_error = snd_pcm_prepare(alsa_stream)) < 0) {
             fprintf(stderr, "snd_pcm_prepare() failed: %s\n", snd_strerror(alsa_error));
-            snd_pcm_close(alsa_stream);
+            closeOutput(false);
             return false;
         }
     }
@@ -142,10 +144,10 @@ ManglerAudio::openOutput(uint32_t rate) {/*{{{*/
 }/*}}}*/
 
 void
-ManglerAudio::closeOutput(void) {/*{{{*/
+ManglerAudio::closeOutput(bool drain) {/*{{{*/
 #ifdef HAVE_PULSE
     if (pulse_stream) {
-        if (pa_simple_drain(pulse_stream, &pulse_error) < 0) {
+        if (drain && pa_simple_drain(pulse_stream, &pulse_error) < 0) {
             fprintf(stderr, __FILE__": pa_simple_drain() failed: %s\n", pa_strerror(pulse_error));
         }
         pa_simple_free(pulse_stream);
@@ -154,7 +156,9 @@ ManglerAudio::closeOutput(void) {/*{{{*/
 #endif
 #ifdef HAVE_ALSA
     if (alsa_stream) {
-        snd_pcm_drain(alsa_stream);
+        if (drain) {
+            snd_pcm_drain(alsa_stream);
+        }
         snd_pcm_close(alsa_stream);
         alsa_stream = NULL;
     }
@@ -163,7 +167,7 @@ ManglerAudio::closeOutput(void) {/*{{{*/
 
 bool
 ManglerAudio::openInput(uint32_t rate) {/*{{{*/
-    closeInput(); // close any existing input streams
+    closeInput(true); // close any existing input streams
 #ifdef HAVE_PULSE
     if (mangler->settings->config.audioSubsystem == "pulse") {
         pulse_samplespec.rate = rate;
@@ -182,6 +186,7 @@ ManglerAudio::openInput(uint32_t rate) {/*{{{*/
                         &buffer_attr,
                         &pulse_error))) {
             fprintf(stderr, __FILE__": pa_simple_new() failed: %s\n", pa_strerror(pulse_error));
+            pulse_stream = NULL;
             return false;
         }
     }
@@ -196,6 +201,7 @@ ManglerAudio::openInput(uint32_t rate) {/*{{{*/
                         SND_PCM_STREAM_CAPTURE,
                         0)) < 0) {
             fprintf(stderr, "snd_pcm_open() failed: %s\n", snd_strerror(alsa_error));
+            alsa_stream = NULL;
             return false;
         }
         if ((alsa_error = snd_pcm_set_params(alsa_stream, // pcm handle
@@ -206,17 +212,17 @@ ManglerAudio::openInput(uint32_t rate) {/*{{{*/
                         true,                             // soft_resample
                         150000)) < 0) {                   // latency in usec (0.15 sec)
             fprintf(stderr, "snd_pcm_set_params() failed: %s\n", snd_strerror(alsa_error));
-            snd_pcm_close(alsa_stream);
+            closeInput(false);
             return false;
         }
         if ((alsa_error = snd_pcm_prepare(alsa_stream)) < 0) {
             fprintf(stderr, "snd_pcm_prepare() failed: %s\n", snd_strerror(alsa_error));
-            snd_pcm_close(alsa_stream);
+            closeInput(false);
             return false;
         }
         if ((alsa_error = snd_pcm_start(alsa_stream)) < 0) {
             fprintf(stderr, "snd_pcm_start() failed: %s\n", snd_strerror(alsa_error));
-            snd_pcm_close(alsa_stream);
+            closeInput(false);
             return false;
         }
     }
@@ -225,7 +231,7 @@ ManglerAudio::openInput(uint32_t rate) {/*{{{*/
 }/*}}}*/
 
 void
-ManglerAudio::closeInput(void) {/*{{{*/
+ManglerAudio::closeInput(bool drain) {/*{{{*/
 #ifdef HAVE_PULSE
     if (pulse_stream) {
         pa_simple_free(pulse_stream);
@@ -234,7 +240,9 @@ ManglerAudio::closeInput(void) {/*{{{*/
 #endif
 #ifdef HAVE_ALSA
     if (alsa_stream) {
-        snd_pcm_drain(alsa_stream);
+        if (drain) {
+            snd_pcm_drain(alsa_stream);
+        }
         snd_pcm_close(alsa_stream);
         alsa_stream = NULL;
     }
@@ -306,7 +314,7 @@ ManglerAudio::input(void) {/*{{{*/
                 //fprintf(stderr, "reading %d bytes from pulse source\n", pcm_framesize);
                 if ((ret = pa_simple_read(pulse_stream, buf+(pcm_framesize*ctr), pcm_framesize, &pulse_error)) < 0) {
                     //fprintf(stderr, __FILE__": pa_simple_read() failed: %s\n", pa_strerror(pulse_error));
-                    pa_simple_free(pulse_stream);
+                    closeInput(false);
                     stop_input = true;
                     //throw Glib::Thread::Exit();
                     return;
@@ -324,7 +332,7 @@ ManglerAudio::input(void) {/*{{{*/
                         snd_pcm_prepare(alsa_stream);
                     } else if ((alsa_error = snd_pcm_recover(alsa_stream, alsa_frames, 0)) < 0) {
                         fprintf(stderr, "snd_pcm_readi() failed: %s\n", snd_strerror(alsa_error));
-                        snd_pcm_close(alsa_stream);
+                        closeInput(false);
                         stop_input = true;
                         return;
                     }
@@ -354,7 +362,7 @@ ManglerAudio::input(void) {/*{{{*/
     }
     //fprintf(stderr, "done with input\n");
     v3_stop_audio();
-    closeInput();
+    closeInput(true);
     outputStreamOpen = false;
     //throw Glib::Thread::Exit();
     return;
@@ -409,7 +417,7 @@ ManglerAudio::output(void) {/*{{{*/
             if ((ret = pa_simple_write(pulse_stream, queuedpcm->sample, queuedpcm->length, &pulse_error)) < 0) {
                 fprintf(stderr, __FILE__": pa_simple_write() failed: %s\n", pa_strerror(pulse_error));
                 g_async_queue_unref(pcm_queue);
-                pa_simple_free(pulse_stream);
+                closeOutput(false);
                 stop_output = true;
                 //throw Glib::Thread::Exit();
                 return;
@@ -433,7 +441,7 @@ ManglerAudio::output(void) {/*{{{*/
                     } else if ((alsa_error = snd_pcm_recover(alsa_stream, alsa_frames, 0)) < 0) {
                         fprintf(stderr, "snd_pcm_writei() failed: %s\n", snd_strerror(alsa_error));
                         g_async_queue_unref(pcm_queue);
-                        snd_pcm_close(alsa_stream);
+                        closeOutput(false);
                         stop_output = true;
                         return;
                     }
@@ -445,7 +453,7 @@ ManglerAudio::output(void) {/*{{{*/
 #endif
         delete queuedpcm;
     }
-    closeOutput();
+    closeOutput(true);
     stop_output = true;
     outputStreamOpen = true;
     //throw Glib::Thread::Exit();
