@@ -86,6 +86,7 @@ ManglerServerList::ManglerServerList(Glib::RefPtr<Gtk::Builder> builder) {
     builder->get_widget("serverListUtUCheckButton",         serverListUtUCheckButton);
     builder->get_widget("serverListPrivateChatCheckButton", serverListPrivateChatCheckButton);
     builder->get_widget("serverListRecordCheckButton",      serverListRecordCheckButton);
+    builder->get_widget("serverListPersistentConnectionCheckButton", serverListPersistentConnectionCheckButton);
     builder->get_widget("serverListPersistentCommentsCheckButton", serverListPersistentCommentsCheckButton);
 
     // Charset combobox
@@ -136,6 +137,7 @@ void ManglerServerList::serverListDeleteButton_clicked_cb(void) {
         serverListUtUCheckButton->set_sensitive(false);
         serverListPrivateChatCheckButton->set_sensitive(false);
         serverListRecordCheckButton->set_sensitive(false);
+        serverListPersistentConnectionCheckButton->set_sensitive(false);
         serverListPersistentCommentsCheckButton->set_sensitive(false);
         serverListCharsetComboBox->set_sensitive(false);
         serverListServerSaveButton->set_sensitive(false);
@@ -243,6 +245,7 @@ void ManglerServerList::editRow(uint32_t id) {
     serverListUtUCheckButton->set_sensitive(true);
     serverListPrivateChatCheckButton->set_sensitive(true);
     serverListRecordCheckButton->set_sensitive(true);
+    serverListPersistentConnectionCheckButton->set_sensitive(true);
     serverListPersistentCommentsCheckButton->set_sensitive(true);
     serverListCharsetComboBox->set_sensitive(true);
     serverListServerSaveButton->set_sensitive(true);
@@ -258,6 +261,7 @@ void ManglerServerList::editRow(uint32_t id) {
     serverListUtUCheckButton->set_active(server->acceptU2U);
     serverListPrivateChatCheckButton->set_active(server->acceptPrivateChat);
     serverListRecordCheckButton->set_active(server->allowRecording);
+    serverListPersistentConnectionCheckButton->set_active(server->persistentConnection);
     serverListPersistentCommentsCheckButton->set_active(server->persistentComments);
     serverListCharsetComboBox->get_entry()->set_text(server->charset.empty() ? charsetslist[0] : server->charset);
 }
@@ -292,6 +296,7 @@ void ManglerServerList::saveRow() {
     server->acceptU2U = serverListUtUCheckButton->get_active();
     server->acceptPrivateChat = serverListPrivateChatCheckButton->get_active();
     server->allowRecording = serverListRecordCheckButton->get_active();
+    server->persistentConnection = serverListPersistentConnectionCheckButton->get_active();
     server->persistentComments = serverListPersistentCommentsCheckButton->get_active();
     server->charset = serverListCharsetComboBox->get_active_text();
 

@@ -65,6 +65,7 @@ class ManglerServerList {
         Gtk::CheckButton *serverListUtUCheckButton;
         Gtk::CheckButton *serverListPrivateChatCheckButton;
         Gtk::CheckButton *serverListRecordCheckButton;
+        Gtk::CheckButton *serverListPersistentConnectionCheckButton;
         Gtk::CheckButton *serverListPersistentCommentsCheckButton;
 
         // Character Set Combobox

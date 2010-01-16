@@ -72,6 +72,7 @@ class Mangler
         Gtk::MenuItem                       *menuitem;
         Gtk::Table                          *table;
         Gtk::CheckButton                    *checkbutton;
+        
 
         std::map<Glib::ustring, Glib::RefPtr<Gdk::Pixbuf> >  icons;
         Glib::RefPtr<Gtk::StatusIcon>       statusIcon;
@@ -93,6 +94,12 @@ class Mangler
         bool                                isAdmin;
         bool                                muteSound;
         bool                                muteMic;
+
+        // Autoreconnect feature stuff - Need ID's to kill threads if needed
+        bool                                wantDisconnect;
+        guint                               reconnectStatusHandlerID;
+        time_t                              lastAttempt;
+        uint32_t                            lastServer;
 
         // These are used by the password entry dialog
         Gtk::Dialog                         *passwordDialog;
@@ -150,6 +157,8 @@ class Mangler
         bool checkPushToTalkMouse(void);
         bool updateXferAmounts(void);
 
+        // autoreconnect implementation
+        bool reconnectStatusHandler(void);
 
         // quick mute options
         void muteSoundCheckButton_toggled_cb(void);

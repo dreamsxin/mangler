@@ -151,6 +151,7 @@ bool ManglerConfig::put(uint16_t id, ManglerServerConfig server) {/*{{{*/
     snprintf(name, 1023, "serverlist.%d.accept_pages",         id); if (!put(name, server.acceptPages          ))  return false;
     snprintf(name, 1023, "serverlist.%d.accept_privchat",      id); if (!put(name, server.acceptPrivateChat    ))  return false;
     snprintf(name, 1023, "serverlist.%d.allow_recording",      id); if (!put(name, server.allowRecording       ))  return false;
+    snprintf(name, 1023, "serverlist.%d.persistent_connection",id); if (!put(name, server.persistentConnection ))  return false;
     snprintf(name, 1023, "serverlist.%d.persistent_comments",  id); if (!put(name, server.persistentComments   ))  return false;
     snprintf(name, 1023, "serverlist.%d.motdhash",             id); if (!put(name, server.motdhash             ))  return false;
 
@@ -430,6 +431,7 @@ void ManglerConfig::load() {/*{{{*/
             server->acceptPages = get(base + "accept_pages") == "0" ? false : true;
             server->acceptPrivateChat = get(base + "accept_privchat") == "0" ? false : true;
             server->allowRecording = get(base + "allow_recording") == "0" ? false : true;
+            server->persistentConnection = get(base + "persistent_connection") == "0" ? false : true;
             server->persistentComments = get(base + "persistent_comments") == "0" ? false : true;
             server->motdhash = atoi(get(base + "motdhash").c_str());
             server->uservolumes = get_user_volumes(base);

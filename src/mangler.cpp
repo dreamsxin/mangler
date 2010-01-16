@@ -26,6 +26,7 @@
 
 #include <gtkmm.h>
 #include <iostream>
+#include <stdio.h>
 #include "mangler.h"
 #include "manglerui.h"
 #include "mangler-icons.h"
@@ -138,6 +139,10 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
     checkbutton->signal_toggled().connect(sigc::mem_fun(this, &Mangler::muteMicCheckButton_toggled_cb));
     builder->get_widget("muteSoundCheckButton", checkbutton);
     checkbutton->signal_toggled().connect(sigc::mem_fun(this, &Mangler::muteSoundCheckButton_toggled_cb));
+
+    // Autoreconnect feature implementation
+    wantDisconnect = false;
+    reconnectStatusHandlerID = 0;
 
     /*
      * Retreive all menu bar items from builder and set their singal handler
@@ -311,8 +316,9 @@ void Mangler::connectButton_clicked_cb(void) {/*{{{*/
     Gtk::TreeModel::iterator iter;
 
     builder->get_widget("connectButton", button);
-    channelTree->updateLobby("Connecting...");
     if (button->get_label() == "gtk-connect") {
+        channelTree->updateLobby("Connecting...");
+        wantDisconnect = false;        
         builder->get_widget("connectButton", button);
         button->set_sensitive(false);
         builder->get_widget("serverSelectComboBox", combobox);
@@ -359,6 +365,7 @@ void Mangler::connectButton_clicked_cb(void) {/*{{{*/
             Glib::signal_timeout().connect(sigc::mem_fun(*this, &Mangler::getNetworkEvent), 10 );
         }
     } else {
+        wantDisconnect = true;
         v3_logout();
     }
     return;
@@ -601,6 +608,28 @@ void Mangler::motdOkButton_clicked_cb(void) {/*{{{*/
     builder->get_widget("motdWindow", window);
     window->hide();
 }/*}}}*/
+
+/*
+ * Auto reconnect handling
+ */
+bool Mangler::reconnectStatusHandler(void) {
+    char buffer [50];
+    int reconnectTimer = (15 - (time(NULL) - lastAttempt));
+    builder->get_widget("connectButton", button);
+    if (button->get_label() == "gtk-disconnect") {
+        reconnectStatusHandlerID = 0;
+        return false;
+    }
+    builder->get_widget("statusbar", statusbar);
+    sprintf (buffer, "Attempting reconnect in %d seconds", reconnectTimer);
+    statusbar->pop();
+    statusbar->push(buffer);
+    if (!(reconnectTimer)) {
+        lastAttempt = time(NULL);
+        Mangler::connectButton_clicked_cb();
+    }
+    return true;
+}
 
 // Timeout Callbacks
 /*
@@ -958,6 +987,7 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                 break;/*}}}*/
             case V3_EVENT_DISCONNECT:/*{{{*/
                 {
+                    ManglerServerConfig *server;
                     channelTree->clear();
                     button->set_label("gtk-connect");
                     builder->get_widget("serverSelectComboBox", combobox);
@@ -978,9 +1008,16 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                     label->set_label("N/A");
                     mangler->statusIcon->set(icons["tray_icon_grey"]);
                     audioControl->playNotification("logout");
-                    connectedServerId = -1;
                     isAdmin = false;
                     chat->clear();
+                    if (connectedServerId != -1) {
+                        server = settings->config.getserver(connectedServerId);
+                        if(!wantDisconnect && server->persistentConnection) {
+                            lastAttempt = time(NULL);
+                            reconnectStatusHandlerID = Glib::signal_timeout().connect_seconds(sigc::mem_fun(*this,&Mangler::reconnectStatusHandler),1);
+                        }
+                    }
+                    connectedServerId = -1;
                 }
                 break;/*}}}*/
             case V3_EVENT_CHAT_JOIN:/*{{{*/
