@@ -57,7 +57,9 @@ ManglerAudio::open(uint32_t rate, bool type, uint32_t pcm_framesize) {/*{{{*/
 #endif
     if (type == AUDIO_OUTPUT) {
         //fprintf(stderr, "opening audio output\n");
-        openOutput(rate);
+        if (!openOutput(rate)) {
+            return;
+        }
         outputStreamOpen = true;
         inputStreamOpen = false;
         //fprintf(stderr, "starting output thread\n");
@@ -70,7 +72,9 @@ ManglerAudio::open(uint32_t rate, bool type, uint32_t pcm_framesize) {/*{{{*/
             return;
         }
         //fprintf(stderr, "starting input with rate %d and framesize %d\n", rate, pcm_framesize);
-        openInput(rate);
+        if (!openInput(rate)) {
+            return;
+        }
         stop_input = false;
         outputStreamOpen = false;
         inputStreamOpen = true;
