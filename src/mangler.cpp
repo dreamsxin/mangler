@@ -307,6 +307,8 @@ void Mangler::connectButton_clicked_cb(void) {/*{{{*/
     builder->get_widget("connectButton", button);
     channelTree->updateLobby("Connecting...");
     if (button->get_label() == "gtk-connect") {
+        builder->get_widget("connectButton", button);
+        button->set_sensitive(false);
         builder->get_widget("serverSelectComboBox", combobox);
         iter = combobox->get_active();
         if (iter) {

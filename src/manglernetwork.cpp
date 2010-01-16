@@ -60,6 +60,7 @@ ManglerNetwork::connect(Glib::ustring hostname, Glib::ustring port, Glib::ustrin
     //mangler->channelTree->expand_all();
     builder->get_widget("connectButton", button);
     button->set_label("gtk-disconnect");
+    button->set_sensitive(true);
     //builder->get_widget("serverTabLabel", label);
     //label->set_label(server);
     builder->get_widget("serverSelectComboBox", combobox);
