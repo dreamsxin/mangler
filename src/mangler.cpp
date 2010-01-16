@@ -495,7 +495,6 @@ void Mangler::startTransmit(void) {/*{{{*/
         return;
     }
     if (muteMic) {
-        stopTransmit();
         return;
     }
     user = v3_get_user(v3_get_user_id());
@@ -541,6 +540,11 @@ void Mangler::muteSoundCheckButton_toggled_cb(void) {/*{{{*/
 void Mangler::muteMicCheckButton_toggled_cb(void) {/*{{{*/
     builder->get_widget("muteMicCheckButton", checkbutton);
     muteMic = checkbutton->get_active();
+    if (muteMic && isTransmitting) {
+        stopTransmit();
+    } else if (!muteMic && isTransmittingMouse || isTransmittingKey || isTransmittingButton) {
+        startTransmit();
+    }
 }/*}}}*/
 
 // Quick Connect callbacks
