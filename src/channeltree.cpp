@@ -168,7 +168,7 @@ ManglerChannelTree::addUser(uint32_t id, uint32_t parent_id, Glib::ustring name,
     if (phantom) {
         displayName = "\"P\" " + displayName; 
     }
-    if (guest) {
+    if (guest && !mangler->settings->config.guestFlagHidden) {
         displayName = displayName + " (GUEST)";
     }
     if (mangler->chat->isUserInChat(id)) {
@@ -199,8 +199,10 @@ ManglerChannelTree::addUser(uint32_t id, uint32_t parent_id, Glib::ustring name,
     channelRow[channelRecord.phonetic]          = phonetic;
     channelRow[channelRecord.url]               = url;
     channelRow[channelRecord.integration_text]  = integration_text;
+    channelRow[channelRecord.rank]              = rank;
     channelRow[channelRecord.last_transmit]     = id != 0 ? "unknown" : "";
     channelRow[channelRecord.password]          = "";
+    channelRow[channelRecord.phantom]           = phantom;
 }/*}}}*/
 
 /*
@@ -237,7 +239,7 @@ ManglerChannelTree::updateUser(uint32_t id, uint32_t parent_id, Glib::ustring na
     if (phantom) {
         displayName = "\"P\" " + displayName; 
     }
-    if (guest) {
+    if (guest && !mangler->settings->config.guestFlagHidden) {
         displayName = displayName + " (GUEST)";
     }
     if (mangler->chat->isUserInChat(id)) {
@@ -263,6 +265,8 @@ ManglerChannelTree::updateUser(uint32_t id, uint32_t parent_id, Glib::ustring na
     user[channelRecord.phonetic]          = phonetic;
     user[channelRecord.url]               = url;
     user[channelRecord.integration_text]  = integration_text;
+    user[channelRecord.rank]              = rank;
+    user[channelRecord.phantom]           = phantom;
 }/*}}}*/
 
 /*
@@ -317,6 +321,7 @@ ManglerChannelTree::addChannel(uint8_t protect_mode, uint32_t id, uint32_t paren
     channelRow[channelRecord.phonetic]          = phonetic;
     channelRow[channelRecord.url]               = "";
     channelRow[channelRecord.integration_text]  = "";
+    channelRow[channelRecord.rank]              = "";
     channelRow[channelRecord.password]          = "";
 }/*}}}*/
 
@@ -365,6 +370,7 @@ ManglerChannelTree::updateChannel(uint8_t protect_mode, uint32_t id, uint32_t pa
     channel[channelRecord.phonetic]          = phonetic;
     channel[channelRecord.url]               = "";
     channel[channelRecord.integration_text]  = "";
+    channel[channelRecord.rank]              = "";
     channel[channelRecord.password]          = "";
 }/*}}}*/
 
@@ -409,6 +415,79 @@ ManglerChannelTree::_refreshAllChannels(Gtk::TreeModel::Children children) {/*{{
         }
         if (row.children().size()) {
             _refreshAllChannels(row.children());
+        }
+        iter++;
+    }
+    return;
+}/*}}}*/
+
+void
+ManglerChannelTree::refreshUser(uint32_t id) {/*{{{*/
+    Glib::ustring displayName = "";
+    Gtk::TreeModel::Row user;
+    Glib::ustring name;
+    Glib::ustring url;
+    Glib::ustring integration_text;
+    Glib::ustring phonetic;
+    Glib::ustring comment;
+    Glib::ustring rank;
+    bool guest;
+    bool phantom;
+
+    if (! (user = getUser(id, channelStore->children())) && id > 0) {
+        fprintf(stderr, "channel missing: id: %d\n", id);
+    }
+    name = user[channelRecord.name];
+    comment = user[channelRecord.comment];
+    url = user[channelRecord.url];
+    integration_text = user[channelRecord.integration_text];
+    phonetic = user[channelRecord.phonetic];
+    rank = user[channelRecord.rank];
+    phantom = user[channelRecord.phantom];
+    guest = user[channelRecord.isGuest];
+    displayName = name;
+    if (!rank.empty()) {
+        displayName = "[" + rank + "] " + displayName; 
+    }
+    if (phantom) {
+        displayName = "\"P\" " + displayName; 
+    }
+    if (guest && !mangler->settings->config.guestFlagHidden) {
+        displayName = displayName + " (GUEST)";
+    }
+    if (mangler->chat->isUserInChat(id)) {
+        displayName = "[C] " + displayName;
+    }
+    if (! comment.empty()) {
+        displayName = displayName + " (" + (url.empty() ? "" : "U: ") + comment + ")";
+    } else if (comment.empty() && !url.empty()) {
+        displayName = displayName + " (" + (url.empty() ? "" : "U: ") + url + ")";
+    }
+
+    if (! integration_text.empty()) {
+        displayName = displayName + " {" + integration_text + "}";
+    }
+
+    user[channelRecord.displayName]       = displayName;
+}/*}}}*/
+
+void
+ManglerChannelTree::refreshAllUsers(void) {/*{{{*/
+    _refreshAllUsers(channelStore->children());
+}/*}}}*/
+
+void
+ManglerChannelTree::_refreshAllUsers(Gtk::TreeModel::Children children) {/*{{{*/
+    Gtk::TreeModel::Children::iterator iter = children.begin();
+    while (iter != children.end()) {
+        Gtk::TreeModel::Row row = *iter;
+        uint32_t id = row[channelRecord.id];
+        uint32_t isUser = row[channelRecord.isUser];
+        if (isUser) {
+            refreshUser(id);
+        }
+        if (row.children().size()) {
+            _refreshAllUsers(row.children());
         }
         iter++;
     }

@@ -141,6 +141,7 @@ class Mangler
         // menu bar signal handlers
         void buttonMenuItem_toggled_cb(void);
         void hideServerInfoMenuItem_toggled_cb(void);
+        void hideGuestFlagMenuItem_toggled_cb(void);
         void quitMenuItem_activate_cb(void);
 
 

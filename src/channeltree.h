@@ -43,9 +43,11 @@ class channelModelColumns : public Gtk::TreeModel::ColumnRecord/*{{{*/
             add(phonetic);
             add(url);
             add(integration_text);
+            add(rank);
             add(last_transmit);
             add(password);
             add(muted);
+            add(phantom);
         }
 
         Gtk::TreeModelColumn<Glib::ustring>                 displayName;
@@ -59,9 +61,11 @@ class channelModelColumns : public Gtk::TreeModel::ColumnRecord/*{{{*/
         Gtk::TreeModelColumn<Glib::ustring>                 phonetic;
         Gtk::TreeModelColumn<Glib::ustring>                 url;
         Gtk::TreeModelColumn<Glib::ustring>                 integration_text;
+        Gtk::TreeModelColumn<Glib::ustring>                 rank;
         Gtk::TreeModelColumn<Glib::ustring>                 last_transmit;
         Gtk::TreeModelColumn<Glib::ustring>                 password;
         Gtk::TreeModelColumn<bool>                          muted;
+        Gtk::TreeModelColumn<bool>                          phantom;
 };/*}}}*/
 class ManglerChannelStore : public Gtk::TreeStore
 {
@@ -112,6 +116,9 @@ class ManglerChannelTree
         void refreshChannel(uint32_t id);
         void _refreshAllChannels(Gtk::TreeModel::Children children);
         void refreshAllChannels();
+        void refreshUser(uint32_t id);
+        void _refreshAllUsers(Gtk::TreeModel::Children children);
+        void refreshAllUsers();
         Glib::ustring getLastTransmit(uint16_t userid);
         void setLastTransmit(uint16_t userid, Glib::ustring last_transmit);
         void removeUser(uint32_t id);

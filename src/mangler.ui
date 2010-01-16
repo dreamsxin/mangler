@@ -106,6 +106,13 @@
                       </object>
                     </child>
                     <child>
+                      <object class="GtkCheckMenuItem" id="hideGuestFlagMenuItem">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">Hide Guest Flag</property>
+                        <property name="use_underline">True</property>
+                      </object>
+                    </child>
+                    <child>
                       <object class="GtkMenuItem" id="chatMenuItem">
                         <property name="visible">True</property>
                         <property name="label" translatable="yes">Global Chat</property>
@@ -1012,27 +1019,6 @@
                           </packing>
                         </child>
                         <child>
-                          <placeholder/>
-                        </child>
-                        <child>
-                          <placeholder/>
-                        </child>
-                        <child>
-                          <placeholder/>
-                        </child>
-                        <child>
-                          <placeholder/>
-                        </child>
-                        <child>
-                          <placeholder/>
-                        </child>
-                        <child>
-                          <placeholder/>
-                        </child>
-                        <child>
-                          <placeholder/>
-                        </child>
-                        <child>
                           <object class="GtkAlignment" id="alignment19">
                             <property name="height_request">10</property>
                             <property name="visible">True</property>
@@ -1040,6 +1026,27 @@
                               <placeholder/>
                             </child>
                           </object>
+                        </child>
+                        <child>
+                          <placeholder/>
+                        </child>
+                        <child>
+                          <placeholder/>
+                        </child>
+                        <child>
+                          <placeholder/>
+                        </child>
+                        <child>
+                          <placeholder/>
+                        </child>
+                        <child>
+                          <placeholder/>
+                        </child>
+                        <child>
+                          <placeholder/>
+                        </child>
+                        <child>
+                          <placeholder/>
                         </child>
                       </object>
                     </child>
@@ -1196,15 +1203,6 @@
                           </packing>
                         </child>
                         <child>
-                          <placeholder/>
-                        </child>
-                        <child>
-                          <placeholder/>
-                        </child>
-                        <child>
-                          <placeholder/>
-                        </child>
-                        <child>
                           <object class="GtkCheckButton" id="serverListUtUCheckButton">
                             <property name="label" translatable="yes">Accept User to User Transmissions</property>
                             <property name="visible">True</property>
@@ -1217,6 +1215,15 @@
                             <property name="top_attach">3</property>
                             <property name="bottom_attach">4</property>
                           </packing>
+                        </child>
+                        <child>
+                          <placeholder/>
+                        </child>
+                        <child>
+                          <placeholder/>
+                        </child>
+                        <child>
+                          <placeholder/>
                         </child>
                       </object>
                     </child>

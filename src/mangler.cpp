@@ -150,6 +150,9 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
     builder->get_widget("hideServerInfoMenuItem", checkmenuitem);
     checkmenuitem->signal_toggled().connect(sigc::mem_fun(this, &Mangler::hideServerInfoMenuItem_toggled_cb));
 
+    builder->get_widget("hideGuestFlagMenuItem", checkmenuitem);
+    checkmenuitem->signal_toggled().connect(sigc::mem_fun(this, &Mangler::hideGuestFlagMenuItem_toggled_cb));
+
     builder->get_widget("serverListMenuItem", menuitem);
     menuitem->signal_activate().connect(sigc::mem_fun(this, &Mangler::serverConfigButton_clicked_cb));
 
@@ -227,6 +230,9 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
 
     builder->get_widget("hideServerInfoMenuItem", checkmenuitem);
     checkmenuitem->set_active(settings->config.serverInfoHidden);
+
+    builder->get_widget("hideGuestFlagMenuItem", checkmenuitem);
+    checkmenuitem->set_active(settings->config.guestFlagHidden);
 
     // Create Server List Window
     serverList = new ManglerServerList(builder);
@@ -456,6 +462,16 @@ void Mangler::hideServerInfoMenuItem_toggled_cb(void) {/*{{{*/
         settings->config.serverInfoHidden = false;
         table->show();
     }
+    settings->config.save();
+}/*}}}*/
+void Mangler::hideGuestFlagMenuItem_toggled_cb(void) {/*{{{*/
+    builder->get_widget("hideGuestFlagMenuItem", checkmenuitem);
+    if (checkmenuitem->get_active()) {
+        settings->config.guestFlagHidden = true;
+    } else {
+        settings->config.guestFlagHidden = false;
+    }
+    channelTree->refreshAllUsers();
     settings->config.save();
 }/*}}}*/
 void Mangler::quitMenuItem_activate_cb(void) {/*{{{*/
