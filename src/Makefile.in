@@ -637,7 +637,7 @@ dev:
 	gcc -g -Wall -o mangler -I../ -I../libventrilo3/ -I../icons/ -I ../sounds/ -pthread \
 		channeltree.cpp  mangleraudio.cpp  manglerconfig.cpp  mangler.cpp \
 		manglernetwork.cpp  manglerserverlist.cpp  manglersettings.cpp \
-		manglerchat.cpp manglercharset.cpp \
+		manglerchat.cpp manglercharset.cpp manglerprivchat.cpp \
 		../libventrilo3/libventrilo3.a \
 		-lpulse-simple -lpulse -lspeex -lgsm \
 		`pkg-config --cflags --libs gthread-2.0` \
