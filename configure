@@ -1556,7 +1556,7 @@ Optional Features:
   --disable-gsm           disable GSM codec support
   --disable-speex         disable Speex codec support
   --disable-pulseaudio    disable PulseAudio support
-  --enable-alsa           enable ALSA support
+  --disable-alsa          disable ALSA support
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -15834,37 +15834,23 @@ if test "${enable_alsa+set}" = set; then :
 fi
 
 
-if test -z "$enable_pulseaudio" -a -z "$enable_alsa" ; then
-	pulseaudio=yes
+pulseaudio=yes
+alsa=yes
+if test -z "$enable_pulseaudio" = "no" ] ; then
+	pulseaudio=no
+fi
+if test -z "$enable_alsa" = "no" ] ; then
 	alsa=no
-elif  test "$enable_pulseaudio" = "yes" -a "$enable_alsa" = "yes" ; then
-	echo "error: you cannot enable support for both ALSA and PulseAudio"
-	exit
-elif  test "$enable_pulseaudio" = "no" -a "$enable_alsa" = "no" ; then
+fi
+
+
+if test "$enable_pulseaudio" = "no" -a "$enable_alsa" = "no" ; then
 	echo "**************************************************************************"
 	echo "*** WARNING: You have disabled support for both PulseAudio and ALSA.   ***"
 	echo "***          You can compile and use Mangler without an audio          ***"
 	echo "***          subsystem, but you will not have any sound, which more    ***"
 	echo "***          more or less makes the program useless.                   ***"
 	echo "**************************************************************************"
-	pulseaudio=no
-	alsa=no
-elif  test "$enable_pulseaudio" = "no" -a "$enable_alsa" != "yes" ; then
-	echo "**************************************************************************"
-	echo "*** WARNING: You have disabled support for both PulseAudio, but you    ***"
-	echo "***          did not enable ALSA support.  Enabling ALSA by default.   ***"
-	echo "**************************************************************************"
-	pulseaudio=no
-	alsa=yes
-	exit
-elif  test "$enable_pulseaudio" = "yes" ; then
-	echo "Enabling PulseAudio support and disabling ALSA support"
-	pulseaudio=yes
-	alsa=no
-elif  test "$enable_alsa" = "yes" ; then
-	echo "Enabling ALSA support and disabling PulseAudio support"
-	pulseaudio=no
-	alsa=yes
 fi
 
 if test "$pulseaudio" = "yes"; then :

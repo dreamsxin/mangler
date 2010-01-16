@@ -208,10 +208,6 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
     // Create Network Communication Object
     network = new ManglerNetwork(builder);
 
-    // Create our audio control object for managing devices
-    audioControl = new ManglerAudio("control");
-    audioControl->getDeviceList();
-
     // Create settings object, load the configuration file, and apply.  If the
     // user has PTT key/mouse enabled, start a timer here
     settings = new ManglerSettings(builder);
@@ -221,6 +217,10 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
     isTransmitting = 0;
     Glib::signal_timeout().connect(sigc::mem_fun(this, &Mangler::checkPushToTalkKeys), 100);
     Glib::signal_timeout().connect(sigc::mem_fun(this, &Mangler::checkPushToTalkMouse), 100); 
+
+    // Create our audio control object for managing devices
+    audioControl = new ManglerAudio("control");
+    audioControl->getDeviceList(settings->config.audioSubsystem);
 
     // set the default window size from the settings
     if (settings->config.windowWidth > 0 && settings->config.windowHeight > 0) {

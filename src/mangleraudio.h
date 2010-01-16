@@ -34,7 +34,8 @@
 # include <pulse/simple.h>
 # include <pulse/error.h>
 # include <pulse/gccmacro.h>
-#elif HAVE_ALSA
+#endif
+#ifdef HAVE_ALSA
 # include <alsa/asoundlib.h>
 # define ALSA_BUF 640
 #endif
@@ -83,7 +84,7 @@ class ManglerAudio
         void            input(void);
         void            finish(void);
 
-        void            getDeviceList(void);
+        void            getDeviceList(Glib::ustring audioSubsystem);
         void            playNotification(Glib::ustring name);
         void            playNotification_thread(Glib::ustring name);
 
@@ -94,7 +95,8 @@ class ManglerAudio
 #ifdef HAVE_PULSE
         pa_sample_spec  pulse_samplespec;
         pa_simple       *pulse_stream;
-#elif HAVE_ALSA
+#endif
+#ifdef HAVE_ALSA
         snd_pcm_sframes_t alsa_frames;
         snd_pcm_t       *alsa_stream;
 #endif
@@ -105,7 +107,8 @@ class ManglerAudio
         std::vector<ManglerAudioDevice*> inputDevices;
         std::vector<ManglerAudioDevice*> outputDevices;
 
-        int             error;
+        int             pulse_error;
+        int             alsa_error;
 
         bool            stop_input;
         bool            stop_output;

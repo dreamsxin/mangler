@@ -63,6 +63,17 @@ class ManglerSettings
         audioPlayerModelColumns  audioPlayerColumns;
         Glib::RefPtr<Gtk::ListStore> audioPlayerTreeModel;
 
+        Gtk::ComboBox       *audioSubsystemComboBox;
+        class audioSubsystemModelColumns : public Gtk::TreeModel::ColumnRecord
+        {
+            public:
+                audioSubsystemModelColumns() { add(id); add(name); }
+                Gtk::TreeModelColumn<Glib::ustring> id;
+                Gtk::TreeModelColumn<Glib::ustring> name;
+        };
+        audioSubsystemModelColumns  audioSubsystemColumns;
+        Glib::RefPtr<Gtk::ListStore> audioSubsystemTreeModel;
+
         // Input Device Combo Box Setup
         Gtk::ComboBox       *inputDeviceComboBox;
         class inputDeviceModelColumns : public Gtk::TreeModel::ColumnRecord
@@ -134,7 +145,8 @@ class ManglerSettings
         void settingsEnablePTTMouseCheckButton_toggled_cb(void);
         void settingsPTTMouseButton_clicked_cb(void);
         void settingsEnableAudioIntegrationCheckButton_toggled_cb(void);
-
+        void audioSubsystemComboBox_changed_cb(void);
+        void updateDeviceComboBoxes(void);
 };
 
 #endif

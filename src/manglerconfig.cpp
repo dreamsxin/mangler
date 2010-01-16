@@ -31,6 +31,7 @@
 #include "mangler.h"
 #include "manglerconfig.h"
 #include <gdk/gdkx.h>
+#include "config.h"
 
 
 ManglerConfig::ManglerConfig() {/*{{{*/
@@ -52,6 +53,11 @@ ManglerConfig::ManglerConfig() {/*{{{*/
     notificationChannelEnterLeave   = true;
     notificationTransmitStartStop   = true;
     mouseDeviceName                 = "";
+#ifdef HAVE_PULSE
+    audioSubsystem                  = "pulse";
+#elif HAVE_ALSA
+    audioSubsystem                  = "alsa";
+#endif
     ManglerServerConfig             qc_lastserver;
     std::vector<ManglerServerConfig> serverlist;
     load();
@@ -79,6 +85,7 @@ bool ManglerConfig::save() {/*{{{*/
     put("notification.channelEnterLeave", notificationChannelEnterLeave);
     put("notification.transmitStartStop", notificationTransmitStartStop);
     put("mouseDeviceName", mouseDeviceName);
+    put("audioSubsystem", audioSubsystem);
     put("qc_lastserver.hostname", qc_lastserver.hostname);
     put("qc_lastserver.port", qc_lastserver.port);
     put("qc_lastserver.username", qc_lastserver.username);
@@ -388,6 +395,9 @@ void ManglerConfig::load() {/*{{{*/
     notificationChannelEnterLeave = get("notification.channelEnterLeave") == "0" ? false : true; // default true
     notificationTransmitStartStop = get("notification.transmitStartStop") == "0" ? false : true; // default true
     mouseDeviceName               = get("mouseDeviceName");
+    if (get("audioSubsystem").length()) {
+        audioSubsystem            = get("audioSubsystem");
+    }
     qc_lastserver.hostname        = get("qc_lastserver.hostname");
     qc_lastserver.port            = get("qc_lastserver.port");
     qc_lastserver.username        = get("qc_lastserver.username");

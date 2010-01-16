@@ -86,6 +86,7 @@ class ManglerConfig {
                 Glib::ustring   outputDeviceName;
                 Glib::ustring   notificationDeviceName;
                 Glib::ustring   mouseDeviceName;
+                Glib::ustring   audioSubsystem;
                 bool            notificationLoginLogout;
                 bool            notificationChannelEnterLeave;
                 bool            notificationTransmitStartStop;
