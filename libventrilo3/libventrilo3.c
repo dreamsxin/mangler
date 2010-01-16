@@ -4479,14 +4479,20 @@ v3_start_audio(uint16_t send_type) {/*{{{*/
     return;
 }/*}}}*/
 
-void
+uint32_t
 v3_send_audio(uint16_t send_type, uint32_t rate, uint8_t *pcm, uint32_t length) {/*{{{*/
     v3_event ev;
+    const v3_codec *codec;
 
     _v3_func_enter("v3_send_audio");
     if (!v3_is_loggedin()) {
         _v3_func_leave("v3_send_audio");
-        return;
+        return 0;
+    }
+    codec = v3_get_channel_codec(v3_get_user_channel(v3_get_user_id()));
+    if (send_type == V3_AUDIO_SENDTYPE_U2CCUR && codec->rate != rate) {
+        _v3_func_leave("v3_send_audio");
+        return codec->rate;
     }
     memset(&ev, 0, sizeof(v3_event));
     ev.type = V3_EVENT_PLAY_AUDIO;
@@ -4502,7 +4508,7 @@ v3_send_audio(uint16_t send_type, uint32_t rate, uint8_t *pcm, uint32_t length) 
     fflush(v3_server.evoutstream);
     _v3_unlock_sendq();
     _v3_func_leave("v3_send_audio");
-    return;
+    return rate;
 }/*}}}*/
 
 void

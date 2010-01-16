@@ -42,66 +42,22 @@ ManglerAudio::open(uint32_t rate, bool type, uint32_t pcm_framesize) {/*{{{*/
     //fprintf(stderr, "creating object: %d \n", type);
     this->rate = rate;
 #ifdef HAVE_PULSE
+    pulse_stream = NULL;
     pulse_samplespec.format = PA_SAMPLE_S16LE;
     pulse_samplespec.rate = rate;
     pulse_samplespec.channels = 1;
-    pa_buffer_attr buffer_attr;
     buffer_attr.maxlength = -1;
     buffer_attr.tlength = -1;
     buffer_attr.prebuf = -1;
     buffer_attr.minreq = -1;
     buffer_attr.fragsize = pcm_framesize;
 #endif
+#ifdef HAVE_ALSA
+    alsa_stream = NULL;
+#endif
     if (type == AUDIO_OUTPUT) {
         //fprintf(stderr, "opening audio output\n");
-#ifdef HAVE_PULSE
-        if (mangler->settings->config.audioSubsystem == "pulse") {
-            //fprintf(stderr, "opening on pulse device %s\n", (char *)mangler->settings->config.outputDeviceName.c_str());
-            if (!(pulse_stream = pa_simple_new(
-                            NULL,
-                            "Mangler",
-                            PA_STREAM_PLAYBACK,
-                            (mangler->settings->config.outputDeviceName == "Default" || mangler->settings->config.outputDeviceName == "" ? NULL : (char *)mangler->settings->config.outputDeviceName.c_str()),
-                            "User Talking In Ventrilo Channel",
-                            &pulse_samplespec,
-                            NULL,
-                            NULL,
-                            &pulse_error))) {
-                fprintf(stderr, __FILE__": pa_simple_new() failed: %s\n", pa_strerror(pulse_error));
-                return;
-            }
-        }
-#endif
-#ifdef HAVE_ALSA
-        if (mangler->settings->config.audioSubsystem == "alsa") {
-            if ((alsa_error = snd_pcm_open(&alsa_stream,
-                            (mangler->settings->config.outputDeviceName == "Default" || 
-                             mangler->settings->config.outputDeviceName == "" 
-                             ? "default" 
-                             : (char *)mangler->settings->config.outputDeviceName.c_str()),
-                            SND_PCM_STREAM_PLAYBACK,
-                            0)) < 0) {
-                fprintf(stderr, "snd_pcm_open() failed: %s\n", snd_strerror(alsa_error));
-                return;
-            }
-            if ((alsa_error = snd_pcm_set_params(alsa_stream,                   // pcm handle
-                            SND_PCM_FORMAT_S16_LE,         // format
-                            SND_PCM_ACCESS_RW_INTERLEAVED, // access
-                            1,                             // channels
-                            rate,                          // rate
-                            true,                          // soft_resample
-                            150000)) < 0) {                // latency in usec (0.15 sec)
-                                fprintf(stderr, "snd_pcm_set_params() failed: %s\n", snd_strerror(alsa_error));
-                                snd_pcm_close(alsa_stream);
-                                return;
-                            }
-            if ((alsa_error = snd_pcm_prepare(alsa_stream)) < 0) {
-                fprintf(stderr, "snd_pcm_prepare() failed: %s\n", snd_strerror(alsa_error));
-                snd_pcm_close(alsa_stream);
-                return;
-            }
-        }
-#endif
+        openOutput(rate);
         outputStreamOpen = true;
         inputStreamOpen = false;
         //fprintf(stderr, "starting output thread\n");
@@ -114,65 +70,171 @@ ManglerAudio::open(uint32_t rate, bool type, uint32_t pcm_framesize) {/*{{{*/
             return;
         }
         //fprintf(stderr, "starting input with rate %d and framesize %d\n", rate, pcm_framesize);
-#ifdef HAVE_PULSE
-        if (mangler->settings->config.audioSubsystem == "pulse") {
-            //fprintf(stderr, "on pulse device %s\n", (char *)mangler->settings->config.outputDeviceName.c_str());
-            if (!(pulse_stream = pa_simple_new(
-                            NULL,
-                            "Mangler",
-                            PA_STREAM_RECORD,
-                            (mangler->settings->config.inputDeviceName == "Default" || mangler->settings->config.inputDeviceName == "" ? NULL : (char *)mangler->settings->config.inputDeviceName.c_str()),
-                            "Talking In Ventrilo Channel",
-                            &pulse_samplespec,
-                            NULL,
-                            &buffer_attr,
-                            &pulse_error))) {
-                fprintf(stderr, __FILE__": pa_simple_new() failed: %s\n", pa_strerror(pulse_error));
-                return;
-            }
-        }
-#endif
-#ifdef HAVE_ALSA
-        if (mangler->settings->config.audioSubsystem == "alsa") {
-            if ((alsa_error = snd_pcm_open(&alsa_stream,
-                            (mangler->settings->config.inputDeviceName == "Default" || 
-                             mangler->settings->config.inputDeviceName == "" 
-                             ? "default" 
-                             : (char *)mangler->settings->config.inputDeviceName.c_str()),
-                            SND_PCM_STREAM_CAPTURE,
-                            0)) < 0) {
-                fprintf(stderr, "snd_pcm_open() failed: %s\n", snd_strerror(alsa_error));
-                return;
-            }
-            if ((alsa_error = snd_pcm_set_params(alsa_stream,                   // pcm handle
-                            SND_PCM_FORMAT_S16_LE,         // format
-                            SND_PCM_ACCESS_RW_INTERLEAVED, // access
-                            1,                             // channels
-                            rate,                          // rate
-                            true,                          // soft_resample
-                            150000)) < 0) {                // latency in usec (0.15 sec)
-                                fprintf(stderr, "snd_pcm_set_params() failed: %s\n", snd_strerror(alsa_error));
-                                snd_pcm_close(alsa_stream);
-                                return;
-                            }
-            if ((alsa_error = snd_pcm_prepare(alsa_stream)) < 0) {
-                fprintf(stderr, "snd_pcm_prepare() failed: %s\n", snd_strerror(alsa_error));
-                snd_pcm_close(alsa_stream);
-                return;
-            }
-            if ((alsa_error = snd_pcm_start(alsa_stream)) < 0) {
-                fprintf(stderr, "snd_pcm_start() failed: %s\n", snd_strerror(alsa_error));
-                snd_pcm_close(alsa_stream);
-                return;
-            }
-        }
-#endif
+        openInput(rate);
         stop_input = false;
         outputStreamOpen = false;
         inputStreamOpen = true;
         //fprintf(stderr, "starting input thread\n");
         Glib::Thread::create(sigc::mem_fun(*this, &ManglerAudio::input), FALSE);
     }
+}/*}}}*/
+
+bool
+ManglerAudio::openOutput(uint32_t rate) {/*{{{*/
+    closeOutput(); // close any existing output streams
+#ifdef HAVE_PULSE
+    if (mangler->settings->config.audioSubsystem == "pulse") {
+        pulse_samplespec.rate = rate;
+        //fprintf(stderr, "opening on pulse device %s\n", (char *)mangler->settings->config.outputDeviceName.c_str());
+        if (!(pulse_stream = pa_simple_new(
+                        NULL,
+                        "Mangler",
+                        PA_STREAM_PLAYBACK,
+                        (mangler->settings->config.outputDeviceName == "Default" || 
+                            mangler->settings->config.outputDeviceName == "" 
+                            ? NULL 
+                            : (char *)mangler->settings->config.outputDeviceName.c_str()),
+                        "User Talking In Ventrilo Channel",
+                        &pulse_samplespec,
+                        NULL,
+                        NULL,
+                        &pulse_error))) {
+            fprintf(stderr, __FILE__": pa_simple_new() failed: %s\n", pa_strerror(pulse_error));
+            return false;
+        }
+    }
+#endif
+#ifdef HAVE_ALSA
+    if (mangler->settings->config.audioSubsystem == "alsa") {
+        if ((alsa_error = snd_pcm_open(&alsa_stream,
+                        (mangler->settings->config.outputDeviceName == "Default" || 
+                            mangler->settings->config.outputDeviceName == "" 
+                            ? "default" 
+                            : (char *)mangler->settings->config.outputDeviceName.c_str()),
+                        SND_PCM_STREAM_PLAYBACK,
+                        0)) < 0) {
+            fprintf(stderr, "snd_pcm_open() failed: %s\n", snd_strerror(alsa_error));
+            return false;
+        }
+        if ((alsa_error = snd_pcm_set_params(alsa_stream, // pcm handle
+                        SND_PCM_FORMAT_S16_LE,            // format
+                        SND_PCM_ACCESS_RW_INTERLEAVED,    // access
+                        1,                                // channels
+                        rate,                             // rate
+                        true,                             // soft_resample
+                        150000)) < 0) {                   // latency in usec (0.15 sec)
+            fprintf(stderr, "snd_pcm_set_params() failed: %s\n", snd_strerror(alsa_error));
+            snd_pcm_close(alsa_stream);
+            return false;
+        }
+        if ((alsa_error = snd_pcm_prepare(alsa_stream)) < 0) {
+            fprintf(stderr, "snd_pcm_prepare() failed: %s\n", snd_strerror(alsa_error));
+            snd_pcm_close(alsa_stream);
+            return false;
+        }
+    }
+#endif
+    return true;
+}/*}}}*/
+
+void
+ManglerAudio::closeOutput(void) {/*{{{*/
+#ifdef HAVE_PULSE
+    if (pulse_stream) {
+        if (pa_simple_drain(pulse_stream, &pulse_error) < 0) {
+            fprintf(stderr, __FILE__": pa_simple_drain() failed: %s\n", pa_strerror(pulse_error));
+        }
+        pa_simple_free(pulse_stream);
+        pulse_stream = NULL;
+    }
+#endif
+#ifdef HAVE_ALSA
+    if (alsa_stream) {
+        snd_pcm_drain(alsa_stream);
+        snd_pcm_close(alsa_stream);
+        alsa_stream = NULL;
+    }
+#endif
+}/*}}}*/
+
+bool
+ManglerAudio::openInput(uint32_t rate) {/*{{{*/
+    closeInput(); // close any existing input streams
+#ifdef HAVE_PULSE
+    if (mangler->settings->config.audioSubsystem == "pulse") {
+        pulse_samplespec.rate = rate;
+        //fprintf(stderr, "on pulse device %s\n", (char *)mangler->settings->config.outputDeviceName.c_str());
+        if (!(pulse_stream = pa_simple_new(
+                        NULL,
+                        "Mangler",
+                        PA_STREAM_RECORD,
+                        (mangler->settings->config.inputDeviceName == "Default" || 
+                            mangler->settings->config.inputDeviceName == "" 
+                            ? NULL 
+                            : (char *)mangler->settings->config.inputDeviceName.c_str()),
+                        "Talking In Ventrilo Channel",
+                        &pulse_samplespec,
+                        NULL,
+                        &buffer_attr,
+                        &pulse_error))) {
+            fprintf(stderr, __FILE__": pa_simple_new() failed: %s\n", pa_strerror(pulse_error));
+            return false;
+        }
+    }
+#endif
+#ifdef HAVE_ALSA
+    if (mangler->settings->config.audioSubsystem == "alsa") {
+        if ((alsa_error = snd_pcm_open(&alsa_stream,
+                        (mangler->settings->config.inputDeviceName == "Default" || 
+                            mangler->settings->config.inputDeviceName == "" 
+                            ? "default" 
+                            : (char *)mangler->settings->config.inputDeviceName.c_str()),
+                        SND_PCM_STREAM_CAPTURE,
+                        0)) < 0) {
+            fprintf(stderr, "snd_pcm_open() failed: %s\n", snd_strerror(alsa_error));
+            return false;
+        }
+        if ((alsa_error = snd_pcm_set_params(alsa_stream, // pcm handle
+                        SND_PCM_FORMAT_S16_LE,            // format
+                        SND_PCM_ACCESS_RW_INTERLEAVED,    // access
+                        1,                                // channels
+                        rate,                             // rate
+                        true,                             // soft_resample
+                        150000)) < 0) {                   // latency in usec (0.15 sec)
+            fprintf(stderr, "snd_pcm_set_params() failed: %s\n", snd_strerror(alsa_error));
+            snd_pcm_close(alsa_stream);
+            return false;
+        }
+        if ((alsa_error = snd_pcm_prepare(alsa_stream)) < 0) {
+            fprintf(stderr, "snd_pcm_prepare() failed: %s\n", snd_strerror(alsa_error));
+            snd_pcm_close(alsa_stream);
+            return false;
+        }
+        if ((alsa_error = snd_pcm_start(alsa_stream)) < 0) {
+            fprintf(stderr, "snd_pcm_start() failed: %s\n", snd_strerror(alsa_error));
+            snd_pcm_close(alsa_stream);
+            return false;
+        }
+    }
+#endif
+    return true;
+}/*}}}*/
+
+void
+ManglerAudio::closeInput(void) {/*{{{*/
+#ifdef HAVE_PULSE
+    if (pulse_stream) {
+        pa_simple_free(pulse_stream);
+        pulse_stream = NULL;
+    }
+#endif
+#ifdef HAVE_ALSA
+    if (alsa_stream) {
+        snd_pcm_drain(alsa_stream);
+        snd_pcm_close(alsa_stream);
+        alsa_stream = NULL;
+    }
+#endif
 }/*}}}*/
 
 void
@@ -186,8 +248,9 @@ ManglerAudio::queue(uint32_t length, uint8_t *sample) {/*{{{*/
 
 void
 ManglerAudio::input(void) {/*{{{*/
-    int ret, error;
+    int ret;
     uint8_t *buf = NULL;
+    uint32_t ret_rate;
     float seconds = 0;
     struct timeval start, now, diff;
     int ctr;
@@ -232,9 +295,13 @@ ManglerAudio::input(void) {/*{{{*/
             //fprintf(stderr, "reading %d bytes of memory to %lu\n", pcm_framesize, (uint64_t) buf+(pcm_framesize*ctr));
 #ifdef HAVE_PULSE
             if (mangler->settings->config.audioSubsystem == "pulse") {
+                if (!pulse_stream && !openInput(rate)) { // reinitialize input stream for pulse
+                    stop_input = true;
+                    return;
+                }
                 //fprintf(stderr, "reading %d bytes from pulse source\n", pcm_framesize);
-                if ((ret = pa_simple_read(pulse_stream, buf+(pcm_framesize*ctr), pcm_framesize, &error)) < 0) {
-                    //fprintf(stderr, __FILE__": pa_simple_read() failed: %s\n", pa_strerror(error));
+                if ((ret = pa_simple_read(pulse_stream, buf+(pcm_framesize*ctr), pcm_framesize, &pulse_error)) < 0) {
+                    //fprintf(stderr, __FILE__": pa_simple_read() failed: %s\n", pa_strerror(pulse_error));
                     pa_simple_free(pulse_stream);
                     stop_input = true;
                     //throw Glib::Thread::Exit();
@@ -244,11 +311,15 @@ ManglerAudio::input(void) {/*{{{*/
 #endif
 #ifdef HAVE_ALSA
             if (mangler->settings->config.audioSubsystem == "alsa") {
+                if (!alsa_stream && !openInput(rate)) { // reinitialize input stream for alsa
+                    stop_input = true;
+                    return;
+                }
                 if ((alsa_frames = snd_pcm_readi(alsa_stream, buf+(pcm_framesize*ctr), pcm_framesize / sizeof(int16_t))) < 0) {
                     if (alsa_frames == -EPIPE) {
                         snd_pcm_prepare(alsa_stream);
-                    } else if ((error = snd_pcm_recover(alsa_stream, alsa_frames, 0)) < 0) {
-                        fprintf(stderr, "snd_pcm_readi() failed: %s\n", snd_strerror(error));
+                    } else if ((alsa_error = snd_pcm_recover(alsa_stream, alsa_frames, 0)) < 0) {
+                        fprintf(stderr, "snd_pcm_readi() failed: %s\n", snd_strerror(alsa_error));
                         snd_pcm_close(alsa_stream);
                         stop_input = true;
                         return;
@@ -265,7 +336,11 @@ ManglerAudio::input(void) {/*{{{*/
         if (! drop) {
             //fprintf(stderr, "sending audio %d bytes of audio\n", ctr * pcm_framesize);
             // TODO: hard coding user to channel for now, need to implement U2U
-            v3_send_audio(V3_AUDIO_SENDTYPE_U2CCUR, rate, buf, ctr * pcm_framesize);
+            if ((ret_rate = v3_send_audio(V3_AUDIO_SENDTYPE_U2CCUR, rate, buf, ctr * pcm_framesize)) != rate) {
+                if (!ret_rate || !openInput((rate = ret_rate))) { // reinitialize input with the new sample rate
+                    stop_input = true; // else we're logged out or we couldn't reinitialize
+                }
+            }
         }
         free(buf);
         buf = NULL;
@@ -275,17 +350,7 @@ ManglerAudio::input(void) {/*{{{*/
     }
     //fprintf(stderr, "done with input\n");
     v3_stop_audio();
-#ifdef HAVE_PULSE
-    if (mangler->settings->config.audioSubsystem == "pulse") {
-        pa_simple_free(pulse_stream);
-    }
-#endif
-#ifdef HAVE_ALSA
-    if (mangler->settings->config.audioSubsystem == "alsa") {
-        snd_pcm_drain(alsa_stream);
-        snd_pcm_close(alsa_stream);
-    }
-#endif
+    closeInput();
     outputStreamOpen = false;
     //throw Glib::Thread::Exit();
     return;
@@ -293,7 +358,7 @@ ManglerAudio::input(void) {/*{{{*/
 
 void
 ManglerAudio::output(void) {/*{{{*/
-    int ret, error;
+    int ret;
     ManglerPCM *queuedpcm;
 
     //fprintf(stderr, "playing audio\n");
@@ -316,13 +381,8 @@ ManglerAudio::output(void) {/*{{{*/
             // we were disconnected while playing the stream.  unref the queue
             // and flush the audio buffers
 #ifdef HAVE_PULSE
-            if (mangler->settings->config.audioSubsystem == "pulse") {
-                pa_simple_flush(pulse_stream, &error);
-            }
-#endif
-#ifdef HAVE_ALSA
-            if (mangler->settings->config.audioSubsystem == "alsa") {
-                snd_pcm_drain(alsa_stream);
+            if (pulse_stream) {
+                pa_simple_flush(pulse_stream, &pulse_error);
             }
 #endif
             g_async_queue_unref(pcm_queue);
@@ -337,8 +397,13 @@ ManglerAudio::output(void) {/*{{{*/
         }
 #ifdef HAVE_PULSE
         if (mangler->settings->config.audioSubsystem == "pulse") {
-            if ((ret = pa_simple_write(pulse_stream, queuedpcm->sample, queuedpcm->length, &error)) < 0) {
-                fprintf(stderr, __FILE__": pa_simple_write() failed: %s\n", pa_strerror(error));
+            if (!pulse_stream && !openOutput(rate)) { // reinitialize output stream for pulse
+                g_async_queue_unref(pcm_queue);
+                stop_output = true;
+                return;
+            }
+            if ((ret = pa_simple_write(pulse_stream, queuedpcm->sample, queuedpcm->length, &pulse_error)) < 0) {
+                fprintf(stderr, __FILE__": pa_simple_write() failed: %s\n", pa_strerror(pulse_error));
                 g_async_queue_unref(pcm_queue);
                 pa_simple_free(pulse_stream);
                 stop_output = true;
@@ -349,6 +414,11 @@ ManglerAudio::output(void) {/*{{{*/
 #endif
 #ifdef HAVE_ALSA
         if (mangler->settings->config.audioSubsystem == "alsa") {
+            if (!alsa_stream && !openOutput(rate)) { // reinitialize output stream for alsa
+                g_async_queue_unref(pcm_queue);
+                stop_output = true;
+                return;
+            }
             uint32_t buflen;
             uint32_t pcmlen = queuedpcm->length;
             uint8_t *pcmptr = queuedpcm->sample;
@@ -356,8 +426,8 @@ ManglerAudio::output(void) {/*{{{*/
                 if ((alsa_frames = snd_pcm_writei(alsa_stream, pcmptr, buflen / sizeof(int16_t))) < 0) {
                     if (alsa_frames == -EPIPE) {
                         snd_pcm_prepare(alsa_stream);
-                    } else if ((error = snd_pcm_recover(alsa_stream, alsa_frames, 0)) < 0) {
-                        fprintf(stderr, "snd_pcm_writei() failed: %s\n", snd_strerror(error));
+                    } else if ((alsa_error = snd_pcm_recover(alsa_stream, alsa_frames, 0)) < 0) {
+                        fprintf(stderr, "snd_pcm_writei() failed: %s\n", snd_strerror(alsa_error));
                         g_async_queue_unref(pcm_queue);
                         snd_pcm_close(alsa_stream);
                         stop_output = true;
@@ -371,20 +441,7 @@ ManglerAudio::output(void) {/*{{{*/
 #endif
         delete queuedpcm;
     }
-#ifdef HAVE_PULSE
-    if (mangler->settings->config.audioSubsystem == "pulse") {
-        if (pa_simple_drain(pulse_stream, &error) < 0) {
-            fprintf(stderr, __FILE__": pa_simple_drain() failed: %s\n", pa_strerror(error));
-        }
-        pa_simple_free(pulse_stream);
-    }
-#endif
-#ifdef HAVE_ALSA
-    if (mangler->settings->config.audioSubsystem == "alsa") {
-        snd_pcm_drain(alsa_stream);
-        snd_pcm_close(alsa_stream);
-    }
-#endif
+    closeOutput();
     stop_output = true;
     outputStreamOpen = true;
     //throw Glib::Thread::Exit();
@@ -583,7 +640,10 @@ ManglerAudio::playNotification_thread(Glib::ustring name) {/*{{{*/
                         NULL,
                         "Mangler",
                         PA_STREAM_PLAYBACK,
-                        (mangler->settings->config.notificationDeviceName == "Default" || mangler->settings->config.notificationDeviceName == "" ? NULL : (char *)mangler->settings->config.notificationDeviceName.c_str()),
+                        (mangler->settings->config.notificationDeviceName == "Default" || 
+                            mangler->settings->config.notificationDeviceName == "" 
+                            ? NULL 
+                            : (char *)mangler->settings->config.notificationDeviceName.c_str()),
                         "Notification Sound",
                         &pulse_samplespec,
                         NULL,
@@ -611,22 +671,22 @@ ManglerAudio::playNotification_thread(Glib::ustring name) {/*{{{*/
         snd_pcm_sframes_t alsa_ret;
         snd_pcm_t         *alsa_s;
         if ((alsa_error = snd_pcm_open(&alsa_s,
-                                  (mangler->settings->config.notificationDeviceName == "Default" || 
-                                      mangler->settings->config.notificationDeviceName == "" 
-                                      ? "default" 
-                                      : (char *)mangler->settings->config.notificationDeviceName.c_str()),
-                                  SND_PCM_STREAM_PLAYBACK,
-                                  0)) < 0) {
+                        (mangler->settings->config.notificationDeviceName == "Default" || 
+                            mangler->settings->config.notificationDeviceName == "" 
+                            ? "default" 
+                            : (char *)mangler->settings->config.notificationDeviceName.c_str()),
+                        SND_PCM_STREAM_PLAYBACK,
+                        0)) < 0) {
             fprintf(stderr, "snd_pcm_open() failed: %s\n", snd_strerror(alsa_error));
             return;
         }
-        if ((alsa_error = snd_pcm_set_params(alsa_s,                             // pcm handle
-                                        SND_PCM_FORMAT_S16_LE,         // format
-                                        SND_PCM_ACCESS_RW_INTERLEAVED, // access
-                                        1,                             // channels
-                                        44100,                         // rate
-                                        true,                          // soft_resample
-                                        150000)) < 0) {                // latency in usec (0.15 sec)
+        if ((alsa_error = snd_pcm_set_params(alsa_s,   // pcm handle
+                        SND_PCM_FORMAT_S16_LE,         // format
+                        SND_PCM_ACCESS_RW_INTERLEAVED, // access
+                        1,                             // channels
+                        44100,                         // rate
+                        true,                          // soft_resample
+                        150000)) < 0) {                // latency in usec (0.15 sec)
             fprintf(stderr, "snd_pcm_set_params() failed: %s\n", snd_strerror(alsa_error));
             snd_pcm_close(alsa_s);
             return;

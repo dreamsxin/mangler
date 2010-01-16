@@ -833,10 +833,6 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                         } else {
                             label->set_text("Unsupported Codec");
                         }
-                        //TODO: need to find out what is causing the time bans while still xmitting
-                        if (isTransmitting) {
-                            stopTransmit();
-                        }
                     } else {
                         if (ev->channel.id == v3_get_user_channel(v3_get_user_id())) {
                             // they're joining our channel
@@ -877,8 +873,12 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                     if (u->is_transmitting) {
                         channelTree->setUserIcon(ev->user.id, "yellow");
                     }
-                    // if we changed channels while other users in previous channel were xmitting, set icons
                     if (ev->user.id == v3_get_user_id()) {
+                        // if we are still xmitting, set icon
+                        if (isTransmitting) {
+                            channelTree->setUserIcon(ev->user.id, "green");
+                        }
+                        // if we changed channels while other users in previous channel were xmitting, set icons
                         //fprintf(stderr, "prev chan id: %i | new chan id: %i\n", ev->channel.prev_id, ev->channel.id);
                         //TODO: implement this
                     }
