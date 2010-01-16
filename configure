@@ -895,8 +895,8 @@ enable_libtool_lock
 enable_glibtest
 enable_gsm
 enable_speex
-enable_pulseaudio
-enable_alsa
+with_pulseaudio
+with_alsa
 '
       ac_precious_vars='build_alias
 host_alias
@@ -1555,8 +1555,6 @@ Optional Features:
   --disable-glibtest      do not try to compile and run a test GLIB program
   --disable-gsm           disable GSM codec support
   --disable-speex         disable Speex codec support
-  --disable-pulseaudio    disable PulseAudio support
-  --disable-alsa          disable ALSA support
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -1564,6 +1562,8 @@ Optional Packages:
   --with-pic              try to use only PIC/non-PIC objects [default=use
                           both]
   --with-gnu-ld           assume the C compiler uses GNU ld [default=no]
+  --without-pulseaudio    disable support for PulseAudio
+  --without-alsa          disable support for ALSA
 
 Some influential environment variables:
   CXX         C++ compiler command
@@ -15823,37 +15823,25 @@ fi
 
 
 
-# Check whether --enable-pulseaudio was given.
-if test "${enable_pulseaudio+set}" = set; then :
-  enableval=$enable_pulseaudio; disable_pulse=yes
-fi
 
-# Check whether --enable-alsa was given.
-if test "${enable_alsa+set}" = set; then :
-  enableval=$enable_alsa; enable_alsa=yes
-fi
-
-
-pulseaudio=yes
-alsa=yes
-if test -z "$enable_pulseaudio" = "no" ] ; then
-	pulseaudio=no
-fi
-if test -z "$enable_alsa" = "no" ] ; then
-	alsa=no
+# Check whether --with-pulseaudio was given.
+if test "${with_pulseaudio+set}" = set; then :
+  withval=$with_pulseaudio;
+else
+  with_pulseaudio=yes
 fi
 
 
-if test "$enable_pulseaudio" = "no" -a "$enable_alsa" = "no" ; then
-	echo "**************************************************************************"
-	echo "*** WARNING: You have disabled support for both PulseAudio and ALSA.   ***"
-	echo "***          You can compile and use Mangler without an audio          ***"
-	echo "***          subsystem, but you will not have any sound, which more    ***"
-	echo "***          more or less makes the program useless.                   ***"
-	echo "**************************************************************************"
+
+# Check whether --with-alsa was given.
+if test "${with_alsa+set}" = set; then :
+  withval=$with_alsa;
+else
+  with_alsa=yes
 fi
 
-if test "$pulseaudio" = "yes"; then :
+
+if test "x$with_pulseaudio" != xno; then :
 
 
 pkg_failed=no
@@ -15946,7 +15934,7 @@ fi
 
 
 fi
-if test "$alsa" = "yes"; then :
+if test "x$with_alsa" != xno; then :
 
 
 pkg_failed=no
@@ -16570,6 +16558,16 @@ done
 
 
 ac_config_files="$ac_config_files src/Makefile Makefile libventrilo3/Makefile"
+
+
+if test "x$with_pulseaudio" = xno -a "x$with_alsa" = "xno" ; then
+	echo "**************************************************************************"
+	echo "*** WARNING: You have disabled support for both PulseAudio and ALSA.   ***"
+	echo "***          You can compile and use Mangler without an audio          ***"
+	echo "***          subsystem, but you will not have any sound, which more    ***"
+	echo "***          more or less makes the program useless.                   ***"
+	echo "**************************************************************************"
+fi
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure

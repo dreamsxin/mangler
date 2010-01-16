@@ -75,30 +75,18 @@ PKG_CHECK_MODULES(gtkmm, gtkmm-2.4 >= 1.3.3)
 AC_SUBST(gtkmm_CFLAGS)
 AC_SUBST(gtkmm_LIBS)
 
-AC_ARG_ENABLE(pulseaudio, [  --disable-pulseaudio    disable PulseAudio support], [disable_pulse=yes])
-AC_ARG_ENABLE(alsa,       [  --disable-alsa          disable ALSA support], [enable_alsa=yes])
+AC_ARG_WITH([pulseaudio],
+	[AS_HELP_STRING([--without-pulseaudio], [disable support for PulseAudio])],
+	[],
+	[with_pulseaudio=yes])
 
-pulseaudio=yes
-alsa=yes
-if test -z "$enable_pulseaudio" = "no" ] ; then
-	pulseaudio=no
-fi
-if test -z "$enable_alsa" = "no" ] ; then
-	alsa=no
-fi
-
-
-if test "$enable_pulseaudio" = "no" -a "$enable_alsa" = "no" ; then
-	echo "**************************************************************************"
-	echo "*** WARNING: You have disabled support for both PulseAudio and ALSA.   ***"
-	echo "***          You can compile and use Mangler without an audio          ***"
-	echo "***          subsystem, but you will not have any sound, which more    ***"
-	echo "***          more or less makes the program useless.                   ***"
-	echo "**************************************************************************"
-fi
+AC_ARG_WITH([alsa],
+	[AS_HELP_STRING([--without-alsa], [disable support for ALSA])],
+	[],
+	[with_alsa=yes])
 
 AS_IF(
-	[test "$pulseaudio" = "yes"],
+	[test "x$with_pulseaudio" != xno],
 	[
 		PKG_CHECK_MODULES(pulse, libpulse-simple >= 0.9.14, [AC_DEFINE(HAVE_PULSE, 1, [have pulse audio])], [
 			echo "**************************************************************************"
@@ -113,7 +101,7 @@ AS_IF(
 	],[]
 )
 AS_IF(
-	[test "$alsa" = "yes"],
+	[test "x$with_alsa" != xno],
 	[
 		PKG_CHECK_MODULES(alsa, alsa >= 1.0.0, [AC_DEFINE(HAVE_ALSA, 1, [have alsa])], [
 			echo "**************************************************************************"
@@ -152,4 +140,14 @@ AC_CHECK_FUNCS([dup2 gettimeofday inet_ntoa memset select socket strchr strdup s
 AC_CONFIG_FILES([src/Makefile
                  Makefile
                  libventrilo3/Makefile])
+
+if test "x$with_pulseaudio" = xno -a "x$with_alsa" = "xno" ; then
+	echo "**************************************************************************"
+	echo "*** WARNING: You have disabled support for both PulseAudio and ALSA.   ***"
+	echo "***          You can compile and use Mangler without an audio          ***"
+	echo "***          subsystem, but you will not have any sound, which more    ***"
+	echo "***          more or less makes the program useless.                   ***"
+	echo "**************************************************************************"
+fi
+
 AC_OUTPUT
