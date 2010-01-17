@@ -1102,7 +1102,7 @@ ManglerChannelTree::on_sort_compare(const Gtk::TreeModel::iterator& a_, const Gt
 void
 ManglerChannelTree::userSettingsWindow(Gtk::TreeModel::Row row) {
 
-    int id = row ;
+    int id = row[channelRecord.id];
     // double clicked a user
     if (id == v3_get_user_id()) {
         // clicked on ourself
