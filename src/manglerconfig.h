@@ -1,12 +1,12 @@
 /*
  * vim: softtabstop=4 shiftwidth=4 cindent foldmethod=marker expandtab
  *
- * $LastChangedDate: 2009-10-10 12:38:51 -0700 (Sat, 10 Oct 2009) $
- * $Revision: 63 $
- * $LastChangedBy: ekilfoil $
- * $URL: http://svn.mangler.org/mangler/trunk/src/manglersettings.h $
+ * $LastChangedDate$
+ * $Revision$
+ * $LastChangedBy$
+ * $URL$
  *
- * Copyright 2009 Eric Kilfoil 
+ * Copyright 2009-2010 Eric Kilfoil 
  *
  * This file is part of Mangler.
  *
@@ -44,9 +44,11 @@ class ManglerServerConfig/*{{{*/
         bool                  acceptPages;
         bool                  acceptPrivateChat;
         bool                  allowRecording;
+        bool                  persistentConnection;
         bool                  persistentComments;
         uint32_t              motdhash;
-        std::map <Glib::ustring, uint8_t> uservolume;
+        std::map <Glib::ustring, uint8_t> uservolumes;
+        std::map <uint16_t, Glib::ustring> channelpass;
 
         ManglerServerConfig() {
             name = "";
@@ -63,6 +65,7 @@ class ManglerServerConfig/*{{{*/
             acceptPages = true;
             acceptPrivateChat = true;
             allowRecording = true;
+            persistentConnection = true;
             persistentComments = true;
         }
 };/*}}}*/
@@ -70,6 +73,7 @@ class ManglerConfig {
 	public:
 		Glib::Mutex     mutex;
 		uint32_t        lv3_debuglevel;
+		uint8_t         masterVolumeLevel;
 		bool            PushToTalkKeyEnabled;
                 Glib::ustring   PushToTalkKeyValue;
                 std::vector<int>     PushToTalkXKeyCodes;
@@ -82,6 +86,7 @@ class ManglerConfig {
                 Glib::ustring   outputDeviceName;
                 Glib::ustring   notificationDeviceName;
                 Glib::ustring   mouseDeviceName;
+                Glib::ustring   audioSubsystem;
                 bool            notificationLoginLogout;
                 bool            notificationChannelEnterLeave;
                 bool            notificationTransmitStartStop;
@@ -90,6 +95,8 @@ class ManglerConfig {
                 uint32_t        windowHeight;
                 bool            buttonsHidden;
                 bool            serverInfoHidden;
+                bool            guestFlagHidden;
+                bool            chatTimestamps;
 
 		ManglerServerConfig   qc_lastserver;
 		std::vector<ManglerServerConfig *> serverlist;
@@ -98,6 +105,8 @@ class ManglerConfig {
 		ManglerConfig();
 		bool save();
                 Glib::ustring get(Glib::ustring cfgname);
+                std::map <Glib::ustring, uint8_t> get_user_volumes(Glib::ustring serverbase);
+                std::map <uint16_t, Glib::ustring> get_channel_passwords(Glib::ustring serverbase);
                 bool put(Glib::ustring name, bool value);
                 bool put(Glib::ustring name, Glib::ustring value);
                 bool put(Glib::ustring name, uint32_t value);

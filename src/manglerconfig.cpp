@@ -1,12 +1,12 @@
 /*
  * vim: softtabstop=4 shiftwidth=4 cindent foldmethod=marker expandtab
  *
- * $LastChangedDate: 2009-10-10 12:38:51 -0700 (Sat, 10 Oct 2009) $
- * $Revision: 63 $
- * $LastChangedBy: ekilfoil $
- * $URL: http://svn.mangler.org/mangler/trunk/src/manglersettings.h $
+ * $LastChangedDate$
+ * $Revision$
+ * $LastChangedBy$
+ * $URL$
  *
- * Copyright 2009 Eric Kilfoil 
+ * Copyright 2009-2010 Eric Kilfoil 
  *
  * This file is part of Mangler.
  *
@@ -31,14 +31,18 @@
 #include "mangler.h"
 #include "manglerconfig.h"
 #include <gdk/gdkx.h>
+#include "config.h"
 
 
 ManglerConfig::ManglerConfig() {/*{{{*/
     lv3_debuglevel                  = 0;
+    masterVolumeLevel               = 79;
     windowWidth = 0;
     windowHeight = 0;
     buttonsHidden = false;
     serverInfoHidden = false;
+    guestFlagHidden = false;
+    chatTimestamps = false;
     PushToTalkKeyEnabled            = false;
     PushToTalkKeyValue              = "";
     PushToTalkMouseEnabled          = false;
@@ -49,6 +53,11 @@ ManglerConfig::ManglerConfig() {/*{{{*/
     notificationChannelEnterLeave   = true;
     notificationTransmitStartStop   = true;
     mouseDeviceName                 = "";
+#ifdef HAVE_PULSE
+    audioSubsystem                  = "pulse";
+#elif HAVE_ALSA
+    audioSubsystem                  = "alsa";
+#endif
     ManglerServerConfig             qc_lastserver;
     std::vector<ManglerServerConfig> serverlist;
     load();
@@ -76,6 +85,7 @@ bool ManglerConfig::save() {/*{{{*/
     put("notification.channelEnterLeave", notificationChannelEnterLeave);
     put("notification.transmitStartStop", notificationTransmitStartStop);
     put("mouseDeviceName", mouseDeviceName);
+    put("audioSubsystem", audioSubsystem);
     put("qc_lastserver.hostname", qc_lastserver.hostname);
     put("qc_lastserver.port", qc_lastserver.port);
     put("qc_lastserver.username", qc_lastserver.username);
@@ -84,10 +94,13 @@ bool ManglerConfig::save() {/*{{{*/
     put("qc_lastserver.comment", "");
     put("lastConnectedServerId", lastConnectedServerId);
     put("lv3_debuglevel", lv3_debuglevel);
+    put("masterVolumeLevel", masterVolumeLevel);
     put("window.width", windowWidth);
     put("window.height", windowHeight);
     put("window.buttonsHidden", buttonsHidden);
     put("window.serverInfoHidden", serverInfoHidden);
+    put("window.guestFlagHidden", guestFlagHidden);
+    put("chatTimestamps", chatTimestamps);
 
     for (uint32_t ctr = 0; ctr < serverlist.size(); ctr++) {
         put(ctr, *serverlist[ctr]);
@@ -145,8 +158,22 @@ bool ManglerConfig::put(uint16_t id, ManglerServerConfig server) {/*{{{*/
     snprintf(name, 1023, "serverlist.%d.accept_pages",         id); if (!put(name, server.acceptPages          ))  return false;
     snprintf(name, 1023, "serverlist.%d.accept_privchat",      id); if (!put(name, server.acceptPrivateChat    ))  return false;
     snprintf(name, 1023, "serverlist.%d.allow_recording",      id); if (!put(name, server.allowRecording       ))  return false;
+    snprintf(name, 1023, "serverlist.%d.persistent_connection",id); if (!put(name, server.persistentConnection ))  return false;
     snprintf(name, 1023, "serverlist.%d.persistent_comments",  id); if (!put(name, server.persistentComments   ))  return false;
     snprintf(name, 1023, "serverlist.%d.motdhash",             id); if (!put(name, server.motdhash             ))  return false;
+
+    for (std::map<Glib::ustring,uint8_t>::iterator it = server.uservolumes.begin(); it != server.uservolumes.end(); it++) {
+        snprintf(name, 1023, "serverlist.%d.volume.%s", id, (char *)(*it).first.c_str());
+        if (!put(name, (*it).second)) {
+            return false;
+        }
+    }
+    for (std::map<uint16_t, Glib::ustring>::iterator it = server.channelpass.begin(); it != server.channelpass.end(); it++) {
+        snprintf(name, 1023, "serverlist.%d.channelpass.%d", id, (*it).first);
+        if (!put(name, (*it).second)) {
+            return false;
+        }
+    }
     return true;
 }/*}}}*/
 Glib::ustring ManglerConfig::get(Glib::ustring cfgname) {/*{{{*/
@@ -161,6 +188,10 @@ Glib::ustring ManglerConfig::get(Glib::ustring cfgname) {/*{{{*/
     cfgfilename += "/.manglerrc";
     // check to see if the file exists
     if (stat(cfgfilename.c_str(), &cfgstat)) {
+        mutex.unlock();
+        save();
+        mutex.lock();
+        /*
         // if not create it
         if (! (this->cfgstream = fopen(cfgfilename.c_str(), "w"))) {
             // if creation fails, print error
@@ -168,11 +199,11 @@ Glib::ustring ManglerConfig::get(Glib::ustring cfgname) {/*{{{*/
                 fprintf(stderr, "could not create settings file: %s\n", (char *)cfgfilename.c_str());
                 notified = true;
             }
-            mutex.unlock();
             return "";
         } else {
             fclose(this->cfgstream);
         }
+        */
     }
     if (! (this->cfgstream = fopen(cfgfilename.c_str(), "r"))) {
         if (!notified) {
@@ -214,6 +245,138 @@ Glib::ustring ManglerConfig::get(Glib::ustring cfgname) {/*{{{*/
     mutex.unlock();
     return "";
 }/*}}}*/
+std::map <Glib::ustring, uint8_t> ManglerConfig::get_user_volumes(Glib::ustring serverbase) {/*{{{*/
+    // We're going to do this in one in C too...
+    struct stat cfgstat;
+    static bool notified = false;
+    char buf[1024];
+    int ctr = 0;
+    std::map <Glib::ustring, uint8_t> volumes;
+
+    mutex.lock();
+    Glib::ustring     cfgfilename = getenv("HOME");
+    cfgfilename += "/.manglerrc";
+    // check to see if the file exists
+    if (stat(cfgfilename.c_str(), &cfgstat)) {
+        // if not create it
+        if (! (this->cfgstream = fopen(cfgfilename.c_str(), "w"))) {
+            // if creation fails, print error
+            if (!notified) {
+                fprintf(stderr, "could not create settings file: %s\n", (char *)cfgfilename.c_str());
+                notified = true;
+            }
+            mutex.unlock();
+            return volumes;
+        } else {
+            fclose(this->cfgstream);
+        }
+    }
+    if (! (this->cfgstream = fopen(cfgfilename.c_str(), "r"))) {
+        if (!notified) {
+            fprintf(stderr, "could not open settings file for reading: %s\n", (char *)cfgfilename.c_str());
+            notified = true;
+        }
+        mutex.unlock();
+    }
+
+    while (! feof(this->cfgstream)) {
+        char *name, *value;
+        if (! fgets(buf, 1024, this->cfgstream)) {
+            fclose(this->cfgstream);
+            mutex.unlock();
+            return volumes;
+        }
+        ctr++;
+        if (buf[strlen(buf)-1] != '\n') {
+            fprintf(stderr, "error in settings file: line %d is longer than 1024 characters\n", ctr);
+            fclose(this->cfgstream);
+            mutex.unlock();
+            return volumes;
+        }
+        buf[strlen(buf)-1] = '\0';
+        name = buf;
+        if ((value = strchr(buf, '=')) == NULL) {
+            continue;
+        }
+        *value = '\0';
+        value++;
+        // see if our string is for the requested server index, get the
+        // username, and populate the map
+        Glib::ustring volbase = serverbase + "volume.";
+        if (strncmp((char *)volbase.c_str(), name, strlen((char *)volbase.c_str())) == 0) {
+            //fprintf(stderr, "volume for user: '%s' = '%s'\n", name+strlen((char *)volbase.c_str()), value);
+            volumes[name+strlen((char *)volbase.c_str())] = atoi(value);
+        }
+    }
+    fclose(this->cfgstream);
+    mutex.unlock();
+    return volumes;
+}/*}}}*/
+std::map <uint16_t, Glib::ustring> ManglerConfig::get_channel_passwords(Glib::ustring serverbase) {/*{{{*/
+    // We're going to do this in one in C too...
+    struct stat cfgstat;
+    static bool notified = false;
+    char buf[1024];
+    int ctr = 0;
+    std::map <uint16_t, Glib::ustring> channelpass;
+
+    mutex.lock();
+    Glib::ustring     cfgfilename = getenv("HOME");
+    cfgfilename += "/.manglerrc";
+    // check to see if the file exists
+    if (stat(cfgfilename.c_str(), &cfgstat)) {
+        // if not create it
+        if (! (this->cfgstream = fopen(cfgfilename.c_str(), "w"))) {
+            // if creation fails, print error
+            if (!notified) {
+                fprintf(stderr, "could not create settings file: %s\n", (char *)cfgfilename.c_str());
+                notified = true;
+            }
+            mutex.unlock();
+            return channelpass;
+        } else {
+            fclose(this->cfgstream);
+        }
+    }
+    if (! (this->cfgstream = fopen(cfgfilename.c_str(), "r"))) {
+        if (!notified) {
+            fprintf(stderr, "could not open settings file for reading: %s\n", (char *)cfgfilename.c_str());
+            notified = true;
+        }
+        mutex.unlock();
+    }
+
+    while (! feof(this->cfgstream)) {
+        char *name, *value;
+        if (! fgets(buf, 1024, this->cfgstream)) {
+            fclose(this->cfgstream);
+            mutex.unlock();
+            return channelpass;
+        }
+        ctr++;
+        if (buf[strlen(buf)-1] != '\n') {
+            fprintf(stderr, "error in settings file: line %d is longer than 1024 characters\n", ctr);
+            fclose(this->cfgstream);
+            mutex.unlock();
+            return channelpass;
+        }
+        buf[strlen(buf)-1] = '\0';
+        name = buf;
+        if ((value = strchr(buf, '=')) == NULL) {
+            continue;
+        }
+        *value = '\0';
+        value++;
+        Glib::ustring chanpassbase = serverbase + "channelpass.";
+        if (strncmp((char *)chanpassbase.c_str(), name, strlen((char *)chanpassbase.c_str())) == 0) {
+            //fprintf(stderr, "channel password for %d: '%s'\n", atoi(name+strlen((char *)chanpassbase.c_str())), value);
+            channelpass[atoi(name+strlen((char *)chanpassbase.c_str()))] = value;
+        }
+    }
+    fclose(this->cfgstream);
+    mutex.unlock();
+    return channelpass;
+}/*}}}*/
 void ManglerConfig::load() {/*{{{*/
     PushToTalkKeyEnabled          = get("PushToTalkKeyEnabled") == "1" ? true : false; // default false
     PushToTalkKeyValue            = get("PushToTalkKeyValue");
@@ -221,7 +384,7 @@ void ManglerConfig::load() {/*{{{*/
     PushToTalkMouseEnabled        = get("PushToTalkMouseEnabled") == "1" ? true : false; // default false
     PushToTalkMouseValue          = get("PushToTalkMouseValue");
     if (PushToTalkMouseValue.length() > 6) {
-        PushToTalkMouseValueInt = atoi(PushToTalkMouseValue.substr(6).c_str());
+        PushToTalkMouseValueInt   = atoi(PushToTalkMouseValue.substr(6).c_str());
     }
     AudioIntegrationEnabled       = get("AudioIntegrationEnabled") == "1" ? true : false; // default false
     AudioIntegrationPlayer        = get("AudioIntegrationPlayer");
@@ -232,6 +395,9 @@ void ManglerConfig::load() {/*{{{*/
     notificationChannelEnterLeave = get("notification.channelEnterLeave") == "0" ? false : true; // default true
     notificationTransmitStartStop = get("notification.transmitStartStop") == "0" ? false : true; // default true
     mouseDeviceName               = get("mouseDeviceName");
+    if (get("audioSubsystem").length()) {
+        audioSubsystem            = get("audioSubsystem");
+    }
     qc_lastserver.hostname        = get("qc_lastserver.hostname");
     qc_lastserver.port            = get("qc_lastserver.port");
     qc_lastserver.username        = get("qc_lastserver.username");
@@ -239,10 +405,15 @@ void ManglerConfig::load() {/*{{{*/
     qc_lastserver.phonetic        = get("qc_lastserver.phonetic");
     qc_lastserver.comment         = get("qc_lastserver.comment");
     lv3_debuglevel                = atoi(get("lv3_debuglevel").c_str());
+    if (get("masterVolumeLevel").length()) {
+        masterVolumeLevel         = atoi(get("masterVolumeLevel").c_str());
+    }
     windowWidth                   = atoi(get("window.width").c_str());
     windowHeight                  = atoi(get("window.height").c_str());
     buttonsHidden                 = get("window.buttonsHidden") == "1" ? true : false; // default false
-    serverInfoHidden                 = get("window.serverInfoHidden") == "1" ? true : false; // default false
+    serverInfoHidden              = get("window.serverInfoHidden") == "1" ? true : false; // default false
+    guestFlagHidden               = get("window.guestFlagHidden") == "1" ? true : false; // default false
+    chatTimestamps                = get("chatTimestamps") == "1" ? true : false; // default false
     lastConnectedServerId         = atoi(get("lastConnectedServerId").c_str());
     for (uint32_t ctr = 0; ctr < serverlist.size(); ctr++) {
         delete serverlist[ctr];
@@ -270,8 +441,11 @@ void ManglerConfig::load() {/*{{{*/
             server->acceptPages = get(base + "accept_pages") == "0" ? false : true;
             server->acceptPrivateChat = get(base + "accept_privchat") == "0" ? false : true;
             server->allowRecording = get(base + "allow_recording") == "0" ? false : true;
+            server->persistentConnection = get(base + "persistent_connection") == "0" ? false : true;
             server->persistentComments = get(base + "persistent_comments") == "0" ? false : true;
             server->motdhash = atoi(get(base + "motdhash").c_str());
+            server->uservolumes = get_user_volumes(base);
+            server->channelpass = get_channel_passwords(base);
             serverlist.push_back(server);
         }
     }

@@ -6,7 +6,7 @@
  * $LastChangedBy$
  * $URL$
  *
- * Copyright 2009 Eric Kilfoil 
+ * Copyright 2009-2010 Eric Kilfoil 
  *
  * This file is part of Mangler.
  *
@@ -27,6 +27,7 @@
 #ifndef _LIBVENTRILO3_H
 #define _LIBVENTRILO3_H
 
+#include "config.h"
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -136,6 +137,23 @@ char *_v3_phantom_errors[] = {
     "Insufficient resources",
     "Banned from channel",
     "Insufficient access rights",
+};
+
+char *_v3_permissions_errors[] = {
+    "Specified ID is no longer valid.",
+    "Duplicate name.",
+    "Server reported an error.",
+    "All user accounts must have a valid password.",
+    "Missing required fields.",
+    "Not allowed to delete Guest account.",
+    "The specified login name is not allowed.",
+    "The specified login name contains characters that are not allowed.",
+    "Insufficient access rights to complete the request.",
+    NULL,
+    "Specified alternate ID is not valid.",
+    "Specified new owner does not have 'Add Users' rights.",
+    "The user account database is full. You must delete an existing account before you can add a new one.",
+    "The Guest account can not be locked without having at least one other account defined and is not locked it self. Otherwise, you would be locking everyone out of the server.",
 };
 
 char *_v3_bitmasks[] = {
@@ -312,7 +330,7 @@ uint32_t _v3_hash_table[] =
  * Global Variables
  */
 
-_v3_server  v3_server  = { 0, 0, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, -1, { 0, 0 }, NULL, NULL, 0, 0, { "", 0, 0 }, { "", 0, 0 }, NULL, NULL, {0, 0},  0, 0 };
+_v3_server  v3_server  = { 0, 0, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, -1, { 0, 0 }, NULL, NULL, 0, 0, { "", 0, 0 }, { "", 0, 0 }, NULL, NULL, {0, 0},  0, 0, 0, 0};
 _v3_luser   v3_luser   = { -1, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, 0, {  } };
 
 v3_channel              *v3_channel_list = NULL;
@@ -321,6 +339,11 @@ int                     _v3_channel_count;
 v3_user                 *v3_user_list = NULL;
 int                     _v3_user_count;
 
+v3_rank                 *v3_rank_list = NULL;
+int                     _v3_rank_count;
+
+v3_account              *v3_account_list = NULL;
+int                     _v3_account_count;
 
 char                    _v3_error_text[256];
 char                    _v3_status_text[256];
@@ -330,6 +353,8 @@ uint32_t                _v3_user_loggedin = 0;
 
 pthread_mutex_t         *userlist_mutex = NULL;
 pthread_mutex_t         *channellist_mutex = NULL;
+pthread_mutex_t         *ranklist_mutex = NULL;
+pthread_mutex_t         *accountlist_mutex = NULL;
 pthread_mutex_t         *server_mutex = NULL;
 pthread_mutex_t         *luser_mutex = NULL;
 pthread_mutex_t         *sendq_mutex = NULL;
@@ -340,10 +365,13 @@ pthread_cond_t          *eventq_cond = NULL;
 v3_event                *_v3_eventq = NULL;
 
 v3_codec v3_codecs[] = {
+#if HAVE_GSM
     { 0, 0, 640, 8000, -1, "GSM 6.10 8kHz" },
     { 0, 1, 640, 11025, -1, "GSM 6.10 11kHz" },
     { 0, 2, 640, 22050, -1, "GSM 6.10 22kHz" },
     { 0, 3, 640, 44100, -1, "GSM 6.10 44kHz" },
+#endif
+#if HAVE_SPEEX
     { 3, 0, 320, 8000, 0, "Speex 8kHz Quality 0" },
     { 3, 1, 320, 8000, 1, "Speex 8kHz Quality 1" },
     { 3, 2, 320, 8000, 2, "Speex 8kHz Quality 2" },
@@ -377,17 +405,21 @@ v3_codec v3_codecs[] = {
     { 3, 30, 1280, 32000, 8, "Speex 32kHz Quality 8" },
     { 3, 31, 1280, 32000, 9, "Speex 32kHz Quality 9" },
     { 3, 32, 1280, 32000, 10, "Speex 32kHz Quality 10" },
-    { -1, -1, -1, -1, -1, "" },
+#endif
+    { -1, -1, -1, -1, -1, "Unsupported Codec" },
 };
 
 typedef struct __v3_decoders {
+#if HAVE_GSM
     gsm gsm;
+#endif
     void *speex;
 } _v3_decoders;
 
 _v3_decoders v3_decoders[65535];
 
 uint8_t _v3_user_volumes[65535];
+uint8_t _v3_master_volume = 79;
 
 
 /*
@@ -426,13 +458,27 @@ int                     _v3_recv_enc_msg(char *data);
 int                     _v3_process_message(_v3_net_message *msg);
 int                     _v3_destroy_packet(_v3_net_message *msg);
 int                     _v3_update_channel(v3_channel *channel);
+void                    _v3_copy_channel(v3_channel *dest, v3_channel *src);
 int                     _v3_update_user(v3_user *user);
+void                    _v3_copy_user(v3_user *dest, v3_user *src);
+v3_user *               _v3_get_user(uint16_t id);
+int                     _v3_update_rank(v3_rank *rank);
+void                    _v3_copy_rank(v3_rank *dest, v3_rank *src);
+int                     _v3_update_account(v3_account *account);
+int                     _v3_remove_account(uint16_t id);
+void                    _v3_copy_account(v3_account *dest, v3_account *src);
 void                    _v3_destroy_userlist(void);
 void                    _v3_destroy_channellist(void);
+void                    _v3_destroy_ranklist(void);
+void                    _v3_destroy_accountlist(void);
 void                    _v3_lock_userlist(void);
 void                    _v3_unlock_userlist(void);
 void                    _v3_lock_channellist(void);
 void                    _v3_unlock_channellist(void);
+void                    _v3_lock_ranklist(void);
+void                    _v3_unlock_ranklist(void);
+void                    _v3_lock_accountlist(void);
+void                    _v3_unlock_accountlist(void);
 void                    _v3_lock_luser(void);
 void                    _v3_unlock_luser(void);
 void                    _v3_lock_sendq(void);

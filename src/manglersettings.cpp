@@ -6,7 +6,7 @@
  * $LastChangedBy$
  * $URL$
  *
- * Copyright 2009 Eric Kilfoil 
+ * Copyright 2009-2010 Eric Kilfoil 
  *
  * This file is part of Mangler.
  *
@@ -75,6 +75,12 @@ ManglerSettings::ManglerSettings(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
     audioPlayerComboBox->pack_start(audioPlayerColumns.name);
     audioPlayerComboBox->set_active(audioPlayerNoneRow);
 
+    builder->get_widget("audioSubsystemComboBox", audioSubsystemComboBox);
+    audioSubsystemTreeModel = Gtk::ListStore::create(audioSubsystemColumns);
+    audioSubsystemComboBox->set_model(audioSubsystemTreeModel);
+    audioSubsystemComboBox->pack_start(audioSubsystemColumns.name);
+    audioSubsystemComboBox->signal_changed().connect(sigc::mem_fun(this, &ManglerSettings::audioSubsystemComboBox_changed_cb));
+
     builder->get_widget("inputDeviceComboBox", inputDeviceComboBox);
     inputDeviceTreeModel = Gtk::ListStore::create(inputColumns);
     inputDeviceComboBox->set_model(inputDeviceTreeModel);
@@ -95,6 +101,38 @@ ManglerSettings::ManglerSettings(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
     mouseDeviceTreeModel = Gtk::ListStore::create(mouseColumns);
     mouseDeviceComboBox->set_model(mouseDeviceTreeModel);
     mouseDeviceComboBox->pack_start(mouseColumns.name);
+
+    // audio subsystem combo box
+    audioSubsystemTreeModel->clear();
+    Gtk::TreeModel::Row audioSubsystemRow;
+#ifdef HAVE_PULSE
+    audioSubsystemRow = *(audioSubsystemTreeModel->append());
+    audioSubsystemRow[audioSubsystemColumns.id] = "pulse";
+    audioSubsystemRow[audioSubsystemColumns.name] = "PulseAudio";
+    if (config.audioSubsystem == "pulse") {
+        audioSubsystemComboBox->set_active(audioSubsystemRow);
+    }
+#endif
+#ifdef HAVE_ALSA
+    audioSubsystemRow = *(audioSubsystemTreeModel->append());
+    audioSubsystemRow[audioSubsystemColumns.id] = "alsa";
+    audioSubsystemRow[audioSubsystemColumns.name] = "ALSA";
+    if (config.audioSubsystem == "alsa") {
+        audioSubsystemComboBox->set_active(audioSubsystemRow);
+    }
+#endif
+
+
+    volumeAdjustment = new Gtk::Adjustment(79, 0, 158, 1, 10, 10);
+    volumehscale = new Gtk::HScale(*volumeAdjustment);
+    volumehscale->add_mark(148, Gtk::POS_LEFT, "200%");
+    volumehscale->add_mark(79, Gtk::POS_LEFT, "100%");
+    volumehscale->add_mark(0, Gtk::POS_LEFT, "0%");
+    volumehscale->set_inverted(false);
+    volumehscale->set_draw_value(false);
+    builder->get_widget("masterVolumeVbox", vbox);
+    vbox->pack_start(*volumehscale);
+    volumehscale->show();
 }/*}}}*/
 void ManglerSettings::applySettings(void) {/*{{{*/
     Gtk::TreeModel::iterator iter;
@@ -155,6 +193,10 @@ void ManglerSettings::applySettings(void) {/*{{{*/
         Gtk::TreeModel::Row row = *iter;
         config.notificationDeviceName = row[notificationColumns.name];
     }
+
+    // Master Volume
+    config.masterVolumeLevel = volumeAdjustment->get_value();
+    v3_set_volume_master(config.masterVolumeLevel);
 
     // Notification sounds
     builder->get_widget("notificationLoginLogoutCheckButton", checkbutton);
@@ -288,6 +330,7 @@ void ManglerSettings::initSettings(void) {/*{{{*/
     builder->get_widget("debugEncryptedPacket", checkbutton);
     checkbutton->set_active(config.lv3_debuglevel & V3_DEBUG_PACKET_ENCRYPTED ? 1 : 0);
 
+    volumeAdjustment->set_value(config.masterVolumeLevel);
 }/*}}}*/
 
 // Settings Window Callbacks
@@ -305,74 +348,7 @@ void ManglerSettings::settingsWindow_show_cb(void) {/*{{{*/
     settingsEnablePTTKeyCheckButton_toggled_cb();
     settingsEnablePTTMouseCheckButton_toggled_cb();
 
-    // Clear the input device store and rebuild it from the audioControl vector
-    inputDeviceTreeModel->clear();
-    row = *(inputDeviceTreeModel->append());
-    row[inputColumns.id] = -1;
-    row[inputColumns.name] = "Default";
-    row[inputColumns.description] = "Default";
-    int inputSelection = 0;
-    int inputCtr = 1;
-    for (
-            std::vector<ManglerAudioDevice*>::iterator i = mangler->audioControl->inputDevices.begin();
-            i <  mangler->audioControl->inputDevices.end();
-            i++, inputCtr++) {
-        Gtk::TreeModel::Row row = *(inputDeviceTreeModel->append());
-        row[inputColumns.id] = (*i)->id;
-        row[inputColumns.name] = (*i)->name;
-        row[inputColumns.description] = (*i)->description;
-        if (config.inputDeviceName == (*i)->name) {
-            inputSelection = inputCtr;
-        }
-    }
-    // TODO: get the currently selected item from settings object and select it
-    inputDeviceComboBox->set_active(inputSelection);
-
-    // Clear the output device store and rebuild it from the audioControl vector
-    outputDeviceTreeModel->clear();
-    row = *(outputDeviceTreeModel->append());
-    row[outputColumns.id] = -1;
-    row[outputColumns.name] = "Default";
-    row[outputColumns.description] = "Default";
-    int outputSelection = 0;
-    int outputCtr = 1;
-    for (
-            std::vector<ManglerAudioDevice*>::iterator i = mangler->audioControl->outputDevices.begin();
-            i <  mangler->audioControl->outputDevices.end();
-            i++, outputCtr++) {
-        Gtk::TreeModel::Row row = *(outputDeviceTreeModel->append());
-        row[outputColumns.id] = (*i)->id;
-        row[outputColumns.name] = (*i)->name;
-        row[outputColumns.description] = (*i)->description;
-        if (config.outputDeviceName == (*i)->name) {
-            outputSelection = outputCtr;
-        }
-    }
-    // TODO: get the currently selected item from settings object and select it
-    outputDeviceComboBox->set_active(outputSelection);
-
-    // Clear the notification device store and rebuild it from the audioControl vector
-    notificationDeviceTreeModel->clear();
-    row = *(notificationDeviceTreeModel->append());
-    row[notificationColumns.id] = -1;
-    row[notificationColumns.name] = "Default";
-    row[notificationColumns.description] = "Default";
-    int notificationSelection = 0;
-    int notificationCtr = 1;
-    for (
-            std::vector<ManglerAudioDevice*>::iterator i = mangler->audioControl->outputDevices.begin();
-            i <  mangler->audioControl->outputDevices.end();
-            i++, notificationCtr++) {
-        Gtk::TreeModel::Row row = *(notificationDeviceTreeModel->append());
-        row[notificationColumns.id] = (*i)->id;
-        row[notificationColumns.name] = (*i)->name;
-        row[notificationColumns.description] = (*i)->description;
-        if (config.notificationDeviceName == (*i)->name) {
-            notificationSelection = notificationCtr;
-        }
-    }
-    // TODO: get the currently selected item from settings object and select it
-    notificationDeviceComboBox->set_active(notificationSelection);
+    updateDeviceComboBoxes();
 
     // Clear the mouse device store and rebuild it from the audioControl vector
     mouseDeviceTreeModel->clear();
@@ -549,6 +525,21 @@ std::map<uint32_t, Glib::ustring> ManglerSettings::getInputDeviceList(void) {/*{
     return(devicelist);
 }/*}}}*/
 
+void ManglerSettings::audioSubsystemComboBox_changed_cb(void) {/*{{{*/
+    Gtk::TreeModel::iterator iter;
+    iter = audioSubsystemComboBox->get_active();
+    if (iter) {
+        Gtk::TreeModel::Row row = *iter;
+        Glib::ustring id = row[audioSubsystemColumns.id];
+        Glib::ustring name = row[audioSubsystemColumns.name];
+        config.audioSubsystem = id;
+        if (mangler) {
+            mangler->audioControl->getDeviceList(id);
+            updateDeviceComboBoxes();
+        }
+    }
+}/*}}}*/
+
 bool
 ManglerSettings::settingsPTTKeyDetect(void) {/*{{{*/
     char        pressed_keys[32];
@@ -567,7 +558,11 @@ ManglerSettings::settingsPTTKeyDetect(void) {/*{{{*/
     XQueryKeymap(GDK_WINDOW_XDISPLAY(rootwin), pressed_keys);
     for (int ctr = 0; ctr < 256; ctr++) {
         if ((pressed_keys[ctr >> 3] >> (ctr & 0x07)) & 0x01) {
-            std::string keyname = XKeysymToString(XKeycodeToKeysym(GDK_WINDOW_XDISPLAY(rootwin), ctr, 0));
+            char *keystring = XKeysymToString(XKeycodeToKeysym(GDK_WINDOW_XDISPLAY(rootwin), ctr, 0));
+            if (keystring == NULL)
+                continue;
+            std::string keyname = keystring;
+
             if (keyname.length() > 1) {
                 ptt_keylist.insert(0, "<" + keyname + ">" + (ptt_keylist.empty() ? "" : "+"));
             } else {
@@ -657,4 +652,76 @@ ManglerSettings::settingsPTTMouseDetect(void) {/*{{{*/
     return(true);
 }/*}}}*/
 
+void
+ManglerSettings::updateDeviceComboBoxes(void) {/*{{{*/
+    Gtk::TreeModel::Row row;
 
+    // Clear the input device store and rebuild it from the audioControl vector
+    inputDeviceTreeModel->clear();
+    row = *(inputDeviceTreeModel->append());
+    row[inputColumns.id] = -1;
+    row[inputColumns.name] = "Default";
+    row[inputColumns.description] = "Default";
+    int inputSelection = 0;
+    int inputCtr = 1;
+    for (
+            std::vector<ManglerAudioDevice*>::iterator i = mangler->audioControl->inputDevices.begin();
+            i <  mangler->audioControl->inputDevices.end();
+            i++, inputCtr++) {
+        Gtk::TreeModel::Row row = *(inputDeviceTreeModel->append());
+        row[inputColumns.id] = (*i)->id;
+        row[inputColumns.name] = (*i)->name;
+        row[inputColumns.description] = (*i)->description;
+        if (config.inputDeviceName == (*i)->name) {
+            inputSelection = inputCtr;
+        }
+    }
+    // TODO: get the currently selected item from settings object and select it
+    inputDeviceComboBox->set_active(inputSelection);
+
+    // Clear the output device store and rebuild it from the audioControl vector
+    outputDeviceTreeModel->clear();
+    row = *(outputDeviceTreeModel->append());
+    row[outputColumns.id] = -1;
+    row[outputColumns.name] = "Default";
+    row[outputColumns.description] = "Default";
+    int outputSelection = 0;
+    int outputCtr = 1;
+    for (
+            std::vector<ManglerAudioDevice*>::iterator i = mangler->audioControl->outputDevices.begin();
+            i <  mangler->audioControl->outputDevices.end();
+            i++, outputCtr++) {
+        Gtk::TreeModel::Row row = *(outputDeviceTreeModel->append());
+        row[outputColumns.id] = (*i)->id;
+        row[outputColumns.name] = (*i)->name;
+        row[outputColumns.description] = (*i)->description;
+        if (config.outputDeviceName == (*i)->name) {
+            outputSelection = outputCtr;
+        }
+    }
+    // TODO: get the currently selected item from settings object and select it
+    outputDeviceComboBox->set_active(outputSelection);
+
+    // Clear the notification device store and rebuild it from the audioControl vector
+    notificationDeviceTreeModel->clear();
+    row = *(notificationDeviceTreeModel->append());
+    row[notificationColumns.id] = -1;
+    row[notificationColumns.name] = "Default";
+    row[notificationColumns.description] = "Default";
+    int notificationSelection = 0;
+    int notificationCtr = 1;
+    for (
+            std::vector<ManglerAudioDevice*>::iterator i = mangler->audioControl->outputDevices.begin();
+            i <  mangler->audioControl->outputDevices.end();
+            i++, notificationCtr++) {
+        Gtk::TreeModel::Row row = *(notificationDeviceTreeModel->append());
+        row[notificationColumns.id] = (*i)->id;
+        row[notificationColumns.name] = (*i)->name;
+        row[notificationColumns.description] = (*i)->description;
+        if (config.notificationDeviceName == (*i)->name) {
+            notificationSelection = notificationCtr;
+        }
+    }
+    // TODO: get the currently selected item from settings object and select it
+    notificationDeviceComboBox->set_active(notificationSelection);
+}/*}}}*/

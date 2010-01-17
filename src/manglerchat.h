@@ -1,12 +1,12 @@
 /*
  * vim: softtabstop=4 shiftwidth=4 cindent foldmethod=marker expandtab
  *
- * $LastChangedDate: 2009-10-10 12:38:51 -0700 (Sat, 10 Oct 2009) $
- * $Revision: 63 $
- * $LastChangedBy: ekilfoil $
- * $URL: http://svn.mangler.org/mangler/trunk/src/manglersettings.h $
+ * $LastChangedDate$
+ * $Revision$
+ * $LastChangedBy$
+ * $URL$
  *
- * Copyright 2009 Eric Kilfoil 
+ * Copyright 2009-2010 Eric Kilfoil 
  *
  * This file is part of Mangler.
  *
@@ -30,6 +30,7 @@
 class ManglerChat {
     public:
         ManglerChat(Glib::RefPtr<Gtk::Builder> builder); 
+        Glib::RefPtr<Gtk::Builder>          builder;
 
         class chatUserModelColumns : public Gtk::TreeModel::ColumnRecord {
             public:
@@ -48,15 +49,18 @@ class ManglerChat {
         Gtk::Window   *chatWindow;
         Gtk::Button   *button;
         Gtk::Entry    *chatMessage;
+        Gtk::CheckButton   *checkbutton;        
         Gtk::TextView *chatBox;
         bool          isOpen;
 
+        void chatTimestampCheckButton_toggled_cb();
         void chatWindow_show_cb(void);
         void chatWindow_hide_cb(void);
         void chatWindowSendChat_clicked_cb(void);
         void chatClose_clicked_cb(void);
 
         void addChatMessage(uint16_t user_id, Glib::ustring message);
+        void addRconMessage(Glib::ustring message);
         void addMessage(Glib::ustring message);
         void addUser(uint16_t user_id);
         void clear(void);

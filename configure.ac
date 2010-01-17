@@ -2,8 +2,9 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.63])
-AC_INIT([mangler], [1.0], [eric@ypass.net])
+AC_INIT([mangler], [1.1.0], [eric@ypass.net])
 AM_INIT_AUTOMAKE
+AM_MAINTAINER_MODE([enable])
 
 AC_CONFIG_SRCDIR([config.h.in])
 AC_CONFIG_HEADERS([config.h])
@@ -35,24 +36,38 @@ AC_CHECK_LIB([m], [tan], [], [
 AC_CHECK_HEADER([mpd/client.h],
 	[AC_CHECK_LIB([mpdclient], [mpd_run_status])]
 )
-AC_CHECK_LIB([gsm], [gsm_create], [], [
-	echo "error: cannot find libgsm: Is it installed? Also make sure you have the"
-	echo "       libgsm development packages installed"
-	exit -1
-	])
-AC_CHECK_HEADER([gsm.h], [AC_DEFINE(HAVE_GSM_H, 1, [location of gsm.h])], [
-	AC_CHECK_HEADER([gsm/gsm.h], [], [
-		echo "error: found gsm libraries, but headers are missing or corrupt. are you"
-		echo "       missing a libgsm development package?"
+
+AC_ARG_ENABLE(gsm,   [  --disable-gsm           disable GSM codec support], [disable_gsm=yes])
+AC_ARG_ENABLE(speex, [  --disable-speex         disable Speex codec support], [disable_speex=yes])
+
+if test "$enable_gsm" != "no" ; then
+	AC_CHECK_LIB([gsm], [gsm_create], [], [
+		echo "error: cannot find libgsm: Is it installed? Also make sure you have the"
+		echo "       libgsm development packages installed"
 		exit -1
 		])
-	])
+	AC_CHECK_HEADER([gsm.h], [AC_DEFINE(HAVE_GSM_H, 1, [location of gsm.h])], [
+		AC_CHECK_HEADER([gsm/gsm.h], AC_DEFINE(HAVE_GSM_GSM_H, 1, [location of gsm.h]),[
+			echo "error: found gsm libraries, but headers are missing or corrupt. are you"
+			echo "       missing a libgsm development package?"
+			exit -1
+			])
+		])
+	AC_DEFINE(HAVE_GSM, 1, [have gsm])
+else
+	AC_DEFINE(HAVE_GSM, 0, [have gsm])
+fi
 
 
 # Checks for header files.
-PKG_CHECK_MODULES(speex, speex >= 1.2)
-AC_SUBST(speex_CFLAGS)
-AC_SUBST(speex_LIBS)
+if test "$enable_speex" != "no" ; then
+	PKG_CHECK_MODULES(speex, speex >= 1.2)
+	AC_SUBST(speex_CFLAGS)
+	AC_SUBST(speex_LIBS)
+	AC_DEFINE(HAVE_SPEEX, 1, [have speex])
+else
+	AC_DEFINE(HAVE_SPEEX, 0, [have speex])
+fi
 
 PKG_CHECK_MODULES(gtk, gtk+-2.0 >= 2.16.0)
 
@@ -61,10 +76,14 @@ AC_SUBST(gtkmm_CFLAGS)
 AC_SUBST(gtkmm_LIBS)
 
 AC_ARG_WITH([pulseaudio],
-  [AS_HELP_STRING([--without-pulseaudio],
-    [disable support for pulseaudio])],
-  [],
-  [with_pulseaudio=yes])
+	[AS_HELP_STRING([--without-pulseaudio], [disable support for PulseAudio])],
+	[],
+	[with_pulseaudio=yes])
+
+AC_ARG_WITH([alsa],
+	[AS_HELP_STRING([--without-alsa], [disable support for ALSA])],
+	[],
+	[with_alsa=yes])
 
 AS_IF(
 	[test "x$with_pulseaudio" != xno],
@@ -73,19 +92,28 @@ AS_IF(
 			echo "**************************************************************************"
 			echo "*** ERROR: pulse audio development libraries or headers were not found ***"
 			echo "*** on your system.  You can disable PulseAudio support with           ***"
-			echo "*** ./configre --without-pulseaudio                                    ***"
-			echo "*** but this will disable sound support                                ***"
+			echo "*** ./configure --without-pulseaudio                                   ***"
 			echo "**************************************************************************"
 			exit 1
 		])
 		AC_SUBST(pulse_CFLAGS)
 		AC_SUBST(pulse_LIBS)
-	],[
-		echo "**************************************************************************"
-		echo "*** WARNING: compiling without pulse.  you will not have sound support ***"
-		echo "*** PulseAudio 0.9.14 or higher is required for audio support          ***"
-		echo "**************************************************************************"
-	]
+	],[]
+)
+AS_IF(
+	[test "x$with_alsa" != xno],
+	[
+		PKG_CHECK_MODULES(alsa, alsa >= 1.0.0, [AC_DEFINE(HAVE_ALSA, 1, [have alsa])], [
+			echo "**************************************************************************"
+			echo "*** ERROR: ALSA audio development libraries or headers were not found  ***"
+			echo "*** on your system.  You can disable ALSA support with                 ***"
+			echo "*** ./configure --without-alsa                                         ***"
+			echo "**************************************************************************"
+			exit 1
+		])
+		AC_SUBST(alsa_CFLAGS)
+		AC_SUBST(alsa_LIBS)
+	],[]
 )
 
 PKG_CHECK_MODULES(gthread, gthread-2.0 >= 2.20.1)
@@ -107,9 +135,19 @@ AC_TYPE_UINT8_T
 # Checks for library functions.
 AC_FUNC_MALLOC
 AC_FUNC_REALLOC
-AC_CHECK_FUNCS([dup2 gettimeofday inet_ntoa memset select socket strchr strdup strerror])
+AC_CHECK_FUNCS([dup2 gettimeofday inet_ntoa memset select socket strchr strdup strerror gethostbyname_r])
 
 AC_CONFIG_FILES([src/Makefile
                  Makefile
                  libventrilo3/Makefile])
+
+if test "x$with_pulseaudio" = xno -a "x$with_alsa" = "xno" ; then
+	echo "**************************************************************************"
+	echo "*** WARNING: You have disabled support for both PulseAudio and ALSA.   ***"
+	echo "***          You can compile and use Mangler without an audio          ***"
+	echo "***          subsystem, but you will not have any sound, which more    ***"
+	echo "***          more or less makes the program useless.                   ***"
+	echo "**************************************************************************"
+fi
+
 AC_OUTPUT

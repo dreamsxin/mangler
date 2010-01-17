@@ -6,7 +6,7 @@
  * $LastChangedBy$
  * $URL$
  *
- * Copyright 2009 Eric Kilfoil 
+ * Copyright 2009-2010 Eric Kilfoil 
  *
  * This file is part of Mangler.
  *
@@ -41,6 +41,11 @@ class ManglerSettings
         Gtk::ComboBox       *combobox;
         Gtk::Window         *window;
         Gtk::CheckButton    *checkbutton;
+        Gtk::VBox           *vbox;
+        Gtk::HScale         *volumehscale;
+        Gtk::Adjustment     *volumeAdjustment;
+        sigc::connection    volumeAdjustSignalConnection;
+
         bool                isDetectingKey;
         bool                isDetectingMouse;
         std::map<uint32_t, Glib::ustring> mouseInputDevices;
@@ -57,6 +62,17 @@ class ManglerSettings
         };
         audioPlayerModelColumns  audioPlayerColumns;
         Glib::RefPtr<Gtk::ListStore> audioPlayerTreeModel;
+
+        Gtk::ComboBox       *audioSubsystemComboBox;
+        class audioSubsystemModelColumns : public Gtk::TreeModel::ColumnRecord
+        {
+            public:
+                audioSubsystemModelColumns() { add(id); add(name); }
+                Gtk::TreeModelColumn<Glib::ustring> id;
+                Gtk::TreeModelColumn<Glib::ustring> name;
+        };
+        audioSubsystemModelColumns  audioSubsystemColumns;
+        Glib::RefPtr<Gtk::ListStore> audioSubsystemTreeModel;
 
         // Input Device Combo Box Setup
         Gtk::ComboBox       *inputDeviceComboBox;
@@ -129,7 +145,8 @@ class ManglerSettings
         void settingsEnablePTTMouseCheckButton_toggled_cb(void);
         void settingsPTTMouseButton_clicked_cb(void);
         void settingsEnableAudioIntegrationCheckButton_toggled_cb(void);
-
+        void audioSubsystemComboBox_changed_cb(void);
+        void updateDeviceComboBoxes(void);
 };
 
 #endif

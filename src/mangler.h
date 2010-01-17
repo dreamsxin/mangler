@@ -6,7 +6,7 @@
  * $LastChangedBy$
  * $URL$
  *
- * Copyright 2009 Eric Kilfoil 
+ * Copyright 2009-2010 Eric Kilfoil 
  *
  * This file is part of Mangler.
  *
@@ -35,6 +35,8 @@
 #include "manglersettings.h"
 #include "manglerserverlist.h"
 #include "manglerchat.h"
+#include "manglerprivchat.h"
+#include "manglercharset.h"
 #include "locale.h"
 
 extern "C" {
@@ -54,6 +56,7 @@ class Mangler
         Gtk::Window                         *manglerWindow;
         Glib::RefPtr<Gtk::Builder>          builder;
         Gtk::Button                         *button;
+        Gtk::ToggleButton                   *togglebutton;
         Gtk::Dialog                         *dialog;
         Gtk::AboutDialog                    *aboutdialog;
         Gtk::MessageDialog                  *msgdialog;
@@ -68,6 +71,8 @@ class Mangler
         Gtk::CheckMenuItem                  *checkmenuitem;
         Gtk::MenuItem                       *menuitem;
         Gtk::Table                          *table;
+        Gtk::CheckButton                    *checkbutton;
+        
 
         std::map<Glib::ustring, Glib::RefPtr<Gdk::Pixbuf> >  icons;
         Glib::RefPtr<Gtk::StatusIcon>       statusIcon;
@@ -77,6 +82,7 @@ class Mangler
         ManglerNetwork                      *network;
         int32_t                             connectedServerId;
         std::map<uint32_t, ManglerAudio* >  outputAudio;
+        std::map<uint16_t, ManglerPrivChat *> privateChatWindows;
         ManglerAudio                        *inputAudio;
         ManglerAudio                        *audioControl;
         ManglerSettings                     *settings;
@@ -85,12 +91,28 @@ class Mangler
         bool                                isTransmittingKey;
         bool                                isTransmittingMouse;
         bool                                iconified;
+        bool                                isAdmin;
+        bool                                muteSound;
+        bool                                muteMic;
+
+        // Autoreconnect feature stuff - Need ID's to kill threads if needed
+        bool                                wantDisconnect;
+        guint                               reconnectStatusHandlerID;
+        time_t                              lastAttempt;
+        uint32_t                            lastServer;
 
         // These are used by the password entry dialog
         Gtk::Dialog                         *passwordDialog;
         Gtk::Entry                          *passwordEntry;
         Glib::ustring                       password;
         bool                                passwordStatus;
+
+        // These are used by the kick/ban reason entry dialog
+        Gtk::Dialog                         *reasonDialog;
+        Gtk::Entry                          *reasonEntry;
+        Glib::ustring                       reason;
+        bool                                reasonStatus;
+        bool                                reasonValid;
 
         // These are used by the text string entry dialog
         Gtk::Dialog                         *textStringChangeDialog;
@@ -104,6 +126,7 @@ class Mangler
         Glib::Thread                        *networkThread;
 
         Glib::ustring getPasswordEntry(Glib::ustring title = "Password", Glib::ustring prompt = "Password");
+        bool getReasonEntry(Glib::ustring title = "Reason", Glib::ustring prompt = "Reason");
         uint32_t getActiveServer(void);
         void setActiveServer(uint32_t row_number);
         void errorDialog(Glib::ustring message);
@@ -119,22 +142,27 @@ class Mangler
         void adminButton_clicked_cb(void);
         void settingsButton_clicked_cb(void);
         void aboutButton_clicked_cb(void);
-        void xmitButton_pressed_cb(void);
-        void xmitButton_released_cb(void);
+        void xmitButton_toggled_cb(void);
         void statusIcon_activate_cb(void);
 
         // menu bar signal handlers
         void buttonMenuItem_toggled_cb(void);
         void hideServerInfoMenuItem_toggled_cb(void);
+        void hideGuestFlagMenuItem_toggled_cb(void);
         void quitMenuItem_activate_cb(void);
 
 
         bool getNetworkEvent(void);
         bool checkPushToTalkKeys(void);
         bool checkPushToTalkMouse(void);
+        bool updateXferAmounts(void);
 
+        // autoreconnect implementation
+        bool reconnectStatusHandler(void);
 
-
+        // quick mute options
+        void muteSoundCheckButton_toggled_cb(void);
+        void muteMicCheckButton_toggled_cb(void);
 
         // quick connect signal handlers
         void qcConnectButton_clicked_cb(void);
@@ -145,6 +173,10 @@ class Mangler
         // password dialog signal handlers
         void passwordDialogOkButton_clicked_cb(void);
         void passwordDialogCancelButton_clicked_cb(void);
+
+        // kick/ban reason dialog signal handlers
+        void reasonDialogOkButton_clicked_cb(void);
+        void reasonDialogCancelButton_clicked_cb(void);
 
         // text string change dialog signal handlers
         void textStringChangeDialogOkButton_clicked_cb(void);
@@ -168,8 +200,6 @@ class ManglerError
         ManglerError(uint32_t code, Glib::ustring message, Glib::ustring module = "");
 };
 
-Glib::ustring c_to_ustring(char *input);
-std::string ustring_to_c(Glib::ustring input);
 GdkFilterReturn ptt_filter(GdkXEvent *gdk_xevent, GdkEvent *event, gpointer data);
 
 extern Mangler *mangler;

@@ -6,7 +6,7 @@
  * $LastChangedBy$
  * $URL$
  *
- * Copyright 2009-2010 Eric Kilfoil 
+ * Copyright 2009 Eric Kilfoil 
  *
  * This file is part of Mangler.
  *
@@ -24,21 +24,14 @@
  * along with Mangler.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _MANGLERNETWORK_H
-#define _MANGLERNETWORK_H
+#ifndef _MANGLERCHARSET_H
+#define _MANGLERCHARSET_H
 
-class ManglerNetwork
-{
-    public:
-        ManglerNetwork(Glib::RefPtr<Gtk::Builder> builder);
-        void connect(Glib::ustring hostname, Glib::ustring port, Glib::ustring username, Glib::ustring password, Glib::ustring phonetic);
-        void disconnect(void);
-        Gtk::Button *button;
-        Gtk::Label *label;
-        Gtk::ComboBox *combobox;
-        Gtk::MessageDialog *msgdialog;
-        Glib::RefPtr<Gtk::Builder> builder;
-};
+extern const char *charsetslist[];
+
+void set_charset(Glib::ustring charset);
+Glib::ustring c_to_ustring(char *input);
+std::string ustring_to_c(Glib::ustring input);
 
 #endif
 

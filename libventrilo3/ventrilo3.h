@@ -6,7 +6,7 @@
  * $LastChangedBy$
  * $URL$
  *
- * Copyright 2009 Eric Kilfoil 
+ * Copyright 2009-2010 Eric Kilfoil 
  *
  * This file is part of Mangler.
  *
@@ -63,6 +63,17 @@
 #define V3_RCON_CHAT                0x03
 #define V3_JOINFAIL_CHAT            0x04
 
+#define V3_START_PRIV_CHAT          0x00
+#define V3_END_PRIV_CHAT            0x01
+#define V3_TALK_PRIV_CHAT           0x02
+#define V3_BACK_PRIV_CHAT           0x03
+#define V3_AWAY_PRIV_CHAT           0x04
+
+#define V3_RANK_LIST                0x00
+#define V3_ADD_RANK                 0x03
+#define V3_REMOVE_RANK              0x04
+#define V3_MODIFY_RANK              0x05
+
 #define V3_REMOVE_USER              0x00
 #define V3_ADD_USER                 0x01
 #define V3_MODIFY_USER              0x02
@@ -75,6 +86,20 @@
 
 #define V3_PHANTOM_ADD              0x00
 #define V3_PHANTOM_REMOVE           0x01 
+
+#define V3_ADMIN_LOGIN              0x00
+#define V3_ADMIN_KICK               0x01
+#define V3_ADMIN_BAN                0x03
+#define V3_ADMIN_LOGOUT             0x04
+#define V3_ADMIN_CHANNEL_BAN        0x05
+
+#define V3_USERLIST_OPEN            0x00
+#define V3_USERLIST_ADD             0x01
+#define V3_USERLIST_REMOVE          0x02
+#define V3_USERLIST_MODIFY          0x03
+#define V3_USERLIST_CLOSE           0x04
+#define V3_USERLIST_LUSER           0x05
+#define V3_USERLIST_CHANGE_OWNER    0x06
 
 #define V3_DEBUG_NONE               0
 #define V3_DEBUG_STATUS             1
@@ -100,13 +125,19 @@ typedef struct __v3_net_message {/*{{{*/
     int (* destroy)(struct __v3_net_message *msg);
     struct __v3_net_message *next;
 } _v3_net_message;/*}}}*/
+#pragma pack(push)
+#pragma pack(1)
 struct _v3_permissions {/*{{{*/
+    uint16_t account_id;
+    uint16_t replace_owner_id;
+    uint8_t hash_password[32];
+    uint16_t rank_id;
+    uint16_t unknown_perm_1;
     uint8_t lock_acct;
-    uint8_t dfl_chan;
+    uint8_t in_reserve_list;
     uint8_t dupe_ip;
     uint8_t switch_chan;
-    uint8_t in_reserve_list;
-    uint8_t unknown_perm_1;
+    uint16_t dfl_chan;
     uint8_t unknown_perm_2;
     uint8_t unknown_perm_3;
     uint8_t recv_bcast;
@@ -166,6 +197,8 @@ struct _v3_permissions {/*{{{*/
     uint8_t see_user_comment;
     uint8_t unknown_perm_15;
 };/*}}}*/
+#pragma pack(pop)
+typedef struct _v3_permissions v3_permissions;
 
 /*
    Define event types to be used by the caller's event handler
@@ -194,18 +227,43 @@ enum _v3_events
     V3_EVENT_CHAT_JOIN,
     V3_EVENT_CHAT_LEAVE,
     V3_EVENT_CHAT_MESSAGE,
+    V3_EVENT_ADMIN_AUTH,
+    V3_EVENT_CHAN_ADMIN_UPDATED,
+    V3_EVENT_PRIVATE_CHAT_MESSAGE,
+    V3_EVENT_PRIVATE_CHAT_START,
+    V3_EVENT_PRIVATE_CHAT_END,
+    V3_EVENT_PRIVATE_CHAT_AWAY,
+    V3_EVENT_PRIVATE_CHAT_BACK,
+    V3_EVENT_USERLIST_ADD,
+    V3_EVENT_USERLIST_MODIFY,
+    V3_EVENT_USERLIST_REMOVE,
+    V3_EVENT_USERLIST_CHANGE_OWNER,
 
     // outbound specific event types
     V3_EVENT_CHANGE_CHANNEL,
     V3_EVENT_PHANTOM_ADD,
     V3_EVENT_PHANTOM_REMOVE,
+    V3_EVENT_ADMIN_LOGIN,
+    V3_EVENT_ADMIN_LOGOUT,
+    V3_EVENT_ADMIN_KICK,
+    V3_EVENT_ADMIN_BAN,
+    V3_EVENT_ADMIN_CHANNEL_BAN,
+    V3_EVENT_FORCE_CHAN_MOVE,
+    V3_EVENT_USERLIST_OPEN,
+    V3_EVENT_USERLIST_CLOSE,
 
     // not implemented
     V3_EVENT_USER_PAGED,
-    V3_EVENT_LUSER_FORCE_CHAN_MOVE,
     V3_EVENT_CHAN_REMOVED,
     V3_EVENT_CHAN_MODIFIED,
     V3_EVENT_RECV_AUDIO,
+};
+
+// different boot types for api function v3_admin_boot
+enum _v3_boot_types {
+    V3_BOOT_KICK,
+    V3_BOOT_BAN,
+    V3_BOOT_CHANNEL_BAN,
 };
 
 #define V3_AUDIO_SENDTYPE_UNK0   0x00  // possibly broadcast?
@@ -215,6 +273,9 @@ enum _v3_events
 #define V3_AUDIO_SENDTYPE_U2CSUB 0x04  // user to channel and all subchannels
 #define V3_AUDIO_SENDTYPE_U2U    0x05  // user to user
 #define V3_AUDIO_SENDTYPE_U2TARG 0x06  // user to voice target
+
+// v3_event.flags values for V3_EVENT_USER_LOGIN
+#define V3_LOGIN_FLAGS_EXISTING (1 << 0)    // user was added from userlist sent at login (existing user)
 
 typedef struct _v3_event v3_event;
 struct _v3_event {
@@ -232,10 +293,16 @@ struct _v3_event {
     uint16_t ping;
     struct {
         uint16_t id;
+        uint16_t privchat_user1;
+        uint16_t privchat_user2;
     } user;
     struct {
         uint16_t id;
     } channel;
+    struct {
+        uint16_t id;
+        uint16_t id2;
+    } account;
     struct {
         char name[32];
         char password[32];
@@ -251,10 +318,22 @@ struct _v3_event {
         uint32_t rate;
     } pcm;
     union {
+        struct {
+            v3_permissions perms;
+            char username[32];
+            char owner[32];
+            char notes[256];
+            char lock_reason[128];
+            int chan_admin_count;
+            uint16_t chan_admin[32];
+            int chan_auth_count;
+            uint16_t chan_auth[32];
+        } account;
         int16_t sample16[8192];
         uint8_t sample[16384];
         char    motd[2048]; 
         char    chatmessage[256];
+        char    reason[128];
     } data;
     v3_event *next;
 };
@@ -278,7 +357,8 @@ typedef struct __v3_msg_user {/*{{{*/
     uint16_t id;
     uint16_t channel;
 
-    uint32_t bitfield;
+    uint16_t bitfield;
+    uint16_t rank_id;
     char *name;
     char *phonetic;
     char *comment;
@@ -293,6 +373,7 @@ typedef struct __v3_msg_user {/*{{{*/
     uint8_t  accept_u2u;
     uint8_t  accept_chat;
     uint8_t  allow_recording;
+    uint8_t  global_mute;
     uint8_t  guest;
     void     *next;
     uint16_t real_user_id; // used for phantom users
@@ -338,8 +419,37 @@ typedef struct __v3_msg_channel {/*{{{*/
      */
     void     *next;
 } _v3_msg_channel;/*}}}*/
+typedef struct __v3_msg_rank {/*{{{*/
+    uint16_t id;
+    uint16_t level;
+    char *name;
+    char *description;
+
+    /*
+     * Put internal variables here
+     */
+    void     *next;
+} _v3_msg_rank;/*}}}*/
+typedef struct __v3_msg_account {/*{{{*/
+    v3_permissions perms;
+    char *username;
+    char *owner;
+    char *notes;
+    char *lock_reason;
+    int chan_admin_count;
+    uint16_t *chan_admin;
+    int chan_auth_count;
+    uint16_t *chan_auth;
+    
+    /*
+     * Put internal variables here
+     */
+    void     *next;
+} _v3_msg_account;/*}}}*/
+typedef _v3_msg_account  v3_account;
 typedef _v3_msg_user     v3_user;
 typedef _v3_msg_channel  v3_channel;
+typedef _v3_msg_rank     v3_rank;
 
 /*
    This structure defines the bit number of each permission setting, the
@@ -393,8 +503,10 @@ typedef struct __v3_server {
     _v3_net_message *_queue;          // This queue (linked list) is used internally
     _v3_net_message *queue;           // This queue (linked list) stores messages that need to be processed by the client
     struct timeval last_timestamp;    // The time() of the last timestamp, a timestamp is sent every 10 seconds
-    uint32_t packet_count;			  // Total amount of packets received from server.
-    uint32_t byte_count;			  // Total amount of bytes received from server.
+    uint32_t recv_packet_count;            // Total amount of packets received from server.
+    uint32_t recv_byte_count;              // Total amount of bytes received from server.
+    uint32_t sent_packet_count;            // Total amount of packets received from server.
+    uint32_t sent_byte_count;              // Total amount of bytes received from server.
 } _v3_server;
 
 /*
@@ -413,7 +525,8 @@ typedef struct __v3_luser {
     uint8_t  accept_u2u;
     uint8_t  accept_chat;
     uint8_t  allow_recording;
-    struct _v3_permissions perms;
+    v3_permissions perms;
+    uint16_t channel_admin[65535];
 } _v3_luser;
 
 /*
@@ -433,6 +546,7 @@ int     _v3_close_connection(void);
 int     _v3_is_connected(void);
 void    _v3_print_user_list(void);   // testing function -- will be deleted
 void    _v3_print_channel_list(void);   // testing function -- will be deleted
+void    _v3_print_permissions(v3_permissions *perms);
 
 /*
  * External functions that are used by a program linking to the library
@@ -441,10 +555,24 @@ int         v3_login(char *server, char *username, char *password, char *phoneti
 void        v3_join_chat(void);
 void        v3_leave_chat(void);
 void        v3_send_chat_message(char* message);
+void        v3_start_privchat(uint16_t userid);
+void        v3_end_privchat(uint16_t userid);
+void        v3_send_privchat_message(uint16_t userid, char* message);
+void        v3_send_privchat_away(uint16_t userid);
+void        v3_send_privchat_back(uint16_t userid);
 void        v3_logout(void);
 void        v3_change_channel(uint16_t channel_id, char *password);
+void        v3_admin_login(char *password);
+void        v3_admin_logout(void);
+void        v3_admin_boot(enum _v3_boot_types type, uint16_t user_id, char *reason);
 void        v3_phantom_add(uint16_t channel_id);
 void        v3_phantom_remove(uint16_t channel_id);
+void        v3_force_channel_move(uint16_t user_id, uint16_t channel_id);
+void        v3_userlist_open(void);
+void        v3_userlist_close(void);
+void        v3_userlist_remove(uint16_t account_id);
+void        v3_userlist_update(v3_account *account);
+void        v3_userlist_change_owner(uint16_t old_owner_id, uint16_t new_owner_id);
 int         v3_debuglevel(uint32_t level);
 int         v3_is_loggedin(void);
 uint16_t    v3_get_user_id(void);
@@ -454,6 +582,10 @@ uint16_t    *v3_get_soundq(uint32_t *len);
 uint32_t    v3_get_soundq_length(void);
 v3_event    *v3_get_event(int block);
 int         v3_get_max_clients(void);
+uint32_t    v3_get_bytes_recv(void);
+uint32_t    v3_get_bytes_sent(void);
+uint32_t    v3_get_packets_recv(void);
+uint32_t    v3_get_packets_sent(void);
 void        v3_clear_events(void);
 uint32_t    v3_get_codec_rate(uint16_t codec, uint16_t format);
 const v3_codec *v3_get_codec(uint16_t codec, uint16_t format);
@@ -461,8 +593,12 @@ const v3_codec *v3_get_channel_codec(uint16_t channel_id);
 uint16_t    v3_get_user_channel(uint16_t id);
 uint16_t    v3_channel_requires_password(uint16_t channel_id);
 void        v3_start_audio(uint16_t send_type);
-void        v3_send_audio(uint16_t send_type, uint32_t rate, uint8_t *pcm, uint32_t length);
+uint32_t    v3_send_audio(uint16_t send_type, uint32_t rate, uint8_t *pcm, uint32_t length);
 void        v3_stop_audio(void);
+void        v3_set_server_opts(uint8_t type, uint8_t value);
+const v3_permissions *v3_get_permissions(void);
+uint8_t     v3_is_channel_admin(uint16_t channel_id);
+
 
 // User list functions
 int         v3_user_count(void);
@@ -474,7 +610,17 @@ int         v3_channel_count(void);
 void        v3_free_channel(v3_channel *channel);
 v3_channel  *v3_get_channel(uint16_t id);
 
+// Rank list functions
+v3_rank     *v3_get_rank(uint16_t id);
+void        v3_free_rank(v3_rank *rank);
+
+// Account list functions
+v3_account *v3_get_account(uint16_t id);
+int         v3_account_count(void);
+void        v3_free_account(v3_account *account);
+
 // audio effects
+void v3_set_volume_master(int level);
 void v3_set_volume_user(uint16_t id, int level);
 void v3_set_volume_luser(int level);
 uint8_t v3_get_volume_user(uint16_t id);

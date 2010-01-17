@@ -6,7 +6,7 @@
  * $LastChangedBy$
  * $URL$
  *
- * Copyright 2009 Eric Kilfoil 
+ * Copyright 2009-2010 Eric Kilfoil 
  *
  * This file is part of Mangler.
  *
@@ -30,10 +30,14 @@
 #include "config.h"
 
 #ifdef HAVE_PULSE
-#include <pulse/pulseaudio.h>
-#include <pulse/simple.h>
-#include <pulse/error.h>
-#include <pulse/gccmacro.h>
+# include <pulse/pulseaudio.h>
+# include <pulse/simple.h>
+# include <pulse/error.h>
+# include <pulse/gccmacro.h>
+#endif
+#ifdef HAVE_ALSA
+# include <alsa/asoundlib.h>
+# define ALSA_BUF 640
 #endif
 #include <stdlib.h>
 #include <string.h>
@@ -75,22 +79,31 @@ class ManglerAudio
         ManglerAudio(Glib::ustring type);
         ~ManglerAudio();
         void            open(uint32_t rate, bool type, uint32_t pcm_framesize = 0);
+        bool            openOutput(uint32_t rate);
+        void            closeOutput(bool drain);
+        bool            openInput(uint32_t rate);
+        void            closeInput(bool drain);
         void            queue(uint32_t length, uint8_t *sample);
         void            output(void);
         void            input(void);
         void            finish(void);
 
-        void            getDeviceList(void);
+        void            getDeviceList(Glib::ustring audioSubsystem);
         void            playNotification(Glib::ustring name);
         void            playNotification_thread(Glib::ustring name);
 
 
 
         GAsyncQueue*    pcm_queue;
-        int             rate;
+        uint32_t        rate;
 #ifdef HAVE_PULSE
         pa_sample_spec  pulse_samplespec;
+        pa_buffer_attr  buffer_attr;
         pa_simple       *pulse_stream;
+#endif
+#ifdef HAVE_ALSA
+        snd_pcm_sframes_t alsa_frames;
+        snd_pcm_t       *alsa_stream;
 #endif
         ManglerPCM      *pcmdata;
 
@@ -99,7 +112,8 @@ class ManglerAudio
         std::vector<ManglerAudioDevice*> inputDevices;
         std::vector<ManglerAudioDevice*> outputDevices;
 
-        int             error;
+        int             pulse_error;
+        int             alsa_error;
 
         bool            stop_input;
         bool            stop_output;

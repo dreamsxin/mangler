@@ -1,12 +1,12 @@
 /*
  * vim: softtabstop=4 shiftwidth=4 cindent foldmethod=marker expandtab
  *
- * $LastChangedDate: 2009-10-01 13:25:43 -0700 (Thu, 01 Oct 2009) $
- * $Revision: 504 $
- * $LastChangedBy: ekilfoil $
- * $URL: http://svn.manglerproject.net/svn/mangler/trunk/libventrilo3/libventrilo3.h $
+ * $LastChangedDate$
+ * $Revision$
+ * $LastChangedBy$
+ * $URL$
  *
- * Copyright 2009 Eric Kilfoil 
+ * Copyright 2009-2010 Eric Kilfoil 
  *
  * This file is part of Mangler.
  *
@@ -65,15 +65,15 @@ class ManglerServerList {
         Gtk::CheckButton *serverListUtUCheckButton;
         Gtk::CheckButton *serverListPrivateChatCheckButton;
         Gtk::CheckButton *serverListRecordCheckButton;
+        Gtk::CheckButton *serverListPersistentConnectionCheckButton;
         Gtk::CheckButton *serverListPersistentCommentsCheckButton;
 
         // Character Set Combobox
-        Gtk::ComboBox *serverListCharsetComboBox;
+        Gtk::ComboBoxEntry *serverListCharsetComboBox;
         class charsetModelColumns : public Gtk::TreeModel::ColumnRecord
         {
             public:
-                charsetModelColumns() { add(id); add(name); }
-                Gtk::TreeModelColumn<uint32_t>      id;
+                charsetModelColumns() { add(name); }
                 Gtk::TreeModelColumn<Glib::ustring> name;
         };
         charsetModelColumns  charsetColumns;
@@ -86,6 +86,7 @@ class ManglerServerList {
         void serverListSelection_changed_cb(void);
         void serverListAddButton_clicked_cb(void);
         void serverListDeleteButton_clicked_cb(void);
+        void serverListCloneButton_clicked_cb(void);
         void serverListSetDefaultButton_clicked_cb(void);
         void serverListCloseButton_clicked_cb(void);
         void serverListServerSaveButton_clicked_cb(void);

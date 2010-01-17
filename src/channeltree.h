@@ -6,7 +6,7 @@
  * $LastChangedBy$
  * $URL$
  *
- * Copyright 2009 Eric Kilfoil 
+ * Copyright 2009-2010 Eric Kilfoil 
  *
  * This file is part of Mangler.
  *
@@ -28,7 +28,7 @@
 #define _CHANNELTREE_H
 #include <sys/types.h>
 
-class channelModelColumns : public Gtk::TreeModelColumnRecord/*{{{*/
+class channelModelColumns : public Gtk::TreeModel::ColumnRecord/*{{{*/
 {
     public:
         channelModelColumns() {
@@ -43,8 +43,11 @@ class channelModelColumns : public Gtk::TreeModelColumnRecord/*{{{*/
             add(phonetic);
             add(url);
             add(integration_text);
+            add(rank);
             add(last_transmit);
             add(password);
+            add(muted);
+            add(phantom);
         }
 
         Gtk::TreeModelColumn<Glib::ustring>                 displayName;
@@ -58,15 +61,33 @@ class channelModelColumns : public Gtk::TreeModelColumnRecord/*{{{*/
         Gtk::TreeModelColumn<Glib::ustring>                 phonetic;
         Gtk::TreeModelColumn<Glib::ustring>                 url;
         Gtk::TreeModelColumn<Glib::ustring>                 integration_text;
+        Gtk::TreeModelColumn<Glib::ustring>                 rank;
         Gtk::TreeModelColumn<Glib::ustring>                 last_transmit;
         Gtk::TreeModelColumn<Glib::ustring>                 password;
+        Gtk::TreeModelColumn<bool>                          muted;
+        Gtk::TreeModelColumn<bool>                          phantom;
 };/*}}}*/
+class ManglerChannelStore : public Gtk::TreeStore
+{
+    public:
+        static Glib::RefPtr<ManglerChannelStore> create();
+        channelModelColumns                 c;
+
+    protected:
+        ManglerChannelStore() {
+            set_column_types(c);
+        }
+        virtual bool row_draggable_vfunc(const Gtk::TreeModel::Path& path) const;
+        virtual bool row_drop_possible_vfunc(const Gtk::TreeModel::Path& dest, const Gtk::SelectionData& selection_data) const;
+        virtual bool drag_data_received_vfunc(const Gtk::TreeModel::Path& dest, const Gtk::SelectionData& selection_data);
+};
+
 class ManglerChannelTree
 {
     private:
         Glib::RefPtr<Gtk::Builder>          builder;
         channelModelColumns                 channelRecord;
-        Glib::RefPtr<Gtk::TreeStore>        channelStore;
+        Glib::RefPtr<ManglerChannelStore>   channelStore;
         Gtk::TreeModel::iterator            channelIter;
         Gtk::TreeModel::Row                 channelRow;
         Gtk::TreeViewColumn                 *column;
@@ -82,15 +103,22 @@ class ManglerChannelTree
         Gtk::Menu                           *rcmenu_channel;
         Gtk::Window                         *window;
         Gtk::Label                          *label;
+        Gtk::LinkButton                     *linkbutton;
         Gtk::VScale                         *volumevscale;
         Gtk::Adjustment                     *volumeAdjustment;
         sigc::connection                    volumeAdjustSignalConnection;
         Gtk::VBox                           *vbox;
         void addChannel(uint8_t protect_mode, uint32_t id, uint32_t parent_id, Glib::ustring name, Glib::ustring comment = "", Glib::ustring phonetic = "");
-        void addUser(uint32_t id, uint32_t channel, Glib::ustring name, Glib::ustring comment = "", Glib::ustring phonetic = "", Glib::ustring url = "", Glib::ustring integration_text = "", bool guest = false, bool phantom = false);
+        void addUser(uint32_t id, uint32_t channel, Glib::ustring name, Glib::ustring comment = "", Glib::ustring phonetic = "", Glib::ustring url = "", Glib::ustring integration_text = "", bool guest = false, bool phantom = false, Glib::ustring rank = "");
         void updateLobby(Glib::ustring name, Glib::ustring comment = "", Glib::ustring phonetic = "");
-        void updateUser(uint32_t id, uint32_t parent_id, Glib::ustring name, Glib::ustring comment, Glib::ustring phonetic, Glib::ustring url, Glib::ustring integration_text, bool guest, bool phantom);
+        void updateUser(uint32_t id, uint32_t parent_id, Glib::ustring name, Glib::ustring comment, Glib::ustring phonetic, Glib::ustring url, Glib::ustring integration_text, bool guest, bool phantom, Glib::ustring rank = "");
         void updateChannel(uint8_t protect_mode, uint32_t id, uint32_t parent_id, Glib::ustring name, Glib::ustring comment, Glib::ustring phonetic);
+        void refreshChannel(uint32_t id);
+        void _refreshAllChannels(Gtk::TreeModel::Children children);
+        void refreshAllChannels();
+        void refreshUser(uint32_t id);
+        void _refreshAllUsers(Gtk::TreeModel::Children children);
+        void refreshAllUsers();
         Glib::ustring getLastTransmit(uint16_t userid);
         void setLastTransmit(uint16_t userid, Glib::ustring last_transmit);
         void removeUser(uint32_t id);
@@ -102,6 +130,7 @@ class ManglerChannelTree
         Glib::ustring getChannelSavedPassword(uint16_t channel_id);
         void setChannelSavedPassword(uint16_t channel_id, Glib::ustring password);
         void forgetChannelSavedPassword(uint16_t channel_id);
+        bool isMuted(uint16_t userid);
         bool expand_all(void);
         bool collapse_all(void);
         void clear(void);
@@ -110,9 +139,15 @@ class ManglerChannelTree
         void channelView_buttonpress_event_cb(GdkEventButton* event);
         void copyCommentMenuItem_activate_cb(void);
         void copyURLMenuItem_activate_cb(void);
+        void privateChatMenuItem_activate_cb(void);
         void addPhantomMenuItem_activate_cb(void);
         void removePhantomMenuItem_activate_cb(void);
+        void kickUserMenuItem_activate_cb(void);
+        void banUserMenuItem_activate_cb(void);
+        void muteUserMenuItem_activate_cb(void);
+        void muteUserGlobalMenuItem_activate_cb(void);
         void volumeAdjustment_value_changed_cb(uint16_t);
+        int  on_sort_compare(const Gtk::TreeModel::iterator& a_, const Gtk::TreeModel::iterator& b_);
 
 };
 

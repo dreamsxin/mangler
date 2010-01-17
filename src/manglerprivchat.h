@@ -24,21 +24,34 @@
  * along with Mangler.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _MANGLERNETWORK_H
-#define _MANGLERNETWORK_H
+#ifndef _MANGLERPRIVCHAT_H
+#define _MANGLERPRIVCHAT_H
 
-class ManglerNetwork
-{
+class ManglerPrivChat {
     public:
-        ManglerNetwork(Glib::RefPtr<Gtk::Builder> builder);
-        void connect(Glib::ustring hostname, Glib::ustring port, Glib::ustring username, Glib::ustring password, Glib::ustring phonetic);
-        void disconnect(void);
-        Gtk::Button *button;
-        Gtk::Label *label;
-        Gtk::ComboBox *combobox;
-        Gtk::MessageDialog *msgdialog;
+        ManglerPrivChat(uint16_t userid); 
+        uint16_t remoteUserId;
+
         Glib::RefPtr<Gtk::Builder> builder;
+        Gtk::Window   *chatWindow;
+        Gtk::Button   *sendButton;
+        Gtk::Button   *closeButton;
+        Gtk::Entry    *chatMessage;
+        Gtk::TextView *chatBox;
+
+        void chatWindow_show_cb(void);
+        void chatWindow_hide_cb(void);
+
+        void addMessage(Glib::ustring message);
+        void addChatMessage(uint16_t id, Glib::ustring message);
+        void remoteClosed(void);
+        void remoteAway(void);
+        void remoteBack(void);
+        void remoteReopened(void);
+        void chatWindowSendChat_clicked_cb(void);
+        void chatWindowCloseChat_clicked_cb(void);
+        void clear(void);
+        Glib::ustring nameFromId(uint16_t user_id);
 };
 
 #endif
-
