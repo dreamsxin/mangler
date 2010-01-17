@@ -614,7 +614,7 @@ void Mangler::motdOkButton_clicked_cb(void) {/*{{{*/
 /*
  * Auto reconnect handling
  */
-bool Mangler::reconnectStatusHandler(void) {
+bool Mangler::reconnectStatusHandler(void) {/*{{{*/
     char buffer [50];
     int reconnectTimer = (15 - (time(NULL) - lastAttempt));
     builder->get_widget("connectButton", button);
@@ -631,7 +631,7 @@ bool Mangler::reconnectStatusHandler(void) {
         Mangler::connectButton_clicked_cb();
     }
     return true;
-}
+}/*}}}*/
 
 // Timeout Callbacks
 /*
@@ -991,7 +991,10 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                 {
                     ManglerServerConfig *server;
                     channelTree->clear();
+                    builder->get_widget("connectButton", button);
                     button->set_label("gtk-connect");
+                    builder->get_widget("xmitButton", togglebutton);
+                    togglebutton->set_active(false);
                     builder->get_widget("serverSelectComboBox", combobox);
                     combobox->set_sensitive(true);
                     builder->get_widget("progressbar", progressbar);
