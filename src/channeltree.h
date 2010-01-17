@@ -136,6 +136,7 @@ class ManglerChannelTree
         void clear(void);
 
         void channelView_row_activated_cb(const Gtk::TreeModel::Path& path, Gtk::TreeViewColumn* column);
+        void userSettingsMenuItem_activate_cb(void);
         void channelView_buttonpress_event_cb(GdkEventButton* event);
         void copyCommentMenuItem_activate_cb(void);
         void copyURLMenuItem_activate_cb(void);
@@ -148,6 +149,7 @@ class ManglerChannelTree
         void muteUserGlobalMenuItem_activate_cb(void);
         void volumeAdjustment_value_changed_cb(uint16_t);
         int  on_sort_compare(const Gtk::TreeModel::iterator& a_, const Gtk::TreeModel::iterator& b_);
+        void userSettingsWindow(Gtk::TreeModel::Row row);
 
 };
 

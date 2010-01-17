@@ -3230,6 +3230,13 @@ Notifications are the sound effects that are played when you login, logout, a us
   <object class="GtkMenu" id="userRightClickMenu">
     <property name="visible">True</property>
     <child>
+      <object class="GtkMenuItem" id="userSettings">
+        <property name="visible">True</property>
+        <property name="label" translatable="yes">User Settings</property>
+        <property name="use_underline">True</property>
+      </object>
+    </child>
+    <child>
       <object class="GtkMenuItem" id="copyComment">
         <property name="visible">True</property>
         <property name="tooltip_text" translatable="yes">Copy User's Comment to Clipboard</property>

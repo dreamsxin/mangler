@@ -59,6 +59,8 @@ ManglerChannelTree::ManglerChannelTree(Glib::RefPtr<Gtk::Builder> builder)/*{{{*
 
     // create our right click context menu for users and connect its signal
     builder->get_widget("userRightClickMenu", rcmenu_user);
+    builder->get_widget("userSettings", menuitem);
+    menuitem->signal_activate().connect(sigc::mem_fun(this, &ManglerChannelTree::userSettingsMenuItem_activate_cb));
     builder->get_widget("copyComment", menuitem);
     menuitem->signal_activate().connect(sigc::mem_fun(this, &ManglerChannelTree::copyCommentMenuItem_activate_cb));
     builder->get_widget("privateChat", menuitem);
@@ -647,53 +649,7 @@ ManglerChannelTree::channelView_row_activated_cb(const Gtk::TreeModel::Path& pat
     int id = row[channelRecord.id];
     bool isUser = row[channelRecord.isUser];
     if (isUser) {
-        // double clicked a user
-        if (id == v3_get_user_id()) {
-            // clicked on ourself
-        } else {
-            v3_user *u;
-            uint16_t id = row[channelRecord.id];
-            Glib::ustring name = row[channelRecord.name];
-            Glib::ustring comment = row[channelRecord.comment];
-            Glib::ustring url = row[channelRecord.url];
-            bool  accept_pages = false, accept_u2u = false, accept_chat = false, allow_recording = false;
-            if ((u = v3_get_user(id)) != NULL) {
-                accept_pages = u->accept_pages;
-                accept_u2u = u->accept_u2u;
-                accept_chat = u->accept_chat;
-                allow_recording = u->allow_recording;
-                v3_free_user(u);
-            }
-
-            // disconnect whatever was connected before and reconnect
-            volumeAdjustSignalConnection.disconnect();
-            volumeAdjustSignalConnection = volumeAdjustment->signal_value_changed().connect(sigc::bind(sigc::mem_fun(this, &ManglerChannelTree::volumeAdjustment_value_changed_cb), id));
-
-            // set the value label
-            builder->get_widget("userSettingsNameValueLabel", label);
-            label->set_text(name);
-            builder->get_widget("userSettingsCommentValue", label);
-            label->set_text(comment);
-            builder->get_widget("userSettingsURLValue", linkbutton);
-            linkbutton->set_uri(url);
-            linkbutton->set_label(url);
-            builder->get_widget("userSettingsU2UValue", label);
-            label->set_text(accept_u2u ? "Yes" : "No");
-            builder->get_widget("userSettingsRecordValue", label);
-            label->set_text(allow_recording ? "Yes" : "No");
-            builder->get_widget("userSettingsPageValue", label);
-            label->set_text(accept_pages ? "Yes" : "No");
-            builder->get_widget("userSettingsChatValue", label);
-            label->set_text(accept_chat ? "Yes" : "No");
-
-            // set the current volume level for this user
-            volumeAdjustment->set_value(v3_get_volume_user(id));
-
-            builder->get_widget("userSettingsWindow", window);
-            window->show_all();
-            window->queue_resize();
-            window->present();
-        }
+        userSettingsWindow(row);
     } else {
         // double clicked a channel
         Gtk::TreeModel::Row user = getUser(v3_get_user_id(), channelStore->children());
@@ -768,6 +724,8 @@ ManglerChannelTree::channelView_buttonpress_event_cb(GdkEventButton* event) {/*{
                 }
                 if (user->id == v3_get_user_id()) {
                     // we clicked ourself
+                    builder->get_widget("userSettings", menuitem);
+                    menuitem->hide();
                     builder->get_widget("kickUser", menuitem);
                     menuitem->hide();
                     builder->get_widget("banUser", menuitem);
@@ -777,6 +735,8 @@ ManglerChannelTree::channelView_buttonpress_event_cb(GdkEventButton* event) {/*{
                     builder->get_widget("muteUserGlobal", menuitem);
                     menuitem->hide();
                 } else {
+                    builder->get_widget("userSettings", menuitem);
+                    menuitem->show();
                     builder->get_widget("kickUser", menuitem);
                     if (perms->kick_user) {
                         menuitem->show();
@@ -810,6 +770,16 @@ ManglerChannelTree::channelView_buttonpress_event_cb(GdkEventButton* event) {/*{
                 rcmenu_channel->popup(event->button, event->time);
             }
         }
+    }
+}/*}}}*/
+
+void
+ManglerChannelTree::userSettingsMenuItem_activate_cb(void) {/*{{{*/
+    Glib::RefPtr<Gtk::TreeSelection> sel = channelView->get_selection();
+    Gtk::TreeModel::iterator iter = sel->get_selected();
+    if(iter) {
+        Gtk::TreeModel::Row row = *iter;
+        userSettingsWindow(row);
     }
 }/*}}}*/
 
@@ -1129,3 +1099,55 @@ ManglerChannelTree::on_sort_compare(const Gtk::TreeModel::iterator& a_, const Gt
     return 0;
 }/*}}}*/
 
+void
+ManglerChannelTree::userSettingsWindow(Gtk::TreeModel::Row row) {
+
+    int id = row ;
+    // double clicked a user
+    if (id == v3_get_user_id()) {
+        // clicked on ourself
+    } else {
+        v3_user *u;
+        uint16_t id = row[channelRecord.id];
+        Glib::ustring name = row[channelRecord.name];
+        Glib::ustring comment = row[channelRecord.comment];
+        Glib::ustring url = row[channelRecord.url];
+        bool  accept_pages = false, accept_u2u = false, accept_chat = false, allow_recording = false;
+        if ((u = v3_get_user(id)) != NULL) {
+            accept_pages = u->accept_pages;
+            accept_u2u = u->accept_u2u;
+            accept_chat = u->accept_chat;
+            allow_recording = u->allow_recording;
+            v3_free_user(u);
+        }
+
+        // disconnect whatever was connected before and reconnect
+        volumeAdjustSignalConnection.disconnect();
+        volumeAdjustSignalConnection = volumeAdjustment->signal_value_changed().connect(sigc::bind(sigc::mem_fun(this, &ManglerChannelTree::volumeAdjustment_value_changed_cb), id));
+
+        // set the value label
+        builder->get_widget("userSettingsNameValueLabel", label);
+        label->set_text(name);
+        builder->get_widget("userSettingsCommentValue", label);
+        label->set_text(comment);
+        builder->get_widget("userSettingsURLValue", linkbutton);
+        linkbutton->set_uri(url);
+        linkbutton->set_label(url);
+        builder->get_widget("userSettingsU2UValue", label);
+        label->set_text(accept_u2u ? "Yes" : "No");
+        builder->get_widget("userSettingsRecordValue", label);
+        label->set_text(allow_recording ? "Yes" : "No");
+        builder->get_widget("userSettingsPageValue", label);
+        label->set_text(accept_pages ? "Yes" : "No");
+        builder->get_widget("userSettingsChatValue", label);
+        label->set_text(accept_chat ? "Yes" : "No");
+
+        // set the current volume level for this user
+        volumeAdjustment->set_value(v3_get_volume_user(id));
+
+        builder->get_widget("userSettingsWindow", window);
+        window->show_all();
+        window->queue_resize();
+        window->present();
+    }
+}
