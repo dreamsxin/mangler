@@ -104,17 +104,12 @@ _v3_get_msg_uint16_array(void *offset, uint16_t *len) {/*{{{*/
 
 int
 _v3_put_msg_uint16_array(void *buffer, uint16_t len, uint16_t *array) {/*{{{*/
-    uint16_t *s;
-    int i;
-    
     _v3_func_enter("_v3_put_msg_uint16_array");
-
     memcpy(buffer, &len, 2);
-    if (len)
+    if (len) {
         memcpy(buffer, array, len * 2);
-
+    }
     _v3_func_leave("_v3_put_msg_uint16_array");
-
     return len + 2;
 }/*}}}*/
 
@@ -818,7 +813,6 @@ _v3_get_0x4a(_v3_net_message *msg) {/*{{{*/
 _v3_net_message *_v3_put_0x4a(uint8_t subtype, v3_account *account, v3_account *account2) {/*{{{*/
     _v3_net_message *m;
     _v3_msg_0x4a *mc;
-    void *offset;
 
     _v3_func_enter("_v3_put_0x4a");
     // Build our message
@@ -1631,7 +1625,7 @@ _v3_destroy_0x60(_v3_net_message *msg) {/*{{{*/
 /*}}}*/
 // Message 0x63 (99) | ADMIN /*{{{*/
 _v3_net_message *
-_v3_put_0x63(uint16_t subtype, uint16_t user_id, uint8_t *string) {/*{{{*/
+_v3_put_0x63(uint16_t subtype, uint16_t user_id, char *string) {/*{{{*/
     _v3_net_message *m;
     _v3_msg_0x63 *mc;
 
@@ -1651,7 +1645,7 @@ _v3_put_0x63(uint16_t subtype, uint16_t user_id, uint8_t *string) {/*{{{*/
     
     switch (subtype) {
         case V3_ADMIN_LOGIN:
-            _v3_hash_password(string, mc->t.password_hash);
+            _v3_hash_password((uint8_t *)string, mc->t.password_hash);
             break;
         case V3_ADMIN_LOGOUT:
             break;

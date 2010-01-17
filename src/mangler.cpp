@@ -544,9 +544,11 @@ void Mangler::stopTransmit(void) {/*{{{*/
     if (!isTransmitting) {
         return;
     }
-    audioControl->playNotification("talkend");
     statusIcon->set(icons["tray_icon_red"]);
-    channelTree->setUserIcon(v3_get_user_id(), "red");
+    if (v3_is_loggedin()) {
+        audioControl->playNotification("talkend");
+        channelTree->setUserIcon(v3_get_user_id(), "red");
+    }
     isTransmitting = false;
     if (inputAudio) {
         inputAudio->finish();
@@ -565,7 +567,7 @@ void Mangler::muteMicCheckButton_toggled_cb(void) {/*{{{*/
     muteMic = checkbutton->get_active();
     if (muteMic && isTransmitting) {
         stopTransmit();
-    } else if (!muteMic && isTransmittingMouse || isTransmittingKey || isTransmittingButton) {
+    } else if (!muteMic && (isTransmittingMouse || isTransmittingKey || isTransmittingButton)) {
         startTransmit();
     }
 }/*}}}*/

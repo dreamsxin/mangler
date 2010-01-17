@@ -1049,7 +1049,8 @@ _v3_recv(int block) {/*{{{*/
                     case V3_EVENT_USERLIST_ADD:
                     case V3_EVENT_USERLIST_MODIFY:/*{{{*/
                         {
-                            v3_account a = {0};
+                            v3_account a;
+                            memset(&a, 0, sizeof(v3_account));
                             a.perms = ev.data.account.perms;
                             a.username = strdup(ev.data.account.username);
                             a.owner = strdup(ev.data.account.owner);
@@ -1267,7 +1268,7 @@ v3_message_waiting(int block) {/*{{{*/
 }/*}}}*/
 
 void
-_v3_hash_password(uint8_t* password, uint8_t* hash) {/*{{{*/
+_v3_hash_password(uint8_t *password, uint8_t *hash) {/*{{{*/
     uint32_t crc, i, j, cnt, len;
     uint8_t  tmp[4] = { 0 };
 
@@ -2010,7 +2011,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                 return V3_MALFORMED;
             } else {
                 _v3_msg_0x36 *m = msg->contents;
-                v3_rank *rl, *r;
+                v3_rank *rl;
                 int ctr;
 
                 _v3_lock_ranklist();
@@ -2304,7 +2305,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                     case V3_USERLIST_CHANGE_OWNER:
                         {
                         v3_account *a;
-                        char *old_owner, *new_owner;
+                        char *old_owner, *new_owner = NULL;
                         _v3_msg_0x4a_perms *msub = msg->contents;
 
                         _v3_debug(V3_DEBUG_INFO, "received change owner (%d => %d)", msub->perms.account_id, msub->perms.replace_owner_id);
@@ -3852,13 +3853,10 @@ v3_user_count(void) {/*{{{*/
  */
 v3_user *
 v3_get_user(uint16_t id) {/*{{{*/
-    v3_user *u, *ret_user;
+    v3_user *u, *ret_user = NULL;
 
     _v3_lock_userlist();
-    u = _v3_get_user(id);
-    if (!u) {
-        ret_user = NULL;
-    } else {
+    if ((u = _v3_get_user(id))) {
         ret_user = malloc(sizeof(v3_user));
         _v3_copy_user(ret_user, u);
         return ret_user;
@@ -3874,7 +3872,7 @@ v3_get_user(uint16_t id) {/*{{{*/
  */
 v3_user *
 _v3_get_user(uint16_t id) {/*{{{*/
-    v3_user *u, *ret_user;
+    v3_user *u;
 
     _v3_lock_userlist();
     for (u = v3_user_list; u != NULL; u = u->next) {
@@ -4362,6 +4360,7 @@ v3_get_codec_rate(uint16_t codec, uint16_t format) {/*{{{*/
             return v3_codecs[ctr].rate;
         }
     }
+    return 0;
 }/*}}}*/
 
 const v3_codec*

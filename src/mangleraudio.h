@@ -95,7 +95,7 @@ class ManglerAudio
 
 
         GAsyncQueue*    pcm_queue;
-        int             rate;
+        uint32_t        rate;
 #ifdef HAVE_PULSE
         pa_sample_spec  pulse_samplespec;
         pa_buffer_attr  buffer_attr;

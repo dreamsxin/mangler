@@ -546,6 +546,7 @@ int     _v3_close_connection(void);
 int     _v3_is_connected(void);
 void    _v3_print_user_list(void);   // testing function -- will be deleted
 void    _v3_print_channel_list(void);   // testing function -- will be deleted
+void    _v3_print_permissions(v3_permissions *perms);
 
 /*
  * External functions that are used by a program linking to the library

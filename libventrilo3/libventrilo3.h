@@ -451,7 +451,6 @@ int                     _v3_send(_v3_net_message *);
 _v3_net_message *       _v3_recv(int block);
 _v3_net_message *       _v3_create_message(_v3_net_message *msg, uint16_t type, uint16_t len, char *data);
 void                    _v3_net_message_dump(_v3_net_message *msg);
-void                    _v3_print_permissions(v3_permissions *perms);
 
 int                     _v3_server_key_exchange(void);
 int                     _v3_send_enc_msg(char *data, int len);
