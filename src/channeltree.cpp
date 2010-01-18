@@ -393,8 +393,10 @@ ManglerChannelTree::refreshUser(uint32_t id) {/*{{{*/
     Glib::ustring phonetic;
     Glib::ustring comment;
     Glib::ustring rank;
+    Glib::ustring flags;
     bool guest;
     bool phantom;
+    bool muted;
     bool global_mute;
 
     if (! (user = getUser(id, channelStore->children())) && id > 0) {
@@ -412,21 +414,29 @@ ManglerChannelTree::refreshUser(uint32_t id) {/*{{{*/
     rank = user[channelRecord.rank];
     phantom = user[channelRecord.phantom];
     guest = user[channelRecord.isGuest];
+    muted = user[channelRecord.muted];
     displayName = name;
     if (!rank.empty()) {
         displayName = "[" + rank + "] " + displayName; 
     }
+    flags = "";
     if (phantom) {
-        displayName = "\"P\" " + displayName; 
+        flags = "P" + flags; 
+    }
+    if (global_mute) {
+        flags = "G" + flags;
+    }
+    if (mangler->chat->isUserInChat(id)) {
+        flags = "C" + flags;
+    }
+    if (muted) {
+        flags = "M" + flags;
+    }
+    if (flags.length()) {
+        displayName = "[" + flags + "] " + displayName;
     }
     if (guest && !mangler->settings->config.guestFlagHidden) {
         displayName = displayName + " (GUEST)";
-    }
-    if (global_mute) {
-        displayName = "[G] " + displayName;
-    }
-    if (mangler->chat->isUserInChat(id)) {
-        displayName = "[C] " + displayName;
     }
     if (! comment.empty()) {
         displayName = displayName + " (" + (url.empty() ? "" : "U: ") + comment + ")";
@@ -868,11 +878,13 @@ ManglerChannelTree::muteUserMenuItem_activate_cb(void) {/*{{{*/
     if(iter) {
         Gtk::TreeModel::Row row = *iter;
         bool muted = row[channelRecord.muted];
+        uint16_t id = row[channelRecord.id];
         if (muted) {
             row[channelRecord.muted] = false;
         } else {
             row[channelRecord.muted] = true;
         }
+        refreshUser(id);
     }
 }/*}}}*/
 
