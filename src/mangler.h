@@ -154,7 +154,7 @@ class Mangler
         void quitMenuItem_activate_cb(void);
 
 
-        bool getNetworkEvent(void);
+        void getNetworkEvent(void);
         bool checkPushToTalkKeys(void);
         bool checkPushToTalkMouse(void);
         bool updateXferAmounts(void);

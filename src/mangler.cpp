@@ -362,10 +362,9 @@ void Mangler::connectButton_clicked_cb(void) {/*{{{*/
             v3_set_server_opts(V3_USER_ACCEPT_U2U, server->acceptU2U);
             v3_set_server_opts(V3_USER_ACCEPT_CHAT, server->acceptPrivateChat);
             v3_set_server_opts(V3_USER_ALLOW_RECORD, server->allowRecording);
-            Glib::Thread::create(sigc::bind(sigc::mem_fun(this->network, &ManglerNetwork::connect), hostname, port, username, password, phonetic), FALSE);
             isAdmin = false;
-            // TODO: move this into a thread and use blocking waits
-            Glib::signal_timeout().connect(sigc::mem_fun(*this, &Mangler::getNetworkEvent), 10 );
+            Glib::Thread::create(sigc::bind(sigc::mem_fun(this->network, &ManglerNetwork::connect), hostname, port, username, password, phonetic), FALSE);
+            Glib::Thread::create(sigc::mem_fun(this, &Mangler::getNetworkEvent), FALSE);
         }
     } else {
         wantDisconnect = true;
@@ -603,7 +602,7 @@ void Mangler::qcConnectButton_clicked_cb(void) {/*{{{*/
     v3_set_server_opts(V3_USER_ALLOW_RECORD, 1);
     Glib::Thread::create(sigc::bind(sigc::mem_fun(this->network, &ManglerNetwork::connect), server, port, username, password, ""), FALSE);
     // TODO: move this into a thread and use blocking waits
-    Glib::signal_timeout().connect( sigc::mem_fun(*this, &Mangler::getNetworkEvent), 10 );
+    Glib::Thread::create(sigc::mem_fun(this, &Mangler::getNetworkEvent), FALSE);
 }/*}}}*/
 void Mangler::qcCancelButton_clicked_cb(void) {/*{{{*/
 }/*}}}*/
@@ -640,14 +639,16 @@ bool Mangler::reconnectStatusHandler(void) {/*{{{*/
 /*
  * Inbound event processing happens here
  */
-bool Mangler::getNetworkEvent() {/*{{{*/
+void Mangler::getNetworkEvent() {/*{{{*/
     v3_event *ev;
 
-    while ((ev = v3_get_event(V3_NONBLOCK)) != NULL) {
+    fprintf(stderr, "******************************************************************************** starting our thread\n");
+    while ((ev = v3_get_event(V3_BLOCK)) != NULL) {
         v3_user *u;
         v3_channel *c;
         Glib::ustring rank = "";
         gdk_threads_enter();
+        fprintf(stderr, "******************************************************************************** iterating in our thread\n");
         // if we're not logged in, just ignore whatever messages we receive
         // *unless* it's a disconnect message.  This prevents old messages in
         // the queue from attempting to interact with the GUI after a
@@ -1027,6 +1028,9 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                         }
                     }
                     connectedServerId = -1;
+                    fprintf(stderr, "******************************************************************************** leaving our thread\n");
+                    gdk_threads_leave();
+                    return;
                 }
                 break;/*}}}*/
             case V3_EVENT_CHAT_JOIN:/*{{{*/
@@ -1182,7 +1186,9 @@ bool Mangler::getNetworkEvent() {/*{{{*/
         free(ev);
         gdk_threads_leave();
     }
-    return true;
+    fprintf(stderr, "******************************************************************************** leaving our thread on an error?\n");
+    gdk_threads_leave();
+    return;
 }/*}}}*/
 bool Mangler::checkPushToTalkKeys(void) {/*{{{*/
     char        pressed_keys[32];
