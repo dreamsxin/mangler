@@ -624,11 +624,12 @@ void Mangler::motdOkButton_clicked_cb(void) {/*{{{*/
  * Auto reconnect handling
  */
 bool Mangler::reconnectStatusHandler(void) {/*{{{*/
+    Gtk::Button *connectbutton;
     char buf[64] = "";
     int reconnectTimer = (15 - (time(NULL) - lastAttempt));
 
-    builder->get_widget("connectButton", button);
-    if (button->get_label() == "gtk-disconnect" || wantDisconnect) {
+    builder->get_widget("connectButton", connectbutton);
+    if (connectbutton->get_label() == "gtk-disconnect" || wantDisconnect) {
         reconnectStatusHandlerID = 0;
         return false;
     }
@@ -638,6 +639,7 @@ bool Mangler::reconnectStatusHandler(void) {/*{{{*/
     statusbar->push(buf);
     if (!reconnectTimer) {
         lastAttempt = time(NULL);
+        connectbutton->set_label("gtk-connect");
         Mangler::connectButton_clicked_cb();
     }
 
