@@ -145,6 +145,7 @@ class Mangler
         void aboutButton_clicked_cb(void);
         void xmitButton_toggled_cb(void);
         void statusIcon_activate_cb(void);
+        void errorOKButton_clicked_cb(void);
 
         // menu bar signal handlers
         void buttonMenuItem_toggled_cb(void);

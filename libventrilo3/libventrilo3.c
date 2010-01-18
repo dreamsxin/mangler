@@ -1650,7 +1650,6 @@ _v3_lock_userlist(void) {/*{{{*/
     }
     _v3_debug(V3_DEBUG_MUTEX, "locking userlist");
     pthread_mutex_lock(userlist_mutex);
-    pthread_mutex_lock(userlist_mutex);
 }/*}}}*/
 
 void

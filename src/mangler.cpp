@@ -178,6 +178,10 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
     builder->get_widget("aboutMenuItem", menuitem);
     menuitem->signal_activate().connect(sigc::mem_fun(this, &Mangler::aboutButton_clicked_cb));
 
+    // connect the signal for our error dialog button
+    builder->get_widget("errorOKButton", button);
+    button->signal_clicked().connect(sigc::mem_fun(this, &Mangler::errorOKButton_clicked_cb));
+
     // Set up our generic password dialog box
     builder->get_widget("passwordDialog", passwordDialog);
     builder->get_widget("passwordEntry", passwordEntry);
@@ -1436,12 +1440,24 @@ void Mangler::setActiveServer(uint32_t row_number) {/*{{{*/
     combobox->set_active(row_number);
 }/*}}}*/
 void Mangler::errorDialog(Glib::ustring message) {/*{{{*/
+    builder->get_widget("errorWindow", window);
+    window->set_keep_above(true);
+    window->set_icon(icons["tray_icon"]);
+    builder->get_widget("errorMessageLabel", label);
+    label->set_text(message);
+    window->show();
+    /*
     builder->get_widget("errorDialog", msgdialog);
     msgdialog->set_icon(icons["tray_icon"]);
     msgdialog->set_keep_above(true);
     msgdialog->set_message(message);
     msgdialog->run();
     msgdialog->hide();
+    */
+}/*}}}*/
+void Mangler::errorOKButton_clicked_cb(void) {/*{{{*/
+    builder->get_widget("errorWindow", window);
+    window->hide();
 }/*}}}*/
 
 ManglerError::ManglerError(uint32_t code, Glib::ustring message, Glib::ustring module) {/*{{{*/
