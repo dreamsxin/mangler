@@ -41,6 +41,9 @@ ManglerNetwork::connect(Glib::ustring hostname, Glib::ustring port, Glib::ustrin
     //Glib::ustring server = "tungsten.typefrag.com:29549"; Glib::ustring password = "";
     if (! v3_login((char *)server.c_str(), (char *)ustring_to_c(username).c_str(), (char *)password.c_str(), (char *)phonetic.c_str())) {
         gdk_threads_enter();
+        builder->get_widget("connectButton", button);
+        button->set_label("gtk-connect");
+        button->set_sensitive(true);
         builder->get_widget("errorDialog", msgdialog);
         msgdialog->set_icon(mangler->icons["tray_icon"]);
         msgdialog->set_message(_v3_error(NULL));

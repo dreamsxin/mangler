@@ -3006,26 +3006,26 @@ v3_login(char *server, char *username, char *password, char *phonetic) {/*{{{*/
     if (! inet_aton(srvname, &srvip)) {
         struct hostent *hp;
         int res = 0;
-        #ifdef GETHOSTBYNAME_R
-            struct hostent hostbuf;
-            size_t hstbuflen;
-            char *tmphstbuf;
-            int herr;
+#ifdef HAVE_GETHOSTBYNAME_R
+        struct hostent hostbuf;
+        size_t hstbuflen;
+        char *tmphstbuf;
+        int herr;
 
-            _v3_status(5, "Looking up hostname for %s", srvname);
-            hstbuflen = 1024;
-            tmphstbuf = malloc (hstbuflen);
+        _v3_status(5, "Looking up hostname for %s", srvname);
+        hstbuflen = 1024;
+        tmphstbuf = malloc (hstbuflen);
 
-            while ((res = gethostbyname_r (srvname, &hostbuf, tmphstbuf, hstbuflen, &hp, &herr)) == ERANGE) {
-                /* Enlarge the buffer.  */
-                hstbuflen *= 2;
-                tmphstbuf = realloc (tmphstbuf, hstbuflen);
-            }
-            free(tmphstbuf);
-        #else
-            // if gethostbyname_r does not exist, assume that the gethostbyname is re-entrant
-            hp = gethostbyname (srvname); 
-        #endif
+        while ((res = gethostbyname_r (srvname, &hostbuf, tmphstbuf, hstbuflen, &hp, &herr)) == ERANGE) {
+            /* Enlarge the buffer.  */
+            hstbuflen *= 2;
+            tmphstbuf = realloc (tmphstbuf, hstbuflen);
+        }
+        free(tmphstbuf);
+#else
+        // if gethostbyname_r does not exist, assume that the gethostbyname is re-entrant
+        hp = gethostbyname (srvname); 
+#endif
         if (res || hp == NULL || hp->h_length < 1) {
             _v3_error("Hostname lookup failed.");
             _v3_func_leave("v3_login");

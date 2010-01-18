@@ -715,6 +715,12 @@ ManglerChannelTree::channelView_buttonpress_event_cb(GdkEventButton* event) {/*{
                 } else {
                     builder->get_widget("userSettings", menuitem);
                     menuitem->show();
+                    builder->get_widget("privateChat", menuitem);
+                    if (perms->start_priv_chat) {
+                        menuitem->show();
+                    } else {
+                        menuitem->hide();
+                    }
                     builder->get_widget("kickUser", menuitem);
                     if (perms->kick_user) {
                         menuitem->show();
