@@ -273,7 +273,8 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
     statusIcon->signal_activate().connect(sigc::mem_fun(this, &Mangler::statusIcon_activate_cb));
     iconified = false;
 
-    Glib::signal_timeout().connect(sigc::mem_fun(*this, &Mangler::updateXferAmounts), 500); 
+    Glib::signal_timeout().connect(sigc::mem_fun(*this, &Mangler::updateXferAmounts), 500);
+    Glib::Thread::create(sigc::mem_fun(this, &Mangler::getNetworkEvent), FALSE);
 }/*}}}*/
 
 /*
@@ -326,8 +327,7 @@ void Mangler::connectButton_clicked_cb(void) {/*{{{*/
         builder->get_widget("statusbar", statusbar);
         statusbar->pop();
         statusbar->push("Disconnected");
-    }
-    else if (connectbutton->get_label() == "gtk-connect") {
+    } else if (connectbutton->get_label() == "gtk-connect") {
         channelTree->updateLobby("Connecting...");
         wantDisconnect = false;
         connectbutton->set_sensitive(false);
@@ -371,7 +371,7 @@ void Mangler::connectButton_clicked_cb(void) {/*{{{*/
             v3_set_server_opts(V3_USER_ALLOW_RECORD, server->allowRecording);
             isAdmin = false;
             Glib::Thread::create(sigc::bind(sigc::mem_fun(this->network, &ManglerNetwork::connect), hostname, port, username, password, phonetic), FALSE);
-            Glib::Thread::create(sigc::mem_fun(this, &Mangler::getNetworkEvent), FALSE);
+            //Glib::Thread::create(sigc::mem_fun(this, &Mangler::getNetworkEvent), FALSE);
         }
     } else {
         wantDisconnect = true;
@@ -609,7 +609,7 @@ void Mangler::qcConnectButton_clicked_cb(void) {/*{{{*/
     v3_set_server_opts(V3_USER_ALLOW_RECORD, 1);
     Glib::Thread::create(sigc::bind(sigc::mem_fun(this->network, &ManglerNetwork::connect), server, port, username, password, ""), FALSE);
     // TODO: move this into a thread and use blocking waits
-    Glib::Thread::create(sigc::mem_fun(this, &Mangler::getNetworkEvent), FALSE);
+    //Glib::Thread::create(sigc::mem_fun(this, &Mangler::getNetworkEvent), FALSE);
 }/*}}}*/
 void Mangler::qcCancelButton_clicked_cb(void) {/*{{{*/
 }/*}}}*/
@@ -1047,8 +1047,8 @@ void Mangler::getNetworkEvent() {/*{{{*/
             case V3_EVENT_DISCONNECT:/*{{{*/
                 {
                     onDisconnectHandler();
-                    gdk_threads_leave();
-                    return;
+                    //gdk_threads_leave();
+                    //return;
                 }
                 break;/*}}}*/
             case V3_EVENT_CHAT_JOIN:/*{{{*/
