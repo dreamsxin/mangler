@@ -996,6 +996,7 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                     channelTree->clear();
                     builder->get_widget("connectButton", button);
                     button->set_label("gtk-connect");
+                    button->set_sensitive(true);
                     builder->get_widget("xmitButton", togglebutton);
                     togglebutton->set_active(false);
                     builder->get_widget("serverSelectComboBox", combobox);
