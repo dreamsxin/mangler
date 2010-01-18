@@ -145,7 +145,6 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
 
     // Autoreconnect feature implementation
     wantDisconnect = false;
-    reconnectStatusHandlerID = 0;
 
     /*
      * Retreive all menu bar items from builder and set their singal handler
@@ -274,7 +273,7 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
     iconified = false;
 
     Glib::signal_timeout().connect(sigc::mem_fun(*this, &Mangler::updateXferAmounts), 500);
-    Glib::Thread::create(sigc::mem_fun(this, &Mangler::getNetworkEvent), FALSE);
+    Glib::signal_timeout().connect(sigc::mem_fun(*this, &Mangler::getNetworkEvent), 10);
 }/*}}}*/
 
 /*
@@ -371,7 +370,6 @@ void Mangler::connectButton_clicked_cb(void) {/*{{{*/
             v3_set_server_opts(V3_USER_ALLOW_RECORD, server->allowRecording);
             isAdmin = false;
             Glib::Thread::create(sigc::bind(sigc::mem_fun(this->network, &ManglerNetwork::connect), hostname, port, username, password, phonetic), FALSE);
-            //Glib::Thread::create(sigc::mem_fun(this, &Mangler::getNetworkEvent), FALSE);
         }
     } else {
         wantDisconnect = true;
@@ -609,7 +607,6 @@ void Mangler::qcConnectButton_clicked_cb(void) {/*{{{*/
     v3_set_server_opts(V3_USER_ALLOW_RECORD, 1);
     Glib::Thread::create(sigc::bind(sigc::mem_fun(this->network, &ManglerNetwork::connect), server, port, username, password, ""), FALSE);
     // TODO: move this into a thread and use blocking waits
-    //Glib::Thread::create(sigc::mem_fun(this, &Mangler::getNetworkEvent), FALSE);
 }/*}}}*/
 void Mangler::qcCancelButton_clicked_cb(void) {/*{{{*/
 }/*}}}*/
@@ -630,7 +627,6 @@ bool Mangler::reconnectStatusHandler(void) {/*{{{*/
 
     builder->get_widget("connectButton", connectbutton);
     if (connectbutton->get_label() == "gtk-disconnect" || wantDisconnect) {
-        reconnectStatusHandlerID = 0;
         return false;
     }
     builder->get_widget("statusbar", statusbar);
@@ -680,7 +676,7 @@ void Mangler::onDisconnectHandler(void) {/*{{{*/
             if (!wantDisconnect && server->persistentConnection) {
                 connectbutton->set_label("gtk-cancel");
                 lastAttempt = time(NULL);
-                reconnectStatusHandlerID = Glib::signal_timeout().connect_seconds(sigc::mem_fun(*this, &Mangler::reconnectStatusHandler), 1);
+                Glib::signal_timeout().connect_seconds(sigc::mem_fun(*this, &Mangler::reconnectStatusHandler), 1);
                 return;
             }
         }
@@ -694,10 +690,10 @@ void Mangler::onDisconnectHandler(void) {/*{{{*/
 /*
  * Inbound event processing happens here
  */
-void Mangler::getNetworkEvent() {/*{{{*/
+bool Mangler::getNetworkEvent() {/*{{{*/
     v3_event *ev;
 
-    while ((ev = v3_get_event(V3_BLOCK)) != NULL) {
+    while ((ev = v3_get_event(V3_NONBLOCK)) != NULL) {
         v3_user *u;
         v3_channel *c;
         Glib::ustring rank = "";
@@ -1045,11 +1041,7 @@ void Mangler::getNetworkEvent() {/*{{{*/
                 }
                 break;/*}}}*/
             case V3_EVENT_DISCONNECT:/*{{{*/
-                {
-                    onDisconnectHandler();
-                    //gdk_threads_leave();
-                    //return;
-                }
+                onDisconnectHandler();
                 break;/*}}}*/
             case V3_EVENT_CHAT_JOIN:/*{{{*/
                 {
@@ -1204,8 +1196,7 @@ void Mangler::getNetworkEvent() {/*{{{*/
         free(ev);
         gdk_threads_leave();
     }
-    gdk_threads_leave();
-    return;
+    return true;
 }/*}}}*/
 bool Mangler::checkPushToTalkKeys(void) {/*{{{*/
     char        pressed_keys[32];

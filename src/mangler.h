@@ -99,7 +99,6 @@ class Mangler
 
         // Autoreconnect feature stuff - Need ID's to kill threads if needed
         bool                                wantDisconnect;
-        guint                               reconnectStatusHandlerID;
         time_t                              lastAttempt;
         uint32_t                            lastServer;
 
@@ -153,7 +152,7 @@ class Mangler
         void hideGuestFlagMenuItem_toggled_cb(void);
         void quitMenuItem_activate_cb(void);
 
-        void getNetworkEvent(void);
+        bool getNetworkEvent(void);
         bool checkPushToTalkKeys(void);
         bool checkPushToTalkMouse(void);
         bool updateXferAmounts(void);
