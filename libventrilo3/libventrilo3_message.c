@@ -772,33 +772,30 @@ _v3_get_0x4a(_v3_net_message *msg) {/*{{{*/
         case V3_USERLIST_ADD:
         case V3_USERLIST_MODIFY:
             {
-            int i;
-            _v3_msg_0x4a_account *msub = malloc(sizeof(_v3_msg_0x4a_account));
-            memcpy(msub, m, sizeof(*m));
-            msg->contents = msub;
+                int i;
+                _v3_msg_0x4a_account *msub = malloc(sizeof(_v3_msg_0x4a_account));
+                memcpy(msub, m, sizeof(*m));
+                msg->contents = msub;
 
-            msub->acct_list_count = msub->header.count;
-            msub->acct_list = calloc(msub->header.count, sizeof(msub->acct_list[0]));
+                msub->acct_list_count = msub->header.count;
+                msub->acct_list = calloc(msub->header.count, sizeof(msub->acct_list[0]));
 
-            for (i = 0, offset = msg->data + sizeof(msub->header);i < msub->header.count; i++) {
-                v3_account *account = msub->acct_list[i] = malloc(sizeof(v3_account));
-                offset += _v3_get_msg_account(offset, account);
-            }
+                for (i = 0, offset = msg->data + sizeof(msub->header);i < msub->header.count; i++) {
+                    v3_account *account = msub->acct_list[i] = malloc(sizeof(v3_account));
+                    offset += _v3_get_msg_account(offset, account);
+                }
             }
             break;
         case V3_USERLIST_REMOVE:
         case V3_USERLIST_LUSER:
         case V3_USERLIST_CHANGE_OWNER:
             {
-            if (msg->len != sizeof(_v3_msg_0x4a_perms)) {
-                _v3_debug(V3_DEBUG_PACKET_PARSE, "expected %d bytes, but message is %d bytes", sizeof(_v3_msg_0x4a_perms), msg->len);
-               _v3_func_leave("_v3_get_0x4a");
-               return false;
-            }
-            _v3_msg_0x4a_perms *msub = (_v3_msg_0x4a_perms *)m;
-            msub = realloc(m, sizeof(_v3_msg_0x4a_perms));
-            memcpy(msub, msg->data, sizeof(_v3_msg_0x4a_perms));
-            msg->contents = msub;
+                if (msg->len != sizeof(_v3_msg_0x4a_perms)) {
+                    _v3_debug(V3_DEBUG_PACKET_PARSE, "expected %d bytes, but message is %d bytes", sizeof(_v3_msg_0x4a_perms), msg->len);
+                    _v3_func_leave("_v3_get_0x4a");
+                    return false;
+                }
+                _v3_msg_0x4a_perms *msub = (_v3_msg_0x4a_perms *)m;
             }
             break;
         default:
