@@ -642,13 +642,11 @@ bool Mangler::reconnectStatusHandler(void) {/*{{{*/
 void Mangler::getNetworkEvent() {/*{{{*/
     v3_event *ev;
 
-    fprintf(stderr, "******************************************************************************** starting our thread\n");
     while ((ev = v3_get_event(V3_BLOCK)) != NULL) {
         v3_user *u;
         v3_channel *c;
         Glib::ustring rank = "";
         gdk_threads_enter();
-        fprintf(stderr, "******************************************************************************** iterating in our thread\n");
         // if we're not logged in, just ignore whatever messages we receive
         // *unless* it's a disconnect message.  This prevents old messages in
         // the queue from attempting to interact with the GUI after a
@@ -1028,7 +1026,6 @@ void Mangler::getNetworkEvent() {/*{{{*/
                         }
                     }
                     connectedServerId = -1;
-                    fprintf(stderr, "******************************************************************************** leaving our thread\n");
                     gdk_threads_leave();
                     return;
                 }
@@ -1186,7 +1183,6 @@ void Mangler::getNetworkEvent() {/*{{{*/
         free(ev);
         gdk_threads_leave();
     }
-    fprintf(stderr, "******************************************************************************** leaving our thread on an error?\n");
     gdk_threads_leave();
     return;
 }/*}}}*/
