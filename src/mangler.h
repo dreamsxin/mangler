@@ -153,7 +153,6 @@ class Mangler
         void hideGuestFlagMenuItem_toggled_cb(void);
         void quitMenuItem_activate_cb(void);
 
-
         void getNetworkEvent(void);
         bool checkPushToTalkKeys(void);
         bool checkPushToTalkMouse(void);
@@ -161,6 +160,7 @@ class Mangler
 
         // autoreconnect implementation
         bool reconnectStatusHandler(void);
+        void onDisconnectHandler(void);
 
         // quick mute options
         void muteSoundCheckButton_toggled_cb(void);

@@ -132,7 +132,7 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
     builder->get_widget("motdOkButton", button);
     button->signal_clicked().connect(sigc::mem_fun(this, &Mangler::motdOkButton_clicked_cb));
 
-    // MOTD Window Buttons
+    // Input VU Meter
     builder->get_widget("inputVUMeterProgressBar", inputvumeter);
 
     // Quick mute options
@@ -316,14 +316,21 @@ void Mangler::serverConfigButton_clicked_cb(void) {/*{{{*/
     window->show();
 }/*}}}*/
 void Mangler::connectButton_clicked_cb(void) {/*{{{*/
+    Gtk::Button *connectbutton;
     Gtk::TreeModel::iterator iter;
 
-    builder->get_widget("connectButton", button);
-    if (button->get_label() == "gtk-connect") {
+    builder->get_widget("connectButton", connectbutton);
+    if (connectbutton->get_label() == "gtk-cancel") {
+        wantDisconnect = true;
+        onDisconnectHandler();
+        builder->get_widget("statusbar", statusbar);
+        statusbar->pop();
+        statusbar->push("Disconnected");
+    }
+    else if (connectbutton->get_label() == "gtk-connect") {
         channelTree->updateLobby("Connecting...");
-        wantDisconnect = false;        
-        builder->get_widget("connectButton", button);
-        button->set_sensitive(false);
+        wantDisconnect = false;
+        connectbutton->set_sensitive(false);
         builder->get_widget("serverSelectComboBox", combobox);
         iter = combobox->get_active();
         if (iter) {
@@ -617,22 +624,68 @@ void Mangler::motdOkButton_clicked_cb(void) {/*{{{*/
  * Auto reconnect handling
  */
 bool Mangler::reconnectStatusHandler(void) {/*{{{*/
-    char buffer [50];
+    char buf[64] = "";
     int reconnectTimer = (15 - (time(NULL) - lastAttempt));
+
     builder->get_widget("connectButton", button);
-    if (button->get_label() == "gtk-disconnect") {
+    if (button->get_label() == "gtk-disconnect" || wantDisconnect) {
         reconnectStatusHandlerID = 0;
         return false;
     }
     builder->get_widget("statusbar", statusbar);
-    sprintf (buffer, "Attempting reconnect in %d seconds", reconnectTimer);
+    snprintf(buf, 63, "Attempting reconnect in %d seconds", reconnectTimer);
     statusbar->pop();
-    statusbar->push(buffer);
-    if (!(reconnectTimer)) {
+    statusbar->push(buf);
+    if (!reconnectTimer) {
         lastAttempt = time(NULL);
         Mangler::connectButton_clicked_cb();
     }
+
     return true;
+}/*}}}*/
+
+void Mangler::onDisconnectHandler(void) {/*{{{*/
+    Gtk::Button *connectbutton;
+    ManglerServerConfig *server;
+
+    builder->get_widget("connectButton", connectbutton);
+    if (connectbutton->get_label() == "gtk-disconnect") {
+        connectbutton->set_sensitive(true);
+        channelTree->clear();
+        builder->get_widget("xmitButton", togglebutton);
+        togglebutton->set_active(false);
+        builder->get_widget("progressbar", progressbar);
+        progressbar->set_text("");
+        progressbar->set_fraction(0);
+        builder->get_widget("statusbar", statusbar);
+        statusbar->pop();
+        statusbar->push("Not connected");
+        //builder->get_widget("serverTabLabel", label);
+        //label->set_label("Not Connected");
+        builder->get_widget("pingLabel", label);
+        label->set_label("N/A");
+        builder->get_widget("userCountLabel", label);
+        label->set_label("N/A");
+        builder->get_widget("codecLabel", label);
+        label->set_label("N/A");
+        mangler->statusIcon->set(icons["tray_icon_grey"]);
+        audioControl->playNotification("logout");
+        isAdmin = false;
+        chat->clear();
+        if (connectedServerId != -1) {
+            server = settings->config.getserver(connectedServerId);
+            connectedServerId = -1;
+            if (!wantDisconnect && server->persistentConnection) {
+                connectbutton->set_label("gtk-cancel");
+                lastAttempt = time(NULL);
+                reconnectStatusHandlerID = Glib::signal_timeout().connect_seconds(sigc::mem_fun(*this, &Mangler::reconnectStatusHandler), 1);
+                return;
+            }
+        }
+    }
+    connectbutton->set_label("gtk-connect");
+    builder->get_widget("serverSelectComboBox", combobox);
+    combobox->set_sensitive(true);
 }/*}}}*/
 
 // Timeout Callbacks
@@ -991,41 +1044,7 @@ void Mangler::getNetworkEvent() {/*{{{*/
                 break;/*}}}*/
             case V3_EVENT_DISCONNECT:/*{{{*/
                 {
-                    ManglerServerConfig *server;
-                    channelTree->clear();
-                    builder->get_widget("connectButton", button);
-                    button->set_label("gtk-connect");
-                    button->set_sensitive(true);
-                    builder->get_widget("xmitButton", togglebutton);
-                    togglebutton->set_active(false);
-                    builder->get_widget("serverSelectComboBox", combobox);
-                    combobox->set_sensitive(true);
-                    builder->get_widget("progressbar", progressbar);
-                    builder->get_widget("statusbar", statusbar);
-                    progressbar->set_text("");
-                    progressbar->set_fraction(0);
-                    statusbar->pop();
-                    statusbar->push("Not connected");
-                    //builder->get_widget("serverTabLabel", label);
-                    //label->set_label("Not Connected");
-                    builder->get_widget("pingLabel", label);
-                    label->set_label("N/A");
-                    builder->get_widget("userCountLabel", label);
-                    label->set_label("N/A");
-                    builder->get_widget("codecLabel", label);
-                    label->set_label("N/A");
-                    mangler->statusIcon->set(icons["tray_icon_grey"]);
-                    audioControl->playNotification("logout");
-                    isAdmin = false;
-                    chat->clear();
-                    if (connectedServerId != -1) {
-                        server = settings->config.getserver(connectedServerId);
-                        if(!wantDisconnect && server->persistentConnection) {
-                            lastAttempt = time(NULL);
-                            reconnectStatusHandlerID = Glib::signal_timeout().connect_seconds(sigc::mem_fun(*this,&Mangler::reconnectStatusHandler),1);
-                        }
-                    }
-                    connectedServerId = -1;
+                    onDisconnectHandler();
                     gdk_threads_leave();
                     return;
                 }
