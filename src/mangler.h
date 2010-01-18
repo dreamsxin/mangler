@@ -72,6 +72,7 @@ class Mangler
         Gtk::MenuItem                       *menuitem;
         Gtk::Table                          *table;
         Gtk::CheckButton                    *checkbutton;
+        Gtk::ProgressBar                    *inputvumeter;
         
 
         std::map<Glib::ustring, Glib::RefPtr<Gdk::Pixbuf> >  icons;
@@ -94,6 +95,7 @@ class Mangler
         bool                                isAdmin;
         bool                                muteSound;
         bool                                muteMic;
+
 
         // Autoreconnect feature stuff - Need ID's to kill threads if needed
         bool                                wantDisconnect;

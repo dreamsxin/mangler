@@ -132,6 +132,9 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
     builder->get_widget("motdOkButton", button);
     button->signal_clicked().connect(sigc::mem_fun(this, &Mangler::motdOkButton_clicked_cb));
 
+    // MOTD Window Buttons
+    builder->get_widget("inputVUMeterProgressBar", inputvumeter);
+
     // Quick mute options
     muteMic   = false;
     muteSound = false;

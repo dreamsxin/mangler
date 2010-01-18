@@ -247,6 +247,7 @@ ManglerAudio::closeInput(bool drain) {/*{{{*/
         alsa_stream = NULL;
     }
 #endif
+    mangler->inputvumeter->set_fraction(0);
 }/*}}}*/
 
 void
@@ -265,6 +266,7 @@ ManglerAudio::input(void) {/*{{{*/
     uint32_t ret_rate;
     float seconds = 0;
     struct timeval start, now, diff;
+    uint16_t pcmmax;
     int ctr;
     bool drop;
 
@@ -273,6 +275,7 @@ ManglerAudio::input(void) {/*{{{*/
         //fprintf(stderr, "main input iteration\n");
         if (stop_input == true) {
             fprintf(stderr, "stopping input\n");
+            closeInput(true);
             //throw Glib::Thread::Exit();
             return;
         }
@@ -343,6 +346,14 @@ ManglerAudio::input(void) {/*{{{*/
             timeval_subtract(&diff, &now, &start);
             seconds = (float)diff.tv_sec + ((float)diff.tv_usec / (float)1000000);
             //fprintf(stderr, "iteration after %f seconds with %d bytes\n", seconds, pcm_framesize*ctr);
+            pcmmax = 0;
+            for (int16_t *pcmptr = (int16_t *)(buf+(pcm_framesize*ctr)); pcmptr < (int16_t *)(buf+pcm_framesize*(ctr+1)); pcmptr++) {
+                pcmmax = abs(*pcmptr) > pcmmax ? abs(*pcmptr) : pcmmax;
+            }
+            if (pcmmax > 16384) {
+                pcmmax = 16384;
+            }
+            mangler->inputvumeter->set_fraction(pcmmax/16384.0);
             ctr++;
         }
         if (! drop) {
