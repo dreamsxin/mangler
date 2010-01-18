@@ -2175,8 +2175,14 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                             u->accept_chat = m->value;
                             break;
                         case V3_USER_GLOBAL_MUTE:
-                            _v3_debug(V3_DEBUG_INFO, "setting user %d as globally muted = %d", m->user_id, m->value);
-                            u->global_mute = m->value;
+                            {
+                                _v3_debug(V3_DEBUG_INFO, "setting user %d as globally muted = %d", m->user_id, m->value);
+                                u->global_mute = m->value;
+                                v3_event *ev = _v3_create_event(V3_EVENT_USER_GLOBAL_MUTE_CHANGED);
+                                ev->user.id = u->id;
+                                _v3_debug(V3_DEBUG_INFO, "queuing event type %d for user %d", ev->type, ev->user.id);
+                                v3_queue_event(ev);
+                            }
                             break;
                         default:
                             _v3_debug(V3_DEBUG_INFO, "unknown setting for user %d setting: %d = %d", m->user_id, m->setting, m->value);
