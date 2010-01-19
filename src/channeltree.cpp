@@ -215,7 +215,13 @@ ManglerChannelTree::updateUser(uint32_t id, uint32_t parent_id, Glib::ustring na
     }
     
     user[channelRecord.displayName]       = displayName;
-    user[channelRecord.icon]              = mangler->icons["user_icon_red"]->scale_simple(15, 15, Gdk::INTERP_BILINEAR);
+    if (id == v3_get_user_id()) {
+        if (mangler->isTransmitting) {
+            user[channelRecord.icon]              = mangler->icons["user_icon_green"]->scale_simple(15, 15, Gdk::INTERP_BILINEAR);
+        } else {
+            user[channelRecord.icon]              = mangler->icons["user_icon_red"]->scale_simple(15, 15, Gdk::INTERP_BILINEAR);
+        }
+    }
     user[channelRecord.isUser]            = id == 0 ? false : true;
     user[channelRecord.isGuest]           = guest;
     user[channelRecord.id]                = id;
