@@ -353,7 +353,9 @@ ManglerAudio::input(void) {/*{{{*/
             if (pcmmax > 24576) {
                 pcmmax = 24576;
             }
+            gdk_threads_enter();
             mangler->inputvumeter->set_fraction(pcmmax/24576.0);
+            gdk_threads_leave();
             ctr++;
         }
         if (! drop) {
