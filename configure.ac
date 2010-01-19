@@ -71,6 +71,10 @@ fi
 
 PKG_CHECK_MODULES(gtk, gtk+-2.0 >= 2.16.0)
 
+PKG_CHECK_MODULES(dbus, dbus-glib-1 >= 0.80, [AC_DEFINE(HAVE_DBUS, 1, [have dbus])], [:])
+AC_SUBST(dbus_CFLAGS)
+AC_SUBST(dbus_LIBS)
+
 PKG_CHECK_MODULES(gtkmm, gtkmm-2.4 >= 1.3.3)
 AC_SUBST(gtkmm_CFLAGS)
 AC_SUBST(gtkmm_LIBS)

@@ -24,6 +24,7 @@
  * along with Mangler.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "config.h"
 #include "mangler.h"
 #include "manglersettings.h"
 #include <gdk/gdkx.h>
@@ -70,8 +71,25 @@ ManglerSettings::ManglerSettings(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
     audioPlayerComboBox->set_model(audioPlayerTreeModel);
     // create a "none" row
     Gtk::TreeModel::Row audioPlayerNoneRow = *(audioPlayerTreeModel->append());
-    audioPlayerNoneRow[audioPlayerColumns.id] = -1;
+    audioPlayerNoneRow[audioPlayerColumns.id] = MusicClient_None;
     audioPlayerNoneRow[audioPlayerColumns.name] = "None";
+#ifdef HAVE_LIBMPDCLIENT
+    // add MPD row
+    Gtk::TreeModel::Row audioPlayerMPDRow = *(audioPlayerTreeModel->append());
+    audioPlayerMPDRow[audioPlayerColumns.id] = MusicClient_MPD;
+    audioPlayerMPDRow[audioPlayerColumns.name] = "MPD";
+#endif
+#ifdef HAVE_DBUS
+    // add DBUS client rows
+    // rhythmbox
+    Gtk::TreeModel::Row audioPlayerRBRow = *(audioPlayerTreeModel->append());
+    audioPlayerRBRow[audioPlayerColumns.id] = MusicClient_Rhythmbox;
+    audioPlayerRBRow[audioPlayerColumns.name] = "Rhythmbox";
+    // amarok
+    Gtk::TreeModel::Row audioPlayerAmarokRow = *(audioPlayerTreeModel->append());
+    audioPlayerAmarokRow[audioPlayerColumns.id] = MusicClient_Amarok;
+    audioPlayerAmarokRow[audioPlayerColumns.name] = "Amarok";
+#endif
     audioPlayerComboBox->pack_start(audioPlayerColumns.name);
     audioPlayerComboBox->set_active(audioPlayerNoneRow);
 
@@ -170,12 +188,19 @@ void ManglerSettings::applySettings(void) {/*{{{*/
 
     // Audio Player Integration
     builder->get_widget("settingsEnableAudioIntegrationCheckButton", checkbutton);
-    config.AudioIntegrationEnabled = checkbutton->get_active() ? true : false;
+    config.AudioIntegrationEnabled = checkbutton->get_active();
     iter = audioPlayerComboBox->get_active();
     if (iter) {
         Gtk::TreeModel::Row row = *iter;
-        config.AudioIntegrationPlayer = row[audioPlayerColumns.name];
+        uint8_t id = row[audioPlayerColumns.id];
+        config.AudioIntegrationPlayer = id;
+        if (config.AudioIntegrationEnabled) {
+            mangler->integration->setClient((MusicClient)id);
+        } else {
+            mangler->integration->setClient(MusicClient_None);
+        }
     }
+    mangler->integration->update(true);
 
     // Audio Devices
     iter = inputDeviceComboBox->get_active();
@@ -272,6 +297,20 @@ void ManglerSettings::initSettings(void) {/*{{{*/
     // Audio Player Integration
     builder->get_widget("settingsEnableAudioIntegrationCheckButton", checkbutton);
     checkbutton->set_active(config.AudioIntegrationEnabled ? true : false);
+    int audioPlayerSelection = 0;
+    int audioPlayerCtr = 0;
+    Gtk::TreeModel::Children apChildren = audioPlayerTreeModel->children();
+    for (
+            Gtk::TreeModel::Children::iterator apIter = apChildren.begin();
+            apIter != apChildren.end();
+            ++apIter, audioPlayerCtr++) {
+        Gtk::TreeModel::Row row = *apIter;
+        uint8_t id = row[audioPlayerColumns.id];
+        if (config.AudioIntegrationPlayer == id) {
+            audioPlayerSelection = audioPlayerCtr;
+        }
+    }
+    audioPlayerComboBox->set_active(audioPlayerSelection);
     /*
        iterate through whatever is available based on what we can find and populate the store
        audioPlayerComboBox->set_active(iterOfSelectedinStore);

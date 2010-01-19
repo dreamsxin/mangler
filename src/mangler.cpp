@@ -276,6 +276,13 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
     statusIcon->signal_activate().connect(sigc::mem_fun(this, &Mangler::statusIcon_activate_cb));
     iconified = false;
 
+    // Music (Now playing)
+    integration = new ManglerIntegration();
+    integration->setClient((MusicClient)settings->config.AudioIntegrationPlayer);
+    integration->update(true);
+    Glib::signal_timeout().connect(sigc::mem_fun(this, &Mangler::updateIntegration), 1000);
+
+
     Glib::signal_timeout().connect(sigc::mem_fun(*this, &Mangler::updateXferAmounts), 500);
     Glib::signal_timeout().connect(sigc::mem_fun(*this, &Mangler::getNetworkEvent), 10);
 }/*}}}*/
@@ -324,7 +331,7 @@ void Mangler::connectButton_clicked_cb(void) {/*{{{*/
     Gtk::TreeModel::iterator iter;
 
     builder->get_widget("connectButton", connectbutton);
-    if (connectbutton->get_label() == "gtk-cancel") {
+    if (connectbutton->get_label() == "Cancel Reconnect") {
         wantDisconnect = true;
         onDisconnectHandler();
         builder->get_widget("statusbar", statusbar);
@@ -678,7 +685,7 @@ void Mangler::onDisconnectHandler(void) {/*{{{*/
             server = settings->config.getserver(connectedServerId);
             connectedServerId = -1;
             if (!wantDisconnect && server->persistentConnection) {
-                connectbutton->set_label("gtk-cancel");
+                connectbutton->set_label("Cancel Reconnect");
                 lastAttempt = time(NULL);
                 Glib::signal_timeout().connect_seconds(sigc::mem_fun(*this, &Mangler::reconnectStatusHandler), 1);
                 return;
@@ -1374,6 +1381,35 @@ bool Mangler::updateXferAmounts(void) {/*{{{*/
     }
     return GDK_FILTER_CONTINUE;
 } }}} */
+bool Mangler::updateIntegration(void) {/*{{{*/
+    if (v3_is_loggedin()) {
+        if (!settings->config.AudioIntegrationEnabled || integration->client == MusicClient_None) {
+            if (integration_text != "") {
+                    v3_set_text((char *) ustring_to_c(comment).c_str(), (char *) ustring_to_c(url).c_str(), (char *)"", false);
+            }
+            return true;
+        }
+        Glib::ustring formatted_text = integration->format();
+        switch (integration->get_mode()) {
+            // Polling (mpd)
+            case 0:
+                if ( ((integration->update(false) || !integration->first()) ) || integration_text != formatted_text ) {
+                    integration_text =  integration->format();
+                    v3_set_text((char *) ustring_to_c(comment).c_str(), (char *) ustring_to_c(url).c_str(), (char *) ustring_to_c(integration_text).c_str(), false);
+                }
+                break;
+
+                // Listening / callbacks (dbus ones)
+            case 1:
+                if (integration_text != formatted_text) {
+                    integration_text = formatted_text;
+                    v3_set_text((char *) ustring_to_c(comment).c_str(), (char *) ustring_to_c(url).c_str(), (char *) ustring_to_c(integration_text).c_str(), false);
+                }
+                break;
+        }
+    }
+    return true;
+}/*}}}*/
 
 Glib::ustring Mangler::getPasswordEntry(Glib::ustring title, Glib::ustring prompt) {/*{{{*/
     password = "";

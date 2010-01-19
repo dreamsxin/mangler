@@ -81,7 +81,7 @@ class ManglerConfig {
                 Glib::ustring   PushToTalkMouseValue;
                 int             PushToTalkMouseValueInt;
 		bool            AudioIntegrationEnabled;
-                Glib::ustring   AudioIntegrationPlayer;
+                uint8_t         AudioIntegrationPlayer;
                 Glib::ustring   inputDeviceName;
                 Glib::ustring   outputDeviceName;
                 Glib::ustring   notificationDeviceName;

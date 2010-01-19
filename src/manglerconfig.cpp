@@ -37,18 +37,18 @@
 ManglerConfig::ManglerConfig() {/*{{{*/
     lv3_debuglevel                  = 0;
     masterVolumeLevel               = 79;
-    windowWidth = 0;
-    windowHeight = 0;
-    buttonsHidden = false;
-    serverInfoHidden = false;
-    guestFlagHidden = false;
-    chatTimestamps = false;
+    windowWidth                     = 0;
+    windowHeight                    = 0;
+    buttonsHidden                   = false;
+    serverInfoHidden                = false;
+    guestFlagHidden                 = false;
+    chatTimestamps                  = false;
     PushToTalkKeyEnabled            = false;
     PushToTalkKeyValue              = "";
     PushToTalkMouseEnabled          = false;
     PushToTalkMouseValue            = "";
     AudioIntegrationEnabled         = false;
-    AudioIntegrationPlayer          = "";
+    AudioIntegrationPlayer          = 0;
     notificationLoginLogout         = true;
     notificationChannelEnterLeave   = true;
     notificationTransmitStartStop   = true;
@@ -387,7 +387,9 @@ void ManglerConfig::load() {/*{{{*/
         PushToTalkMouseValueInt   = atoi(PushToTalkMouseValue.substr(6).c_str());
     }
     AudioIntegrationEnabled       = get("AudioIntegrationEnabled") == "1" ? true : false; // default false
-    AudioIntegrationPlayer        = get("AudioIntegrationPlayer");
+    if (get("AudioIntegrationPlayer").length()) {
+        AudioIntegrationPlayer        = atoi(get("AudioIntegrationPlayer").c_str());
+    }
     inputDeviceName               = get("inputDeviceName");
     outputDeviceName              = get("outputDeviceName");
     notificationDeviceName        = get("notificationDeviceName");

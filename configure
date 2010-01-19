@@ -752,6 +752,8 @@ pulse_LIBS
 pulse_CFLAGS
 gtkmm_LIBS
 gtkmm_CFLAGS
+dbus_LIBS
+dbus_CFLAGS
 gtk_LIBS
 gtk_CFLAGS
 speex_LIBS
@@ -916,6 +918,8 @@ speex_CFLAGS
 speex_LIBS
 gtk_CFLAGS
 gtk_LIBS
+dbus_CFLAGS
+dbus_LIBS
 gtkmm_CFLAGS
 gtkmm_LIBS
 pulse_CFLAGS
@@ -1583,6 +1587,8 @@ Some influential environment variables:
   speex_LIBS  linker flags for speex, overriding pkg-config
   gtk_CFLAGS  C compiler flags for gtk, overriding pkg-config
   gtk_LIBS    linker flags for gtk, overriding pkg-config
+  dbus_CFLAGS C compiler flags for dbus, overriding pkg-config
+  dbus_LIBS   linker flags for dbus, overriding pkg-config
   gtkmm_CFLAGS
               C compiler flags for gtkmm, overriding pkg-config
   gtkmm_LIBS  linker flags for gtkmm, overriding pkg-config
@@ -5452,13 +5458,13 @@ if test "${lt_cv_nm_interface+set}" = set; then :
 else
   lt_cv_nm_interface="BSD nm"
   echo "int some_variable = 0;" > conftest.$ac_ext
-  (eval echo "\"\$as_me:5455: $ac_compile\"" >&5)
+  (eval echo "\"\$as_me:5461: $ac_compile\"" >&5)
   (eval "$ac_compile" 2>conftest.err)
   cat conftest.err >&5
-  (eval echo "\"\$as_me:5458: $NM \\\"conftest.$ac_objext\\\"\"" >&5)
+  (eval echo "\"\$as_me:5464: $NM \\\"conftest.$ac_objext\\\"\"" >&5)
   (eval "$NM \"conftest.$ac_objext\"" 2>conftest.err > conftest.out)
   cat conftest.err >&5
-  (eval echo "\"\$as_me:5461: output\"" >&5)
+  (eval echo "\"\$as_me:5467: output\"" >&5)
   cat conftest.out >&5
   if $GREP 'External.*some_variable' conftest.out > /dev/null; then
     lt_cv_nm_interface="MS dumpbin"
@@ -6653,7 +6659,7 @@ ia64-*-hpux*)
   ;;
 *-*-irix6*)
   # Find out which ABI we are using.
-  echo '#line 6656 "configure"' > conftest.$ac_ext
+  echo '#line 6662 "configure"' > conftest.$ac_ext
   if { { eval echo "\"\$as_me\":${as_lineno-$LINENO}: \"$ac_compile\""; } >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -8573,11 +8579,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:8576: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:8582: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:8580: \$? = $ac_status" >&5
+   echo "$as_me:8586: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -8912,11 +8918,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:8915: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:8921: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:8919: \$? = $ac_status" >&5
+   echo "$as_me:8925: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -9017,11 +9023,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:9020: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:9026: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:9024: \$? = $ac_status" >&5
+   echo "$as_me:9030: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -9072,11 +9078,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:9075: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:9081: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:9079: \$? = $ac_status" >&5
+   echo "$as_me:9085: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -11452,7 +11458,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<_LT_EOF
-#line 11455 "configure"
+#line 11461 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -11548,7 +11554,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<_LT_EOF
-#line 11551 "configure"
+#line 11557 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -13504,11 +13510,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:13507: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:13513: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:13511: \$? = $ac_status" >&5
+   echo "$as_me:13517: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -13603,11 +13609,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:13606: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:13612: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:13610: \$? = $ac_status" >&5
+   echo "$as_me:13616: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -13655,11 +13661,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:13658: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:13664: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:13662: \$? = $ac_status" >&5
+   echo "$as_me:13668: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -15729,6 +15735,82 @@ else
 $as_echo "yes" >&6; }
 	:
 fi
+
+
+pkg_failed=no
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for dbus" >&5
+$as_echo_n "checking for dbus... " >&6; }
+
+if test -n "$PKG_CONFIG"; then
+    if test -n "$dbus_CFLAGS"; then
+        pkg_cv_dbus_CFLAGS="$dbus_CFLAGS"
+    else
+        if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"dbus-glib-1 >= 0.80\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "dbus-glib-1 >= 0.80") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_dbus_CFLAGS=`$PKG_CONFIG --cflags "dbus-glib-1 >= 0.80" 2>/dev/null`
+else
+  pkg_failed=yes
+fi
+    fi
+else
+	pkg_failed=untried
+fi
+if test -n "$PKG_CONFIG"; then
+    if test -n "$dbus_LIBS"; then
+        pkg_cv_dbus_LIBS="$dbus_LIBS"
+    else
+        if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"dbus-glib-1 >= 0.80\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "dbus-glib-1 >= 0.80") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_dbus_LIBS=`$PKG_CONFIG --libs "dbus-glib-1 >= 0.80" 2>/dev/null`
+else
+  pkg_failed=yes
+fi
+    fi
+else
+	pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        dbus_PKG_ERRORS=`$PKG_CONFIG --short-errors --errors-to-stdout --print-errors "dbus-glib-1 >= 0.80"`
+        else
+	        dbus_PKG_ERRORS=`$PKG_CONFIG --errors-to-stdout --print-errors "dbus-glib-1 >= 0.80"`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$dbus_PKG_ERRORS" >&5
+
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+                :
+elif test $pkg_failed = untried; then
+	:
+else
+	dbus_CFLAGS=$pkg_cv_dbus_CFLAGS
+	dbus_LIBS=$pkg_cv_dbus_LIBS
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+$as_echo "#define HAVE_DBUS 1" >>confdefs.h
+
+fi
+
+
 
 
 pkg_failed=no

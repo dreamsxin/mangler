@@ -350,10 +350,10 @@ ManglerAudio::input(void) {/*{{{*/
             for (int16_t *pcmptr = (int16_t *)(buf+(pcm_framesize*ctr)); pcmptr < (int16_t *)(buf+pcm_framesize*(ctr+1)); pcmptr++) {
                 pcmmax = abs(*pcmptr) > pcmmax ? abs(*pcmptr) : pcmmax;
             }
-            if (pcmmax > 16384) {
-                pcmmax = 16384;
+            if (pcmmax > 24576) {
+                pcmmax = 24576;
             }
-            mangler->inputvumeter->set_fraction(pcmmax/16384.0);
+            mangler->inputvumeter->set_fraction(pcmmax/24576.0);
             ctr++;
         }
         if (! drop) {

@@ -1754,6 +1754,7 @@ out the encryption
                     <child>
                       <object class="GtkCheckButton" id="settingsEnableAudioIntegrationCheckButton">
                         <property name="label" translatable="yes">Enable "Now Playing" Music Player Integration</property>
+                        <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">False</property>
                         <property name="draw_indicator">True</property>
@@ -1768,6 +1769,7 @@ out the encryption
                         <property name="visible">True</property>
                         <child>
                           <object class="GtkLabel" id="settingsAudioIntegrationLabel">
+                            <property name="visible">True</property>
                             <property name="xalign">0.94999998807907104</property>
                             <property name="label" translatable="yes">Media Player:</property>
                           </object>
@@ -1777,7 +1779,9 @@ out the encryption
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkComboBox" id="settingsAudioIntegrationComboBox"/>
+                          <object class="GtkComboBox" id="settingsAudioIntegrationComboBox">
+                            <property name="visible">True</property>
+                          </object>
                           <packing>
                             <property name="padding">5</property>
                             <property name="position">1</property>

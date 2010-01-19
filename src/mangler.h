@@ -37,6 +37,7 @@
 #include "manglerchat.h"
 #include "manglerprivchat.h"
 #include "manglercharset.h"
+#include "manglerintegration.h"
 #include "locale.h"
 
 extern "C" {
@@ -87,6 +88,8 @@ class Mangler
         ManglerAudio                        *inputAudio;
         ManglerAudio                        *audioControl;
         ManglerSettings                     *settings;
+        ManglerIntegration                  *integration;
+
         bool                                isTransmitting;
         bool                                isTransmittingButton;
         bool                                isTransmittingKey;
@@ -95,7 +98,6 @@ class Mangler
         bool                                isAdmin;
         bool                                muteSound;
         bool                                muteMic;
-
 
         // Autoreconnect feature stuff - Need ID's to kill threads if needed
         bool                                wantDisconnect;
@@ -147,6 +149,7 @@ class Mangler
         void statusIcon_activate_cb(void);
         void errorOKButton_clicked_cb(void);
 
+
         // menu bar signal handlers
         void buttonMenuItem_toggled_cb(void);
         void hideServerInfoMenuItem_toggled_cb(void);
@@ -154,6 +157,7 @@ class Mangler
         void quitMenuItem_activate_cb(void);
 
         bool getNetworkEvent(void);
+        bool updateIntegration(void); // music player integration
         bool checkPushToTalkKeys(void);
         bool checkPushToTalkMouse(void);
         bool updateXferAmounts(void);
