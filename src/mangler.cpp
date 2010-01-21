@@ -842,6 +842,10 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                 break;/*}}}*/
             case V3_EVENT_USER_LOGOUT:/*{{{*/
                 if (v3_is_loggedin()) {
+                    if (outputAudio[ev->user.id]) {
+                        outputAudio[ev->user.id]->finish();
+                        outputAudio.erase(ev->user.id);
+                    }
                     if (v3_get_user_channel(v3_get_user_id()) == ev->channel.id) {
                         audioControl->playNotification("channelleave");
                     }
