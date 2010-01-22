@@ -1221,8 +1221,13 @@ v3_message_waiting(int block) {/*{{{*/
      * don't know WHY the client does this, but it does... so we do too.  As
      * such, if we're blocking, we need to timeout in those 10 second intervals.
      */
-    gettimeofday(&now, NULL);
-    _v3_next_timestamp(&tv, &v3_server.last_timestamp);
+    if (block) {
+        gettimeofday(&now, NULL);
+        _v3_next_timestamp(&tv, &v3_server.last_timestamp);
+    } else {
+        tv.tv_sec=0;
+        tv.tv_usec=0;
+    }
     _v3_debug(V3_DEBUG_INFO, "outbound timestamp pending in %d.%d seconds", tv.tv_sec, tv.tv_usec);
 
     while ((ret = select(_v3_sockd > v3_server.evpipe[0] ? _v3_sockd+1 : v3_server.evpipe[0]+1, &rset, NULL, NULL, &tv)) >= 0) {
@@ -1232,7 +1237,7 @@ v3_message_waiting(int block) {/*{{{*/
             _v3_func_leave("v3_message_waiting");
             return false;
         }
-        if (ret == 0) {
+        if (ret == 0 && block) {
             _v3_net_message *m;
             FD_ZERO(&rset);
             FD_SET(v3_server.evpipe[0], &rset);
