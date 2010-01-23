@@ -891,7 +891,7 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                 {
                     u = v3_get_user(ev->user.id);
                     if (! u) {
-                        fprintf(stderr, "failed to retreive user information for user id %d", ev->user.id);
+                        fprintf(stderr, "failed to retreive user information for user id %d\n", ev->user.id);
                         break;
                     }
                     if (ev->user.id == v3_get_user_id()) {
@@ -958,7 +958,7 @@ bool Mangler::getNetworkEvent() {/*{{{*/
             case V3_EVENT_CHAN_ADD:/*{{{*/
                 c = v3_get_channel(ev->channel.id);
                 if (! c) {
-                    fprintf(stderr, "failed to retreive channel information for channel id %d", ev->channel.id);
+                    fprintf(stderr, "failed to retreive channel information for channel id %d\n", ev->channel.id);
                     break;;
                 }
                 channelTree->addChannel(

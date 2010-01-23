@@ -3832,7 +3832,7 @@ v3_set_text(char *comment, char *url, char *integration_text, uint8_t silent) {/
     }
     fflush(v3_server.evoutstream);
     _v3_unlock_sendq();
-    _v3_func_leave("v3_change_channel");
+    _v3_func_leave("v3_set_text");
     return;
 }/*}}}*/
 

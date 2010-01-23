@@ -115,9 +115,14 @@ void ManglerChat::addMessage(Glib::ustring message) {
 }
 
 Glib::ustring ManglerChat::nameFromId(uint16_t user_id) {
-    v3_user *u = v3_get_user(user_id);
-    Glib::ustring name = c_to_ustring(u->name);
-    v3_free_user(u);
+    v3_user *u;
+    Glib::ustring name = "";
+
+    if ((u = v3_get_user(user_id))) {
+        name = c_to_ustring(u->name);
+        v3_free_user(u);
+    }
+
     return name;
 }
 
@@ -134,6 +139,9 @@ void ManglerChat::addUser(uint16_t user_id) {
         return;
     }
     Glib::ustring name = nameFromId(user_id);
+    if (name == "") {
+        return;
+    }
     chatUserIter = chatUserTreeModel->append();
     chatUserRow = *chatUserIter;
     chatUserRow[chatUserColumns.id] = user_id;
