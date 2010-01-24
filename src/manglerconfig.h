@@ -34,6 +34,8 @@ class ManglerServerConfig/*{{{*/
         Glib::ustring         name;
         Glib::ustring         hostname;
         Glib::ustring         port;
+        Glib::ustring         defaultchannel;
+        uint32_t              defaultchannelid;
         Glib::ustring         username;
         Glib::ustring         password;
         Glib::ustring         phonetic;
@@ -54,6 +56,8 @@ class ManglerServerConfig/*{{{*/
             name = "";
             hostname = "";
             port = "";
+            defaultchannel = "";
+            defaultchannelid = 0;
             username = "";
             password = "";
             phonetic = "";

@@ -148,6 +148,8 @@ bool ManglerConfig::put(uint16_t id, ManglerServerConfig server) {/*{{{*/
     snprintf(name, 1023, "serverlist.%d.name",                 id); if (!put(name, server.name                 ))  return false;
     snprintf(name, 1023, "serverlist.%d.hostname",             id); if (!put(name, server.hostname             ))  return false;
     snprintf(name, 1023, "serverlist.%d.port",                 id); if (!put(name, server.port                 ))  return false;
+    snprintf(name, 1023, "serverlist.%d.defaultchannel",       id); if (!put(name, server.defaultchannel       ))  return false;
+    snprintf(name, 1023, "serverlist.%d.defaultchannelid",     id); if (!put(name, server.defaultchannelid     ))  return false;
     snprintf(name, 1023, "serverlist.%d.username",             id); if (!put(name, server.username             ))  return false;
     snprintf(name, 1023, "serverlist.%d.password",             id); if (!put(name, server.password             ))  return false;
     snprintf(name, 1023, "serverlist.%d.phonetic",             id); if (!put(name, server.phonetic             ))  return false;
@@ -433,6 +435,8 @@ void ManglerConfig::load() {/*{{{*/
             server->name = get(base + "name");
             server->hostname = get(base + "hostname");
             server->port = get(base + "port");
+            server->defaultchannel = get(base + "defaultchannel");
+            server->defaultchannelid = atoi(get(base + "defaultchannelid").c_str());
             server->username = get(base + "username");
             server->password = get(base + "password");
             server->phonetic = get(base + "phonetic");

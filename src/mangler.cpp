@@ -880,6 +880,13 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                         comment = server->comment;
                         url = server->url;
                         v3_set_text((char *) ustring_to_c(server->comment).c_str(), (char *) ustring_to_c(server->url).c_str(), (char *) ustring_to_c(integration_text).c_str(), true);
+
+                        //Default Channel
+                        uint32_t defaultChannelId = server->defaultchannelid;
+                        if (defaultChannelId) {
+                            //For now, only handling right click menu set
+                            channelTree->channelView_switchChannel2Default(defaultChannelId);
+                        }
                     }
                     builder->get_widget("chatWindow", window);
                     if(chat->isOpen) {

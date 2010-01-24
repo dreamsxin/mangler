@@ -75,12 +75,14 @@ ManglerChannelTree::ManglerChannelTree(Glib::RefPtr<Gtk::Builder> builder)/*{{{*
     menuitem->signal_activate().connect(sigc::mem_fun(this, &ManglerChannelTree::muteUserMenuItem_activate_cb));
     builder->get_widget("muteUserGlobal", menuitem);
     menuitem->signal_activate().connect(sigc::mem_fun(this, &ManglerChannelTree::muteUserGlobalMenuItem_activate_cb));
-
     builder->get_widget("channelRightClickMenu", rcmenu_channel);
     builder->get_widget("addPhantom", menuitem);
     menuitem->signal_activate().connect(sigc::mem_fun(this, &ManglerChannelTree::addPhantomMenuItem_activate_cb));
     builder->get_widget("removePhantom", menuitem);
     menuitem->signal_activate().connect(sigc::mem_fun(this, &ManglerChannelTree::removePhantomMenuItem_activate_cb));
+    builder->get_widget("setDefaultChannel", checkmenuitem);
+    signalDefaultChannel = checkmenuitem->signal_toggled().connect(sigc::mem_fun(this, &ManglerChannelTree::setDefaultChannel_toggled_cb));
+
 
     //int colnum = channelView->append_column("Name", channelRecord.displayName) - 1;
     // TODO: Write a sort routine to make sure users are always immediately
@@ -758,6 +760,24 @@ ManglerChannelTree::channelView_buttonpress_event_cb(GdkEventButton* event) {/*{
                 v3_free_user(user);
             } else {
                 rcmenu_channel->popup(event->button, event->time);
+                builder->get_widget("setDefaultChannel", checkmenuitem);
+                if ( mangler->connectedServerId == -1) { //Hide default channel on quick connects
+                    checkmenuitem->set_sensitive(false);
+                    checkmenuitem->hide();
+                } else {
+                    checkmenuitem->set_sensitive(true);
+                    checkmenuitem->show();
+                    ManglerServerConfig *server = mangler->settings->config.getserver(mangler->connectedServerId);
+                    if (server->defaultchannel == row[channelRecord.name] && server->defaultchannelid == row[channelRecord.id] ) {
+                        signalDefaultChannel.block();
+                        checkmenuitem->set_active(true);
+                        signalDefaultChannel.unblock();
+                    } else {
+                        signalDefaultChannel.block();
+                        checkmenuitem->set_active(false);
+                        signalDefaultChannel.unblock();
+                    }
+                }
             }
         }
     }
@@ -1143,3 +1163,110 @@ ManglerChannelTree::userSettingsWindow(Gtk::TreeModel::Row row) {
         window->present();
     }
 }
+/*
+ * Arbitrary channel changing (default channels)
+ */
+bool ManglerChannelTree::channelView_getPathFromId(const Gtk::TreeModel::Path &path, uint32_t id, Glib::ustring *r_path) {
+    Gtk::TreeModel::iterator iter = channelStore->get_iter(path);
+    if((uint32_t)(*iter)[channelRecord.id] == id) {
+        r_path->assign(path.to_string());
+        return true;
+    }
+    return false;
+}
+bool ManglerChannelTree::channelView_findDefault(const Gtk::TreeModel::iterator &iter, Gtk::TreeModel::iterator *oldDefault) {
+    if((bool)(*iter)[channelRecord.isDefault] && !(bool)(*iter)[channelRecord.isUser]) {
+        *oldDefault = iter;
+        return true;
+    }
+    return false;
+}
+void ManglerChannelTree::setDefaultChannel_toggled_cb(void) {/*{{{*/
+    Glib::RefPtr<Gtk::TreeSelection> sel = channelView->get_selection();
+    Gtk::TreeModel::iterator iter = sel->get_selected();
+    if(iter) {
+        Gtk::TreeModel::Row row = *iter;
+        if (row[channelRecord.isUser] || mangler->connectedServerId == -1) {
+            //Silently failing on users, or quick connected servers... they shouldn't happen
+            return;
+        }
+        //Initial checks are done, time to get to work
+        bool isDefault = row[channelRecord.isDefault];
+        Glib::ustring name = row[channelRecord.name];
+        ManglerServerConfig *server = mangler->settings->config.getserver(mangler->connectedServerId);
+        //Already default, so unset it's status
+        if(isDefault) {
+            row[channelRecord.isDefault] = false;
+            server->defaultchannel = "";
+            server->defaultchannelid = 0;
+        } else {
+            //Not default, so we need to unset the default if one exists, active status will be handled when its opened
+            Gtk::TreeModel::iterator oldDefault;
+            channelStore->foreach_iter(sigc::bind(sigc::mem_fun(*this,&ManglerChannelTree::channelView_findDefault), &oldDefault));
+            if (oldDefault) {
+                Gtk::TreeModel::Row oldRow = *oldDefault;
+                oldRow[channelRecord.isDefault] = false;
+            }
+            //Now, lets set this one active
+            row[channelRecord.isDefault] = true;
+            server->defaultchannel = row[channelRecord.name];
+            server->defaultchannelid = row[channelRecord.id];
+        }
+        mangler->settings->config.save();
+    }
+}/*}}}*/
+
+void ManglerChannelTree::channelView_switchChannel2Default(uint32_t defaultChannelId) {/*{{{*/
+    Glib::ustring defaultChannelPath = "";
+    channelStore->foreach_path(sigc::bind(sigc::mem_fun(*this,&ManglerChannelTree::channelView_getPathFromId), defaultChannelId, &defaultChannelPath));
+    if (defaultChannelPath == "") {
+        fprintf(stderr, "default channel id %u is no longer valid\n", defaultChannelId);
+        return;
+    }
+    Gtk::TreeModel::iterator iter = channelStore->get_iter(defaultChannelPath);
+    if(iter) {
+        Gtk::TreeModel::Row row  = *iter;
+        Gtk::TreeModel::Row user = getUser(v3_get_user_id(), channelStore->children());
+        if ((bool)row[channelRecord.isUser]) {    //Can't switch into a user
+            return;
+        }
+        if ((uint32_t)(row[channelRecord.id] == (uint32_t)user[channelRecord.parent_id] )) {
+            //No point switching to the same channel
+            return;
+        }
+        if ((mangler->connectedServerId == -1 )) {
+            //No quick connected servers
+            return;
+        }
+        //If the one to go to isn't the lobby, lets do something
+        uint32_t id = row[channelRecord.id];
+        if (id != 0) {
+            v3_channel *channel = v3_get_channel(id);
+            Glib::ustring password;
+            bool password_required = false;
+            uint16_t pw_cid;
+            Gtk::TreeModel::Row pwrow;
+
+            if (! channel) {
+                fprintf(stderr, "failed to retrieve channel information for channel id %d\n", id);
+                return;
+            }
+            if ((pw_cid = v3_channel_requires_password(channel->id))) {  // Channel is password protected
+                password_required = true;
+                password = getChannelSavedPassword(pw_cid);
+                // if we didn't find a saved password, prompt the user
+                if (password.empty()) {
+                    password = mangler->getPasswordEntry("Channel Password");
+                }
+                setChannelSavedPassword(pw_cid, password);
+                ManglerServerConfig *server = mangler->settings->config.getserver(mangler->connectedServerId);
+                server->channelpass[pw_cid] = password;
+            }
+            v3_free_channel(channel);
+            if (password_required && password.empty()) {
+                return;
+            }
+            v3_change_channel(id, (char *)password.c_str());
+        }
+    }
+}/*}}}*/

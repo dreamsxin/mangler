@@ -48,6 +48,7 @@ class channelModelColumns : public Gtk::TreeModel::ColumnRecord/*{{{*/
             add(password);
             add(muted);
             add(phantom);
+            add(isDefault);
         }
 
         Gtk::TreeModelColumn<Glib::ustring>                 displayName;
@@ -66,6 +67,7 @@ class channelModelColumns : public Gtk::TreeModel::ColumnRecord/*{{{*/
         Gtk::TreeModelColumn<Glib::ustring>                 password;
         Gtk::TreeModelColumn<bool>                          muted;
         Gtk::TreeModelColumn<bool>                          phantom;
+        Gtk::TreeModelColumn<bool>                          isDefault;
 };/*}}}*/
 class ManglerChannelStore : public Gtk::TreeStore
 {
@@ -94,6 +96,7 @@ class ManglerChannelTree
         Gtk::CellRendererPixbuf             *pixrenderer;
         Gtk::CellRendererText               *textrenderer;
         Gtk::MenuItem                       *menuitem;
+        Gtk::CheckMenuItem                  *checkmenuitem;
         void renderCellData(Gtk::CellRenderer *cell, const Gtk::TreeModel::iterator& iter);
 
     public:
@@ -151,6 +154,12 @@ class ManglerChannelTree
         int  on_sort_compare(const Gtk::TreeModel::iterator& a_, const Gtk::TreeModel::iterator& b_);
         void userSettingsWindow(Gtk::TreeModel::Row row);
 
+        // default channel handlers
+        sigc::connection signalDefaultChannel;
+        void setDefaultChannel_toggled_cb(void);
+        bool channelView_getPathFromId(const Gtk::TreeModel::Path &path, uint32_t id, Glib::ustring *r_path);
+        bool channelView_findDefault(const Gtk::TreeModel::iterator &iter, Gtk::TreeModel::iterator *r_iter);
+        void channelView_switchChannel2Default(uint32_t defaultChannelId);
 };
 
 Glib::ustring getTimeString(void);
