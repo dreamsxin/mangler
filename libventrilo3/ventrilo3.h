@@ -6,7 +6,7 @@
  * $LastChangedBy$
  * $URL$
  *
- * Copyright 2009-2010 Eric Kilfoil 
+ * Copyright 2009-2010 Eric Kilfoil
  *
  * This file is part of Mangler.
  *
@@ -85,7 +85,7 @@
 #define V3_AUDIO_UNK                0x03
 
 #define V3_PHANTOM_ADD              0x00
-#define V3_PHANTOM_REMOVE           0x01 
+#define V3_PHANTOM_REMOVE           0x01
 
 #define V3_ADMIN_LOGIN              0x00
 #define V3_ADMIN_KICK               0x01
@@ -342,7 +342,7 @@ struct _v3_event {
         } account;
         int16_t sample16[8192];
         uint8_t sample[16384];
-        char    motd[2048]; 
+        char    motd[2048];
         char    chatmessage[256];
         char    reason[128];
     } data;
@@ -451,7 +451,7 @@ typedef struct __v3_msg_account {/*{{{*/
     uint16_t *chan_admin;
     int chan_auth_count;
     uint16_t *chan_auth;
-    
+
     /*
      * Put internal variables here
      */

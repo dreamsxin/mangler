@@ -6,7 +6,7 @@
  * $LastChangedBy$
  * $URL$
  *
- * Copyright 2009-2010 Eric Kilfoil 
+ * Copyright 2009-2010 Eric Kilfoil
  *
  * This file is part of Mangler.
  *
@@ -104,7 +104,7 @@ ManglerSettings::ManglerSettings(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
     inputDeviceComboBox->set_model(inputDeviceTreeModel);
     inputDeviceComboBox->pack_start(inputColumns.description);
     inputDeviceComboBox->signal_changed().connect(sigc::mem_fun(this, &ManglerSettings::inputDeviceComboBox_changed_cb));
-    
+
     builder->get_widget("inputDeviceCustomName", inputDeviceCustomName);
 
     builder->get_widget("outputDeviceComboBox", outputDeviceComboBox);
@@ -112,7 +112,7 @@ ManglerSettings::ManglerSettings(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
     outputDeviceComboBox->set_model(outputDeviceTreeModel);
     outputDeviceComboBox->pack_start(outputColumns.description);
     outputDeviceComboBox->signal_changed().connect(sigc::mem_fun(this, &ManglerSettings::outputDeviceComboBox_changed_cb));
-    
+
     builder->get_widget("outputDeviceCustomName", outputDeviceCustomName);
 
     builder->get_widget("notificationDeviceComboBox", notificationDeviceComboBox);
@@ -122,7 +122,7 @@ ManglerSettings::ManglerSettings(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
     notificationDeviceComboBox->signal_changed().connect(sigc::mem_fun(this, &ManglerSettings::notificationDeviceComboBox_changed_cb));
 
     builder->get_widget("notificationDeviceCustomName", notificationDeviceCustomName);
-    
+
     mouseInputDevices = getInputDeviceList();
     builder->get_widget("settingsMouseDeviceComboBox", mouseDeviceComboBox);
     mouseDeviceTreeModel = Gtk::ListStore::create(mouseColumns);
@@ -808,7 +808,7 @@ ManglerSettings::updateDeviceComboBoxes(void) {/*{{{*/
     notificationDeviceComboBox->set_active(notificationSelection);
 }/*}}}*/
 
-void 
+void
 ManglerSettings::inputDeviceComboBox_changed_cb(void) {/*{{{*/
     builder->get_widget("CustomInputLabel", label);
     if (config.audioSubsystem == "alsa") {
@@ -838,7 +838,7 @@ ManglerSettings::outputDeviceComboBox_changed_cb(void) {/*{{{*/
     label->hide();
 }/*}}}*/
 
-void 
+void
 ManglerSettings::notificationDeviceComboBox_changed_cb(void) {/*{{{*/
     builder->get_widget("CustomNotificationLabel", label);
     if (config.audioSubsystem == "alsa") {

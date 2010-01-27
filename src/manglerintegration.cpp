@@ -7,7 +7,7 @@
  * $LastChangedBy: ekilfoil $
  * $URL: http://svn.mangler.org/mangler/trunk/src/mangler.cpp $
  *
- * Copyright 2009 Eric Kilfoil 
+ * Copyright 2009 Eric Kilfoil
  *
  * This file is part of Mangler.
  *
@@ -146,7 +146,7 @@ void ManglerIntegration::setClient (MusicClient _client)
             dbus_player_path = dbus_shell_path = "/Player";
             dbus_uri_changed = "TrackChange";
             dbus_playing_changed = "StatusChange";
-            
+
             dbus_get_current_song = dbus_get_song_properties = "GetMetadata";
 
             bus = dbus_g_bus_get(DBUS_BUS_SESSION, NULL);
@@ -251,7 +251,7 @@ Glib::ustring ManglerIntegration::format () const
     int _state = (int) current_status;
     Glib::ustring formatted_text ("");
     if (_state == 0 || _state == 1)
-      return formatted_text; 
+      return formatted_text;
 //        os <<  "Stopped" << ": ";
 //    if (_state == 1)
 //        os <<  "Paused" << ": ";

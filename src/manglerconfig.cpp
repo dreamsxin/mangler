@@ -6,7 +6,7 @@
  * $LastChangedBy$
  * $URL$
  *
- * Copyright 2009-2010 Eric Kilfoil 
+ * Copyright 2009-2010 Eric Kilfoil
  *
  * This file is part of Mangler.
  *
@@ -23,7 +23,7 @@
  * You should have received a copy of the GNU General Public License
  * along with Mangler.  If not, see <http://www.gnu.org/licenses/>.
  */
-		
+
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>

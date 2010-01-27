@@ -6,7 +6,7 @@
  * $LastChangedBy$
  * $URL$
  *
- * Copyright 2009-2010 Eric Kilfoil 
+ * Copyright 2009-2010 Eric Kilfoil
  *
  * This file is part of Mangler.
  *
@@ -74,7 +74,7 @@ class Mangler
         Gtk::Table                          *table;
         Gtk::CheckButton                    *checkbutton;
         Gtk::ProgressBar                    *inputvumeter;
-        
+
 
         std::map<Glib::ustring, Glib::RefPtr<Gdk::Pixbuf> >  icons;
         Glib::RefPtr<Gtk::StatusIcon>       statusIcon;

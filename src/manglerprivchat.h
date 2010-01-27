@@ -6,7 +6,7 @@
  * $LastChangedBy$
  * $URL$
  *
- * Copyright 2009-2010 Eric Kilfoil 
+ * Copyright 2009-2010 Eric Kilfoil
  *
  * This file is part of Mangler.
  *
@@ -29,7 +29,7 @@
 
 class ManglerPrivChat {
     public:
-        ManglerPrivChat(uint16_t userid); 
+        ManglerPrivChat(uint16_t userid);
         uint16_t remoteUserId;
 
         Glib::RefPtr<Gtk::Builder> builder;

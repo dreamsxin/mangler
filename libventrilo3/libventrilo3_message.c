@@ -6,7 +6,7 @@
  * $LastChangedBy$
  * $URL$
  *
- * Copyright 2009-2010 Eric Kilfoil 
+ * Copyright 2009-2010 Eric Kilfoil
  *
  * This file is part of Mangler.
  *
@@ -96,7 +96,7 @@ _v3_get_msg_uint16_array(void *offset, uint16_t *len) {/*{{{*/
     memcpy(s, offset+2, *len*2);
     for (ctr = 0; ctr < *len; ctr++) {
         s[ctr] = ntohs(s[ctr]);
-    } 
+    }
     *len = (*len*2)+2;
     _v3_func_leave("_v3_get_msg_string");
     return s;
@@ -116,7 +116,7 @@ _v3_put_msg_uint16_array(void *buffer, uint16_t len, uint16_t *array) {/*{{{*/
 int
 _v3_put_msg_string(void *buffer, char *string) {/*{{{*/
     int len;
-    
+
     _v3_func_enter("_v3_put_msg_string");
     len = htons((uint16_t)strlen(string));
     memcpy(buffer, &len, 2);
@@ -213,7 +213,7 @@ _v3_get_msg_account(void *offset, _v3_msg_account *account) {/*{{{*/
     account->lock_reason = _v3_get_msg_string(offset, &len);
     _v3_debug(V3_DEBUG_PACKET_PARSE, "lock reason: %s", account->lock_reason);
     offset += len;
-                
+
     account->chan_admin = _v3_get_msg_uint16_array(offset, &len);
     for (j=0;j<(len-2)/2;j++)
         _v3_debug(V3_DEBUG_PACKET_PARSE, "chanadmin: 0x%x", account->chan_admin[j]);
@@ -541,7 +541,7 @@ _v3_get_0x3c(_v3_net_message *msg) {/*{{{*/
 }/*}}}*/
 /*}}}*/
 // Message 0x42 (66) | CHAT/RCON /*{{{*/
-int 
+int
 _v3_get_0x42(_v3_net_message *msg) {/*{{{*/
     _v3_msg_0x42 *m;
     _v3_func_enter("_v3_get_0x42");
@@ -564,22 +564,22 @@ _v3_net_message *_v3_put_0x42(uint16_t subtype, uint16_t user_id, char* message)
     m = malloc(sizeof(_v3_net_message));
     memset(m, 0, sizeof(_v3_net_message));
     m->type = 0x42;
-    
+
     // Build our message contents
-    uint16_t base = sizeof(_v3_msg_0x42) - (sizeof(char *) + sizeof(uint16_t)); 
+    uint16_t base = sizeof(_v3_msg_0x42) - (sizeof(char *) + sizeof(uint16_t));
     uint16_t len  = base;
     mc = malloc(base);
     memset(mc, 0, base);
     mc->type = 0x42;
     mc->subtype = subtype;
     mc->user_id = user_id;
-    
-    if(message) {        
+
+    if(message) {
         len += strlen(message) + 2;
         mc = realloc(mc, len);
-        _v3_put_msg_string((char *)mc + base, message);   
+        _v3_put_msg_string((char *)mc + base, message);
     }
-    
+
     m->contents = mc;
     m->data = (char *)mc;
     m->len = len;
@@ -751,7 +751,7 @@ _v3_get_0x4a(_v3_net_message *msg) {/*{{{*/
     void *offset;
 
     _v3_func_enter("_v3_get_0x4a");
-    
+
     m = msg->contents = msg->data;
 
     _v3_debug(V3_DEBUG_PACKET_PARSE, "subtype.......: %d", m->subtype);
@@ -766,7 +766,7 @@ _v3_get_0x4a(_v3_net_message *msg) {/*{{{*/
         _v3_func_leave("_v3_get_0x4a");
         return true;
     }
- 
+
     switch (m->subtype) {
         case V3_USERLIST_OPEN:
         case V3_USERLIST_ADD:
@@ -1101,7 +1101,7 @@ _v3_put_0x52(uint8_t subtype, uint16_t codec, uint16_t codec_format, uint16_t se
     memset(msg, 0, sizeof(_v3_net_message));
 
     /*
-     * First we go through and create our main message structure 
+     * First we go through and create our main message structure
      */
     switch (subtype) {
         case V3_AUDIO_START:
@@ -1372,7 +1372,7 @@ _v3_get_0x59(_v3_net_message *msg) {/*{{{*/
 }/*}}}*/
 /*}}}*/
 // Message 0x5a (90) | PRIVATE CHAT /*{{{*/
-int 
+int
 _v3_get_0x5a(_v3_net_message *msg) {/*{{{*/
     _v3_msg_0x5a *m;
     _v3_func_enter("_v3_get_0x5a");
@@ -1395,9 +1395,9 @@ _v3_net_message *_v3_put_0x5a(uint16_t subtype, uint16_t user1, uint16_t user2, 
     m = malloc(sizeof(_v3_net_message));
     memset(m, 0, sizeof(_v3_net_message));
     m->type = 0x5a;
-    
+
     // Build our message contents
-    uint16_t base = sizeof(_v3_msg_0x5a) - (sizeof(char *) + sizeof(uint16_t)); 
+    uint16_t base = sizeof(_v3_msg_0x5a) - (sizeof(char *) + sizeof(uint16_t));
     uint16_t len  = base;
     mc = malloc(base);
     memset(mc, 0, base);
@@ -1405,13 +1405,13 @@ _v3_net_message *_v3_put_0x5a(uint16_t subtype, uint16_t user1, uint16_t user2, 
     mc->subtype = subtype;
     mc->user1 = user1;
     mc->user2 = user2;
-    
+
     if (message) {
         len += strlen(message) + 2;
         mc = realloc(mc, len);
-        _v3_put_msg_string((char *)mc + base, message);   
+        _v3_put_msg_string((char *)mc + base, message);
     }
-    
+
     m->contents = mc;
     m->data = (char *)mc;
     m->len = len;
@@ -1687,7 +1687,7 @@ _v3_put_0x63(uint16_t subtype, uint16_t user_id, char *string) {/*{{{*/
 
     mc->type = 0x63;
     mc->subtype = subtype;
-    
+
     switch (subtype) {
         case V3_ADMIN_LOGIN:
             _v3_hash_password((uint8_t *)string, mc->t.password_hash);

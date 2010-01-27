@@ -6,7 +6,7 @@
  * $LastChangedBy$
  * $URL$
  *
- * Copyright 2009-2010 Eric Kilfoil 
+ * Copyright 2009-2010 Eric Kilfoil
  *
  * This file is part of Mangler.
  *
@@ -176,10 +176,10 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
 
     builder->get_widget("adminWindowMenuItem", menuitem);
     menuitem->signal_activate().connect(sigc::mem_fun(this, &Mangler::adminButton_clicked_cb));
-    
+
     builder->get_widget("settingsMenuItem", menuitem);
     menuitem->signal_activate().connect(sigc::mem_fun(this, &Mangler::settingsButton_clicked_cb));
-    
+
     builder->get_widget("chatMenuItem", menuitem);
     menuitem->signal_activate().connect(sigc::mem_fun(this, &Mangler::chatButton_clicked_cb));
 
@@ -236,7 +236,7 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
     isTransmittingKey = 0;
     isTransmitting = 0;
     Glib::signal_timeout().connect(sigc::mem_fun(this, &Mangler::checkPushToTalkKeys), 100);
-    Glib::signal_timeout().connect(sigc::mem_fun(this, &Mangler::checkPushToTalkMouse), 100); 
+    Glib::signal_timeout().connect(sigc::mem_fun(this, &Mangler::checkPushToTalkMouse), 100);
 
     // Create our audio control object for managing devices
     audioControl = new ManglerAudio("control");
@@ -261,7 +261,7 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
 
     // Create Server List Window
     serverList = new ManglerServerList(builder);
-    
+
     // Create Chat Window
     chat = new ManglerChat(builder);
 
@@ -984,6 +984,7 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                     }
                     //channelTree->refreshUser(ev->user.id);
                     channelTree->refreshAllUsers();
+                    chat->chatUserTreeModelFilter->refilter();
                     v3_free_user(u);
                 }
                 break;/*}}}*/
@@ -1240,7 +1241,7 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                     if (lobby) {
                         channelTree->updateLobby(c_to_ustring(lobby->name), c_to_ustring(lobby->comment), lobby->phonetic);
                         v3_free_user(lobby);
-                    } 
+                    }
                 }
                 break;/*}}}*/
             case V3_EVENT_CHAN_ADMIN_UPDATED:/*{{{*/
@@ -1304,8 +1305,8 @@ bool Mangler::checkPushToTalkKeys(void) {/*{{{*/
     return(true);
 
 }/*}}}*/
-bool Mangler::checkPushToTalkMouse(void) {/*{{{*/ 
-    GdkWindow   *rootwin = gdk_get_default_root_window(); 
+bool Mangler::checkPushToTalkMouse(void) {/*{{{*/
+    GdkWindow   *rootwin = gdk_get_default_root_window();
     XDevice *dev = NULL;
     XDeviceInfo *xdev;
     XDeviceState *xds;
@@ -1315,12 +1316,12 @@ bool Mangler::checkPushToTalkMouse(void) {/*{{{*/
     int state = 1;
     int byte = settings->config.PushToTalkMouseValueInt / 8;
     int bit = settings->config.PushToTalkMouseValueInt % 8;
-    bool        ptt_on = false; 
+    bool        ptt_on = false;
 
-    if (! settings->config.PushToTalkMouseEnabled) { 
-        isTransmittingMouse = false; 
-        return true; 
-    } 
+    if (! settings->config.PushToTalkMouseEnabled) {
+        isTransmittingMouse = false;
+        return true;
+    }
     if (settings->config.mouseDeviceName.empty()) {
         return true;
     }
@@ -1360,18 +1361,18 @@ bool Mangler::checkPushToTalkMouse(void) {/*{{{*/
     XFreeDeviceList(xdev);
     XCloseDevice(GDK_WINDOW_XDISPLAY(rootwin), dev);
 
-    if (ptt_on) { 
-        isTransmittingMouse = true; 
-        startTransmit(); 
-    } else { 
-        isTransmittingMouse = false; 
-        if (! isTransmittingButton && ! isTransmittingKey) { 
-            stopTransmit(); 
-        } 
-    } 
-    return(true); 
+    if (ptt_on) {
+        isTransmittingMouse = true;
+        startTransmit();
+    } else {
+        isTransmittingMouse = false;
+        if (! isTransmittingButton && ! isTransmittingKey) {
+            stopTransmit();
+        }
+    }
+    return(true);
 }/*}}}*/
-bool Mangler::updateXferAmounts(void) {/*{{{*/ 
+bool Mangler::updateXferAmounts(void) {/*{{{*/
     uint32_t packets, bytes;
     char buf[1024];
 
@@ -1403,7 +1404,7 @@ bool Mangler::updateXferAmounts(void) {/*{{{*/
     }
     label->set_text(buf);
 
-    return(true); 
+    return(true);
 }/*}}}*/
 /* {{{ GdkFilterReturn ptt_filter(GdkXEvent *gdk_xevent, GdkEvent *event, gpointer data) {
     GdkWindow   *rootwin = gdk_get_default_root_window();

@@ -6,7 +6,7 @@
  * $LastChangedBy: humb4b4 $
  * $URL$
  *
- * Copyright 2009 Eric Kilfoil 
+ * Copyright 2009 Eric Kilfoil
  *
  * This file is part of Mangler.
  *
@@ -42,9 +42,9 @@ main(int argc, char **argv) {
         argv[0]);
         return 1;
     }
-    
+
     FILE *in, *out;
-    
+
     if (!strncmp(argv[1], "-", 1)) {
         in = stdin;
     } else if (!(in = fopen(argv[1], "r"))) {
@@ -64,7 +64,7 @@ main(int argc, char **argv) {
         fprintf(stderr, "output: %s: error: %s\n", argv[2], strerror(errno));
         return 1;
     }
-    
+
     unsigned char buf[BUF_SIZE];
     memset(&buf, 0, sizeof(buf));
     fprintf(out, "\n%s %s[] = {", TYPE_NAME, argv[3]);
@@ -82,14 +82,14 @@ main(int argc, char **argv) {
         }
     }
     fputs("\n};\n\n", out);
-    
+
     if (in != stdin) {
         fclose(in);
     }
     if (out != stdout) {
         fclose(out);
     }
-    
+
     fprintf(stderr, "%s: conversion done\n", argv[0]);
     return 0;
 }

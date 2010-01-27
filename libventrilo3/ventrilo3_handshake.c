@@ -262,7 +262,7 @@ uint32_t ventrilo3_recv_udp(uint32_t sd, ventrilo3_auth_t *vauth, uint8_t *data,
 
 uint32_t getbe(uint8_t *data, uint32_t *ret, uint32_t bits) {
     uint32_t i, bytes, num;
-    
+
     bytes = bits >> 3;
     for(num = i = 0; i < bytes; i++) {
         num |= (data[i] << ((bytes - 1 - i) << 3));

@@ -6,7 +6,7 @@
  * $LastChangedBy: ekilfoil $
  * $URL: http://svn.mangler.org/mangler/trunk/src/manglersettings.h $
  *
- * Copyright 2009 Eric Kilfoil 
+ * Copyright 2009 Eric Kilfoil
  *
  * This file is part of Mangler.
  *
@@ -75,7 +75,7 @@ class ManglerIntegration{
         struct mpd_connection *mpd_connection;
 #endif
         gchar * get_current_uri_dbus();
-        
+
         void set_current_status (int _status) { current_status = _status; };
 
         Glib::ustring dbus_namespace;

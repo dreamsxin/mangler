@@ -6,7 +6,7 @@
  * $LastChangedBy$
  * $URL$
  *
- * Copyright 2009-2010 Eric Kilfoil 
+ * Copyright 2009-2010 Eric Kilfoil
  *
  * This file is part of Mangler.
  *
@@ -53,7 +53,7 @@ ManglerChannelTree::ManglerChannelTree(Glib::RefPtr<Gtk::Builder> builder)/*{{{*
     channelView->signal_row_activated().connect(sigc::mem_fun(this, &ManglerChannelTree::channelView_row_activated_cb));
     channelView->signal_button_press_event().connect_notify(sigc::mem_fun(this, &ManglerChannelTree::channelView_buttonpress_event_cb));
 
-    // setup drag and drop 
+    // setup drag and drop
     channelView->enable_model_drag_source();
     channelView->enable_model_drag_dest();
 
@@ -101,7 +101,7 @@ ManglerChannelTree::ManglerChannelTree(Glib::RefPtr<Gtk::Builder> builder)/*{{{*
 
 /*
  *  The GTK cell renederer for the channel tree view
- *  
+ *
  *  This function sets the colors, weight, etc for each row in the tree
  */
 void
@@ -135,7 +135,7 @@ ManglerChannelTree::renderCellData(Gtk::CellRenderer *cell, const Gtk::TreeModel
  * comment = ""
  * phonetic = ""
  * url = ""
- * integration_text = ""     
+ * integration_text = ""
  *
  * this calculates the display name automatically
  */
@@ -152,7 +152,7 @@ ManglerChannelTree::addUser(uint32_t id, uint32_t parent_id, Glib::ustring name,
         fprintf(stderr, "orphaned user: id %d: %s is supposed to be in channel %d\n", id, name.c_str(), parent_id);
         return;
     }
-    
+
     if (parent) {
         channelIter                                 = channelStore->prepend(parent.children());
     } else {
@@ -186,7 +186,7 @@ ManglerChannelTree::addUser(uint32_t id, uint32_t parent_id, Glib::ustring name,
  * comment = ""
  * phonetic = ""
  * url = ""
- * integration_text = ""     
+ * integration_text = ""
  *
  * this calculates the display name automatically
  */
@@ -203,7 +203,7 @@ ManglerChannelTree::updateUser(uint32_t id, uint32_t parent_id, Glib::ustring na
         fprintf(stderr, "missing user: id %d: %s is supposed to be in channel %d\n", id, name.c_str(), parent_id);
         return;
     }
-    
+
     user[channelRecord.displayName]       = displayName;
     if (id == v3_get_user_id()) {
         if (mangler->isTransmitting) {
@@ -461,11 +461,11 @@ ManglerChannelTree::refreshUser(uint32_t id) {/*{{{*/
     muted = user[channelRecord.muted];
     displayName = name;
     if (!rank.empty()) {
-        displayName = "[" + rank + "] " + displayName; 
+        displayName = "[" + rank + "] " + displayName;
     }
     flags = "";
     if (phantom) {
-        flags = "P" + flags; 
+        flags = "P" + flags;
     }
     if (global_mute) {
         flags = "G" + flags;
@@ -1062,9 +1062,9 @@ ManglerChannelStore::row_draggable_vfunc(const Gtk::TreeModel::Path& path) const
     const v3_permissions *perms = v3_get_permissions();
     ManglerChannelStore* unconstThis = const_cast<ManglerChannelStore*>(this);
     const_iterator iter = unconstThis->get_iter(path);
-    if (!iter) 
+    if (!iter)
         return Gtk::TreeStore::row_draggable_vfunc(path);
-    
+
     Row row = *iter;
     if (row[c.isUser] && perms->move_user && (perms->srv_admin || v3_is_channel_admin(v3_get_user_channel(row[c.id]))))
         return true;

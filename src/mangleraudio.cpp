@@ -6,7 +6,7 @@
  * $LastChangedBy$
  * $URL$
  *
- * Copyright 2009-2010 Eric Kilfoil 
+ * Copyright 2009-2010 Eric Kilfoil
  *
  * This file is part of Mangler.
  *
@@ -94,9 +94,9 @@ ManglerAudio::openOutput(uint32_t rate) {/*{{{*/
                         NULL,
                         "Mangler",
                         PA_STREAM_PLAYBACK,
-                        (mangler->settings->config.outputDeviceName == "Default" || 
-                            mangler->settings->config.outputDeviceName == "" 
-                            ? NULL 
+                        (mangler->settings->config.outputDeviceName == "Default" ||
+                            mangler->settings->config.outputDeviceName == ""
+                            ? NULL
                             : (char *)mangler->settings->config.outputDeviceName.c_str()),
                         "User Talking In Ventrilo Channel",
                         &pulse_samplespec,
@@ -179,9 +179,9 @@ ManglerAudio::openInput(uint32_t rate) {/*{{{*/
                         NULL,
                         "Mangler",
                         PA_STREAM_RECORD,
-                        (mangler->settings->config.inputDeviceName == "Default" || 
-                            mangler->settings->config.inputDeviceName == "" 
-                            ? NULL 
+                        (mangler->settings->config.inputDeviceName == "Default" ||
+                            mangler->settings->config.inputDeviceName == ""
+                            ? NULL
                             : (char *)mangler->settings->config.inputDeviceName.c_str()),
                         "Talking In Ventrilo Channel",
                         &pulse_samplespec,
@@ -401,7 +401,7 @@ ManglerAudio::output(void) {/*{{{*/
 
     //short circuit if we are muted
     if(mangler->muteSound) {
-        return;    
+        return;
     }
 
     g_async_queue_ref(pcm_queue);
@@ -541,16 +541,16 @@ ManglerAudio::getDeviceList(Glib::ustring audioSubsystem) {/*{{{*/
 #ifdef HAVE_ALSA
     if (audioSubsystem == "alsa") {
         snd_pcm_stream_t stream[2] = { SND_PCM_STREAM_PLAYBACK, SND_PCM_STREAM_CAPTURE };
-        
+
         for (ctr = 0; ctr < 2; ctr++) { // the rest is just copypasta, with bad code from alsa
             snd_ctl_t *handle;
-            int card, err, dev, 
+            int card, err, dev,
                 idx_p = 0, idx_c = 0;
             snd_ctl_card_info_t *info;
             snd_pcm_info_t *pcminfo;
             snd_ctl_card_info_alloca(&info);
             snd_pcm_info_alloca(&pcminfo);
-            
+
             card = -1;
             if (snd_card_next(&card) < 0 || card < 0) {
                 fputs("alsa: no sound cards found...\n", stderr);
@@ -671,9 +671,9 @@ ManglerAudio::playNotification_thread(Glib::ustring name) {/*{{{*/
                         NULL,
                         "Mangler",
                         PA_STREAM_PLAYBACK,
-                        (mangler->settings->config.notificationDeviceName == "Default" || 
-                            mangler->settings->config.notificationDeviceName == "" 
-                            ? NULL 
+                        (mangler->settings->config.notificationDeviceName == "Default" ||
+                            mangler->settings->config.notificationDeviceName == ""
+                            ? NULL
                             : (char *)mangler->settings->config.notificationDeviceName.c_str()),
                         "Notification Sound",
                         &pulse_samplespec,

@@ -30,15 +30,15 @@ int main(int argc, char **argv)
    speex_bits_init(&bits);
    while (1)
    {
-      /*Read the size encoded by sampleenc, this part will likely be 
+      /*Read the size encoded by sampleenc, this part will likely be
         different in your application*/
       fread(&nbBytes, sizeof(short), 1, stdin);
       //nbBytes = ntohs(nbBytes);
-	
+
       fprintf (stderr, "nbBytes recv: %d\n", nbBytes);
       if (feof(stdin))
          break;
-      
+
       /*Read the "packet" encoded by sampleenc*/
       fread(cbits, 1, nbBytes, stdin);
       /*Copy the data into the bit-stream struct*/
@@ -54,7 +54,7 @@ int main(int argc, char **argv)
       /*Write the decoded audio to file*/
       fwrite(out, sizeof(short), FRAME_SIZE, stdout);
    }
-   
+
    /*Destroy the decoder state*/
    speex_decoder_destroy(state);
    /*Destroy the bit-stream truct*/

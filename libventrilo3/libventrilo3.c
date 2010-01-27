@@ -6,7 +6,7 @@
  * $LastChangedBy$
  * $URL$
  *
- * Copyright 2009-2010 Eric Kilfoil 
+ * Copyright 2009-2010 Eric Kilfoil
  *
  * This file is part of Mangler.
  *
@@ -599,7 +599,7 @@ _v3_send_enc_msg(char *data, int len) {/*{{{*/
 /*
  * The majority of outbound message processing happens here since this function
  * also reads from the event pipe from the client
- * 
+ *
  * This is more like a mainloop than a receive function.
  */
 _v3_net_message *
@@ -881,7 +881,7 @@ _v3_recv(int block) {/*{{{*/
                         break;/*}}}*/
                     case V3_EVENT_CHAT_MESSAGE:/*{{{*/
                         {
-                            _v3_net_message *msg = _v3_put_0x42(V3_TALK_CHAT, v3_luser.id, ev.data.chatmessage);   
+                            _v3_net_message *msg = _v3_put_0x42(V3_TALK_CHAT, v3_luser.id, ev.data.chatmessage);
                             if (_v3_send(msg)) {
                                 _v3_debug(V3_DEBUG_SOCKET, "sent chat message to server");
                             } else {
@@ -914,7 +914,7 @@ _v3_recv(int block) {/*{{{*/
                         break;/*}}}*/
                     case V3_EVENT_PRIVATE_CHAT_MESSAGE:/*{{{*/
                         {
-                            _v3_net_message *msg = _v3_put_0x5a(V3_TALK_PRIV_CHAT, ev.user.id, v3_luser.id, ev.data.chatmessage);   
+                            _v3_net_message *msg = _v3_put_0x5a(V3_TALK_PRIV_CHAT, ev.user.id, v3_luser.id, ev.data.chatmessage);
                             if (_v3_send(msg)) {
                                 _v3_debug(V3_DEBUG_SOCKET, "sent private chat message to server for user %d", ev.user.id);
                             } else {
@@ -969,7 +969,7 @@ _v3_recv(int block) {/*{{{*/
                         break;/*}}}*/
                     case V3_EVENT_ADMIN_LOGOUT:/*{{{*/
                         {
-                            _v3_net_message *msg = _v3_put_0x63(V3_ADMIN_LOGOUT, 0, NULL); 
+                            _v3_net_message *msg = _v3_put_0x63(V3_ADMIN_LOGOUT, 0, NULL);
                             if (_v3_send(msg)) {
                                 _v3_debug(V3_DEBUG_SOCKET, "sent admin logout request to server");
                             } else {
@@ -980,7 +980,7 @@ _v3_recv(int block) {/*{{{*/
                         break;/*}}}*/
                     case V3_EVENT_ADMIN_KICK:/*{{{*/
                         {
-                            _v3_net_message *msg = _v3_put_0x63(V3_ADMIN_KICK, ev.user.id, ev.data.reason); 
+                            _v3_net_message *msg = _v3_put_0x63(V3_ADMIN_KICK, ev.user.id, ev.data.reason);
                             if (_v3_send(msg)) {
                                 _v3_debug(V3_DEBUG_SOCKET, "sent admin kick request to server");
                             } else {
@@ -991,7 +991,7 @@ _v3_recv(int block) {/*{{{*/
                         break;/*}}}*/
                     case V3_EVENT_ADMIN_BAN:/*{{{*/
                         {
-                            _v3_net_message *msg = _v3_put_0x63(V3_ADMIN_BAN, ev.user.id, ev.data.reason); 
+                            _v3_net_message *msg = _v3_put_0x63(V3_ADMIN_BAN, ev.user.id, ev.data.reason);
                             if (_v3_send(msg)) {
                                 _v3_debug(V3_DEBUG_SOCKET, "sent admin ban request to server");
                             } else {
@@ -1002,7 +1002,7 @@ _v3_recv(int block) {/*{{{*/
                         break;/*}}}*/
                     case V3_EVENT_ADMIN_CHANNEL_BAN:/*{{{*/
                         {
-                            _v3_net_message *msg = _v3_put_0x63(V3_ADMIN_CHANNEL_BAN, ev.user.id, ev.data.reason); 
+                            _v3_net_message *msg = _v3_put_0x63(V3_ADMIN_CHANNEL_BAN, ev.user.id, ev.data.reason);
                             if (_v3_send(msg)) {
                                 _v3_debug(V3_DEBUG_SOCKET, "sent admin channel ban request to server");
                             } else {
@@ -1869,7 +1869,7 @@ _v3_destroy_decoders(void) {/*{{{*/
  *  be passed on to a calling program.
  *
  *  Returns an integer:
- *  
+ *
  *     V3_NOTIMPL......: The packet type is not implemented
  *     V3_MALFORMED....: The packet type is corrupt and/or the subtype is not implemented
  *     V3_OK...........: The packet was processed successfully
@@ -2122,7 +2122,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                         }
                         break;
                     case V3_TALK_CHAT:
-                        {   
+                        {
                             v3_event *ev = _v3_create_event(V3_EVENT_CHAT_MESSAGE);
                             ev->user.id = m->user_id;
                             strncpy(ev->data.chatmessage, m->msg, sizeof(ev->data.chatmessage) - 1);
@@ -2251,7 +2251,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                 return V3_MALFORMED;
             } else {
                 _v3_msg_0x4a *m = msg->contents;
-                
+
                 if (m->error_id) {
                     if (m->error_id != 10) {
                         char *error;
@@ -2319,7 +2319,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                         _v3_msg_0x4a_perms *msub = msg->contents;
 
                         _v3_debug(V3_DEBUG_INFO, "received change owner (%d => %d)", msub->perms.account_id, msub->perms.replace_owner_id);
-                       
+
                         a = v3_get_account(msub->perms.account_id);
                         if (a == NULL) {
                             _v3_debug(V3_DEBUG_INFO, "can't find account id %d", msub->perms.account_id);
@@ -2336,7 +2336,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                         }
                         new_owner = strdup(a->username);
                         v3_free_account(a);
-                        
+
                         _v3_lock_accountlist();
                         for (a = v3_account_list; a != NULL; a = a->next) {
                             if (strcmp(a->owner, old_owner))
@@ -2683,7 +2683,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                 return V3_MALFORMED;
             } else {
                 _v3_msg_0x53 *m = (_v3_msg_0x53 *)msg->contents;
-                
+
                 v3_user *user;
                 _v3_debug(V3_DEBUG_INFO, "user %d moved to channel %d", m->user_id, m->channel_id);
                 user = v3_get_user(m->user_id);
@@ -2770,12 +2770,12 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                             _v3_lock_userlist();
                             _v3_remove_user(m->phantom_user_id);
                             _v3_unlock_userlist();
-    
+
                             ev = _v3_create_event(V3_EVENT_USER_LOGOUT);
                             ev->user.id = m->phantom_user_id;
                             ev->channel.id = m->channel_id;
                             _v3_debug(V3_DEBUG_INFO, "queuing event type %d for user %d", ev->type, ev->user.id);
-    
+
                             v3_queue_event(ev);
                             break;
 
@@ -2849,7 +2849,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                         }
                         break;
                     case V3_TALK_PRIV_CHAT:
-                        {   
+                        {
                             v3_event *ev = _v3_create_event(V3_EVENT_PRIVATE_CHAT_MESSAGE);
                             ev->user.privchat_user1 = m->user1;
                             ev->user.privchat_user2 = m->user2;
@@ -3130,7 +3130,7 @@ v3_login(char *server, char *username, char *password, char *phonetic) {/*{{{*/
         free(tmphstbuf);
 #else
         // if gethostbyname_r does not exist, assume that the gethostbyname is re-entrant
-        hp = gethostbyname (srvname); 
+        hp = gethostbyname (srvname);
 #endif
         if (res || hp == NULL || hp->h_length < 1) {
             _v3_error("Hostname lookup failed.");
@@ -3216,7 +3216,7 @@ v3_login(char *server, char *username, char *password, char *phonetic) {/*{{{*/
         if(!msg) {
             _v3_func_leave("v3_login");
             return false;
-        }	
+        }
         type = msg->type;
         switch (type) {
             case 0x4a:
@@ -3583,7 +3583,7 @@ v3_phantom_remove(uint16_t channel_id) {/*{{{*/
         _v3_func_leave("v3_phantom_remove");
         return;
     }
-    
+
     _v3_debug(V3_DEBUG_EVENT, "attempting to remove phantom from channel %d", channel_id);
 
     _v3_lock_userlist();
@@ -3599,7 +3599,7 @@ v3_phantom_remove(uint16_t channel_id) {/*{{{*/
     } else {
         ev.type = V3_EVENT_PHANTOM_REMOVE;
         ev.user.id = u->id;
-    
+
         _v3_lock_sendq();
         _v3_debug(V3_DEBUG_EVENT, "sending %lu bytes to event pipe", sizeof(v3_event));
         if (fwrite(&ev, sizeof(struct _v3_event), 1, v3_server.evoutstream) != 1) {
@@ -3623,12 +3623,12 @@ v3_phantom_add(uint16_t channel_id) {/*{{{*/
         _v3_func_leave("v3_phantom_add");
         return;
     }
-    
+
     _v3_debug(V3_DEBUG_EVENT, "attempting to add phantom to channel %d", channel_id);
 
     ev.type = V3_EVENT_PHANTOM_ADD;
     ev.channel.id = channel_id;
-    
+
     _v3_lock_sendq();
     _v3_debug(V3_DEBUG_EVENT, "sending %lu bytes to event pipe", sizeof(v3_event));
     if (fwrite(&ev, sizeof(struct _v3_event), 1, v3_server.evoutstream) != 1) {
@@ -3749,10 +3749,10 @@ v3_admin_boot(enum _v3_boot_types type, uint16_t user_id, char *reason) {/*{{{*/
         _v3_func_leave("v3_admin_boot");
         return;
     }
-            
+
     ev.user.id = user_id;
     strncpy(ev.data.reason, reason ? reason : "", sizeof(ev.data.reason));
-    
+
     switch (type) {
         case V3_BOOT_KICK:
             ev.type = V3_EVENT_ADMIN_KICK;
@@ -3808,7 +3808,7 @@ v3_userlist_close(void) {/*{{{*/
         _v3_func_leave("v3_userlist_close");
         return;
     }
-    
+
     _v3_destroy_accountlist();
 
     memset(&ev, 0, sizeof(v3_event));
@@ -3863,7 +3863,7 @@ v3_userlist_update(v3_account *account) {/*{{{*/
 
     if (ev.data.account.perms.account_id != 0)
         ev.type = V3_EVENT_USERLIST_MODIFY;
-    else    
+    else
         ev.type = V3_EVENT_USERLIST_ADD;
 
     ev.data.account.perms = account->perms;
@@ -3961,7 +3961,7 @@ v3_user_count(void) {/*{{{*/
 }/*}}}*/
 
 /*
- * This function returns a COPY of the user structure 
+ * This function returns a COPY of the user structure
  */
 v3_user *
 v3_get_user(uint16_t id) {/*{{{*/
@@ -4255,7 +4255,7 @@ int
 v3_account_count(void) {/*{{{*/
     v3_account *a;
     int ctr=0;
-    
+
     _v3_lock_accountlist();
     for (a = v3_account_list; a != NULL; a = a->next, ctr++);
     _v3_unlock_accountlist();
@@ -4347,7 +4347,7 @@ v3_queue_event(v3_event *ev) {/*{{{*/
     pthread_mutex_lock(eventq_mutex);
     // if we're not allowed to see channels, gui should think any channel is the lobby
     if(!v3_luser.perms.see_chan_list || !v3_channel_count()) {
-        ev->channel.id = 0;    
+        ev->channel.id = 0;
     }
     ev->next = NULL;
     ev->timestamp = time(NULL);

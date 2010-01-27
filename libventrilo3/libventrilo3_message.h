@@ -6,7 +6,7 @@
  * $LastChangedBy$
  * $URL$
  *
- * Copyright 2009-2010 Eric Kilfoil 
+ * Copyright 2009-2010 Eric Kilfoil
  *
  * This file is part of Mangler.
  *
@@ -51,7 +51,7 @@
  * appropriately.
  *
  * For questions or comments, join irc://irc.freenode.net channel #mangler
- * 
+ *
  * Better documentation on these messages can be found at our wiki:
  * http://www.mangler.org/trac/wiki/ProtocolDocumentation
  */
@@ -80,7 +80,7 @@ typedef struct _v3_net_message_0x33 {/*{{{*/
     uint32_t type;              // 0
     uint8_t  unkonwn[48];       // 4
     uint16_t channel_id_count;  // 52
-    uint16_t *channel_ids;      // 54 - array of uint16_t - variable length starts list  
+    uint16_t *channel_ids;      // 54 - array of uint16_t - variable length starts list
 } _v3_msg_0x33;
 int _v3_get_0x33(_v3_net_message *msg);
 int _v3_destroy_0x33(_v3_net_message *msg);/*}}}*/
@@ -140,7 +140,7 @@ typedef struct _v3_net_message_0x42 {/*{{{*/
     uint16_t user_id;           // 4
     uint16_t subtype;           // 6
     uint32_t unknown;           // 8
-    
+
     uint16_t msglen;            // 12 - variable length starts here
     char *   msg;               // 14
 } _v3_msg_0x42;
