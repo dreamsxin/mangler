@@ -493,6 +493,7 @@ ManglerChannelTree::refreshUser(uint32_t id) {/*{{{*/
     }
 
     user[channelRecord.displayName] = displayName;
+    mangler->chat->updateUser(id);
     mangler->chat->chatUserTreeModelFilter->refilter();
 }/*}}}*/
 
