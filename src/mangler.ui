@@ -1879,6 +1879,9 @@ out the encryption
                     <child>
                       <object class="GtkComboBox" id="inputDeviceComboBox">
                         <property name="visible">True</property>
+                        <accessibility>
+                          <relation type="labelled-by" target="inputDeviceLabel"/>
+                        </accessibility>
                       </object>
                       <packing>
                         <property name="left_attach">1</property>
@@ -1891,6 +1894,9 @@ out the encryption
                     <child>
                       <object class="GtkComboBox" id="outputDeviceComboBox">
                         <property name="visible">True</property>
+                        <accessibility>
+                          <relation type="labelled-by" target="outputDeviceLabel"/>
+                        </accessibility>
                       </object>
                       <packing>
                         <property name="left_attach">1</property>
@@ -1916,6 +1922,9 @@ out the encryption
                     <child>
                       <object class="GtkComboBox" id="notificationDeviceComboBox">
                         <property name="visible">True</property>
+                        <accessibility>
+                          <relation type="labelled-by" target="notificationDeviceInfoLabel"/>
+                        </accessibility>
                       </object>
                       <packing>
                         <property name="left_attach">1</property>
@@ -2054,6 +2063,9 @@ Notifications are the sound effects that are played when you login, logout, a us
                     <child>
                       <object class="GtkComboBox" id="audioSubsystemComboBox">
                         <property name="visible">True</property>
+                        <accessibility>
+                          <relation type="labelled-by" target="audioSubsystemLabel"/>
+                        </accessibility>
                       </object>
                       <packing>
                         <property name="left_attach">1</property>
@@ -2067,6 +2079,9 @@ Notifications are the sound effects that are played when you login, logout, a us
                         <property name="can_focus">True</property>
                         <property name="tooltip_text" translatable="yes">User defined PCM device from .asoundrc file</property>
                         <property name="invisible_char">&#x2022;</property>
+                        <accessibility>
+                          <relation type="labelled-by" target="CustomInputLabel"/>
+                        </accessibility>
                       </object>
                       <packing>
                         <property name="left_attach">1</property>
@@ -2081,6 +2096,9 @@ Notifications are the sound effects that are played when you login, logout, a us
                         <property name="can_focus">True</property>
                         <property name="tooltip_text" translatable="yes">User defined PCM device from .asoundrc file</property>
                         <property name="invisible_char">&#x2022;</property>
+                        <accessibility>
+                          <relation type="labelled-by" target="CustomOutputLabel"/>
+                        </accessibility>
                       </object>
                       <packing>
                         <property name="left_attach">1</property>
@@ -2095,6 +2113,9 @@ Notifications are the sound effects that are played when you login, logout, a us
                         <property name="can_focus">True</property>
                         <property name="tooltip_text" translatable="yes">User defined PCM device from .asoundrc file</property>
                         <property name="invisible_char">&#x2022;</property>
+                        <accessibility>
+                          <relation type="labelled-by" target="CustomNotificationLabel"/>
+                        </accessibility>
                       </object>
                       <packing>
                         <property name="left_attach">1</property>
