@@ -163,9 +163,20 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
     builder->get_widget("hideGuestFlagMenuItem", checkmenuitem);
     checkmenuitem->signal_toggled().connect(sigc::mem_fun(this, &Mangler::hideGuestFlagMenuItem_toggled_cb));
 
+    builder->get_widget("quickConnectMenuItem", menuitem);
+    menuitem->signal_activate().connect(sigc::mem_fun(this, &Mangler::quickConnectButton_clicked_cb));
+
     builder->get_widget("serverListMenuItem", menuitem);
     menuitem->signal_activate().connect(sigc::mem_fun(this, &Mangler::serverConfigButton_clicked_cb));
 
+    builder->get_widget("adminSeparatorMenuItem", menuitem);
+
+    builder->get_widget("adminLoginMenuItem", menuitem);
+    menuitem->signal_activate().connect(sigc::mem_fun(this, &Mangler::adminButton_clicked_cb));
+
+    builder->get_widget("adminWindowMenuItem", menuitem);
+    menuitem->signal_activate().connect(sigc::mem_fun(this, &Mangler::adminButton_clicked_cb));
+    
     builder->get_widget("settingsMenuItem", menuitem);
     menuitem->signal_activate().connect(sigc::mem_fun(this, &Mangler::settingsButton_clicked_cb));
     
@@ -433,14 +444,6 @@ void Mangler::adminButton_clicked_cb(void) {/*{{{*/
             v3_admin_login((char *)password.c_str());
             // if we tried sending a password, the only options are either
             // success or get booted from the server
-            isAdmin = true;
-            v3_user *u = v3_get_user(0);
-            if (!u) {
-                fprintf(stderr, "couldn't retreive lobby user\n");
-                return;
-            }
-            channelTree->updateLobby(c_to_ustring(u->name), c_to_ustring(u->comment), u->phonetic);
-            v3_free_user(u);
         }
     }
 }/*}}}*/
@@ -683,6 +686,12 @@ void Mangler::onDisconnectHandler(void) {/*{{{*/
         mangler->statusIcon->set(icons["tray_icon_grey"]);
         audioControl->playNotification("logout");
         isAdmin = false;
+        builder->get_widget("adminSeparatorMenuItem", menuitem);
+        menuitem->hide();
+        builder->get_widget("adminLoginMenuItem", menuitem);
+        menuitem->hide();
+        builder->get_widget("adminWindowMenuItem", menuitem);
+        menuitem->hide();
         chat->clear();
         if (connectedServerId != -1) {
             server = settings->config.getserver(connectedServerId);
@@ -896,6 +905,10 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                         v3_join_chat();
                     }
                     myID = v3_get_user_id();
+                    builder->get_widget("adminSeparatorMenuItem", menuitem);
+                    menuitem->show();
+                    builder->get_widget("adminLoginMenuItem", menuitem);
+                    menuitem->show();
                 }
                 break;/*}}}*/
             case V3_EVENT_USER_CHAN_MOVE:/*{{{*/
@@ -1202,13 +1215,26 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                 }
                 break;/*}}}*/
             case V3_EVENT_ADMIN_AUTH:/*{{{*/
-                isAdmin = true;
                 {
+                    const v3_permissions *perms = v3_get_permissions();
+                    if (perms->srv_admin) {
+                        isAdmin = true;
+                        builder->get_widget("adminLoginMenuItem", menuitem);
+                        menuitem->hide();
+                        builder->get_widget("adminWindowMenuItem", menuitem);
+                        menuitem->show();
+                    } else {
+                        isAdmin = false;
+                        builder->get_widget("adminLoginMenuItem", menuitem);
+                        menuitem->show();
+                        builder->get_widget("adminWindowMenuItem", menuitem);
+                        menuitem->hide();
+                    }
                     v3_user *lobby = v3_get_user(0);
                     if (lobby) {
                         channelTree->updateLobby(c_to_ustring(lobby->name), c_to_ustring(lobby->comment), lobby->phonetic);
                         v3_free_user(lobby);
-                    }
+                    } 
                 }
                 break;/*}}}*/
             case V3_EVENT_CHAN_ADMIN_UPDATED:/*{{{*/

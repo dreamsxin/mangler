@@ -34,6 +34,35 @@
                       </object>
                     </child>
                     <child>
+                      <object class="GtkImageMenuItem" id="quickConnectMenuItem">
+                        <property name="label" translatable="yes">Quick Connect</property>
+                        <property name="visible">True</property>
+                        <property name="image">image8</property>
+                        <property name="use_stock">False</property>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkSeparatorMenuItem" id="adminSeparatorMenuItem">
+                        <property name="visible">False</property>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkImageMenuItem" id="adminLoginMenuItem">
+                        <property name="label" translatable="yes">Admin Login</property>
+                        <property name="visible">False</property>
+                        <property name="image">image7</property>
+                        <property name="use_stock">False</property>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkImageMenuItem" id="adminWindowMenuItem">
+                        <property name="label" translatable="yes">Admin Window</property>
+                        <property name="visible">False</property>
+                        <property name="image">image5</property>
+                        <property name="use_stock">False</property>
+                      </object>
+                    </child>
+                    <child>
                       <object class="GtkSeparatorMenuItem" id="separatormenuitem1">
                         <property name="visible">True</property>
                       </object>
@@ -4668,5 +4697,21 @@ Notifications are the sound effects that are played when you login, logout, a us
         </child>
       </object>
     </child>
+  </object>
+  <object class="GtkImage" id="image5">
+    <property name="visible">True</property>
+    <property name="stock">gtk-preferences</property>
+  </object>
+  <object class="GtkImage" id="image6">
+    <property name="visible">True</property>
+    <property name="stock">gtk-dialog-authentication</property>
+  </object>
+  <object class="GtkImage" id="image7">
+    <property name="visible">True</property>
+    <property name="stock">gtk-dialog-authentication</property>
+  </object>
+  <object class="GtkImage" id="image8">
+    <property name="visible">True</property>
+    <property name="stock">gtk-connect</property>
   </object>
 </interface>
