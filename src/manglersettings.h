@@ -86,7 +86,7 @@ class ManglerSettings
         };
         inputDeviceModelColumns  inputColumns;
         Glib::RefPtr<Gtk::ListStore> inputDeviceTreeModel;
-
+        Gtk::Entry          *inputDeviceCustomName;
         // Output Device Combo Box Setup
         Gtk::ComboBox       *outputDeviceComboBox;
         class outputDeviceModelColumns : public Gtk::TreeModel::ColumnRecord
@@ -99,6 +99,7 @@ class ManglerSettings
         };
         outputDeviceModelColumns  outputColumns;
         Glib::RefPtr<Gtk::ListStore> outputDeviceTreeModel;
+        Gtk::Entry          *outputDeviceCustomName;
 
         // Notification Device Combo Box Setup
         Gtk::ComboBox       *notificationDeviceComboBox;
@@ -112,6 +113,7 @@ class ManglerSettings
         };
         notificationDeviceModelColumns  notificationColumns;
         Glib::RefPtr<Gtk::ListStore> notificationDeviceTreeModel;
+        Gtk::Entry          *notificationDeviceCustomName;
 
         // Mouse Input Device Combo Box Setup
         Gtk::ComboBox       *mouseDeviceComboBox;
@@ -147,6 +149,9 @@ class ManglerSettings
         void settingsEnableAudioIntegrationCheckButton_toggled_cb(void);
         void audioSubsystemComboBox_changed_cb(void);
         void updateDeviceComboBoxes(void);
+        void inputDeviceComboBox_changed_cb(void);
+        void outputDeviceComboBox_changed_cb(void);
+        void notificationDeviceComboBox_changed_cb(void);
 };
 
 #endif

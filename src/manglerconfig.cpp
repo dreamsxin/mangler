@@ -58,6 +58,9 @@ ManglerConfig::ManglerConfig() {/*{{{*/
 #elif HAVE_ALSA
     audioSubsystem                  = "alsa";
 #endif
+    inputDeviceCustomName           = "";
+    outputDeviceCustomName          = "";
+    notificationDeviceCustomName    = "";
     ManglerServerConfig             qc_lastserver;
     std::vector<ManglerServerConfig> serverlist;
     load();
@@ -79,8 +82,11 @@ bool ManglerConfig::save() {/*{{{*/
     put("AudioIntegrationEnabled", AudioIntegrationEnabled);
     put("AudioIntegrationPlayer", AudioIntegrationPlayer);
     put("inputDeviceName", inputDeviceName);
+    put("inputDeviceCustomName", inputDeviceCustomName);
     put("outputDeviceName", outputDeviceName);
+    put("outputDeviceCustomName", outputDeviceCustomName);
     put("notificationDeviceName", notificationDeviceName);
+    put("notificationDeviceCustomName", notificationDeviceCustomName);
     put("notification.loginLogout", notificationLoginLogout);
     put("notification.channelEnterLeave", notificationChannelEnterLeave);
     put("notification.transmitStartStop", notificationTransmitStartStop);
@@ -393,8 +399,11 @@ void ManglerConfig::load() {/*{{{*/
         AudioIntegrationPlayer        = atoi(get("AudioIntegrationPlayer").c_str());
     }
     inputDeviceName               = get("inputDeviceName");
+    inputDeviceCustomName         = get("inputDeviceCustomName");
     outputDeviceName              = get("outputDeviceName");
+    outputDeviceCustomName        = get("outputDeviceCustomName");
     notificationDeviceName        = get("notificationDeviceName");
+    notificationDeviceCustomName  = get("notificationDeviceCustomName");
     notificationLoginLogout       = get("notification.loginLogout") == "0" ? false : true; // default true
     notificationChannelEnterLeave = get("notification.channelEnterLeave") == "0" ? false : true; // default true
     notificationTransmitStartStop = get("notification.transmitStartStop") == "0" ? false : true; // default true

@@ -1820,7 +1820,7 @@ out the encryption
                 <child>
                   <object class="GtkTable" id="audioDeviceTable">
                     <property name="visible">True</property>
-                    <property name="n_rows">9</property>
+                    <property name="n_rows">12</property>
                     <property name="n_columns">2</property>
                     <property name="column_spacing">6</property>
                     <property name="row_spacing">9</property>
@@ -1844,8 +1844,8 @@ out the encryption
                         <property name="label" translatable="yes">Output Device:</property>
                       </object>
                       <packing>
-                        <property name="top_attach">2</property>
-                        <property name="bottom_attach">3</property>
+                        <property name="top_attach">3</property>
+                        <property name="bottom_attach">4</property>
                         <property name="x_options">GTK_FILL</property>
                         <property name="y_options">GTK_FILL</property>
                       </packing>
@@ -1869,8 +1869,8 @@ out the encryption
                       <packing>
                         <property name="left_attach">1</property>
                         <property name="right_attach">2</property>
-                        <property name="top_attach">2</property>
-                        <property name="bottom_attach">3</property>
+                        <property name="top_attach">3</property>
+                        <property name="bottom_attach">4</property>
                         <property name="y_options">GTK_FILL</property>
                       </packing>
                     </child>
@@ -1881,8 +1881,8 @@ out the encryption
                         <property name="label" translatable="yes">Notification Device:</property>
                       </object>
                       <packing>
-                        <property name="top_attach">7</property>
-                        <property name="bottom_attach">8</property>
+                        <property name="top_attach">9</property>
+                        <property name="bottom_attach">10</property>
                         <property name="x_options">GTK_FILL</property>
                         <property name="y_options">GTK_FILL</property>
                       </packing>
@@ -1894,8 +1894,8 @@ out the encryption
                       <packing>
                         <property name="left_attach">1</property>
                         <property name="right_attach">2</property>
-                        <property name="top_attach">7</property>
-                        <property name="bottom_attach">8</property>
+                        <property name="top_attach">9</property>
+                        <property name="bottom_attach">10</property>
                         <property name="y_options">GTK_FILL</property>
                       </packing>
                     </child>
@@ -1911,8 +1911,8 @@ Notifications are the sound effects that are played when you login, logout, a us
                       </object>
                       <packing>
                         <property name="right_attach">2</property>
-                        <property name="top_attach">6</property>
-                        <property name="bottom_attach">7</property>
+                        <property name="top_attach">8</property>
+                        <property name="bottom_attach">9</property>
                         <property name="y_options">GTK_FILL</property>
                       </packing>
                     </child>
@@ -1922,8 +1922,8 @@ Notifications are the sound effects that are played when you login, logout, a us
                       </object>
                       <packing>
                         <property name="right_attach">2</property>
-                        <property name="top_attach">5</property>
-                        <property name="bottom_attach">6</property>
+                        <property name="top_attach">7</property>
+                        <property name="bottom_attach">8</property>
                         <property name="y_options">GTK_FILL</property>
                       </packing>
                     </child>
@@ -1973,8 +1973,8 @@ Notifications are the sound effects that are played when you login, logout, a us
                       </object>
                       <packing>
                         <property name="right_attach">2</property>
-                        <property name="top_attach">8</property>
-                        <property name="bottom_attach">9</property>
+                        <property name="top_attach">11</property>
+                        <property name="bottom_attach">12</property>
                         <property name="y_options"></property>
                       </packing>
                     </child>
@@ -1999,8 +1999,8 @@ Notifications are the sound effects that are played when you login, logout, a us
                       </object>
                       <packing>
                         <property name="right_attach">2</property>
-                        <property name="top_attach">4</property>
-                        <property name="bottom_attach">5</property>
+                        <property name="top_attach">6</property>
+                        <property name="bottom_attach">7</property>
                       </packing>
                     </child>
                     <child>
@@ -2009,8 +2009,8 @@ Notifications are the sound effects that are played when you login, logout, a us
                       </object>
                       <packing>
                         <property name="right_attach">2</property>
-                        <property name="top_attach">3</property>
-                        <property name="bottom_attach">4</property>
+                        <property name="top_attach">5</property>
+                        <property name="bottom_attach">6</property>
                         <property name="y_options">GTK_FILL</property>
                       </packing>
                     </child>
@@ -2033,6 +2033,81 @@ Notifications are the sound effects that are played when you login, logout, a us
                         <property name="left_attach">1</property>
                         <property name="right_attach">2</property>
                         <property name="y_options">GTK_FILL</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkEntry" id="inputDeviceCustomName">
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <property name="tooltip_text" translatable="yes">User defined PCM device from .asoundrc file</property>
+                        <property name="invisible_char">&#x2022;</property>
+                      </object>
+                      <packing>
+                        <property name="left_attach">1</property>
+                        <property name="right_attach">2</property>
+                        <property name="top_attach">2</property>
+                        <property name="bottom_attach">3</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkEntry" id="outputDeviceCustomName">
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <property name="tooltip_text" translatable="yes">User defined PCM device from .asoundrc file</property>
+                        <property name="invisible_char">&#x2022;</property>
+                      </object>
+                      <packing>
+                        <property name="left_attach">1</property>
+                        <property name="right_attach">2</property>
+                        <property name="top_attach">4</property>
+                        <property name="bottom_attach">5</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkEntry" id="notificationDeviceCustomName">
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <property name="tooltip_text" translatable="yes">User defined PCM device from .asoundrc file</property>
+                        <property name="invisible_char">&#x2022;</property>
+                      </object>
+                      <packing>
+                        <property name="left_attach">1</property>
+                        <property name="right_attach">2</property>
+                        <property name="top_attach">10</property>
+                        <property name="bottom_attach">11</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkLabel" id="CustomInputLabel">
+                        <property name="visible">True</property>
+                        <property name="xalign">0.94999998807907104</property>
+                        <property name="label" translatable="yes">Custom Input Device</property>
+                      </object>
+                      <packing>
+                        <property name="top_attach">2</property>
+                        <property name="bottom_attach">3</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkLabel" id="CustomOutputLabel">
+                        <property name="visible">True</property>
+                        <property name="xalign">0.94999998807907104</property>
+                        <property name="label" translatable="yes">Custom Output Device</property>
+                      </object>
+                      <packing>
+                        <property name="top_attach">4</property>
+                        <property name="bottom_attach">5</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkLabel" id="CustomNotificationLabel">
+                        <property name="visible">True</property>
+                        <property name="xalign">0.94999998807907104</property>
+                        <property name="label" translatable="yes">Custom Notification Device</property>
+                      </object>
+                      <packing>
+                        <property name="top_attach">10</property>
+                        <property name="bottom_attach">11</property>
                       </packing>
                     </child>
                   </object>

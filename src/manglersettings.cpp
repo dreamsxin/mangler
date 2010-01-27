@@ -103,17 +103,26 @@ ManglerSettings::ManglerSettings(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
     inputDeviceTreeModel = Gtk::ListStore::create(inputColumns);
     inputDeviceComboBox->set_model(inputDeviceTreeModel);
     inputDeviceComboBox->pack_start(inputColumns.description);
+    inputDeviceComboBox->signal_changed().connect(sigc::mem_fun(this, &ManglerSettings::inputDeviceComboBox_changed_cb));
+    
+    builder->get_widget("inputDeviceCustomName", inputDeviceCustomName);
 
     builder->get_widget("outputDeviceComboBox", outputDeviceComboBox);
     outputDeviceTreeModel = Gtk::ListStore::create(outputColumns);
     outputDeviceComboBox->set_model(outputDeviceTreeModel);
     outputDeviceComboBox->pack_start(outputColumns.description);
+    outputDeviceComboBox->signal_changed().connect(sigc::mem_fun(this, &ManglerSettings::outputDeviceComboBox_changed_cb));
+    
+    builder->get_widget("outputDeviceCustomName", outputDeviceCustomName);
 
     builder->get_widget("notificationDeviceComboBox", notificationDeviceComboBox);
     notificationDeviceTreeModel = Gtk::ListStore::create(notificationColumns);
     notificationDeviceComboBox->set_model(notificationDeviceTreeModel);
     notificationDeviceComboBox->pack_start(notificationColumns.description);
+    notificationDeviceComboBox->signal_changed().connect(sigc::mem_fun(this, &ManglerSettings::notificationDeviceComboBox_changed_cb));
 
+    builder->get_widget("notificationDeviceCustomName", notificationDeviceCustomName);
+    
     mouseInputDevices = getInputDeviceList();
     builder->get_widget("settingsMouseDeviceComboBox", mouseDeviceComboBox);
     mouseDeviceTreeModel = Gtk::ListStore::create(mouseColumns);
@@ -208,16 +217,19 @@ void ManglerSettings::applySettings(void) {/*{{{*/
         Gtk::TreeModel::Row row = *iter;
         config.inputDeviceName = row[inputColumns.name];
     }
+    config.inputDeviceCustomName = inputDeviceCustomName->get_text();
     iter = outputDeviceComboBox->get_active();
     if (iter) {
         Gtk::TreeModel::Row row = *iter;
         config.outputDeviceName = row[outputColumns.name];
     }
+    config.outputDeviceCustomName = outputDeviceCustomName->get_text();
     iter = notificationDeviceComboBox->get_active();
     if (iter) {
         Gtk::TreeModel::Row row = *iter;
         config.notificationDeviceName = row[notificationColumns.name];
     }
+    config.notificationDeviceCustomName = notificationDeviceCustomName->get_text();
 
     // Master Volume
     config.masterVolumeLevel = volumeAdjustment->get_value();
@@ -318,6 +330,10 @@ void ManglerSettings::initSettings(void) {/*{{{*/
 
     // Audio Devices
     // the proper devices are selected in the window->show() callback
+    // init the custom audio devices
+    inputDeviceCustomName->set_text(config.inputDeviceCustomName);
+    outputDeviceCustomName->set_text(config.outputDeviceCustomName);
+    notificationDeviceCustomName->set_text(config.notificationDeviceCustomName);
 
     // Notification sounds
     builder->get_widget("notificationLoginLogoutCheckButton", checkbutton);
@@ -715,6 +731,15 @@ ManglerSettings::updateDeviceComboBoxes(void) {/*{{{*/
             inputSelection = inputCtr;
         }
     }
+    if (config.audioSubsystem == "alsa") {
+        row = *(inputDeviceTreeModel->append());
+        row[inputColumns.id] = -2;
+        row[inputColumns.name] = "Custom";
+        row[inputColumns.description] = "Custom";
+        if (config.inputDeviceName == "Custom") {
+            inputSelection = inputCtr;
+        }
+    }
     // TODO: get the currently selected item from settings object and select it
     inputDeviceComboBox->set_active(inputSelection);
 
@@ -735,6 +760,15 @@ ManglerSettings::updateDeviceComboBoxes(void) {/*{{{*/
         row[outputColumns.name] = (*i)->name;
         row[outputColumns.description] = (*i)->description;
         if (config.outputDeviceName == (*i)->name) {
+            outputSelection = outputCtr;
+        }
+    }
+    if (config.audioSubsystem == "alsa") {
+        row = *(outputDeviceTreeModel->append());
+        row[outputColumns.id] = -2;
+        row[outputColumns.name] = "Custom";
+        row[outputColumns.description] = "Custom";
+        if (config.outputDeviceName == "Custom") {
             outputSelection = outputCtr;
         }
     }
@@ -761,6 +795,60 @@ ManglerSettings::updateDeviceComboBoxes(void) {/*{{{*/
             notificationSelection = notificationCtr;
         }
     }
+    if (config.audioSubsystem == "alsa") {
+        row = *(notificationDeviceTreeModel->append());
+        row[notificationColumns.id] = -2;
+        row[notificationColumns.name] = "Custom";
+        row[notificationColumns.description] = "Custom";
+        if (config.notificationDeviceName == "Custom") {
+            notificationSelection = notificationCtr;
+        }
+    }
     // TODO: get the currently selected item from settings object and select it
     notificationDeviceComboBox->set_active(notificationSelection);
+}/*}}}*/
+
+void 
+ManglerSettings::inputDeviceComboBox_changed_cb(void) {/*{{{*/
+    builder->get_widget("CustomInputLabel", label);
+    if (config.audioSubsystem == "alsa") {
+        Gtk::TreeModel::iterator iter = inputDeviceComboBox->get_active();
+        if (iter && (*iter)[inputColumns.name] == "Custom") {
+            inputDeviceCustomName->show();
+            label->show();
+            return;
+        }
+    }
+    inputDeviceCustomName->hide();
+    label->hide();
+}/*}}}*/
+
+void
+ManglerSettings::outputDeviceComboBox_changed_cb(void) {/*{{{*/
+    builder->get_widget("CustomOutputLabel", label);
+    if (config.audioSubsystem == "alsa") {
+        Gtk::TreeModel::iterator iter = outputDeviceComboBox->get_active();
+        if (iter && (*iter)[outputColumns.name] == "Custom") {
+            outputDeviceCustomName->show();
+            label->show();
+            return;
+        }
+    }
+    outputDeviceCustomName->hide();
+    label->hide();
+}/*}}}*/
+
+void 
+ManglerSettings::notificationDeviceComboBox_changed_cb(void) {/*{{{*/
+    builder->get_widget("CustomNotificationLabel", label);
+    if (config.audioSubsystem == "alsa") {
+        Gtk::TreeModel::iterator iter = notificationDeviceComboBox->get_active();
+        if (iter && (*iter)[notificationColumns.name] == "Custom") {
+            notificationDeviceCustomName->show();
+            label->show();
+            return;
+        }
+    }
+    notificationDeviceCustomName->hide();
+    label->hide();
 }/*}}}*/

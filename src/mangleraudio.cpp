@@ -111,11 +111,14 @@ ManglerAudio::openOutput(uint32_t rate) {/*{{{*/
 #endif
 #ifdef HAVE_ALSA
     if (mangler->settings->config.audioSubsystem == "alsa") {
+        std::string mangler_output_device = mangler->settings->config.outputDeviceName.c_str();
+        if (mangler_output_device == "Default" || mangler_output_device == "") {
+            mangler_output_device = "default";
+        } else if (mangler_output_device == "Custom") {
+            mangler_output_device = mangler->settings->config.outputDeviceCustomName;
+        }
         if ((alsa_error = snd_pcm_open(&alsa_stream,
-                        (mangler->settings->config.outputDeviceName == "Default" || 
-                            mangler->settings->config.outputDeviceName == "" 
-                            ? "default" 
-                            : (char *)mangler->settings->config.outputDeviceName.c_str()),
+                        mangler_output_device.c_str(),
                         SND_PCM_STREAM_PLAYBACK,
                         0)) < 0) {
             fprintf(stderr, "snd_pcm_open() failed: %s\n", snd_strerror(alsa_error));
@@ -193,11 +196,14 @@ ManglerAudio::openInput(uint32_t rate) {/*{{{*/
 #endif
 #ifdef HAVE_ALSA
     if (mangler->settings->config.audioSubsystem == "alsa") {
+        std::string mangler_input_device = mangler->settings->config.inputDeviceName.c_str();
+        if (mangler_input_device == "Default" || mangler_input_device == "") {
+            mangler_input_device = "default";
+        } else if (mangler_input_device == "Custom") {
+            mangler_input_device = mangler->settings->config.inputDeviceCustomName;
+        }
         if ((alsa_error = snd_pcm_open(&alsa_stream,
-                        (mangler->settings->config.inputDeviceName == "Default" || 
-                            mangler->settings->config.inputDeviceName == "" 
-                            ? "default" 
-                            : (char *)mangler->settings->config.inputDeviceName.c_str()),
+                        mangler_input_device.c_str(),
                         SND_PCM_STREAM_CAPTURE,
                         0)) < 0) {
             fprintf(stderr, "snd_pcm_open() failed: %s\n", snd_strerror(alsa_error));
@@ -695,11 +701,14 @@ ManglerAudio::playNotification_thread(Glib::ustring name) {/*{{{*/
     if (mangler->settings->config.audioSubsystem == "alsa") {
         snd_pcm_sframes_t alsa_ret;
         snd_pcm_t         *alsa_s;
+        std::string mangler_notification_device = mangler->settings->config.notificationDeviceName.c_str();
+        if (mangler_notification_device == "Default" || mangler_notification_device == "") {
+            mangler_notification_device = "default";
+        } else if (mangler_notification_device == "Custom") {
+            mangler_notification_device = mangler->settings->config.notificationDeviceCustomName;
+        }
         if ((alsa_error = snd_pcm_open(&alsa_s,
-                        (mangler->settings->config.notificationDeviceName == "Default" || 
-                            mangler->settings->config.notificationDeviceName == "" 
-                            ? "default" 
-                            : (char *)mangler->settings->config.notificationDeviceName.c_str()),
+                        mangler_notification_device.c_str(),
                         SND_PCM_STREAM_PLAYBACK,
                         0)) < 0) {
             fprintf(stderr, "snd_pcm_open() failed: %s\n", snd_strerror(alsa_error));

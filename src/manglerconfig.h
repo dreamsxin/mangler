@@ -87,8 +87,11 @@ class ManglerConfig {
 		bool            AudioIntegrationEnabled;
                 uint8_t         AudioIntegrationPlayer;
                 Glib::ustring   inputDeviceName;
+                Glib::ustring   inputDeviceCustomName;
                 Glib::ustring   outputDeviceName;
+                Glib::ustring   outputDeviceCustomName;
                 Glib::ustring   notificationDeviceName;
+                Glib::ustring   notificationDeviceCustomName;
                 Glib::ustring   mouseDeviceName;
                 Glib::ustring   audioSubsystem;
                 bool            notificationLoginLogout;
