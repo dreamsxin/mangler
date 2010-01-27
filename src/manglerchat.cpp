@@ -48,9 +48,12 @@ ManglerChat::ManglerChat(Glib::RefPtr<Gtk::Builder> builder) {
 
     builder->get_widget("chatUserListTreeView", chatUserListView);
     chatUserTreeModel = Gtk::ListStore::create(chatUserColumns);
-    chatUserListView->set_model(chatUserTreeModel);
+    chatUserTreeModelFilter = Gtk::TreeModelFilter::create(chatUserTreeModel);
+    chatUserTreeModelFilter->set_visible_func( sigc::mem_fun(*this, &ManglerChat::filterVisible) );
+    chatUserListView->set_model(chatUserTreeModelFilter);
+
     chatUserListView->append_column("Name", chatUserColumns.name);
-    
+
     builder->get_widget("chatTimestampCheckButton", checkbutton);
     checkbutton->signal_toggled().connect(sigc::mem_fun(this, &ManglerChat::chatTimestampCheckButton_toggled_cb));
 
@@ -146,7 +149,11 @@ void ManglerChat::addUser(uint16_t user_id) {
     chatUserRow = *chatUserIter;
     chatUserRow[chatUserColumns.id] = user_id;
     chatUserRow[chatUserColumns.name] = name;
-    addMessage("* " + name + " has joined the chat.");
+    chatUserRow[chatUserColumns.channel] = v3_get_user_channel(user_id);
+    chatUserTreeModelFilter->refilter();
+    if (isGlobal || (v3_get_user_channel(user_id) == v3_get_user_channel(mangler->myID)) ) {
+        addMessage("* " + name + " has joined the chat.");
+    }
 }
 
 void ManglerChat::removeUser(uint16_t user_id) {
@@ -157,13 +164,24 @@ void ManglerChat::removeUser(uint16_t user_id) {
         row = *iter;
         uint32_t rowId = row[chatUserColumns.id];
         if (rowId == user_id) {
-            addMessage("* " + row[chatUserColumns.name] + " has left the chat.");
+            if (isGlobal || (v3_get_user_channel(user_id) == v3_get_user_channel(mangler->myID)) ) {
+                addMessage("* " + row[chatUserColumns.name] + " has left the chat.");
+            }
             chatUserTreeModel->erase(row);
+            chatUserTreeModelFilter->refilter();
             return;
         }
         iter++;
     }
     return;
+}
+
+bool ManglerChat::filterVisible(const Gtk::TreeIter& iter) {
+    uint16_t theirChannel = (*iter)[chatUserColumns.channel];
+    if (((*iter)[chatUserColumns.id] == mangler->myID) || isGlobal || (theirChannel == v3_get_user_channel(mangler->myID))) {
+        return true;
+    }
+    return false;
 }
 
 void ManglerChat::clear(void) {

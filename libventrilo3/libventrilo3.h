@@ -43,6 +43,9 @@
 #include <errno.h>
 #include <pthread.h>
 
+#define true  1
+#define false 0
+
 char *_v3_errors[] = {
     "Success",
     "Operation can not be performed on your self",
@@ -330,7 +333,7 @@ uint32_t _v3_hash_table[] =
  * Global Variables
  */
 
-_v3_server  v3_server  = { 0, 0, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, -1, { 0, 0 }, NULL, NULL, 0, 0, { "", 0, 0 }, { "", 0, 0 }, NULL, NULL, {0, 0},  0, 0, 0, 0};
+_v3_server  v3_server  = { 0, 0, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, -1, { 0, 0 }, NULL, NULL, 0, 0, { "", 0, 0 }, { "", 0, 0 }, NULL, NULL, {0, 0},  0, 0, 0, 0, false, false, false};
 _v3_luser   v3_luser   = { -1, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, 0, {  } };
 
 v3_channel              *v3_channel_list = NULL;

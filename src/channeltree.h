@@ -111,6 +111,7 @@ class ManglerChannelTree
         Gtk::Adjustment                     *volumeAdjustment;
         sigc::connection                    volumeAdjustSignalConnection;
         Gtk::VBox                           *vbox;
+        bool                                sortAlphanumeric;
         void addChannel(uint8_t protect_mode, uint32_t id, uint32_t parent_id, Glib::ustring name, Glib::ustring comment = "", Glib::ustring phonetic = "");
         void addUser(uint32_t id, uint32_t channel, Glib::ustring name, Glib::ustring comment = "", Glib::ustring phonetic = "", Glib::ustring url = "", Glib::ustring integration_text = "", bool guest = false, bool phantom = false, Glib::ustring rank = "");
         void updateLobby(Glib::ustring name, Glib::ustring comment = "", Glib::ustring phonetic = "");
@@ -122,6 +123,7 @@ class ManglerChannelTree
         void refreshUser(uint32_t id);
         void _refreshAllUsers(Gtk::TreeModel::Children children);
         void refreshAllUsers();
+        int  sortFunction(const Gtk::TreeModel::iterator& a, const Gtk::TreeModel::iterator& b);
         Glib::ustring getLastTransmit(uint16_t userid);
         void setLastTransmit(uint16_t userid, Glib::ustring last_transmit);
         void removeUser(uint32_t id);
@@ -137,6 +139,7 @@ class ManglerChannelTree
         bool expand_all(void);
         bool collapse_all(void);
         void clear(void);
+        void setSort(bool);
 
         void channelView_row_activated_cb(const Gtk::TreeModel::Path& path, Gtk::TreeViewColumn* column);
         void userSettingsMenuItem_activate_cb(void);
@@ -151,7 +154,6 @@ class ManglerChannelTree
         void muteUserMenuItem_activate_cb(void);
         void muteUserGlobalMenuItem_activate_cb(void);
         void volumeAdjustment_value_changed_cb(uint16_t);
-        int  on_sort_compare(const Gtk::TreeModel::iterator& a_, const Gtk::TreeModel::iterator& b_);
         void userSettingsWindow(Gtk::TreeModel::Row row);
 
         // default channel handlers
@@ -163,6 +165,8 @@ class ManglerChannelTree
 };
 
 Glib::ustring getTimeString(void);
+int natsort(const char *l, const char *r);
+
 
 
 #endif

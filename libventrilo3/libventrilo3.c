@@ -2364,6 +2364,106 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
             _v3_destroy_packet(msg);
             _v3_func_leave("_v3_process_message");
             return V3_OK;/*}}}*/
+        case 0x4C:/*{{{*/
+            if (!_v3_get_0x4c(msg)) {
+                _v3_destroy_packet(msg);
+                _v3_func_leave("_v3_process_message");
+                return V3_MALFORMED;
+            } else {
+                _v3_msg_0x4c *m = msg->contents;
+                _v3_lock_server();
+                switch (m->subtype) {
+                    case 0x02:
+                        switch (m->property) {
+                            case V3_SERVER_CHAT_FILTER:
+                                switch (m->value) {
+                                    case 0x30:
+                                        v3_server.global_chat_filter = true;
+                                    break;
+                                    case 0x31:
+                                        v3_server.global_chat_filter = false;
+                                    break;
+                                    default:
+                                        _v3_func_leave("_v3_get_0x4c");
+                                        _v3_unlock_server();
+                                        _v3_destroy_packet(msg);
+                                        return V3_MALFORMED;
+                                    break;
+                                }
+                            break;
+                            case V3_SERVER_ALPHABETIC:
+                                switch (m->value) {
+                                    case 0x30:
+                                        v3_server.channels_alphabetical = true;
+                                    break;
+                                    case 0x31:
+                                        v3_server.channels_alphabetical = false;
+                                    break;
+                                    default:
+                                        _v3_func_leave("_v3_get_0x4c");
+                                        _v3_unlock_server();
+                                        _v3_destroy_packet(msg);
+                                        return V3_MALFORMED;
+                                    break;
+                                }
+                            break;
+                            case V3_SERVER_MOTD_ALWAYS:
+                                switch (m->value) {
+                                    case 0x30:
+                                        v3_server.motd_always = false;
+                                    break;
+                                    case 0x31:
+                                        v3_server.motd_always = true;
+                                    break;
+                                    default:
+                                        _v3_func_leave("_v3_get_0x4c");
+                                        _v3_unlock_server();
+                                        _v3_destroy_packet(msg);
+                                        return V3_MALFORMED;
+                                    break;
+                                }
+                            break;
+                            default:
+                                _v3_debug(V3_DEBUG_PACKET_PARSE, "Unknown server property sub-type: 0x02 property: %d", m->subtype);
+                                _v3_func_leave("_v3_get_0x4c");
+                                _v3_unlock_server();
+                                _v3_destroy_packet(msg);
+                                return V3_MALFORMED;
+                            break;
+                        }
+                    break;
+                    default:
+                        _v3_debug(V3_DEBUG_PACKET_PARSE, "Unknown server property sub-type: %d", m->subtype);
+                        _v3_func_leave("_v3_get_0x4c");
+                        _v3_unlock_server();
+                        _v3_destroy_packet(msg);
+                        return V3_MALFORMED;
+                    break;
+                }
+                v3_event *ev = _v3_create_event(V3_EVENT_SERVER_PROPERTY_UPDATED);
+                ev->serverproperty.property = m->property;
+                if (m->value == 0x30) {
+                    if (m->property == V3_SERVER_MOTD_ALWAYS) {
+                            ev->serverproperty.value = false;
+                    } else {
+                        ev->serverproperty.value = true;
+                    }
+                } else {
+                    if (m->property == V3_SERVER_MOTD_ALWAYS) {
+                            ev->serverproperty.value = true;
+                    } else {
+                        ev->serverproperty.value = false;
+                    }
+                }
+                _v3_debug(V3_DEBUG_INFO, "queuing event type %d for property %d and value %d", ev->type, ev->serverproperty.property, ev->serverproperty.value);
+                v3_queue_event(ev);
+
+            }
+
+            _v3_func_leave("_v3_process_message");
+            _v3_unlock_server();
+            _v3_destroy_packet(msg);
+            return V3_OK;/*}}}*/
         case 0x50:/*{{{*/
             if (!_v3_get_0x50(msg)) {
                 _v3_destroy_packet(msg);
@@ -2383,7 +2483,11 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                     _v3_unlock_server();
                     return false;
                 }
-                motd = m->guest_motd_flag == 1 ? &v3_server.guest_motd : &v3_server.motd;
+                if (m->guest_motd_flag == 1 && &v3_server.guest_motd != NULL) {
+                    motd = &v3_server.guest_motd;
+                } else {
+                    motd = &v3_server.motd;
+                }
                 if(m->message_id == 0) {
                     if (*motd != NULL) {
                         free(*motd);
@@ -2397,15 +2501,13 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                     memset(*motd + size, 0, m->message_size + 1);
                     memcpy(*motd + size, m->message, m->message_size);
                 }
-                // if we're a registered user and we've sent the non-guest
-                // MOTD already, don't send again
                 if ((u = v3_get_user(v3_get_user_id()))) {
                     guest = u->guest;
                 } else {
                     // this should never happen... but just in case....
                     guest = false;
                 }
-                if ((guest && m->guest_motd_flag) && m->message_id +1 == m->message_num) {
+                if ((m->message_id+1) == m->message_num) {
                     // At this point we have our motd, may want to notify the user here :)
                     v3_event *ev = _v3_create_event(V3_EVENT_DISPLAY_MOTD);
                     strncpy(ev->data.motd, *motd, 2047);

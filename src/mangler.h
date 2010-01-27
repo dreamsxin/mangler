@@ -98,6 +98,7 @@ class Mangler
         bool                                isAdmin;
         bool                                muteSound;
         bool                                muteMic;
+        bool                                motdAlways;
 
         // Autoreconnect feature stuff - Need ID's to kill threads if needed
         bool                                wantDisconnect;
@@ -128,12 +129,15 @@ class Mangler
 
         Glib::Thread                        *networkThread;
 
+        //Less intensive than looking it up every time
+        uint16_t                            myID;
+
         Glib::ustring getPasswordEntry(Glib::ustring title = "Password", Glib::ustring prompt = "Password");
         bool getReasonEntry(Glib::ustring title = "Reason", Glib::ustring prompt = "Reason");
         uint32_t getActiveServer(void);
         void setActiveServer(uint32_t row_number);
         void errorDialog(Glib::ustring message);
-        
+
     protected:
         // button signal handlers
         void quickConnectButton_clicked_cb(void);

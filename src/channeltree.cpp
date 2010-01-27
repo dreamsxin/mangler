@@ -84,18 +84,6 @@ ManglerChannelTree::ManglerChannelTree(Glib::RefPtr<Gtk::Builder> builder)/*{{{*
     signalDefaultChannel = checkmenuitem->signal_toggled().connect(sigc::mem_fun(this, &ManglerChannelTree::setDefaultChannel_toggled_cb));
 
 
-    //int colnum = channelView->append_column("Name", channelRecord.displayName) - 1;
-    // TODO: Write a sort routine to make sure users are always immediately
-    // below the channel, otherwise users get sorted within the subchannels
-    channelStore->set_sort_column(channelRecord.name, Gtk::SORT_ASCENDING);
-    /*
-    channelView->get_column(colnum)->set_cell_data_func(
-                *channelView->get_column_cell_renderer(colnum),
-                sigc::mem_fun(*this, &ManglerChannelTree::renderCellData)
-                );
-     */
-    channelStore->set_sort_func(channelRecord.name, sigc::mem_fun (*this, &ManglerChannelTree::on_sort_compare));
-
     /*
      * We have to finish off our user settings window.  I can't find a way to
      * do this in builder, so let's pack our volume adjustment manually
@@ -370,7 +358,55 @@ ManglerChannelTree::refreshChannel(uint32_t id) {/*{{{*/
 void
 ManglerChannelTree::refreshAllChannels(void) {/*{{{*/
     _refreshAllChannels(channelStore->children());
+    if (sortAlphanumeric) {
+        channelStore->set_sort_func (0, sigc::mem_fun (*this, &ManglerChannelTree::sortFunction));
+        channelStore->set_sort_column(channelRecord.displayName, Gtk::SORT_ASCENDING);
+    } else {
+        channelStore->set_sort_func (channelRecord.id, sigc::mem_fun (*this, &ManglerChannelTree::sortFunction));
+        channelStore->set_sort_column(channelRecord.id, Gtk::SORT_ASCENDING);
+    }
 }/*}}}*/
+
+int ManglerChannelTree::sortFunction(const Gtk::TreeModel::iterator& a, const Gtk::TreeModel::iterator& b){
+    bool isUser_a = (*a)[channelRecord.isUser];
+    bool isUser_b = (*b)[channelRecord.isUser];
+//    Glib::ustring sort_a = (isUser_a) ? (*a)[channelRecord.name] : (*a)[channelRecord.displayName];
+//    Glib::ustring sort_b = (isUser_b) ? (*b)[channelRecord.name] : (*b)[channelRecord.displayName];
+
+    Glib::ustring sort_a = (*a)[channelRecord.name];
+    Glib::ustring sort_b = (*b)[channelRecord.name];
+    const char *sortName_a = sort_a.c_str();
+    const char *sortName_b = sort_b.c_str();
+    if (isUser_a) {
+        if (isUser_b) {
+            return natsort(sortName_a, sortName_b);
+        } else {
+            //A = User, B = Channel
+            return -1;
+        }
+    } else {
+        if (isUser_b) {
+            //A = Channel, B = User
+            return 1;
+        } else {
+            // Both are Channels
+            if (sortAlphanumeric) {
+                //Sort alphabetical
+                return natsort(sortName_a, sortName_b);
+            } else {
+                //Sort manual
+                if ((*a)[channelRecord.id] > (*b)[channelRecord.id]) {
+                    return 1;
+                } else if ((*a)[channelRecord.id] < (*b)[channelRecord.id]) {
+                    return -1;
+                }
+            }
+            return 0;
+        }
+    }
+    fprintf(stderr, "sorting failed to find if one or both options were users or channels\n");
+    return 0;
+}
 
 void
 ManglerChannelTree::_refreshAllChannels(Gtk::TreeModel::Children children) {/*{{{*/
@@ -456,7 +492,8 @@ ManglerChannelTree::refreshUser(uint32_t id) {/*{{{*/
         displayName = displayName + " {" + integration_text + "}";
     }
 
-    user[channelRecord.displayName]       = displayName;
+    user[channelRecord.displayName] = displayName;
+    mangler->chat->chatUserTreeModelFilter->refilter();
 }/*}}}*/
 
 void
@@ -1090,27 +1127,6 @@ ManglerChannelStore::drag_data_received_vfunc(const Gtk::TreeModel::Path& dest, 
     return false;
 }/*}}}*/
 
-int
-ManglerChannelTree::on_sort_compare(const Gtk::TreeModel::iterator& a_, const Gtk::TreeModel::iterator& b_) {/*{{{*/
-    Gtk::TreeModel::Row row1 = *a_;
-    Gtk::TreeModel::Row row2 = *b_;
-    Glib::ustring row1_name = row1[channelRecord.name];
-    Glib::ustring row2_name = row2[channelRecord.name];
-    //fprintf(stderr, "%s == %s\n", (char *)row1_name.c_str(), (char *)row2_name.c_str());
-    bool row1_isUser = row1[channelRecord.isUser];
-    bool row2_isUser = row2[channelRecord.isUser];
-    if (row1_isUser && row2_isUser) {
-        if (row1_name == row2_name) {
-            return 0;
-        }
-        if (row1_name < row2_name) {
-            return -1;
-        }
-        return 1;
-    }
-    return 0;
-}/*}}}*/
-
 void
 ManglerChannelTree::userSettingsWindow(Gtk::TreeModel::Row row) {
 
@@ -1270,3 +1286,101 @@ void ManglerChannelTree::channelView_switchChannel2Default(uint32_t defaultChann
         }
     }
 }/*}}}*/
+
+
+/*
+   The Alphanum Algorithm is an improved sorting algorithm for strings
+   containing numbers.  Instead of sorting numbers in ASCII order like a
+   standard sort, this algorithm sorts numbers in numeric order.
+
+   The Alphanum Algorithm is discussed at http://www.DaveKoelle.com
+
+   This implementation is Copyright (c) 2008 Dirk Jagdmann <doj@cubic.org>.
+   It is a cleanroom implementation of the algorithm and not derived by
+   other's works. In contrast to the versions written by Dave Koelle this
+   source code is distributed with the libpng/zlib license.
+
+   This software is provided 'as-is', without any express or implied
+   warranty. In no event will the authors be held liable for any damages
+   arising from the use of this software.
+
+   Permission is granted to anyone to use this software for any purpose,
+   including commercial applications, and to alter it and redistribute it
+   freely, subject to the following restrictions:
+
+   1. The origin of this software must not be misrepresented; you
+      must not claim that you wrote the original software. If you use
+      this software in a product, an acknowledgment in the product
+      documentation would be appreciated but is not required.
+
+   2. Altered source versions must be plainly marked as such, and
+      must not be misrepresented as being the original software.
+
+   3. This notice may not be removed or altered from any source
+      distribution. */
+int natsort(const char *l, const char *r) {/*{{{*/
+    enum mode_t { STRING, NUMBER } mode=STRING;
+
+    while(*l && *r)
+    {
+        if(mode == STRING)
+        {
+            char l_char, r_char;
+            while((l_char=*l) && (r_char=*r))
+            {
+                // check if this are digit characters
+                const bool l_digit=isdigit(l_char), r_digit=isdigit(r_char);
+                // if both characters are digits, we continue in NUMBER mode
+                if(l_digit && r_digit)
+                {
+                    mode=NUMBER;
+                    break;
+                }
+                // if only the left character is a digit, we have a result
+                if(l_digit) return -1;
+                // if only the right character is a digit, we have a result
+                if(r_digit) return +1;
+                // compute the difference of both characters
+                const int diff=l_char - r_char;
+                // if they differ we have a result
+                if(diff != 0) return diff;
+                // otherwise process the next characters
+                ++l;
+                ++r;
+            }
+        }
+        else // mode==NUMBER
+        {
+            // get the left number
+            unsigned long l_int=0;
+            while(*l && isdigit(*l))
+            {
+                // TODO: this can overflow
+                l_int=l_int*10 + *l-'0';
+                ++l;
+            }
+
+            // get the right number
+            unsigned long r_int=0;
+            while(*r && isdigit(*r))
+            {
+                // TODO: this can overflow
+                r_int=r_int*10 + *r-'0';
+                ++r;
+            }
+
+            // if the difference is not equal to zero, we have a comparison result
+            const long diff=l_int-r_int;
+            if(diff != 0)
+                return diff;
+
+            // otherwise we process the next substring in STRING mode
+            mode=STRING;
+        }
+    }
+
+    if(*r) return -1;
+    if(*l) return +1;
+    return 0;
+}/*}}}*/
+

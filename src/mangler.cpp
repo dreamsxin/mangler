@@ -146,6 +146,9 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
     // Autoreconnect feature implementation
     wantDisconnect = false;
 
+    // Feature implementation
+    motdAlways = false;
+
     /*
      * Retreive all menu bar items from builder and set their singal handler
      * callbacks.  Most of these can use the same callback as their
@@ -892,6 +895,7 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                     if(chat->isOpen) {
                         v3_join_chat();
                     }
+                    myID = v3_get_user_id();
                 }
                 break;/*}}}*/
             case V3_EVENT_USER_CHAN_MOVE:/*{{{*/
@@ -959,6 +963,8 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                         //fprintf(stderr, "prev chan id: %i | new chan id: %i\n", ev->channel.prev_id, ev->channel.id);
                         //TODO: implement this
                     }
+                    //channelTree->refreshUser(ev->user.id);
+                    channelTree->refreshAllUsers();
                     v3_free_user(u);
                 }
                 break;/*}}}*/
@@ -1047,7 +1053,7 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                             motdhash += ev->data.motd[ctr] + ctr;
                         }
                     }
-                    if (connectedServerId == -1 || (server && (motdhash != server->motdhash))) {
+                    if (connectedServerId == -1 || motdAlways || (server && (motdhash != server->motdhash))) {
                         Glib::RefPtr< Gtk::TextBuffer > tb = Gtk::TextBuffer::create();
                         builder->get_widget("motdWindow", window);
                         window->set_title("Mangler - MOTD");
@@ -1211,6 +1217,21 @@ bool Mangler::getNetworkEvent() {/*{{{*/
             case V3_EVENT_USER_GLOBAL_MUTE_CHANGED:/*{{{*/
                 channelTree->refreshUser(ev->user.id);
                 break;/*}}}*/
+            case V3_EVENT_SERVER_PROPERTY_UPDATED:
+                switch (ev->serverproperty.property) {
+                    case V3_SERVER_CHAT_FILTER:
+                        chat->isGlobal = ev->serverproperty.value;
+                        chat->chatUserTreeModelFilter->refilter();
+                        break;
+                    case V3_SERVER_ALPHABETIC:
+                        channelTree->sortAlphanumeric = ev->serverproperty.value;
+                        channelTree->refreshAllChannels();
+                        break;
+                    case V3_SERVER_MOTD_ALWAYS:
+                        motdAlways = ev->serverproperty.value;
+                        break;
+                }
+                break;
             default:
                 fprintf(stderr, "******************************************************** got unknown event type %d\n", ev->type);
         }

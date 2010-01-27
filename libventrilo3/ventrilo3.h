@@ -101,6 +101,10 @@
 #define V3_USERLIST_LUSER           0x05
 #define V3_USERLIST_CHANGE_OWNER    0x06
 
+#define V3_SERVER_CHAT_FILTER       0x02
+#define V3_SERVER_ALPHABETIC        0x03
+#define V3_SERVER_MOTD_ALWAYS       0x05
+
 #define V3_DEBUG_NONE               0
 #define V3_DEBUG_STATUS             1
 #define V3_DEBUG_ERROR              1 << 2
@@ -258,7 +262,9 @@ enum _v3_events
     V3_EVENT_CHAN_REMOVED,
     V3_EVENT_CHAN_MODIFIED,
     V3_EVENT_RECV_AUDIO,
+    V3_EVENT_SERVER_PROPERTY_UPDATED,
 };
+
 
 // different boot types for api function v3_admin_boot
 enum _v3_boot_types {
@@ -318,6 +324,10 @@ struct _v3_event {
         uint16_t send_type;
         uint32_t rate;
     } pcm;
+    struct {
+        uint16_t property;
+        uint8_t  value;
+    } serverproperty;
     union {
         struct {
             v3_permissions perms;
@@ -504,10 +514,13 @@ typedef struct __v3_server {
     _v3_net_message *_queue;          // This queue (linked list) is used internally
     _v3_net_message *queue;           // This queue (linked list) stores messages that need to be processed by the client
     struct timeval last_timestamp;    // The time() of the last timestamp, a timestamp is sent every 10 seconds
-    uint32_t recv_packet_count;            // Total amount of packets received from server.
-    uint32_t recv_byte_count;              // Total amount of bytes received from server.
-    uint32_t sent_packet_count;            // Total amount of packets received from server.
-    uint32_t sent_byte_count;              // Total amount of bytes received from server.
+    uint32_t recv_packet_count;       // Total amount of packets received from server.
+    uint32_t recv_byte_count;         // Total amount of bytes received from server.
+    uint32_t sent_packet_count;       // Total amount of packets received from server.
+    uint32_t sent_byte_count;         // Total amount of bytes received from server.
+    uint8_t motd_always;              // Always display MOTD
+    uint8_t global_chat_filter;       // Global or Per Channel chat filter
+    uint8_t channels_alphabetical;    // Display the channels alphabetical or manual
 } _v3_server;
 
 /*
