@@ -728,13 +728,19 @@ bool Mangler::getNetworkEvent() {/*{{{*/
         switch (ev->type) {
             case V3_EVENT_PING:/*{{{*/
                 if (v3_is_loggedin()) {
-                    char buf[16];
+                    char buf[32];
                     builder->get_widget("pingLabel", label);
                     if (ev->ping != 65535) {
+                        builder->get_widget("statusbar", statusbar);
+                        snprintf(buf, 31, "Ping: %dms", ev->ping);
+                        statusbar->pop();
+                        statusbar->push(buf);
                         snprintf(buf, 16, "%d", ev->ping);
                         label->set_text(buf);
                     } else {
                         label->set_text("checking...");
+                        statusbar->pop();
+                        statusbar->push("Ping: checking...");
                     }
                     builder->get_widget("userCountLabel", label);
                     snprintf(buf, 16, "%d/%d", v3_user_count(), v3_get_max_clients());
@@ -1243,7 +1249,7 @@ bool Mangler::getNetworkEvent() {/*{{{*/
             case V3_EVENT_USER_GLOBAL_MUTE_CHANGED:/*{{{*/
                 channelTree->refreshUser(ev->user.id);
                 break;/*}}}*/
-            case V3_EVENT_SERVER_PROPERTY_UPDATED:
+            case V3_EVENT_SERVER_PROPERTY_UPDATED:/*{{{*/
                 switch (ev->serverproperty.property) {
                     case V3_SERVER_CHAT_FILTER:
                         chat->isGlobal = ev->serverproperty.value;
@@ -1257,7 +1263,7 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                         motdAlways = ev->serverproperty.value;
                         break;
                 }
-                break;
+                break;/*}}}*/
             default:
                 fprintf(stderr, "******************************************************** got unknown event type %d\n", ev->type);
         }

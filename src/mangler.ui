@@ -42,14 +42,11 @@
                       </object>
                     </child>
                     <child>
-                      <object class="GtkSeparatorMenuItem" id="adminSeparatorMenuItem">
-                        <property name="visible">False</property>
-                      </object>
+                      <object class="GtkSeparatorMenuItem" id="adminSeparatorMenuItem"/>
                     </child>
                     <child>
                       <object class="GtkImageMenuItem" id="adminLoginMenuItem">
                         <property name="label" translatable="yes">Admin Login</property>
-                        <property name="visible">False</property>
                         <property name="image">image7</property>
                         <property name="use_stock">False</property>
                       </object>
@@ -57,7 +54,6 @@
                     <child>
                       <object class="GtkImageMenuItem" id="adminWindowMenuItem">
                         <property name="label" translatable="yes">Admin Window</property>
-                        <property name="visible">False</property>
                         <property name="image">image5</property>
                         <property name="use_stock">False</property>
                       </object>
@@ -1790,6 +1786,7 @@ out the encryption
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">False</property>
+                        <property name="tooltip_text" translatable="yes">Show the track that's currently playing in your audio player software to other users in the channel list</property>
                         <property name="draw_indicator">True</property>
                       </object>
                       <packing>
