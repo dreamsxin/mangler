@@ -889,7 +889,6 @@ _v3_destroy_0x4a(_v3_net_message *msg) {/*{{{*/
 }/*}}}*/
 /*}}}*/
 // Message 0x4b (75) | TIMESTAMP /*{{{*/
-
 _v3_net_message *_v3_put_0x4b(void) {/*{{{*/
     _v3_net_message *m;
     _v3_msg_0x4b *mc;
@@ -912,6 +911,7 @@ _v3_net_message *_v3_put_0x4b(void) {/*{{{*/
     _v3_func_leave("_v3_put_0x4b");
     return m;
 }/*}}}*/
+/*}}}*/
 // Message 0x4c (76) | SERVER PROPERTIES /*{{{*/
 int
 _v3_get_0x4c(_v3_net_message *msg) {/*{{{*/
