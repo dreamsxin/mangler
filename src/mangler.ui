@@ -774,7 +774,7 @@
                         <property name="visible">True</property>
                         <property name="sensitive">False</property>
                         <property name="can_focus">True</property>
-                        <property name="max_length">16</property>
+                        <property name="max_length">31</property>
                         <property name="visibility">False</property>
                         <property name="invisible_char">&#x25CF;</property>
                         <property name="activates_default">True</property>

@@ -4,7 +4,7 @@
 AC_PREREQ([2.63])
 AC_INIT([mangler], [1.0.1], [eric@ypass.net])
 AM_INIT_AUTOMAKE
-AM_MAINTAINER_MODE([disable])
+AM_MAINTAINER_MODE([enable])
 
 AC_CONFIG_SRCDIR([config.h.in])
 AC_CONFIG_HEADERS([config.h])
