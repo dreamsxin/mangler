@@ -1177,8 +1177,10 @@ _v3_put_0x52(uint8_t subtype, uint16_t codec, uint16_t codec_format, uint16_t se
                         // copy the frames
                         for (ctr = 0; ctr < length / 65; ctr++) {
                             memcpy(offset, frames[ctr], 65);
+                            free(frames[ctr]); // TODO: this shouldn't be here
                             offset += 65;
                         }
+                        free(frames); // TODO: nope
                     }
                     break;
                 case 3:
@@ -1205,9 +1207,9 @@ _v3_put_0x52(uint8_t subtype, uint16_t codec, uint16_t codec_format, uint16_t se
                             free(speexdata->frames[ctr]);
                             offset += enc_frame_size;
                         }
-                        // TODO: These, and the free in the loop above, are only temporary fixes.
+                        // TODO: These, and the free in the loop above, <strike>are only temporary fixes.
                         // We should construct _v3_destroy_0x52 in such a way that it can free outgoing audio packages;
-                        // or just write seperate functions for freeing incoming/outgoing audio.
+                        // or just write seperate functions for freeing incoming/outgoing audio.</strike> shouldn't be here
                         free(speexdata->frames);
                         free(speexdata);
                     }
