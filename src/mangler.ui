@@ -1479,6 +1479,7 @@ out the encryption
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="invisible_char">&#x25CF;</property>
+                <property name="activates_default">True</property>
                 <accessibility>
                   <relation type="labelled-by" target="qcServerNameLabel"/>
                 </accessibility>
@@ -1493,6 +1494,7 @@ out the encryption
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="invisible_char">&#x25CF;</property>
+                <property name="activates_default">True</property>
                 <accessibility>
                   <relation type="labelled-by" target="qcPortLabel"/>
                 </accessibility>
@@ -1509,6 +1511,7 @@ out the encryption
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="invisible_char">&#x25CF;</property>
+                <property name="activates_default">True</property>
                 <accessibility>
                   <relation type="labelled-by" target="qcUsernameLabel"/>
                 </accessibility>
@@ -1526,6 +1529,7 @@ out the encryption
                 <property name="can_focus">True</property>
                 <property name="visibility">False</property>
                 <property name="invisible_char">&#x25CF;</property>
+                <property name="activates_default">True</property>
                 <accessibility>
                   <relation type="labelled-by" target="qcPasswordLabel"/>
                 </accessibility>
@@ -3122,6 +3126,7 @@ Notifications are the sound effects that are played when you login, logout, a us
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="invisible_char">&#x25CF;</property>
+                <property name="activates_default">True</property>
                 <accessibility>
                   <relation type="labelled-by" target="textStringChangeCommentLabel"/>
                 </accessibility>
@@ -3137,6 +3142,7 @@ Notifications are the sound effects that are played when you login, logout, a us
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="invisible_char">&#x25CF;</property>
+                <property name="activates_default">True</property>
                 <accessibility>
                   <relation type="labelled-by" target="textStringChangeURLLabel"/>
                 </accessibility>
@@ -3154,6 +3160,7 @@ Notifications are the sound effects that are played when you login, logout, a us
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="invisible_char">&#x25CF;</property>
+                <property name="activates_default">True</property>
                 <accessibility>
                   <relation type="labelled-by" target="textStringChangeIntegrationLabel"/>
                 </accessibility>
@@ -3195,6 +3202,8 @@ Notifications are the sound effects that are played when you login, logout, a us
                 <property name="label">gtk-ok</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
+                <property name="can_default">True</property>
+                <property name="has_default">True</property>
                 <property name="receives_default">True</property>
                 <property name="use_stock">True</property>
               </object>
