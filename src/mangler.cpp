@@ -515,6 +515,7 @@ void Mangler::quitMenuItem_activate_cb(void) {/*{{{*/
 void Mangler::statusIcon_activate_cb(void) {/*{{{*/
     if (iconified == true) {
         manglerWindow->deiconify();
+        manglerWindow->present();
         manglerWindow->set_skip_pager_hint(false);
         manglerWindow->set_skip_taskbar_hint(false);
         iconified = false;
