@@ -185,7 +185,7 @@ bool ManglerChat::filterVisible(const Gtk::TreeIter& iter) {/*{{{*/
 }/*}}}*/
 
 void ManglerChat::clear(void) {/*{{{*/
-    chatUserTreeModel->clear();
+    chatBox->get_buffer()->set_text("");
 }/*}}}*/
 
 bool ManglerChat::isUserInChat(uint16_t user_id) {/*{{{*/
