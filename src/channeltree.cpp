@@ -448,6 +448,18 @@ ManglerChannelTree::refreshUser(uint32_t id) {/*{{{*/
     }
     if ((u = v3_get_user(id))) {
         global_mute = u->global_mute;
+        // update xmit icons
+        if ( (u->is_transmitting && getUserChannelId(id) == getUserChannelId(mangler->myID))
+        ||  (id == mangler->myID && mangler->isTransmitting) ) {
+            // transmitting in same channel or we are transmitting
+            setUserIcon(id, "green");
+        } else if (u->is_transmitting && getUserChannelId(id) != getUserChannelId(mangler->myID)) {
+            // transmitting in different channel
+            setUserIcon(id, "yellow");
+        } else {
+            // not transmitting
+            setUserIcon(id, "red");
+        }
         v3_free_user(u);
     }
     name = user[channelRecord.name];
@@ -487,7 +499,6 @@ ManglerChannelTree::refreshUser(uint32_t id) {/*{{{*/
     } else if (comment.empty() && !url.empty()) {
         displayName = displayName + " (" + (url.empty() ? "" : "U: ") + url + ")";
     }
-
     if (! integration_text.empty()) {
         displayName = displayName + " {" + integration_text + "}";
     }

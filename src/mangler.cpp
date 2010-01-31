@@ -970,20 +970,6 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                         outputAudio[ev->user.id]->finish();
                         outputAudio.erase(ev->user.id);
                     }
-                    // if user is still xmitting, set icon
-                    if (u->is_transmitting) {
-                        channelTree->setUserIcon(ev->user.id, "yellow");
-                    }
-                    if (ev->user.id == v3_get_user_id()) {
-                        // if we are still xmitting, set icon
-                        if (isTransmitting) {
-                            channelTree->setUserIcon(ev->user.id, "green");
-                        }
-                        // if we changed channels while other users in previous channel were xmitting, set icons
-                        //fprintf(stderr, "prev chan id: %i | new chan id: %i\n", ev->channel.prev_id, ev->channel.id);
-                        //TODO: implement this
-                    }
-                    //channelTree->refreshUser(ev->user.id);
                     channelTree->refreshAllUsers();
                     chat->chatUserTreeModelFilter->refilter();
                     v3_free_user(u);
@@ -1015,7 +1001,7 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                 v3_user *me, *user;
                 me = v3_get_user(v3_get_user_id());
                 user = v3_get_user(ev->user.id);
-                channelTree->setUserIcon(ev->user.id, "yellow");
+                channelTree->refreshUser(ev->user.id);
                 if (me && user && me->channel == user->channel) {
                     v3_free_user(me);
                     v3_free_user(user);
@@ -1035,7 +1021,7 @@ bool Mangler::getNetworkEvent() {/*{{{*/
             case V3_EVENT_USER_TALK_END:/*{{{*/
                 if (v3_is_loggedin()) {
                     //fprintf(stderr, "user %d stopped talking\n", ev->user.id);
-                    channelTree->setUserIcon(ev->user.id, "red");
+                    channelTree->refreshUser(ev->user.id);
                     // TODO: this is bad, there must be a flag in the last audio
                     // packet saying that it's the last one.  Need to figure out
                     // what that flag is and close it in V3_EVENT_PLAY_AUDIO
