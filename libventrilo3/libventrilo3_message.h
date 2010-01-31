@@ -61,9 +61,9 @@
 
 typedef struct _v3_net_message_0x00 {/*{{{*/
     uint32_t type;
-    char version[16];
-    char salt1[32];
-    char salt2[32];
+    char     version[16];
+    char     salt1[32];
+    char     salt2[32];
 } _v3_msg_0x00;
 _v3_net_message *_v3_put_0x00();/*}}}*/
 typedef struct _v3_net_message_0x06 {/*{{{*/
@@ -73,7 +73,7 @@ typedef struct _v3_net_message_0x06 {/*{{{*/
     uint32_t subtype;           // 8
 
     uint8_t  unknown_2;         // 12 - variable length starts here
-    uint8_t* encryption_key;
+    uint8_t *encryption_key;
 } _v3_msg_0x06;
 int _v3_get_0x06(_v3_net_message *msg);/*}}}*/
 typedef struct _v3_net_message_0x33 {/*{{{*/
@@ -181,7 +181,7 @@ typedef struct _v3_net_message_0x49 {/*{{{*/
     uint16_t subtype;           // 6
     uint8_t  hash_password[32]; // 8
 
-    v3_channel *channel;        // 40 - variable lenghth starts here
+    v3_channel *channel;        // 40 - variable length starts here
 } _v3_msg_0x49;
 int _v3_get_0x49(_v3_net_message *msg);
 _v3_net_message *_v3_put_0x49(uint16_t subtype, uint16_t user_id, char *channel_password, _v3_msg_channel *channel);/*}}}*/
@@ -257,8 +257,14 @@ typedef struct _v3_net_message_0x52_0x01_in {/*{{{*/
     _v3_msg_0x52 header;        // 0
     uint16_t unknown_4;         // 24
     uint16_t unknown_5;         // 26
-
-    void     *data;             // 28 - either gsmdata* or speexdata*
+    union {
+        void *frames;           // 28 - variable length starts here
+        struct {
+            uint16_t frame_count;    // 28
+            uint16_t pcm_frame_size; // 30
+            void *frames;            // 32 - variable length starts here
+        } speex;
+    } data;
 } _v3_msg_0x52_0x01_in;/*}}}*/
 typedef struct _v3_net_message_0x52_0x01_out {/*{{{*/
     _v3_msg_0x52 header;        // 0
@@ -266,17 +272,7 @@ typedef struct _v3_net_message_0x52_0x01_out {/*{{{*/
     uint16_t unknown_5;         // 26
     uint16_t unknown_6;         // 28
     uint16_t unknown_7;         // 30
-
-    void     *data;             // 28 - either gsmdata* or speexdata*
 } _v3_msg_0x52_0x01_out;/*}}}*/
-typedef struct _v3_net_message_0x52_gsmdata {/*{{{*/
-    uint8_t  **frames;
-} _v3_msg_0x52_gsmdata;/*}}}*/
-typedef struct _v3_net_message_0x52_speexdata {/*{{{*/
-    uint16_t frame_count;
-    uint16_t sample_size;
-    uint8_t  **frames;
-} _v3_msg_0x52_speexdata;/*}}}*/
 typedef struct _v3_net_message_0x52_0x02 {/*{{{*/
     _v3_msg_0x52 header;        // 0
     uint16_t unknown_4;         // 24

@@ -482,12 +482,12 @@ typedef struct {
 } ventrilo_key_ctx;
 
 typedef struct __v3_codec {
-    uint8_t codec;
-    uint8_t format;
-    uint32_t samplesize;
+    uint8_t  codec;
+    uint8_t  format;
+    uint16_t pcmframesize;
     uint32_t rate;
-    uint8_t quality;
-    char name[128];
+    uint8_t  quality;
+    char     name[128];
 } v3_codec;
 extern v3_codec v3_codecs[];
 

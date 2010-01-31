@@ -38,14 +38,18 @@
 #include <netdb.h>
 #include <errno.h>
 #include <unistd.h>
+#include <math.h>
+
 #if HAVE_SPEEX
 # include <speex/speex.h>
 #endif
-#include <math.h>
+#if HAVE_CELT
+# include <celt/celt.h>
+#endif
 #ifdef HAVE_GSM_H
-#include <gsm.h>
+# include <gsm.h>
 #elif HAVE_GSM_GSM_H
-#include <gsm/gsm.h>
+# include <gsm/gsm.h>
 #endif
 
 
@@ -649,7 +653,7 @@ _v3_recv(int block) {/*{{{*/
                             const v3_codec  *codec;
 
                             codec = v3_get_channel_codec(v3_get_user_channel(v3_get_user_id()));
-                            _v3_debug(V3_DEBUG_INFO, "got outbound audio event", codec->rate);
+                            _v3_debug(V3_DEBUG_INFO, "got outbound user talk start event");
                             msg = _v3_put_0x52(V3_AUDIO_START, codec->codec, codec->format, ev.pcm.send_type, 0, 0, NULL);
                             if (!_v3_send(msg)) {
                                 _v3_debug(V3_DEBUG_SOCKET, "failed to send user talk start message");
@@ -665,144 +669,126 @@ _v3_recv(int block) {/*{{{*/
                             int             send = false;
 
                             codec = v3_get_channel_codec(v3_get_user_channel(v3_get_user_id()));
-                            _v3_debug(V3_DEBUG_INFO, "got outbound audio event", codec->rate);
+                            _v3_debug(V3_DEBUG_INFO, "got outbound play audio event");
                             // TODO: this is too messy to do here, make it a function
                             switch (codec->codec) {
-                                case 0:
 #if HAVE_GSM
+                                case 0x00: // GSM
                                     {
-                                        uint8_t **frames;
-                                        static gsm handle = NULL;
-                                        _v3_debug(V3_DEBUG_INFO, "encoding PCM to GSM @ %lu", codec->rate);
-                                        if (handle == NULL) {
-                                            _v3_debug(V3_DEBUG_INFO, "creating gsm encoding handle");
-                                            if (!(handle = gsm_create())) {
-                                                _v3_debug(V3_DEBUG_INFO, "could not encode audio: failed to create gsm handle");
-                                            }
-                                        }
-                                        frames = malloc(ev.pcm.length / codec->samplesize * sizeof(void *));
-                                        for (ctr = 0; ctr < ev.pcm.length / codec->samplesize; ctr++) {
-                                            gsm_signal sample[320];
-                                            int one = 1;
+                                        static void *gsmenc = NULL;
+                                        uint16_t frame_count;
+                                        uint8_t *frames;
 
-                                            frames[ctr] = malloc(65);
-                                            gsm_option(handle, GSM_OPT_WAV49, &one);
-                                            memcpy(sample, ((uint8_t *)&ev.data.sample)+(ctr*codec->samplesize), codec->samplesize);
-                                            gsm_encode(handle, sample, frames[ctr]);
-                                            gsm_encode(handle, ((short*)sample)+160, frames[ctr]+32);
-                                            _v3_debug(V3_DEBUG_INFO, "encoding frame %d", ctr);
-                                        }
-                                        //gsm_destroy(handle);
-                                        msg = _v3_put_0x52(V3_AUDIO_DATA, codec->codec, codec->format, ev.pcm.send_type, ev.pcm.length, ctr*65, frames);
-                                    }
-                                    send = true;
-#endif
-                                    break;
-                                case 3:
-#if HAVE_SPEEX
-                                    {
-                                        _v3_debug(V3_DEBUG_INFO, "encoding %d bytes of PCM to SPEEX @ %lu", codec->samplesize, codec->rate);
-                                        char cbits[200];
-                                        uint16_t nbBytes;
-                                        static void *state = NULL;
-                                        uint8_t sample[codec->samplesize];
-                                        SpeexBits bits;
-                                        int encoded_size;
-                                        int tmp;
-                                        static int rate = -1;
-                                        static int format = -1;
-                                        _v3_msg_0x52_speexdata *speexdata = malloc(sizeof(_v3_msg_0x52_speexdata));
-
-                                        speexdata->frame_count = ev.pcm.length / codec->samplesize;
-                                        speexdata->sample_size = (codec->samplesize / 2);
-
-                                        // TODO: we need to make sure the current band is correct in case the codec format
-                                        // changes (i.e. per channel codecs)
-                                        if (rate != codec->rate || format != codec->format) {
-                                            if (state != NULL) {
-                                                speex_encoder_destroy(state);
-                                            }
-                                            /*Create a new encoder state in appropriate band*/
-                                            switch (codec->rate) {
-                                                case 8000:
-                                                    _v3_debug(V3_DEBUG_INFO, "using narrow band");
-                                                    state = speex_encoder_init(&speex_nb_mode);
-                                                    send = true;
-                                                    break;
-                                                case 16000:
-                                                    _v3_debug(V3_DEBUG_INFO, "using wide band");
-                                                    state = speex_encoder_init(&speex_wb_mode);
-                                                    send = true;
-                                                    break;
-                                                case 32000:
-                                                    _v3_debug(V3_DEBUG_INFO, "using ultra-wide band");
-                                                    state = speex_encoder_init(&speex_uwb_mode);
-                                                    send = true;
-                                                    break;
-                                                default:
-                                                    send = false;
-                                                    break;
-                                            }
-                                            if (send && state) {
-                                                rate = codec->rate;
-                                                format = codec->format;
-                                                tmp = codec->quality;
-                                                speex_encoder_ctl(state, SPEEX_SET_QUALITY, &tmp);
-                                            } else {
-                                                // just give up now...
+                                        _v3_debug(V3_DEBUG_INFO, "encoding %d bytes of PCM to GSM @ %lu", ev.pcm.length, codec->rate);
+                                        if (!gsmenc) {
+                                            if (!(gsmenc = gsm_create())) {
+                                                _v3_debug(V3_DEBUG_INFO, "failed to create gsm encoder");
+                                                send = false;
                                                 break;
                                             }
+                                            int one = 1;
+                                            gsm_option(gsmenc, GSM_OPT_WAV49, &one);
                                         }
-                                        send = true;
-
-                                        nbBytes = 4; // speex data has a 4 byte header
-
-                                        // Initialization of the structure that holds the bits
-                                        speex_bits_init(&bits);
-
-                                        // allocate memory for pointers to our frames
-                                        _v3_debug(V3_DEBUG_MEMORY, "allocating %lu bytes for %d frame pointers", speexdata->frame_count * sizeof(uint8_t *), speexdata->frame_count);
-                                        speexdata->frames = malloc(speexdata->frame_count * sizeof(uint8_t *));
-
-                                        _v3_debug(V3_DEBUG_INFO, "starting frame processing for %d frames", speexdata->frame_count);
-                                        for (ctr = 0; ctr < speexdata->frame_count; ctr++) {
-                                            _v3_debug(V3_DEBUG_INFO, "encoding frame %d", ctr);
-                                            // Copy the 16 bits values to a temp variable for the sake of code readability
-                                            _v3_debug(V3_DEBUG_INFO, "copying %d bytes from %d to %d", codec->samplesize, ev.data.sample+(ctr*codec->samplesize), sample);
-                                            memcpy(sample, ev.data.sample+(ctr*codec->samplesize), codec->samplesize);
-
-                                            // Flush all the bits in the struct so we can encode a new frame
-                                            speex_bits_reset(&bits);
-
-                                            // Encode the frame
-                                            speex_encode_int(state, (int16_t *)sample, &bits);
-
-                                            // Copy the bits to an array of char that can be written
-                                            nbBytes += encoded_size = speex_bits_write(&bits, cbits, 200);
-                                            nbBytes += 2; // add two bytes for the encoded length
-
-                                            // allocate memory for the actual frame
-                                            speexdata->frames[ctr] = malloc(encoded_size + 2);
-
-                                            _v3_debug(V3_DEBUG_INFO, "encoded size is %d bytes (total %d) @ qual %d", encoded_size, nbBytes, codec->quality);
-                                            // Copy the size of the frame first.
-                                            encoded_size = htons(encoded_size);
-                                            memcpy(speexdata->frames[ctr], &encoded_size, 2);
-
-                                            // copy the frame data
-                                            memcpy(speexdata->frames[ctr]+2, cbits, ntohs(encoded_size));
+                                        frame_count = ev.pcm.length / 640;
+                                        _v3_debug(V3_DEBUG_MEMORY, "allocating %lu bytes for %d gsm frames", frame_count * 65, frame_count);
+                                        frames = malloc(frame_count * 65);
+                                        for (ctr = 0; ctr < frame_count; ctr++) {
+                                            _v3_debug(V3_DEBUG_INFO, "encoding gsm frame %d", ctr+1);
+                                            gsm_encode(gsmenc, ((void *)&ev.data.sample)+(ctr*640), frames+(ctr*65));
+                                            gsm_encode(gsmenc, ((void *)&ev.data.sample)+(ctr*640)+320, frames+(ctr*65)+32);
                                         }
-                                        msg = _v3_put_0x52(V3_AUDIO_DATA, codec->codec, codec->format, ev.pcm.send_type, ev.pcm.length, nbBytes, speexdata);
-
-                                        // Destroy the encoder state
-                                        // speex_encoder_destroy(state);
-
-                                        // Destroy the bit-packing struct
-                                        speex_bits_destroy(&bits);
+                                        //gsm_destroy(gsmenc);
+                                        msg = _v3_put_0x52(
+                                                        V3_AUDIO_DATA,
+                                                        codec->codec,
+                                                        codec->format,
+                                                        ev.pcm.send_type,
+                                                        ev.pcm.length,
+                                                        frame_count * 65,
+                                                        frames);
+                                        free(frames);
                                     }
-#endif
                                     send = true;
                                     break;
+#endif
+#if HAVE_SPEEX
+                                case 0x03: // SPEEX
+                                    {
+                                        static void *spxenc = NULL;
+                                        static uint32_t rate = 0;
+                                        static uint8_t format = -1;
+                                        static uint8_t quality = -1;
+                                        uint16_t frame_count;
+                                        uint16_t pcm_frame_size;
+                                        uint16_t spx_frame_size;
+                                        uint16_t spxmaxbuf = 200;
+                                        uint8_t *spxdata;
+                                        uint16_t spxdatalen;
+                                        uint16_t *spxhead;
+                                        SpeexBits bits;
+
+                                        _v3_debug(V3_DEBUG_INFO, "encoding %d bytes of PCM to SPEEX @ %lu", ev.pcm.length, codec->rate);
+                                        if (!spxenc || rate != codec->rate || format != codec->format || quality != codec->quality) {
+                                            if (spxenc) {
+                                                speex_encoder_destroy(spxenc);
+                                                spxenc = NULL;
+                                            }
+                                            switch (codec->rate) {
+                                              case 8000:
+                                                _v3_debug(V3_DEBUG_INFO, "using narrow band mode");
+                                                spxenc = speex_encoder_init(&speex_nb_mode);
+                                                break;
+                                              case 16000:
+                                                _v3_debug(V3_DEBUG_INFO, "using wide band mode");
+                                                spxenc = speex_encoder_init(&speex_wb_mode);
+                                                break;
+                                              case 32000:
+                                                _v3_debug(V3_DEBUG_INFO, "using ultra-wide band mode");
+                                                spxenc = speex_encoder_init(&speex_uwb_mode);
+                                                break;
+                                            }
+                                            if (!spxenc) {
+                                                _v3_debug(V3_DEBUG_INFO, "failed to create speex encoder");
+                                                send = false;
+                                                break;
+                                            }
+                                            rate = codec->rate;
+                                            format = codec->format;
+                                            quality = codec->quality;
+                                            speex_encoder_ctl(spxenc, SPEEX_SET_QUALITY, &quality);
+                                        }
+                                        frame_count = ev.pcm.length / codec->pcmframesize;
+                                        pcm_frame_size = codec->pcmframesize / sizeof(int16_t);
+                                        _v3_debug(V3_DEBUG_MEMORY, "allocating %lu bytes of data buffer for %d speex frames", (frame_count + 1) * spxmaxbuf, frame_count);
+                                        spxdata = malloc((frame_count + 1) * spxmaxbuf);
+                                        spxhead = (void *)spxdata;
+                                        *spxhead++ = htons(frame_count);
+                                        *spxhead++ = htons(pcm_frame_size);
+                                        spxdatalen = (void *)spxhead - (void *)spxdata;
+                                        speex_bits_init(&bits);
+                                        for (ctr = 0; ctr < frame_count; ctr++) {
+                                            speex_bits_reset(&bits);
+                                            speex_encode_int(spxenc, ((void *)&ev.data.sample)+(ctr*codec->pcmframesize), &bits);
+                                            spx_frame_size = speex_bits_write(&bits, (void *)spxdata+(spxdatalen+sizeof(uint16_t)), spxmaxbuf);
+                                            *((uint16_t *)(spxdata + spxdatalen)) = htons(spx_frame_size);
+                                            spxdatalen += sizeof(uint16_t) + spx_frame_size;
+                                        }
+                                        speex_bits_destroy(&bits);
+                                        //speex_encoder_destroy(spxenc);
+                                        _v3_debug(V3_DEBUG_MEMORY, "used %lu out of %lu bytes for %d speex frames", spxdatalen, (frame_count + 1) * spxmaxbuf, frame_count);
+                                        msg = _v3_put_0x52(
+                                                        V3_AUDIO_DATA,
+                                                        codec->codec,
+                                                        codec->format,
+                                                        ev.pcm.send_type,
+                                                        ev.pcm.length,
+                                                        spxdatalen,
+                                                        spxdata);
+                                        free(spxdata);
+                                    }
+                                    send = true;
+                                    break;
+#endif
                                 default:
                                     _v3_debug(V3_DEBUG_INFO, "unsupported codec %d/%d", codec->codec, codec->format);
                                     send = false;
@@ -819,10 +805,8 @@ _v3_recv(int block) {/*{{{*/
                     case V3_EVENT_USER_TALK_END:/*{{{*/
                         {
                             _v3_net_message *msg;
-                            const v3_codec  *codec;
 
-                            codec = v3_get_channel_codec(v3_get_user_channel(v3_get_user_id()));
-                            _v3_debug(V3_DEBUG_INFO, "got outbound audio event", codec->rate);
+                            _v3_debug(V3_DEBUG_INFO, "got outbound user talk end event");
                             msg = _v3_put_0x52(V3_AUDIO_STOP, -1, -1, 0, 0, 0, NULL);
                             if (!_v3_send(msg)) {
                                  _v3_debug(V3_DEBUG_SOCKET, "failed to send user talk end message");
@@ -2556,18 +2540,14 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                             ev->user.id = m->header.user_id;
                             ev->pcm.send_type = m->header.send_type;
                             ev->pcm.rate = v3_get_codec_rate(msub->header.codec, msub->header.codec_format);
-                            int volumectr;
+                            int ctr;
 
                             // TODO: it's too messy to have this here.  Write a function that decodes
                             switch (msub->header.codec) {
-                                case 0: // GSM
+                                case 0x00: // GSM
 #if HAVE_GSM
                                     {
-                                        _v3_msg_0x52_gsmdata *gsmdata =  msub->data;
-                                        uint8_t buf[65];
-                                        int8_t sample[640];
-                                        int ctr;
-                                        int one = 1; // used for codec settings
+                                        uint8_t *frames = msub->data.frames;
 
                                         if (! v3_decoders[m->header.user_id].gsm) {
                                             if (!(v3_decoders[m->header.user_id].gsm = gsm_create())) {
@@ -2578,72 +2558,74 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                                                 _v3_func_leave("_v3_process_message");
                                                 return V3_MALFORMED; // it's not really a malformed packet...
                                             }
+                                            int one = 1;
                                             gsm_option(v3_decoders[m->header.user_id].gsm, GSM_OPT_WAV49, &one);
                                         }
-                                        memset(sample, 0, 640);
                                         for (ctr = 0; ctr < msub->header.data_length / 65; ctr++) {
-                                            memcpy(buf, gsmdata->frames[ctr], 65);
-                                            if (gsm_decode(v3_decoders[m->header.user_id].gsm, buf, (int16_t *)sample) || gsm_decode(v3_decoders[m->header.user_id].gsm, buf+33, ((int16_t *)sample)+160)) {
+                                            if (gsm_decode(v3_decoders[m->header.user_id].gsm, frames+(ctr*65), (void *)ev->data.sample+(ctr*640)) || 
+                                                gsm_decode(v3_decoders[m->header.user_id].gsm, frames+((ctr*65)+33), (void *)ev->data.sample+((ctr*640)+320))) {
                                                 _v3_debug(V3_DEBUG_INFO, "failed to decode gsm frame %d", ctr);
                                                 continue;
                                             }
-                                            _v3_debug(V3_DEBUG_INFO, "copying 640 bytes of frame %d from %lu to %lu", ctr, sample, ev->data.sample+(ctr*640));
-                                            memcpy(ev->data.sample+(ctr*640), sample, 640);
                                         }
-                                        ev->pcm.length = msub->header.data_length/65*640;
+                                        ev->pcm.length = (msub->header.data_length/65)*640;
                                         _v3_debug(V3_DEBUG_EVENT, "queueing pcm msg length %d", ev->pcm.length);
                                     }
 #endif
                                     break;
-                                case 3: // SPEEX
+                                case 0x03: // SPEEX
 #if HAVE_SPEEX
                                     {
-                                        char  cbits[200];
+                                        static uint32_t last_rate = 0;
+                                        uint16_t frame_count = msub->data.speex.frame_count;
+                                        uint16_t pcm_frame_size = msub->data.speex.pcm_frame_size;
+                                        uint8_t *spx_frames = msub->data.speex.frames;
+                                        uint16_t spx_frame_size;
                                         SpeexBits bits;
-                                        int frame_size;
-                                        int ctr;
-                                        static int currate = 0;
 
-                                        _v3_msg_0x52_speexdata *speexdata = msub->data;
-                                        // The frame size as a uint16_t is prepended to
-                                        // every frame, but they're always the same.
-                                        // The length of the data divided by the count
-                                        // is the actual frame size in the packet.  Then
-                                        // subtract two for extra int16 specifying length
-                                        frame_size = msub->header.data_length / speexdata->frame_count - 2;
-                                        if (v3_decoders[m->header.user_id].speex == NULL || (ev->pcm.rate != currate)) {
+                                        /*
+                                         * Two uint16_t as frame count and pcm frame size
+                                         * are prepended at the beginning of the speex data.
+                                         * A uint16_t specifying speex frame size is prepended
+                                         * to every frame but instead we ignore its value and
+                                         * calculate it by the total data length minus two
+                                         * uint16_t by frame count minus a uint16_t we ignore.
+                                         */
+                                        spx_frame_size = ((msub->header.data_length - 4) / frame_count) - 2;
+
+                                        if (! v3_decoders[m->header.user_id].speex || ev->pcm.rate != last_rate) {
                                             if (v3_decoders[m->header.user_id].speex) {
                                                 speex_decoder_destroy(v3_decoders[m->header.user_id].speex);
+                                                v3_decoders[m->header.user_id].speex = NULL;
                                             }
-                                            currate = ev->pcm.rate;
                                             switch (ev->pcm.rate) {
-                                                case 8000:
-                                                    v3_decoders[m->header.user_id].speex = speex_decoder_init(&speex_nb_mode);
-                                                    break;
-                                                case 16000:
-                                                    v3_decoders[m->header.user_id].speex = speex_decoder_init(&speex_wb_mode);
-                                                    break;
-                                                case 32000:
-                                                    v3_decoders[m->header.user_id].speex = speex_decoder_init(&speex_uwb_mode);
-                                                    break;
-                                                default:
-                                                    _v3_debug(V3_DEBUG_INFO, "received unknown speex pcm rate %d", ev->pcm.rate);
-                                                    _v3_destroy_0x52(msg);
-                                                    _v3_destroy_packet(msg);
-                                                    free(ev);
-                                                    _v3_func_leave("_v3_process_message");
-                                                    return V3_MALFORMED;
+                                              case 8000:
+                                                v3_decoders[m->header.user_id].speex = speex_decoder_init(&speex_nb_mode);
+                                                break;
+                                              case 16000:
+                                                v3_decoders[m->header.user_id].speex = speex_decoder_init(&speex_wb_mode);
+                                                break;
+                                              case 32000:
+                                                v3_decoders[m->header.user_id].speex = speex_decoder_init(&speex_uwb_mode);
+                                                break;
+                                              default:
+                                                _v3_debug(V3_DEBUG_INFO, "received unknown pcm rate for speex %d", ev->pcm.rate);
+                                                _v3_destroy_0x52(msg);
+                                                _v3_destroy_packet(msg);
+                                                free(ev);
+                                                _v3_func_leave("_v3_process_message");
+                                                return V3_MALFORMED;
                                             }
+                                            last_rate = ev->pcm.rate;
                                         }
                                         speex_bits_init(&bits);
-                                        for (ctr = 0; ctr < speexdata->frame_count; ctr++) {
-                                            memcpy(cbits, speexdata->frames[ctr] + 2, frame_size);
-                                            speex_bits_read_from(&bits, cbits, frame_size);
-                                            speex_decode_int(v3_decoders[m->header.user_id].speex, &bits, ((int16_t *)ev->data.sample)+ctr*speexdata->sample_size);
+                                        for (ctr = 0; ctr < frame_count; ctr++) {
+                                            speex_bits_read_from(&bits, (void *)spx_frames+(ctr*(spx_frame_size+2))+2, spx_frame_size);
+                                            speex_decode_int(v3_decoders[m->header.user_id].speex, &bits, ev->data.sample16+(ctr*pcm_frame_size));
                                         }
-                                        ev->pcm.length  = speexdata->frame_count * speexdata->sample_size * sizeof(int16_t);
-                                        _v3_debug(V3_DEBUG_EVENT, "queueing pcm msg length %d", ev->pcm.length);
                                         speex_bits_destroy(&bits);
+                                        ev->pcm.length = frame_count * pcm_frame_size * sizeof(int16_t);
+                                        _v3_debug(V3_DEBUG_EVENT, "queueing pcm msg length %d", ev->pcm.length);
                                     }
 #endif
                                     break;
@@ -2652,15 +2634,15 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                             if (_v3_master_volume != 79) {
                                 float multiplier = tan(_v3_master_volume/100.0);
                                 _v3_debug(V3_DEBUG_INFO, "master: amplifying to level %d (%3.10f multiplier)", _v3_master_volume, multiplier);
-                                for (volumectr = 0; volumectr < ev->pcm.length / 2; volumectr++) {
-                                    ev->data.sample16[volumectr] *= multiplier;
+                                for (ctr = 0; ctr < ev->pcm.length / 2; ctr++) {
+                                    ev->data.sample16[ctr] *= multiplier;
                                 }
                             }
                             if (_v3_user_volumes[ev->user.id] != 79) {
                                 float multiplier = tan(_v3_user_volumes[ev->user.id]/100.0);
                                 _v3_debug(V3_DEBUG_INFO, "user: amplifying to level %d (%3.10f multiplier)", _v3_user_volumes[ev->user.id], multiplier);
-                                for (volumectr = 0; volumectr < ev->pcm.length / 2; volumectr++) {
-                                    ev->data.sample16[volumectr] *= multiplier;
+                                for (ctr = 0; ctr < ev->pcm.length / 2; ctr++) {
+                                    ev->data.sample16[ctr] *= multiplier;
                                 }
                             }
                         }

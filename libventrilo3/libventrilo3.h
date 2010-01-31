@@ -409,7 +409,7 @@ v3_codec v3_codecs[] = {
     { 3, 31, 1280, 32000, 9, "Speex 32kHz Quality 9" },
     { 3, 32, 1280, 32000, 10, "Speex 32kHz Quality 10" },
 #endif
-    { -1, -1, -1, -1, -1, "Unsupported Codec" },
+    { -1, -1, 0, 0, -1, "Unsupported Codec" },
 };
 
 typedef struct __v3_decoders {
