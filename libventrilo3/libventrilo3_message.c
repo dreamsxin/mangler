@@ -1008,8 +1008,8 @@ _v3_get_0x52(_v3_net_message *msg) {/*{{{*/
                 _v3_debug(V3_DEBUG_PACKET_PARSE, "received an audio packet from user id %d", msub->header.user_id);
                 if (msub->header.data_length > 0xffff) {
                     // if data length is somehow greater than 65535 bytes, bail out
-                    free(msub);
                     _v3_debug(V3_DEBUG_PACKET_PARSE, "data length is too large: %d bytes", msub->header.data_length);
+                    free(msub);
                     _v3_func_leave("_v3_get_0x52");
                     return false;
                 }

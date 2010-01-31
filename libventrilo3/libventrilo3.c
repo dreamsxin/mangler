@@ -717,7 +717,7 @@ _v3_recv(int block) {/*{{{*/
                                         static void *spxenc = NULL;
                                         static uint32_t rate = 0;
                                         static uint8_t format = -1;
-                                        static uint8_t quality = -1;
+                                        int quality = -1;
                                         uint16_t frame_count;
                                         uint16_t pcm_frame_size;
                                         uint16_t spx_frame_size;
@@ -728,7 +728,7 @@ _v3_recv(int block) {/*{{{*/
                                         SpeexBits bits;
 
                                         _v3_debug(V3_DEBUG_INFO, "encoding %d bytes of PCM to SPEEX @ %lu", ev.pcm.length, codec->rate);
-                                        if (!spxenc || rate != codec->rate || format != codec->format || quality != codec->quality) {
+                                        if (!spxenc || rate != codec->rate || format != codec->format) {
                                             if (spxenc) {
                                                 speex_encoder_destroy(spxenc);
                                                 spxenc = NULL;
