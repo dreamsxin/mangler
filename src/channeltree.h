@@ -130,7 +130,8 @@ class ManglerChannelTree
         void removeChannel(uint32_t id);
         void setUserIcon(uint16_t id, Glib::ustring color);
         Gtk::TreeModel::Row getChannel(uint32_t id, Gtk::TreeModel::Children children);
-        Gtk::TreeModel::Row getUser(uint32_t id, Gtk::TreeModel::Children children);
+        Gtk::TreeModel::Row getUser(uint32_t id);
+        bool _getUser(const Gtk::TreeModel::iterator &iter, uint32_t id, Gtk::TreeModel::iterator *r_iter);
         uint16_t getUserChannelId(uint16_t userid);
         Glib::ustring getChannelSavedPassword(uint16_t channel_id);
         void setChannelSavedPassword(uint16_t channel_id, Glib::ustring password);

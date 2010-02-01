@@ -199,7 +199,7 @@ ManglerChannelTree::updateUser(uint32_t id, uint32_t parent_id, Glib::ustring na
         updateLobby(name, comment, phonetic);
         return;
     }
-    if (! (user = getUser(id, channelStore->children())) && id > 0) {
+    if (! (user = getUser(id)) && id > 0) {
         fprintf(stderr, "missing user: id %d: %s is supposed to be in channel %d\n", id, name.c_str(), parent_id);
         return;
     }
@@ -443,17 +443,17 @@ ManglerChannelTree::refreshUser(uint32_t id) {/*{{{*/
     bool muted;
     bool global_mute;
 
-    if (! (user = getUser(id, channelStore->children())) && id > 0) {
+    if (! (user = getUser(id)) && id > 0) {
         fprintf(stderr, "channel missing: id: %d\n", id);
     }
     if ((u = v3_get_user(id))) {
         global_mute = u->global_mute;
         // update xmit icons
-        if ( (u->is_transmitting && getUserChannelId(id) == getUserChannelId(mangler->myID))
+        if ( (u->is_transmitting && getUserChannelId(id) == getUserChannelId(v3_get_user_id()))
         ||  (id == mangler->myID && mangler->isTransmitting) ) {
             // transmitting in same channel or we are transmitting
             setUserIcon(id, "green");
-        } else if (u->is_transmitting && getUserChannelId(id) != getUserChannelId(mangler->myID)) {
+        } else if (u->is_transmitting && getUserChannelId(id) != getUserChannelId(v3_get_user_id())) {
             // transmitting in different channel
             setUserIcon(id, "yellow");
         } else {
@@ -541,8 +541,8 @@ ManglerChannelTree::removeUser(uint32_t id) {/*{{{*/
     Glib::ustring displayName = "";
     Gtk::TreeModel::Row user;
 
-    if (! (user = getUser(id, channelStore->children())) && id > 0) {
-        fprintf(stderr, "could not find user id %d to delete\n", id);
+    if (! (user = getUser(id)) && id > 0) {
+        fprintf(stderr, "removeUser: could not find user id %d to delete\n", id);
         return;
     }
     channelStore->erase(user);
@@ -592,29 +592,24 @@ ManglerChannelTree::getChannel(uint32_t id, Gtk::TreeModel::Children children) {
 
 // Recursively search the channel store for a specific user id and returns the row
 Gtk::TreeModel::Row
-ManglerChannelTree::getUser(uint32_t id, Gtk::TreeModel::Children children) {/*{{{*/
-    Gtk::TreeModel::Children::iterator iter = children.begin();
-    //std::cerr << "looking for user id : " << id  << endl;
-    while (iter != children.end()) {
-        Gtk::TreeModel::Row row = *iter;
-        uint32_t rowId = row[channelRecord.id];
-        bool isUser = row[channelRecord.isUser];
-        //std::cerr << "iterating: " << rowId << " | isUser: " << isUser << " | name: " << row[channelRecord.name] << endl;
-        if (rowId == id && isUser == true) {
-            //std::cerr << "found it" << endl;
-            return row;
+ManglerChannelTree::getUser(uint32_t id) {/*{{{*/
+    Gtk::TreeModel::iterator iter;
+    channelStore->foreach_iter(sigc::bind(sigc::mem_fun(*this,&ManglerChannelTree::_getUser), id, &iter));
+    if (iter) {
+        if ((bool)(*iter)[channelRecord.isUser]) {
+            return *iter;
         }
-        if (row.children().size()) {
-            //std::cerr << "looking through children" << endl;
-            if (row = getUser(id, row->children())) {
-                //std::cerr << "found it in a child" << endl;
-                return row;
-            }
-        }
-        iter++;
     }
-    return *iter;
-}/*}}}*/
+    Gtk::TreeModel::Row empty;
+    return empty;
+}
+bool ManglerChannelTree::_getUser(const Gtk::TreeModel::iterator &iter, uint32_t id, Gtk::TreeModel::iterator *r_iter) {/*{{{*/
+    if((uint32_t)(*iter)[channelRecord.id] == id) {
+        *r_iter = iter;
+        return true;
+    }
+    return false;
+}
 
 void
 ManglerChannelTree::updateLobby(Glib::ustring name, Glib::ustring comment, Glib::ustring phonetic) {/*{{{*/
@@ -645,11 +640,19 @@ ManglerChannelTree::updateLobby(Glib::ustring name, Glib::ustring comment, Glib:
 
 void
 ManglerChannelTree::setUserIcon(uint16_t id, Glib::ustring color) {/*{{{*/
-    Gtk::TreeModel::Row user = getUser(id, channelStore->children());
-    Gtk::TreeModel::Row me   = getUser(v3_get_user_id(), channelStore->children());
+    Gtk::TreeModel::Row user = getUser(id);
+    Gtk::TreeModel::Row me   = getUser(v3_get_user_id());
     Glib::ustring iconname = "user_icon_" + color;
     if (! mangler->icons[iconname]) {
         iconname = "user_icon_red";
+    }
+    if (!user) {
+        fprintf(stderr, "setUserIcon: failed to retrieve row for user id %d", id);
+        return;
+    }
+    if (!me) {
+        fprintf(stderr, "setUserIcon: failed to retrieve row for my id %d", v3_get_user_id());
+        return;
     }
     user[channelRecord.icon] = mangler->icons[iconname]->scale_simple(15, 15, Gdk::INTERP_BILINEAR);
     user[channelRecord.last_transmit]     = getTimeString();
@@ -687,11 +690,14 @@ ManglerChannelTree::channelView_row_activated_cb(const Gtk::TreeModel::Path& pat
         userSettingsWindow(row);
     } else {
         // double clicked a channel
-        Gtk::TreeModel::Row user = getUser(v3_get_user_id(), channelStore->children());
+        Gtk::TreeModel::Row user = getUser(v3_get_user_id());
         int curchannel = user[channelRecord.parent_id];
         uint16_t pw_cid;
         Gtk::TreeModel::Row pwrow;
-
+        if (!user) {
+            fprintf(stderr, "failed to retrieve row for id %d", id);
+            return;
+        }
         if (id == curchannel) {
             // we're already in this channel
             return;
@@ -975,7 +981,11 @@ ManglerChannelTree::muteUserGlobalMenuItem_activate_cb(void) {/*{{{*/
 
 uint16_t
 ManglerChannelTree::getUserChannelId(uint16_t userid) {/*{{{*/
-    Gtk::TreeModel::Row user = getUser(userid, channelStore->children());
+    Gtk::TreeModel::Row user;
+    if (! (user = getUser(userid)) && userid > 0) {
+        fprintf(stderr, "getUserChannelId: could not find user id %d\n", userid);
+        return NULL;
+    }
     return(user[channelRecord.parent_id]);
 }/*}}}*/
 
@@ -1028,19 +1038,31 @@ ManglerChannelTree::volumeAdjustment_value_changed_cb(uint16_t id) {/*{{{*/
 
 Glib::ustring
 ManglerChannelTree::getLastTransmit(uint16_t userid) {/*{{{*/
-    Gtk::TreeModel::Row user = getUser(userid, channelStore->children());
+    Gtk::TreeModel::Row user;
+    if (! (user = getUser(userid)) && userid > 0) {
+        fprintf(stderr, "getLastTransmit: could not find user id %d\n", userid);
+        return NULL;
+    }
     return(user[channelRecord.last_transmit]);
 }/*}}}*/
 
 bool
 ManglerChannelTree::isMuted(uint16_t userid) {/*{{{*/
-    Gtk::TreeModel::Row user = getUser(userid, channelStore->children());
+    Gtk::TreeModel::Row user;
+    if (! (user = getUser(userid)) && userid > 0) {
+        fprintf(stderr, "isMuted: could not find user id %d\n", userid);
+        return NULL;
+    }
     return(user[channelRecord.muted]);
 }/*}}}*/
 
 void
 ManglerChannelTree::setLastTransmit(uint16_t userid, Glib::ustring last_transmit) {/*{{{*/
-    Gtk::TreeModel::Row user = getUser(userid, channelStore->children());
+    Gtk::TreeModel::Row user;
+    if (! (user = getUser(userid)) && userid > 0) {
+        fprintf(stderr, "setLastTransmit: could not find user id %d\n", userid);
+        return;
+    }
     user[channelRecord.last_transmit] = last_transmit;
 }/*}}}*/
 
@@ -1254,7 +1276,11 @@ void ManglerChannelTree::channelView_switchChannel2Default(uint32_t defaultChann
     Gtk::TreeModel::iterator iter = channelStore->get_iter(defaultChannelPath);
     if(iter) {
         Gtk::TreeModel::Row row  = *iter;
-        Gtk::TreeModel::Row user = getUser(v3_get_user_id(), channelStore->children());
+        Gtk::TreeModel::Row user;
+        if (! (user = getUser(v3_get_user_id()))) {
+            fprintf(stderr, "channelView_switchChannel2Default: could not find user id %d\n", v3_get_user_id());
+            return;
+        }
         if ((bool)row[channelRecord.isUser]) {    //Can't switch into a user
             return;
         }

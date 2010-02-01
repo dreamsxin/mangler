@@ -2563,7 +2563,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                                         }
                                         for (ctr = 0; ctr < msub->header.data_length / 65; ctr++) {
                                             if (gsm_decode(v3_decoders[m->header.user_id].gsm, frames+(ctr*65), (void *)ev->data.sample+(ctr*640)) || 
-                                                gsm_decode(v3_decoders[m->header.user_id].gsm, frames+((ctr*65)+33), (void *)ev->data.sample+((ctr*640)+320))) {
+                                                gsm_decode(v3_decoders[m->header.user_id].gsm, frames+(ctr*65)+33, (void *)ev->data.sample+(ctr*640)+320)) {
                                                 _v3_debug(V3_DEBUG_INFO, "failed to decode gsm frame %d", ctr);
                                                 continue;
                                             }
