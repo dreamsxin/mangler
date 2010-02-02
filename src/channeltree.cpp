@@ -367,7 +367,8 @@ ManglerChannelTree::refreshAllChannels(void) {/*{{{*/
     }
 }/*}}}*/
 
-int ManglerChannelTree::sortFunction(const Gtk::TreeModel::iterator& a, const Gtk::TreeModel::iterator& b){
+int
+ManglerChannelTree::sortFunction(const Gtk::TreeModel::iterator& a, const Gtk::TreeModel::iterator& b){/*{{{*/
     bool isUser_a = (*a)[channelRecord.isUser];
     bool isUser_b = (*b)[channelRecord.isUser];
 //    Glib::ustring sort_a = (isUser_a) ? (*a)[channelRecord.name] : (*a)[channelRecord.displayName];
@@ -406,7 +407,7 @@ int ManglerChannelTree::sortFunction(const Gtk::TreeModel::iterator& a, const Gt
     }
     fprintf(stderr, "sorting failed to find if one or both options were users or channels\n");
     return 0;
-}
+}/*}}}*/
 
 void
 ManglerChannelTree::_refreshAllChannels(Gtk::TreeModel::Children children) {/*{{{*/
@@ -602,14 +603,16 @@ ManglerChannelTree::getUser(uint32_t id) {/*{{{*/
     }
     Gtk::TreeModel::Row empty;
     return empty;
-}
-bool ManglerChannelTree::_getUser(const Gtk::TreeModel::iterator &iter, uint32_t id, Gtk::TreeModel::iterator *r_iter) {/*{{{*/
+}/*}}}*/
+
+bool
+ManglerChannelTree::_getUser(const Gtk::TreeModel::iterator &iter, uint32_t id, Gtk::TreeModel::iterator *r_iter) {/*{{{*/
     if((uint32_t)(*iter)[channelRecord.id] == id) {
         *r_iter = iter;
         return true;
     }
     return false;
-}
+}/*}}}*/
 
 void
 ManglerChannelTree::updateLobby(Glib::ustring name, Glib::ustring comment, Glib::ustring phonetic) {/*{{{*/
@@ -1162,8 +1165,7 @@ ManglerChannelStore::drag_data_received_vfunc(const Gtk::TreeModel::Path& dest, 
 }/*}}}*/
 
 void
-ManglerChannelTree::userSettingsWindow(Gtk::TreeModel::Row row) {
-
+ManglerChannelTree::userSettingsWindow(Gtk::TreeModel::Row row) {/*{{{*/
     int id = row[channelRecord.id];
     // double clicked a user
     if (id == v3_get_user_id()) {
@@ -1212,26 +1214,31 @@ ManglerChannelTree::userSettingsWindow(Gtk::TreeModel::Row row) {
         window->queue_resize();
         window->present();
     }
-}
+}/*}}}*/
 /*
  * Arbitrary channel changing (default channels)
  */
-bool ManglerChannelTree::channelView_getPathFromId(const Gtk::TreeModel::Path &path, uint32_t id, Glib::ustring *r_path) {
+bool
+ManglerChannelTree::channelView_getPathFromId(const Gtk::TreeModel::Path &path, uint32_t id, Glib::ustring *r_path) {/*{{{*/
     Gtk::TreeModel::iterator iter = channelStore->get_iter(path);
     if((uint32_t)(*iter)[channelRecord.id] == id) {
         r_path->assign(path.to_string());
         return true;
     }
     return false;
-}
-bool ManglerChannelTree::channelView_findDefault(const Gtk::TreeModel::iterator &iter, Gtk::TreeModel::iterator *oldDefault) {
+}/*}}}*/
+
+bool
+ManglerChannelTree::channelView_findDefault(const Gtk::TreeModel::iterator &iter, Gtk::TreeModel::iterator *oldDefault) {/*{{{*/
     if((bool)(*iter)[channelRecord.isDefault] && !(bool)(*iter)[channelRecord.isUser]) {
         *oldDefault = iter;
         return true;
     }
     return false;
-}
-void ManglerChannelTree::setDefaultChannel_toggled_cb(void) {/*{{{*/
+}/*}}}*/
+
+void
+ManglerChannelTree::setDefaultChannel_toggled_cb(void) {/*{{{*/
     Glib::RefPtr<Gtk::TreeSelection> sel = channelView->get_selection();
     Gtk::TreeModel::iterator iter = sel->get_selected();
     if(iter) {
@@ -1266,7 +1273,8 @@ void ManglerChannelTree::setDefaultChannel_toggled_cb(void) {/*{{{*/
     }
 }/*}}}*/
 
-void ManglerChannelTree::channelView_switchChannel2Default(uint32_t defaultChannelId) {/*{{{*/
+void
+ManglerChannelTree::channelView_switchChannel2Default(uint32_t defaultChannelId) {/*{{{*/
     Glib::ustring defaultChannelPath = "";
     channelStore->foreach_path(sigc::bind(sigc::mem_fun(*this,&ManglerChannelTree::channelView_getPathFromId), defaultChannelId, &defaultChannelPath));
     if (defaultChannelPath == "") {
