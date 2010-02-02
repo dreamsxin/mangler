@@ -403,11 +403,13 @@ void Mangler::connectButton_clicked_cb(void) {/*{{{*/
     return;
 }/*}}}*/
 void Mangler::commentButton_clicked_cb(void) {/*{{{*/
-    textStringChangeCommentEntry->set_text(comment);
-    textStringChangeURLEntry->set_text(url);
-    textStringChangeIntegrationEntry->set_text(integration_text);
-    textStringChangeDialog->run();
-    textStringChangeDialog->hide();
+    if (v3_is_loggedin()) {
+        textStringChangeCommentEntry->set_text(comment);
+        textStringChangeURLEntry->set_text(url);
+        textStringChangeIntegrationEntry->set_text(integration_text);
+        textStringChangeDialog->run();
+        textStringChangeDialog->hide();
+    }
 }/*}}}*/
 void Mangler::chatButton_clicked_cb(void) {/*{{{*/
     if (v3_is_loggedin()) {
@@ -666,6 +668,21 @@ void Mangler::onDisconnectHandler(void) {/*{{{*/
 
     builder->get_widget("connectButton", connectbutton);
     if (connectbutton->get_label() == "gtk-disconnect") {
+        builder->get_widget("adminButton", button);
+        button->set_sensitive(false);
+        builder->get_widget("adminLoginMenuItem", menuitem);
+        menuitem->set_sensitive(false);
+        builder->get_widget("adminWindowMenuItem", menuitem);
+        menuitem->set_sensitive(false);
+        builder->get_widget("chatButton", button);
+        button->set_sensitive(false);
+        builder->get_widget("chatMenuItem", menuitem);
+        menuitem->set_sensitive(false);
+        builder->get_widget("commentButton", button);
+        button->set_sensitive(false);
+        builder->get_widget("commentMenuItem", menuitem);
+        menuitem->set_sensitive(false);
+
         connectbutton->set_sensitive(true);
         channelTree->clear();
         builder->get_widget("xmitButton", togglebutton);
@@ -884,6 +901,21 @@ bool Mangler::getNetworkEvent() {/*{{{*/
             case V3_EVENT_LOGIN_COMPLETE:/*{{{*/
                 if (v3_is_loggedin()) {
                     const v3_codec *codec_info;
+
+                    builder->get_widget("adminButton", button);
+                    button->set_sensitive(true);
+                    builder->get_widget("adminLoginMenuItem", menuitem);
+                    menuitem->set_sensitive(true);
+                    builder->get_widget("adminWindowMenuItem", menuitem);
+                    menuitem->set_sensitive(true);
+                    builder->get_widget("chatButton", button);
+                    button->set_sensitive(true);
+                    builder->get_widget("chatMenuItem", menuitem);
+                    menuitem->set_sensitive(true);
+                    builder->get_widget("commentButton", button);
+                    button->set_sensitive(true);
+                    builder->get_widget("commentMenuItem", menuitem);
+                    menuitem->set_sensitive(true);
 
                     builder->get_widget("codecLabel", label);
                     if ((codec_info = v3_get_channel_codec(0))) {

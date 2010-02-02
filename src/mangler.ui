@@ -88,6 +88,7 @@
                       <object class="GtkImageMenuItem" id="commentMenuItem">
                         <property name="label">Comment</property>
                         <property name="visible">True</property>
+                        <property name="sensitive">False</property>
                         <property name="image">image2</property>
                         <property name="use_stock">False</property>
                       </object>
@@ -235,6 +236,7 @@
                       <object class="GtkButton" id="commentButton">
                         <property name="label" translatable="yes">Co_mment</property>
                         <property name="visible">True</property>
+                        <property name="sensitive">False</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
                         <property name="tooltip_text" translatable="yes">Change your user comment or URL</property>
@@ -250,6 +252,7 @@
                       <object class="GtkButton" id="chatButton">
                         <property name="label" translatable="yes">_Chat</property>
                         <property name="visible">True</property>
+                        <property name="sensitive">False</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
                         <property name="tooltip_text" translatable="yes">Open the public chat window</property>
@@ -278,6 +281,7 @@
                       <object class="GtkButton" id="adminButton">
                         <property name="label" translatable="yes">_Admin</property>
                         <property name="visible">True</property>
+                        <property name="sensitive">False</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
                         <property name="use_underline">True</property>
