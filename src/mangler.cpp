@@ -928,9 +928,11 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                     if (connectedServerId != -1) {
                         ManglerServerConfig *server;
                         server = settings->config.getserver(connectedServerId);
-                        comment = server->comment;
-                        url = server->url;
-                        v3_set_text((char *) ustring_to_c(server->comment).c_str(), (char *) ustring_to_c(server->url).c_str(), (char *) ustring_to_c(integration_text).c_str(), true);
+                        if (server->persistentComments) {
+                            comment = server->comment;
+                            url = server->url;
+                            v3_set_text((char *) ustring_to_c(server->comment).c_str(), (char *) ustring_to_c(server->url).c_str(), (char *) ustring_to_c(integration_text).c_str(), true);
+                        }
 
                         //Default Channel
                         uint32_t defaultChannelId = server->defaultchannelid;
