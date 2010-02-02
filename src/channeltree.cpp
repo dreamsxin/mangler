@@ -154,9 +154,9 @@ ManglerChannelTree::addUser(uint32_t id, uint32_t parent_id, Glib::ustring name,
     }
 
     if (parent) {
-        channelIter                                 = channelStore->prepend(parent.children());
+        channelIter                             = channelStore->prepend(parent.children());
     } else {
-        channelIter                                 = channelStore->prepend();
+        channelIter                             = channelStore->prepend();
     }
     channelRow                                  = *channelIter;
     channelRow[channelRecord.displayName]       = displayName;
@@ -207,9 +207,9 @@ ManglerChannelTree::updateUser(uint32_t id, uint32_t parent_id, Glib::ustring na
     user[channelRecord.displayName]       = displayName;
     if (id == v3_get_user_id()) {
         if (mangler->isTransmitting) {
-            user[channelRecord.icon]              = mangler->icons["user_icon_green"]->scale_simple(15, 15, Gdk::INTERP_BILINEAR);
+            user[channelRecord.icon]      = mangler->icons["user_icon_green"]->scale_simple(15, 15, Gdk::INTERP_BILINEAR);
         } else {
-            user[channelRecord.icon]              = mangler->icons["user_icon_red"]->scale_simple(15, 15, Gdk::INTERP_BILINEAR);
+            user[channelRecord.icon]      = mangler->icons["user_icon_red"]->scale_simple(15, 15, Gdk::INTERP_BILINEAR);
         }
     }
     user[channelRecord.isUser]            = id == 0 ? false : true;
@@ -252,21 +252,21 @@ ManglerChannelTree::addChannel(uint8_t protect_mode, uint32_t id, uint32_t paren
     }
     //displayName = "<span weight=\"bold\">" + displayName + "</span>";
     if (parent) {
-        channelIter                                 = channelStore->append(parent.children());
+        channelIter                             = channelStore->append(parent.children());
     } else {
-        channelIter                                 = channelStore->append();
+        channelIter                             = channelStore->append();
     }
     channelRow                                  = *channelIter;
     channelRow[channelRecord.displayName]       = displayName;
     switch (protect_mode) {
         case 0:
-            channelRow[channelRecord.icon]              = mangler->icons["black_circle"]->scale_simple(12, 12, Gdk::INTERP_BILINEAR);;
+            channelRow[channelRecord.icon]      = mangler->icons["black_circle"]->scale_simple(12, 12, Gdk::INTERP_BILINEAR);;
             break;
         case 1:
-            channelRow[channelRecord.icon]              = mangler->icons["red_circle"]->scale_simple(12, 12, Gdk::INTERP_BILINEAR);;
+            channelRow[channelRecord.icon]      = mangler->icons["red_circle"]->scale_simple(12, 12, Gdk::INTERP_BILINEAR);;
             break;
         case 2:
-            channelRow[channelRecord.icon]              = mangler->icons["yellow_circle"]->scale_simple(12, 12, Gdk::INTERP_BILINEAR);;
+            channelRow[channelRecord.icon]      = mangler->icons["yellow_circle"]->scale_simple(12, 12, Gdk::INTERP_BILINEAR);;
             break;
     }
     channelRow[channelRecord.isUser]            = false;
@@ -309,13 +309,13 @@ ManglerChannelTree::updateChannel(uint8_t protect_mode, uint32_t id, uint32_t pa
     channel[channelRecord.displayName]       = displayName;
     switch (protect_mode) {
         case 0:
-            channel[channelRecord.icon]              = mangler->icons["black_circle"]->scale_simple(12, 12, Gdk::INTERP_BILINEAR);;
+            channel[channelRecord.icon]      = mangler->icons["black_circle"]->scale_simple(12, 12, Gdk::INTERP_BILINEAR);;
             break;
         case 1:
-            channel[channelRecord.icon]              = mangler->icons["red_circle"]->scale_simple(12, 12, Gdk::INTERP_BILINEAR);;
+            channel[channelRecord.icon]      = mangler->icons["red_circle"]->scale_simple(12, 12, Gdk::INTERP_BILINEAR);;
             break;
         case 2:
-            channel[channelRecord.icon]              = mangler->icons["yellow_circle"]->scale_simple(12, 12, Gdk::INTERP_BILINEAR);;
+            channel[channelRecord.icon]      = mangler->icons["yellow_circle"]->scale_simple(12, 12, Gdk::INTERP_BILINEAR);;
             break;
     }
     channel[channelRecord.isUser]            = false;
@@ -444,18 +444,17 @@ ManglerChannelTree::refreshUser(uint32_t id) {/*{{{*/
     bool muted;
     bool global_mute;
 
-    if (! (user = getUser(id)) && id > 0) {
+    if (!(user = getUser(id)) && id > 0) {
         fprintf(stderr, "channel missing: id: %d\n", id);
     }
     if ((u = v3_get_user(id))) {
         global_mute = u->global_mute;
         // update xmit icons
-        if ( (u->is_transmitting && getUserChannelId(id) == getUserChannelId(v3_get_user_id()))
-        ||  (id == mangler->myID && mangler->isTransmitting) ) {
-            // transmitting in same channel or we are transmitting
+        if (id == v3_get_user_id() && mangler->isTransmitting) {
+            // we're transmitting
             setUserIcon(id, "green", true);
-        } else if (u->is_transmitting && getUserChannelId(id) != getUserChannelId(v3_get_user_id())) {
-            // transmitting in different channel
+        } else if (u->is_transmitting) {
+            // transmitting but without playback
             setUserIcon(id, "yellow", true);
         } else {
             // not transmitting
