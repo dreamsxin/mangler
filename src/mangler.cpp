@@ -556,7 +556,7 @@ void Mangler::startTransmit(void) {/*{{{*/
     audioControl->playNotification("talkstart");
     statusIcon->set(icons["tray_icon_green"]);
     isTransmitting = true;
-    channelTree->setUserIcon(v3_get_user_id(), "green");
+    channelTree->setUserIcon(v3_get_user_id(), "green", true);
     if ((codec = v3_get_channel_codec(user->channel))) {
         //fprintf(stderr, "channel %d codec rate: %d at sample size %d\n", user->channel, codec->rate, codec->pcmframesize);
         v3_start_audio(V3_AUDIO_SENDTYPE_U2CCUR);
@@ -572,7 +572,7 @@ void Mangler::stopTransmit(void) {/*{{{*/
     statusIcon->set(icons["tray_icon_red"]);
     if (v3_is_loggedin()) {
         audioControl->playNotification("talkend");
-        channelTree->setUserIcon(v3_get_user_id(), "red");
+        channelTree->setUserIcon(v3_get_user_id(), "red", true);
     }
     isTransmitting = false;
     if (inputAudio) {
@@ -1035,7 +1035,7 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                 if (v3_is_loggedin()) {
                     if (!channelTree->isMuted(ev->user.id) && !muteSound) {
                         // Open a stream if we don't have one for this user
-                        channelTree->setUserIcon(ev->user.id, "green");
+                        channelTree->setUserIcon(ev->user.id, "green", true);
                         if (!outputAudio[ev->user.id]) {
                             outputAudio[ev->user.id] = new ManglerAudio("output");
                             outputAudio[ev->user.id]->open(ev->pcm.rate, AUDIO_OUTPUT);

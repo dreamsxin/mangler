@@ -128,7 +128,7 @@ class ManglerChannelTree
         void setLastTransmit(uint16_t userid, Glib::ustring last_transmit);
         void removeUser(uint32_t id);
         void removeChannel(uint32_t id);
-        void setUserIcon(uint16_t id, Glib::ustring color);
+        void setUserIcon(uint16_t id, Glib::ustring color, bool updateLastTransmit = false);
         Gtk::TreeModel::Row getChannel(uint32_t id, Gtk::TreeModel::Children children);
         Gtk::TreeModel::Row getUser(uint32_t id);
         bool _getUser(const Gtk::TreeModel::iterator &iter, uint32_t id, Gtk::TreeModel::iterator *r_iter);

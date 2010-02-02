@@ -453,10 +453,10 @@ ManglerChannelTree::refreshUser(uint32_t id) {/*{{{*/
         if ( (u->is_transmitting && getUserChannelId(id) == getUserChannelId(v3_get_user_id()))
         ||  (id == mangler->myID && mangler->isTransmitting) ) {
             // transmitting in same channel or we are transmitting
-            setUserIcon(id, "green");
+            setUserIcon(id, "green", true);
         } else if (u->is_transmitting && getUserChannelId(id) != getUserChannelId(v3_get_user_id())) {
             // transmitting in different channel
-            setUserIcon(id, "yellow");
+            setUserIcon(id, "yellow", true);
         } else {
             // not transmitting
             setUserIcon(id, "red");
@@ -642,7 +642,7 @@ ManglerChannelTree::updateLobby(Glib::ustring name, Glib::ustring comment, Glib:
 }/*}}}*/
 
 void
-ManglerChannelTree::setUserIcon(uint16_t id, Glib::ustring color) {/*{{{*/
+ManglerChannelTree::setUserIcon(uint16_t id, Glib::ustring color, bool updateLastTransmit) {/*{{{*/
     Gtk::TreeModel::Row user = getUser(id);
     Gtk::TreeModel::Row me   = getUser(v3_get_user_id());
     Glib::ustring iconname = "user_icon_" + color;
@@ -658,7 +658,9 @@ ManglerChannelTree::setUserIcon(uint16_t id, Glib::ustring color) {/*{{{*/
         return;
     }
     user[channelRecord.icon] = mangler->icons[iconname]->scale_simple(15, 15, Gdk::INTERP_BILINEAR);
-    user[channelRecord.last_transmit]     = getTimeString();
+    if (updateLastTransmit) {
+        user[channelRecord.last_transmit]     = getTimeString();
+    }
 }/*}}}*/
 
 bool
