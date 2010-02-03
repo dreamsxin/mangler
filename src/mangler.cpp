@@ -1067,12 +1067,12 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                 break;/*}}}*/
             case V3_EVENT_PLAY_AUDIO:/*{{{*/
                 if (v3_is_loggedin()) {
+                    channelTree->setUserIcon(ev->user.id, "green", true);
                     if (!channelTree->isMuted(ev->user.id) && !muteSound) {
                         // Open a stream if we don't have one for this user
-                        channelTree->setUserIcon(ev->user.id, "green", true);
                         if (!outputAudio[ev->user.id]) {
                             outputAudio[ev->user.id] = new ManglerAudio("output");
-                            outputAudio[ev->user.id]->open(ev->pcm.rate, AUDIO_OUTPUT);
+                            outputAudio[ev->user.id]->open(ev->pcm.rate, AUDIO_OUTPUT, 0, ev->pcm.channels);
                         }
                         // And queue the audio
                         if (outputAudio[ev->user.id]) {

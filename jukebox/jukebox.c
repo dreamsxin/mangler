@@ -70,7 +70,7 @@ int debug = 0;
 int should_exit = 0;
 musicfile **musiclist;
 int musicfile_count = 0;
-
+int stereo = 0;
 
 // prototypes
 void usage(char *argv[]);
@@ -94,7 +94,7 @@ void ctrl_c (int signum) {
 }
 
 void usage(char *argv[]) {
-    fprintf(stderr, "usage: %s -s hostname:port -u username -c channelid /path/to/music\n", argv[0]);
+    fprintf(stderr, "usage: %s -h hostname:port -u username [-p password] -c channelid [-s stereo; celt only] /path/to/music\n", argv[0]);
     exit(1);
 }
 
@@ -156,7 +156,7 @@ void *jukebox_player(void *connptr) {
                     break;
                 case V3_EVENT_CHAT_MESSAGE:
                     if (strcmp(ev->data.chatmessage, "play worst band in the world") == 0) {
-                        v3_send_chat_message("we don't have an Creed songs...");
+                        v3_send_chat_message("we don't have any Creed songs...");
                     } else if (strncmp(ev->data.chatmessage, "play ", 5) == 0) {
                         char *searchspec;
                         int ctr;
@@ -242,8 +242,9 @@ void *jukebox_player(void *connptr) {
                 exit(1);
             }
             if (get_mp3_frame(mh, 2, sendbuf)) { // TODO: fix channel count!!!
-                v3_send_audio(V3_AUDIO_SENDTYPE_U2CCUR, 44100, (uint8_t *)sendbuf, 640*15);
+                v3_send_audio(V3_AUDIO_SENDTYPE_U2CCUR, 44100, (uint8_t *)sendbuf, 640*15*((stereo)?2:1), stereo);
                 usleep(108000);
+                //usleep((((640*15 / 2) * 1000) / 44100) * 1000);
             } else {
                 v3_stop_audio();
                 fprintf(stderr, "no more frames or some error\n");
@@ -257,27 +258,29 @@ void *jukebox_player(void *connptr) {
 }
 
 void send_now_playing(int filenum) {
-    char msgbuf[255];
+    char msgbuf[255] = "";
 
     if (!get_id3_info(musiclist[filenum])) {
         if (debug) {
             fprintf(stderr, "no valid id3 tag: %s\n", musiclist[filenum]->path);
         }
     }
-    snprintf(msgbuf, 254, "playing: ");
-    if (musiclist[filenum]->artist && strlen(musiclist[filenum]->artist)) {
-        strncat(msgbuf, musiclist[filenum]->artist, 254);
-    }
-    if (musiclist[filenum]->title && strlen(musiclist[filenum]->title)) {
-        strncat(msgbuf, " - \"", 254);
-        strncat(msgbuf, musiclist[filenum]->title, 254);
-        strncat(msgbuf, "\"", 254);
-    }
-    if (musiclist[filenum]->album && strlen(musiclist[filenum]->album)) {
-        strncat(msgbuf, " from ", 254);
-        strncat(msgbuf, musiclist[filenum]->album, 254);
-    }
-    if (strcmp(msgbuf, "playing: ") == 0) {
+    if (musiclist[filenum]->artist || musiclist[filenum]->title || musiclist[filenum]->album) {
+        if (musiclist[filenum]->artist && strlen(musiclist[filenum]->artist)) {
+            strncat(msgbuf, musiclist[filenum]->artist, 254);
+        }
+        if (musiclist[filenum]->title && strlen(musiclist[filenum]->title)) {
+            strncat(msgbuf, " - \"", 254);
+            strncat(msgbuf, musiclist[filenum]->title, 254);
+            strncat(msgbuf, "\"", 254);
+        }
+        if (musiclist[filenum]->album && strlen(musiclist[filenum]->album)) {
+            strncat(msgbuf, " from ", 254);
+            strncat(msgbuf, musiclist[filenum]->album, 254);
+        }
+        v3_set_text("", "", msgbuf, 1);
+    } else {
+        v3_set_text("", "", "", 1);
         strncat(msgbuf, musiclist[filenum]->path, 254);
     }
     v3_send_chat_message(msgbuf);
@@ -478,7 +481,9 @@ int get_mp3_frame(mpg123_handle *mh, int channels, int16_t *buf) {
             return 0;
         }
         readptr = (int16_t *)readbuffer;
-        if (channels == 2) {
+        if (stereo) {
+            memcpy((uint8_t *)buf, &readbuffer, channels*640*15);
+        } else {
             int ctr;
             for (ctr = 0; ctr < 640*15/2; ctr++) {
                 buf[ctr] = (readptr[ctr*2] + readptr[ctr*2+1]) / 2;
@@ -509,7 +514,7 @@ int main(int argc, char *argv[]) {
     pthread_t player;
     struct _conninfo conninfo;
 
-    while ((opt = getopt(argc, argv, "dh:p:u:c:")) != -1) {
+    while ((opt = getopt(argc, argv, "dh:p:u:c:s")) != -1) {
         switch (opt) {
             case 'd':
                 debug++;
@@ -525,6 +530,9 @@ int main(int argc, char *argv[]) {
                 break;
             case 'p':
                 conninfo.password = strdup(optarg);
+                break;
+            case 's':
+                stereo = 1;
                 break;
         }
     }
@@ -551,6 +559,12 @@ int main(int argc, char *argv[]) {
     fprintf(stderr, "server: %s\nusername: %s\nmedia path: %s\n", conninfo.server, conninfo.username, conninfo.path);
     scan_media_path(conninfo.path);
     fprintf(stderr, "found %d files in music path\n", musicfile_count);
+    if (!musicfile_count) {
+        return 1;
+    }
+    if (stereo) {
+        fprintf(stderr, "using 2 channels for the CELT codec\n");
+    }
     rc = pthread_create(&network, NULL, jukebox_connection, (void *)&conninfo);
     rc = pthread_create(&player, NULL, jukebox_player, (void *)&conninfo);
     signal (SIGINT, ctrl_c);

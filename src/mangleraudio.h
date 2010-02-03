@@ -78,7 +78,7 @@ class ManglerAudio
     public:
         ManglerAudio(Glib::ustring type);
         ~ManglerAudio();
-        void            open(uint32_t rate, bool type, uint32_t pcm_framesize = 0);
+        void            open(uint32_t rate, bool type, uint32_t pcm_framesize = 0, uint8_t channels = 1);
         bool            openOutput(uint32_t rate);
         void            closeOutput(bool drain);
         bool            openInput(uint32_t rate);
@@ -96,6 +96,7 @@ class ManglerAudio
 
         GAsyncQueue*    pcm_queue;
         uint32_t        rate;
+        uint8_t         channels;
 #ifdef HAVE_PULSE
         pa_sample_spec  pulse_samplespec;
         pa_buffer_attr  buffer_attr;

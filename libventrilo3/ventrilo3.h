@@ -323,6 +323,7 @@ struct _v3_event {
         uint32_t length;
         uint16_t send_type;
         uint32_t rate;
+        uint8_t  channels;
     } pcm;
     struct {
         uint16_t property;
@@ -340,8 +341,8 @@ struct _v3_event {
             int chan_auth_count;
             uint16_t chan_auth[32];
         } account;
-        int16_t sample16[8192];
-        uint8_t sample[16384];
+        int16_t sample16[16384];
+        uint8_t sample[32768];
         char    motd[2048];
         char    chatmessage[256];
         char    reason[128];
@@ -607,7 +608,7 @@ const v3_codec *v3_get_channel_codec(uint16_t channel_id);
 uint16_t    v3_get_user_channel(uint16_t id);
 uint16_t    v3_channel_requires_password(uint16_t channel_id);
 void        v3_start_audio(uint16_t send_type);
-uint32_t    v3_send_audio(uint16_t send_type, uint32_t rate, uint8_t *pcm, uint32_t length);
+uint32_t    v3_send_audio(uint16_t send_type, uint32_t rate, uint8_t *pcm, uint32_t length, uint8_t celt_stereo);
 void        v3_stop_audio(void);
 void        v3_set_server_opts(uint8_t type, uint8_t value);
 const v3_permissions *v3_get_permissions(void);

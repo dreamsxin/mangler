@@ -1018,7 +1018,7 @@ _v3_get_0x52(_v3_net_message *msg) {/*{{{*/
                         if (msub->header.codec_format > 3) {
                             // this should always be <= than 3, otherwise bail out
                             free(msub);
-                            _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown gsm codec format 0x%02X", msub->header.codec_format);
+                            _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown codec format for gsm 0x%02X", msub->header.codec_format);
                             _v3_func_leave("_v3_get_0x52 (0x01_in gsm)");
                             return false;
                         } else {
@@ -1031,11 +1031,29 @@ _v3_get_0x52(_v3_net_message *msg) {/*{{{*/
                             return true;
                         }
                         break;
+                    case 0x01: // CELT
+                    case 0x02:
+                        if (msub->header.codec_format != 0) {
+                            // this should always be 0, otherwise bail out
+                            free(msub);
+                            _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown codec format for celt 0x%02X", msub->header.codec_format);
+                            _v3_func_leave("_v3_get_0x52 (0x01_in celt)");
+                            return false;
+                        } else {
+                            _v3_debug(V3_DEBUG_PACKET_PARSE, "celt data length: %d", msub->header.data_length);
+                            _v3_debug(V3_DEBUG_PACKET_PARSE, "allocating %d bytes for celt frames", msub->header.data_length);
+                            msub->data.frames = malloc(msub->header.data_length);
+                            memcpy(msub->data.frames, msg->data + (sizeof(_v3_msg_0x52_0x01_in) - sizeof(msub->data)), msub->header.data_length);
+                            msg->contents = msub;
+                            _v3_func_leave("_v3_get_0x52 (0x01_in celt)");
+                            return true;
+                        }
+                        break;
                     case 0x03: // SPEEX
                         if (msub->header.codec_format > 32) {
                             // this should always be <= than 32, otherwise bail out
                             free(msub);
-                            _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown speex codec format %02X", msub->header.codec_format);
+                            _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown codec format for speex 0x%02X", msub->header.codec_format);
                             _v3_func_leave("_v3_get_0x52 (0x01_in speex)");
                             return false;
                         } else {
@@ -1188,6 +1206,8 @@ _v3_destroy_0x52(_v3_net_message *msg) {/*{{{*/
             msubin = (_v3_msg_0x52_0x01_in *)m;
             switch (msubin->header.codec) {
                 case 0x00: // GSM
+                case 0x01: // CELT
+                case 0x02:
                     if (msubin->data.frames) {
                         _v3_debug(V3_DEBUG_PACKET_PARSE, "freeing %d bytes of frames", msubin->header.data_length);
                         free(msubin->data.frames);

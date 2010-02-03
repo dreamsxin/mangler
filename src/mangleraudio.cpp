@@ -36,16 +36,17 @@ ManglerAudio::~ManglerAudio() {/*{{{*/
 }/*}}}*/
 
 void
-ManglerAudio::open(uint32_t rate, bool type, uint32_t pcm_framesize) {/*{{{*/
+ManglerAudio::open(uint32_t rate, bool type, uint32_t pcm_framesize, uint8_t channels) {/*{{{*/
     outputStreamOpen = false;
     inputStreamOpen = false;
     //fprintf(stderr, "creating object: %d \n", type);
     this->rate = rate;
+    this->channels = (channels == 2) ? 2 : 1;
 #ifdef HAVE_PULSE
     pulse_stream = NULL;
     pulse_samplespec.format = PA_SAMPLE_S16LE;
-    pulse_samplespec.rate = rate;
-    pulse_samplespec.channels = 1;
+    pulse_samplespec.rate = this->rate;
+    pulse_samplespec.channels = this->channels;
     buffer_attr.maxlength = -1;
     buffer_attr.tlength = -1;
     buffer_attr.prebuf = -1;
@@ -128,7 +129,7 @@ ManglerAudio::openOutput(uint32_t rate) {/*{{{*/
         if ((alsa_error = snd_pcm_set_params(alsa_stream, // pcm handle
                         SND_PCM_FORMAT_S16_LE,            // format
                         SND_PCM_ACCESS_RW_INTERLEAVED,    // access
-                        1,                                // channels
+                        channels,                         // channels
                         rate,                             // rate
                         true,                             // soft_resample
                         150000)) < 0) {                   // latency in usec (0.15 sec)
@@ -367,7 +368,7 @@ ManglerAudio::input(void) {/*{{{*/
         if (! drop) {
             //fprintf(stderr, "sending audio %d bytes of audio\n", ctr * pcm_framesize);
             // TODO: hard coding user to channel for now, need to implement U2U
-            if ((ret_rate = v3_send_audio(V3_AUDIO_SENDTYPE_U2CCUR, rate, buf, ctr * pcm_framesize)) != rate) {
+            if ((ret_rate = v3_send_audio(V3_AUDIO_SENDTYPE_U2CCUR, rate, buf, ctr * pcm_framesize, false)) != rate) {
                 if (!ret_rate || !openInput((rate = ret_rate))) { // reinitialize input with the new sample rate
                     stop_input = true; // else we're logged out or we couldn't reinitialize
                 }
@@ -399,8 +400,8 @@ ManglerAudio::output(void) {/*{{{*/
         return;
     }
 
-    //short circuit if we are muted
-    if(mangler->muteSound) {
+    // short circuit if we are muted
+    if (mangler->muteSound) {
         return;
     }
 
@@ -454,7 +455,7 @@ ManglerAudio::output(void) {/*{{{*/
             uint32_t pcmlen = queuedpcm->length;
             uint8_t *pcmptr = queuedpcm->sample;
             while ((buflen = pcmlen >= ALSA_BUF ? ALSA_BUF : pcmlen)) {
-                if ((alsa_frames = snd_pcm_writei(alsa_stream, pcmptr, buflen / sizeof(int16_t))) < 0) {
+                if ((alsa_frames = snd_pcm_writei(alsa_stream, pcmptr, buflen / (sizeof(int16_t) * channels))) < 0) {
                     if (alsa_frames == -EPIPE) {
                         snd_pcm_prepare(alsa_stream);
                     } else if ((alsa_error = snd_pcm_recover(alsa_stream, alsa_frames, 0)) < 0) {

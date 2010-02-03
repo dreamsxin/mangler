@@ -374,6 +374,10 @@ v3_codec v3_codecs[] = {
     { 0, 2, 640, 22050, -1, "GSM 6.10 22kHz" },
     { 0, 3, 640, 44100, -1, "GSM 6.10 44kHz" },
 #endif
+#if HAVE_CELT
+    { 1, 0, 640, 44100, -1, "CELT 0.7 44kHz" },
+    { 2, 0, 640, 22050, -1, "CELT 0.7 22kHz" },
+#endif
 #if HAVE_SPEEX
     { 3, 0, 320, 8000, 0, "Speex 8kHz Quality 0" },
     { 3, 1, 320, 8000, 1, "Speex 8kHz Quality 1" },
@@ -417,6 +421,8 @@ typedef struct __v3_decoders {
     gsm gsm;
 #endif
     void *speex;
+    void *celtmode;
+    void *celt;
 } _v3_decoders;
 
 _v3_decoders v3_decoders[65535];
