@@ -2815,18 +2815,30 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                                     break;
                             }
                             // don't waste resources if we don't need to deal with it
+                            static const int16_t maxsample = 0x7fff;
+                            static const int16_t minsample = 0x7fff + 1;
+                            register float tmpsample = 0;
+
                             if (_v3_master_volume != 79) {
                                 float multiplier = tan(_v3_master_volume/100.0);
                                 _v3_debug(V3_DEBUG_INFO, "master: amplifying to level %d (%3.10f multiplier)", _v3_master_volume, multiplier);
                                 for (ctr = 0; ctr < ev->pcm.length / 2; ctr++) {
-                                    ev->data.sample16[ctr] *= multiplier;
+                                    tmpsample = ev->data.sample16[ctr];
+                                    tmpsample *= multiplier;
+                                    ev->data.sample16[ctr] = (tmpsample > maxsample)
+                                        ? maxsample
+                                        : ((tmpsample < minsample) ? minsample : tmpsample);
                                 }
                             }
                             if (_v3_user_volumes[ev->user.id] != 79) {
                                 float multiplier = tan(_v3_user_volumes[ev->user.id]/100.0);
                                 _v3_debug(V3_DEBUG_INFO, "user: amplifying to level %d (%3.10f multiplier)", _v3_user_volumes[ev->user.id], multiplier);
                                 for (ctr = 0; ctr < ev->pcm.length / 2; ctr++) {
-                                    ev->data.sample16[ctr] *= multiplier;
+                                    tmpsample = ev->data.sample16[ctr];
+                                    tmpsample *= multiplier;
+                                    ev->data.sample16[ctr] = (tmpsample > maxsample)
+                                        ? maxsample
+                                        : ((tmpsample < minsample) ? minsample : tmpsample);
                                 }
                             }
                         }
