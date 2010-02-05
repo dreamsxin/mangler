@@ -273,18 +273,16 @@ ManglerAudio::input(void) {/*{{{*/
     uint32_t ret_rate;
     float seconds = 0;
     struct timeval start, now, diff;
-    uint16_t pcmmax;
     int ctr;
     bool drop;
+    register float pcmmax = 0;
 
     //fprintf(stderr, "getting input\n");
     for (;;) {
         //fprintf(stderr, "main input iteration\n");
-        if (stop_input == true) {
-            fprintf(stderr, "stopping input\n");
-            closeInput(true);
+        if (stop_input) {
             //throw Glib::Thread::Exit();
-            return;
+            break;
         }
         if (!inputStreamOpen) {
             fprintf(stderr, "input stream is not open\n");
@@ -353,32 +351,35 @@ ManglerAudio::input(void) {/*{{{*/
             timeval_subtract(&diff, &now, &start);
             seconds = (float)diff.tv_sec + ((float)diff.tv_usec / (float)1000000);
             //fprintf(stderr, "iteration after %f seconds with %d bytes\n", seconds, pcm_framesize*ctr);
-            pcmmax = 0;
-            for (int16_t *pcmptr = (int16_t *)(buf+(pcm_framesize*ctr)); pcmptr < (int16_t *)(buf+pcm_framesize*(ctr+1)); pcmptr++) {
-                pcmmax = abs(*pcmptr) > pcmmax ? abs(*pcmptr) : pcmmax;
+            if (seconds >= 0.115 / 2 && pcmmax) {
+                pcmmax -= 0.115 / 2;
+                pcmmax = (pcmmax < 0) ? 0 : pcmmax;
+                gdk_threads_enter();
+                mangler->inputvumeter->set_fraction(pcmmax);
+                gdk_threads_leave();
+                pcmmax = 0;
             }
-            if (pcmmax > 24576) {
-                pcmmax = 24576;
-            }
-            gdk_threads_enter();
-            mangler->inputvumeter->set_fraction(pcmmax/24576.0);
-            gdk_threads_leave();
             ctr++;
         }
-        if (! drop) {
+        if (!drop && !stop_input) {
             //fprintf(stderr, "sending audio %d bytes of audio\n", ctr * pcm_framesize);
             // TODO: hard coding user to channel for now, need to implement U2U
-            if ((ret_rate = v3_send_audio(V3_AUDIO_SENDTYPE_U2CCUR, rate, buf, ctr * pcm_framesize, false)) != rate) {
+            if ((ret_rate = v3_send_audio(V3_AUDIO_SENDTYPE_U2CCUR, rate, buf, pcm_framesize * ctr, false)) != rate) {
                 if (!ret_rate || !openInput((rate = ret_rate))) { // reinitialize input with the new sample rate
                     stop_input = true; // else we're logged out or we couldn't reinitialize
                 }
             }
         }
+        for (int16_t *pcmptr = (int16_t *)buf; pcmptr < (int16_t *)(buf+(pcm_framesize*ctr)); pcmptr++) {
+            pcmmax = abs(*pcmptr) > pcmmax ? abs(*pcmptr) : pcmmax;
+        }
+        pcmmax = log10(((pcmmax / 0x7fff) * 9) + 1);
+        pcmmax = (pcmmax > 1) ? 1 : pcmmax;
+        gdk_threads_enter();
+        mangler->inputvumeter->set_fraction(pcmmax);
+        gdk_threads_leave();
         free(buf);
         buf = NULL;
-        if (stop_input == true) {
-            break;
-        }
     }
     //fprintf(stderr, "done with input\n");
     v3_stop_audio();
