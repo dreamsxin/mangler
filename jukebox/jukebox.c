@@ -84,6 +84,7 @@ int get_id3_info(musicfile *musicfile);
 char *id3strdup(mpg123_string *inlines);
 int get_random_number(int min, int max);
 void send_now_playing(int filenum);
+int select_channel(void);
 
 
 void ctrl_c (int signum) {
@@ -94,7 +95,7 @@ void ctrl_c (int signum) {
 }
 
 void usage(char *argv[]) {
-    fprintf(stderr, "usage: %s -h hostname:port -u username [-p password] -c channelid [-s stereo; celt only] /path/to/music\n", argv[0]);
+    fprintf(stderr, "usage: %s -h hostname:port -u username [-p password] [-c channelid] [-s stereo; celt only] /path/to/music\n", argv[0]);
     exit(1);
 }
 
@@ -150,7 +151,11 @@ void *jukebox_player(void *connptr) {
                     if (debug) {
                         fprintf(stderr, "login complete...");
                     }
-                    v3_change_channel(atoi(conninfo->channelid), "");
+                    if (!conninfo->channelid) {
+                        v3_change_channel(select_channel(), "");
+                    } else {
+                        v3_change_channel(atoi(conninfo->channelid), "");
+                    }
                     v3_join_chat();
                     connected = 1;
                     break;
@@ -506,6 +511,22 @@ int get_random_number(int min, int max) {
     return min + (int)( ((float)max) * rand() / ( RAND_MAX + 1.0 ) );
 }
 
+int select_channel(void) {
+    int ctr;
+    v3_channel *c;
+    char buf[16];
+
+    for (ctr = 0; ctr < 65535; ctr++) {
+        if ((c = v3_get_channel(ctr))) {
+            fprintf(stdout, "%d: %s\n", c->id, c->name);
+            v3_free_channel(c);
+        }
+    }
+    fprintf(stdout, "Enter a channel id: ");
+    fgets(buf, 15, stdin);
+    return atoi(buf);
+}
+
 
 int main(int argc, char *argv[]) {
     int opt;
@@ -514,6 +535,7 @@ int main(int argc, char *argv[]) {
     pthread_t player;
     struct _conninfo conninfo;
 
+    conninfo.channelid = 0;
     while ((opt = getopt(argc, argv, "dh:p:u:c:s")) != -1) {
         switch (opt) {
             case 'd':
@@ -542,10 +564,6 @@ int main(int argc, char *argv[]) {
     }
     if (! conninfo.username)  {
         fprintf(stderr, "error: username (-u) was not specified\n");
-        usage(argv);
-    }
-    if (! conninfo.channelid) {
-        fprintf(stderr, "error: channel id (-c) was not specified\n");
         usage(argv);
     }
     if (! conninfo.password) {
