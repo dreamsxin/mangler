@@ -78,6 +78,9 @@ libventrilo3_la_DEPENDENCIES = $(am__DEPENDENCIES_1) \
 am_libventrilo3_la_OBJECTS = libventrilo3.lo libventrilo3_message.lo \
 	ventrilo3_handshake.lo
 libventrilo3_la_OBJECTS = $(am_libventrilo3_la_OBJECTS)
+libventrilo3_la_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
+	$(libventrilo3_la_LDFLAGS) $(LDFLAGS) -o $@
 PROGRAMS = $(noinst_PROGRAMS)
 am_lv3_test_OBJECTS = lv3_test.$(OBJEXT)
 lv3_test_OBJECTS = $(am_lv3_test_OBJECTS)
@@ -245,6 +248,7 @@ ACLOCAL_AMFLAGS = -I m4
 lib_LTLIBRARIES = libventrilo3.la
 libventrilo3_la_SOURCES = libventrilo3.c  libventrilo3_message.c  ventrilo3_handshake.c
 libventrilo3_la_LIBADD = $(pulse_LIBS) $(speex_LIBS) $(gsm_LIBS) -lm
+libventrilo3_la_LDFLAGS = -version 0:0:0
 lv3_test_SOURCES = lv3_test.c
 INCLUDES = $(pulse_CFLAGS) $(speex_CFLAGS)
 lv3_test_LDADD = libventrilo3.la
@@ -314,7 +318,7 @@ clean-libLTLIBRARIES:
 	  rm -f "$${dir}/so_locations"; \
 	done
 libventrilo3.la: $(libventrilo3_la_OBJECTS) $(libventrilo3_la_DEPENDENCIES) 
-	$(LINK) -rpath $(libdir) $(libventrilo3_la_OBJECTS) $(libventrilo3_la_LIBADD) $(LIBS)
+	$(libventrilo3_la_LINK) -rpath $(libdir) $(libventrilo3_la_OBJECTS) $(libventrilo3_la_LIBADD) $(LIBS)
 
 clean-noinstPROGRAMS:
 	@list='$(noinst_PROGRAMS)'; test -n "$$list" || exit 0; \
