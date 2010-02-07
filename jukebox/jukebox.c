@@ -104,7 +104,7 @@ void ctrl_c (int signum) {
 }
 
 void usage(char *argv[]) {
-    fprintf(stderr, "usage: %s -h hostname:port -u username [-p password] [-c channelid] [-s stereo; celt only] /path/to/music\n", argv[0]);
+    fprintf(stderr, "usage: %s -h hostname:port -u username [-p password] [-c channelid] [-v volume_multipler] [-s stereo; celt only] /path/to/music\n", argv[0]);
     exit(1);
 }
 
@@ -196,11 +196,21 @@ void *jukebox_player(void *connptr) {
                     }
                     break;
                 case V3_EVENT_CHAT_MESSAGE:
-                    if (strcmp(ev->data.chatmessage, "play worst band in the world") == 0) {
+                    if (strcmp(ev->data.chatmessage, "!play worst band in the world") == 0) {
                         v3_send_chat_message("We don't have any Creed songs...");
-                    } else if (strcasecmp(ev->data.chatmessage, "play creed") == 0) {
+                    } else if (strcasecmp(ev->data.chatmessage, "!play creed") == 0) {
                         v3_send_chat_message("No.");
-                    } else if (! stopped && strncmp(ev->data.chatmessage, "play ", 5) == 0) {
+                    } else if (! stopped && strncmp(ev->data.chatmessage, "!volume ", 8) == 0) {
+                        char *volume = ev->data.chatmessage + 8;
+                        if (atof(volume) == 0) {
+                            break;
+                        }
+                        if (atof(volume) > 5) {
+                            break;
+                        }
+                        conninfo->volume = atof(volume);
+                        fprintf(stderr, "change volume to %f\n", conninfo->volume);
+                    } else if (! stopped && strncmp(ev->data.chatmessage, "!play ", 6) == 0) {
                         char *searchspec;
                         int ctr;
                         int found = 0;
