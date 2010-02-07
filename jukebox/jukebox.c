@@ -52,6 +52,7 @@ struct _conninfo {
     char *password;
     char *channelid;
     char *path;
+    float volume;
 };
 
 struct _musicfile {
@@ -149,6 +150,7 @@ void *jukebox_player(void *connptr) {
     uint64_t audio_dur, code_dur;
     uint32_t res_len;
     uint32_t bytestosend, bytestoread;
+    int ctr;
 
     conninfo = connptr;
     for (;;) {
@@ -331,6 +333,9 @@ void *jukebox_player(void *connptr) {
 
             if (get_mp3_frame(mh, 2, sendbuf, bytestoread)) { // TODO: fix channel count!!!
                 res_len = pcm_resample_for_channel(sendbuf, codec->rate, bytestoread, bytestosend);
+                for (ctr = 0; ctr < bytestosend/2; ctr++) {
+                    sendbuf[ctr] *= conninfo->volume;
+                }
                 v3_send_audio(V3_AUDIO_SENDTYPE_U2CCUR, codec->rate, (uint8_t *)sendbuf, bytestosend, stereo);
                 gettimeofday(&tm_end, NULL);
                 audio_dur = (bytestosend/2/(double)(codec->rate)*1000000.0);
@@ -678,7 +683,8 @@ int main(int argc, char *argv[]) {
     struct _conninfo conninfo;
 
     conninfo.channelid = 0;
-    while ((opt = getopt(argc, argv, "dh:p:u:c:s")) != -1) {
+    conninfo.volume = 1;
+    while ((opt = getopt(argc, argv, "dh:p:u:c:sv:")) != -1) {
         switch (opt) {
             case 'd':
                 debug++;
@@ -691,6 +697,9 @@ int main(int argc, char *argv[]) {
                 break;
             case 'c':
                 conninfo.channelid = strdup(optarg);
+                break;
+            case 'v':
+                conninfo.volume = atof(optarg);
                 break;
             case 'p':
                 conninfo.password = strdup(optarg);
