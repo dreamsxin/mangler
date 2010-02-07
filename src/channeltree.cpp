@@ -708,11 +708,12 @@ ManglerChannelTree::channelView_row_activated_cb(const Gtk::TreeModel::Path& pat
         }
         if (id != 0) {
             channel = v3_get_channel(id);
+            const v3_permissions *perms = v3_get_permissions();
             if (! channel) {
                 fprintf(stderr, "failed to retrieve channel information for channel id %d", id);
                 return;
             }
-            if ((pw_cid = v3_channel_requires_password(channel->id))) {  // Channel is password protected
+            if (!perms->srv_admin && (pw_cid = v3_channel_requires_password(channel->id))) {  // Channel is password protected
                 password_required = true;
                 password = getChannelSavedPassword(pw_cid);
                 // if we didn't find a saved password, prompt the user
@@ -818,7 +819,6 @@ ManglerChannelTree::channelView_buttonpress_event_cb(GdkEventButton* event) {/*{
                 rcmenu_user->popup(event->button, event->time);
                 v3_free_user(user);
             } else {
-                rcmenu_channel->popup(event->button, event->time);
                 builder->get_widget("setDefaultChannel", checkmenuitem);
                 if ( mangler->connectedServerId == -1) { //Hide default channel on quick connects
                     checkmenuitem->set_sensitive(false);
@@ -837,6 +837,8 @@ ManglerChannelTree::channelView_buttonpress_event_cb(GdkEventButton* event) {/*{
                         signalDefaultChannel.unblock();
                     }
                 }
+                rcmenu_channel->set_title("test");
+                rcmenu_channel->popup(event->button, event->time);
             }
         }
     }
