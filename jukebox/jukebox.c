@@ -205,11 +205,10 @@ void *jukebox_player(void *connptr) {
                         if (atof(volume) == 0) {
                             break;
                         }
-                        if (atof(volume) > 5) {
+                        if (atof(volume) > 1) {
                             break;
                         }
                         conninfo->volume = atof(volume);
-                        fprintf(stderr, "change volume to %f\n", conninfo->volume);
                     } else if (! stopped && strncmp(ev->data.chatmessage, "!play ", 6) == 0) {
                         char *searchspec;
                         int ctr;
@@ -251,9 +250,11 @@ void *jukebox_player(void *connptr) {
                                         fprintf(stderr, "could not open: %s\n", musiclist[filenum]->path);
                                     }
                                     continue;
+                                } else {
+                                    break;
                                 }
                             }
-                            if (attempts == 20) {
+                            if (attempts > 20) {
                                 // give up and just pick a random song
                                 v3_send_chat_message("Apparently something matched, but it doesn't appear to be a song... so I fail.  Here's something else");
                                 playing = 0;
@@ -263,15 +264,14 @@ void *jukebox_player(void *connptr) {
                                 v3_start_audio(V3_AUDIO_SENDTYPE_U2CCUR);
                             }
                         }
-                    } else if (! stopped && strcmp(ev->data.chatmessage, "next track") == 0) {
+                    } else if (! stopped && strcmp(ev->data.chatmessage, "!next track") == 0) {
                         v3_stop_audio();
                         close_mp3(mh);
                         mh = NULL;
                         playing = 0;
                     } else if (strcmp(ev->data.chatmessage, "!move") == 0) {
                         user = v3_get_user(ev->user.id);
-                        v3_send_chat_message("Moving");
-                        v3_change_channel(user->channel, "");
+                        v3_send_chat_message("Moving"); v3_change_channel(user->channel, "");
                         v3_free_user(user);
                     } else if (strcmp(ev->data.chatmessage, "!start") == 0) {
                         if ((codec->codec == 0 || codec->codec == 3) && codec->rate >= 11025) {
@@ -709,7 +709,9 @@ int main(int argc, char *argv[]) {
                 conninfo.channelid = strdup(optarg);
                 break;
             case 'v':
-                conninfo.volume = atof(optarg);
+                if (atof(optarg) > 0 && atof(optarg) < 1) {
+                    conninfo.volume = atof(optarg);
+                }
                 break;
             case 'p':
                 conninfo.password = strdup(optarg);
