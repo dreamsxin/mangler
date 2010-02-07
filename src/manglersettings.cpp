@@ -93,6 +93,9 @@ ManglerSettings::ManglerSettings(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
     audioPlayerComboBox->pack_start(audioPlayerColumns.name);
     audioPlayerComboBox->set_active(audioPlayerNoneRow);
 
+    builder->get_widget("settingsEnableVoiceActivationCheckButton", checkbutton);
+    checkbutton->signal_toggled().connect(sigc::mem_fun(this, &ManglerSettings::settingsEnableVoiceActivationCheckButton_toggled_cb));
+
     builder->get_widget("audioSubsystemComboBox", audioSubsystemComboBox);
     audioSubsystemTreeModel = Gtk::ListStore::create(audioSubsystemColumns);
     audioSubsystemComboBox->set_model(audioSubsystemTreeModel);
@@ -211,6 +214,14 @@ void ManglerSettings::applySettings(void) {/*{{{*/
     }
     mangler->integration->update(true);
 
+    // Voice Activation
+    builder->get_widget("settingsEnableVoiceActivationCheckButton", checkbutton);
+    config.VoiceActivationEnabled = checkbutton->get_active() ? true : false;
+    builder->get_widget("settingsVoiceActivationSilenceDurationSpinButton", spinbutton);
+    config.VoiceActivationSilenceDuration = spinbutton->get_value() * 1000.0;
+    builder->get_widget("settingsVoiceActivationSensitivitySpinButton", spinbutton);
+    config.VoiceActivationSensitivity = spinbutton->get_value_as_int();
+
     // Audio Devices
     iter = inputDeviceComboBox->get_active();
     if (iter) {
@@ -327,6 +338,14 @@ void ManglerSettings::initSettings(void) {/*{{{*/
        iterate through whatever is available based on what we can find and populate the store
        audioPlayerComboBox->set_active(iterOfSelectedinStore);
     */
+
+    // Voice Activation
+    builder->get_widget("settingsEnableVoiceActivationCheckButton", checkbutton);
+    checkbutton->set_active(config.VoiceActivationEnabled ? true : false);
+    builder->get_widget("settingsVoiceActivationSilenceDurationSpinButton", spinbutton);
+    spinbutton->set_value(config.VoiceActivationSilenceDuration / 1000.0);
+    builder->get_widget("settingsVoiceActivationSensitivitySpinButton", spinbutton);
+    spinbutton->set_value(config.VoiceActivationSensitivity);
 
     // Audio Devices
     // the proper devices are selected in the window->show() callback
@@ -472,9 +491,23 @@ void ManglerSettings::settingsEnablePTTKeyCheckButton_toggled_cb(void) {/*{{{*/
 void ManglerSettings::settingsEnableAudioIntegrationCheckButton_toggled_cb(void) {/*{{{*/
     builder->get_widget("settingsEnableAudioIntegrationCheckButton", checkbutton);
     if (checkbutton->get_active()) {
+        builder->get_widget("settingsAudioIntegrationLabel", label);
+        label->set_sensitive(true);
         audioPlayerComboBox->set_sensitive(true);
     } else {
+        builder->get_widget("settingsAudioIntegrationLabel", label);
+        label->set_sensitive(false);
         audioPlayerComboBox->set_sensitive(false);
+    }
+}/*}}}*/
+void ManglerSettings::settingsEnableVoiceActivationCheckButton_toggled_cb(void) {/*{{{*/
+    builder->get_widget("settingsEnableVoiceActivationCheckButton", checkbutton);
+    if (checkbutton->get_active()) {
+        builder->get_widget("settingsVoiceActivationTable", table);
+        table->set_sensitive(true);
+    } else {
+        builder->get_widget("settingsVoiceActivationTable", table);
+        table->set_sensitive(false);
     }
 }/*}}}*/
 /*
@@ -496,10 +529,6 @@ void ManglerSettings::settingsPTTKeyButton_clicked_cb(void) {/*{{{*/
         button->set_sensitive(false);
         builder->get_widget("settingsOkButton", button);
         button->set_sensitive(false);
-        builder->get_widget("settingsMouseDeviceComboBox", combobox);
-        combobox->set_sensitive(false);
-        builder->get_widget("settingsPTTMouseButton", button);
-        button->set_sensitive(false);
         Glib::signal_timeout().connect( sigc::mem_fun(*this, &ManglerSettings::settingsPTTKeyDetect), 100 );
     } else {
         isDetectingKey = false;
@@ -509,10 +538,6 @@ void ManglerSettings::settingsPTTKeyButton_clicked_cb(void) {/*{{{*/
         builder->get_widget("settingsApplyButton", button);
         button->set_sensitive(true);
         builder->get_widget("settingsOkButton", button);
-        button->set_sensitive(true);
-        builder->get_widget("settingsMouseDeviceComboBox", combobox);
-        combobox->set_sensitive(true);
-        builder->get_widget("settingsPTTMouseButton", button);
         button->set_sensitive(true);
         builder->get_widget("settingsPTTKeyValueLabel", label);
         // if the text is as follows, the user pressed done without any keys
@@ -532,6 +557,8 @@ void ManglerSettings::settingsEnablePTTMouseCheckButton_toggled_cb(void) {/*{{{*
         label->set_sensitive(true);
         builder->get_widget("settingsPTTMouseButton", button);
         button->set_sensitive(true);
+        builder->get_widget("settingsMouseDeviceLabel", label);
+        label->set_sensitive(true);
         builder->get_widget("settingsMouseDeviceComboBox", combobox);
         combobox->set_sensitive(true);
     } else {
@@ -542,6 +569,8 @@ void ManglerSettings::settingsEnablePTTMouseCheckButton_toggled_cb(void) {/*{{{*
         label->set_sensitive(false);
         builder->get_widget("settingsPTTMouseButton", button);
         button->set_sensitive(false);
+        builder->get_widget("settingsMouseDeviceLabel", label);
+        label->set_sensitive(false);
         builder->get_widget("settingsMouseDeviceComboBox", combobox);
         combobox->set_sensitive(false);
     }

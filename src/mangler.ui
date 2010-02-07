@@ -1646,6 +1646,7 @@ out the encryption
                         <child>
                           <object class="GtkLabel" id="settingsPTTKeyLabel">
                             <property name="visible">True</property>
+                            <property name="sensitive">False</property>
                             <property name="label" translatable="yes">Push To Talk Key:</property>
                           </object>
                           <packing>
@@ -1669,6 +1670,7 @@ out the encryption
                             <property name="label" translatable="yes">Set</property>
                             <property name="width_request">75</property>
                             <property name="visible">True</property>
+                            <property name="sensitive">False</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">True</property>
                           </object>
@@ -1680,6 +1682,7 @@ out the encryption
                       </object>
                       <packing>
                         <property name="expand">False</property>
+                        <property name="padding">2</property>
                         <property name="position">1</property>
                       </packing>
                     </child>
@@ -1712,6 +1715,7 @@ out the encryption
                         <child>
                           <object class="GtkLabel" id="settingsMouseDeviceLabel">
                             <property name="visible">True</property>
+                            <property name="sensitive">False</property>
                             <property name="xalign">0.05000000074505806</property>
                             <property name="xpad">3</property>
                             <property name="label" translatable="yes">Select Mouse:</property>
@@ -1724,6 +1728,7 @@ out the encryption
                         <child>
                           <object class="GtkComboBox" id="settingsMouseDeviceComboBox">
                             <property name="visible">True</property>
+                            <property name="sensitive">False</property>
                           </object>
                           <packing>
                             <property name="padding">1</property>
@@ -1733,6 +1738,7 @@ out the encryption
                       </object>
                       <packing>
                         <property name="expand">False</property>
+                        <property name="padding">2</property>
                         <property name="position">4</property>
                       </packing>
                     </child>
@@ -1742,6 +1748,7 @@ out the encryption
                         <child>
                           <object class="GtkLabel" id="settingsPTTMouseLabel">
                             <property name="visible">True</property>
+                            <property name="sensitive">False</property>
                             <property name="label" translatable="yes">Push To Talk Button:</property>
                           </object>
                           <packing>
@@ -1764,6 +1771,7 @@ out the encryption
                             <property name="label" translatable="yes">Set</property>
                             <property name="width_request">75</property>
                             <property name="visible">True</property>
+                            <property name="sensitive">False</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">True</property>
                           </object>
@@ -1775,6 +1783,7 @@ out the encryption
                       </object>
                       <packing>
                         <property name="expand">False</property>
+                        <property name="padding">2</property>
                         <property name="position">5</property>
                       </packing>
                     </child>
@@ -1794,7 +1803,7 @@ out the encryption
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">False</property>
-                        <property name="tooltip_text" translatable="yes">Show the track that's currently playing in your audio player software to other users in the channel list</property>
+                        <property name="tooltip_text" translatable="yes">Show track information in your comment field which is currently playing in your media player software to other users in the channel list.</property>
                         <property name="draw_indicator">True</property>
                       </object>
                       <packing>
@@ -1808,6 +1817,7 @@ out the encryption
                         <child>
                           <object class="GtkLabel" id="settingsAudioIntegrationLabel">
                             <property name="visible">True</property>
+                            <property name="sensitive">False</property>
                             <property name="xalign">0.94999998807907104</property>
                             <property name="label" translatable="yes">Media Player:</property>
                           </object>
@@ -1819,6 +1829,7 @@ out the encryption
                         <child>
                           <object class="GtkComboBox" id="settingsAudioIntegrationComboBox">
                             <property name="visible">True</property>
+                            <property name="sensitive">False</property>
                           </object>
                           <packing>
                             <property name="padding">5</property>
@@ -1828,7 +1839,126 @@ out the encryption
                       </object>
                       <packing>
                         <property name="expand">False</property>
+                        <property name="padding">2</property>
                         <property name="position">8</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkHSeparator" id="hseparator11">
+                        <property name="visible">True</property>
+                      </object>
+                      <packing>
+                        <property name="expand">False</property>
+                        <property name="padding">6</property>
+                        <property name="position">9</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkCheckButton" id="settingsEnableVoiceActivationCheckButton">
+                        <property name="label" translatable="yes">Enable Voice Activation</property>
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <property name="receives_default">False</property>
+                        <property name="tooltip_text" translatable="yes">Specify the amount of sensitivity in percentage to activate transmit and the duration of silence in seconds to deactivate transmit. This setting is only applicable to the transmit toggle button.</property>
+                        <property name="draw_indicator">True</property>
+                      </object>
+                      <packing>
+                        <property name="expand">False</property>
+                        <property name="position">10</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkTable" id="settingsVoiceActivationTable">
+                        <property name="visible">True</property>
+                        <property name="sensitive">False</property>
+                        <property name="n_rows">2</property>
+                        <property name="n_columns">3</property>
+                        <child>
+                          <object class="GtkLabel" id="settingsVoiceActivationSilenceDurationLabel">
+                            <property name="visible">True</property>
+                            <property name="xalign">0.94999998807907104</property>
+                            <property name="label" translatable="yes">Silence Duration:</property>
+                          </object>
+                          <packing>
+                            <property name="x_options">GTK_FILL</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkSpinButton" id="settingsVoiceActivationSilenceDurationSpinButton">
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <property name="invisible_char">&#x25CF;</property>
+                            <property name="adjustment">settingsVoiceActivationSilenceDurationSpinButtonAdjustment</property>
+                            <property name="climb_rate">0.5</property>
+                            <property name="digits">2</property>
+                            <property name="numeric">True</property>
+                          </object>
+                          <packing>
+                            <property name="left_attach">1</property>
+                            <property name="right_attach">2</property>
+                            <property name="x_options">GTK_FILL</property>
+                            <property name="x_padding">5</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkLabel" id="settingsVoiceActivationSilenceDurationSecondsLabel">
+                            <property name="visible">True</property>
+                            <property name="xalign">0.0099999997764825821</property>
+                            <property name="label" translatable="yes">seconds</property>
+                          </object>
+                          <packing>
+                            <property name="left_attach">2</property>
+                            <property name="right_attach">3</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkLabel" id="settingsVoiceActivationSensitivityLabel">
+                            <property name="visible">True</property>
+                            <property name="xalign">0.94999998807907104</property>
+                            <property name="label" translatable="yes">Sensitivity:</property>
+                          </object>
+                          <packing>
+                            <property name="top_attach">1</property>
+                            <property name="bottom_attach">2</property>
+                            <property name="x_options">GTK_FILL</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkSpinButton" id="settingsVoiceActivationSensitivitySpinButton">
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <property name="invisible_char">&#x25CF;</property>
+                            <property name="adjustment">settingsVoiceActivationSensitivitySpinButtonAdjustment</property>
+                            <property name="climb_rate">1</property>
+                            <property name="numeric">True</property>
+                          </object>
+                          <packing>
+                            <property name="left_attach">1</property>
+                            <property name="right_attach">2</property>
+                            <property name="top_attach">1</property>
+                            <property name="bottom_attach">2</property>
+                            <property name="x_options">GTK_FILL</property>
+                            <property name="x_padding">5</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkLabel" id="settingsVoiceActivationSensitivityPercentLabel">
+                            <property name="visible">True</property>
+                            <property name="xalign">0.0099999997764825821</property>
+                            <property name="label" translatable="yes">%</property>
+                          </object>
+                          <packing>
+                            <property name="left_attach">2</property>
+                            <property name="right_attach">3</property>
+                            <property name="top_attach">1</property>
+                            <property name="bottom_attach">2</property>
+                          </packing>
+                        </child>
+                      </object>
+                      <packing>
+                        <property name="expand">False</property>
+                        <property name="padding">2</property>
+                        <property name="position">11</property>
                       </packing>
                     </child>
                   </object>
@@ -2136,7 +2266,7 @@ Notifications are the sound effects that are played when you login, logout, a us
                       <object class="GtkLabel" id="CustomInputLabel">
                         <property name="visible">True</property>
                         <property name="xalign">0.94999998807907104</property>
-                        <property name="label" translatable="yes">Custom Input Device</property>
+                        <property name="label" translatable="yes">Custom Input Device:</property>
                       </object>
                       <packing>
                         <property name="top_attach">2</property>
@@ -2147,7 +2277,7 @@ Notifications are the sound effects that are played when you login, logout, a us
                       <object class="GtkLabel" id="CustomOutputLabel">
                         <property name="visible">True</property>
                         <property name="xalign">0.94999998807907104</property>
-                        <property name="label" translatable="yes">Custom Output Device</property>
+                        <property name="label" translatable="yes">Custom Output Device:</property>
                       </object>
                       <packing>
                         <property name="top_attach">4</property>
@@ -2386,9 +2516,11 @@ Notifications are the sound effects that are played when you login, logout, a us
                             <child>
                               <object class="GtkLabel" id="debugTextLabel">
                                 <property name="visible">True</property>
-                                <property name="xalign">0.05000000074505806</property>
+                                <property name="xalign">0</property>
                                 <property name="xpad">1</property>
-                                <property name="label" translatable="yes">&lt;span weight="bold"&gt;WARNING:&lt;/span&gt; Enabling these debug setings can generate a substantial amount of output and use more CPU resources.  These are probably only useful for developers.</property>
+                                <property name="label" translatable="yes">&lt;span weight="bold"&gt;WARNING:&lt;/span&gt; Enabling these debug settings can generate a substantial amount of output and resources.
+
+These are useful for developers.</property>
                                 <property name="use_markup">True</property>
                                 <property name="wrap">True</property>
                                 <property name="wrap_mode">word-char</property>
@@ -2418,7 +2550,7 @@ Notifications are the sound effects that are played when you login, logout, a us
                         <child type="label">
                           <object class="GtkLabel" id="label101">
                             <property name="visible">True</property>
-                            <property name="label" translatable="yes">&lt;b&gt;Enable Debug Output&lt;/b&gt;</property>
+                            <property name="label" translatable="yes">&lt;b&gt;Debug Output&lt;/b&gt;</property>
                             <property name="use_markup">True</property>
                           </object>
                         </child>
@@ -2458,6 +2590,7 @@ Notifications are the sound effects that are played when you login, logout, a us
             </child>
           </object>
           <packing>
+            <property name="padding">2</property>
             <property name="position">0</property>
           </packing>
         </child>
@@ -4747,5 +4880,15 @@ Notifications are the sound effects that are played when you login, logout, a us
   <object class="GtkImage" id="image8">
     <property name="visible">True</property>
     <property name="stock">gtk-connect</property>
+  </object>
+  <object class="GtkAdjustment" id="settingsVoiceActivationSilenceDurationSpinButtonAdjustment">
+    <property name="upper">300</property>
+    <property name="step_increment">0.5</property>
+    <property name="page_increment">1</property>
+  </object>
+  <object class="GtkAdjustment" id="settingsVoiceActivationSensitivitySpinButtonAdjustment">
+    <property name="upper">100</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">10</property>
   </object>
 </interface>

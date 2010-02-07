@@ -49,6 +49,9 @@ ManglerConfig::ManglerConfig() {/*{{{*/
     PushToTalkMouseValue            = "";
     AudioIntegrationEnabled         = false;
     AudioIntegrationPlayer          = 0;
+    VoiceActivationEnabled          = false;
+    VoiceActivationSilenceDuration  = 2000;
+    VoiceActivationSensitivity      = 25;
     notificationLoginLogout         = true;
     notificationChannelEnterLeave   = true;
     notificationTransmitStartStop   = true;
@@ -81,6 +84,9 @@ bool ManglerConfig::save() {/*{{{*/
     put("PushToTalkMouseValue", PushToTalkMouseValue);
     put("AudioIntegrationEnabled", AudioIntegrationEnabled);
     put("AudioIntegrationPlayer", AudioIntegrationPlayer);
+    put("VoiceActivationEnabled", VoiceActivationEnabled);
+    put("VoiceActivationSilenceDuration", VoiceActivationSilenceDuration);
+    put("VoiceActivationSensitivity", VoiceActivationSensitivity);
     put("inputDeviceName", inputDeviceName);
     put("inputDeviceCustomName", inputDeviceCustomName);
     put("outputDeviceName", outputDeviceName);
@@ -396,7 +402,14 @@ void ManglerConfig::load() {/*{{{*/
     }
     AudioIntegrationEnabled       = get("AudioIntegrationEnabled") == "1" ? true : false; // default false
     if (get("AudioIntegrationPlayer").length()) {
-        AudioIntegrationPlayer        = atoi(get("AudioIntegrationPlayer").c_str());
+        AudioIntegrationPlayer    = atoi(get("AudioIntegrationPlayer").c_str());
+    }
+    VoiceActivationEnabled        = get("VoiceActivationEnabled") == "1" ? true : false; // default false
+    if (get("VoiceActivationSilenceDuration").length()) {
+        VoiceActivationSilenceDuration = atoi(get("VoiceActivationSilenceDuration").c_str());
+    }
+    if (get("VoiceActivationSensitivity").length()) {
+        VoiceActivationSensitivity = atoi(get("VoiceActivationSensitivity").c_str());
     }
     inputDeviceName               = get("inputDeviceName");
     inputDeviceCustomName         = get("inputDeviceCustomName");

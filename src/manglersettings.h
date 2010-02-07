@@ -42,6 +42,8 @@ class ManglerSettings
         Gtk::Window         *window;
         Gtk::CheckButton    *checkbutton;
         Gtk::VBox           *vbox;
+        Gtk::Table          *table;
+        Gtk::SpinButton     *spinbutton;
         Gtk::HScale         *volumehscale;
         Gtk::Adjustment     *volumeAdjustment;
         sigc::connection    volumeAdjustSignalConnection;
@@ -147,6 +149,7 @@ class ManglerSettings
         void settingsEnablePTTMouseCheckButton_toggled_cb(void);
         void settingsPTTMouseButton_clicked_cb(void);
         void settingsEnableAudioIntegrationCheckButton_toggled_cb(void);
+        void settingsEnableVoiceActivationCheckButton_toggled_cb(void);
         void audioSubsystemComboBox_changed_cb(void);
         void updateDeviceComboBoxes(void);
         void inputDeviceComboBox_changed_cb(void);

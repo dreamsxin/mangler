@@ -80,9 +80,9 @@ class ManglerAudio
         ~ManglerAudio();
         void            open(uint32_t rate, bool type, uint32_t pcm_framesize = 0, uint8_t channels = 1);
         bool            openOutput(uint32_t rate);
-        void            closeOutput(bool drain);
+        void            closeOutput(bool drain = false);
         bool            openInput(uint32_t rate);
-        void            closeInput(bool drain);
+        void            closeInput(bool drain = false);
         void            queue(uint32_t length, uint8_t *sample);
         void            output(void);
         void            input(void);

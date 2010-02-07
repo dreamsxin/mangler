@@ -112,21 +112,25 @@ ManglerAudio::openOutput(uint32_t rate) {/*{{{*/
 #endif
 #ifdef HAVE_ALSA
     if (mangler->settings->config.audioSubsystem == "alsa") {
-        std::string mangler_output_device = mangler->settings->config.outputDeviceName.c_str();
-        if (mangler_output_device == "Default" || mangler_output_device == "") {
-            mangler_output_device = "default";
-        } else if (mangler_output_device == "Custom") {
-            mangler_output_device = mangler->settings->config.outputDeviceCustomName;
+        Glib::ustring outputDeviceName = mangler->settings->config.outputDeviceName;
+
+        if (outputDeviceName == "Default" || outputDeviceName == "") {
+            outputDeviceName = "default";
+        } else if (outputDeviceName == "Custom") {
+            outputDeviceName = mangler->settings->config.outputDeviceCustomName;
         }
-        if ((alsa_error = snd_pcm_open(&alsa_stream,
-                        mangler_output_device.c_str(),
+
+        if ((alsa_error = snd_pcm_open(
+                        &alsa_stream,
+                        outputDeviceName.c_str(),
                         SND_PCM_STREAM_PLAYBACK,
                         0)) < 0) {
             fprintf(stderr, "snd_pcm_open() failed: %s\n", snd_strerror(alsa_error));
             alsa_stream = NULL;
             return false;
         }
-        if ((alsa_error = snd_pcm_set_params(alsa_stream, // pcm handle
+        if ((alsa_error = snd_pcm_set_params(
+                        alsa_stream,                      // pcm handle
                         SND_PCM_FORMAT_S16_LE,            // format
                         SND_PCM_ACCESS_RW_INTERLEAVED,    // access
                         channels,                         // channels
@@ -134,12 +138,12 @@ ManglerAudio::openOutput(uint32_t rate) {/*{{{*/
                         true,                             // soft_resample
                         150000)) < 0) {                   // latency in usec (0.15 sec)
             fprintf(stderr, "snd_pcm_set_params() failed: %s\n", snd_strerror(alsa_error));
-            closeOutput(false);
+            closeOutput();
             return false;
         }
         if ((alsa_error = snd_pcm_prepare(alsa_stream)) < 0) {
             fprintf(stderr, "snd_pcm_prepare() failed: %s\n", snd_strerror(alsa_error));
-            closeOutput(false);
+            closeOutput();
             return false;
         }
     }
@@ -197,21 +201,25 @@ ManglerAudio::openInput(uint32_t rate) {/*{{{*/
 #endif
 #ifdef HAVE_ALSA
     if (mangler->settings->config.audioSubsystem == "alsa") {
-        std::string mangler_input_device = mangler->settings->config.inputDeviceName.c_str();
-        if (mangler_input_device == "Default" || mangler_input_device == "") {
-            mangler_input_device = "default";
-        } else if (mangler_input_device == "Custom") {
-            mangler_input_device = mangler->settings->config.inputDeviceCustomName;
+        Glib::ustring inputDeviceName = mangler->settings->config.inputDeviceName;
+
+        if (inputDeviceName == "Default" || inputDeviceName == "") {
+            inputDeviceName = "default";
+        } else if (inputDeviceName == "Custom") {
+            inputDeviceName = mangler->settings->config.inputDeviceCustomName;
         }
-        if ((alsa_error = snd_pcm_open(&alsa_stream,
-                        mangler_input_device.c_str(),
+
+        if ((alsa_error = snd_pcm_open(
+                        &alsa_stream,
+                        inputDeviceName.c_str(),
                         SND_PCM_STREAM_CAPTURE,
                         0)) < 0) {
             fprintf(stderr, "snd_pcm_open() failed: %s\n", snd_strerror(alsa_error));
             alsa_stream = NULL;
             return false;
         }
-        if ((alsa_error = snd_pcm_set_params(alsa_stream, // pcm handle
+        if ((alsa_error = snd_pcm_set_params(
+                        alsa_stream,                      // pcm handle
                         SND_PCM_FORMAT_S16_LE,            // format
                         SND_PCM_ACCESS_RW_INTERLEAVED,    // access
                         1,                                // channels
@@ -219,17 +227,17 @@ ManglerAudio::openInput(uint32_t rate) {/*{{{*/
                         true,                             // soft_resample
                         150000)) < 0) {                   // latency in usec (0.15 sec)
             fprintf(stderr, "snd_pcm_set_params() failed: %s\n", snd_strerror(alsa_error));
-            closeInput(false);
+            closeInput();
             return false;
         }
         if ((alsa_error = snd_pcm_prepare(alsa_stream)) < 0) {
             fprintf(stderr, "snd_pcm_prepare() failed: %s\n", snd_strerror(alsa_error));
-            closeInput(false);
+            closeInput();
             return false;
         }
         if ((alsa_error = snd_pcm_start(alsa_stream)) < 0) {
             fprintf(stderr, "snd_pcm_start() failed: %s\n", snd_strerror(alsa_error));
-            closeInput(false);
+            closeInput();
             return false;
         }
     }
@@ -254,7 +262,6 @@ ManglerAudio::closeInput(bool drain) {/*{{{*/
         alsa_stream = NULL;
     }
 #endif
-    mangler->inputvumeter->set_fraction(0);
 }/*}}}*/
 
 void
@@ -272,10 +279,12 @@ ManglerAudio::input(void) {/*{{{*/
     uint8_t *buf = NULL;
     uint32_t ret_rate;
     float seconds = 0;
-    struct timeval start, now, diff;
+    struct timeval start, vastart, now, diff;
     int ctr;
-    bool drop;
-    register float pcmmax = 0;
+    bool drop, xmit = false;
+    register float pcmpeak = 0;
+    uint8_t vapercent;
+    float vasilencedur, vasilenceelapsed;
 
     //fprintf(stderr, "getting input\n");
     for (;;) {
@@ -300,7 +309,7 @@ ManglerAudio::input(void) {/*{{{*/
                 break;
             }
             */
-            if (pcm_framesize * ctr > rate * 0.115 * 2) {
+            if (pcm_framesize * ctr > (rate * sizeof(int16_t)) * 0.115) {
                 //fprintf(stderr, "we have 0.115 seconds of audio in %d iterations\n", ctr);
                 break;
             }
@@ -322,7 +331,7 @@ ManglerAudio::input(void) {/*{{{*/
                 //fprintf(stderr, "reading %d bytes from pulse source\n", pcm_framesize);
                 if ((ret = pa_simple_read(pulse_stream, buf+(pcm_framesize*ctr), pcm_framesize, &pulse_error)) < 0) {
                     //fprintf(stderr, __FILE__": pa_simple_read() failed: %s\n", pa_strerror(pulse_error));
-                    closeInput(false);
+                    closeInput();
                     stop_input = true;
                     //throw Glib::Thread::Exit();
                     return;
@@ -340,7 +349,7 @@ ManglerAudio::input(void) {/*{{{*/
                         snd_pcm_prepare(alsa_stream);
                     } else if ((alsa_error = snd_pcm_recover(alsa_stream, alsa_frames, 0)) < 0) {
                         fprintf(stderr, "snd_pcm_readi() failed: %s\n", snd_strerror(alsa_error));
-                        closeInput(false);
+                        closeInput();
                         stop_input = true;
                         return;
                     }
@@ -349,42 +358,83 @@ ManglerAudio::input(void) {/*{{{*/
 #endif
             gettimeofday(&now, NULL);
             timeval_subtract(&diff, &now, &start);
-            seconds = (float)diff.tv_sec + ((float)diff.tv_usec / (float)1000000);
+            seconds = (float)diff.tv_sec + ((float)diff.tv_usec / 1000000.0);
             //fprintf(stderr, "iteration after %f seconds with %d bytes\n", seconds, pcm_framesize*ctr);
-            if (seconds >= 0.115 / 2 && pcmmax) {
-                pcmmax -= 0.115 / 2;
-                pcmmax = (pcmmax < 0) ? 0 : pcmmax;
+            if (seconds >= 0.115 / 2 && pcmpeak) {
+                pcmpeak -= pcmpeak * (0.115 / 2);
                 gdk_threads_enter();
-                mangler->inputvumeter->set_fraction(pcmmax);
+                mangler->inputvumeter->set_fraction(pcmpeak);
                 gdk_threads_leave();
-                pcmmax = 0;
+                pcmpeak = 0;
             }
             ctr++;
         }
-        if (!drop && !stop_input) {
-            //fprintf(stderr, "sending audio %d bytes of audio\n", ctr * pcm_framesize);
-            // TODO: hard coding user to channel for now, need to implement U2U
-            if ((ret_rate = v3_send_audio(V3_AUDIO_SENDTYPE_U2CCUR, rate, buf, pcm_framesize * ctr, false)) != rate) {
-                if (!ret_rate || !openInput((rate = ret_rate))) { // reinitialize input with the new sample rate
-                    stop_input = true; // else we're logged out or we couldn't reinitialize
+        if (!stop_input) {
+            for (int16_t *pcmptr = (int16_t *)buf; pcmptr < (int16_t *)(buf+(pcm_framesize*ctr)); pcmptr++) {
+                pcmpeak = abs(*pcmptr) > pcmpeak ? abs(*pcmptr) : pcmpeak;
+            }
+            pcmpeak = log10(((pcmpeak / 0x7fff) * 9) + 1);
+            pcmpeak = (pcmpeak > 1) ? 1 : pcmpeak;
+            gdk_threads_enter();
+            if (mangler->settings->config.VoiceActivationEnabled && mangler->isTransmittingButton) {
+                vasilencedur = mangler->settings->config.VoiceActivationSilenceDuration;
+                vapercent = mangler->settings->config.VoiceActivationSensitivity;
+                if (pcmpeak * 100 >= vapercent) {
+                    gettimeofday(&vastart, NULL);
+                    if (!xmit) {
+                        xmit = true;
+                        mangler->audioControl->playNotification("talkstart");
+                        mangler->statusIcon->set(mangler->icons["tray_icon_green"]);
+                        v3_start_audio(V3_AUDIO_SENDTYPE_U2CCUR);
+                    }
+                    mangler->channelTree->setUserIcon(v3_get_user_id(), "green", true);
+                } else if (xmit) {
+                    gettimeofday(&now, NULL);
+                    timeval_subtract(&diff, &now, &vastart);
+                    vasilenceelapsed = (float)diff.tv_sec + ((float)diff.tv_usec / 1000000.0);
+                    if (vasilenceelapsed * 1000 >= vasilencedur) {
+                        xmit = false;
+                        mangler->audioControl->playNotification("talkend");
+                        mangler->channelTree->setUserIcon(v3_get_user_id(), "orange", true);
+                        mangler->statusIcon->set(mangler->icons["tray_icon_yellow"]);
+                        v3_stop_audio();
+                    } else {
+                        mangler->channelTree->setUserIcon(v3_get_user_id(), "yellow", true);
+                    }
+                }
+            } else {
+                if (!xmit) {
+                    xmit = true;
+                    v3_start_audio(V3_AUDIO_SENDTYPE_U2CCUR);
+                }
+                mangler->channelTree->setUserIcon(v3_get_user_id(), "green", true);
+                mangler->statusIcon->set(mangler->icons["tray_icon_green"]);
+            }
+            mangler->inputvumeter->set_fraction(pcmpeak);
+            gdk_threads_leave();
+            if (!drop && xmit) {
+                //fprintf(stderr, "sending audio %d bytes of audio\n", ctr * pcm_framesize);
+                // TODO: hard coding user to channel for now, need to implement U2U
+                if ((ret_rate = v3_send_audio(V3_AUDIO_SENDTYPE_U2CCUR, rate, buf, pcm_framesize * ctr, false)) != rate) {
+                    if (!ret_rate || !openInput((rate = ret_rate))) { // reinitialize input with the new sample rate
+                        stop_input = true; // else we're logged out or we couldn't reinitialize
+                    }
                 }
             }
         }
-        for (int16_t *pcmptr = (int16_t *)buf; pcmptr < (int16_t *)(buf+(pcm_framesize*ctr)); pcmptr++) {
-            pcmmax = abs(*pcmptr) > pcmmax ? abs(*pcmptr) : pcmmax;
-        }
-        pcmmax = log10(((pcmmax / 0x7fff) * 9) + 1);
-        pcmmax = (pcmmax > 1) ? 1 : pcmmax;
-        gdk_threads_enter();
-        mangler->inputvumeter->set_fraction(pcmmax);
-        gdk_threads_leave();
         free(buf);
         buf = NULL;
     }
     //fprintf(stderr, "done with input\n");
-    v3_stop_audio();
+    if (xmit) {
+        xmit = false;
+        v3_stop_audio();
+    }
     closeInput(true);
     outputStreamOpen = false;
+    gdk_threads_enter();
+    mangler->inputvumeter->set_fraction(0);
+    gdk_threads_leave();
     //throw Glib::Thread::Exit();
     return;
 }/*}}}*/
@@ -438,7 +488,7 @@ ManglerAudio::output(void) {/*{{{*/
             if ((ret = pa_simple_write(pulse_stream, queuedpcm->sample, queuedpcm->length, &pulse_error)) < 0) {
                 fprintf(stderr, __FILE__": pa_simple_write() failed: %s\n", pa_strerror(pulse_error));
                 g_async_queue_unref(pcm_queue);
-                closeOutput(false);
+                closeOutput();
                 stop_output = true;
                 //throw Glib::Thread::Exit();
                 return;
@@ -462,7 +512,7 @@ ManglerAudio::output(void) {/*{{{*/
                     } else if ((alsa_error = snd_pcm_recover(alsa_stream, alsa_frames, 0)) < 0) {
                         fprintf(stderr, "snd_pcm_writei() failed: %s\n", snd_strerror(alsa_error));
                         g_async_queue_unref(pcm_queue);
-                        closeOutput(false);
+                        closeOutput();
                         stop_output = true;
                         return;
                     }
@@ -546,14 +596,13 @@ ManglerAudio::getDeviceList(Glib::ustring audioSubsystem) {/*{{{*/
 
         for (ctr = 0; ctr < 2; ctr++) { // the rest is just copypasta, with bad code from alsa
             snd_ctl_t *handle;
-            int card, err, dev,
-                idx_p = 0, idx_c = 0;
+            int card, err, dev, idx_p = 0, idx_c = 0;
             snd_ctl_card_info_t *info;
             snd_pcm_info_t *pcminfo;
-            snd_ctl_card_info_alloca(&info);
-            snd_pcm_info_alloca(&pcminfo);
 
             card = -1;
+            snd_ctl_card_info_alloca(&info);
+            snd_pcm_info_alloca(&pcminfo);
             if (snd_card_next(&card) < 0 || card < 0) {
                 fputs("alsa: no sound cards found...\n", stderr);
                 return;
@@ -580,16 +629,19 @@ ManglerAudio::getDeviceList(Glib::ustring audioSubsystem) {/*{{{*/
                 }
                 dev = -1;
                 for (;;) {
-                    if (snd_ctl_pcm_next_device(handle, &dev) < 0)
+                    if (snd_ctl_pcm_next_device(handle, &dev) < 0) {
                         fprintf(stderr, "alsa: snd_ctl_pcm_next_device\n");
-                    if (dev < 0)
+                    }
+                    if (dev < 0) {
                         break;
+                    }
                     snd_pcm_info_set_device(pcminfo, dev);
                     snd_pcm_info_set_subdevice(pcminfo, 0);
                     snd_pcm_info_set_stream(pcminfo, stream[ctr]);
                     if ((err = snd_ctl_pcm_info(handle, pcminfo)) < 0) {
-                        if (err != -ENOENT)
+                        if (err != -ENOENT) {
                             fprintf(stderr, "alsa: control digital audio info (%i): %s\n", card, snd_strerror(err));
+                        }
                         continue;
                     }
                     char name[256] = "", desc[512] = "";
@@ -598,7 +650,7 @@ ManglerAudio::getDeviceList(Glib::ustring audioSubsystem) {/*{{{*/
                         snd_ctl_card_info_get_name(info),
                         snd_pcm_info_get_name(pcminfo),
                         name
-                    );
+                        );
                     switch (stream[ctr]) {
                       case SND_PCM_STREAM_PLAYBACK:
                         outputDevices.push_back(
@@ -606,7 +658,7 @@ ManglerAudio::getDeviceList(Glib::ustring audioSubsystem) {/*{{{*/
                                 idx_p++,
                                 name,
                                 desc)
-                        );
+                            );
                         break;
                       case SND_PCM_STREAM_CAPTURE:
                         inputDevices.push_back(
@@ -614,7 +666,7 @@ ManglerAudio::getDeviceList(Glib::ustring audioSubsystem) {/*{{{*/
                                 idx_c++,
                                 name,
                                 desc)
-                        );
+                            );
                         break;
                     }
                 }
@@ -659,7 +711,8 @@ ManglerAudio::playNotification_thread(Glib::ustring name) {/*{{{*/
 #ifdef HAVE_PULSE
     if (mangler->settings->config.audioSubsystem == "pulse") {
         int pulse_ret;
-        pa_simple       *pulse_s;
+        pa_simple *pulse_s;
+
         pulse_samplespec.format = PA_SAMPLE_S16LE;
         pulse_samplespec.rate = 44100;
         pulse_samplespec.channels = 1;
@@ -669,6 +722,7 @@ ManglerAudio::playNotification_thread(Glib::ustring name) {/*{{{*/
         buffer_attr.prebuf = -1;
         buffer_attr.minreq = -1;
         buffer_attr.fragsize = pcm_framesize;
+
         if (!(pulse_s = pa_simple_new(
                         NULL,
                         "Mangler",
@@ -702,21 +756,25 @@ ManglerAudio::playNotification_thread(Glib::ustring name) {/*{{{*/
 #ifdef HAVE_ALSA
     if (mangler->settings->config.audioSubsystem == "alsa") {
         snd_pcm_sframes_t alsa_ret;
-        snd_pcm_t         *alsa_s;
-        std::string mangler_notification_device = mangler->settings->config.notificationDeviceName.c_str();
-        if (mangler_notification_device == "Default" || mangler_notification_device == "") {
-            mangler_notification_device = "default";
-        } else if (mangler_notification_device == "Custom") {
-            mangler_notification_device = mangler->settings->config.notificationDeviceCustomName;
+        snd_pcm_t *alsa_s;
+        Glib::ustring notificationDeviceName = mangler->settings->config.notificationDeviceName;
+
+        if (notificationDeviceName == "Default" || notificationDeviceName == "") {
+            notificationDeviceName = "default";
+        } else if (notificationDeviceName == "Custom") {
+            notificationDeviceName = mangler->settings->config.notificationDeviceCustomName;
         }
-        if ((alsa_error = snd_pcm_open(&alsa_s,
-                        mangler_notification_device.c_str(),
+
+        if ((alsa_error = snd_pcm_open(
+                        &alsa_s,
+                        notificationDeviceName.c_str(),
                         SND_PCM_STREAM_PLAYBACK,
                         0)) < 0) {
             fprintf(stderr, "snd_pcm_open() failed: %s\n", snd_strerror(alsa_error));
             return;
         }
-        if ((alsa_error = snd_pcm_set_params(alsa_s,   // pcm handle
+        if ((alsa_error = snd_pcm_set_params(
+                        alsa_s,                        // pcm handle
                         SND_PCM_FORMAT_S16_LE,         // format
                         SND_PCM_ACCESS_RW_INTERLEAVED, // access
                         1,                             // channels
@@ -732,6 +790,7 @@ ManglerAudio::playNotification_thread(Glib::ustring name) {/*{{{*/
             snd_pcm_close(alsa_s);
             return;
         }
+
         uint32_t buflen;
         uint32_t pcmlen = sounds[name]->length;
         uint8_t *pcmptr = sounds[name]->sample;
@@ -748,6 +807,7 @@ ManglerAudio::playNotification_thread(Glib::ustring name) {/*{{{*/
             pcmlen -= buflen;
             pcmptr += buflen;
         }
+
         snd_pcm_drain(alsa_s);
         snd_pcm_close(alsa_s);
     }

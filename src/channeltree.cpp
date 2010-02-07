@@ -452,9 +452,9 @@ ManglerChannelTree::refreshUser(uint32_t id) {/*{{{*/
         // update xmit icons
         if (id == v3_get_user_id() && mangler->isTransmitting) {
             // we're transmitting
-            setUserIcon(id, "green", true);
+            setUserIcon(id, "orange", true);
         } else if (u->is_transmitting) {
-            // transmitting but without playback
+            // transmitting without playback
             setUserIcon(id, "yellow", true);
         } else {
             // not transmitting

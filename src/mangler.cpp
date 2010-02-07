@@ -555,14 +555,13 @@ void Mangler::startTransmit(void) {/*{{{*/
         v3_free_user(user);
         return;
     }
-    audioControl->playNotification("talkstart");
-    statusIcon->set(icons["tray_icon_green"]);
     isTransmitting = true;
-    channelTree->setUserIcon(v3_get_user_id(), "green", true);
     if ((codec = v3_get_channel_codec(user->channel))) {
         //fprintf(stderr, "channel %d codec rate: %d at sample size %d\n", user->channel, codec->rate, codec->pcmframesize);
-        v3_start_audio(V3_AUDIO_SENDTYPE_U2CCUR);
         v3_free_user(user);
+        audioControl->playNotification("talkstart");
+        channelTree->setUserIcon(v3_get_user_id(), "orange", true);
+        statusIcon->set(icons["tray_icon_yellow"]);
         inputAudio = new ManglerAudio("input");
         inputAudio->open(codec->rate, AUDIO_INPUT, codec->pcmframesize);
     }
@@ -571,12 +570,12 @@ void Mangler::stopTransmit(void) {/*{{{*/
     if (!isTransmitting) {
         return;
     }
-    statusIcon->set(icons["tray_icon_red"]);
+    isTransmitting = false;
     if (v3_is_loggedin()) {
         audioControl->playNotification("talkend");
         channelTree->setUserIcon(v3_get_user_id(), "red", true);
     }
-    isTransmitting = false;
+    statusIcon->set(icons["tray_icon_red"]);
     if (inputAudio) {
         inputAudio->finish();
     }
