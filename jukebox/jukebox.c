@@ -241,7 +241,7 @@ void *jukebox_player(void *connptr) {
                                     continue;
                                 }
                             }
-                            if (attempts == 10) {
+                            if (attempts == 20) {
                                 // give up and just pick a random song
                                 v3_send_chat_message("Apparently something matched, but it doesn't appear to be a song... so I fail.  Here's something else");
                                 playing = 0;
@@ -274,6 +274,8 @@ void *jukebox_player(void *connptr) {
                         mh = NULL;
                         playing = 0;
                         stopped = 1;
+                    } else {
+                        fprintf(stderr, "chat message: '%s'\n", ev->data.chatmessage);
                     }
                     break;
             }
@@ -421,10 +423,11 @@ void scan_media_path(char *path) {
             }
         }
     }
+    closedir(dir);
 }
 
 int get_id3_info(musicfile *musicfile) {
-    mpg123_handle *mh;
+    mpg123_handle *mh = NULL;
     mpg123_id3v1 *v1;
     mpg123_id3v2 *v2;
     int meta;
@@ -475,6 +478,8 @@ int get_id3_info(musicfile *musicfile) {
             }
         }
     }
+    mpg123_close(mh);
+    mpg123_delete(mh);
     mpg123_exit();
     return 1;
 }
