@@ -465,8 +465,8 @@ void Mangler::xmitButton_toggled_cb(void) {/*{{{*/
         isTransmittingButton = true;
         startTransmit();
     } else {
-        isTransmittingButton = false;
         stopTransmit();
+        isTransmittingButton = false;
     }
 }/*}}}*/
 
@@ -559,7 +559,6 @@ void Mangler::startTransmit(void) {/*{{{*/
     if ((codec = v3_get_channel_codec(user->channel))) {
         //fprintf(stderr, "channel %d codec rate: %d at sample size %d\n", user->channel, codec->rate, codec->pcmframesize);
         v3_free_user(user);
-        audioControl->playNotification("talkstart");
         channelTree->setUserIcon(v3_get_user_id(), "orange", true);
         statusIcon->set(icons["tray_icon_yellow"]);
         inputAudio = new ManglerAudio("input");
@@ -572,7 +571,6 @@ void Mangler::stopTransmit(void) {/*{{{*/
     }
     isTransmitting = false;
     if (v3_is_loggedin()) {
-        audioControl->playNotification("talkend");
         channelTree->setUserIcon(v3_get_user_id(), "red", true);
     }
     statusIcon->set(icons["tray_icon_red"]);
