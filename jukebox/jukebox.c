@@ -196,6 +196,10 @@ void *jukebox_player(void *connptr) {
                     }
                     break;
                 case V3_EVENT_CHAT_MESSAGE:
+                    if (ev->user.id == v3_get_user_id()) {
+                        // ignore commands from ourself
+                        break;
+                    }
                     if (strcmp(ev->data.chatmessage, "!play worst band in the world") == 0) {
                         v3_send_chat_message("We don't have any Creed songs...");
                     } else if (strcasecmp(ev->data.chatmessage, "!play creed") == 0) {
@@ -206,6 +210,7 @@ void *jukebox_player(void *connptr) {
                         v3_send_chat_message("!next track -- play a new random track");
                         v3_send_chat_message("!play [song/artist/file name] -- search for a song by filename and play the first random match");
                         v3_send_chat_message("!volume [0-1] -- Set the volume to the specified level: ex: !volume 0.5");
+                        break;
                     } else if (! stopped && strncmp(ev->data.chatmessage, "!volume ", 8) == 0) {
                         char *volume = ev->data.chatmessage + 8;
                         if (atof(volume) == 0) {
