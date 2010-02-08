@@ -6,7 +6,7 @@
  * $LastChangedBy$
  * $URL$
  *
- * Copyright 2009-2010 Eric Kilfoil 
+ * Copyright 2009-2010 Eric Kilfoil
  *
  * This file is part of Mangler.
  *
@@ -97,9 +97,9 @@ int select_channel(void);
 
 
 void ctrl_c (int signum) {
-    printf("disconnecting... ");
+    fprintf(stderr, "disconnecting... ");
     v3_logout();
-    printf("done\n");
+    fprintf(stderr, "done\n");
     exit(0);
 }
 
@@ -224,7 +224,7 @@ void *jukebox_player(void *connptr) {
                         char *searchspec;
                         int ctr;
                         int found = 0;
-                        searchspec = ev->data.chatmessage + 5;
+                        searchspec = ev->data.chatmessage + 6;
                         for (ctr = 0; ctr < musicfile_count; ctr++) {
                             // make sure we have at least 1 thing that matches
                             // so  we don't end up in an endless loop
