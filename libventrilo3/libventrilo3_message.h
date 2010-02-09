@@ -56,8 +56,10 @@
  * http://www.mangler.org/trac/wiki/ProtocolDocumentation
  */
 
+#ifndef ANDROID
 #pragma pack(push)
 #pragma pack(1)
+#endif
 
 typedef struct _v3_net_message_0x00 {/*{{{*/
     uint32_t type;
@@ -396,7 +398,9 @@ typedef struct _v3_net_message_0x63 {/*{{{*/
 } _v3_msg_0x63;
 _v3_net_message *_v3_put_0x63(uint16_t subtype, uint16_t user_id, char *string);/*}}}*/
 
+#ifndef ANDROID
 #pragma pack(pop)
+#endif
 
 char *      _v3_get_msg_string(void *offset, uint16_t *len);
 int         _v3_put_msg_string(void *buffer, char *string);

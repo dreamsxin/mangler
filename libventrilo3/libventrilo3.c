@@ -24,7 +24,11 @@
  * along with Mangler.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#ifdef ANDROID
+#include <android/log.h>
+#else
 #include "config.h"
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -95,16 +99,28 @@ _v3_debug(uint32_t level, const char *format, ...) {/*{{{*/
     t = tv.tv_sec;
     tmp = localtime(&t);
     if (tmp == NULL) {
-        fprintf(stderr, "libventrilo3: %s\n",buf); // print without timestamp
+#ifndef ANDROID
+        fprintf(stderr, "libventrilo3: %s\n", buf); // print without timestamp
+#else
+		__android_log_write(ANDROID_LOG_VERBOSE, "libventrilo3", buf);
+#endif
         return;
     }
 
     if (strftime(timestamp, sizeof(timestamp), "%T", tmp) == 0) {
-        fprintf(stderr, "libventrilo3: %s\n",buf); // print without timestamp
+#ifndef ANDROID
+        fprintf(stderr, "libventrilo3: %s\n", buf); // print without timestamp
+#else
+		__android_log_write(ANDROID_LOG_VERBOSE, "libventrilo3", buf);
+#endif
         return;
     }
-
+    
+#ifndef ANDROID
     fprintf(stderr, "libventrilo3: %s.%06d: %s\n", timestamp, (uint32_t)tv.tv_usec, buf); //print with timestamp
+#else
+	__android_log_print(ANDROID_LOG_VERBOSE, "libventrilo3", " %s.%06d: %s", timestamp, (uint32_t)tv.tv_usec, buf);
+#endif
     return;
 }/*}}}*/
 

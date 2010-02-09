@@ -129,8 +129,12 @@ typedef struct __v3_net_message {/*{{{*/
     int (* destroy)(struct __v3_net_message *msg);
     struct __v3_net_message *next;
 } _v3_net_message;/*}}}*/
+
+#ifndef ANDROID
 #pragma pack(push)
 #pragma pack(1)
+#endif
+
 struct _v3_permissions {/*{{{*/
     uint16_t account_id;
     uint16_t replace_owner_id;
@@ -201,7 +205,10 @@ struct _v3_permissions {/*{{{*/
     uint8_t see_user_comment;
     uint8_t unknown_perm_15;
 };/*}}}*/
+
+#ifndef ANDROID
 #pragma pack(pop)
+#endif
 typedef struct _v3_permissions v3_permissions;
 
 /*
