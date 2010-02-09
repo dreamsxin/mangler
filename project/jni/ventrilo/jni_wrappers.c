@@ -1,10 +1,6 @@
 #include <jni.h>
 #include "ventrilo3.h"
 
-JNIEXPORT void JNICALL Java_org_mangler_VentriloInterface_startprocessing() {
-	start_processing();
-}
-
 JNIEXPORT void JNICALL Java_org_mangler_VentriloInterface_joinchat() {
 	v3_join_chat();
 }
@@ -75,10 +71,10 @@ JNIEXPORT jint JNICALL Java_org_mangler_VentriloInterface_channelcount() {
 
 JNIEXPORT jint JNICALL Java_org_mangler_VentriloInterface_login(JNIEnv* env, jobject obj, jstring server, jstring username, jstring password, jstring phonetic) {
 	v3_debuglevel(V3_DEBUG_ALL);
-	const char* _server = (*env)->GetStringUTFChars(env, server, 0);
-	const char* _username = (*env)->GetStringUTFChars(env, username, 0);
-	const char* _password = (*env)->GetStringUTFChars(env, password, 0);
-	const char* _phonetic = (*env)->GetStringUTFChars(env, phonetic, 0);
+	char* _server	= (char*)(*env)->GetStringUTFChars(env, server, 0);
+	char* _username = (char*)(*env)->GetStringUTFChars(env, username, 0);
+	char* _password = (char*)(*env)->GetStringUTFChars(env, password, 0);
+	char* _phonetic = (char*)(*env)->GetStringUTFChars(env, phonetic, 0);
 	jint ret = v3_login(_server, _username, _password, _phonetic);
 	(*env)->ReleaseStringUTFChars(env, server, _server);
 	(*env)->ReleaseStringUTFChars(env, username, _username);
@@ -88,22 +84,22 @@ JNIEXPORT jint JNICALL Java_org_mangler_VentriloInterface_login(JNIEnv* env, job
 }
 
 JNIEXPORT void JNICALL Java_org_mangler_VentriloInterface_sendchatmessage(JNIEnv* env, jobject obj, jstring message) {
-	const char* _message = (*env)->GetStringUTFChars(env, message, 0);
+	char* _message = (char*)(*env)->GetStringUTFChars(env, message, 0);
 	v3_send_chat_message(_message);
 	(*env)->ReleaseStringUTFChars(env, message, _message);
 }
 
 JNIEXPORT void JNICALL Java_org_mangler_VentriloInterface_changechannel(JNIEnv* env, jobject obj, jchar channelid, jstring password) {
-	const char* _password = (*env)->GetStringUTFChars(env, password, 0);
+	char* _password = (char*)(*env)->GetStringUTFChars(env, password, 0);
 	v3_change_channel(channelid, _password);
 	(*env)->ReleaseStringUTFChars(env, password, _password);
 }
 
 
 JNIEXPORT void JNICALL Java_org_mangler_VentriloInterface_settext(JNIEnv* env, jobject obj, jstring comment, jstring url, jstring integrationtext, jboolean silent) {
-	const char* _comment = (*env)->GetStringUTFChars(env, comment, 0);
-	const char* _url = (*env)->GetStringUTFChars(env, url, 0);
-	const char* _integrationtext = (*env)->GetStringUTFChars(env, integrationtext, 0);
+	char* _comment = (char*)(*env)->GetStringUTFChars(env, comment, 0);
+	char* _url = (char*)(*env)->GetStringUTFChars(env, url, 0);
+	char* _integrationtext = (char*)(*env)->GetStringUTFChars(env, integrationtext, 0);
 	v3_set_text(_comment, _url, _integrationtext, silent);
 	(*env)->ReleaseStringUTFChars(env, comment, _comment);
 	(*env)->ReleaseStringUTFChars(env, url, _url);
