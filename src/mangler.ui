@@ -4816,6 +4816,8 @@ These are useful for developers.</property>
                     <property name="xalign">0.05000000074505806</property>
                     <property name="yalign">0.05000000074505806</property>
                     <property name="label" translatable="yes">Error Message</property>
+                    <property name="wrap">True</property>
+                    <property name="wrap_mode">word-char</property>
                   </object>
                 </child>
               </object>
