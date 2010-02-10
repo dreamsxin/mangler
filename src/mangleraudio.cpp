@@ -383,7 +383,7 @@ ManglerAudio::input(void) {/*{{{*/
                     gettimeofday(&vastart, NULL);
                     if (!xmit) {
                         xmit = true;
-                        playNotification("talkstart");
+                        mangler->audioControl->playNotification("talkstart");
                         mangler->statusIcon->set(mangler->icons["tray_icon_green"]);
                         v3_start_audio(V3_AUDIO_SENDTYPE_U2CCUR);
                     }
@@ -397,7 +397,7 @@ ManglerAudio::input(void) {/*{{{*/
                         v3_stop_audio();
                         mangler->channelTree->setUserIcon(v3_get_user_id(), "orange", true);
                         mangler->statusIcon->set(mangler->icons["tray_icon_yellow"]);
-                        playNotification("talkend");
+                        mangler->audioControl->playNotification("talkend");
                     } else {
                         mangler->channelTree->setUserIcon(v3_get_user_id(), "yellow", true);
                     }
@@ -405,7 +405,7 @@ ManglerAudio::input(void) {/*{{{*/
             } else {
                 if (!xmit) {
                     xmit = true;
-                    playNotification("talkstart");
+                    mangler->audioControl->playNotification("talkstart");
                     v3_start_audio(V3_AUDIO_SENDTYPE_U2CCUR);
                 }
                 mangler->channelTree->setUserIcon(v3_get_user_id(), "green", true);
@@ -430,7 +430,7 @@ ManglerAudio::input(void) {/*{{{*/
     if (xmit) {
         xmit = false;
         v3_stop_audio();
-        playNotification("talkend");
+        mangler->audioControl->playNotification("talkend");
     }
     closeInput(true);
     outputStreamOpen = false;
