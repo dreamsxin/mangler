@@ -447,10 +447,10 @@ void Mangler::adminButton_clicked_cb(void) {/*{{{*/
         password = mangler->getPasswordEntry("Admin Password");
         if (password.length()) {
             v3_admin_login((char *)password.c_str());
+            admin->adminWindow->show();
             // if we tried sending a password, the only options are either
             // success or get booted from the server
         }
-        admin->adminWindow->show();
     } else {
         admin->adminWindow->show();
     }
@@ -675,6 +675,7 @@ void Mangler::onDisconnectHandler(void) {/*{{{*/
 
     builder->get_widget("connectButton", connectbutton);
     if (connectbutton->get_label() == "gtk-disconnect") {
+        admin->adminWindow->hide();
         builder->get_widget("adminButton", button);
         button->set_sensitive(false);
         builder->get_widget("adminLoginMenuItem", menuitem);
