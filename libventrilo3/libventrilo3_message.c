@@ -115,15 +115,16 @@ _v3_put_msg_uint16_array(void *buffer, uint16_t len, uint16_t *array) {/*{{{*/
 
 int
 _v3_put_msg_string(void *buffer, char *string) {/*{{{*/
-    int len;
+    int len, nlen;
 
     _v3_func_enter("_v3_put_msg_string");
-    if (string) len = htons((uint16_t)strlen(string));
-    else len = 0;
+    if (string) nlen = strlen(string);
+    else nlen = 0;
+    len = htons((uint16_t)nlen);
     memcpy(buffer, &len, 2);
-    if (len) memcpy(buffer+2, string, strlen(string));
+    if (nlen) memcpy(buffer+2, string, nlen);
     _v3_func_leave("_v3_put_msg_string");
-    return len + 2;
+    return nlen + 2;
 }/*}}}*/
 
 int
@@ -703,7 +704,7 @@ _v3_put_0x49(uint16_t subtype, uint16_t user_id, char *channel_password, _v3_msg
     msg->type = 0x49;
     switch (subtype) {
         case V3_CHANGE_CHANNEL:
-            msg->len = sizeof(_v3_msg_0x49)-sizeof(void *)+sizeof(_v3_msg_channel) - sizeof(void *) * 4;
+            msg->len = sizeof(_v3_msg_0x49)-sizeof(void *) + sizeof(_v3_msg_channel) - sizeof(void *) * 4 + 6;
             _v3_debug(V3_DEBUG_PACKET_PARSE, "allocating %d bytes", msg->len);
             msgdata = malloc(sizeof(_v3_msg_0x49)-sizeof(void *)+sizeof(_v3_msg_channel));
             memset(msgdata, 0, sizeof(_v3_msg_0x49)-sizeof(void *)+sizeof(_v3_msg_channel));
@@ -719,7 +720,10 @@ _v3_put_0x49(uint16_t subtype, uint16_t user_id, char *channel_password, _v3_msg
             return(msg);
         case V3_ADD_CHANNEL:
         case V3_MODIFY_CHANNEL:
-            msg->len = sizeof(_v3_msg_0x49) - sizeof(void *) + sizeof(_v3_msg_channel) - sizeof(void *) * 4 + strlen(channel->name) + strlen(channel->phonetic) + strlen(channel->comment) + sizeof(uint16_t) * 3;
+            msg->len = sizeof(_v3_msg_0x49) - sizeof(void *) + sizeof(_v3_msg_channel) - sizeof(void *) * 4 + 6;
+            if (channel->name) msg->len += strlen(channel->name);
+            if (channel->phonetic) msg->len += strlen(channel->phonetic);
+            if (channel->comment) msg->len += strlen(channel->comment);
             _v3_debug(V3_DEBUG_PACKET_PARSE, "allocating %d bytes", msg->len);
             msgdata = malloc(msg->len);
             memset(msgdata, 0, msg->len);
@@ -734,7 +738,7 @@ _v3_put_0x49(uint16_t subtype, uint16_t user_id, char *channel_password, _v3_msg
             _v3_func_leave("_v3_put_0x49");
             return(msg);
         case V3_REMOVE_CHANNEL:
-            msg->len = sizeof(_v3_msg_0x49)-sizeof(void *)+sizeof(_v3_msg_channel) - sizeof(void *) * 4;
+            msg->len = sizeof(_v3_msg_0x49)-sizeof(void *) + sizeof(_v3_msg_channel) - sizeof(void *) * 4 + 6;
             _v3_debug(V3_DEBUG_PACKET_PARSE, "allocating %d bytes", msg->len);
             msgdata = malloc(sizeof(_v3_msg_0x49)-sizeof(void *)+sizeof(_v3_msg_channel));
             memset(msgdata, 0, sizeof(_v3_msg_0x49)-sizeof(void *)+sizeof(_v3_msg_channel));

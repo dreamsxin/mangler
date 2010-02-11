@@ -670,7 +670,7 @@ _v3_recv(int block) {/*{{{*/
                             v3_channel channel;
                             memset(&channel, 0, sizeof(_v3_msg_channel));
                             /* channel.id = ev.channel.id; */
-                            memcpy(&channel, &ev.data.channel, sizeof(v3_channel));
+                            memcpy(&channel, &ev.data.channel, 48);
                             channel.name = ev.text.name;
                             channel.phonetic = ev.text.phonetic;
                             channel.comment = ev.text.comment;
