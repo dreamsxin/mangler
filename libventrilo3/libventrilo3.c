@@ -663,8 +663,8 @@ _v3_recv(int block) {/*{{{*/
                             _v3_destroy_packet(msg);
                         }
                         break;/*}}}*/
-                    case V3_EVENT_CHAN_MODIFY:
-                    case V3_EVENT_CHAN_ADD:/*{{{*/
+                    case V3_EVENT_CHAN_MODIFY:/*{{{*/
+                    case V3_EVENT_CHAN_ADD:
                         {
                             _v3_net_message *msg;
                             v3_channel channel;
@@ -4097,10 +4097,11 @@ v3_userlist_update(v3_account *account) {/*{{{*/
 
     memset(&ev, 0, sizeof(v3_event));
 
-    if (account->perms.account_id)
+    if (account->perms.account_id) {
         ev.type = V3_EVENT_USERLIST_MODIFY;
-    else
+    } else {
         ev.type = V3_EVENT_USERLIST_ADD;
+    }
 
     ev.data.account.perms = account->perms;
     strncpy(ev.data.account.username, account->username, sizeof(ev.data.account.username) - 1);
@@ -4301,11 +4302,16 @@ v3_channel_update(v3_channel *channel, const char *password) {/*{{{*/
 
     memset(&ev, 0, sizeof(v3_event));
 
-    if (channel->id) ev.type = V3_EVENT_CHAN_MODIFY;
-    else ev.type = V3_EVENT_CHAN_ADD;
+    if (channel->id) {
+        ev.type = V3_EVENT_CHAN_MODIFY;
+    } else {
+        ev.type = V3_EVENT_CHAN_ADD;
+    }
     
     memcpy(&(ev.data.channel), channel, sizeof(v3_channel) - sizeof(void*) * 4);
-    if (password) strncpy(ev.text.password, password, 31);
+    if (password) {
+        strncpy(ev.text.password, password, 31);
+    }
     strncpy(ev.text.name, channel->name, 31);
     strncpy(ev.text.phonetic, channel->phonetic, 31);
     strncpy(ev.text.comment, channel->comment, 127);
@@ -4970,8 +4976,12 @@ v3_get_permissions(void) {/*{{{*/
 uint8_t
 v3_is_channel_admin(uint16_t channel_id) {/*{{{*/
     v3_channel *c;
-    if (v3_luser.channel_admin[channel_id]) return 1;
-    if (! channel_id) return 0;
+    if (v3_luser.channel_admin[channel_id]) {
+        return 1;
+    }
+    if (! channel_id) {
+        return 0;
+    }
     c = v3_get_channel(channel_id);
     channel_id = c->parent;
     v3_free_channel(c);

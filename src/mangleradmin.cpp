@@ -29,9 +29,6 @@
 //#include <cstdlib>
 //#include <cstring>
 
-/* this is defined in channeltree.cpp */
-int natsort(const char *l, const char *r);
-
 ManglerAdmin::ManglerAdmin(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
     this->builder = builder;
     Gtk::TreeModel::Row row;

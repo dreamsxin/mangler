@@ -722,17 +722,23 @@ _v3_put_0x49(uint16_t subtype, uint16_t user_id, char *channel_password, _v3_msg
             *np = 0; np++;
             *np = strlen(channel->name);
             offset = (void*)(np + 1);
-            if (*np) memcpy(offset, channel->name, *np + 1);
+            if (*np) {
+                memcpy(offset, channel->name, *np + 1);
+            }
             np += (*np + 1);
             *np = 0; np++;
             *np = strlen(channel->phonetic);
             offset = (void*)(np + 1);
-            if (*np) memcpy(offset, channel->phonetic, *np);
+            if (*np) {
+                memcpy(offset, channel->phonetic, *np);
+            }
             np += (*np + 1);
             *np = 0; np++;
             *np = strlen(channel->comment);
             offset = (void*)(np + 1);
-            if (*np) memcpy(offset, channel->comment, *np);
+            if (*np) {
+                memcpy(offset, channel->comment, *np);
+            }
             msg->data = (char *)msgdata;
             _v3_func_leave("_v3_put_0x49");
             return(msg);
