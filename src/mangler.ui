@@ -279,7 +279,7 @@
                     </child>
                     <child>
                       <object class="GtkButton" id="adminButton">
-                        <property name="label" translatable="yes">_Admin</property>
+                        <property name="label" translatable="yes">_Admin Login</property>
                         <property name="visible">True</property>
                         <property name="sensitive">False</property>
                         <property name="can_focus">True</property>
@@ -4179,6 +4179,7 @@ These are useful for developers.</property>
                                               <object class="GtkEntry" id="ChannelPassword">
                                                 <property name="visible">True</property>
                                                 <property name="can_focus">True</property>
+                                                <property name="visibility">False</property>
                                                 <property name="invisible_char">&#x2022;</property>
                                               </object>
                                               <packing>

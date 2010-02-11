@@ -450,6 +450,7 @@ void Mangler::adminButton_clicked_cb(void) {/*{{{*/
             // if we tried sending a password, the only options are either
             // success or get booted from the server
         }
+        admin->adminWindow->show();
     } else {
         admin->adminWindow->show();
     }
@@ -1271,6 +1272,8 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                 {
                     const v3_permissions *perms = v3_get_permissions();
                     if (perms->srv_admin) {
+                        builder->get_widget("adminButton", button);
+                        button->set_label("Admin");
                         isAdmin = true;
                         builder->get_widget("adminLoginMenuItem", menuitem);
                         menuitem->hide();
