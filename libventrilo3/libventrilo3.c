@@ -663,6 +663,43 @@ _v3_recv(int block) {/*{{{*/
                             _v3_destroy_packet(msg);
                         }
                         break;/*}}}*/
+                    case V3_EVENT_CHAN_MODIFY:
+                    case V3_EVENT_CHAN_ADD:/*{{{*/
+                        {
+                            _v3_net_message *msg;
+                            v3_channel channel;
+                            memset(&channel, 0, sizeof(_v3_msg_channel));
+                            /* channel.id = ev.channel.id; */
+                            memcpy(&channel, &ev.data.channel, sizeof(v3_channel));
+                            channel.name = ev.text.name;
+                            channel.phonetic = ev.text.phonetic;
+                            channel.comment = ev.text.comment;
+                            if (channel.id) {
+                                _v3_debug(V3_DEBUG_INFO, "modify channel id %d", channel.id);
+                            } else {
+                                _v3_debug(V3_DEBUG_INFO, "add channel '%s'", channel.name);
+                            }
+                            msg = _v3_put_0x49(channel.id ? V3_MODIFY_CHANNEL : V3_ADD_CHANNEL, v3_get_user_id(), ev.text.password, &channel);
+                            if (!_v3_send(msg)) {
+                                _v3_debug(V3_DEBUG_SOCKET, "failed to send channel modify/add message");
+                            }
+                            _v3_destroy_packet(msg);
+                        }
+                        break;/*}}}*/
+                    case V3_EVENT_CHAN_REMOVE:/*{{{*/
+                        {
+                            _v3_net_message *msg;
+                            v3_channel channel;
+                            memset(&channel, 0, sizeof(_v3_msg_channel));
+                            channel.id = ev.channel.id;
+                            _v3_debug(V3_DEBUG_INFO, "removing channel id %d", channel.id);
+                            msg = _v3_put_0x49(V3_REMOVE_CHANNEL, v3_get_user_id(), NULL, &channel);
+                            if (!_v3_send(msg)) {
+                                _v3_debug(V3_DEBUG_SOCKET, "failed to send channel remove message");
+                            }
+                            _v3_destroy_packet(msg);
+                        }
+                        break;/*}}}*/
                     case V3_EVENT_USER_TALK_START:/*{{{*/
                         {
                             _v3_net_message *msg;
@@ -2911,6 +2948,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                 v3_server.name = strdup(m->name);
                 v3_server.version = strdup(m->version);
                 v3_server.max_clients = m->max_clients;
+                v3_server.is_licensed = m->is_licensed;
                 v3_server.connected_clients = m->connected_clients;
                 v3_server.port = m->port;
                 _v3_unlock_server();
@@ -4059,7 +4097,7 @@ v3_userlist_update(v3_account *account) {/*{{{*/
 
     memset(&ev, 0, sizeof(v3_event));
 
-    if (ev.data.account.perms.account_id != 0)
+    if (account->perms.account_id)
         ev.type = V3_EVENT_USERLIST_MODIFY;
     else
         ev.type = V3_EVENT_USERLIST_ADD;
@@ -4250,7 +4288,65 @@ v3_free_channel(v3_channel *channel) {/*{{{*/
     free(channel->comment);
     free(channel);
 }/*}}}*/
+void
+v3_channel_update(v3_channel *channel, const char *password) {/*{{{*/
+    /* update or create channel */
+    v3_event ev;
 
+    _v3_func_enter("v3_channel_update");
+    if (!v3_is_loggedin()) {
+        _v3_func_leave("v3_channel_update");
+        return;
+    }
+
+    memset(&ev, 0, sizeof(v3_event));
+
+    if (channel->id) ev.type = V3_EVENT_CHAN_MODIFY;
+    else ev.type = V3_EVENT_CHAN_ADD;
+    
+    memcpy(&(ev.data.channel), channel, sizeof(v3_channel) - sizeof(void*) * 4);
+    if (password) strncpy(ev.text.password, password, 31);
+    strncpy(ev.text.name, channel->name, 31);
+    strncpy(ev.text.phonetic, channel->phonetic, 31);
+    strncpy(ev.text.comment, channel->comment, 127);
+
+    _v3_lock_sendq();
+    _v3_debug(V3_DEBUG_EVENT, "sending %lu bytes to event pipe", sizeof(v3_event));
+    if (fwrite(&ev, sizeof(struct _v3_event), 1, v3_server.evoutstream) != 1) {
+        _v3_error("could not write to event pipe");
+    }
+    fflush(v3_server.evoutstream);
+    _v3_unlock_sendq();
+    _v3_func_leave("v3_channel_update");
+    return;
+}/*}}}*/
+void
+v3_channel_remove(uint16_t channel_id) {/*{{{*/
+    /* remove channel */
+    v3_event ev;
+
+    _v3_func_enter("v3_channel_remove");
+    if (!v3_is_loggedin()) {
+        _v3_func_leave("v3_channel_remove");
+        return;
+    }
+
+    memset(&ev, 0, sizeof(v3_event));
+
+    ev.type = V3_EVENT_CHAN_REMOVE;
+    ev.channel.id = channel_id;
+    ev.user.id = v3_get_user_id();
+    
+    _v3_lock_sendq();
+    _v3_debug(V3_DEBUG_EVENT, "sending %lu bytes to event pipe", sizeof(v3_event));
+    if (fwrite(&ev, sizeof(struct _v3_event), 1, v3_server.evoutstream) != 1) {
+        _v3_error("could not write to event pipe");
+    }
+    fflush(v3_server.evoutstream);
+    _v3_unlock_sendq();
+    _v3_func_leave("v3_channel_remove");
+    return;
+}/*}}}*/
 v3_rank *
 v3_get_rank(uint16_t id) {/*{{{*/
     v3_rank *rank, *ret_rank;
@@ -4641,6 +4737,11 @@ v3_get_max_clients(void) {/*{{{*/
     return v3_server.max_clients;
 }/*}}}*/
 
+int
+v3_is_licensed(void) {/*{{{*/
+    return v3_server.is_licensed;
+}/*}}}*/
+
 uint32_t
 v3_get_bytes_recv(void) {/*{{{*/
     return v3_server.recv_byte_count;
@@ -4868,7 +4969,13 @@ v3_get_permissions(void) {/*{{{*/
 
 uint8_t
 v3_is_channel_admin(uint16_t channel_id) {/*{{{*/
-    return v3_luser.channel_admin[channel_id];
+    v3_channel *c;
+    if (v3_luser.channel_admin[channel_id]) return 1;
+    if (! channel_id) return 0;
+    c = v3_get_channel(channel_id);
+    channel_id = c->parent;
+    v3_free_channel(c);
+    return v3_is_channel_admin(channel_id);
 }/*}}}*/
 
 /*

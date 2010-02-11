@@ -677,7 +677,8 @@ _v3_put_0x49(uint16_t subtype, uint16_t user_id, char *channel_password, _v3_msg
     _v3_net_message *msg;
     struct _v3_net_message_0x49 *msgdata;
     void *offset;
-
+    _v3_msg_channel *chan;
+    uint8_t *np;
     _v3_func_enter("_v3_put_0x49");
     msg = malloc(sizeof(_v3_net_message));
     memset(msg, 0, sizeof(_v3_net_message));
@@ -700,6 +701,56 @@ _v3_put_0x49(uint16_t subtype, uint16_t user_id, char *channel_password, _v3_msg
             }
             offset = (void*)((char *)msgdata + sizeof(_v3_msg_0x49)-sizeof(void *));
             memcpy(offset, channel, sizeof(_v3_msg_channel));
+            msg->data = (char *)msgdata;
+            _v3_func_leave("_v3_put_0x49");
+            return(msg);
+        case V3_ADD_CHANNEL:
+        case V3_MODIFY_CHANNEL:
+            msg->len = sizeof(_v3_msg_0x49) - sizeof(void *) + sizeof(_v3_msg_channel) - sizeof(void *) * 4 + strlen(channel->name) + strlen(channel->phonetic) + strlen(channel->comment) + sizeof(uint16_t) * 3;
+            _v3_debug(V3_DEBUG_PACKET_PARSE, "allocating %d bytes", msg->len);
+            msgdata = malloc(msg->len);
+            memset(msgdata, 0, msg->len);
+            msgdata->type = msg->type;
+            msgdata->subtype = subtype;
+            msgdata->user_id = user_id;
+            if (channel_password != NULL && strlen(channel_password) != 0) {
+                _v3_hash_password((uint8_t *)channel_password, (uint8_t *)msgdata->hash_password);
+            }
+            chan = (_v3_msg_channel*)&msgdata->channel;
+            memcpy(chan, channel, sizeof(_v3_msg_channel) - sizeof(void*)*4);
+            np = (uint8_t*)&chan->name;
+            *np = 0; np++;
+            *np = strlen(channel->name);
+            offset = (void*)(np + 1);
+            if (*np) memcpy(offset, channel->name, *np + 1);
+            np += (*np + 1);
+            *np = 0; np++;
+            *np = strlen(channel->phonetic);
+            offset = (void*)(np + 1);
+            if (*np) memcpy(offset, channel->phonetic, *np);
+            np += (*np + 1);
+            *np = 0; np++;
+            *np = strlen(channel->comment);
+            offset = (void*)(np + 1);
+            if (*np) memcpy(offset, channel->comment, *np);
+            msg->data = (char *)msgdata;
+            _v3_func_leave("_v3_put_0x49");
+            return(msg);
+        case V3_REMOVE_CHANNEL:
+            // this is a standard channel packet minus the pointer bytes for
+            // the name, comment, and phonetic
+            msg->len = sizeof(_v3_msg_0x49)-sizeof(void *)+sizeof(_v3_msg_channel) - sizeof(void *) * 4;
+            _v3_debug(V3_DEBUG_PACKET_PARSE, "allocating %d bytes", msg->len);
+            msgdata = malloc(sizeof(_v3_msg_0x49)-sizeof(void *)+sizeof(_v3_msg_channel));
+            memset(msgdata, 0, sizeof(_v3_msg_0x49)-sizeof(void *)+sizeof(_v3_msg_channel));
+            msgdata->type = msg->type;
+            msgdata->subtype = subtype;
+            msgdata->user_id = user_id;
+            if (channel_password != NULL && strlen(channel_password) != 0) {
+                _v3_hash_password((uint8_t *)channel_password, (uint8_t *)msgdata->hash_password);
+            }
+            chan = (_v3_msg_channel*)&msgdata->channel;
+            memcpy(chan, channel, sizeof(_v3_msg_channel) - sizeof(void*)*4);
             msg->data = (char *)msgdata;
             _v3_func_leave("_v3_put_0x49");
             return(msg);

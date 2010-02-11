@@ -348,6 +348,33 @@ struct _v3_event {
             int chan_auth_count;
             uint16_t chan_auth[32];
         } account;
+        struct {
+            uint16_t id;
+            uint16_t parent;
+            uint8_t  unknown_1;
+            uint8_t  password_protected;
+            uint16_t unknown_2;
+            uint16_t allow_recording;
+            uint16_t allow_cross_channel_transmit;
+            uint16_t allow_paging;
+            uint16_t allow_wave_file_binds;
+            uint16_t allow_tts_binds;
+            uint16_t allow_u2u_transmit;
+            uint16_t disable_guest_transmit;
+            uint16_t disable_sound_events;
+            uint16_t voice_mode;
+            uint16_t transmit_time_limit;
+            uint16_t allow_phantoms;
+            uint16_t max_clients;
+            uint16_t allow_guests;
+            uint16_t inactive_exempt;
+            uint16_t protect_mode;
+            uint16_t transmit_rank_level;
+            uint16_t channel_codec;
+            uint16_t channel_format;
+            uint16_t allow_voice_target;
+            uint16_t allow_command_target;
+        } channel;
         int16_t sample16[16384];
         uint8_t sample[32768];
         char    motd[2048];
@@ -504,6 +531,7 @@ typedef struct __v3_server {
     uint16_t port;                    // The server's TCP port number
     uint16_t max_clients;             // The maximum number of clients allowed
     uint16_t connected_clients;       // The number of clients currently connected
+    uint16_t is_licensed;             // The server is licensed
     char *name;                       // The name of the server
     char *version;                    // The version of the server
     char *os;                         // The OS the server is running on
@@ -604,6 +632,7 @@ uint16_t    *v3_get_soundq(uint32_t *len);
 uint32_t    v3_get_soundq_length(void);
 v3_event    *v3_get_event(int block);
 int         v3_get_max_clients(void);
+int         v3_is_licensed(void);
 uint32_t    v3_get_bytes_recv(void);
 uint32_t    v3_get_bytes_sent(void);
 uint32_t    v3_get_packets_recv(void);
@@ -620,7 +649,8 @@ void        v3_stop_audio(void);
 void        v3_set_server_opts(uint8_t type, uint8_t value);
 const v3_permissions *v3_get_permissions(void);
 uint8_t     v3_is_channel_admin(uint16_t channel_id);
-
+void        v3_channel_update(v3_channel *channel, const char *password);
+void        v3_channel_remove(uint16_t channel_id);
 
 // User list functions
 int         v3_user_count(void);

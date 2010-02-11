@@ -108,6 +108,7 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
     builder->get_widget("adminButton", button);
     button->signal_clicked().connect(sigc::mem_fun(this, &Mangler::adminButton_clicked_cb));
     isAdmin = false;
+    isChanAdmin = false;
 
     // Settings Button
     builder->get_widget("settingsButton", button);
@@ -175,7 +176,7 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
     menuitem->signal_activate().connect(sigc::mem_fun(this, &Mangler::adminButton_clicked_cb));
 
     builder->get_widget("adminWindowMenuItem", menuitem);
-    menuitem->signal_activate().connect(sigc::mem_fun(this, &Mangler::adminButton_clicked_cb));
+    menuitem->signal_activate().connect(sigc::mem_fun(this, &Mangler::adminWindowMenuItem_activated_cb));
 
     builder->get_widget("settingsMenuItem", menuitem);
     menuitem->signal_activate().connect(sigc::mem_fun(this, &Mangler::settingsButton_clicked_cb));
@@ -299,6 +300,7 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
 
     Glib::signal_timeout().connect(sigc::mem_fun(*this, &Mangler::updateXferAmounts), 500);
     Glib::signal_timeout().connect(sigc::mem_fun(*this, &Mangler::getNetworkEvent), 10);
+    admin = new ManglerAdmin(builder);
 }/*}}}*/
 
 /*
@@ -394,6 +396,7 @@ void Mangler::connectButton_clicked_cb(void) {/*{{{*/
             v3_set_server_opts(V3_USER_ACCEPT_CHAT, server->acceptPrivateChat);
             v3_set_server_opts(V3_USER_ALLOW_RECORD, server->allowRecording);
             isAdmin = false;
+            isChanAdmin = false;
             Glib::Thread::create(sigc::bind(sigc::mem_fun(this->network, &ManglerNetwork::connect), hostname, port, username, password, phonetic), FALSE);
         }
     } else {
@@ -447,7 +450,12 @@ void Mangler::adminButton_clicked_cb(void) {/*{{{*/
             // if we tried sending a password, the only options are either
             // success or get booted from the server
         }
+    } else {
+        admin->adminWindow->show();
     }
+}/*}}}*/
+void Mangler::adminWindowMenuItem_activated_cb(void) {/*{{{*/
+    admin->adminWindow->show();
 }/*}}}*/
 void Mangler::settingsButton_clicked_cb(void) {/*{{{*/
     settings->settingsWindow->show();
@@ -618,6 +626,7 @@ void Mangler::qcConnectButton_clicked_cb(void) {/*{{{*/
     set_charset("");
     connectedServerId = -1;
     isAdmin = false;
+    isChanAdmin = false;
     v3_set_server_opts(V3_USER_ACCEPT_PAGES, 1);
     v3_set_server_opts(V3_USER_ACCEPT_U2U, 1);
     v3_set_server_opts(V3_USER_ACCEPT_CHAT, 1);
@@ -682,6 +691,7 @@ void Mangler::onDisconnectHandler(void) {/*{{{*/
 
         connectbutton->set_sensitive(true);
         channelTree->clear();
+        admin->clearChannels();
         builder->get_widget("xmitButton", togglebutton);
         togglebutton->set_active(false);
         builder->get_widget("progressbar", progressbar);
@@ -701,6 +711,7 @@ void Mangler::onDisconnectHandler(void) {/*{{{*/
         mangler->statusIcon->set(icons["tray_icon_grey"]);
         audioControl->playNotification("logout");
         isAdmin = false;
+        isChanAdmin = false;
         builder->get_widget("adminSeparatorMenuItem", menuitem);
         menuitem->hide();
         builder->get_widget("adminLoginMenuItem", menuitem);
@@ -862,6 +873,14 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                             c_to_ustring(c->name),
                             c_to_ustring(c->comment),
                             c->phonetic);
+                    if (! isAdmin && ! isChanAdmin && v3_is_channel_admin(c->id)) {
+                        isChanAdmin = true;
+                        builder->get_widget("adminSeparatorMenuItem", menuitem);
+                        menuitem->show();
+                        builder->get_widget("adminWindowMenuItem", menuitem);
+                        menuitem->show();
+                    }
+                    admin->channelUpdated(c);
                     if (ev->channel.id == v3_get_user_channel(v3_get_user_id())) {
                         builder->get_widget("codecLabel", label);
                         if ((codec_info = v3_get_channel_codec(ev->channel.id))) {
@@ -893,6 +912,7 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                     // can't get any channel info... it's already gone by this point
                     //fprintf(stderr, "removing channel id %d\n", ev->channel.id);
                     channelTree->removeChannel(ev->channel.id);
+                    admin->channelRemoved(ev->channel.id);
                 }
                 break;/*}}}*/
             case V3_EVENT_LOGIN_COMPLETE:/*{{{*/
@@ -1019,6 +1039,14 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                         c_to_ustring(c->name),
                         c_to_ustring(c->comment),
                         c->phonetic);
+                if (! isAdmin && ! isChanAdmin && v3_is_channel_admin(c->id)) {
+                    isChanAdmin = true;
+                    builder->get_widget("adminSeparatorMenuItem", menuitem);
+                    menuitem->show();
+                    builder->get_widget("adminWindowMenuItem", menuitem);
+                    menuitem->show();
+                }
+                admin->channelAdded(c);
                 v3_free_channel(c);
                 break;/*}}}*/
             case V3_EVENT_CHAN_BADPASS:/*{{{*/
@@ -1253,7 +1281,11 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                         builder->get_widget("adminLoginMenuItem", menuitem);
                         menuitem->show();
                         builder->get_widget("adminWindowMenuItem", menuitem);
-                        menuitem->hide();
+                        if (isChanAdmin) {
+                            menuitem->show();
+                        } else {
+                            menuitem->hide();
+                        }
                     }
                     v3_user *lobby = v3_get_user(0);
                     if (lobby) {
@@ -1277,6 +1309,7 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                     case V3_SERVER_ALPHABETIC:
                         channelTree->sortAlphanumeric = ev->serverproperty.value;
                         channelTree->refreshAllChannels();
+                        admin->channelSort(ev->serverproperty.value);
                         break;
                     case V3_SERVER_MOTD_ALWAYS:
                         motdAlways = ev->serverproperty.value;

@@ -38,6 +38,7 @@
 #include "manglerprivchat.h"
 #include "manglercharset.h"
 #include "manglerintegration.h"
+#include "mangleradmin.h"
 #include "locale.h"
 
 extern "C" {
@@ -89,6 +90,7 @@ class Mangler
         ManglerAudio                        *audioControl;
         ManglerSettings                     *settings;
         ManglerIntegration                  *integration;
+        ManglerAdmin                       *admin;
 
         bool                                isTransmitting;
         bool                                isTransmittingButton;
@@ -96,6 +98,7 @@ class Mangler
         bool                                isTransmittingMouse;
         bool                                iconified;
         bool                                isAdmin;
+        bool                                isChanAdmin;
         bool                                muteSound;
         bool                                muteMic;
         bool                                motdAlways;
@@ -159,6 +162,7 @@ class Mangler
         void hideServerInfoMenuItem_toggled_cb(void);
         void hideGuestFlagMenuItem_toggled_cb(void);
         void quitMenuItem_activate_cb(void);
+        void adminWindowMenuItem_activated_cb(void);
 
         bool getNetworkEvent(void);
         bool updateIntegration(void); // music player integration
