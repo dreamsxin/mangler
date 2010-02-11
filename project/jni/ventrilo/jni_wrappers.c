@@ -1,6 +1,10 @@
 #include <jni.h>
 #include "ventrilo3.h"
 
+JNIEXPORT jboolean JNICALL Java_org_mangler_VentriloInterface_recv() {
+	return _v3_recv(1) != NULL;
+}
+
 JNIEXPORT void JNICALL Java_org_mangler_VentriloInterface_joinchat() {
 	v3_join_chat();
 }
@@ -21,8 +25,8 @@ JNIEXPORT void JNICALL Java_org_mangler_VentriloInterface_phantomremove(jchar ch
 	v3_phantom_remove(channelid);
 }
 
-JNIEXPORT jint JNICALL Java_org_mangler_VentriloInterface_isloggedin() {
-	return v3_is_loggedin();
+JNIEXPORT jboolean JNICALL Java_org_mangler_VentriloInterface_isloggedin() {
+	return v3_is_loggedin() != 0;
 }
 
 JNIEXPORT jchar JNICALL Java_org_mangler_VentriloInterface_getuserid() {
@@ -109,7 +113,6 @@ JNIEXPORT void JNICALL Java_org_mangler_VentriloInterface_settext(JNIEnv* env, j
 JNIEXPORT jint JNICALL Java_org_mangler_VentriloInterface_getevent(JNIEnv* env, jobject obj, jobject eventdata) {
 	v3_event *ev = v3_get_event(V3_BLOCK);
 	if(ev != NULL) {
-		
 		jclass event_class = (*env)->GetObjectClass(env, eventdata);
 		jfieldID _data = (*env)->GetFieldID(env, event_class, "data", "Lorg/mangler/EventData$_data;");
 		
@@ -128,4 +131,14 @@ JNIEXPORT jint JNICALL Java_org_mangler_VentriloInterface_getevent(JNIEnv* env, 
 		return type;
 	}
 	return 0;
+}
+
+JNIEXPORT void JNICALL Java_org_mangler_VentriloInterface_sendaudio(JNIEnv* env, jobject obj, jbyteArray pcm, jint rate) {
+	jboolean isCopy;
+	jsize size  = (*env)->GetArrayLength(env, pcm);
+	jbyte *data = (*env)->GetByteArrayElements(env, pcm, &isCopy);
+	v3_send_audio(V3_AUDIO_SENDTYPE_U2CCUR, rate, data, size, 0);
+	if(isCopy) {
+		free(data);
+	}
 }
