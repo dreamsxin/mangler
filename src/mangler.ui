@@ -3704,6 +3704,7 @@ These are useful for developers.</property>
     </action-widgets>
   </object>
   <object class="GtkWindow" id="adminWindow">
+    <property name="title" translatable="yes">Mangler - Server Admin</property>
     <property name="default_width">640</property>
     <property name="default_height">480</property>
     <child>
