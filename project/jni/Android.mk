@@ -34,16 +34,15 @@ include $(CLEAR_VARS)
 LOCAL_PATH			:= $(LIBPATH)
 LOCAL_MODULE    		:= libventrilo3
 LOCAL_SRC_FILES 		:= libventrilo3.c libventrilo3_message.c ventrilo3_handshake.c
-LOCAL_STATIC_LIBRARIES		:= libgsm libspeex
-LOCAL_LDLIBS			:= -llog
 LOCAL_CFLAGS			:= -DANDROID -D__EMX__ -fpack-struct=1 -I$(ROOT)/gsm/inc -I$(ROOT)/speex/include -DHAVE_GSM -DHAVE_GSM_H -DHAVE_SPEEX
-include $(BUILD_SHARED_LIBRARY)
+include $(BUILD_STATIC_LIBRARY)
 
-# Build JNI interface
+# Build libventrilo
 include $(CLEAR_VARS)
 LOCAL_PATH			:= $(ROOT)/ventrilo
-LOCAL_MODULE    		:= ventrilo_jni
+LOCAL_MODULE    		:= libventrilo_interface
 LOCAL_SRC_FILES 		:= jni_wrappers.c
-LOCAL_SHARED_LIBRARIES		:= ventrilo3
+LOCAL_LDLIBS			:= -llog
 LOCAL_CFLAGS			:= -I$(LIBPATH)
+LOCAL_STATIC_LIBRARIES		:= libventrilo3 libgsm libspeex
 include $(BUILD_SHARED_LIBRARY)
