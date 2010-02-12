@@ -1210,9 +1210,11 @@ _v3_recv(int block) {/*{{{*/
                             a.owner = strdup(ev.data.account.owner);
                             a.notes = strdup(ev.data.account.notes);
                             a.lock_reason = strdup(ev.data.account.lock_reason);
-                            a.chan_admin = malloc(ev.data.account.chan_admin_count);
+                            a.chan_admin_count = ev.data.account.chan_admin_count;
+                            a.chan_admin = malloc(a.chan_admin_count * 2);
                             memcpy(a.chan_admin, ev.data.account.chan_admin, ev.data.account.chan_admin_count * 2);
-                            a.chan_auth = malloc(ev.data.account.chan_auth_count);
+                            a.chan_auth_count = ev.data.account.chan_auth_count;
+                            a.chan_auth = malloc(a.chan_auth_count * 2);
                             memcpy(a.chan_auth, ev.data.account.chan_auth, ev.data.account.chan_auth_count * 2);
                             a.next = NULL;
 

@@ -104,13 +104,16 @@ _v3_get_msg_uint16_array(void *offset, uint16_t *len) {/*{{{*/
 
 int
 _v3_put_msg_uint16_array(void *buffer, uint16_t len, uint16_t *array) {/*{{{*/
+    uint16_t count;
+    void *p;
     _v3_func_enter("_v3_put_msg_uint16_array");
-    memcpy(buffer, &len, 2);
-    if (len) {
-        memcpy(buffer, array, len * 2);
+    *((uint16_t*)buffer) = htons(len);
+    for (count = 0; count < len; count++) {
+        p = buffer + 2 + count * 2;
+        *((uint16_t*)p) = htons(array[count]);
     }
     _v3_func_leave("_v3_put_msg_uint16_array");
-    return len + 2;
+    return len*2 + 2;
 }/*}}}*/
 
 int
@@ -876,7 +879,7 @@ _v3_net_message *_v3_put_0x4a(uint8_t subtype, v3_account *account, v3_account *
             m->len = sizeof(_v3_msg_0x4a) + sizeof(account->perms) + strlen(account->username) + 2 + strlen(account->owner) + 2 + strlen(account->notes) + 2 + strlen(account->lock_reason) + 2 + ((account->chan_admin_count * 2) + 2) + ((account->chan_auth_count * 2) + 2);
             mc = malloc(m->len);
             memset(mc, 0, m->len);
-            ((_v3_msg_0x4a_account *)mc)->header.count = 1;
+            mc->count = 1;
             _v3_put_msg_account((uint8_t *)mc + sizeof(_v3_msg_0x4a), account);
             break;
         case V3_USERLIST_REMOVE:
