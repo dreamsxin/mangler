@@ -26,8 +26,8 @@
 
 #include "mangler.h"
 #include "mangleradmin.h"
-//#include <cstdlib>
-//#include <cstring>
+
+int natsort(const char *l, const char *r);
 
 ManglerAdmin::ManglerAdmin(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
     this->builder = builder;

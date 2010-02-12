@@ -29,6 +29,9 @@
 #include "mangler-sounds.h"
 #include <sys/time.h>
 
+#include "channeltree.h"
+#include "manglersettings.h"
+
 ManglerAudio::ManglerAudio(Glib::ustring type) {/*{{{*/
     //fprintf(stderr, "creating audio object\n");
 }/*}}}*/

@@ -29,6 +29,12 @@
 #include "channeltree.h"
 #include "time.h"
 
+#include "manglerchat.h"
+#include "manglerconfig.h"
+#include "manglersettings.h"
+#include "manglerprivchat.h"
+#include "manglercharset.h"
+
 using namespace std;
 
 ManglerChannelTree::ManglerChannelTree(Glib::RefPtr<Gtk::Builder> builder)/*{{{*/

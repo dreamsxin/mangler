@@ -27,6 +27,9 @@
 #include "mangler.h"
 #include "manglerserverlist.h"
 
+#include "manglersettings.h"
+#include "manglercharset.h"
+
 ManglerServerList::ManglerServerList(Glib::RefPtr<Gtk::Builder> builder) {
     serverListTreeModel = Gtk::ListStore::create(serverListColumns);
     builder->get_widget("serverListWindow", serverListWindow);

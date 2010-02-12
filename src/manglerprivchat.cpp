@@ -26,6 +26,9 @@
 
 #include "mangler.h"
 #include "manglerprivchat.h"
+
+#include "manglercharset.h"
+
 extern const char ManglerUI[];
 
 ManglerPrivChat::ManglerPrivChat(uint16_t userid) {

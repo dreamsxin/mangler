@@ -29,17 +29,16 @@
 #include <sys/types.h>
 #include <stdint.h>
 #include <iostream>
-#include "channeltree.h"
-#include "manglernetwork.h"
-#include "mangleraudio.h"
-#include "manglersettings.h"
-#include "manglerserverlist.h"
-#include "manglerchat.h"
-#include "manglerprivchat.h"
-#include "manglercharset.h"
-#include "manglerintegration.h"
-#include "mangleradmin.h"
-#include "locale.h"
+
+class ManglerChannelTree;
+class ManglerNetwork;
+class ManglerAudio;
+class ManglerSettings;
+class ManglerServerList;
+class ManglerChat;
+class ManglerPrivChat;
+class ManglerIntegration;
+class ManglerAdmin;
 
 extern "C" {
 #include <ventrilo3.h>

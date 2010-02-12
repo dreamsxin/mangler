@@ -27,6 +27,10 @@
 #include "mangler.h"
 #include "manglernetwork.h"
 
+#include "channeltree.h"
+#include "manglersettings.h"
+#include "manglercharset.h"
+
 ManglerNetwork::ManglerNetwork(        Glib::RefPtr<Gtk::Builder>          builder) {
     this->builder = builder;
 }

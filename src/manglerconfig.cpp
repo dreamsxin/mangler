@@ -33,6 +33,7 @@
 #include <gdk/gdkx.h>
 #include "config.h"
 
+#include "manglerserverlist.h"
 
 ManglerConfig::ManglerConfig() {/*{{{*/
     lv3_debuglevel                  = 0;

@@ -29,6 +29,9 @@
 #include "manglersettings.h"
 #include <gdk/gdkx.h>
 
+#include "manglerintegration.h"
+#include "mangleraudio.h"
+
 ManglerSettings::ManglerSettings(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
 
     this->builder = builder;

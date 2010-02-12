@@ -33,6 +33,18 @@
 #include <gdk/gdkx.h>
 #include <X11/extensions/XInput.h>
 
+#include "channeltree.h"
+#include "manglernetwork.h"
+#include "mangleraudio.h"
+#include "manglersettings.h"
+#include "manglerserverlist.h"
+#include "manglerchat.h"
+#include "manglerprivchat.h"
+#include "manglercharset.h"
+#include "manglerintegration.h"
+#include "mangleradmin.h"
+#include "locale.h"
+
 using namespace std;
 
 Mangler *mangler;
