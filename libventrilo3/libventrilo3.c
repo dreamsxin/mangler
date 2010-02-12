@@ -784,13 +784,15 @@ _v3_recv(int block) {/*{{{*/
                                         uint8_t channels         = (ev.pcm.channels == 2) ? 2 : 1;
                                         uint16_t pcm_frame_size  = codec->pcmframesize * channels;
                                         uint16_t frame_count     = ev.pcm.length / pcm_frame_size;
-                                        uint16_t celt_frame_size = (codec->codec == 0x01) ? 60 : 54;
-                                        uint16_t celtdatabuf     = frame_count * celt_frame_size;
+                                        uint8_t celt_frag_size   = (codec->codec == 0x01) ? 60 : 54;
+                                        uint8_t celt_frame_size;
+                                        uint16_t celtdatabuf     = frame_count * celt_frag_size;
                                         uint8_t *celtdata        = NULL;
+                                        uint8_t *celtdataptr     = NULL;
                                         uint16_t celtdatalen     = 0;
                                         uint16_t pktlen          = (codec->codec == 0x01) ? 198 : 108; // max data length for packet
-                                        uint8_t pktframes        = pktlen / celt_frame_size; // max celt frames per packet
-                                        pktlen                   = pktframes * celt_frame_size; // new data length for frames to fill a packet
+                                        uint8_t pktframes        = pktlen / celt_frag_size; // max celt frames per packet
+                                        pktlen                   = pktframes * celt_frag_size; // new data length for frames to fill a packet
 
                                         _v3_debug(V3_DEBUG_INFO, "encoding %d bytes of PCM to CELT @ %lu", ev.pcm.length, codec->rate);
                                         if (!celtmode || !celtenc || channels != last_chan) {
@@ -833,11 +835,12 @@ _v3_recv(int block) {/*{{{*/
                                         _v3_debug(V3_DEBUG_MEMORY, "allocating %lu bytes for %d celt frames", celtdatabuf, frame_count);
                                         celtdata = malloc(celtdatabuf);
                                         memset(celtdata, 0, celtdatabuf);
+                                        celtdataptr = celtdata;
                                         for (ctr = 0; ctr <= frame_count; ctr++) {
                                             if (ctr && (!(ctr % pktframes) || ctr == frame_count)) {
                                                 if (ctr == frame_count && frame_count % pktframes) {
                                                     pktframes = frame_count % pktframes;
-                                                    pktlen = pktframes * celt_frame_size;
+                                                    pktlen = pktframes * celt_frag_size;
                                                 }
                                                 msg = _v3_put_0x52(
                                                                 V3_AUDIO_DATA,
@@ -855,14 +858,17 @@ _v3_recv(int block) {/*{{{*/
                                             }
                                             if (ctr < frame_count) {
                                                 _v3_debug(V3_DEBUG_INFO, "encoding celt frame %d", ctr+1);
+                                                celt_frame_size = celt_frag_size - 1;
+                                                *celtdataptr++ = celt_frame_size;
                                                 if (celt_encode(
                                                                 celtenc,
                                                                 ((void *)&ev.data.sample)+(ctr*pcm_frame_size),
                                                                 NULL,
-                                                                (void *)celtdata+(ctr*celt_frame_size),
+                                                                (void *)celtdataptr,
                                                                 celt_frame_size) < 0) {
                                                     _v3_debug(V3_DEBUG_INFO, "failed to encode celt frame %d", ctr+1);
                                                 }
+                                                celtdataptr += celt_frame_size;
                                             }
                                         }
                                         //celt_encoder_destroy(celtenc);
@@ -2721,6 +2727,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                     case 0x01:
                         {
                             _v3_msg_0x52_0x01_in *msub = (_v3_msg_0x52_0x01_in *)msg->contents;
+                            const v3_codec *codec = v3_get_codec(msub->header.codec, msub->header.codec_format);
                             ev->type = V3_EVENT_PLAY_AUDIO;
                             ev->user.id = m->header.user_id;
                             ev->pcm.send_type = m->header.send_type;
@@ -2733,7 +2740,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
 #if HAVE_GSM
                                 case 0x00: // GSM
                                     {
-                                        uint8_t *gsmdata = msub->data.frames;
+                                        uint8_t *gsmdataptr = msub->data.frames;
 
                                         if (!v3_decoders[m->header.user_id].gsm) {
                                             if (!(v3_decoders[m->header.user_id].gsm = gsm_create())) {
@@ -2748,8 +2755,8 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                                             gsm_option(v3_decoders[m->header.user_id].gsm, GSM_OPT_WAV49, &one);
                                         }
                                         for (ctr = 0; ctr < msub->header.data_length / 65; ctr++) {
-                                            if (gsm_decode(v3_decoders[m->header.user_id].gsm, gsmdata+(ctr*65), (void *)ev->data.sample+(ctr*640)) || 
-                                                gsm_decode(v3_decoders[m->header.user_id].gsm, gsmdata+(ctr*65)+33, (void *)ev->data.sample+(ctr*640)+320)) {
+                                            if (gsm_decode(v3_decoders[m->header.user_id].gsm, gsmdataptr+(ctr*65), (void *)ev->data.sample+(ctr*640)) || 
+                                                gsm_decode(v3_decoders[m->header.user_id].gsm, gsmdataptr+(ctr*65)+33, (void *)ev->data.sample+(ctr*640)+320)) {
                                                 _v3_debug(V3_DEBUG_INFO, "failed to decode gsm frame %d", ctr);
                                                 continue;
                                             }
@@ -2767,10 +2774,11 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                                         void *celtdec            = v3_decoders[m->header.user_id].celt;
                                         static uint8_t last_chan = 0;
                                         uint8_t channels         = ev->pcm.channels;
-                                        uint16_t pcm_frame_size  = 640 * channels;
+                                        uint16_t pcm_frame_size  = codec->pcmframesize * channels;
                                         uint16_t frame_size      = pcm_frame_size / channels;
-                                        uint16_t celt_frame_size = (msub->header.codec == 0x01) ? 60 : 54;
-                                        uint8_t *celtdata        = msub->data.frames;
+                                        uint8_t celt_frame_size;
+                                        uint8_t *celtdataptr     = msub->data.frames;
+                                        uint16_t celtdatalen     = msub->header.data_length;
 
                                         if (!celtmode || !celtdec || channels != last_chan) {
                                             if (celtdec) {
@@ -2794,17 +2802,28 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                                             v3_decoders[m->header.user_id].celt = celtdec;
                                             last_chan = channels;
                                         }
-                                        for (ctr = 0; ctr < msub->header.data_length / celt_frame_size; ctr++) {
-                                            if (celt_decode(
-                                                            v3_decoders[m->header.user_id].celt,
-                                                            (void *)celtdata+(ctr*celt_frame_size),
-                                                            celt_frame_size,
-                                                            (void *)ev->data.sample+(ctr*pcm_frame_size))) {
-                                                _v3_debug(V3_DEBUG_INFO, "failed to decode celt frame %d", ctr+1);
-                                                continue;
+                                        while (celtdatalen) {
+                                            celt_frame_size = *celtdataptr++;
+                                            celtdatalen--;
+                                            if (!celt_frame_size || celtdatalen - celt_frame_size < 0) {
+                                                _v3_error("received a malformed celt packet");
+                                                _v3_destroy_0x52(msg);
+                                                _v3_destroy_packet(msg);
+                                                free(ev);
+                                                _v3_func_leave("_v3_process_message");
+                                                return V3_MALFORMED;
                                             }
+                                            if (celt_decode(
+                                                            celtdec,
+                                                            (void *)celtdataptr,
+                                                            celt_frame_size,
+                                                            (void *)ev->data.sample + ev->pcm.length)) {
+                                                _v3_debug(V3_DEBUG_INFO, "failed to decode celt frame");
+                                            }
+                                            celtdataptr += celt_frame_size;
+                                            celtdatalen -= celt_frame_size;
+                                            ev->pcm.length += pcm_frame_size;
                                         }
-                                        ev->pcm.length = (msub->header.data_length / celt_frame_size) * pcm_frame_size;
                                         _v3_debug(V3_DEBUG_EVENT, "queueing pcm msg length %d", ev->pcm.length);
                                     }
                                     break;
@@ -2814,9 +2833,9 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                                     {
                                         static uint32_t last_rate = 0;
                                         uint16_t frame_count      = msub->data.speex.frame_count;
-                                        uint16_t pcm_frame_size   = msub->data.speex.pcm_frame_size;
+                                        uint16_t pcm_frame_size   = codec->pcmframesize;
                                         uint16_t spx_frame_size;
-                                        uint8_t *spxdata          = msub->data.speex.frames;
+                                        uint8_t *spxdataptr       = msub->data.speex.frames;
                                         SpeexBits bits;
 
                                         /*
@@ -2856,11 +2875,11 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                                         }
                                         speex_bits_init(&bits);
                                         for (ctr = 0; ctr < frame_count; ctr++) {
-                                            speex_bits_read_from(&bits, (void *)spxdata+(ctr*(spx_frame_size+2))+2, spx_frame_size);
-                                            speex_decode_int(v3_decoders[m->header.user_id].speex, &bits, ev->data.sample16+(ctr*pcm_frame_size));
+                                            speex_bits_read_from(&bits, (void *)spxdataptr+(ctr*(spx_frame_size+2))+2, spx_frame_size);
+                                            speex_decode_int(v3_decoders[m->header.user_id].speex, &bits, (void *)ev->data.sample+(ctr*pcm_frame_size));
                                         }
                                         speex_bits_destroy(&bits);
-                                        ev->pcm.length = frame_count * pcm_frame_size * sizeof(int16_t);
+                                        ev->pcm.length = frame_count * pcm_frame_size;
                                         _v3_debug(V3_DEBUG_EVENT, "queueing pcm msg length %d", ev->pcm.length);
                                     }
                                     break;
@@ -3073,7 +3092,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                                 v3_event *ev = _v3_create_event(V3_EVENT_PRIVATE_CHAT_START);
                                 ev->user.privchat_user1 = m->user1;
                                 ev->user.privchat_user2 = m->user2;
-                                _v3_debug(V3_DEBUG_INFO, "recieved chat start from user id %d", m->user2);
+                                _v3_debug(V3_DEBUG_INFO, "received chat start from user id %d", m->user2);
                                 v3_queue_event(ev);
                             }
                         }
@@ -3083,7 +3102,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                             v3_event *ev = _v3_create_event(V3_EVENT_PRIVATE_CHAT_END);
                             ev->user.privchat_user1 = m->user1;
                             ev->user.privchat_user2 = m->user2;
-                            _v3_debug(V3_DEBUG_INFO, "recieved chat end from user id %d", m->user2);
+                            _v3_debug(V3_DEBUG_INFO, "received chat end from user id %d", m->user2);
                             v3_queue_event(ev);
                         }
                         break;
@@ -3094,7 +3113,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                             ev->user.privchat_user2 = m->user2;
                             ev->flags = m->error;
                             strncpy(ev->data.chatmessage, m->msg, sizeof(ev->data.chatmessage) - 1);
-                            _v3_debug(V3_DEBUG_INFO, "recieved chat message from user id %d: %s", m->user2, m->msg);
+                            _v3_debug(V3_DEBUG_INFO, "received chat message from user id %d: %s", m->user2, m->msg);
                             free(m->msg);
                             v3_queue_event(ev);
                         }
@@ -3104,7 +3123,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                             v3_event *ev = _v3_create_event(V3_EVENT_PRIVATE_CHAT_BACK);
                             ev->user.privchat_user1 = m->user1;
                             ev->user.privchat_user2 = m->user2;
-                            _v3_debug(V3_DEBUG_INFO, "recieved chat back from user id %d");
+                            _v3_debug(V3_DEBUG_INFO, "received chat back from user id %d");
                             v3_queue_event(ev);
                         }
                         break;
@@ -3113,12 +3132,12 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                             v3_event *ev = _v3_create_event(V3_EVENT_PRIVATE_CHAT_AWAY);
                             ev->user.privchat_user1 = m->user1;
                             ev->user.privchat_user2 = m->user2;
-                            _v3_debug(V3_DEBUG_INFO, "recieved chat away from user id %d");
+                            _v3_debug(V3_DEBUG_INFO, "received chat away from user id %d");
                             v3_queue_event(ev);
                         }
                         break;
                     default:
-                        _v3_debug(V3_DEBUG_INFO, "recieved unknown subtype %d", m->subtype);
+                        _v3_debug(V3_DEBUG_INFO, "received unknown subtype %d", m->subtype);
                         break;
                 }
                 _v3_destroy_packet(msg);
@@ -4773,25 +4792,29 @@ v3_get_packets_sent(void) {/*{{{*/
 
 uint32_t
 v3_get_codec_rate(uint16_t codec, uint16_t format) {/*{{{*/
-    int ctr;
+    int ctr = 0;
 
-    for (ctr = 0; v3_codecs[ctr].codec != (uint8_t)-1; ctr++) {
+    while (v3_codecs[ctr].codec != (uint8_t)-1) {
         if (v3_codecs[ctr].codec == codec && v3_codecs[ctr].format == format) {
             return v3_codecs[ctr].rate;
         }
+        ctr++;
     }
+
     return 0;
 }/*}}}*/
 
 const v3_codec*
 v3_get_codec(uint16_t codec, uint16_t format) {/*{{{*/
-    int ctr;
+    int ctr = 0;
 
-    for (ctr = 0; v3_codecs[ctr].codec != (uint8_t)-1; ctr++) {
+    while (v3_codecs[ctr].codec != (uint8_t)-1) {
         if (v3_codecs[ctr].codec == codec && v3_codecs[ctr].format == format) {
             return &v3_codecs[ctr];
         }
+        ctr++;
     }
+
     return NULL;
 }/*}}}*/
 
@@ -4899,7 +4922,7 @@ v3_start_audio(uint16_t send_type) {/*{{{*/
 }/*}}}*/
 
 uint32_t
-v3_send_audio(uint16_t send_type, uint32_t rate, uint8_t *pcm, uint32_t length, uint8_t celt_stereo) {/*{{{*/
+v3_send_audio(uint16_t send_type, uint32_t rate, uint8_t *pcm, uint32_t length, uint8_t stereo) {/*{{{*/
     v3_event ev;
     const v3_codec *codec;
 
@@ -4918,7 +4941,7 @@ v3_send_audio(uint16_t send_type, uint32_t rate, uint8_t *pcm, uint32_t length, 
     ev.pcm.send_type = send_type;
     ev.pcm.rate = rate;
     ev.pcm.length = length;
-    ev.pcm.channels = celt_stereo ? 2 : 1;
+    ev.pcm.channels = stereo ? 2 : 1;
     memcpy(ev.data.sample, pcm, length);
     _v3_lock_sendq();
     _v3_debug(V3_DEBUG_EVENT, "sending %lu bytes to event pipe for event type %d (pcm length %d)", sizeof(v3_event), ev.type, length);

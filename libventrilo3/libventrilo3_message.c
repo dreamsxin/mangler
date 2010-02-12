@@ -303,6 +303,8 @@ _v3_put_msg_channel(void *buffer, _v3_msg_channel *channel) {/*{{{*/
     return(buffer-start_buffer);
 }/*}}}*/
 
+/*}}}*/
+
 /*
  * These functions parse or create the various message types.  For all
  * functions, the "data" member is an array of bytes either received from or
@@ -1108,7 +1110,7 @@ _v3_get_0x52(_v3_net_message *msg) {/*{{{*/
                             return false;
                         } else {
                             uint16_t frame_count;
-                            uint16_t spx_fragment_size;
+                            uint16_t spx_frag_size;
 
                             msub->data.speex.frame_count = ntohs(msub->data.speex.frame_count); // these are big endian
                             msub->data.speex.pcm_frame_size = ntohs(msub->data.speex.pcm_frame_size); // convert to host byte order
@@ -1119,11 +1121,11 @@ _v3_get_0x52(_v3_net_message *msg) {/*{{{*/
                                 _v3_func_leave("_v3_get_0x52 (0x01_in speex)");
                                 return false;
                             }
-                            spx_fragment_size = (msub->header.data_length - 4) / frame_count;
-                            _v3_debug(V3_DEBUG_PACKET_PARSE, "speex frame count: %d (%d byte frames)", frame_count, spx_fragment_size - 2);
-                            _v3_debug(V3_DEBUG_PACKET_PARSE, "allocating %d bytes for speex data", frame_count * spx_fragment_size);
-                            msub->data.speex.frames = malloc(frame_count * spx_fragment_size);
-                            memcpy(msub->data.speex.frames, msg->data + (sizeof(_v3_msg_0x52_0x01_in) - sizeof(void *)), frame_count * spx_fragment_size);
+                            spx_frag_size = (msub->header.data_length - 4) / frame_count;
+                            _v3_debug(V3_DEBUG_PACKET_PARSE, "speex frame count: %d (%d byte frames)", frame_count, spx_frag_size - 2);
+                            _v3_debug(V3_DEBUG_PACKET_PARSE, "allocating %d bytes for speex data", frame_count * spx_frag_size);
+                            msub->data.speex.frames = malloc(frame_count * spx_frag_size);
+                            memcpy(msub->data.speex.frames, msg->data + (sizeof(_v3_msg_0x52_0x01_in) - sizeof(void *)), frame_count * spx_frag_size);
                             msg->contents = msub;
                             _v3_func_leave("_v3_get_0x52 (0x01_in speex)");
                             return true;

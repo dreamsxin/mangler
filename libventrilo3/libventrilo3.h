@@ -421,8 +421,10 @@ typedef struct __v3_decoders {
     gsm gsm;
 #endif
     void *speex;
+#if HAVE_CELT
     void *celtmode;
     void *celt;
+#endif
 } _v3_decoders;
 
 _v3_decoders v3_decoders[65535];
