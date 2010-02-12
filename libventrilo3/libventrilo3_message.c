@@ -115,16 +115,16 @@ _v3_put_msg_uint16_array(void *buffer, uint16_t len, uint16_t *array) {/*{{{*/
 
 int
 _v3_put_msg_string(void *buffer, char *string) {/*{{{*/
-    int len, nlen;
+    uint16_t len;
 
     _v3_func_enter("_v3_put_msg_string");
-    if (string) nlen = strlen(string);
-    else nlen = 0;
-    len = htons((uint16_t)nlen);
-    memcpy(buffer, &len, 2);
-    if (nlen) memcpy(buffer+2, string, nlen);
+    len = (string) ? strlen(string) : 0;
+    *((uint16_t *)buffer) = htons(len);
+    if (len) {
+        memcpy(buffer+2, string, len);
+    }
     _v3_func_leave("_v3_put_msg_string");
-    return nlen + 2;
+    return len + 2;
 }/*}}}*/
 
 int
@@ -286,12 +286,12 @@ _v3_put_msg_channel(void *buffer, _v3_msg_channel *channel) {/*{{{*/
     void *start_buffer = buffer;
 
     _v3_func_enter("_v3_put_msg_channel");
-    // put the user information
+    // put the channel information
     _v3_debug(V3_DEBUG_PACKET_PARSE, "putting channel id: %d", channel->id);
     memcpy(buffer, channel, 48);
     buffer+=48;
 
-    // put the user strings
+    // put the channel strings
     buffer += _v3_put_msg_string(buffer, channel->name);
     buffer += _v3_put_msg_string(buffer, channel->phonetic);
     buffer += _v3_put_msg_string(buffer, channel->comment);
@@ -299,8 +299,6 @@ _v3_put_msg_channel(void *buffer, _v3_msg_channel *channel) {/*{{{*/
     _v3_func_leave("_v3_put_msg_channel");
     return(buffer-start_buffer);
 }/*}}}*/
-
-/*}}}*/
 
 /*
  * These functions parse or create the various message types.  For all
