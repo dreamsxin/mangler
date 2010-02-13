@@ -89,7 +89,7 @@ class Mangler
         ManglerAudio                        *audioControl;
         ManglerSettings                     *settings;
         ManglerIntegration                  *integration;
-        ManglerAdmin                       *admin;
+        ManglerAdmin                        *admin;
 
         bool                                isTransmitting;
         bool                                isTransmittingButton;

@@ -27,6 +27,8 @@
 #ifndef _MANGLERADMIN_H
 #define _MANGLERADMIN_H
 
+#include <vector>
+
 extern "C" {
 #include <ventrilo3.h>
 }
@@ -41,6 +43,11 @@ class ManglerAdmin {
         void channelAdded(v3_channel *channel);
         void channelSort(bool alphanumeric);
         void clearChannels(void);
+        void accountUpdated(v3_account *account);
+        void accountAdded(v3_account *account);
+        void accountRemoved(uint32_t acctid);
+        void accountRemoved(v3_account *account);
+        static void trimString(Glib::ustring &s);
 
     protected:
         Glib::RefPtr<Gtk::Builder>          builder;
@@ -48,6 +55,7 @@ class ManglerAdmin {
         Gtk::Alignment                      *ChannelsTab;
         Gtk::Alignment                      *UsersTab;
         Gtk::Alignment                      *RanksTab;
+        Gtk::Statusbar                      *AdminStatusbar;
         
        
         /* channel editor stuff */
@@ -75,6 +83,53 @@ class ManglerAdmin {
         uint32_t                            currentChannelID;
         uint32_t                            currentChannelParent;
         bool                                channelsortAlphanumeric;
+
+        /* user editor stuff */
+        class adminCheckModelColumns : public Gtk::TreeModel::ColumnRecord {
+            public:
+                adminCheckModelColumns() { add(id); add(on); add(name); }
+                Gtk::TreeModelColumn<uint32_t>              id;
+                /* Gtk::CellRendererToggle                     toggle; */
+                Gtk::TreeModelColumn<bool>                  on;
+                Gtk::TreeModelColumn<Glib::ustring>         name;
+        } adminCheckRecord;
+        
+
+        adminModelColumns                   UserEditorColumns;
+        Glib::RefPtr<Gtk::TreeStore>        UserEditorTreeModel;
+        Gtk::TreeView                       *UserEditorTree;
+
+        adminCheckModelColumns              UserChanAdminColumns;
+        Glib::RefPtr<Gtk::TreeStore>        UserChanAdminModel;
+        Gtk::TreeView                       *UserChanAdminTree;
+
+        adminCheckModelColumns              UserChanAuthColumns;
+        Glib::RefPtr<Gtk::TreeStore>        UserChanAuthModel;
+        Gtk::TreeView                       *UserChanAuthTree;
+        
+        adminModelColumns                   UserOwnerColumns;
+        Glib::RefPtr<Gtk::TreeStore>        UserOwnerModel;
+        
+        adminModelColumns                   UserRankColumns;
+        Glib::RefPtr<Gtk::TreeStore>        UserRankModel;
+
+        adminModelColumns                   UserDuplicateIPsColumns;
+        Glib::RefPtr<Gtk::TreeStore>        UserDuplicateIPsModel;
+        
+        adminModelColumns                   UserDefaultChannelColumns;
+        Glib::RefPtr<Gtk::TreeStore>        UserDefaultChannelModel;
+        
+
+        Gtk::VBox                           *UserEditor;
+        Gtk::Table                          *UserInfoSection;
+        Gtk::VBox                           *UserNetworkSection;
+        Gtk::VBox                           *UserTransmitSection;
+        Gtk::VBox                           *UserDisplaySection;
+        Gtk::VBox                           *UserAdminSection;
+        Gtk::Button                         *UserRemove;
+        Gtk::Button                         *UserAdd;
+        uint32_t                            currentUserID;
+
         /* generic pointers and window pointer */
         Gtk::Button         *button;
         Gtk::Entry          *entry;
@@ -82,8 +137,25 @@ class ManglerAdmin {
         Gtk::ComboBox       *combobox;
         Gtk::Label          *label;
         Gtk::SpinButton     *spinbutton;
+        Gtk::ToggleButton   *togglebutton;
+        Gtk::Arrow          *arrow;
 
-        Gtk::TreeModel::Row getChannel(uint32_t id, Gtk::TreeModel::Children children);
+        /* admin window man functions and callbacks */
+        void adminWindow_show_cb(void);
+        void adminWindow_hide_cb(void);
+        void copyToEntry(const char *widgetName, const char *src);
+        void copyToSpinbutton(const char *widgetName, uint32_t src);
+        void copyToCheckbutton(const char *widgetName, bool src);
+        void copyToCombobox(const char *widgetName, uint32_t src, uint32_t deflt = 0);
+        Glib::ustring getFromEntry(const char *widgetName);
+        uint32_t getFromSpinbutton(const char *widgetName);
+        bool getFromCheckbutton(const char *widgetName);
+        uint32_t getFromCombobox(const char *widgetName, uint32_t deflt = 0);
+        void setWidgetSensitive(const char *widgetName, bool widgetSens = true);
+
+        /* channel editor functions and callbacks */
+        Glib::ustring getChannelPathString(uint32_t id, Gtk::TreeModel::Children children);
+        Gtk::TreeModel::Row getChannel(uint32_t id, Gtk::TreeModel::Children children, bool hasCheckbox = false);
         void populateChannelEditor(v3_channel *channel);
         int channelSortFunction(const Gtk::TreeModel::iterator &left, const Gtk::TreeModel::iterator &right);
         void ChannelTree_cursor_changed_cb(void);
@@ -92,9 +164,26 @@ class ManglerAdmin {
         void UpdateChannel_clicked_cb(void);
         void CloseButton_clicked_cb(void);
         void LoadCodecFormats(void);
-        void adminWindow_show_cb(void);
         void ChannelProtMode_changed_cb(void);
         void ChannelVoiceMode_changed_cb(void);
+
+        /* user editor functions and callbacks */
+        Gtk::TreeModel::Row getAccount(uint32_t id, Gtk::TreeModel::Children children);
+        void populateUserEditor(v3_account *account);
+        void setAdminCheckTree(Gtk::TreeModel::Children children, uint16_t *chanids, int chan_count);
+        void getAdminCheckTree(Gtk::TreeModel::Children children, std::vector<uint16_t> &chanids);
+        void getAdminCheckTree(Gtk::TreeModel::Children children, uint16_t *&chanids, int &chan_count);
+        void UserTree_cursor_changed_cb(void);
+        void UserAdd_clicked_cb(void);
+        void UserRemove_clicked_cb(void);
+        void UserUpdate_clicked_cb(void);
+        void UserInfoButton_toggled_cb(void);
+        void UserNetworkButton_toggled_cb(void);
+        void UserTransmitButton_toggled_cb(void);
+        void UserDisplayButton_toggled_cb(void);
+        void UserAdminButton_toggled_cb(void);
+        void UserChanAdminButton_toggled_cb(void);
+        void UserChanAuthButton_toggled_cb(void);
 };
 
 #endif

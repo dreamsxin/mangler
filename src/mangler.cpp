@@ -1332,6 +1332,27 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                         break;
                 }
                 break;/*}}}*/
+            case V3_EVENT_USERLIST_ADD:/*{{{*/
+                {
+                    v3_account *account = v3_get_account(ev->account.id);
+                    if (account) {
+                        admin->accountAdded(account);
+                        v3_free_account(account);
+                    }
+                }
+                break;/*}}}*/
+            case V3_EVENT_USERLIST_REMOVE:/*{{{*/
+                admin->accountRemoved(ev->account.id);
+                break;/*}}}*/
+            case V3_EVENT_USERLIST_MODIFY:/*{{{*/
+                {
+                    v3_account *account = v3_get_account(ev->account.id);
+                    if (account) {
+                        admin->accountUpdated(account);
+                        v3_free_account(account);
+                    }
+                }
+                break;/*}}}*/
             default:
                 fprintf(stderr, "******************************************************** got unknown event type %d\n", ev->type);
         }
