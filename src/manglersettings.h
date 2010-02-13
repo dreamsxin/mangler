@@ -82,7 +82,7 @@ class ManglerSettings
         {
             public:
                 inputDeviceModelColumns() { add(id); add(name); add(description); }
-                Gtk::TreeModelColumn<uint32_t>      id;
+                Gtk::TreeModelColumn<int32_t>       id;
                 Gtk::TreeModelColumn<Glib::ustring> name;
                 Gtk::TreeModelColumn<Glib::ustring> description;
         };
@@ -95,7 +95,7 @@ class ManglerSettings
         {
             public:
                 outputDeviceModelColumns() { add(id); add(name); add(description); }
-                Gtk::TreeModelColumn<uint32_t>      id;
+                Gtk::TreeModelColumn<int32_t>       id;
                 Gtk::TreeModelColumn<Glib::ustring> name;
                 Gtk::TreeModelColumn<Glib::ustring> description;
         };
@@ -109,7 +109,7 @@ class ManglerSettings
         {
             public:
                 notificationDeviceModelColumns() { add(id); add(name); add(description); }
-                Gtk::TreeModelColumn<uint32_t>      id;
+                Gtk::TreeModelColumn<int32_t>       id;
                 Gtk::TreeModelColumn<Glib::ustring> name;
                 Gtk::TreeModelColumn<Glib::ustring> description;
         };
