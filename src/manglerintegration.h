@@ -39,6 +39,7 @@
 #endif
 #include <glib.h>
 #include <gtkmm.h>
+#include <string.h>
 #include <string>
 
 enum MusicClient
