@@ -37,11 +37,11 @@ LOCAL_SRC_FILES 		:= libventrilo3.c libventrilo3_message.c ventrilo3_handshake.c
 LOCAL_CFLAGS			:= -DANDROID -D__EMX__ -fpack-struct=1 -I$(ROOT)/gsm/inc -I$(ROOT)/speex/include -DHAVE_GSM -DHAVE_GSM_H -DHAVE_SPEEX
 include $(BUILD_STATIC_LIBRARY)
 
-# Build libventrilo
+# Build library interface
 include $(CLEAR_VARS)
 LOCAL_PATH			:= $(ROOT)/ventrilo
 LOCAL_MODULE    		:= libventrilo_interface
-LOCAL_SRC_FILES 		:= jni_wrappers.c
+LOCAL_SRC_FILES 		:= jni_wrappers.c debug.c
 LOCAL_LDLIBS			:= -llog
 LOCAL_CFLAGS			:= -I$(LIBPATH)
 LOCAL_STATIC_LIBRARIES		:= libventrilo3 libgsm libspeex

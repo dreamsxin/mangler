@@ -1,5 +1,7 @@
 #include <jni.h>
+#include <stdint.h>
 #include "ventrilo3.h"
+#include "debug.h"
 
 JNIEXPORT jboolean JNICALL Java_org_mangler_VentriloInterface_recv() {
 	return _v3_recv(1) != NULL;
@@ -133,12 +135,12 @@ JNIEXPORT jint JNICALL Java_org_mangler_VentriloInterface_getevent(JNIEnv* env, 
 	return 0;
 }
 
-JNIEXPORT void JNICALL Java_org_mangler_VentriloInterface_sendaudio(JNIEnv* env, jobject obj, jbyteArray pcm, jint rate) {
+JNIEXPORT void JNICALL Java_org_mangler_VentriloInterface_sendaudio(JNIEnv* env, jobject obj, jshortArray pcm, jint size, jint rate) {
 	jboolean isCopy;
-	jsize size  = (*env)->GetArrayLength(env, pcm);
-	jbyte *data = (*env)->GetByteArrayElements(env, pcm, &isCopy);
-	v3_send_audio(V3_AUDIO_SENDTYPE_U2CCUR, rate, data, size, 0);
-	if(isCopy) {
-		free(data);
-	}
+	jshort *data = (*env)->GetShortArrayElements(env, pcm, &isCopy);
+
+	print((uint8_t*)data, size * 2, "jni_wrappers");
+	v3_send_audio(V3_AUDIO_SENDTYPE_U2CCUR, rate, (uint8_t*)data, size * 2, 0);
+
+	(*env)->ReleaseShortArrayElements(env, pcm, data, 0);
 }
