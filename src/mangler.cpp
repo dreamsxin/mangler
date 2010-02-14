@@ -1538,6 +1538,7 @@ bool Mangler::updateIntegration(void) {/*{{{*/
     if (v3_is_loggedin()) {
         if (!settings->config.AudioIntegrationEnabled || integration->client == MusicClient_None) {
             if (integration_text != "") {
+                    integration_text = "";
                     v3_set_text((char *) ustring_to_c(comment).c_str(), (char *) ustring_to_c(url).c_str(), (char *)"", false);
             }
             return true;
