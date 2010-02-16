@@ -152,7 +152,11 @@ std::string ustring_to_c(Glib::ustring input) {/*{{{*/
     return converted;
 }/*}}}*/
 Glib::ustring c_to_ustring(char *input) {/*{{{*/
-    Glib::ustring converted, input_u = input;
+    Glib::ustring converted, input_u;
+    // if input is NULL, return an empty string
+    if (! input) return "";
+
+    input_u = input;
 
     // check if input is already valid UTF-8
     if (input_u.validate())

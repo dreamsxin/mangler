@@ -755,7 +755,6 @@ void Mangler::onDisconnectHandler(void) {/*{{{*/
  */
 bool Mangler::getNetworkEvent() {/*{{{*/
     v3_event *ev;
-
     while ((ev = v3_get_event(V3_NONBLOCK)) != NULL) {
         v3_user *u;
         v3_channel *c;

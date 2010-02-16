@@ -164,7 +164,7 @@ class ManglerAdmin {
         /* admin window main functions and callbacks */
         void adminWindow_show_cb(void);
         void adminWindow_hide_cb(void);
-        void copyToEntry(const char *widgetName, const char *src);
+        void copyToEntry(const char *widgetName, Glib::ustring src);
         void copyToSpinbutton(const char *widgetName, uint32_t src);
         void copyToCheckbutton(const char *widgetName, bool src);
         void copyToCombobox(const char *widgetName, uint32_t src, uint32_t deflt = 0);
