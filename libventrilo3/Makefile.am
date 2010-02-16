@@ -9,6 +9,8 @@ libventrilo3_la_LIBADD = $(pulse_LIBS) $(speex_LIBS) $(gsm_LIBS) -lm
 
 libventrilo3_la_LDFLAGS = -version 0:0:0
 
+include_HEADERS = ventrilo3.h
+
 lv3_test_SOURCES = lv3_test.c
 
 INCLUDES=$(pulse_CFLAGS) $(speex_CFLAGS)
