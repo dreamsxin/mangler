@@ -1353,6 +1353,23 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                     }
                 }
                 break;/*}}}*/
+            case V3_EVENT_RANK_ADD:/*{{{*/
+                {
+                    v3_rank *rank = v3_get_rank(ev->data.rank.id);
+                    admin->rankAdded(rank);
+                }
+                break;/*}}}*/
+            case V3_EVENT_RANK_REMOVE:/*{{{*/
+                {
+                    admin->rankRemoved(ev->data.rank.id);
+                }
+                break;/*}}}*/
+            case V3_EVENT_RANK_MODIFY:/*{{{*/
+                {
+                    v3_rank *rank = v3_get_rank(ev->data.rank.id);
+                    admin->rankUpdated(rank);
+                }
+                break;/*}}}*/
             default:
                 fprintf(stderr, "******************************************************** got unknown event type %d\n", ev->type);
         }

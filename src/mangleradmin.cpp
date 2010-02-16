@@ -58,7 +58,13 @@ ManglerAdmin::ManglerAdmin(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
     builder->get_widget("UsersTab", UsersTab);
     builder->get_widget("RanksTab", RanksTab);
     builder->get_widget("AdminStatusbar", AdminStatusbar);
+    AdminStatusbar->set_has_resize_grip(false);
     
+    StatusbarTime = ::time(NULL);
+    StatusbarCount = 0;
+
+    Glib::signal_timeout().connect_seconds(sigc::mem_fun(this, &ManglerAdmin::statusbarPop), 1);
+
     /* set up the channel editor stuff */
     builder->get_widget("ChannelEditorTree", ChannelEditorTree);
     ChannelEditorTreeModel = Gtk::TreeStore::create(ChannelEditorColumns);
@@ -242,6 +248,24 @@ ManglerAdmin::ManglerAdmin(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
     builder->get_widget("UserChanAuthButton", togglebutton);
     togglebutton->signal_toggled().connect(sigc::mem_fun(this, &ManglerAdmin::UserChanAuthButton_toggled_cb));
 
+    /* set up the rank editor stuff */
+    RankEditorModel = Gtk::TreeStore::create(RankEditorColumns);
+    builder->get_widget("RankTree", RankEditorTree);
+    RankEditorTree->set_model(RankEditorModel);
+    RankEditorTree->append_column_editable("Name", rankRecord.name);
+    RankEditorTree->append_column_numeric_editable("Level", rankRecord.level, "%ld");
+    RankEditorTree->append_column_editable("Description", rankRecord.description);
+    RankModelSigConn = RankEditorModel->signal_row_changed().connect(sigc::mem_fun(this, &ManglerAdmin::RankEditorModel_row_changed_cb));
+    RankEditorTree->signal_cursor_changed().connect(sigc::mem_fun(this, &ManglerAdmin::RankEditorTree_cursor_changed_cb));
+
+    builder->get_widget("RankAdd", button);
+    button->signal_clicked().connect(sigc::mem_fun(this, &ManglerAdmin::RankAdd_clicked_cb));
+    
+    builder->get_widget("RankRemove", button);
+    button->signal_clicked().connect(sigc::mem_fun(this, &ManglerAdmin::RankRemove_clicked_cb));
+    button->set_sensitive(false);
+
+    /* set up the channel lists */
     clearChannels();
 
 
@@ -261,16 +285,11 @@ ManglerAdmin::adminWindow_show_cb(void) {/*{{{*/
         //ServerTab->hide();
         UsersTab->hide();
     }
-#if 0
     if (perms->edit_rank) {
+        v3_ranklist_open();
         RanksTab->show();
-    } else {
-        RanksTab->hide();
-    }
-#else
-    ServerTab->hide();
-    RanksTab->hide();
-#endif
+    } else RanksTab->hide();
+    ServerTab->hide(); // not implemented *yet*
 
     ChannelEditorTree->expand_all();
     UserChanAdminTree->expand_all();
@@ -280,11 +299,11 @@ ManglerAdmin::adminWindow_show_cb(void) {/*{{{*/
         Gtk::TreeModel::Path lobbypath = ChannelEditorTreeModel->get_path(iter);
         ChannelEditorTree->set_cursor(lobbypath);
     }
-    AdminStatusbar->pop();
 }/*}}}*/
 void
 ManglerAdmin::adminWindow_hide_cb(void) {/*{{{*/
-    if (mangler->isAdmin) {
+    const v3_permissions *perms = v3_get_permissions();
+    if (perms->srv_admin) {
         v3_userlist_close();
         UserEditorTreeModel->clear();
         UserOwnerModel->clear();
@@ -293,6 +312,24 @@ ManglerAdmin::adminWindow_hide_cb(void) {/*{{{*/
         UserRemove->set_sensitive(false);
         UserAdd->set_sensitive(false);
     }
+    if (perms->edit_rank) {
+        v3_ranklist_close();
+    }
+}/*}}}*/
+void
+ManglerAdmin::statusbarPush(Glib::ustring msg) {/*{{{*/
+    AdminStatusbar->push(msg);
+    StatusbarCount++;
+    StatusbarTime = time(NULL);
+}/*}}}*/
+bool
+ManglerAdmin::statusbarPop(void) {/*{{{*/
+    if (StatusbarTime + 3 > ::time(NULL)) return true;
+    while (StatusbarCount) {
+        AdminStatusbar->pop();
+        StatusbarCount--;
+    }
+    return true;
 }/*}}}*/
 void
 ManglerAdmin::CloseButton_clicked_cb(void) {/*{{{*/
@@ -495,9 +532,8 @@ ManglerAdmin::channelUpdated(v3_channel *channel) {/*{{{*/
             chanrow[adminCheckRecord.name] = channel->name;
         }
     }
-
-    AdminStatusbar->pop();
-    AdminStatusbar->push(Glib::ustring::compose("Channel %1 (%2) Updated.", Glib::ustring::format(channel->id), channel->name));
+    /* update status bar */
+    statusbarPush(Glib::ustring::compose("Channel %1 (%2) Updated.", Glib::ustring::format(channel->id), channel->name));
 }/*}}}*/
 void
 ManglerAdmin::channelRemoved(uint32_t chanid) {/*{{{*/
@@ -524,9 +560,8 @@ ManglerAdmin::channelRemoved(uint32_t chanid) {/*{{{*/
     /* user channel auth tree */
     chanrow = getChannel(chanid, UserChanAuthModel->children());
     if (chanrow) UserChanAuthModel->erase(chanrow);
-
-    AdminStatusbar->pop();
-    AdminStatusbar->push(Glib::ustring::compose("Channel %1 Removed.", Glib::ustring::format(chanid)));
+    /* update status bar */
+    statusbarPush(Glib::ustring::compose("Channel %1 Removed.", Glib::ustring::format(chanid)));
 }/*}}}*/
 void
 ManglerAdmin::channelRemoved(v3_channel *channel) {/*{{{*/
@@ -573,9 +608,8 @@ ManglerAdmin::channelAdded(v3_channel *channel) {/*{{{*/
         channelRow[adminCheckRecord.id] = channel->id;
         channelRow[adminCheckRecord.name] = channel->name;
     }
-
-    AdminStatusbar->pop();
-    AdminStatusbar->push(Glib::ustring::compose("Channel %1 (%2) Added.", Glib::ustring::format(channel->id), channel->name));
+    /* update status bar */
+    statusbarPush(Glib::ustring::compose("Channel %1 (%2) Added.", Glib::ustring::format(channel->id), channel->name));
 }/*}}}*/
 void
 ManglerAdmin::populateChannelEditor(v3_channel *channel) {/*{{{*/
@@ -743,8 +777,8 @@ ManglerAdmin::UpdateChannel_clicked_cb(void) {/*{{{*/
         channel.channel_codec = 0xffff;
         channel.channel_format = 0xffff;
     }
-    fprintf(stderr, "Updating:\nname: %s\nphonetic: %s\ncomment: %s\npassword: %s\n",
-        channel.name, channel.phonetic, channel.comment, password.c_str());
+    //fprintf(stderr, "Updating:\nname: %s\nphonetic: %s\ncomment: %s\npassword: %s\n",
+    //    channel.name, channel.phonetic, channel.comment, password.c_str());
     v3_channel_update(&channel, password.c_str());
     ::free(channel.name);
     ::free(channel.phonetic);
@@ -872,9 +906,8 @@ ManglerAdmin::accountUpdated(v3_account *account) {/*{{{*/
         acct[adminRecord.id] = account->perms.account_id;
         acct[adminRecord.name] = account->username;
     }
-
-    AdminStatusbar->pop();
-    AdminStatusbar->push(Glib::ustring::compose("User %1 (%2) Updated.", Glib::ustring::format(account->perms.account_id), account->username));
+    /* update status bar */
+    statusbarPush(Glib::ustring::compose("User %1 (%2) Updated.", Glib::ustring::format(account->perms.account_id), account->username));
 }/*}}}*/
 void
 ManglerAdmin::accountAdded(v3_account *account) {/*{{{*/
@@ -892,8 +925,8 @@ ManglerAdmin::accountAdded(v3_account *account) {/*{{{*/
         acct[adminRecord.id] = account->perms.account_id;
         acct[adminRecord.name] = account->username;
     }
-    AdminStatusbar->pop();
-    AdminStatusbar->push(Glib::ustring::compose("User %1 (%2) Added.", Glib::ustring::format(account->perms.account_id), account->username));
+    /* update status bar */
+    statusbarPush(Glib::ustring::compose("User %1 (%2) Added.", Glib::ustring::format(account->perms.account_id), account->username));
 }/*}}}*/
 void
 ManglerAdmin::accountRemoved(uint32_t acctid) {/*{{{*/
@@ -904,8 +937,8 @@ ManglerAdmin::accountRemoved(uint32_t acctid) {/*{{{*/
     /* User Owner combo box */
     acct = getAccount(acctid, UserOwnerModel->children());
     if (acct) UserOwnerModel->erase(acct);
-    AdminStatusbar->pop();
-    AdminStatusbar->push(Glib::ustring::compose("User %1 Removed.", Glib::ustring::format(acctid)));
+    /* update status bar */
+    statusbarPush(Glib::ustring::compose("User %1 Removed.", Glib::ustring::format(acctid)));
 }/*}}}*/
 void
 ManglerAdmin::accountRemoved(v3_account *account) {/*{{{*/
@@ -941,7 +974,6 @@ ManglerAdmin::UserTree_cursor_changed_cb(void) {/*{{{*/
 }/*}}}*/
 void
 ManglerAdmin::populateUserEditor(v3_account *account) {/*{{{*/
-    //currentUserID = account->perms.account_id;
     bool isLicensed( v3_is_licensed() );
     copyToEntry("UserLogin", account->username);
     copyToEntry("UserPassword", "");
@@ -1160,17 +1192,6 @@ ManglerAdmin::UserUpdate_clicked_cb(void) {/*{{{*/
     account.perms.edit_command_target = getFromCheckbutton("UserEditCommandTargets");
     account.perms.assign_reserved = getFromCheckbutton("UserAssignReserved");
     getAdminCheckTree(UserChanAdminModel->children(), account.chan_admin, account.chan_admin_count);
-#if 0
-    fprintf(stderr, "Channel Admin Count: %d\n", account.chan_admin_count);
-    for (int i = 0; i < account.chan_admin_count; ++i) {
-        fprintf(stderr, "  Channel: %lu\n", account.chan_admin[i]);
-    }
-    getAdminCheckTree(UserChanAuthModel->children(), account.chan_auth, account.chan_auth_count);
-    fprintf(stderr, "Channel Auth Count: %d\n", account.chan_auth_count);
-    for (int i = 0; i < account.chan_auth_count; ++i) {
-        fprintf(stderr, "  Channel: %lu\n", account.chan_auth[i]);
-    }
-#endif
     v3_userlist_update(&account);
     ::free(account.username);
     ::free(account.owner);
@@ -1261,5 +1282,113 @@ ManglerAdmin::UserChanAuthButton_toggled_cb(void) {/*{{{*/
     } else {
         UserChanAuthTree->hide();
         arrow->set(Gtk::ARROW_RIGHT, Gtk::SHADOW_NONE);
+    }
+}/*}}}*/
+Gtk::TreeModel::iterator
+ManglerAdmin::getRank(uint16_t id, Gtk::TreeModel::Children children) {/*{{{*/
+    Gtk::TreeModel::Children::iterator iter = children.begin();
+    while (iter != children.end()) {
+        if ((*iter)[rankRecord.id] == id) break;
+        iter++;
+    }
+    return iter;
+}/*}}}*/
+void
+ManglerAdmin::rankUpdated(v3_rank *rank) {/*{{{*/
+    RankModelSigConn.block();
+    Gtk::TreeModel::iterator iter = getRank(rank->id, RankEditorModel->children());
+    if (! iter) iter = RankEditorModel->append();
+    (*iter)[rankRecord.id] = rank->id;
+    (*iter)[rankRecord.level] = rank->level;
+    (*iter)[rankRecord.name] = rank->name;
+    (*iter)[rankRecord.description] = rank->description;
+    /* now handle the User Rank combo box */
+    /* the poorly named getAccount() will work fine for this */
+    Gtk::TreeModel::Row row = getAccount(rank->id, UserRankModel->children());
+    if (! row) row = *(UserRankModel->append());
+    row[adminRecord.id] = rank->id; row[adminRecord.name] = rank->name;
+    /* update status bar */
+    statusbarPush(Glib::ustring::compose("Rank %1 (%2) Updated.", Glib::ustring::format(rank->id), rank->name));
+    RankModelSigConn.unblock();
+}/*}}}*/
+void
+ManglerAdmin::rankAdded(v3_rank *rank) {/*{{{*/
+    RankModelSigConn.block();
+    Gtk::TreeModel::iterator iter = RankEditorModel->append();
+    (*iter)[rankRecord.id] = rank->id;
+    (*iter)[rankRecord.level] = rank->level;
+    (*iter)[rankRecord.name] = rank->name;
+    (*iter)[rankRecord.description] = rank->description;
+    /* now handle the User Rank combo box */
+    iter = UserRankModel->append();
+    (*iter)[adminRecord.id] = rank->id; (*iter)[adminRecord.name] = rank->name;
+    /* update status bar */
+    statusbarPush(Glib::ustring::compose("Rank %1 (%2) Added.", Glib::ustring::format(rank->id), rank->name));
+    RankModelSigConn.unblock();
+}/*}}}*/
+void
+ManglerAdmin::rankRemoved(uint16_t rankid) {/*{{{*/
+    RankModelSigConn.block();
+    Gtk::TreeModel::iterator iter = getRank(rankid, RankEditorModel->children());
+    if (iter) RankEditorModel->erase(*iter);
+    /* now handle the User Rank combo box */
+    /* the poorly named getAccount() will work fine for this */
+    Gtk::TreeModel::Row row = getAccount(rankid, UserRankModel->children());
+    if (row) UserRankModel->erase(row);
+    /* update status bar */
+    statusbarPush(Glib::ustring::compose("Rank %1 Removed.", Glib::ustring::format(rankid)));
+    RankModelSigConn.unblock();
+}/*}}}*/
+void
+ManglerAdmin::rankRemoved(v3_rank *rank) {/*{{{*/
+    rankRemoved(rank->id);
+}/*}}}*/
+void
+ManglerAdmin::RankEditorModel_row_changed_cb(const Gtk::TreeModel::Path &path, const Gtk::TreeModel::iterator &iter) {/*{{{*/
+    v3_rank rank;
+    rank.id = (*iter)[rankRecord.id];
+    rank.level = uint16_t( (*iter)[rankRecord.level] );
+    Glib::ustring rankname = (*iter)[rankRecord.name];
+    rank.name = ::strdup(rankname.c_str());
+    Glib::ustring rankdesc = (*iter)[rankRecord.description];
+    rank.description = ::strdup(rankdesc.c_str());
+    //fprintf(stderr, "rank changed : id %u, level %u, name '%s', description '%s'\n", rank.id, rank.level, rank.name, rank.description);
+    v3_rank_update(&rank);
+    ::free(rank.name);
+    ::free(rank.description);
+}/*}}}*/
+void
+ManglerAdmin::RankEditorTree_cursor_changed_cb(void) {/*{{{*/
+    Gtk::TreeModel::Path path;
+    Gtk::TreeViewColumn *column;
+    RankEditorTree->get_cursor(path, column);
+    Gtk::TreeModel::iterator iter = RankEditorModel->get_iter(path);
+    uint16_t rankid = 0;
+    if (iter) rankid = (*iter)[rankRecord.id];
+    setWidgetSensitive("RankRemove", rankid);
+}/*}}}*/
+void
+ManglerAdmin::RankAdd_clicked_cb(void) {/*{{{*/
+    v3_rank rank;
+    rank.id = 0;
+    rank.level = 0;
+    rank.name = ::strdup("new rank");
+    rank.description = ::strdup("description");
+    v3_rank_update(&rank);
+    ::free(rank.name);
+    ::free(rank.description);
+}/*}}}*/
+void
+ManglerAdmin::RankRemove_clicked_cb(void) {/*{{{*/
+    Gtk::TreeModel::Path path;
+    Gtk::TreeViewColumn *column;
+    RankEditorTree->get_cursor(path, column);
+    Gtk::TreeModel::iterator iter = RankEditorModel->get_iter(path);
+    if (! iter) return;
+    uint16_t rankid = (*iter)[rankRecord.id];
+    Glib::ustring rankname = (*iter)[rankRecord.name];
+    Gtk::MessageDialog confirmDlg( Glib::ustring::compose("Are you sure you want to remove rank %1 (%2)?", Glib::ustring::format(rankid), rankname), false, Gtk::MESSAGE_QUESTION, Gtk::BUTTONS_YES_NO, true );
+    if (confirmDlg.run() == Gtk::RESPONSE_YES) {
+        v3_rank_remove(rankid);
     }
 }/*}}}*/

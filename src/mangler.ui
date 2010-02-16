@@ -5889,7 +5889,7 @@ These are useful for developers.</property>
                             <property name="visible">True</property>
                             <property name="orientation">vertical</property>
                             <child>
-                              <object class="GtkButton" id="button3">
+                              <object class="GtkButton" id="RankAdd">
                                 <property name="label" translatable="yes">Add</property>
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
@@ -5903,7 +5903,7 @@ These are useful for developers.</property>
                               </packing>
                             </child>
                             <child>
-                              <object class="GtkButton" id="button6">
+                              <object class="GtkButton" id="RankRemove">
                                 <property name="label" translatable="yes">Remove</property>
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
@@ -5941,7 +5941,7 @@ These are useful for developers.</property>
                             <property name="vscrollbar_policy">automatic</property>
                             <property name="shadow_type">in</property>
                             <child>
-                              <object class="GtkTreeView" id="treeview3">
+                              <object class="GtkTreeView" id="RankTree">
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
                               </object>

@@ -48,6 +48,10 @@ class ManglerAdmin {
         void accountRemoved(uint32_t acctid);
         void accountRemoved(v3_account *account);
         static void trimString(Glib::ustring &s);
+        void rankUpdated(v3_rank *rank);
+        void rankAdded(v3_rank *rank);
+        void rankRemoved(uint16_t rankid);
+        void rankRemoved(v3_rank *rank);
 
     protected:
         Glib::RefPtr<Gtk::Builder>          builder;
@@ -56,6 +60,8 @@ class ManglerAdmin {
         Gtk::Alignment                      *UsersTab;
         Gtk::Alignment                      *RanksTab;
         Gtk::Statusbar                      *AdminStatusbar;
+        guint                               StatusbarCount;
+        time_t                              StatusbarTime;
         
        
         /* channel editor stuff */
@@ -129,7 +135,22 @@ class ManglerAdmin {
         Gtk::Button                         *UserRemove;
         Gtk::Button                         *UserAdd;
         uint32_t                            currentUserID;
-
+        
+        /* rank editor stuff */
+        class rankModelColumns : public Gtk::TreeModel::ColumnRecord {
+            public:
+                rankModelColumns() { add(id); add(name); add(level); add(description); }
+                Gtk::TreeModelColumn<uint16_t>              id;
+                Gtk::TreeModelColumn<long>                  level;
+                Gtk::TreeModelColumn<Glib::ustring>         name;
+                Gtk::TreeModelColumn<Glib::ustring>         description;
+        } rankRecord;
+        
+        rankModelColumns                    RankEditorColumns;
+        Glib::RefPtr<Gtk::TreeStore>        RankEditorModel;
+        Gtk::TreeView                       *RankEditorTree;
+        sigc::connection                    RankModelSigConn;
+        
         /* generic pointers and window pointer */
         Gtk::Button         *button;
         Gtk::Entry          *entry;
@@ -140,7 +161,7 @@ class ManglerAdmin {
         Gtk::ToggleButton   *togglebutton;
         Gtk::Arrow          *arrow;
 
-        /* admin window man functions and callbacks */
+        /* admin window main functions and callbacks */
         void adminWindow_show_cb(void);
         void adminWindow_hide_cb(void);
         void copyToEntry(const char *widgetName, const char *src);
@@ -152,6 +173,8 @@ class ManglerAdmin {
         bool getFromCheckbutton(const char *widgetName);
         uint32_t getFromCombobox(const char *widgetName, uint32_t deflt = 0);
         void setWidgetSensitive(const char *widgetName, bool widgetSens = true);
+        bool statusbarPop(void);
+        void statusbarPush(Glib::ustring msg);
 
         /* channel editor functions and callbacks */
         Glib::ustring getChannelPathString(uint32_t id, Gtk::TreeModel::Children children);
@@ -184,6 +207,14 @@ class ManglerAdmin {
         void UserAdminButton_toggled_cb(void);
         void UserChanAdminButton_toggled_cb(void);
         void UserChanAuthButton_toggled_cb(void);
+
+        /* rank editor callbacks */
+        Gtk::TreeModel::iterator getRank(uint16_t id, Gtk::TreeModel::Children children);
+        void RankEditorModel_row_changed_cb(const Gtk::TreeModel::Path &path, const Gtk::TreeModel::iterator &iter);
+        void RankEditorTree_cursor_changed_cb(void);
+        void RankAdd_clicked_cb(void);
+        void RankRemove_clicked_cb(void);
+
 };
 
 #endif
