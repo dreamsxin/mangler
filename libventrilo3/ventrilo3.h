@@ -70,6 +70,8 @@
 #define V3_AWAY_PRIV_CHAT           0x04
 
 #define V3_RANK_LIST                0x00
+#define V3_OPEN_RANK                0x01
+#define V3_CLOSE_RANK               0x02
 #define V3_ADD_RANK                 0x03
 #define V3_REMOVE_RANK              0x04
 #define V3_MODIFY_RANK              0x05
@@ -270,6 +272,11 @@ enum _v3_events
     V3_EVENT_CHAN_MODIFIED,
     V3_EVENT_RECV_AUDIO,
     V3_EVENT_SERVER_PROPERTY_UPDATED,
+    V3_EVENT_RANKLIST_OPEN,
+    V3_EVENT_RANKLIST_CLOSE,
+    V3_EVENT_RANK_ADD,
+    V3_EVENT_RANK_MODIFY,
+    V3_EVENT_RANK_REMOVE,
 };
 
 
@@ -375,6 +382,10 @@ struct _v3_event {
             uint16_t allow_voice_target;
             uint16_t allow_command_target;
         } channel;
+        struct {
+            uint16_t id;
+            uint16_t level;
+        } rank;
         int16_t sample16[16384];
         uint8_t sample[32768];
         char    motd[2048];
@@ -663,7 +674,11 @@ void        v3_free_channel(v3_channel *channel);
 v3_channel  *v3_get_channel(uint16_t id);
 
 // Rank list functions
+void        v3_ranklist_open(void);
+void        v3_ranklist_close(void);
 v3_rank     *v3_get_rank(uint16_t id);
+void        v3_rank_update(v3_rank *rank);
+void        v3_rank_remove(uint16_t rankid);
 void        v3_free_rank(v3_rank *rank);
 
 // Account list functions

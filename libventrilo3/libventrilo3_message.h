@@ -97,6 +97,7 @@ typedef struct _v3_net_message_0x36 {/*{{{*/
     _v3_msg_rank *rank_list;
 } _v3_msg_0x36;
 int _v3_get_0x36(_v3_net_message *msg);
+_v3_net_message *_v3_put_0x36(uint16_t subtype, v3_rank *rank);
 int _v3_destroy_0x36(_v3_net_message *msg);/*}}}*/
 typedef struct _v3_net_message_0x37 {/*{{{*/
     uint32_t type;              // 0

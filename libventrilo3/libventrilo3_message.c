@@ -303,6 +303,20 @@ _v3_put_msg_channel(void *buffer, _v3_msg_channel *channel) {/*{{{*/
     return(buffer-start_buffer);
 }/*}}}*/
 
+int _v3_put_msg_rank(void *buffer, _v3_msg_rank *rank) {/*{{{*/
+    void *start_buffer = buffer;
+
+    _v3_func_enter("_v3_put_msg_rank");
+
+    *((uint16_t*)(buffer)) = rank->id; buffer += 2;
+    *((uint16_t*)(buffer)) = rank->level; buffer += 2;
+    buffer += _v3_put_msg_string(buffer, rank->name);
+    buffer += _v3_put_msg_string(buffer, rank->description);
+
+    _v3_func_leave("_v3_put_msg_rank");
+    return(buffer-start_buffer);
+}/*}}}*/
+
 /*}}}*/
 
 /*
@@ -408,7 +422,6 @@ _v3_get_0x36(_v3_net_message *msg) {/*{{{*/
     _v3_func_leave("_v3_get_0x36");
     return true;
 }/*}}}*/
-
 int
 _v3_destroy_0x36(_v3_net_message *msg) {/*{{{*/
     _v3_msg_0x36 *m;
@@ -424,6 +437,43 @@ _v3_destroy_0x36(_v3_net_message *msg) {/*{{{*/
     free(m->rank_list);
     _v3_func_leave("_v3_destroy_0x36");
     return true;
+}/*}}}*/
+_v3_net_message *
+_v3_put_0x36(uint16_t subtype, v3_rank *rank) {/*{{{*/
+    _v3_net_message *m;
+    _v3_msg_0x36 *mc;
+
+    _v3_func_enter("_v3_put_0x36");
+    // Build our message
+    m = malloc(sizeof(_v3_net_message));
+    memset(m, 0, sizeof(_v3_net_message));
+    m->type = 0x36;
+    switch (subtype) {
+        case V3_OPEN_RANK:
+        case V3_CLOSE_RANK:
+            m->len = 16;
+            mc = malloc(m->len);
+            break;
+        case V3_ADD_RANK:
+        case V3_MODIFY_RANK:
+            m->len = 24 + (rank->name ? strlen(rank->name) : 0) + (rank->description ? strlen(rank->description) : 0);
+            mc = malloc(m->len);
+            break;
+        case V3_REMOVE_RANK:
+            m->len = 20;
+            mc = malloc(m->len + 4);
+            break;
+    }
+    memset(mc, 0, m->len);
+    mc->type = 0x36;
+    mc->subtype = subtype;
+    mc->rank_count = 1;
+    if (rank) _v3_put_msg_rank(&mc->rank_list, rank);
+
+    m->data = (char*)mc;
+    m->contents = mc;
+    _v3_func_leave("_v3_put_0x36");
+    return m;
 }/*}}}*/
 /*}}}*/
 // Message 0x37 (55) | PING /*{{{*/

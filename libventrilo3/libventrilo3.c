@@ -701,6 +701,75 @@ _v3_recv(int block) {/*{{{*/
                             _v3_destroy_packet(msg);
                         }
                         break;/*}}}*/
+                    case V3_EVENT_RANKLIST_OPEN:/*{{{*/
+                        {
+                            _v3_net_message *msg;
+                            msg = _v3_put_0x36(V3_OPEN_RANK, NULL);
+                            if (_v3_send(msg)) {
+                                _v3_debug(V3_DEBUG_SOCKET, "sent rank list open request to server");
+                            } else {
+                                _v3_debug(V3_DEBUG_SOCKET, "failed to send rank list open request");
+                            }
+                            _v3_destroy_packet(msg);
+                        }
+                        break;/*}}}*/
+                    case V3_EVENT_RANKLIST_CLOSE:/*{{{*/
+                        {
+                            _v3_net_message *msg;
+                            msg = _v3_put_0x36(V3_CLOSE_RANK, NULL);
+                            if (_v3_send(msg)) {
+                                _v3_debug(V3_DEBUG_SOCKET, "sent rank list close request to server");
+                            } else {
+                                _v3_debug(V3_DEBUG_SOCKET, "failed to send rank list close request");
+                            }
+                            _v3_destroy_packet(msg);
+                        }
+                        break;/*}}}*/
+                    case V3_EVENT_RANK_REMOVE:/*{{{*/
+                        {
+                            _v3_net_message *msg;
+                            v3_rank rank;
+                            memset(&rank, 0, sizeof(v3_rank));
+                            rank.id = ev.data.rank.id;
+                            rank.level = ev.data.rank.level;
+                            msg = _v3_put_0x36(V3_REMOVE_RANK, &rank);
+                            if (_v3_send(msg)) {
+                                _v3_debug(V3_DEBUG_SOCKET, "sent rank remove request to server");
+                            } else {
+                                _v3_debug(V3_DEBUG_SOCKET, "failed to send rank remove request");
+                            }
+                            _v3_destroy_packet(msg);
+
+                        }
+                        break;/*}}}*/
+                    case V3_EVENT_RANK_MODIFY:
+                    case V3_EVENT_RANK_ADD:/*{{{*/
+                        {
+                            uint16_t subtype;
+                            const char *subtype_str;
+                            if (ev.type == V3_EVENT_RANK_MODIFY) {
+                                subtype = V3_MODIFY_RANK;
+                                subtype_str = "modify";
+                            } else {
+                                subtype = V3_ADD_RANK;
+                                subtype_str = "add";
+                            }
+                            _v3_net_message *msg;
+                            v3_rank rank;
+                            memset(&rank, 0, sizeof(v3_rank));
+                            rank.id = ev.data.rank.id;
+                            rank.level = ev.data.rank.level;
+                            rank.name = ev.text.name;
+                            rank.description = ev.text.comment;
+                            msg = _v3_put_0x36(subtype, &rank);
+                            if (_v3_send(msg)) {
+                                _v3_debug(V3_DEBUG_SOCKET, "sent rank %s request to server", subtype_str);
+                            } else {
+                                _v3_debug(V3_DEBUG_SOCKET, "failed to send rank %s request", subtype_str);
+                            }
+                            _v3_destroy_packet(msg);
+                        }
+                        break;/*}}}*/
                     case V3_EVENT_USER_TALK_START:/*{{{*/
                         {
                             _v3_net_message *msg;
@@ -2200,25 +2269,29 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                         _v3_debug(V3_DEBUG_INFO, "removing %d ranks from user list",  m->rank_count);
                         for (ctr = 0; ctr < m->rank_count; ctr++) {
                             // do we need to queue an event?
-                            //v3_event *ev = _v3_create_event(V3_EVENT_RANK_REMOVE);
-                            //ev->rank.id = m->rank_list[ctr].id;
-                            //_v3_debug(V3_DEBUG_INFO, "queuing event type %d for user %d", ev->type, ev->user.id);
+                            v3_event *ev = _v3_create_event(V3_EVENT_RANK_REMOVE);
+                            ev->data.rank.id = m->rank_list[ctr].id;
+                            _v3_debug(V3_DEBUG_INFO, "queuing event type %d for user %d", ev->type, ev->user.id);
                             _v3_remove_rank(m->rank_list[ctr].id);
-                            //v3_queue_event(ev);
+                            v3_queue_event(ev);
                         }
                         break;
                     case V3_MODIFY_RANK:
                     case V3_ADD_RANK:
+                    case V3_RANK_LIST:
                         _v3_debug(V3_DEBUG_INFO, "adding %d ranks on rank list",  m->rank_count);
                         for (ctr = 0; ctr < m->rank_count; ctr++) {
                             _v3_update_rank(&m->rank_list[ctr]);
-                            //v3_event *ev = _v3_create_event(m->subtype == V3_ADD_RANK ? V3_EVENT_RANK_ADD : V3_EVENT_RANK_MODIFY);
-                            //ev->user.id = m->user_list[ctr].id;
-                            //ev->channel.id = m->user_list[ctr].channel;
-                            //_v3_debug(V3_DEBUG_INFO, "queuing event type %d for user %d", ev->type, ev->user.id);
-                            //v3_queue_event(ev);
+                            v3_event *ev = _v3_create_event(m->subtype == V3_ADD_RANK ? V3_EVENT_RANK_ADD : V3_EVENT_RANK_MODIFY);
+                            ev->data.rank.id = m->rank_list[ctr].id;
+                            ev->data.rank.level = m->rank_list[ctr].level;
+                            strncpy(ev->text.name, m->rank_list[ctr].name, 31);
+                            strncpy(ev->text.comment, m->rank_list[ctr].description, 127);
+                            _v3_debug(V3_DEBUG_INFO, "queuing event type %d for user %d", ev->type, ev->user.id);
+                            v3_queue_event(ev);
                         }
                         break;
+#if 0
                     case V3_RANK_LIST:
                         // <strke>user 1 is always ourself in this subtype</strike>
                         // TODO: this is a bad assumption... the userlist can span multiple 0x5d packets
@@ -2232,6 +2305,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                             //v3_queue_event(ev);
                         }
                         break;
+#endif
                 }
                 free(rl);
                 _v3_unlock_ranklist();
@@ -4391,7 +4465,118 @@ v3_get_rank(uint16_t id) {/*{{{*/
     _v3_unlock_ranklist();
     return NULL;
 }/*}}}*/
+void
+v3_ranklist_open(void) {/*{{{*/
+    v3_event ev;
 
+    _v3_func_enter("v3_ranklist_open");
+    if (!v3_is_loggedin()) {
+        _v3_func_leave("v3_ranklist_open");
+        return;
+    }
+    memset(&ev, 0, sizeof(v3_event));
+    ev.type = V3_EVENT_RANKLIST_OPEN;
+
+    _v3_lock_sendq();
+    _v3_debug(V3_DEBUG_EVENT, "sending %lu bytes to event pipe", sizeof(v3_event));
+    if (fwrite(&ev, sizeof(struct _v3_event), 1, v3_server.evoutstream) != 1) {
+        _v3_error("could not write to event pipe");
+    }
+    fflush(v3_server.evoutstream);
+    _v3_unlock_sendq();
+    _v3_func_leave("v3_ranklist_open");
+    return;
+}/*}}}*/
+
+void
+v3_ranklist_close(void) {/*{{{*/
+    v3_event ev;
+
+    _v3_func_enter("v3_ranklist_close");
+    if (!v3_is_loggedin()) {
+        _v3_func_leave("v3_ranklist_close");
+        return;
+    }
+
+    memset(&ev, 0, sizeof(v3_event));
+    ev.type = V3_EVENT_RANKLIST_CLOSE;
+
+    _v3_lock_sendq();
+    _v3_debug(V3_DEBUG_EVENT, "sending %lu bytes to event pipe", sizeof(v3_event));
+    if (fwrite(&ev, sizeof(struct _v3_event), 1, v3_server.evoutstream) != 1) {
+        _v3_error("could not write to event pipe");
+    }
+    fflush(v3_server.evoutstream);
+    _v3_unlock_sendq();
+    _v3_func_leave("v3_ranklist_close");
+    return;
+}/*}}}*/
+
+void
+v3_rank_update(v3_rank *rank) {/*{{{*/
+    /* update or create rank */
+    v3_event ev;
+
+    _v3_func_enter("v3_rank_update");
+    if (!v3_is_loggedin()) {
+        _v3_func_leave("v3_rank_update");
+        return;
+    }
+    
+    memset(&ev, 0, sizeof(v3_event));
+    
+    if (rank->id) ev.type = V3_EVENT_RANK_MODIFY;
+    else ev.type = V3_EVENT_RANK_ADD;
+    ev.data.rank.id = rank->id;
+    ev.data.rank.level = rank->level;
+    strncpy(ev.text.name, rank->name, 31);
+    strncpy(ev.text.comment, rank->description, 127);
+
+    _v3_lock_sendq();
+    _v3_debug(V3_DEBUG_EVENT, "sending %lu bytes to event pipe", sizeof(v3_event));
+    if (fwrite(&ev, sizeof(struct _v3_event), 1, v3_server.evoutstream) != 1) {
+        _v3_error("could not write to event pipe");
+    }
+    fflush(v3_server.evoutstream);
+    _v3_unlock_sendq();
+    _v3_func_leave("v3_rank_update");
+    return;
+    
+}/*}}}*/
+void
+v3_rank_remove(uint16_t rankid) {/*{{{*/
+    /* remove rank */
+    v3_event ev;
+
+    _v3_func_enter("v3_rank_remove");
+    if (!v3_is_loggedin()) {
+        _v3_func_leave("v3_rank_remove");
+        return;
+    }
+    
+    memset(&ev, 0, sizeof(v3_event));
+    ev.type = V3_EVENT_RANK_REMOVE;
+    v3_rank *rank = v3_get_rank(rankid);
+    if (! rank) {
+        _v3_func_leave("v3_rank_remove");
+        return;
+    }
+    ev.data.rank.id = rankid;
+    ev.data.rank.level = rank->level;
+    strncpy(ev.text.name, rank->name, 31);
+    strncpy(ev.text.comment, rank->description, 127);
+
+    _v3_lock_sendq();
+    _v3_debug(V3_DEBUG_EVENT, "sending %lu bytes to event pipe", sizeof(v3_event));
+    if (fwrite(&ev, sizeof(struct _v3_event), 1, v3_server.evoutstream) != 1) {
+        _v3_error("could not write to event pipe");
+    }
+    fflush(v3_server.evoutstream);
+    _v3_unlock_sendq();
+    _v3_func_leave("v3_rank_remove");
+    return;
+    
+}/*}}}*/
 void
 v3_free_rank(v3_rank *rank) {/*{{{*/
     free(rank->name);
