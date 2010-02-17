@@ -45,6 +45,9 @@
 #include <unistd.h>
 #include <math.h>
 
+#if HAVE_SPEEX_DSP
+# include <speex/speex_resampler.h>
+#endif
 #if HAVE_SPEEX
 # include <speex/speex.h>
 #endif
@@ -5107,27 +5110,104 @@ v3_start_audio(uint16_t send_type) {/*{{{*/
 }/*}}}*/
 
 uint32_t
+v3_samplesize_for_rate(uint32_t rate) {
+	_v3_func_enter("v3_samplesize_for_rate");
+    if (!v3_is_loggedin()) {
+        _v3_func_leave("v3_samplesize_for_rate");
+        return 0;
+    }
+	const v3_codec *codec = v3_get_channel_codec(v3_get_user_channel(v3_get_user_id()));
+	if(codec) {
+		uint32_t bytestosend = codec->pcmframesize;
+		switch (codec->codec) {
+			case 0:
+				switch (codec->format) {
+					case 1:
+						bytestosend *= 4;
+						break;
+					case 2:
+						bytestosend *= 7;
+						break;
+					case 3:
+						bytestosend *= 15;
+						break;
+				}
+				break;
+			case 1:
+				bytestosend *= 15;
+				break;
+			case 2:
+				bytestosend *= 7;
+				break;
+			case 3:
+				bytestosend *= 6;
+				break;
+		}
+		_v3_func_leave("v3_samplesize_for_rate");
+		return bytestosend * ((float)rate / (float)codec->rate);
+	}
+	_v3_func_leave("v3_samplesize_for_rate");
+	return 0;
+}
+
+uint32_t
 v3_send_audio(uint16_t send_type, uint32_t rate, uint8_t *pcm, uint32_t length, uint8_t stereo) {/*{{{*/
     v3_event ev;
     const v3_codec *codec;
-
+    
     _v3_func_enter("v3_send_audio");
+    
     if (!v3_is_loggedin()) {
         _v3_func_leave("v3_send_audio");
         return 0;
     }
-    codec = v3_get_channel_codec(v3_get_user_channel(v3_get_user_id()));
-    if (send_type == V3_AUDIO_SENDTYPE_U2CCUR && codec->rate != rate) {
-        _v3_func_leave("v3_send_audio");
-        return codec->rate;
-    }
+    
     memset(&ev, 0, sizeof(v3_event));
+    codec = v3_get_channel_codec(v3_get_user_channel(v3_get_user_id()));
+    
+    if (send_type == V3_AUDIO_SENDTYPE_U2CCUR && codec->rate != rate) {
+#if HAVE_SPEEX_DSP
+		uint32_t insamples = length, outsamples = v3_samplesize_for_rate(rate);
+		if(length > outsamples) {
+			_v3_error("Sample size is %d but a sample of %d size was supplied.", outsamples, insamples);
+			_v3_func_leave("v3_send_audio");
+			return 0;
+		}
+		
+		int err = 0;
+		void *resampler = (void *)speex_resampler_init(stereo ? 2 : 1, rate, codec->rate, 10, &err);
+		if(err) {
+			_v3_error("Resampler initialization error: %d: %s\n", err, speex_resampler_strerror(err));
+			_v3_func_leave("v3_send_audio");
+			return 0;
+		}
+		
+		err = speex_resampler_process_interleaved_int(resampler, (void *)pcm, &insamples, (void *)ev.data.sample, &outsamples);
+		if (err) {
+			_v3_error("Resampling error: %d: %s\n", err, speex_resampler_strerror(err));
+			_v3_func_leave("v3_send_audio");
+			return 0;
+		}
+		
+		speex_resampler_destroy(resampler);
+		ev.pcm.length = outsamples;
+#else
+		_v3_error("Sample rate (%d) did not match codec rate (%d) and Speex DSP was not found.", rate, codec->rate);
+		_v3_func_leave("v3_send_audio");
+		return 0;
+#endif // HAVE_SPEEX_DSP
+    }
+    else {
+		ev.pcm.length = length;
+		memcpy(ev.data.sample, pcm, length);
+	}
+
+	// General audio event settings.
     ev.type = V3_EVENT_PLAY_AUDIO;
     ev.pcm.send_type = send_type;
-    ev.pcm.rate = rate;
-    ev.pcm.length = length;
+    ev.pcm.rate = codec->rate;
     ev.pcm.channels = stereo ? 2 : 1;
-    memcpy(ev.data.sample, pcm, length);
+    
     _v3_lock_sendq();
     _v3_debug(V3_DEBUG_EVENT, "sending %lu bytes to event pipe for event type %d (pcm length %d)", sizeof(v3_event), ev.type, length);
     if (fwrite(&ev, sizeof(struct _v3_event), 1, v3_server.evoutstream) != 1) {
@@ -5135,6 +5215,7 @@ v3_send_audio(uint16_t send_type, uint32_t rate, uint8_t *pcm, uint32_t length, 
     }
     fflush(v3_server.evoutstream);
     _v3_unlock_sendq();
+    
     _v3_func_leave("v3_send_audio");
     return rate;
 }/*}}}*/
