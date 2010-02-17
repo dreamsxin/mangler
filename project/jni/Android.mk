@@ -25,7 +25,7 @@ LOCAL_SRC_FILES			:= cb_search.c		exc_10_32_table.c 	exc_8_128_table.c 	filters.
 				   exc_5_64_table.c	gain_table_lbr.c 	hexc_10_32_table.c	lpc.c \
 				   lsp_tables_nb.c 	modes.c 		modes_wb.c 		nb_celp.c \
 				   quant_lsp.c		sb_celp.c		speex_callbacks.c 	speex_header.c \
-				   window.c
+				   window.c		resample.c
 LOCAL_CFLAGS			:= -I$(LOCAL_PATH)/../include -D__EMX__ -DFIXED_POINT -DEXPORT=''
 include $(BUILD_STATIC_LIBRARY)
 
@@ -34,7 +34,7 @@ include $(CLEAR_VARS)
 LOCAL_PATH			:= $(LIBPATH)
 LOCAL_MODULE    		:= libventrilo3
 LOCAL_SRC_FILES 		:= libventrilo3.c libventrilo3_message.c ventrilo3_handshake.c
-LOCAL_CFLAGS			:= -DANDROID -D__EMX__ -fpack-struct=1 -I$(ROOT)/gsm/inc -I$(ROOT)/speex/include -DHAVE_GSM -DHAVE_GSM_H -DHAVE_SPEEX
+LOCAL_CFLAGS			:= -DANDROID -D__EMX__ -fpack-struct=1 -I$(ROOT)/gsm/inc -I$(ROOT)/speex/include -DHAVE_GSM -DHAVE_GSM_H -DHAVE_SPEEX -DHAVE_SPEEX_DSP=1
 include $(BUILD_STATIC_LIBRARY)
 
 # Build library interface
