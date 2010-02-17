@@ -662,7 +662,8 @@ const v3_permissions *v3_get_permissions(void);
 uint8_t     v3_is_channel_admin(uint16_t channel_id);
 void        v3_channel_update(v3_channel *channel, const char *password);
 void        v3_channel_remove(uint16_t channel_id);
-uint32_t	v3_samplesize_for_rate(uint32_t rate);
+
+uint32_t    v3_pcmlength_for_rate(uint32_t rate);
 
 // User list functions
 int         v3_user_count(void);
