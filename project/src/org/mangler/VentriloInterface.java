@@ -26,6 +26,6 @@ public class VentriloInterface {
 	public static native int 		channelcount();
 	public static native void		startprocessing();
 	public static native boolean	recv();
-	public static native void		sendaudio(short[] pcm, int size, int rate);
+	public static native void		sendaudio(byte[] pcm, int size, int rate);
 	public static native int		pcmlengthforrate(int rate);
 }

@@ -53,48 +53,26 @@ public class main extends Activity {
 		        );
 		        record.startRecording();
 		        
-		        Log.e("8000", Integer.toString(VentriloInterface.pcmlengthforrate(8000)));
-		        Log.e("16000", Integer.toString(VentriloInterface.pcmlengthforrate(16000)));
-		        Log.e("32000", Integer.toString(VentriloInterface.pcmlengthforrate(32000)));
-		        Log.e("44000", Integer.toString(VentriloInterface.pcmlengthforrate(44000)));
-		        
-		        /*
-		        int pcm_length = 5000;
-		        int offset = 0;
+		        // We require an even number because recording in 16 bit. (8 bit does not work!)
+		        int pcm_length = VentriloInterface.pcmlengthforrate(8000);
 		        byte buffer[] = new byte[pcm_length];
-		        do {
-		        	Log.e("ddebug", "---> Requested bytes: " + Integer.toString(pcm_length - offset) + ", offset: " + Integer.toString(offset));
-		        	int pcm_read = record.read(buffer, offset, pcm_length - offset);
-		        	Log.e("ddebug", "---> Bytes read: " + Integer.toString(pcm_read));
-		        	offset += pcm_read;
-		        	Log.e("ddebug", "---> Total read: " + Integer.toString(offset) + ", " + Integer.toString(pcm_length - offset) + " bytes left.");
-		        }
-		        while(offset < pcm_length);
-		        Log.e("ddebug", "Total bytes read: " + Integer.toString(offset));
-		        */
 		        
-		        /*
-		        do {
-		        	int pcm_read = record.read(store, pcm_length);
-		        	if(pcm_read == -3 || pcm_read == -2) {
-		        		break;
-		        	}
-		        	Log.e("recordread", "Read " + Integer.toString(pcm_read) + " of " + Integer.toString(pcm_length) + " bytes.");
-		        }
-		        while(store.arrayOffset() < pcm_length);
-		        */
+		        VentriloInterface.startaudio((short) 3);
 		        
-		        /*
-		        short buffer[] = new short[bufsz];
-		        while(true) {
-			    	int bufrd = record.read(buffer, 0, bufsz);
-			    	if(bufrd != AudioRecord.ERROR_BAD_VALUE && bufrd != AudioRecord.ERROR_INVALID_OPERATION) {
-			    		VentriloInterface.sendaudio(buffer, bufrd, rate);
-			    	}
-			    	else {
-			    		Log.e("read_fail", "bufrd returned: " + Integer.toString(bufrd));
-			    	}
-		        }*/
+		        while(VentriloInterface.isloggedin()) {
+			        int offset = 0;
+			        do {
+			        	//Log.e("ddebug", "---> Requested bytes: " + Integer.toString(pcm_length - offset) + ", offset: " + Integer.toString(offset));
+			        	int pcm_read = record.read(buffer, offset, pcm_length - offset);
+			        	//Log.e("ddebug", "---> Bytes read: " + Integer.toString(pcm_read));
+			        	offset += pcm_read;
+			        	//Log.e("ddebug", "---> Total read: " + Integer.toString(offset) + ", " + Integer.toString(pcm_length - offset) + " bytes left.");
+			        }
+			        while(offset < pcm_length);
+			        //Log.e("ddebug", "Total bytes read: " + Integer.toString(offset));
+			        
+			        VentriloInterface.sendaudio(buffer, pcm_length, 8000);
+		        }
 		    } 
     	
     	}

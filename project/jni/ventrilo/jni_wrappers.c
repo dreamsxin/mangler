@@ -7,7 +7,7 @@ JNIEXPORT jboolean JNICALL Java_org_mangler_VentriloInterface_recv() {
 	return _v3_recv(1) != NULL;
 }
 
-JNIEXPORT jint JNICALL Java_org_mangler_VentriloInterface_pcmlengthforrate(jint rate) {
+JNIEXPORT jint JNICALL Java_org_mangler_VentriloInterface_pcmlengthforrate(JNIEnv* env, jobject obj, jint rate) {
 	return v3_pcmlength_for_rate(rate);
 }
 
@@ -64,7 +64,7 @@ JNIEXPORT jchar JNICALL Java_org_mangler_VentriloInterface_channelrequirespasswo
 }
 
 JNIEXPORT void JNICALL Java_org_mangler_VentriloInterface_startaudio(jchar sendtype) {
-	v3_start_audio(sendtype);
+	v3_start_audio(3);
 }
 
 JNIEXPORT void JNICALL Java_org_mangler_VentriloInterface_stopaudio() {
@@ -139,12 +139,11 @@ JNIEXPORT jint JNICALL Java_org_mangler_VentriloInterface_getevent(JNIEnv* env, 
 	return 0;
 }
 
-JNIEXPORT void JNICALL Java_org_mangler_VentriloInterface_sendaudio(JNIEnv* env, jobject obj, jshortArray pcm, jint size, jint rate) {
+JNIEXPORT void JNICALL Java_org_mangler_VentriloInterface_sendaudio(JNIEnv* env, jobject obj, jbyteArray pcm, jint size, jint rate) {
 	jboolean isCopy;
-	jshort *data = (*env)->GetShortArrayElements(env, pcm, &isCopy);
+	jbyte *data = (*env)->GetByteArrayElements(env, pcm, &isCopy);
 
-	print((uint8_t*)data, size * 2, "jni_wrappers");
-	v3_send_audio(V3_AUDIO_SENDTYPE_U2CCUR, rate, (uint8_t*)data, size * 2, 0);
+	v3_send_audio(V3_AUDIO_SENDTYPE_U2CCUR, rate, data, size, 0);
 
-	(*env)->ReleaseShortArrayElements(env, pcm, data, 0);
+	(*env)->ReleaseByteArrayElements(env, pcm, data, 0);
 }
