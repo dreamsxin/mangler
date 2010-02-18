@@ -7,8 +7,8 @@ JNIEXPORT jboolean JNICALL Java_org_mangler_VentriloInterface_recv() {
 	return _v3_recv(1) != NULL;
 }
 
-JNIEXPORT jint JNICALL Java_org_mangler_VentriloInterface_samplesizeforrate(jint rate) {
-	return v3_samplesize_for_rate(rate);
+JNIEXPORT jint JNICALL Java_org_mangler_VentriloInterface_pcmlengthforrate(jint rate) {
+	return v3_pcmlength_for_rate(rate);
 }
 
 JNIEXPORT void JNICALL Java_org_mangler_VentriloInterface_joinchat() {
