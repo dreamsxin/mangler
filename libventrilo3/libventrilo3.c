@@ -5174,21 +5174,23 @@ v3_send_audio(uint16_t send_type, uint32_t rate, uint8_t *pcm, uint32_t length, 
     if (send_type == V3_AUDIO_SENDTYPE_U2CCUR && codec->rate != rate) {
 #if HAVE_SPEEX_DSP
         static int err = 0;
-        static void *resampler = speex_resampler_init(stereo ? 2 : 1, rate, codec->rate, 10, &err);
+        static void *resampler = NULL;
         uint32_t insamples = length;
         uint32_t outsamples = v3_pcmlength_for_rate(rate);
-        /*
+
+        if (!resampler) {
+            resampler = speex_resampler_init(stereo ? 2 : 1, rate, codec->rate, 10, &err);
+        }
         if (length > outsamples) {
-            _v3_error("Sample size is %d but a sample of %d size was supplied.", outsamples, insamples);
+            _v3_error("sample size is %d but a sample of %d size was supplied.", outsamples, insamples);
             _v3_func_leave("v3_send_audio");
             return 0;
         }
         if (err) {
-            _v3_error("Resampler initialization error: %d: %s\n", err, speex_resampler_strerror(err));
+            _v3_error("resampler initialization error: %d: %s\n", err, speex_resampler_strerror(err));
             _v3_func_leave("v3_send_audio");
             return 0;
         }
-        */
         insamples  /= sizeof(int16_t) * (stereo ? 2 : 1);
         outsamples /= sizeof(int16_t) * (stereo ? 2 : 1);
         err = speex_resampler_process_interleaved_int(resampler, (void *)pcm, &insamples, (void *)ev.data.sample, &outsamples);
