@@ -5147,7 +5147,7 @@ v3_pcmlength_for_rate(uint32_t rate) {/*{{{*/
         }
         bytestosend *= ((float)rate / (float)codec->rate);
         _v3_func_leave("v3_pcmlength_for_rate");
-        return bytestosend;
+        return bytestosend + bytestosend % 2;
     }
     _v3_func_leave("v3_pcmlength_for_rate");
     return 0;
@@ -5176,12 +5176,12 @@ v3_send_audio(uint16_t send_type, uint32_t rate, uint8_t *pcm, uint32_t length, 
         static int err = 0;
         static void *resampler = NULL;
         uint32_t insamples = length;
-        uint32_t outsamples = v3_pcmlength_for_rate(rate);
+        uint32_t outsamples = v3_pcmlength_for_rate(codec->rate);
 
         if (!resampler) {
             resampler = speex_resampler_init(stereo ? 2 : 1, rate, codec->rate, 10, &err);
         }
-        if (length > outsamples) {
+        if (length > v3_pcmlength_for_rate(rate)) {
             _v3_error("sample size is %d but a sample of %d size was supplied.", outsamples, insamples);
             _v3_func_leave("v3_send_audio");
             return 0;
@@ -5200,7 +5200,7 @@ v3_send_audio(uint16_t send_type, uint32_t rate, uint8_t *pcm, uint32_t length, 
             return 0;
         }
         //speex_resampler_destroy(resampler);
-        ev.pcm.length = v3_pcmlength_for_rate(rate);
+		ev.pcm.length = outsamples * sizeof(int16_t);
 #else
         //_v3_error("sample rate (%d) did not match codec rate (%d) and speex dsp was not found.", rate, codec->rate);
         _v3_func_leave("v3_send_audio");
