@@ -4008,6 +4008,9 @@ v3_change_channel(uint16_t channel_id, char *password) {/*{{{*/
         _v3_func_leave("v3_change_channel");
         return;
     }
+#ifdef ANDROID // FIXME: This function should block until channels are changed.
+	_v3_get_user(v3_get_user_id())->channel = channel_id;
+#endif
     memset(&ev, 0, sizeof(v3_event));
     ev.type = V3_EVENT_CHANGE_CHANNEL;
     if (password == NULL) {
