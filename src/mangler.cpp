@@ -366,9 +366,6 @@ void Mangler::connectButton_clicked_cb(void) {/*{{{*/
         statusbar->pop();
         statusbar->push("Disconnected");
     } else if (connectbutton->get_label() == "gtk-connect") {
-        channelTree->updateLobby("Connecting...");
-        wantDisconnect = false;
-        connectbutton->set_sensitive(false);
         builder->get_widget("serverSelectComboBox", combobox);
         iter = combobox->get_active();
         if (iter) {
@@ -384,7 +381,9 @@ void Mangler::connectButton_clicked_cb(void) {/*{{{*/
             Glib::ustring password = server->password;
             Glib::ustring phonetic = server->phonetic;
             if (!server || server->hostname.empty() || server->port.empty() || server->username.empty()) {
-                channelTree->updateLobby("Not connected");
+                builder->get_widget("statusbar", statusbar);
+                statusbar->pop();
+                statusbar->push("Not connected...");
                 if (server->hostname.empty()) {
                     errorDialog("You have not specified a hostname for this server.");
                     return;
@@ -399,8 +398,11 @@ void Mangler::connectButton_clicked_cb(void) {/*{{{*/
                 }
                 return;
             }
-            set_charset(server->charset);
+            channelTree->updateLobby("Connecting...");
+            wantDisconnect = false;
+            connectbutton->set_sensitive(false);
 
+            set_charset(server->charset);
             settings->config.lastConnectedServerId = server_id;
             settings->config.save();
             v3_set_server_opts(V3_USER_ACCEPT_PAGES, server->acceptPages);
@@ -713,7 +715,7 @@ void Mangler::onDisconnectHandler(void) {/*{{{*/
         progressbar->set_fraction(0);
         builder->get_widget("statusbar", statusbar);
         statusbar->pop();
-        statusbar->push("Not connected");
+        statusbar->push("Disconnected");
         //builder->get_widget("serverTabLabel", label);
         //label->set_label("Not Connected");
         builder->get_widget("pingLabel", label);
@@ -769,13 +771,13 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                 if (v3_is_loggedin()) {
                     char buf[32];
                     builder->get_widget("pingLabel", label);
+                    builder->get_widget("statusbar", statusbar);
                     if (ev->ping != 65535) {
-                        builder->get_widget("statusbar", statusbar);
+                        snprintf(buf, 16, "%d", ev->ping);
+                        label->set_text(buf);
                         snprintf(buf, 31, "Ping: %dms", ev->ping);
                         statusbar->pop();
                         statusbar->push(buf);
-                        snprintf(buf, 16, "%d", ev->ping);
-                        label->set_text(buf);
                     } else {
                         label->set_text("checking...");
                         statusbar->pop();
