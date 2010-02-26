@@ -27,8 +27,6 @@
 #ifndef _MANGLERSERVERLIST_H
 #define _MANGLERSERVERLIST_H
 
-#include "manglerconfig.h"
-
 class ManglerServerList {
     public:
         ManglerServerList(Glib::RefPtr<Gtk::Builder> builder);

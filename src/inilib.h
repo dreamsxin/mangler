@@ -21,9 +21,12 @@
 #include <map>
 #include <vector>
 #include <string>
-#include <stdlib.h>
 
-using namespace std;
+using std::string;
+using std::vector;
+using std::map;
+using std::istream;
+using std::ostream;
 
 class iniVariant {
     public:
@@ -58,7 +61,7 @@ class iniValue : public vector<iniVariant> {
     public:
     iniValue() {}
     iniValue(const iniVariant &v);
-    size_t count() const;
+    size_type count() const;
     void append(const iniVariant &v);
     operator iniVariant &();
     iniVariant value() const;
@@ -72,7 +75,7 @@ class iniSection : public map<string, iniValue> {
     public:
     iniSection() {}
     bool contains(const string &s) const;
-    int count(const string &s) const;
+    iniValue::size_type count(const string &s) const;
     protected:
     ostream &save(ostream &out) const;
     static vector<string> parseLine(const string &s);

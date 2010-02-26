@@ -18,6 +18,10 @@
 
 #include <sstream>
 #include <fstream>
+#include <cctype>
+#include <cstdlib>
+
+using namespace std;
 
 iniVariant::iniVariant() : mValue("") {}
 
@@ -140,7 +144,7 @@ iniVariant iniValue::value() const {
      return at(0);
 }
 
-size_t iniValue::count() const { return size(); }
+iniValue::size_type iniValue::count() const { return size(); }
 
 void iniValue::append(const iniVariant &v) { push_back(v); }
 
@@ -158,7 +162,7 @@ bool iniSection::contains(const string &s) const {
     return (find(s) != end());
 }
 
-int iniSection::count(const string &s) const {
+iniValue::size_type iniSection::count(const string &s) const {
     if (contains(s)) return at(s).size();
     else return 0;
 }
