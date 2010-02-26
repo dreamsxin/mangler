@@ -48,7 +48,7 @@ const char *charsetslist[] = {
     NULL
 };
 
-static Glib::ustring iso_8859_1_to_utf8 (char *input) {/*{{{*/
+static Glib::ustring iso_8859_1_to_utf8 (const char *input) {/*{{{*/
     Glib::ustring output;
     unsigned char *text = (unsigned char *)input;
     int len = strlen(input);
@@ -151,7 +151,7 @@ std::string ustring_to_c(Glib::ustring input) {/*{{{*/
     }
     return converted;
 }/*}}}*/
-Glib::ustring c_to_ustring(char *input) {/*{{{*/
+Glib::ustring c_to_ustring(const char *input) {/*{{{*/
     Glib::ustring converted, input_u;
     // if input is NULL, return an empty string
     if (! input) return "";

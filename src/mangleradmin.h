@@ -33,9 +33,12 @@ extern "C" {
 #include <ventrilo3.h>
 }
 
+class iniFile;
+
 class ManglerAdmin {
     public:
         ManglerAdmin(Glib::RefPtr<Gtk::Builder> builder);
+        ~ManglerAdmin();
         Gtk::Window         *adminWindow;
         void channelUpdated(v3_channel *channel);
         void channelRemoved(uint32_t chanid);
@@ -62,7 +65,7 @@ class ManglerAdmin {
         Gtk::Statusbar                      *AdminStatusbar;
         guint                               StatusbarCount;
         time_t                              StatusbarTime;
-        
+        iniFile                             *usertemplates;
        
         /* channel editor stuff */
         class adminModelColumns : public Gtk::TreeModel::ColumnRecord {
@@ -125,6 +128,9 @@ class ManglerAdmin {
         adminModelColumns                   UserDefaultChannelColumns;
         Glib::RefPtr<Gtk::TreeStore>        UserDefaultChannelModel;
         
+        Gtk::ComboBoxEntry                  *UserTemplate;
+        adminModelColumns                   UserTemplateColumns;
+        Glib::RefPtr<Gtk::TreeStore>        UserTemplateModel;
 
         Gtk::VBox                           *UserEditor;
         Gtk::Table                          *UserInfoSection;
@@ -207,6 +213,11 @@ class ManglerAdmin {
         void UserAdminButton_toggled_cb(void);
         void UserChanAdminButton_toggled_cb(void);
         void UserChanAuthButton_toggled_cb(void);
+        /* user editor 'profile' stuff */
+        void readUserTemplates(void);
+        void UserTemplate_changed_cb(void);
+        void UserTemplateLoad_clicked_cb(void);
+        void UserTemplateSave_clicked_cb(void);
 
         /* rank editor callbacks */
         Gtk::TreeModel::iterator getRank(uint16_t id, Gtk::TreeModel::Children children);
