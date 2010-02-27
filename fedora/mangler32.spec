@@ -37,6 +37,7 @@ rm -rf $RPM_BUILD_ROOT
 %files
 %defattr(-,root,root,-)
 /usr/bin/mangler
+/usr/include/ventrilo3.h
 /usr/lib/libventrilo3.a
 /usr/lib/libventrilo3.la
 /usr/lib/libventrilo3.so
