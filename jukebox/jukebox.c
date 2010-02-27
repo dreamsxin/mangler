@@ -209,6 +209,7 @@ void *jukebox_player(void *connptr) {
                         v3_send_chat_message("!start -- start playing music");
                         v3_send_chat_message("!stop -- stop playing music");
                         v3_send_chat_message("!next -- play a new random track");
+                        v3_send_chat_message("!move -- move to your channel");
                         v3_send_chat_message("!play [song/artist/file name] -- search for a song by filename and play the first random match");
                         v3_send_chat_message("!volume [0-1] -- Set the volume to the specified level: ex: !volume 0.5");
                         break;
@@ -218,7 +219,7 @@ void *jukebox_player(void *connptr) {
                             break;
                         }
                         conninfo->volume = atof(volume);
-                    } else if (! stopped && strncmp(ev->data.chatmessage, "!play ", 6) == 0) {
+                    } else if (strncmp(ev->data.chatmessage, "!play ", 6) == 0) {
                         char *searchspec;
                         int ctr;
                         int found = false;
@@ -270,6 +271,7 @@ void *jukebox_player(void *connptr) {
                             } else {
                                 send_now_playing(filenum);
                                 playing = true;
+                                stopped = false;
                                 v3_start_audio(V3_AUDIO_SENDTYPE_U2CCUR);
                             }
                         }
