@@ -6,7 +6,7 @@
  * $LastChangedBy$
  * $URL$
  *
- * Copyright 2009-2010 Eric Kilfoil 
+ * Copyright 2009-2010 Eric Kilfoil
  *
  * This file is part of Mangler.
  *
@@ -29,29 +29,32 @@
 
 class ManglerChat {
     public:
-        ManglerChat(Glib::RefPtr<Gtk::Builder> builder); 
+        ManglerChat(Glib::RefPtr<Gtk::Builder> builder);
         Glib::RefPtr<Gtk::Builder>          builder;
 
         class chatUserModelColumns : public Gtk::TreeModel::ColumnRecord {
             public:
-                chatUserModelColumns() { add(id); add(name); }
+                chatUserModelColumns() { add(id); add(name); add(channel);}
                 Gtk::TreeModelColumn<uint32_t>              id;
                 Gtk::TreeModelColumn<Glib::ustring>         name;
+                Gtk::TreeModelColumn<uint32_t>              channel;
         };
-        chatUserModelColumns            chatUserColumns;
-        Glib::RefPtr<Gtk::ListStore>    chatUserTreeModel;
-        Gtk::TreeView                   *chatUserListView;
-        Gtk::TreeModel::iterator        chatUserIter;
-        Gtk::TreeModel::Row             chatUserRow;
+        chatUserModelColumns                chatUserColumns;
+        Glib::RefPtr<Gtk::ListStore>        chatUserTreeModel;
+        Glib::RefPtr<Gtk::TreeModelFilter>  chatUserTreeModelFilter;
+        Gtk::TreeView                       *chatUserListView;
+        Gtk::TreeModel::iterator            chatUserIter;
+        Gtk::TreeModel::Row                 chatUserRow;
 
         //Glib::RefPtr<Gtk::TreeSelection> chatUserSelection; // probably not needed for this
 
         Gtk::Window   *chatWindow;
         Gtk::Button   *button;
         Gtk::Entry    *chatMessage;
-        Gtk::CheckButton   *checkbutton;        
+        Gtk::CheckButton   *checkbutton;
         Gtk::TextView *chatBox;
         bool          isOpen;
+        bool isGlobal;
 
         void chatTimestampCheckButton_toggled_cb();
         void chatWindow_show_cb(void);
@@ -62,11 +65,14 @@ class ManglerChat {
         void addChatMessage(uint16_t user_id, Glib::ustring message);
         void addRconMessage(Glib::ustring message);
         void addMessage(Glib::ustring message);
+        void updateUser(uint16_t user_id);
         void addUser(uint16_t user_id);
         void clear(void);
         void removeUser(uint16_t user_id);
         bool isUserInChat(uint16_t user_id);
         Glib::ustring nameFromId(uint16_t user_id);
+        bool filterVisible(const Gtk::TreeIter& iter);
+
 
 };
 

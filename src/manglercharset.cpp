@@ -6,7 +6,7 @@
  * $LastChangedBy$
  * $URL$
  *
- * Copyright 2009 Eric Kilfoil 
+ * Copyright 2009 Eric Kilfoil
  *
  * This file is part of Mangler.
  *
@@ -48,7 +48,7 @@ const char *charsetslist[] = {
     NULL
 };
 
-static Glib::ustring iso_8859_1_to_utf8 (char *input) {/*{{{*/
+static Glib::ustring iso_8859_1_to_utf8 (const char *input) {/*{{{*/
     Glib::ustring output;
     unsigned char *text = (unsigned char *)input;
     int len = strlen(input);
@@ -109,7 +109,7 @@ static Glib::ustring iso_8859_1_to_utf8 (char *input) {/*{{{*/
 }/*}}}*/
 void set_charset(Glib::ustring charset) {/*{{{*/
     charset = charset.uppercase();
-        
+
     if (charset.find(' ') != Glib::ustring::npos)
         charset = charset.erase(charset.find(' '));
 
@@ -123,12 +123,12 @@ void set_charset(Glib::ustring charset) {/*{{{*/
             charset.clear();
         }
     }
-    
+
     serverCharset = charset;
 }/*}}}*/
 std::string ustring_to_c(Glib::ustring input) {/*{{{*/
     std::string to_charset, converted;
-    
+
     // check if input is already 7-bit
     if (input.is_ascii())
         return input;
@@ -143,7 +143,7 @@ std::string ustring_to_c(Glib::ustring input) {/*{{{*/
     // try encoding using the locale charset, unless its some utf-8
     if (Glib::get_charset(to_charset) == true)
         to_charset = "ISO-8859-1";
-    
+
     try {
         converted = Glib::convert_with_fallback(input, to_charset, "UTF-8", "?");
     } catch (...) {
@@ -151,20 +151,24 @@ std::string ustring_to_c(Glib::ustring input) {/*{{{*/
     }
     return converted;
 }/*}}}*/
-Glib::ustring c_to_ustring(char *input) {/*{{{*/
-    Glib::ustring converted, input_u = input;
+Glib::ustring c_to_ustring(const char *input) {/*{{{*/
+    Glib::ustring converted, input_u;
+    // if input is NULL, return an empty string
+    if (! input) return "";
+
+    input_u = input;
 
     // check if input is already valid UTF-8
     if (input_u.validate())
         return input_u;
-  
+
     // try to convert using the chosen charset
     if (!serverCharset.empty()) {
         try {
             return Glib::convert(input, "UTF-8", serverCharset);
         } catch (...) {}
     }
-        
+
     // try to convert using the current locale
     try {
         converted = Glib::locale_to_utf8(input);

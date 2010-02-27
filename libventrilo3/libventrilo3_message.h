@@ -6,7 +6,7 @@
  * $LastChangedBy$
  * $URL$
  *
- * Copyright 2009-2010 Eric Kilfoil 
+ * Copyright 2009-2010 Eric Kilfoil
  *
  * This file is part of Mangler.
  *
@@ -51,19 +51,21 @@
  * appropriately.
  *
  * For questions or comments, join irc://irc.freenode.net channel #mangler
- * 
+ *
  * Better documentation on these messages can be found at our wiki:
  * http://www.mangler.org/trac/wiki/ProtocolDocumentation
  */
 
+#ifndef ANDROID
 #pragma pack(push)
 #pragma pack(1)
+#endif
 
 typedef struct _v3_net_message_0x00 {/*{{{*/
     uint32_t type;
-    char version[16];
-    char salt1[32];
-    char salt2[32];
+    char     version[16];
+    char     salt1[32];
+    char     salt2[32];
 } _v3_msg_0x00;
 _v3_net_message *_v3_put_0x00();/*}}}*/
 typedef struct _v3_net_message_0x06 {/*{{{*/
@@ -73,14 +75,14 @@ typedef struct _v3_net_message_0x06 {/*{{{*/
     uint32_t subtype;           // 8
 
     uint8_t  unknown_2;         // 12 - variable length starts here
-    uint8_t* encryption_key;
+    uint8_t *encryption_key;
 } _v3_msg_0x06;
 int _v3_get_0x06(_v3_net_message *msg);/*}}}*/
 typedef struct _v3_net_message_0x33 {/*{{{*/
     uint32_t type;              // 0
     uint8_t  unkonwn[48];       // 4
     uint16_t channel_id_count;  // 52
-    uint16_t *channel_ids;      // 54 - array of uint16_t - variable length starts list  
+    uint16_t *channel_ids;      // 54 - array of uint16_t - variable length starts list
 } _v3_msg_0x33;
 int _v3_get_0x33(_v3_net_message *msg);
 int _v3_destroy_0x33(_v3_net_message *msg);/*}}}*/
@@ -95,6 +97,7 @@ typedef struct _v3_net_message_0x36 {/*{{{*/
     _v3_msg_rank *rank_list;
 } _v3_msg_0x36;
 int _v3_get_0x36(_v3_net_message *msg);
+_v3_net_message *_v3_put_0x36(uint16_t subtype, v3_rank *rank);
 int _v3_destroy_0x36(_v3_net_message *msg);/*}}}*/
 typedef struct _v3_net_message_0x37 {/*{{{*/
     uint32_t type;              // 0
@@ -140,7 +143,7 @@ typedef struct _v3_net_message_0x42 {/*{{{*/
     uint16_t user_id;           // 4
     uint16_t subtype;           // 6
     uint32_t unknown;           // 8
-    
+
     uint16_t msglen;            // 12 - variable length starts here
     char *   msg;               // 14
 } _v3_msg_0x42;
@@ -181,7 +184,7 @@ typedef struct _v3_net_message_0x49 {/*{{{*/
     uint16_t subtype;           // 6
     uint8_t  hash_password[32]; // 8
 
-    v3_channel *channel;        // 40 - variable lenghth starts here
+    v3_channel *channel;        // 40 - variable length starts here
 } _v3_msg_0x49;
 int _v3_get_0x49(_v3_net_message *msg);
 _v3_net_message *_v3_put_0x49(uint16_t subtype, uint16_t user_id, char *channel_password, _v3_msg_channel *channel);/*}}}*/
@@ -213,6 +216,17 @@ typedef struct _v3_net_message_0x4b {/*{{{*/
     uint32_t empty;             // 8
 } _v3_msg_0x4b;
 _v3_net_message *_v3_put_0x4b(void);/*}}}*/
+
+typedef struct _v3_net_message_0x4c {/*{{{*/
+    uint32_t type;              // 0
+    uint16_t subtype;           // 4
+    uint16_t property;          // 6
+    uint32_t empty;             // 8
+    uint16_t unknown;           // 12
+    uint8_t  value;             // 14
+} _v3_msg_0x4c;
+int _v3_get_0x4c(_v3_net_message *msg);/*}}}*/
+
 typedef struct _v3_net_message_0x50 {/*{{{*/
     uint32_t type;              // 0
     uint32_t timestamp;         // 4
@@ -246,8 +260,14 @@ typedef struct _v3_net_message_0x52_0x01_in {/*{{{*/
     _v3_msg_0x52 header;        // 0
     uint16_t unknown_4;         // 24
     uint16_t unknown_5;         // 26
-
-    void     *data;             // 28 - either gsmdata* or speexdata*
+    union {
+        void *frames;           // 28 - variable length starts here
+        struct {
+            uint16_t frame_count;    // 28
+            uint16_t pcm_frame_size; // 30
+            void *frames;            // 32 - variable length starts here
+        } speex;
+    } data;
 } _v3_msg_0x52_0x01_in;/*}}}*/
 typedef struct _v3_net_message_0x52_0x01_out {/*{{{*/
     _v3_msg_0x52 header;        // 0
@@ -255,17 +275,7 @@ typedef struct _v3_net_message_0x52_0x01_out {/*{{{*/
     uint16_t unknown_5;         // 26
     uint16_t unknown_6;         // 28
     uint16_t unknown_7;         // 30
-
-    void     *data;             // 28 - either gsmdata* or speexdata*
 } _v3_msg_0x52_0x01_out;/*}}}*/
-typedef struct _v3_net_message_0x52_gsmdata {/*{{{*/
-    uint8_t  **frames;
-} _v3_msg_0x52_gsmdata;/*}}}*/
-typedef struct _v3_net_message_0x52_speexdata {/*{{{*/
-    uint16_t frame_count;
-    uint16_t sample_size;
-    uint8_t  **frames;
-} _v3_msg_0x52_speexdata;/*}}}*/
 typedef struct _v3_net_message_0x52_0x02 {/*{{{*/
     _v3_msg_0x52 header;        // 0
     uint16_t unknown_4;         // 24
@@ -389,14 +399,16 @@ typedef struct _v3_net_message_0x63 {/*{{{*/
 } _v3_msg_0x63;
 _v3_net_message *_v3_put_0x63(uint16_t subtype, uint16_t user_id, char *string);/*}}}*/
 
+#ifndef ANDROID
 #pragma pack(pop)
+#endif
 
 char *      _v3_get_msg_string(void *offset, uint16_t *len);
 int         _v3_put_msg_string(void *buffer, char *string);
 uint16_t *  _v3_get_msg_uint16_array(void *offset, uint16_t *len);
 int         _v3_put_msg_uint16_array(void *buffer, uint16_t len, uint16_t *array);
 int         _v3_get_msg_channel(void *offset, _v3_msg_channel *channel);
-int         _v3_put_msg_channel(char *buf, _v3_msg_channel *channel);
+int         _v3_put_msg_channel(void *buffer, _v3_msg_channel *channel);
 int         _v3_get_msg_user(void *offset, _v3_msg_user *user);
 int         _v3_put_msg_user(void *buf, _v3_msg_user *user);
 int         _v3_get_msg_account(void *offset, _v3_msg_account *account);

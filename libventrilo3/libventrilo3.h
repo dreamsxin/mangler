@@ -6,7 +6,7 @@
  * $LastChangedBy$
  * $URL$
  *
- * Copyright 2009-2010 Eric Kilfoil 
+ * Copyright 2009-2010 Eric Kilfoil
  *
  * This file is part of Mangler.
  *
@@ -42,6 +42,9 @@
 #include <sys/select.h>
 #include <errno.h>
 #include <pthread.h>
+
+#define true  1
+#define false 0
 
 char *_v3_errors[] = {
     "Success",
@@ -330,7 +333,7 @@ uint32_t _v3_hash_table[] =
  * Global Variables
  */
 
-_v3_server  v3_server  = { 0, 0, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, -1, { 0, 0 }, NULL, NULL, 0, 0, { "", 0, 0 }, { "", 0, 0 }, NULL, NULL, {0, 0},  0, 0, 0, 0};
+_v3_server  v3_server  = { 0, 0, 0, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, -1, { 0, 0 }, NULL, NULL, 0, 0, { "", 0, 0 }, { "", 0, 0 }, NULL, NULL, {0, 0},  0, 0, 0, 0, false, false, false};
 _v3_luser   v3_luser   = { -1, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, 0, {  } };
 
 v3_channel              *v3_channel_list = NULL;
@@ -371,6 +374,10 @@ v3_codec v3_codecs[] = {
     { 0, 2, 640, 22050, -1, "GSM 6.10 22kHz" },
     { 0, 3, 640, 44100, -1, "GSM 6.10 44kHz" },
 #endif
+#if HAVE_CELT
+    { 1, 0, 640, 44100, -1, "CELT 0.7 44kHz" },
+    { 2, 0, 640, 22050, -1, "CELT 0.7 22kHz" },
+#endif
 #if HAVE_SPEEX
     { 3, 0, 320, 8000, 0, "Speex 8kHz Quality 0" },
     { 3, 1, 320, 8000, 1, "Speex 8kHz Quality 1" },
@@ -406,7 +413,7 @@ v3_codec v3_codecs[] = {
     { 3, 31, 1280, 32000, 9, "Speex 32kHz Quality 9" },
     { 3, 32, 1280, 32000, 10, "Speex 32kHz Quality 10" },
 #endif
-    { -1, -1, -1, -1, -1, "Unsupported Codec" },
+    { -1, -1, 0, 0, -1, "Unsupported Codec" },
 };
 
 typedef struct __v3_decoders {
@@ -414,6 +421,10 @@ typedef struct __v3_decoders {
     gsm gsm;
 #endif
     void *speex;
+#if HAVE_CELT
+    void *celtmode;
+    void *celt;
+#endif
 } _v3_decoders;
 
 _v3_decoders v3_decoders[65535];

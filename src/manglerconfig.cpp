@@ -6,7 +6,7 @@
  * $LastChangedBy$
  * $URL$
  *
- * Copyright 2009-2010 Eric Kilfoil 
+ * Copyright 2009-2010 Eric Kilfoil
  *
  * This file is part of Mangler.
  *
@@ -23,7 +23,7 @@
  * You should have received a copy of the GNU General Public License
  * along with Mangler.  If not, see <http://www.gnu.org/licenses/>.
  */
-		
+
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -33,22 +33,26 @@
 #include <gdk/gdkx.h>
 #include "config.h"
 
+#include "manglerserverlist.h"
 
 ManglerConfig::ManglerConfig() {/*{{{*/
     lv3_debuglevel                  = 0;
     masterVolumeLevel               = 79;
-    windowWidth = 0;
-    windowHeight = 0;
-    buttonsHidden = false;
-    serverInfoHidden = false;
-    guestFlagHidden = false;
-    chatTimestamps = false;
+    windowWidth                     = 0;
+    windowHeight                    = 0;
+    buttonsHidden                   = false;
+    serverInfoHidden                = false;
+    guestFlagHidden                 = false;
+    chatTimestamps                  = false;
     PushToTalkKeyEnabled            = false;
     PushToTalkKeyValue              = "";
     PushToTalkMouseEnabled          = false;
     PushToTalkMouseValue            = "";
     AudioIntegrationEnabled         = false;
-    AudioIntegrationPlayer          = "";
+    AudioIntegrationPlayer          = 0;
+    VoiceActivationEnabled          = false;
+    VoiceActivationSilenceDuration  = 2000;
+    VoiceActivationSensitivity      = 25;
     notificationLoginLogout         = true;
     notificationChannelEnterLeave   = true;
     notificationTransmitStartStop   = true;
@@ -58,6 +62,9 @@ ManglerConfig::ManglerConfig() {/*{{{*/
 #elif HAVE_ALSA
     audioSubsystem                  = "alsa";
 #endif
+    inputDeviceCustomName           = "";
+    outputDeviceCustomName          = "";
+    notificationDeviceCustomName    = "";
     ManglerServerConfig             qc_lastserver;
     std::vector<ManglerServerConfig> serverlist;
     load();
@@ -78,9 +85,15 @@ bool ManglerConfig::save() {/*{{{*/
     put("PushToTalkMouseValue", PushToTalkMouseValue);
     put("AudioIntegrationEnabled", AudioIntegrationEnabled);
     put("AudioIntegrationPlayer", AudioIntegrationPlayer);
+    put("VoiceActivationEnabled", VoiceActivationEnabled);
+    put("VoiceActivationSilenceDuration", VoiceActivationSilenceDuration);
+    put("VoiceActivationSensitivity", VoiceActivationSensitivity);
     put("inputDeviceName", inputDeviceName);
+    put("inputDeviceCustomName", inputDeviceCustomName);
     put("outputDeviceName", outputDeviceName);
+    put("outputDeviceCustomName", outputDeviceCustomName);
     put("notificationDeviceName", notificationDeviceName);
+    put("notificationDeviceCustomName", notificationDeviceCustomName);
     put("notification.loginLogout", notificationLoginLogout);
     put("notification.channelEnterLeave", notificationChannelEnterLeave);
     put("notification.transmitStartStop", notificationTransmitStartStop);
@@ -148,6 +161,8 @@ bool ManglerConfig::put(uint16_t id, ManglerServerConfig server) {/*{{{*/
     snprintf(name, 1023, "serverlist.%d.name",                 id); if (!put(name, server.name                 ))  return false;
     snprintf(name, 1023, "serverlist.%d.hostname",             id); if (!put(name, server.hostname             ))  return false;
     snprintf(name, 1023, "serverlist.%d.port",                 id); if (!put(name, server.port                 ))  return false;
+    snprintf(name, 1023, "serverlist.%d.defaultchannel",       id); if (!put(name, server.defaultchannel       ))  return false;
+    snprintf(name, 1023, "serverlist.%d.defaultchannelid",     id); if (!put(name, server.defaultchannelid     ))  return false;
     snprintf(name, 1023, "serverlist.%d.username",             id); if (!put(name, server.username             ))  return false;
     snprintf(name, 1023, "serverlist.%d.password",             id); if (!put(name, server.password             ))  return false;
     snprintf(name, 1023, "serverlist.%d.phonetic",             id); if (!put(name, server.phonetic             ))  return false;
@@ -387,10 +402,22 @@ void ManglerConfig::load() {/*{{{*/
         PushToTalkMouseValueInt   = atoi(PushToTalkMouseValue.substr(6).c_str());
     }
     AudioIntegrationEnabled       = get("AudioIntegrationEnabled") == "1" ? true : false; // default false
-    AudioIntegrationPlayer        = get("AudioIntegrationPlayer");
+    if (get("AudioIntegrationPlayer").length()) {
+        AudioIntegrationPlayer    = atoi(get("AudioIntegrationPlayer").c_str());
+    }
+    VoiceActivationEnabled        = get("VoiceActivationEnabled") == "1" ? true : false; // default false
+    if (get("VoiceActivationSilenceDuration").length()) {
+        VoiceActivationSilenceDuration = atoi(get("VoiceActivationSilenceDuration").c_str());
+    }
+    if (get("VoiceActivationSensitivity").length()) {
+        VoiceActivationSensitivity = atoi(get("VoiceActivationSensitivity").c_str());
+    }
     inputDeviceName               = get("inputDeviceName");
+    inputDeviceCustomName         = get("inputDeviceCustomName");
     outputDeviceName              = get("outputDeviceName");
+    outputDeviceCustomName        = get("outputDeviceCustomName");
     notificationDeviceName        = get("notificationDeviceName");
+    notificationDeviceCustomName  = get("notificationDeviceCustomName");
     notificationLoginLogout       = get("notification.loginLogout") == "0" ? false : true; // default true
     notificationChannelEnterLeave = get("notification.channelEnterLeave") == "0" ? false : true; // default true
     notificationTransmitStartStop = get("notification.transmitStartStop") == "0" ? false : true; // default true
@@ -431,6 +458,8 @@ void ManglerConfig::load() {/*{{{*/
             server->name = get(base + "name");
             server->hostname = get(base + "hostname");
             server->port = get(base + "port");
+            server->defaultchannel = get(base + "defaultchannel");
+            server->defaultchannelid = atoi(get(base + "defaultchannelid").c_str());
             server->username = get(base + "username");
             server->password = get(base + "password");
             server->phonetic = get(base + "phonetic");

@@ -6,7 +6,7 @@
  * $LastChangedBy$
  * $URL$
  *
- * Copyright 2009-2010 Eric Kilfoil 
+ * Copyright 2009-2010 Eric Kilfoil
  *
  * This file is part of Mangler.
  *
@@ -42,6 +42,8 @@ class ManglerSettings
         Gtk::Window         *window;
         Gtk::CheckButton    *checkbutton;
         Gtk::VBox           *vbox;
+        Gtk::Table          *table;
+        Gtk::SpinButton     *spinbutton;
         Gtk::HScale         *volumehscale;
         Gtk::Adjustment     *volumeAdjustment;
         sigc::connection    volumeAdjustSignalConnection;
@@ -80,25 +82,26 @@ class ManglerSettings
         {
             public:
                 inputDeviceModelColumns() { add(id); add(name); add(description); }
-                Gtk::TreeModelColumn<uint32_t>      id;
+                Gtk::TreeModelColumn<int32_t>       id;
                 Gtk::TreeModelColumn<Glib::ustring> name;
                 Gtk::TreeModelColumn<Glib::ustring> description;
         };
         inputDeviceModelColumns  inputColumns;
         Glib::RefPtr<Gtk::ListStore> inputDeviceTreeModel;
-
+        Gtk::Entry          *inputDeviceCustomName;
         // Output Device Combo Box Setup
         Gtk::ComboBox       *outputDeviceComboBox;
         class outputDeviceModelColumns : public Gtk::TreeModel::ColumnRecord
         {
             public:
                 outputDeviceModelColumns() { add(id); add(name); add(description); }
-                Gtk::TreeModelColumn<uint32_t>      id;
+                Gtk::TreeModelColumn<int32_t>       id;
                 Gtk::TreeModelColumn<Glib::ustring> name;
                 Gtk::TreeModelColumn<Glib::ustring> description;
         };
         outputDeviceModelColumns  outputColumns;
         Glib::RefPtr<Gtk::ListStore> outputDeviceTreeModel;
+        Gtk::Entry          *outputDeviceCustomName;
 
         // Notification Device Combo Box Setup
         Gtk::ComboBox       *notificationDeviceComboBox;
@@ -106,12 +109,13 @@ class ManglerSettings
         {
             public:
                 notificationDeviceModelColumns() { add(id); add(name); add(description); }
-                Gtk::TreeModelColumn<uint32_t>      id;
+                Gtk::TreeModelColumn<int32_t>       id;
                 Gtk::TreeModelColumn<Glib::ustring> name;
                 Gtk::TreeModelColumn<Glib::ustring> description;
         };
         notificationDeviceModelColumns  notificationColumns;
         Glib::RefPtr<Gtk::ListStore> notificationDeviceTreeModel;
+        Gtk::Entry          *notificationDeviceCustomName;
 
         // Mouse Input Device Combo Box Setup
         Gtk::ComboBox       *mouseDeviceComboBox;
@@ -145,8 +149,12 @@ class ManglerSettings
         void settingsEnablePTTMouseCheckButton_toggled_cb(void);
         void settingsPTTMouseButton_clicked_cb(void);
         void settingsEnableAudioIntegrationCheckButton_toggled_cb(void);
+        void settingsEnableVoiceActivationCheckButton_toggled_cb(void);
         void audioSubsystemComboBox_changed_cb(void);
         void updateDeviceComboBoxes(void);
+        void inputDeviceComboBox_changed_cb(void);
+        void outputDeviceComboBox_changed_cb(void);
+        void notificationDeviceComboBox_changed_cb(void);
 };
 
 #endif

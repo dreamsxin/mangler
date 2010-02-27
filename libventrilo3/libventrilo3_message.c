@@ -6,7 +6,7 @@
  * $LastChangedBy$
  * $URL$
  *
- * Copyright 2009-2010 Eric Kilfoil 
+ * Copyright 2009-2010 Eric Kilfoil
  *
  * This file is part of Mangler.
  *
@@ -96,7 +96,7 @@ _v3_get_msg_uint16_array(void *offset, uint16_t *len) {/*{{{*/
     memcpy(s, offset+2, *len*2);
     for (ctr = 0; ctr < *len; ctr++) {
         s[ctr] = ntohs(s[ctr]);
-    } 
+    }
     *len = (*len*2)+2;
     _v3_func_leave("_v3_get_msg_string");
     return s;
@@ -104,25 +104,30 @@ _v3_get_msg_uint16_array(void *offset, uint16_t *len) {/*{{{*/
 
 int
 _v3_put_msg_uint16_array(void *buffer, uint16_t len, uint16_t *array) {/*{{{*/
+    uint16_t count;
+    void *p;
     _v3_func_enter("_v3_put_msg_uint16_array");
-    memcpy(buffer, &len, 2);
-    if (len) {
-        memcpy(buffer, array, len * 2);
+    *((uint16_t*)buffer) = htons(len);
+    for (count = 0; count < len; count++) {
+        p = buffer + 2 + count * 2;
+        *((uint16_t*)p) = htons(array[count]);
     }
     _v3_func_leave("_v3_put_msg_uint16_array");
-    return len + 2;
+    return len*2 + 2;
 }/*}}}*/
 
 int
 _v3_put_msg_string(void *buffer, char *string) {/*{{{*/
-    int len;
-    
+    uint16_t len;
+
     _v3_func_enter("_v3_put_msg_string");
-    len = htons((uint16_t)strlen(string));
-    memcpy(buffer, &len, 2);
-    memcpy(buffer+2, string, strlen(string));
+    len = (string) ? strlen(string) : 0;
+    *((uint16_t *)buffer) = htons(len);
+    if (len) {
+        memcpy(buffer+2, string, len);
+    }
     _v3_func_leave("_v3_put_msg_string");
-    return strlen(string) + 2;
+    return len + 2;
 }/*}}}*/
 
 int
@@ -213,7 +218,7 @@ _v3_get_msg_account(void *offset, _v3_msg_account *account) {/*{{{*/
     account->lock_reason = _v3_get_msg_string(offset, &len);
     _v3_debug(V3_DEBUG_PACKET_PARSE, "lock reason: %s", account->lock_reason);
     offset += len;
-                
+
     account->chan_admin = _v3_get_msg_uint16_array(offset, &len);
     for (j=0;j<(len-2)/2;j++)
         _v3_debug(V3_DEBUG_PACKET_PARSE, "chanadmin: 0x%x", account->chan_admin[j]);
@@ -278,6 +283,40 @@ _v3_put_msg_user(void *buffer, v3_user *user) {/*{{{*/
     _v3_func_leave("_v3_put_msg_user");
     return(buffer-start_buffer);
 }/*}}}*/
+
+int
+_v3_put_msg_channel(void *buffer, _v3_msg_channel *channel) {/*{{{*/
+    void *start_buffer = buffer;
+
+    _v3_func_enter("_v3_put_msg_channel");
+    // put the channel information
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "putting channel id: %d", channel->id);
+    memcpy(buffer, channel, 48);
+    buffer+=48;
+
+    // put the channel strings
+    buffer += _v3_put_msg_string(buffer, channel->name);
+    buffer += _v3_put_msg_string(buffer, channel->phonetic);
+    buffer += _v3_put_msg_string(buffer, channel->comment);
+
+    _v3_func_leave("_v3_put_msg_channel");
+    return(buffer-start_buffer);
+}/*}}}*/
+
+int _v3_put_msg_rank(void *buffer, _v3_msg_rank *rank) {/*{{{*/
+    void *start_buffer = buffer;
+
+    _v3_func_enter("_v3_put_msg_rank");
+
+    *((uint16_t*)(buffer)) = rank->id; buffer += 2;
+    *((uint16_t*)(buffer)) = rank->level; buffer += 2;
+    buffer += _v3_put_msg_string(buffer, rank->name);
+    buffer += _v3_put_msg_string(buffer, rank->description);
+
+    _v3_func_leave("_v3_put_msg_rank");
+    return(buffer-start_buffer);
+}/*}}}*/
+
 /*}}}*/
 
 /*
@@ -383,7 +422,6 @@ _v3_get_0x36(_v3_net_message *msg) {/*{{{*/
     _v3_func_leave("_v3_get_0x36");
     return true;
 }/*}}}*/
-
 int
 _v3_destroy_0x36(_v3_net_message *msg) {/*{{{*/
     _v3_msg_0x36 *m;
@@ -399,6 +437,43 @@ _v3_destroy_0x36(_v3_net_message *msg) {/*{{{*/
     free(m->rank_list);
     _v3_func_leave("_v3_destroy_0x36");
     return true;
+}/*}}}*/
+_v3_net_message *
+_v3_put_0x36(uint16_t subtype, v3_rank *rank) {/*{{{*/
+    _v3_net_message *m;
+    _v3_msg_0x36 *mc;
+
+    _v3_func_enter("_v3_put_0x36");
+    // Build our message
+    m = malloc(sizeof(_v3_net_message));
+    memset(m, 0, sizeof(_v3_net_message));
+    m->type = 0x36;
+    switch (subtype) {
+        case V3_OPEN_RANK:
+        case V3_CLOSE_RANK:
+            m->len = 16;
+            mc = malloc(m->len);
+            break;
+        case V3_ADD_RANK:
+        case V3_MODIFY_RANK:
+            m->len = 24 + (rank->name ? strlen(rank->name) : 0) + (rank->description ? strlen(rank->description) : 0);
+            mc = malloc(m->len);
+            break;
+        case V3_REMOVE_RANK:
+            m->len = 20;
+            mc = malloc(m->len + 4);
+            break;
+    }
+    memset(mc, 0, m->len);
+    mc->type = 0x36;
+    mc->subtype = subtype;
+    mc->rank_count = 1;
+    if (rank) _v3_put_msg_rank(&mc->rank_list, rank);
+
+    m->data = (char*)mc;
+    m->contents = mc;
+    _v3_func_leave("_v3_put_0x36");
+    return m;
 }/*}}}*/
 /*}}}*/
 // Message 0x37 (55) | PING /*{{{*/
@@ -541,7 +616,7 @@ _v3_get_0x3c(_v3_net_message *msg) {/*{{{*/
 }/*}}}*/
 /*}}}*/
 // Message 0x42 (66) | CHAT/RCON /*{{{*/
-int 
+int
 _v3_get_0x42(_v3_net_message *msg) {/*{{{*/
     _v3_msg_0x42 *m;
     _v3_func_enter("_v3_get_0x42");
@@ -564,22 +639,22 @@ _v3_net_message *_v3_put_0x42(uint16_t subtype, uint16_t user_id, char* message)
     m = malloc(sizeof(_v3_net_message));
     memset(m, 0, sizeof(_v3_net_message));
     m->type = 0x42;
-    
+
     // Build our message contents
-    uint16_t base = sizeof(_v3_msg_0x42) - (sizeof(char *) + sizeof(uint16_t)); 
+    uint16_t base = sizeof(_v3_msg_0x42) - (sizeof(char *) + sizeof(uint16_t));
     uint16_t len  = base;
     mc = malloc(base);
     memset(mc, 0, base);
     mc->type = 0x42;
     mc->subtype = subtype;
     mc->user_id = user_id;
-    
-    if(message) {        
+
+    if(message) {
         len += strlen(message) + 2;
         mc = realloc(mc, len);
-        _v3_put_msg_string((char *)mc + base, message);   
+        _v3_put_msg_string((char *)mc + base, message);
     }
-    
+
     m->contents = mc;
     m->data = (char *)mc;
     m->len = len;
@@ -676,19 +751,13 @@ _v3_net_message *
 _v3_put_0x49(uint16_t subtype, uint16_t user_id, char *channel_password, _v3_msg_channel *channel) {/*{{{*/
     _v3_net_message *msg;
     struct _v3_net_message_0x49 *msgdata;
-    void *offset;
-
     _v3_func_enter("_v3_put_0x49");
     msg = malloc(sizeof(_v3_net_message));
     memset(msg, 0, sizeof(_v3_net_message));
     msg->type = 0x49;
     switch (subtype) {
         case V3_CHANGE_CHANNEL:
-            // TODO: this is messy and should probably be cleaned up
-
-            // this is a standard channel packet minus the pointer bytes for
-            // the name, comment, and phonetic
-            msg->len = sizeof(_v3_msg_0x49)-sizeof(void *)+sizeof(_v3_msg_channel) - sizeof(void *) * 4;
+            msg->len = sizeof(_v3_msg_0x49)-sizeof(void *) + sizeof(_v3_msg_channel) - sizeof(void *) * 4 + 6;
             _v3_debug(V3_DEBUG_PACKET_PARSE, "allocating %d bytes", msg->len);
             msgdata = malloc(sizeof(_v3_msg_0x49)-sizeof(void *)+sizeof(_v3_msg_channel));
             memset(msgdata, 0, sizeof(_v3_msg_0x49)-sizeof(void *)+sizeof(_v3_msg_channel));
@@ -698,8 +767,41 @@ _v3_put_0x49(uint16_t subtype, uint16_t user_id, char *channel_password, _v3_msg
             if (channel_password != NULL && strlen(channel_password) != 0) {
                 _v3_hash_password((uint8_t *)channel_password, (uint8_t *)msgdata->hash_password);
             }
-            offset = (void*)((char *)msgdata + sizeof(_v3_msg_0x49)-sizeof(void *));
-            memcpy(offset, channel, sizeof(_v3_msg_channel));
+            _v3_put_msg_channel(&msgdata->channel, channel);
+            msg->data = (char *)msgdata;
+            _v3_func_leave("_v3_put_0x49");
+            return(msg);
+        case V3_ADD_CHANNEL:
+        case V3_MODIFY_CHANNEL:
+            msg->len = sizeof(_v3_msg_0x49) - sizeof(void *) + sizeof(_v3_msg_channel) - sizeof(void *) * 4 + 6;
+            if (channel->name) msg->len += strlen(channel->name);
+            if (channel->phonetic) msg->len += strlen(channel->phonetic);
+            if (channel->comment) msg->len += strlen(channel->comment);
+            _v3_debug(V3_DEBUG_PACKET_PARSE, "allocating %d bytes", msg->len);
+            msgdata = malloc(msg->len);
+            memset(msgdata, 0, msg->len);
+            msgdata->type = msg->type;
+            msgdata->subtype = subtype;
+            msgdata->user_id = user_id;
+            if (channel_password != NULL && strlen(channel_password) != 0) {
+                _v3_hash_password((uint8_t *)channel_password, (uint8_t *)msgdata->hash_password);
+            }
+            _v3_put_msg_channel(&msgdata->channel, channel);
+            msg->data = (char *)msgdata;
+            _v3_func_leave("_v3_put_0x49");
+            return(msg);
+        case V3_REMOVE_CHANNEL:
+            msg->len = sizeof(_v3_msg_0x49)-sizeof(void *) + sizeof(_v3_msg_channel) - sizeof(void *) * 4 + 6;
+            _v3_debug(V3_DEBUG_PACKET_PARSE, "allocating %d bytes", msg->len);
+            msgdata = malloc(sizeof(_v3_msg_0x49)-sizeof(void *)+sizeof(_v3_msg_channel));
+            memset(msgdata, 0, sizeof(_v3_msg_0x49)-sizeof(void *)+sizeof(_v3_msg_channel));
+            msgdata->type = msg->type;
+            msgdata->subtype = subtype;
+            msgdata->user_id = user_id;
+            if (channel_password != NULL && strlen(channel_password) != 0) {
+                _v3_hash_password((uint8_t *)channel_password, (uint8_t *)msgdata->hash_password);
+            }
+            _v3_put_msg_channel(&msgdata->channel, channel);
             msg->data = (char *)msgdata;
             _v3_func_leave("_v3_put_0x49");
             return(msg);
@@ -751,7 +853,7 @@ _v3_get_0x4a(_v3_net_message *msg) {/*{{{*/
     void *offset;
 
     _v3_func_enter("_v3_get_0x4a");
-    
+
     m = msg->contents = msg->data;
 
     _v3_debug(V3_DEBUG_PACKET_PARSE, "subtype.......: %d", m->subtype);
@@ -766,39 +868,36 @@ _v3_get_0x4a(_v3_net_message *msg) {/*{{{*/
         _v3_func_leave("_v3_get_0x4a");
         return true;
     }
- 
+
     switch (m->subtype) {
         case V3_USERLIST_OPEN:
         case V3_USERLIST_ADD:
         case V3_USERLIST_MODIFY:
             {
-            int i;
-            _v3_msg_0x4a_account *msub = malloc(sizeof(_v3_msg_0x4a_account));
-            memcpy(msub, m, sizeof(*m));
-            msg->contents = msub;
+                int i;
+                _v3_msg_0x4a_account *msub = malloc(sizeof(_v3_msg_0x4a_account));
+                memcpy(msub, m, sizeof(*m));
+                msg->contents = msub;
 
-            msub->acct_list_count = msub->header.count;
-            msub->acct_list = calloc(msub->header.count, sizeof(msub->acct_list[0]));
+                msub->acct_list_count = msub->header.count;
+                msub->acct_list = calloc(msub->header.count, sizeof(msub->acct_list[0]));
 
-            for (i = 0, offset = msg->data + sizeof(msub->header);i < msub->header.count; i++) {
-                v3_account *account = msub->acct_list[i] = malloc(sizeof(v3_account));
-                offset += _v3_get_msg_account(offset, account);
-            }
+                for (i = 0, offset = msg->data + sizeof(msub->header);i < msub->header.count; i++) {
+                    v3_account *account = msub->acct_list[i] = malloc(sizeof(v3_account));
+                    offset += _v3_get_msg_account(offset, account);
+                }
             }
             break;
         case V3_USERLIST_REMOVE:
         case V3_USERLIST_LUSER:
         case V3_USERLIST_CHANGE_OWNER:
             {
-            if (msg->len != sizeof(_v3_msg_0x4a_perms)) {
-                _v3_debug(V3_DEBUG_PACKET_PARSE, "expected %d bytes, but message is %d bytes", sizeof(_v3_msg_0x4a_perms), msg->len);
-               _v3_func_leave("_v3_get_0x4a");
-               return false;
-            }
-            _v3_msg_0x4a_perms *msub = (_v3_msg_0x4a_perms *)m;
-            msub = realloc(m, sizeof(_v3_msg_0x4a_perms));
-            memcpy(msub, msg->data, sizeof(_v3_msg_0x4a_perms));
-            msg->contents = msub;
+                if (msg->len != sizeof(_v3_msg_0x4a_perms)) {
+                    _v3_debug(V3_DEBUG_PACKET_PARSE, "expected %d bytes, but message is %d bytes", sizeof(_v3_msg_0x4a_perms), msg->len);
+                    _v3_func_leave("_v3_get_0x4a");
+                    return false;
+                }
+                _v3_msg_0x4a_perms *msub = (_v3_msg_0x4a_perms *)m;
             }
             break;
         default:
@@ -832,7 +931,7 @@ _v3_net_message *_v3_put_0x4a(uint8_t subtype, v3_account *account, v3_account *
             m->len = sizeof(_v3_msg_0x4a) + sizeof(account->perms) + strlen(account->username) + 2 + strlen(account->owner) + 2 + strlen(account->notes) + 2 + strlen(account->lock_reason) + 2 + ((account->chan_admin_count * 2) + 2) + ((account->chan_auth_count * 2) + 2);
             mc = malloc(m->len);
             memset(mc, 0, m->len);
-            ((_v3_msg_0x4a_account *)mc)->header.count = 1;
+            mc->count = 1;
             _v3_put_msg_account((uint8_t *)mc + sizeof(_v3_msg_0x4a), account);
             break;
         case V3_USERLIST_REMOVE:
@@ -892,7 +991,6 @@ _v3_destroy_0x4a(_v3_net_message *msg) {/*{{{*/
 }/*}}}*/
 /*}}}*/
 // Message 0x4b (75) | TIMESTAMP /*{{{*/
-
 _v3_net_message *_v3_put_0x4b(void) {/*{{{*/
     _v3_net_message *m;
     _v3_msg_0x4b *mc;
@@ -916,6 +1014,55 @@ _v3_net_message *_v3_put_0x4b(void) {/*{{{*/
     return m;
 }/*}}}*/
 /*}}}*/
+// Message 0x4c (76) | SERVER PROPERTIES /*{{{*/
+int
+_v3_get_0x4c(_v3_net_message *msg) {/*{{{*/
+    _v3_msg_0x4c *m;
+
+    _v3_func_enter("_v3_get_0x4c");
+    if (msg->len != sizeof(_v3_msg_0x4c)) {
+        _v3_debug(V3_DEBUG_PACKET_PARSE, "expected %d bytes, but message is %d bytes", sizeof(_v3_msg_0x4c), msg->len);
+        _v3_func_leave("_v3_get_0x4c");
+        return false;
+    }
+    m = msg->contents = msg->data;
+    switch (m->subtype) {
+            case 0x02:
+                switch (m->property) {
+                    case 0x02: // Chat filter
+                        _v3_debug(V3_DEBUG_PACKET_PARSE, "Server Property:");
+                        _v3_debug(V3_DEBUG_PACKET_PARSE, "global chat filter..: %d",   m->value);
+                    break;
+                    case 0x03: // Channel ordering
+                        _v3_debug(V3_DEBUG_PACKET_PARSE, "Server Property:");
+                        _v3_debug(V3_DEBUG_PACKET_PARSE, "channels alphabetic.: %d",   m->value);
+                    break;
+                    case 0x05: // MOTD State
+                        _v3_debug(V3_DEBUG_PACKET_PARSE, "Server Property:");
+                        _v3_debug(V3_DEBUG_PACKET_PARSE, "motd always.........: %d",   m->value);
+                    break;
+                    default:
+                        _v3_debug(V3_DEBUG_PACKET_PARSE, "0x4C 0x02 Server Property - Unknown Property:");
+                        _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown property....: %d",   m->property);
+                        _v3_debug(V3_DEBUG_PACKET_PARSE, "empty...............: %d",   m->empty);
+                        _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown.............: %d",   m->unknown);
+                        _v3_debug(V3_DEBUG_PACKET_PARSE, "value...............: %d",   m->value);
+                    break;
+                }
+            break;
+            default:
+                _v3_debug(V3_DEBUG_PACKET_PARSE, "0x4C Server Property - Unknown Subtype:");
+                _v3_debug(V3_DEBUG_PACKET_PARSE, "subtype.............: %d",   m->subtype);
+                _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown property....: %d",   m->value);
+                _v3_debug(V3_DEBUG_PACKET_PARSE, "empty...............: %d",   m->empty);
+                _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown.............: %d",   m->unknown);
+                _v3_debug(V3_DEBUG_PACKET_PARSE, "value...............: %d",   m->property);
+            break;
+    }
+    _v3_func_leave("_v3_get_0x4c");
+    return true;
+}/*}}}*/
+/*}}}*/
 // Message 0x50 (80) | MOTD /*{{{*/
 int
 _v3_get_0x50(_v3_net_message *msg) {/*{{{*/
@@ -928,7 +1075,6 @@ _v3_get_0x50(_v3_net_message *msg) {/*{{{*/
 // Message 0x52 (82) | SOUND DATA /*{{{*/
 int
 _v3_get_0x52(_v3_net_message *msg) {/*{{{*/
-    int ctr, offset;
     _v3_msg_0x52 *m;
 
     _v3_func_enter("_v3_get_0x52");
@@ -960,60 +1106,76 @@ _v3_get_0x52(_v3_net_message *msg) {/*{{{*/
                 memcpy(msub, msg->data, sizeof(_v3_msg_0x52_0x01_in));
                 _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown 4.....: %d", msub->unknown_4);
                 _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown 5.....: %d", msub->unknown_5);
-                _v3_debug(V3_DEBUG_PACKET_PARSE, "allocating %d bytes for audio packet", sizeof(_v3_msg_0x52_0x01_in));
+                _v3_debug(V3_DEBUG_PACKET_PARSE, "allocated %d bytes for audio packet", sizeof(_v3_msg_0x52_0x01_in));
                 _v3_debug(V3_DEBUG_PACKET_PARSE, "received an audio packet from user id %d", msub->header.user_id);
+                if (msub->header.data_length > 0xffff) {
+                    // if data length is somehow greater than 65535 bytes, bail out
+                    _v3_debug(V3_DEBUG_PACKET_PARSE, "data length is too large: %d bytes", msub->header.data_length);
+                    free(msub);
+                    _v3_func_leave("_v3_get_0x52");
+                    return false;
+                }
                 switch (msub->header.codec) {
                     case 0x00: // GSM
                         if (msub->header.codec_format > 3) {
-                            // this should always be <= than 3, otherwise, bail out
+                            // this should always be <= than 3, otherwise bail out
                             free(msub);
-                            _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown gsm codec format 0x%02X", msub->header.codec_format);
+                            _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown codec format for gsm 0x%02X", msub->header.codec_format);
                             _v3_func_leave("_v3_get_0x52 (0x01_in gsm)");
                             return false;
                         } else {
-                            _v3_msg_0x52_gsmdata *data;
-                            data = malloc(sizeof(_v3_msg_0x52_gsmdata));
                             _v3_debug(V3_DEBUG_PACKET_PARSE, "gsm length..........: %d (%d frames)", msub->header.data_length, msub->header.data_length/65);
-                            _v3_debug(V3_DEBUG_PACKET_PARSE, "allocating %d bytes for pointers", msub->header.data_length / 65 * sizeof(uint8_t *));
-                            data->frames = malloc(msub->header.data_length / 65 * sizeof(uint8_t *));
-                            for (ctr = 0, offset = 28; ctr < msub->header.data_length / 65; ctr++, offset += 65) {
-                                _v3_debug(V3_DEBUG_PACKET_PARSE, "allocating 65 bytes for frame");
-                                data->frames[ctr] = malloc(65);
-                                memcpy(data->frames[ctr], msg->data+offset, 65);
-                            }
-                            msub->data = data;
+                            _v3_debug(V3_DEBUG_PACKET_PARSE, "allocating %d bytes for gsm frames", msub->header.data_length);
+                            msub->data.frames = malloc(msub->header.data_length);
+                            memcpy(msub->data.frames, msg->data + (sizeof(_v3_msg_0x52_0x01_in) - sizeof(msub->data)), msub->header.data_length);
                             msg->contents = msub;
                             _v3_func_leave("_v3_get_0x52 (0x01_in gsm)");
                             return true;
                         }
                         break;
-                    case 0x03: // speex
+                    case 0x01: // CELT
+                    case 0x02:
+                        if (msub->header.codec_format != 0) {
+                            // this should always be 0, otherwise bail out
+                            free(msub);
+                            _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown codec format for celt 0x%02X", msub->header.codec_format);
+                            _v3_func_leave("_v3_get_0x52 (0x01_in celt)");
+                            return false;
+                        } else {
+                            _v3_debug(V3_DEBUG_PACKET_PARSE, "celt data length: %d", msub->header.data_length);
+                            _v3_debug(V3_DEBUG_PACKET_PARSE, "allocating %d bytes for celt frames", msub->header.data_length);
+                            msub->data.frames = malloc(msub->header.data_length);
+                            memcpy(msub->data.frames, msg->data + (sizeof(_v3_msg_0x52_0x01_in) - sizeof(msub->data)), msub->header.data_length);
+                            msg->contents = msub;
+                            _v3_func_leave("_v3_get_0x52 (0x01_in celt)");
+                            return true;
+                        }
+                        break;
+                    case 0x03: // SPEEX
                         if (msub->header.codec_format > 32) {
                             // this should always be <= than 32, otherwise bail out
                             free(msub);
-                            _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown speex codec format %02X", msub->header.codec_format);
+                            _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown codec format for speex 0x%02X", msub->header.codec_format);
                             _v3_func_leave("_v3_get_0x52 (0x01_in speex)");
                             return false;
                         } else {
-                            _v3_msg_0x52_speexdata *data;
-                            data = malloc(sizeof(_v3_msg_0x52_speexdata));
-                            memcpy(data, msg->data+28, sizeof(uint16_t) * 2); // copy the audio count and frame size values
-                            data->frame_count = ntohs(data->frame_count); // for some reason, these are big endian
-                            data->sample_size  = ntohs(data->sample_size);  // convert them to host byte order
-                            if (data->frame_count == 0) {
-                                _v3_debug(V3_DEBUG_PACKET_PARSE, "received audio packet with zero frames");
+                            uint16_t frame_count;
+                            uint16_t spx_frag_size;
+
+                            msub->data.speex.frame_count = ntohs(msub->data.speex.frame_count); // these are big endian
+                            msub->data.speex.pcm_frame_size = ntohs(msub->data.speex.pcm_frame_size); // convert to host byte order
+                            frame_count = msub->data.speex.frame_count;
+                            if (!frame_count) {
+                                free(msub);
+                                _v3_debug(V3_DEBUG_PACKET_PARSE, "received speex audio packet with no frames");
+                                _v3_func_leave("_v3_get_0x52 (0x01_in speex)");
                                 return false;
                             }
-                            _v3_debug(V3_DEBUG_PACKET_PARSE, "speex audio count: %d (%d byte frames)", data->frame_count, (msub->header.data_length - 4) / data->frame_count);
-                            _v3_debug(V3_DEBUG_PACKET_PARSE, "allocating %d bytes for pointers", data->frame_count * sizeof(uint8_t *));
-                            data->frames = malloc(data->frame_count * sizeof(uint8_t *));
-                            for (ctr = 0, offset = 32; ctr < data->frame_count; ctr++, offset += (msub->header.data_length - 4) / data->frame_count) {
-                                _v3_debug(V3_DEBUG_PACKET_PARSE, "allocating %d bytes for frame", (msub->header.data_length - 4) / data->frame_count);
-                                data->frames[ctr] = malloc((msub->header.data_length - 4) / data->frame_count);
-                                memcpy(data->frames[ctr], msg->data+offset, (msub->header.data_length - 4) / data->frame_count);
-                            }
-
-                            msub->data = data;
+                            spx_frag_size = (msub->header.data_length - 4) / frame_count;
+                            _v3_debug(V3_DEBUG_PACKET_PARSE, "speex frame count: %d (%d byte frames)", frame_count, spx_frag_size - 2);
+                            _v3_debug(V3_DEBUG_PACKET_PARSE, "allocating %d bytes for speex data", frame_count * spx_frag_size);
+                            msub->data.speex.frames = malloc(frame_count * spx_frag_size);
+                            memcpy(msub->data.speex.frames, msg->data + (sizeof(_v3_msg_0x52_0x01_in) - sizeof(void *)), frame_count * spx_frag_size);
                             msg->contents = msub;
                             _v3_func_leave("_v3_get_0x52 (0x01_in speex)");
                             return true;
@@ -1021,10 +1183,10 @@ _v3_get_0x52(_v3_net_message *msg) {/*{{{*/
                         break;
                     default:
                         _v3_debug(V3_DEBUG_PACKET_PARSE, "unsupported codec type 0x%02X", (uint16_t)msub->header.codec);
+                        free(msub);
                         _v3_func_leave("_v3_get_0x52 (0x01_in)");
                         return false;
                 }
-                return true;
             }
             break;
         case 0x02:
@@ -1035,34 +1197,37 @@ _v3_get_0x52(_v3_net_message *msg) {/*{{{*/
                 _v3_debug(V3_DEBUG_PACKET_PARSE, "user %d stopped transmitting", msub->header.user_id);
                 msg->contents = msub;
                 _v3_func_leave("_v3_get_0x52");
+                return true;
             }
-            return true;
         default:
             _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown 0x52 subtype %02x", m->subtype);
+            free(m);
             _v3_func_leave("_v3_get_0x52");
             return false;
     }
+    free(m);
     _v3_func_leave("_v3_get_0x52");
+    return false;
 }/*}}}*/
 
 _v3_net_message *
 _v3_put_0x52(uint8_t subtype, uint16_t codec, uint16_t codec_format, uint16_t send_type, uint32_t pcmlength, uint32_t length, void *data) {/*{{{*/
     _v3_net_message *msg;
     _v3_msg_0x52_0x01_out *msgdata;
-    int ctr;
 
     _v3_func_enter("_v3_put_0x52");
     msg = malloc(sizeof(_v3_net_message));
     memset(msg, 0, sizeof(_v3_net_message));
 
     /*
-     * First we go through and create our main message structure 
+     * First we go through and create our main message structure
      */
     switch (subtype) {
         case V3_AUDIO_START:
             _v3_debug(V3_DEBUG_PACKET_PARSE, "sending 0x52 subtype 0x00 size %d", sizeof(_v3_msg_0x52_0x00));
             msgdata = malloc(sizeof(_v3_msg_0x52_0x00));
             memset(msgdata, 0, sizeof(_v3_msg_0x52_0x00));
+            msg->len = sizeof(_v3_msg_0x52_0x00);
             msgdata->header.subtype = V3_AUDIO_START;
             msgdata->header.data_length = 0;
             msgdata->header.user_id = v3_get_user_id();
@@ -1070,17 +1235,14 @@ _v3_put_0x52(uint8_t subtype, uint16_t codec, uint16_t codec_format, uint16_t se
             msgdata->unknown_4 = htons(1);
             msgdata->unknown_5 = htons(2);
             msgdata->unknown_6 = htons(1);
-            msg->len = sizeof(_v3_msg_0x52_0x00);
             break;
         case V3_AUDIO_DATA:
             _v3_debug(V3_DEBUG_PACKET_PARSE, "sending 0x52 subtype 0x01 header size %d data size %d", sizeof(_v3_msg_0x52_0x00), length);
             msgdata = malloc(sizeof(_v3_msg_0x52_0x01_out));
             memset(msgdata, 0, sizeof(_v3_msg_0x52_0x01_out));
-            msg->len = sizeof(_v3_msg_0x52_0x01_out) - sizeof(void *) + length;
-            if (codec == 0 || codec == 3) {
-                _v3_debug(V3_DEBUG_PACKET_PARSE, "setting pcm length to %d", pcmlength);
-                msgdata->header.pcm_length = pcmlength;
-            }
+            msg->len = sizeof(_v3_msg_0x52_0x01_out) + length;
+            _v3_debug(V3_DEBUG_PACKET_PARSE, "setting pcm length to %d", pcmlength);
+            msgdata->header.pcm_length = pcmlength;
             msgdata->header.data_length = length;
             // TODO: we really need to figure out what these values are
             msgdata->unknown_4 = htons(1);
@@ -1109,7 +1271,7 @@ _v3_put_0x52(uint8_t subtype, uint16_t codec, uint16_t codec_format, uint16_t se
     /*
      * Now we allocate the actual msg->data for the network packet representation
      */
-    _v3_debug(V3_DEBUG_MEMORY, "allocating %d bytes for data", sizeof(_v3_msg_0x52_0x01_out) - sizeof(void *) + length);
+    _v3_debug(V3_DEBUG_MEMORY, "allocating %d bytes for data", msg->len);
     msg->data = malloc(msg->len);
     memset(msg->data, 0, msg->len);
 
@@ -1123,51 +1285,7 @@ _v3_put_0x52(uint8_t subtype, uint16_t codec, uint16_t codec_format, uint16_t se
         case V3_AUDIO_DATA:
             _v3_debug(V3_DEBUG_PACKET_PARSE, "send_type is %d", msgdata->header.send_type);
             memcpy(msg->data, msgdata, sizeof(_v3_msg_0x52_0x01_out));
-            switch (codec) {
-                case 0:
-                    {
-                        // Set our beginning offset into the packet
-                        char *offset = msg->data + sizeof(_v3_msg_0x52_0x01_out) - sizeof(void *);
-                        uint8_t **frames = data;
-                        // copy the frames
-                        for (ctr = 0; ctr < length / 65; ctr++) {
-                            memcpy(offset, frames[ctr], 65);
-                            offset += 65;
-                        }
-                    }
-                    break;
-                case 3:
-                    {
-                        // Set our beginning offset into the packet
-                        char *offset = msg->data + sizeof(_v3_msg_0x52_0x01_out) - sizeof(void *);
-                        uint16_t tmp, enc_frame_size;
-                        _v3_msg_0x52_speexdata *speexdata = data;
-
-                        tmp = htons(speexdata->frame_count);
-                        memcpy(offset, &tmp, 2);
-                        offset += 2;
-
-                        tmp = htons(speexdata->sample_size);
-                        memcpy(offset, &tmp, 2);
-                        offset += 2;
-
-                        // Figure out how long each frame is
-                        enc_frame_size = ((length - 4) / speexdata->frame_count);
-
-                        // Copy all frames in the array into the network packet
-                        for (ctr = 0; ctr < speexdata->frame_count; ctr++) {
-                            memcpy(offset, speexdata->frames[ctr], enc_frame_size);
-                            free(speexdata->frames[ctr]);
-                            offset += enc_frame_size;
-                        }
-                        // TODO: These, and the free in the loop above, are only temporary fixes.
-                        // We should construct _v3_destroy_0x52 in such a way that it can free outgoing audio packages;
-                        // or just write seperate functions for freeing incoming/outgoing audio.
-                        free(speexdata->frames);
-                        free(speexdata);
-                    }
-                    break;
-            }
+            memcpy(msg->data + sizeof(_v3_msg_0x52_0x01_out), data, length);
             break;
         case V3_AUDIO_STOP:
             memcpy(msg->data, msgdata, sizeof(_v3_msg_0x52_0x02));
@@ -1176,17 +1294,12 @@ _v3_put_0x52(uint8_t subtype, uint16_t codec, uint16_t codec_format, uint16_t se
     free(msgdata);
     _v3_func_leave("_v3_put_0x52");
     return msg;
-
 }/*}}}*/
 
 int
 _v3_destroy_0x52(_v3_net_message *msg) {/*{{{*/
     _v3_msg_0x52 *m;
     _v3_msg_0x52_0x01_in *msubin;
-    // _v3_msg_0x52_0x01_out *msubout; // TODO: free output structures
-    _v3_msg_0x52_gsmdata *gsmdata;
-    _v3_msg_0x52_speexdata *speexdata;
-    int ctr;
 
     _v3_func_enter("_v3_destroy_0x52");
     m = msg->contents;
@@ -1194,23 +1307,21 @@ _v3_destroy_0x52(_v3_net_message *msg) {/*{{{*/
         case 0x01:
             msubin = (_v3_msg_0x52_0x01_in *)m;
             switch (msubin->header.codec) {
-                case 0x00:
-                    gsmdata = msubin->data;
-                    for (ctr = 0; ctr < msubin->header.data_length / 65; ctr++) {
-                        _v3_debug(V3_DEBUG_PACKET_PARSE, "freeing 65 bytes for gsm frame %d", ctr);
-                        free(gsmdata->frames[ctr]);
+                case 0x00: // GSM
+                case 0x01: // CELT
+                case 0x02:
+                    if (msubin->data.frames) {
+                        _v3_debug(V3_DEBUG_PACKET_PARSE, "freeing %d bytes of frames", msubin->header.data_length);
+                        free(msubin->data.frames);
+                        msubin->data.frames = NULL;
                     }
-                    free(gsmdata->frames);
-                    free(gsmdata);
                     break;
-                case 0x03:
-                    speexdata = msubin->data;
-                    for (ctr = 0; ctr < speexdata->frame_count; ctr++) {
-                        _v3_debug(V3_DEBUG_PACKET_PARSE, "freeing %d bytes for frame %d", msubin->header.data_length / speexdata->frame_count, ctr);
-                        free(speexdata->frames[ctr]);
+                case 0x03: // SPEEX
+                    if (msubin->data.speex.frames) {
+                        _v3_debug(V3_DEBUG_PACKET_PARSE, "freeing speex frames");
+                        free(msubin->data.speex.frames);
+                        msubin->data.speex.frames = NULL;
                     }
-                    free(speexdata->frames);
-                    free(speexdata);
                     break;
             }
             break;
@@ -1327,7 +1438,7 @@ _v3_get_0x59(_v3_net_message *msg) {/*{{{*/
 }/*}}}*/
 /*}}}*/
 // Message 0x5a (90) | PRIVATE CHAT /*{{{*/
-int 
+int
 _v3_get_0x5a(_v3_net_message *msg) {/*{{{*/
     _v3_msg_0x5a *m;
     _v3_func_enter("_v3_get_0x5a");
@@ -1350,9 +1461,9 @@ _v3_net_message *_v3_put_0x5a(uint16_t subtype, uint16_t user1, uint16_t user2, 
     m = malloc(sizeof(_v3_net_message));
     memset(m, 0, sizeof(_v3_net_message));
     m->type = 0x5a;
-    
+
     // Build our message contents
-    uint16_t base = sizeof(_v3_msg_0x5a) - (sizeof(char *) + sizeof(uint16_t)); 
+    uint16_t base = sizeof(_v3_msg_0x5a) - (sizeof(char *) + sizeof(uint16_t));
     uint16_t len  = base;
     mc = malloc(base);
     memset(mc, 0, base);
@@ -1360,13 +1471,13 @@ _v3_net_message *_v3_put_0x5a(uint16_t subtype, uint16_t user1, uint16_t user2, 
     mc->subtype = subtype;
     mc->user1 = user1;
     mc->user2 = user2;
-    
+
     if (message) {
         len += strlen(message) + 2;
         mc = realloc(mc, len);
-        _v3_put_msg_string((char *)mc + base, message);   
+        _v3_put_msg_string((char *)mc + base, message);
     }
-    
+
     m->contents = mc;
     m->data = (char *)mc;
     m->len = len;
@@ -1642,7 +1753,7 @@ _v3_put_0x63(uint16_t subtype, uint16_t user_id, char *string) {/*{{{*/
 
     mc->type = 0x63;
     mc->subtype = subtype;
-    
+
     switch (subtype) {
         case V3_ADMIN_LOGIN:
             _v3_hash_password((uint8_t *)string, mc->t.password_hash);

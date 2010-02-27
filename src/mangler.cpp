@@ -6,7 +6,7 @@
  * $LastChangedBy$
  * $URL$
  *
- * Copyright 2009-2010 Eric Kilfoil 
+ * Copyright 2009-2010 Eric Kilfoil
  *
  * This file is part of Mangler.
  *
@@ -32,6 +32,18 @@
 #include "mangler-icons.h"
 #include <gdk/gdkx.h>
 #include <X11/extensions/XInput.h>
+
+#include "channeltree.h"
+#include "manglernetwork.h"
+#include "mangleraudio.h"
+#include "manglersettings.h"
+#include "manglerserverlist.h"
+#include "manglerchat.h"
+#include "manglerprivchat.h"
+#include "manglercharset.h"
+#include "manglerintegration.h"
+#include "mangleradmin.h"
+#include "locale.h"
 
 using namespace std;
 
@@ -108,6 +120,7 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
     builder->get_widget("adminButton", button);
     button->signal_clicked().connect(sigc::mem_fun(this, &Mangler::adminButton_clicked_cb));
     isAdmin = false;
+    isChanAdmin = false;
 
     // Settings Button
     builder->get_widget("settingsButton", button);
@@ -132,6 +145,9 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
     builder->get_widget("motdOkButton", button);
     button->signal_clicked().connect(sigc::mem_fun(this, &Mangler::motdOkButton_clicked_cb));
 
+    // Input VU Meter
+    builder->get_widget("inputVUMeterProgressBar", inputvumeter);
+
     // Quick mute options
     muteMic   = false;
     muteSound = false;
@@ -142,7 +158,9 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
 
     // Autoreconnect feature implementation
     wantDisconnect = false;
-    reconnectStatusHandlerID = 0;
+
+    // Feature implementation
+    motdAlways = false;
 
     /*
      * Retreive all menu bar items from builder and set their singal handler
@@ -158,12 +176,23 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
     builder->get_widget("hideGuestFlagMenuItem", checkmenuitem);
     checkmenuitem->signal_toggled().connect(sigc::mem_fun(this, &Mangler::hideGuestFlagMenuItem_toggled_cb));
 
+    builder->get_widget("quickConnectMenuItem", menuitem);
+    menuitem->signal_activate().connect(sigc::mem_fun(this, &Mangler::quickConnectButton_clicked_cb));
+
     builder->get_widget("serverListMenuItem", menuitem);
     menuitem->signal_activate().connect(sigc::mem_fun(this, &Mangler::serverConfigButton_clicked_cb));
 
+    builder->get_widget("adminSeparatorMenuItem", menuitem);
+
+    builder->get_widget("adminLoginMenuItem", menuitem);
+    menuitem->signal_activate().connect(sigc::mem_fun(this, &Mangler::adminButton_clicked_cb));
+
+    builder->get_widget("adminWindowMenuItem", menuitem);
+    menuitem->signal_activate().connect(sigc::mem_fun(this, &Mangler::adminWindowMenuItem_activated_cb));
+
     builder->get_widget("settingsMenuItem", menuitem);
     menuitem->signal_activate().connect(sigc::mem_fun(this, &Mangler::settingsButton_clicked_cb));
-    
+
     builder->get_widget("chatMenuItem", menuitem);
     menuitem->signal_activate().connect(sigc::mem_fun(this, &Mangler::chatButton_clicked_cb));
 
@@ -175,6 +204,10 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
 
     builder->get_widget("aboutMenuItem", menuitem);
     menuitem->signal_activate().connect(sigc::mem_fun(this, &Mangler::aboutButton_clicked_cb));
+
+    // connect the signal for our error dialog button
+    builder->get_widget("errorOKButton", button);
+    button->signal_clicked().connect(sigc::mem_fun(this, &Mangler::errorOKButton_clicked_cb));
 
     // Set up our generic password dialog box
     builder->get_widget("passwordDialog", passwordDialog);
@@ -216,7 +249,7 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
     isTransmittingKey = 0;
     isTransmitting = 0;
     Glib::signal_timeout().connect(sigc::mem_fun(this, &Mangler::checkPushToTalkKeys), 100);
-    Glib::signal_timeout().connect(sigc::mem_fun(this, &Mangler::checkPushToTalkMouse), 100); 
+    Glib::signal_timeout().connect(sigc::mem_fun(this, &Mangler::checkPushToTalkMouse), 100);
 
     // Create our audio control object for managing devices
     audioControl = new ManglerAudio("control");
@@ -241,7 +274,7 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
 
     // Create Server List Window
     serverList = new ManglerServerList(builder);
-    
+
     // Create Chat Window
     chat = new ManglerChat(builder);
 
@@ -270,7 +303,16 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
     statusIcon->signal_activate().connect(sigc::mem_fun(this, &Mangler::statusIcon_activate_cb));
     iconified = false;
 
-    Glib::signal_timeout().connect(sigc::mem_fun(*this, &Mangler::updateXferAmounts), 500); 
+    // Music (Now playing)
+    integration = new ManglerIntegration();
+    integration->setClient((MusicClient)settings->config.AudioIntegrationPlayer);
+    integration->update(true);
+    Glib::signal_timeout().connect(sigc::mem_fun(this, &Mangler::updateIntegration), 1000);
+
+
+    Glib::signal_timeout().connect(sigc::mem_fun(*this, &Mangler::updateXferAmounts), 500);
+    Glib::signal_timeout().connect(sigc::mem_fun(*this, &Mangler::getNetworkEvent), 10);
+    admin = new ManglerAdmin(builder);
 }/*}}}*/
 
 /*
@@ -313,14 +355,17 @@ void Mangler::serverConfigButton_clicked_cb(void) {/*{{{*/
     window->show();
 }/*}}}*/
 void Mangler::connectButton_clicked_cb(void) {/*{{{*/
+    Gtk::Button *connectbutton;
     Gtk::TreeModel::iterator iter;
 
-    builder->get_widget("connectButton", button);
-    if (button->get_label() == "gtk-connect") {
-        channelTree->updateLobby("Connecting...");
-        wantDisconnect = false;        
-        builder->get_widget("connectButton", button);
-        button->set_sensitive(false);
+    builder->get_widget("connectButton", connectbutton);
+    if (connectbutton->get_label() == "Cancel Reconnect") {
+        wantDisconnect = true;
+        onDisconnectHandler();
+        builder->get_widget("statusbar", statusbar);
+        statusbar->pop();
+        statusbar->push("Disconnected");
+    } else if (connectbutton->get_label() == "gtk-connect") {
         builder->get_widget("serverSelectComboBox", combobox);
         iter = combobox->get_active();
         if (iter) {
@@ -336,7 +381,9 @@ void Mangler::connectButton_clicked_cb(void) {/*{{{*/
             Glib::ustring password = server->password;
             Glib::ustring phonetic = server->phonetic;
             if (!server || server->hostname.empty() || server->port.empty() || server->username.empty()) {
-                channelTree->updateLobby("Not connected");
+                builder->get_widget("statusbar", statusbar);
+                statusbar->pop();
+                statusbar->push("Not connected...");
                 if (server->hostname.empty()) {
                     errorDialog("You have not specified a hostname for this server.");
                     return;
@@ -351,18 +398,20 @@ void Mangler::connectButton_clicked_cb(void) {/*{{{*/
                 }
                 return;
             }
-            set_charset(server->charset);
+            channelTree->updateLobby("Connecting...");
+            wantDisconnect = false;
+            connectbutton->set_sensitive(false);
 
+            set_charset(server->charset);
             settings->config.lastConnectedServerId = server_id;
             settings->config.save();
             v3_set_server_opts(V3_USER_ACCEPT_PAGES, server->acceptPages);
             v3_set_server_opts(V3_USER_ACCEPT_U2U, server->acceptU2U);
             v3_set_server_opts(V3_USER_ACCEPT_CHAT, server->acceptPrivateChat);
             v3_set_server_opts(V3_USER_ALLOW_RECORD, server->allowRecording);
-            Glib::Thread::create(sigc::bind(sigc::mem_fun(this->network, &ManglerNetwork::connect), hostname, port, username, password, phonetic), FALSE);
             isAdmin = false;
-            // TODO: move this into a thread and use blocking waits
-            Glib::signal_timeout().connect(sigc::mem_fun(*this, &Mangler::getNetworkEvent), 10 );
+            isChanAdmin = false;
+            Glib::Thread::create(sigc::bind(sigc::mem_fun(this->network, &ManglerNetwork::connect), hostname, port, username, password, phonetic), FALSE);
         }
     } else {
         wantDisconnect = true;
@@ -371,11 +420,13 @@ void Mangler::connectButton_clicked_cb(void) {/*{{{*/
     return;
 }/*}}}*/
 void Mangler::commentButton_clicked_cb(void) {/*{{{*/
-    textStringChangeCommentEntry->set_text(comment);
-    textStringChangeURLEntry->set_text(url);
-    textStringChangeIntegrationEntry->set_text(integration_text);
-    textStringChangeDialog->run();
-    textStringChangeDialog->hide();
+    if (v3_is_loggedin()) {
+        textStringChangeCommentEntry->set_text(comment);
+        textStringChangeURLEntry->set_text(url);
+        textStringChangeIntegrationEntry->set_text(integration_text);
+        textStringChangeDialog->run();
+        textStringChangeDialog->hide();
+    }
 }/*}}}*/
 void Mangler::chatButton_clicked_cb(void) {/*{{{*/
     if (v3_is_loggedin()) {
@@ -410,18 +461,16 @@ void Mangler::adminButton_clicked_cb(void) {/*{{{*/
         password = mangler->getPasswordEntry("Admin Password");
         if (password.length()) {
             v3_admin_login((char *)password.c_str());
+            admin->adminWindow->show();
             // if we tried sending a password, the only options are either
             // success or get booted from the server
-            isAdmin = true;
-            v3_user *u = v3_get_user(0);
-            if (!u) {
-                fprintf(stderr, "couldn't retreive lobby user\n");
-                return;
-            }
-            channelTree->updateLobby(c_to_ustring(u->name), c_to_ustring(u->comment), u->phonetic);
-            v3_free_user(u);
         }
+    } else {
+        admin->adminWindow->show();
     }
+}/*}}}*/
+void Mangler::adminWindowMenuItem_activated_cb(void) {/*{{{*/
+    admin->adminWindow->show();
 }/*}}}*/
 void Mangler::settingsButton_clicked_cb(void) {/*{{{*/
     settings->settingsWindow->show();
@@ -439,8 +488,8 @@ void Mangler::xmitButton_toggled_cb(void) {/*{{{*/
         isTransmittingButton = true;
         startTransmit();
     } else {
-        isTransmittingButton = false;
         stopTransmit();
+        isTransmittingButton = false;
     }
 }/*}}}*/
 
@@ -491,6 +540,7 @@ void Mangler::quitMenuItem_activate_cb(void) {/*{{{*/
 void Mangler::statusIcon_activate_cb(void) {/*{{{*/
     if (iconified == true) {
         manglerWindow->deiconify();
+        manglerWindow->present();
         manglerWindow->set_skip_pager_hint(false);
         manglerWindow->set_skip_taskbar_hint(false);
         iconified = false;
@@ -528,28 +578,25 @@ void Mangler::startTransmit(void) {/*{{{*/
         v3_free_user(user);
         return;
     }
-    audioControl->playNotification("talkstart");
-    statusIcon->set(icons["tray_icon_green"]);
     isTransmitting = true;
-    channelTree->setUserIcon(v3_get_user_id(), "green");
     if ((codec = v3_get_channel_codec(user->channel))) {
-        //fprintf(stderr, "channel %d codec rate: %d at sample size %d\n", user->channel, codec->rate, codec->samplesize);
-        v3_start_audio(V3_AUDIO_SENDTYPE_U2CCUR);
+        //fprintf(stderr, "channel %d codec rate: %d at sample size %d\n", user->channel, codec->rate, codec->pcmframesize);
         v3_free_user(user);
+        channelTree->setUserIcon(v3_get_user_id(), "orange");
+        statusIcon->set(icons["tray_icon_yellow"]);
         inputAudio = new ManglerAudio("input");
-        inputAudio->open(codec->rate, AUDIO_INPUT, codec->samplesize);
+        inputAudio->open(codec->rate, AUDIO_INPUT, codec->pcmframesize);
     }
 }/*}}}*/
 void Mangler::stopTransmit(void) {/*{{{*/
     if (!isTransmitting) {
         return;
     }
-    statusIcon->set(icons["tray_icon_red"]);
+    isTransmitting = false;
     if (v3_is_loggedin()) {
-        audioControl->playNotification("talkend");
         channelTree->setUserIcon(v3_get_user_id(), "red");
     }
-    isTransmitting = false;
+    statusIcon->set(icons["tray_icon_red"]);
     if (inputAudio) {
         inputAudio->finish();
     }
@@ -594,13 +641,13 @@ void Mangler::qcConnectButton_clicked_cb(void) {/*{{{*/
     set_charset("");
     connectedServerId = -1;
     isAdmin = false;
+    isChanAdmin = false;
     v3_set_server_opts(V3_USER_ACCEPT_PAGES, 1);
     v3_set_server_opts(V3_USER_ACCEPT_U2U, 1);
     v3_set_server_opts(V3_USER_ACCEPT_CHAT, 1);
     v3_set_server_opts(V3_USER_ALLOW_RECORD, 1);
     Glib::Thread::create(sigc::bind(sigc::mem_fun(this->network, &ManglerNetwork::connect), server, port, username, password, ""), FALSE);
     // TODO: move this into a thread and use blocking waits
-    Glib::signal_timeout().connect( sigc::mem_fun(*this, &Mangler::getNetworkEvent), 10 );
 }/*}}}*/
 void Mangler::qcCancelButton_clicked_cb(void) {/*{{{*/
 }/*}}}*/
@@ -615,22 +662,93 @@ void Mangler::motdOkButton_clicked_cb(void) {/*{{{*/
  * Auto reconnect handling
  */
 bool Mangler::reconnectStatusHandler(void) {/*{{{*/
-    char buffer [50];
+    Gtk::Button *connectbutton;
+    char buf[64] = "";
     int reconnectTimer = (15 - (time(NULL) - lastAttempt));
-    builder->get_widget("connectButton", button);
-    if (button->get_label() == "gtk-disconnect") {
-        reconnectStatusHandlerID = 0;
+
+    builder->get_widget("connectButton", connectbutton);
+    if (connectbutton->get_label() == "gtk-disconnect" || wantDisconnect) {
         return false;
     }
     builder->get_widget("statusbar", statusbar);
-    sprintf (buffer, "Attempting reconnect in %d seconds", reconnectTimer);
+    snprintf(buf, 63, "Attempting reconnect in %d seconds", reconnectTimer);
     statusbar->pop();
-    statusbar->push(buffer);
-    if (!(reconnectTimer)) {
+    statusbar->push(buf);
+    if (!reconnectTimer) {
         lastAttempt = time(NULL);
+        connectbutton->set_label("gtk-connect");
         Mangler::connectButton_clicked_cb();
     }
+
     return true;
+}/*}}}*/
+
+void Mangler::onDisconnectHandler(void) {/*{{{*/
+    Gtk::Button *connectbutton;
+    ManglerServerConfig *server;
+
+    builder->get_widget("connectButton", connectbutton);
+    if (connectbutton->get_label() == "gtk-disconnect") {
+        admin->adminWindow->hide();
+        builder->get_widget("adminButton", button);
+        button->set_sensitive(false);
+        builder->get_widget("adminLoginMenuItem", menuitem);
+        menuitem->set_sensitive(false);
+        builder->get_widget("adminWindowMenuItem", menuitem);
+        menuitem->set_sensitive(false);
+        builder->get_widget("chatButton", button);
+        button->set_sensitive(false);
+        builder->get_widget("chatMenuItem", menuitem);
+        menuitem->set_sensitive(false);
+        builder->get_widget("commentButton", button);
+        button->set_sensitive(false);
+        builder->get_widget("commentMenuItem", menuitem);
+        menuitem->set_sensitive(false);
+
+        connectbutton->set_sensitive(true);
+        channelTree->clear();
+        admin->clearChannels();
+        builder->get_widget("xmitButton", togglebutton);
+        togglebutton->set_active(false);
+        builder->get_widget("progressbar", progressbar);
+        progressbar->set_text("");
+        progressbar->set_fraction(0);
+        builder->get_widget("statusbar", statusbar);
+        statusbar->pop();
+        statusbar->push("Disconnected");
+        //builder->get_widget("serverTabLabel", label);
+        //label->set_label("Not Connected");
+        builder->get_widget("pingLabel", label);
+        label->set_label("N/A");
+        builder->get_widget("userCountLabel", label);
+        label->set_label("N/A");
+        builder->get_widget("codecLabel", label);
+        label->set_label("N/A");
+        mangler->statusIcon->set(icons["tray_icon_grey"]);
+        audioControl->playNotification("logout");
+        isAdmin = false;
+        isChanAdmin = false;
+        builder->get_widget("adminSeparatorMenuItem", menuitem);
+        menuitem->hide();
+        builder->get_widget("adminLoginMenuItem", menuitem);
+        menuitem->hide();
+        builder->get_widget("adminWindowMenuItem", menuitem);
+        menuitem->hide();
+        chat->clear();
+        if (connectedServerId != -1) {
+            server = settings->config.getserver(connectedServerId);
+            connectedServerId = -1;
+            if (!wantDisconnect && server->persistentConnection) {
+                connectbutton->set_label("Cancel Reconnect");
+                lastAttempt = time(NULL);
+                Glib::signal_timeout().connect_seconds(sigc::mem_fun(*this, &Mangler::reconnectStatusHandler), 1);
+                return;
+            }
+        }
+    }
+    connectbutton->set_label("gtk-connect");
+    builder->get_widget("serverSelectComboBox", combobox);
+    combobox->set_sensitive(true);
 }/*}}}*/
 
 // Timeout Callbacks
@@ -639,7 +757,6 @@ bool Mangler::reconnectStatusHandler(void) {/*{{{*/
  */
 bool Mangler::getNetworkEvent() {/*{{{*/
     v3_event *ev;
-
     while ((ev = v3_get_event(V3_NONBLOCK)) != NULL) {
         v3_user *u;
         v3_channel *c;
@@ -652,13 +769,19 @@ bool Mangler::getNetworkEvent() {/*{{{*/
         switch (ev->type) {
             case V3_EVENT_PING:/*{{{*/
                 if (v3_is_loggedin()) {
-                    char buf[16];
+                    char buf[32];
                     builder->get_widget("pingLabel", label);
+                    builder->get_widget("statusbar", statusbar);
                     if (ev->ping != 65535) {
                         snprintf(buf, 16, "%d", ev->ping);
                         label->set_text(buf);
+                        snprintf(buf, 31, "Ping: %dms", ev->ping);
+                        statusbar->pop();
+                        statusbar->push(buf);
                     } else {
                         label->set_text("checking...");
+                        statusbar->pop();
+                        statusbar->push("Ping: checking...");
                     }
                     builder->get_widget("userCountLabel", label);
                     snprintf(buf, 16, "%d/%d", v3_user_count(), v3_get_max_clients());
@@ -765,6 +888,14 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                             c_to_ustring(c->name),
                             c_to_ustring(c->comment),
                             c->phonetic);
+                    if (! isAdmin && ! isChanAdmin && v3_is_channel_admin(c->id)) {
+                        isChanAdmin = true;
+                        builder->get_widget("adminSeparatorMenuItem", menuitem);
+                        menuitem->show();
+                        builder->get_widget("adminWindowMenuItem", menuitem);
+                        menuitem->show();
+                    }
+                    admin->channelUpdated(c);
                     if (ev->channel.id == v3_get_user_channel(v3_get_user_id())) {
                         builder->get_widget("codecLabel", label);
                         if ((codec_info = v3_get_channel_codec(ev->channel.id))) {
@@ -778,6 +909,10 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                 break;/*}}}*/
             case V3_EVENT_USER_LOGOUT:/*{{{*/
                 if (v3_is_loggedin()) {
+                    if (outputAudio[ev->user.id]) {
+                        outputAudio[ev->user.id]->finish();
+                        outputAudio.erase(ev->user.id);
+                    }
                     if (v3_get_user_channel(v3_get_user_id()) == ev->channel.id) {
                         audioControl->playNotification("channelleave");
                     }
@@ -792,11 +927,27 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                     // can't get any channel info... it's already gone by this point
                     //fprintf(stderr, "removing channel id %d\n", ev->channel.id);
                     channelTree->removeChannel(ev->channel.id);
+                    admin->channelRemoved(ev->channel.id);
                 }
                 break;/*}}}*/
             case V3_EVENT_LOGIN_COMPLETE:/*{{{*/
                 if (v3_is_loggedin()) {
                     const v3_codec *codec_info;
+
+                    builder->get_widget("adminButton", button);
+                    button->set_sensitive(true);
+                    builder->get_widget("adminLoginMenuItem", menuitem);
+                    menuitem->set_sensitive(true);
+                    builder->get_widget("adminWindowMenuItem", menuitem);
+                    menuitem->set_sensitive(true);
+                    builder->get_widget("chatButton", button);
+                    button->set_sensitive(true);
+                    builder->get_widget("chatMenuItem", menuitem);
+                    menuitem->set_sensitive(true);
+                    builder->get_widget("commentButton", button);
+                    button->set_sensitive(true);
+                    builder->get_widget("commentMenuItem", menuitem);
+                    menuitem->set_sensitive(true);
 
                     builder->get_widget("codecLabel", label);
                     if ((codec_info = v3_get_channel_codec(0))) {
@@ -809,21 +960,35 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                     if (connectedServerId != -1) {
                         ManglerServerConfig *server;
                         server = settings->config.getserver(connectedServerId);
-                        comment = server->comment;
-                        url = server->url;
-                        v3_set_text((char *) ustring_to_c(server->comment).c_str(), (char *) ustring_to_c(server->url).c_str(), (char *) ustring_to_c(integration_text).c_str(), true);
+                        if (server->persistentComments) {
+                            comment = server->comment;
+                            url = server->url;
+                            v3_set_text((char *) ustring_to_c(server->comment).c_str(), (char *) ustring_to_c(server->url).c_str(), (char *) ustring_to_c(integration_text).c_str(), true);
+                        }
+
+                        //Default Channel
+                        uint32_t defaultChannelId = server->defaultchannelid;
+                        if (defaultChannelId) {
+                            //For now, only handling right click menu set
+                            channelTree->channelView_switchChannel2Default(defaultChannelId);
+                        }
                     }
                     builder->get_widget("chatWindow", window);
                     if(chat->isOpen) {
                         v3_join_chat();
                     }
+                    myID = v3_get_user_id();
+                    builder->get_widget("adminSeparatorMenuItem", menuitem);
+                    menuitem->show();
+                    builder->get_widget("adminLoginMenuItem", menuitem);
+                    menuitem->show();
                 }
                 break;/*}}}*/
             case V3_EVENT_USER_CHAN_MOVE:/*{{{*/
                 {
                     u = v3_get_user(ev->user.id);
                     if (! u) {
-                        fprintf(stderr, "failed to retreive user information for user id %d", ev->user.id);
+                        fprintf(stderr, "failed to retreive user information for user id %d\n", ev->user.id);
                         break;
                     }
                     if (ev->user.id == v3_get_user_id()) {
@@ -871,26 +1036,15 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                         outputAudio[ev->user.id]->finish();
                         outputAudio.erase(ev->user.id);
                     }
-                    // if user is still xmitting, set icon
-                    if (u->is_transmitting) {
-                        channelTree->setUserIcon(ev->user.id, "yellow");
-                    }
-                    if (ev->user.id == v3_get_user_id()) {
-                        // if we are still xmitting, set icon
-                        if (isTransmitting) {
-                            channelTree->setUserIcon(ev->user.id, "green");
-                        }
-                        // if we changed channels while other users in previous channel were xmitting, set icons
-                        //fprintf(stderr, "prev chan id: %i | new chan id: %i\n", ev->channel.prev_id, ev->channel.id);
-                        //TODO: implement this
-                    }
+                    channelTree->refreshAllUsers();
+                    chat->chatUserTreeModelFilter->refilter();
                     v3_free_user(u);
                 }
                 break;/*}}}*/
             case V3_EVENT_CHAN_ADD:/*{{{*/
                 c = v3_get_channel(ev->channel.id);
                 if (! c) {
-                    fprintf(stderr, "failed to retreive channel information for channel id %d", ev->channel.id);
+                    fprintf(stderr, "failed to retreive channel information for channel id %d\n", ev->channel.id);
                     break;;
                 }
                 channelTree->addChannel(
@@ -900,6 +1054,14 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                         c_to_ustring(c->name),
                         c_to_ustring(c->comment),
                         c->phonetic);
+                if (! isAdmin && ! isChanAdmin && v3_is_channel_admin(c->id)) {
+                    isChanAdmin = true;
+                    builder->get_widget("adminSeparatorMenuItem", menuitem);
+                    menuitem->show();
+                    builder->get_widget("adminWindowMenuItem", menuitem);
+                    menuitem->show();
+                }
+                admin->channelAdded(c);
                 v3_free_channel(c);
                 break;/*}}}*/
             case V3_EVENT_CHAN_BADPASS:/*{{{*/
@@ -913,7 +1075,7 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                 v3_user *me, *user;
                 me = v3_get_user(v3_get_user_id());
                 user = v3_get_user(ev->user.id);
-                channelTree->setUserIcon(ev->user.id, "yellow");
+                channelTree->refreshUser(ev->user.id);
                 if (me && user && me->channel == user->channel) {
                     v3_free_user(me);
                     v3_free_user(user);
@@ -933,7 +1095,7 @@ bool Mangler::getNetworkEvent() {/*{{{*/
             case V3_EVENT_USER_TALK_END:/*{{{*/
                 if (v3_is_loggedin()) {
                     //fprintf(stderr, "user %d stopped talking\n", ev->user.id);
-                    channelTree->setUserIcon(ev->user.id, "red");
+                    channelTree->refreshUser(ev->user.id);
                     // TODO: this is bad, there must be a flag in the last audio
                     // packet saying that it's the last one.  Need to figure out
                     // what that flag is and close it in V3_EVENT_PLAY_AUDIO
@@ -945,12 +1107,12 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                 break;/*}}}*/
             case V3_EVENT_PLAY_AUDIO:/*{{{*/
                 if (v3_is_loggedin()) {
+                    channelTree->setUserIcon(ev->user.id, "green", true);
                     if (!channelTree->isMuted(ev->user.id) && !muteSound) {
                         // Open a stream if we don't have one for this user
-                        channelTree->setUserIcon(ev->user.id, "green");
                         if (!outputAudio[ev->user.id]) {
                             outputAudio[ev->user.id] = new ManglerAudio("output");
-                            outputAudio[ev->user.id]->open(ev->pcm.rate, AUDIO_OUTPUT);
+                            outputAudio[ev->user.id]->open(ev->pcm.rate, AUDIO_OUTPUT, 0, ev->pcm.channels);
                         }
                         // And queue the audio
                         if (outputAudio[ev->user.id]) {
@@ -972,7 +1134,7 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                             motdhash += ev->data.motd[ctr] + ctr;
                         }
                     }
-                    if (connectedServerId == -1 || (server && (motdhash != server->motdhash))) {
+                    if (connectedServerId == -1 || motdAlways || (server && (motdhash != server->motdhash))) {
                         Glib::RefPtr< Gtk::TextBuffer > tb = Gtk::TextBuffer::create();
                         builder->get_widget("motdWindow", window);
                         window->set_title("Mangler - MOTD");
@@ -988,42 +1150,7 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                 }
                 break;/*}}}*/
             case V3_EVENT_DISCONNECT:/*{{{*/
-                {
-                    ManglerServerConfig *server;
-                    channelTree->clear();
-                    builder->get_widget("connectButton", button);
-                    button->set_label("gtk-connect");
-                    builder->get_widget("xmitButton", togglebutton);
-                    togglebutton->set_active(false);
-                    builder->get_widget("serverSelectComboBox", combobox);
-                    combobox->set_sensitive(true);
-                    builder->get_widget("progressbar", progressbar);
-                    builder->get_widget("statusbar", statusbar);
-                    progressbar->set_text("");
-                    progressbar->set_fraction(0);
-                    statusbar->pop();
-                    statusbar->push("Not connected");
-                    //builder->get_widget("serverTabLabel", label);
-                    //label->set_label("Not Connected");
-                    builder->get_widget("pingLabel", label);
-                    label->set_label("N/A");
-                    builder->get_widget("userCountLabel", label);
-                    label->set_label("N/A");
-                    builder->get_widget("codecLabel", label);
-                    label->set_label("N/A");
-                    mangler->statusIcon->set(icons["tray_icon_grey"]);
-                    audioControl->playNotification("logout");
-                    isAdmin = false;
-                    chat->clear();
-                    if (connectedServerId != -1) {
-                        server = settings->config.getserver(connectedServerId);
-                        if(!wantDisconnect && server->persistentConnection) {
-                            lastAttempt = time(NULL);
-                            reconnectStatusHandlerID = Glib::signal_timeout().connect_seconds(sigc::mem_fun(*this,&Mangler::reconnectStatusHandler),1);
-                        }
-                    }
-                    connectedServerId = -1;
-                }
+                onDisconnectHandler();
                 break;/*}}}*/
             case V3_EVENT_CHAT_JOIN:/*{{{*/
                 {
@@ -1156,8 +1283,27 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                 }
                 break;/*}}}*/
             case V3_EVENT_ADMIN_AUTH:/*{{{*/
-                isAdmin = true;
                 {
+                    const v3_permissions *perms = v3_get_permissions();
+                    if (perms->srv_admin) {
+                        builder->get_widget("adminButton", button);
+                        button->set_label("Admin");
+                        isAdmin = true;
+                        builder->get_widget("adminLoginMenuItem", menuitem);
+                        menuitem->hide();
+                        builder->get_widget("adminWindowMenuItem", menuitem);
+                        menuitem->show();
+                    } else {
+                        isAdmin = false;
+                        builder->get_widget("adminLoginMenuItem", menuitem);
+                        menuitem->show();
+                        builder->get_widget("adminWindowMenuItem", menuitem);
+                        if (isChanAdmin) {
+                            menuitem->show();
+                        } else {
+                            menuitem->hide();
+                        }
+                    }
                     v3_user *lobby = v3_get_user(0);
                     if (lobby) {
                         channelTree->updateLobby(c_to_ustring(lobby->name), c_to_ustring(lobby->comment), lobby->phonetic);
@@ -1167,6 +1313,63 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                 break;/*}}}*/
             case V3_EVENT_CHAN_ADMIN_UPDATED:/*{{{*/
                 channelTree->refreshAllChannels();
+                break;/*}}}*/
+            case V3_EVENT_USER_GLOBAL_MUTE_CHANGED:/*{{{*/
+                channelTree->refreshUser(ev->user.id);
+                break;/*}}}*/
+            case V3_EVENT_SERVER_PROPERTY_UPDATED:/*{{{*/
+                switch (ev->serverproperty.property) {
+                    case V3_SERVER_CHAT_FILTER:
+                        chat->isGlobal = ev->serverproperty.value;
+                        chat->chatUserTreeModelFilter->refilter();
+                        break;
+                    case V3_SERVER_ALPHABETIC:
+                        channelTree->sortAlphanumeric = ev->serverproperty.value;
+                        channelTree->refreshAllChannels();
+                        admin->channelSort(ev->serverproperty.value);
+                        break;
+                    case V3_SERVER_MOTD_ALWAYS:
+                        motdAlways = ev->serverproperty.value;
+                        break;
+                }
+                break;/*}}}*/
+            case V3_EVENT_USERLIST_ADD:/*{{{*/
+                {
+                    v3_account *account = v3_get_account(ev->account.id);
+                    if (account) {
+                        admin->accountAdded(account);
+                        v3_free_account(account);
+                    }
+                }
+                break;/*}}}*/
+            case V3_EVENT_USERLIST_REMOVE:/*{{{*/
+                admin->accountRemoved(ev->account.id);
+                break;/*}}}*/
+            case V3_EVENT_USERLIST_MODIFY:/*{{{*/
+                {
+                    v3_account *account = v3_get_account(ev->account.id);
+                    if (account) {
+                        admin->accountUpdated(account);
+                        v3_free_account(account);
+                    }
+                }
+                break;/*}}}*/
+            case V3_EVENT_RANK_ADD:/*{{{*/
+                {
+                    v3_rank *rank = v3_get_rank(ev->data.rank.id);
+                    admin->rankAdded(rank);
+                }
+                break;/*}}}*/
+            case V3_EVENT_RANK_REMOVE:/*{{{*/
+                {
+                    admin->rankRemoved(ev->data.rank.id);
+                }
+                break;/*}}}*/
+            case V3_EVENT_RANK_MODIFY:/*{{{*/
+                {
+                    v3_rank *rank = v3_get_rank(ev->data.rank.id);
+                    admin->rankUpdated(rank);
+                }
                 break;/*}}}*/
             default:
                 fprintf(stderr, "******************************************************** got unknown event type %d\n", ev->type);
@@ -1208,8 +1411,8 @@ bool Mangler::checkPushToTalkKeys(void) {/*{{{*/
     return(true);
 
 }/*}}}*/
-bool Mangler::checkPushToTalkMouse(void) {/*{{{*/ 
-    GdkWindow   *rootwin = gdk_get_default_root_window(); 
+bool Mangler::checkPushToTalkMouse(void) {/*{{{*/
+    GdkWindow   *rootwin = gdk_get_default_root_window();
     XDevice *dev = NULL;
     XDeviceInfo *xdev;
     XDeviceState *xds;
@@ -1219,12 +1422,12 @@ bool Mangler::checkPushToTalkMouse(void) {/*{{{*/
     int state = 1;
     int byte = settings->config.PushToTalkMouseValueInt / 8;
     int bit = settings->config.PushToTalkMouseValueInt % 8;
-    bool        ptt_on = false; 
+    bool        ptt_on = false;
 
-    if (! settings->config.PushToTalkMouseEnabled) { 
-        isTransmittingMouse = false; 
-        return true; 
-    } 
+    if (! settings->config.PushToTalkMouseEnabled) {
+        isTransmittingMouse = false;
+        return true;
+    }
     if (settings->config.mouseDeviceName.empty()) {
         return true;
     }
@@ -1264,18 +1467,18 @@ bool Mangler::checkPushToTalkMouse(void) {/*{{{*/
     XFreeDeviceList(xdev);
     XCloseDevice(GDK_WINDOW_XDISPLAY(rootwin), dev);
 
-    if (ptt_on) { 
-        isTransmittingMouse = true; 
-        startTransmit(); 
-    } else { 
-        isTransmittingMouse = false; 
-        if (! isTransmittingButton && ! isTransmittingKey) { 
-            stopTransmit(); 
-        } 
-    } 
-    return(true); 
+    if (ptt_on) {
+        isTransmittingMouse = true;
+        startTransmit();
+    } else {
+        isTransmittingMouse = false;
+        if (! isTransmittingButton && ! isTransmittingKey) {
+            stopTransmit();
+        }
+    }
+    return(true);
 }/*}}}*/
-bool Mangler::updateXferAmounts(void) {/*{{{*/ 
+bool Mangler::updateXferAmounts(void) {/*{{{*/
     uint32_t packets, bytes;
     char buf[1024];
 
@@ -1307,7 +1510,7 @@ bool Mangler::updateXferAmounts(void) {/*{{{*/
     }
     label->set_text(buf);
 
-    return(true); 
+    return(true);
 }/*}}}*/
 /* {{{ GdkFilterReturn ptt_filter(GdkXEvent *gdk_xevent, GdkEvent *event, gpointer data) {
     GdkWindow   *rootwin = gdk_get_default_root_window();
@@ -1349,6 +1552,36 @@ bool Mangler::updateXferAmounts(void) {/*{{{*/
     }
     return GDK_FILTER_CONTINUE;
 } }}} */
+bool Mangler::updateIntegration(void) {/*{{{*/
+    if (v3_is_loggedin()) {
+        if (!settings->config.AudioIntegrationEnabled || integration->client == MusicClient_None) {
+            if (integration_text != "") {
+                    integration_text = "";
+                    v3_set_text((char *) ustring_to_c(comment).c_str(), (char *) ustring_to_c(url).c_str(), (char *)"", false);
+            }
+            return true;
+        }
+        Glib::ustring formatted_text = integration->format();
+        switch (integration->get_mode()) {
+            // Polling (mpd)
+            case 0:
+                if ( ((integration->update(false) || !integration->first()) ) || integration_text != formatted_text ) {
+                    integration_text =  integration->format();
+                    v3_set_text((char *) ustring_to_c(comment).c_str(), (char *) ustring_to_c(url).c_str(), (char *) ustring_to_c(integration_text).c_str(), false);
+                }
+                break;
+
+                // Listening / callbacks (dbus ones)
+            case 1:
+                if (integration_text != formatted_text) {
+                    integration_text = formatted_text;
+                    v3_set_text((char *) ustring_to_c(comment).c_str(), (char *) ustring_to_c(url).c_str(), (char *) ustring_to_c(integration_text).c_str(), false);
+                }
+                break;
+        }
+    }
+    return true;
+}/*}}}*/
 
 Glib::ustring Mangler::getPasswordEntry(Glib::ustring title, Glib::ustring prompt) {/*{{{*/
     password = "";
@@ -1396,7 +1629,7 @@ void Mangler::textStringChangeDialogOkButton_clicked_cb(void) {/*{{{*/
             settings->config.save();
         }
     }
-    v3_set_text((char *) ustring_to_c(comment).c_str(), (char *) ustring_to_c(url).c_str(), (char *) ustring_to_c(integration_text).c_str(), true);
+    v3_set_text((char *)ustring_to_c(comment).c_str(), (char *)ustring_to_c(url).c_str(), (char *)ustring_to_c(integration_text).c_str(), true);
 }/*}}}*/
 void Mangler::textStringChangeDialogCancelButton_clicked_cb(void) {/*{{{*/
     textStringChangeCommentEntry->set_text(comment);
@@ -1415,12 +1648,24 @@ void Mangler::setActiveServer(uint32_t row_number) {/*{{{*/
     combobox->set_active(row_number);
 }/*}}}*/
 void Mangler::errorDialog(Glib::ustring message) {/*{{{*/
+    builder->get_widget("errorWindow", window);
+    window->set_keep_above(true);
+    window->set_icon(icons["tray_icon"]);
+    builder->get_widget("errorMessageLabel", label);
+    label->set_text(message);
+    window->show();
+    /*
     builder->get_widget("errorDialog", msgdialog);
     msgdialog->set_icon(icons["tray_icon"]);
     msgdialog->set_keep_above(true);
     msgdialog->set_message(message);
     msgdialog->run();
     msgdialog->hide();
+    */
+}/*}}}*/
+void Mangler::errorOKButton_clicked_cb(void) {/*{{{*/
+    builder->get_widget("errorWindow", window);
+    window->hide();
 }/*}}}*/
 
 ManglerError::ManglerError(uint32_t code, Glib::ustring message, Glib::ustring module) {/*{{{*/

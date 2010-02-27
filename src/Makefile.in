@@ -56,13 +56,15 @@ am_mangler_OBJECTS = mangler.$(OBJEXT) channeltree.$(OBJEXT) \
 	mangleraudio.$(OBJEXT) manglernetwork.$(OBJEXT) \
 	manglerserverlist.$(OBJEXT) manglersettings.$(OBJEXT) \
 	manglerconfig.$(OBJEXT) manglerchat.$(OBJEXT) \
-	manglerprivchat.$(OBJEXT) manglercharset.$(OBJEXT)
+	manglerprivchat.$(OBJEXT) manglercharset.$(OBJEXT) \
+	manglerintegration.$(OBJEXT) mangleradmin.$(OBJEXT) \
+	inilib.$(OBJEXT)
 mangler_OBJECTS = $(am_mangler_OBJECTS)
 am__DEPENDENCIES_1 =
 mangler_DEPENDENCIES = @top_srcdir@/libventrilo3/libventrilo3.la \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1)
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
@@ -209,6 +211,8 @@ build_vendor = @build_vendor@
 builddir = @builddir@
 datadir = @datadir@
 datarootdir = @datarootdir@
+dbus_CFLAGS = @dbus_CFLAGS@
+dbus_LIBS = @dbus_LIBS@
 docdir = @docdir@
 dvidir = @dvidir@
 exec_prefix = @exec_prefix@
@@ -256,9 +260,9 @@ icondir = $(datadir)/pixmaps
 desktopdir = $(datadir)/applications
 icon_DATA = ../icons/mangler_logo.svg 
 desktop_DATA = ../mangler.desktop
-mangler_SOURCES = manglerui.h mangler.cpp channeltree.cpp  mangleraudio.cpp  manglernetwork.cpp  manglerserverlist.cpp  manglersettings.cpp manglerconfig.cpp manglerchat.cpp manglerprivchat.cpp manglercharset.cpp
-mangler_LDADD = @top_srcdir@/libventrilo3/libventrilo3.la $(gtkmm_LIBS) $(gthread_LIBS) $(pulse_LIBS) $(alsa_LIBS) $(speex_LIBS)
-INCLUDES = -I@top_srcdir@/libventrilo3/ -I@top_srcdir@/icons/ -I@top_srcdir@/sounds/ $(gtkmm_CFLAGS) $(gthread_CFLAGS) $(pulse_CFLAGS) $(alsa_CFLAGS) $(speex_CFLAGS)
+mangler_SOURCES = manglerui.h mangler.cpp channeltree.cpp  mangleraudio.cpp  manglernetwork.cpp  manglerserverlist.cpp  manglersettings.cpp manglerconfig.cpp manglerchat.cpp manglerprivchat.cpp manglercharset.cpp manglerintegration.cpp mangleradmin.cpp inilib.cpp
+mangler_LDADD = @top_srcdir@/libventrilo3/libventrilo3.la $(gtkmm_LIBS) $(gthread_LIBS) $(pulse_LIBS) $(alsa_LIBS) $(speex_LIBS) ${dbus_LIBS}
+INCLUDES = -I@top_srcdir@/libventrilo3/ -I@top_srcdir@/icons/ -I@top_srcdir@/sounds/ $(gtkmm_CFLAGS) $(gthread_CFLAGS) $(pulse_CFLAGS) $(alsa_CFLAGS) $(speex_CFLAGS) ${dbus_CFLAGS}
 all: all-am
 
 .SUFFIXES:
@@ -347,11 +351,14 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/channeltree.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/inilib.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mangler.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mangleradmin.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mangleraudio.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/manglercharset.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/manglerchat.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/manglerconfig.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/manglerintegration.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/manglernetwork.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/manglerprivchat.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/manglerserverlist.Po@am__quote@
@@ -637,9 +644,10 @@ dev:
 	gcc -g -Wall -o mangler -I../ -I../libventrilo3/ -I../icons/ -I ../sounds/ -pthread \
 		channeltree.cpp  mangleraudio.cpp  manglerconfig.cpp  mangler.cpp \
 		manglernetwork.cpp  manglerserverlist.cpp  manglersettings.cpp \
-		manglerchat.cpp manglercharset.cpp manglerprivchat.cpp \
-		../libventrilo3/libventrilo3.a \
+		manglerchat.cpp manglercharset.cpp manglerintegration.cpp manglerprivchat.cpp \
+		mangleradmin.cpp ../libventrilo3/libventrilo3.a \
 		-lpulse-simple -lpulse -lspeex -lgsm -lasound \
+		`pkg-config --cflags --libs dbus-glib-1` \
 		`pkg-config --cflags --libs gthread-2.0` \
 		`pkg-config --cflags --libs gtkmm-2.4`
 

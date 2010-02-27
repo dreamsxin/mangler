@@ -6,7 +6,7 @@
  * $LastChangedBy$
  * $URL$
  *
- * Copyright 2009-2010 Eric Kilfoil 
+ * Copyright 2009-2010 Eric Kilfoil
  *
  * This file is part of Mangler.
  *
@@ -55,6 +55,7 @@ class ManglerServerList {
         Gtk::Entry *serverListServerNameEntry;
         Gtk::Entry *serverListHostnameEntry;
         Gtk::Entry *serverListPortEntry;
+        Gtk::Entry *serverListDefaultChannelEntry;
         Gtk::Entry *serverListUsernameEntry;
         Gtk::Entry *serverListPasswordEntry;
         Gtk::Entry *serverListPhoneticEntry;

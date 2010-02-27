@@ -6,7 +6,7 @@
  * $LastChangedBy$
  * $URL$
  *
- * Copyright 2009-2010 Eric Kilfoil 
+ * Copyright 2009-2010 Eric Kilfoil
  *
  * This file is part of Mangler.
  *
@@ -29,15 +29,16 @@
 #include <sys/types.h>
 #include <stdint.h>
 #include <iostream>
-#include "channeltree.h"
-#include "manglernetwork.h"
-#include "mangleraudio.h"
-#include "manglersettings.h"
-#include "manglerserverlist.h"
-#include "manglerchat.h"
-#include "manglerprivchat.h"
-#include "manglercharset.h"
-#include "locale.h"
+
+class ManglerChannelTree;
+class ManglerNetwork;
+class ManglerAudio;
+class ManglerSettings;
+class ManglerServerList;
+class ManglerChat;
+class ManglerPrivChat;
+class ManglerIntegration;
+class ManglerAdmin;
 
 extern "C" {
 #include <ventrilo3.h>
@@ -72,7 +73,8 @@ class Mangler
         Gtk::MenuItem                       *menuitem;
         Gtk::Table                          *table;
         Gtk::CheckButton                    *checkbutton;
-        
+        Gtk::ProgressBar                    *inputvumeter;
+
 
         std::map<Glib::ustring, Glib::RefPtr<Gdk::Pixbuf> >  icons;
         Glib::RefPtr<Gtk::StatusIcon>       statusIcon;
@@ -86,18 +88,22 @@ class Mangler
         ManglerAudio                        *inputAudio;
         ManglerAudio                        *audioControl;
         ManglerSettings                     *settings;
+        ManglerIntegration                  *integration;
+        ManglerAdmin                        *admin;
+
         bool                                isTransmitting;
         bool                                isTransmittingButton;
         bool                                isTransmittingKey;
         bool                                isTransmittingMouse;
         bool                                iconified;
         bool                                isAdmin;
+        bool                                isChanAdmin;
         bool                                muteSound;
         bool                                muteMic;
+        bool                                motdAlways;
 
         // Autoreconnect feature stuff - Need ID's to kill threads if needed
         bool                                wantDisconnect;
-        guint                               reconnectStatusHandlerID;
         time_t                              lastAttempt;
         uint32_t                            lastServer;
 
@@ -125,12 +131,15 @@ class Mangler
 
         Glib::Thread                        *networkThread;
 
+        //Less intensive than looking it up every time
+        uint16_t                            myID;
+
         Glib::ustring getPasswordEntry(Glib::ustring title = "Password", Glib::ustring prompt = "Password");
         bool getReasonEntry(Glib::ustring title = "Reason", Glib::ustring prompt = "Reason");
         uint32_t getActiveServer(void);
         void setActiveServer(uint32_t row_number);
         void errorDialog(Glib::ustring message);
-        
+
     protected:
         // button signal handlers
         void quickConnectButton_clicked_cb(void);
@@ -144,21 +153,25 @@ class Mangler
         void aboutButton_clicked_cb(void);
         void xmitButton_toggled_cb(void);
         void statusIcon_activate_cb(void);
+        void errorOKButton_clicked_cb(void);
+
 
         // menu bar signal handlers
         void buttonMenuItem_toggled_cb(void);
         void hideServerInfoMenuItem_toggled_cb(void);
         void hideGuestFlagMenuItem_toggled_cb(void);
         void quitMenuItem_activate_cb(void);
-
+        void adminWindowMenuItem_activated_cb(void);
 
         bool getNetworkEvent(void);
+        bool updateIntegration(void); // music player integration
         bool checkPushToTalkKeys(void);
         bool checkPushToTalkMouse(void);
         bool updateXferAmounts(void);
 
         // autoreconnect implementation
         bool reconnectStatusHandler(void);
+        void onDisconnectHandler(void);
 
         // quick mute options
         void muteSoundCheckButton_toggled_cb(void);

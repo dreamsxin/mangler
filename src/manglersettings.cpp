@@ -6,7 +6,7 @@
  * $LastChangedBy$
  * $URL$
  *
- * Copyright 2009-2010 Eric Kilfoil 
+ * Copyright 2009-2010 Eric Kilfoil
  *
  * This file is part of Mangler.
  *
@@ -24,9 +24,13 @@
  * along with Mangler.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "config.h"
 #include "mangler.h"
 #include "manglersettings.h"
 #include <gdk/gdkx.h>
+
+#include "manglerintegration.h"
+#include "mangleraudio.h"
 
 ManglerSettings::ManglerSettings(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
 
@@ -70,10 +74,30 @@ ManglerSettings::ManglerSettings(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
     audioPlayerComboBox->set_model(audioPlayerTreeModel);
     // create a "none" row
     Gtk::TreeModel::Row audioPlayerNoneRow = *(audioPlayerTreeModel->append());
-    audioPlayerNoneRow[audioPlayerColumns.id] = -1;
+    audioPlayerNoneRow[audioPlayerColumns.id] = MusicClient_None;
     audioPlayerNoneRow[audioPlayerColumns.name] = "None";
+#ifdef HAVE_LIBMPDCLIENT
+    // add MPD row
+    Gtk::TreeModel::Row audioPlayerMPDRow = *(audioPlayerTreeModel->append());
+    audioPlayerMPDRow[audioPlayerColumns.id] = MusicClient_MPD;
+    audioPlayerMPDRow[audioPlayerColumns.name] = "MPD";
+#endif
+#ifdef HAVE_DBUS
+    // add DBUS client rows
+    // rhythmbox
+    Gtk::TreeModel::Row audioPlayerRBRow = *(audioPlayerTreeModel->append());
+    audioPlayerRBRow[audioPlayerColumns.id] = MusicClient_Rhythmbox;
+    audioPlayerRBRow[audioPlayerColumns.name] = "Rhythmbox";
+    // amarok
+    Gtk::TreeModel::Row audioPlayerAmarokRow = *(audioPlayerTreeModel->append());
+    audioPlayerAmarokRow[audioPlayerColumns.id] = MusicClient_Amarok;
+    audioPlayerAmarokRow[audioPlayerColumns.name] = "Amarok";
+#endif
     audioPlayerComboBox->pack_start(audioPlayerColumns.name);
     audioPlayerComboBox->set_active(audioPlayerNoneRow);
+
+    builder->get_widget("settingsEnableVoiceActivationCheckButton", checkbutton);
+    checkbutton->signal_toggled().connect(sigc::mem_fun(this, &ManglerSettings::settingsEnableVoiceActivationCheckButton_toggled_cb));
 
     builder->get_widget("audioSubsystemComboBox", audioSubsystemComboBox);
     audioSubsystemTreeModel = Gtk::ListStore::create(audioSubsystemColumns);
@@ -85,16 +109,25 @@ ManglerSettings::ManglerSettings(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
     inputDeviceTreeModel = Gtk::ListStore::create(inputColumns);
     inputDeviceComboBox->set_model(inputDeviceTreeModel);
     inputDeviceComboBox->pack_start(inputColumns.description);
+    inputDeviceComboBox->signal_changed().connect(sigc::mem_fun(this, &ManglerSettings::inputDeviceComboBox_changed_cb));
+
+    builder->get_widget("inputDeviceCustomName", inputDeviceCustomName);
 
     builder->get_widget("outputDeviceComboBox", outputDeviceComboBox);
     outputDeviceTreeModel = Gtk::ListStore::create(outputColumns);
     outputDeviceComboBox->set_model(outputDeviceTreeModel);
     outputDeviceComboBox->pack_start(outputColumns.description);
+    outputDeviceComboBox->signal_changed().connect(sigc::mem_fun(this, &ManglerSettings::outputDeviceComboBox_changed_cb));
+
+    builder->get_widget("outputDeviceCustomName", outputDeviceCustomName);
 
     builder->get_widget("notificationDeviceComboBox", notificationDeviceComboBox);
     notificationDeviceTreeModel = Gtk::ListStore::create(notificationColumns);
     notificationDeviceComboBox->set_model(notificationDeviceTreeModel);
     notificationDeviceComboBox->pack_start(notificationColumns.description);
+    notificationDeviceComboBox->signal_changed().connect(sigc::mem_fun(this, &ManglerSettings::notificationDeviceComboBox_changed_cb));
+
+    builder->get_widget("notificationDeviceCustomName", notificationDeviceCustomName);
 
     mouseInputDevices = getInputDeviceList();
     builder->get_widget("settingsMouseDeviceComboBox", mouseDeviceComboBox);
@@ -170,12 +203,27 @@ void ManglerSettings::applySettings(void) {/*{{{*/
 
     // Audio Player Integration
     builder->get_widget("settingsEnableAudioIntegrationCheckButton", checkbutton);
-    config.AudioIntegrationEnabled = checkbutton->get_active() ? true : false;
+    config.AudioIntegrationEnabled = checkbutton->get_active();
     iter = audioPlayerComboBox->get_active();
     if (iter) {
         Gtk::TreeModel::Row row = *iter;
-        config.AudioIntegrationPlayer = row[audioPlayerColumns.name];
+        uint8_t id = row[audioPlayerColumns.id];
+        config.AudioIntegrationPlayer = id;
+        if (config.AudioIntegrationEnabled) {
+            mangler->integration->setClient((MusicClient)id);
+        } else {
+            mangler->integration->setClient(MusicClient_None);
+        }
     }
+    mangler->integration->update(true);
+
+    // Voice Activation
+    builder->get_widget("settingsEnableVoiceActivationCheckButton", checkbutton);
+    config.VoiceActivationEnabled = checkbutton->get_active() ? true : false;
+    builder->get_widget("settingsVoiceActivationSilenceDurationSpinButton", spinbutton);
+    config.VoiceActivationSilenceDuration = spinbutton->get_value() * 1000.0;
+    builder->get_widget("settingsVoiceActivationSensitivitySpinButton", spinbutton);
+    config.VoiceActivationSensitivity = spinbutton->get_value_as_int();
 
     // Audio Devices
     iter = inputDeviceComboBox->get_active();
@@ -183,15 +231,23 @@ void ManglerSettings::applySettings(void) {/*{{{*/
         Gtk::TreeModel::Row row = *iter;
         config.inputDeviceName = row[inputColumns.name];
     }
+    config.inputDeviceCustomName = inputDeviceCustomName->get_text();
     iter = outputDeviceComboBox->get_active();
     if (iter) {
         Gtk::TreeModel::Row row = *iter;
         config.outputDeviceName = row[outputColumns.name];
     }
+    config.outputDeviceCustomName = outputDeviceCustomName->get_text();
     iter = notificationDeviceComboBox->get_active();
     if (iter) {
         Gtk::TreeModel::Row row = *iter;
         config.notificationDeviceName = row[notificationColumns.name];
+    }
+    config.notificationDeviceCustomName = notificationDeviceCustomName->get_text();
+    iter = audioSubsystemComboBox->get_active();
+    if (iter) {
+        Gtk::TreeModel::Row row = *iter;
+        config.audioSubsystem = row[audioSubsystemColumns.id];
     }
 
     // Master Volume
@@ -272,13 +328,39 @@ void ManglerSettings::initSettings(void) {/*{{{*/
     // Audio Player Integration
     builder->get_widget("settingsEnableAudioIntegrationCheckButton", checkbutton);
     checkbutton->set_active(config.AudioIntegrationEnabled ? true : false);
+    int audioPlayerSelection = 0;
+    int audioPlayerCtr = 0;
+    Gtk::TreeModel::Children apChildren = audioPlayerTreeModel->children();
+    for (
+            Gtk::TreeModel::Children::iterator apIter = apChildren.begin();
+            apIter != apChildren.end();
+            ++apIter, audioPlayerCtr++) {
+        Gtk::TreeModel::Row row = *apIter;
+        uint8_t id = row[audioPlayerColumns.id];
+        if (config.AudioIntegrationPlayer == id) {
+            audioPlayerSelection = audioPlayerCtr;
+        }
+    }
+    audioPlayerComboBox->set_active(audioPlayerSelection);
     /*
        iterate through whatever is available based on what we can find and populate the store
        audioPlayerComboBox->set_active(iterOfSelectedinStore);
     */
 
+    // Voice Activation
+    builder->get_widget("settingsEnableVoiceActivationCheckButton", checkbutton);
+    checkbutton->set_active(config.VoiceActivationEnabled ? true : false);
+    builder->get_widget("settingsVoiceActivationSilenceDurationSpinButton", spinbutton);
+    spinbutton->set_value(config.VoiceActivationSilenceDuration / 1000.0);
+    builder->get_widget("settingsVoiceActivationSensitivitySpinButton", spinbutton);
+    spinbutton->set_value(config.VoiceActivationSensitivity);
+
     // Audio Devices
     // the proper devices are selected in the window->show() callback
+    // init the custom audio devices
+    inputDeviceCustomName->set_text(config.inputDeviceCustomName);
+    outputDeviceCustomName->set_text(config.outputDeviceCustomName);
+    notificationDeviceCustomName->set_text(config.notificationDeviceCustomName);
 
     // Notification sounds
     builder->get_widget("notificationLoginLogoutCheckButton", checkbutton);
@@ -417,9 +499,23 @@ void ManglerSettings::settingsEnablePTTKeyCheckButton_toggled_cb(void) {/*{{{*/
 void ManglerSettings::settingsEnableAudioIntegrationCheckButton_toggled_cb(void) {/*{{{*/
     builder->get_widget("settingsEnableAudioIntegrationCheckButton", checkbutton);
     if (checkbutton->get_active()) {
+        builder->get_widget("settingsAudioIntegrationLabel", label);
+        label->set_sensitive(true);
         audioPlayerComboBox->set_sensitive(true);
     } else {
+        builder->get_widget("settingsAudioIntegrationLabel", label);
+        label->set_sensitive(false);
         audioPlayerComboBox->set_sensitive(false);
+    }
+}/*}}}*/
+void ManglerSettings::settingsEnableVoiceActivationCheckButton_toggled_cb(void) {/*{{{*/
+    builder->get_widget("settingsEnableVoiceActivationCheckButton", checkbutton);
+    if (checkbutton->get_active()) {
+        builder->get_widget("settingsVoiceActivationTable", table);
+        table->set_sensitive(true);
+    } else {
+        builder->get_widget("settingsVoiceActivationTable", table);
+        table->set_sensitive(false);
     }
 }/*}}}*/
 /*
@@ -441,10 +537,6 @@ void ManglerSettings::settingsPTTKeyButton_clicked_cb(void) {/*{{{*/
         button->set_sensitive(false);
         builder->get_widget("settingsOkButton", button);
         button->set_sensitive(false);
-        builder->get_widget("settingsMouseDeviceComboBox", combobox);
-        combobox->set_sensitive(false);
-        builder->get_widget("settingsPTTMouseButton", button);
-        button->set_sensitive(false);
         Glib::signal_timeout().connect( sigc::mem_fun(*this, &ManglerSettings::settingsPTTKeyDetect), 100 );
     } else {
         isDetectingKey = false;
@@ -454,10 +546,6 @@ void ManglerSettings::settingsPTTKeyButton_clicked_cb(void) {/*{{{*/
         builder->get_widget("settingsApplyButton", button);
         button->set_sensitive(true);
         builder->get_widget("settingsOkButton", button);
-        button->set_sensitive(true);
-        builder->get_widget("settingsMouseDeviceComboBox", combobox);
-        combobox->set_sensitive(true);
-        builder->get_widget("settingsPTTMouseButton", button);
         button->set_sensitive(true);
         builder->get_widget("settingsPTTKeyValueLabel", label);
         // if the text is as follows, the user pressed done without any keys
@@ -477,6 +565,8 @@ void ManglerSettings::settingsEnablePTTMouseCheckButton_toggled_cb(void) {/*{{{*
         label->set_sensitive(true);
         builder->get_widget("settingsPTTMouseButton", button);
         button->set_sensitive(true);
+        builder->get_widget("settingsMouseDeviceLabel", label);
+        label->set_sensitive(true);
         builder->get_widget("settingsMouseDeviceComboBox", combobox);
         combobox->set_sensitive(true);
     } else {
@@ -487,6 +577,8 @@ void ManglerSettings::settingsEnablePTTMouseCheckButton_toggled_cb(void) {/*{{{*
         label->set_sensitive(false);
         builder->get_widget("settingsPTTMouseButton", button);
         button->set_sensitive(false);
+        builder->get_widget("settingsMouseDeviceLabel", label);
+        label->set_sensitive(false);
         builder->get_widget("settingsMouseDeviceComboBox", combobox);
         combobox->set_sensitive(false);
     }
@@ -527,12 +619,12 @@ std::map<uint32_t, Glib::ustring> ManglerSettings::getInputDeviceList(void) {/*{
 
 void ManglerSettings::audioSubsystemComboBox_changed_cb(void) {/*{{{*/
     Gtk::TreeModel::iterator iter;
+
     iter = audioSubsystemComboBox->get_active();
     if (iter) {
         Gtk::TreeModel::Row row = *iter;
         Glib::ustring id = row[audioSubsystemColumns.id];
         Glib::ustring name = row[audioSubsystemColumns.name];
-        config.audioSubsystem = id;
         if (mangler) {
             mangler->audioControl->getDeviceList(id);
             updateDeviceComboBoxes();
@@ -655,6 +747,7 @@ ManglerSettings::settingsPTTMouseDetect(void) {/*{{{*/
 void
 ManglerSettings::updateDeviceComboBoxes(void) {/*{{{*/
     Gtk::TreeModel::Row row;
+    Gtk::TreeModel::iterator iter;
 
     // Clear the input device store and rebuild it from the audioControl vector
     inputDeviceTreeModel->clear();
@@ -673,6 +766,16 @@ ManglerSettings::updateDeviceComboBoxes(void) {/*{{{*/
         row[inputColumns.name] = (*i)->name;
         row[inputColumns.description] = (*i)->description;
         if (config.inputDeviceName == (*i)->name) {
+            inputSelection = inputCtr;
+        }
+    }
+    iter = audioSubsystemComboBox->get_active();
+    if (iter && (*iter)[audioSubsystemColumns.id] == "alsa") {
+        row = *(inputDeviceTreeModel->append());
+        row[inputColumns.id] = -2;
+        row[inputColumns.name] = "Custom";
+        row[inputColumns.description] = "Custom";
+        if (config.inputDeviceName == "Custom") {
             inputSelection = inputCtr;
         }
     }
@@ -699,6 +802,16 @@ ManglerSettings::updateDeviceComboBoxes(void) {/*{{{*/
             outputSelection = outputCtr;
         }
     }
+    iter = audioSubsystemComboBox->get_active();
+    if (iter && (*iter)[audioSubsystemColumns.id] == "alsa") {
+        row = *(outputDeviceTreeModel->append());
+        row[outputColumns.id] = -2;
+        row[outputColumns.name] = "Custom";
+        row[outputColumns.description] = "Custom";
+        if (config.outputDeviceName == "Custom") {
+            outputSelection = outputCtr;
+        }
+    }
     // TODO: get the currently selected item from settings object and select it
     outputDeviceComboBox->set_active(outputSelection);
 
@@ -722,6 +835,58 @@ ManglerSettings::updateDeviceComboBoxes(void) {/*{{{*/
             notificationSelection = notificationCtr;
         }
     }
+    iter = audioSubsystemComboBox->get_active();
+    if (iter && (*iter)[audioSubsystemColumns.id] == "alsa") {
+        row = *(notificationDeviceTreeModel->append());
+        row[notificationColumns.id] = -2;
+        row[notificationColumns.name] = "Custom";
+        row[notificationColumns.description] = "Custom";
+        if (config.notificationDeviceName == "Custom") {
+            notificationSelection = notificationCtr;
+        }
+    }
     // TODO: get the currently selected item from settings object and select it
     notificationDeviceComboBox->set_active(notificationSelection);
+}/*}}}*/
+
+void
+ManglerSettings::inputDeviceComboBox_changed_cb(void) {/*{{{*/
+    Gtk::TreeModel::iterator iter = inputDeviceComboBox->get_active();
+
+    builder->get_widget("CustomInputLabel", label);
+    if (iter && (*iter)[inputColumns.id] == -2) {
+        inputDeviceCustomName->show();
+        label->show();
+        return;
+    }
+    inputDeviceCustomName->hide();
+    label->hide();
+}/*}}}*/
+
+void
+ManglerSettings::outputDeviceComboBox_changed_cb(void) {/*{{{*/
+    Gtk::TreeModel::iterator iter = outputDeviceComboBox->get_active();
+
+    builder->get_widget("CustomOutputLabel", label);
+    if (iter && (*iter)[outputColumns.id] == -2) {
+        outputDeviceCustomName->show();
+        label->show();
+        return;
+    }
+    outputDeviceCustomName->hide();
+    label->hide();
+}/*}}}*/
+
+void
+ManglerSettings::notificationDeviceComboBox_changed_cb(void) {/*{{{*/
+    Gtk::TreeModel::iterator iter = notificationDeviceComboBox->get_active();
+
+    builder->get_widget("CustomNotificationLabel", label);
+    if (iter && (*iter)[notificationColumns.id] == -2) {
+        notificationDeviceCustomName->show();
+        label->show();
+        return;
+    }
+    notificationDeviceCustomName->hide();
+    label->hide();
 }/*}}}*/

@@ -2,9 +2,9 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.63])
-AC_INIT([mangler], [1.1.0], [eric@ypass.net])
+AC_INIT([mangler], [1.1.20100227], [eric@ypass.net])
 AM_INIT_AUTOMAKE
-AM_MAINTAINER_MODE([enable])
+AM_MAINTAINER_MODE([disable])
 
 AC_CONFIG_SRCDIR([config.h.in])
 AC_CONFIG_HEADERS([config.h])
@@ -70,6 +70,10 @@ else
 fi
 
 PKG_CHECK_MODULES(gtk, gtk+-2.0 >= 2.16.0)
+
+PKG_CHECK_MODULES(dbus, dbus-glib-1 >= 0.80, [AC_DEFINE(HAVE_DBUS, 1, [have dbus])], [:])
+AC_SUBST(dbus_CFLAGS)
+AC_SUBST(dbus_LIBS)
 
 PKG_CHECK_MODULES(gtkmm, gtkmm-2.4 >= 1.3.3)
 AC_SUBST(gtkmm_CFLAGS)

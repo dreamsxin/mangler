@@ -6,7 +6,7 @@
  * $LastChangedBy$
  * $URL$
  *
- * Copyright 2009-2010 Eric Kilfoil 
+ * Copyright 2009-2010 Eric Kilfoil
  *
  * This file is part of Mangler.
  *
@@ -78,11 +78,11 @@ class ManglerAudio
     public:
         ManglerAudio(Glib::ustring type);
         ~ManglerAudio();
-        void            open(uint32_t rate, bool type, uint32_t pcm_framesize = 0);
+        void            open(uint32_t rate, bool type, uint32_t pcm_framesize = 0, uint8_t channels = 1);
         bool            openOutput(uint32_t rate);
-        void            closeOutput(bool drain);
+        void            closeOutput(bool drain = false);
         bool            openInput(uint32_t rate);
-        void            closeInput(bool drain);
+        void            closeInput(bool drain = false);
         void            queue(uint32_t length, uint8_t *sample);
         void            output(void);
         void            input(void);
@@ -96,6 +96,7 @@ class ManglerAudio
 
         GAsyncQueue*    pcm_queue;
         uint32_t        rate;
+        uint8_t         channels;
 #ifdef HAVE_PULSE
         pa_sample_spec  pulse_samplespec;
         pa_buffer_attr  buffer_attr;

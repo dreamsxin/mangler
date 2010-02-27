@@ -6,7 +6,7 @@
  * $LastChangedBy$
  * $URL$
  *
- * Copyright 2009 Eric Kilfoil 
+ * Copyright 2009 Eric Kilfoil
  *
  * This file is part of Mangler.
  *
@@ -30,7 +30,7 @@
 extern const char *charsetslist[];
 
 void set_charset(Glib::ustring charset);
-Glib::ustring c_to_ustring(char *input);
+Glib::ustring c_to_ustring(const char *input);
 std::string ustring_to_c(Glib::ustring input);
 
 #endif

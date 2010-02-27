@@ -6,7 +6,7 @@
  * $LastChangedBy$
  * $URL$
  *
- * Copyright 2009-2010 Eric Kilfoil 
+ * Copyright 2009-2010 Eric Kilfoil
  *
  * This file is part of Mangler.
  *
@@ -48,6 +48,7 @@ class channelModelColumns : public Gtk::TreeModel::ColumnRecord/*{{{*/
             add(password);
             add(muted);
             add(phantom);
+            add(isDefault);
         }
 
         Gtk::TreeModelColumn<Glib::ustring>                 displayName;
@@ -66,6 +67,7 @@ class channelModelColumns : public Gtk::TreeModel::ColumnRecord/*{{{*/
         Gtk::TreeModelColumn<Glib::ustring>                 password;
         Gtk::TreeModelColumn<bool>                          muted;
         Gtk::TreeModelColumn<bool>                          phantom;
+        Gtk::TreeModelColumn<bool>                          isDefault;
 };/*}}}*/
 class ManglerChannelStore : public Gtk::TreeStore
 {
@@ -94,6 +96,7 @@ class ManglerChannelTree
         Gtk::CellRendererPixbuf             *pixrenderer;
         Gtk::CellRendererText               *textrenderer;
         Gtk::MenuItem                       *menuitem;
+        Gtk::CheckMenuItem                  *checkmenuitem;
         void renderCellData(Gtk::CellRenderer *cell, const Gtk::TreeModel::iterator& iter);
 
     public:
@@ -108,6 +111,7 @@ class ManglerChannelTree
         Gtk::Adjustment                     *volumeAdjustment;
         sigc::connection                    volumeAdjustSignalConnection;
         Gtk::VBox                           *vbox;
+        bool                                sortAlphanumeric;
         void addChannel(uint8_t protect_mode, uint32_t id, uint32_t parent_id, Glib::ustring name, Glib::ustring comment = "", Glib::ustring phonetic = "");
         void addUser(uint32_t id, uint32_t channel, Glib::ustring name, Glib::ustring comment = "", Glib::ustring phonetic = "", Glib::ustring url = "", Glib::ustring integration_text = "", bool guest = false, bool phantom = false, Glib::ustring rank = "");
         void updateLobby(Glib::ustring name, Glib::ustring comment = "", Glib::ustring phonetic = "");
@@ -119,13 +123,15 @@ class ManglerChannelTree
         void refreshUser(uint32_t id);
         void _refreshAllUsers(Gtk::TreeModel::Children children);
         void refreshAllUsers();
+        int  sortFunction(const Gtk::TreeModel::iterator& a, const Gtk::TreeModel::iterator& b);
         Glib::ustring getLastTransmit(uint16_t userid);
         void setLastTransmit(uint16_t userid, Glib::ustring last_transmit);
         void removeUser(uint32_t id);
         void removeChannel(uint32_t id);
-        void setUserIcon(uint16_t id, Glib::ustring color);
+        void setUserIcon(uint16_t id, Glib::ustring color, bool updateLastTransmit = false);
         Gtk::TreeModel::Row getChannel(uint32_t id, Gtk::TreeModel::Children children);
-        Gtk::TreeModel::Row getUser(uint32_t id, Gtk::TreeModel::Children children);
+        Gtk::TreeModel::Row getUser(uint32_t id);
+        bool _getUser(const Gtk::TreeModel::iterator &iter, uint32_t id, Gtk::TreeModel::iterator *r_iter);
         uint16_t getUserChannelId(uint16_t userid);
         Glib::ustring getChannelSavedPassword(uint16_t channel_id);
         void setChannelSavedPassword(uint16_t channel_id, Glib::ustring password);
@@ -134,8 +140,10 @@ class ManglerChannelTree
         bool expand_all(void);
         bool collapse_all(void);
         void clear(void);
+        void setSort(bool);
 
         void channelView_row_activated_cb(const Gtk::TreeModel::Path& path, Gtk::TreeViewColumn* column);
+        void userSettingsMenuItem_activate_cb(void);
         void channelView_buttonpress_event_cb(GdkEventButton* event);
         void copyCommentMenuItem_activate_cb(void);
         void copyURLMenuItem_activate_cb(void);
@@ -147,11 +155,19 @@ class ManglerChannelTree
         void muteUserMenuItem_activate_cb(void);
         void muteUserGlobalMenuItem_activate_cb(void);
         void volumeAdjustment_value_changed_cb(uint16_t);
-        int  on_sort_compare(const Gtk::TreeModel::iterator& a_, const Gtk::TreeModel::iterator& b_);
+        void userSettingsWindow(Gtk::TreeModel::Row row);
 
+        // default channel handlers
+        sigc::connection signalDefaultChannel;
+        void setDefaultChannel_toggled_cb(void);
+        bool channelView_getPathFromId(const Gtk::TreeModel::Path &path, uint32_t id, Glib::ustring *r_path);
+        bool channelView_findDefault(const Gtk::TreeModel::iterator &iter, Gtk::TreeModel::iterator *r_iter);
+        void channelView_switchChannel2Default(uint32_t defaultChannelId);
 };
 
 Glib::ustring getTimeString(void);
+int natsort(const char *l, const char *r);
+
 
 
 #endif

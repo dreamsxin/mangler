@@ -6,7 +6,7 @@
  * $LastChangedBy$
  * $URL$
  *
- * Copyright 2009-2010 Eric Kilfoil 
+ * Copyright 2009-2010 Eric Kilfoil
  *
  * This file is part of Mangler.
  *
@@ -26,6 +26,9 @@
 
 #include "mangler.h"
 #include "manglerserverlist.h"
+
+#include "manglersettings.h"
+#include "manglercharset.h"
 
 ManglerServerList::ManglerServerList(Glib::RefPtr<Gtk::Builder> builder) {
     serverListTreeModel = Gtk::ListStore::create(serverListColumns);
@@ -76,6 +79,7 @@ ManglerServerList::ManglerServerList(Glib::RefPtr<Gtk::Builder> builder) {
     builder->get_widget("serverListServerNameEntry",    serverListServerNameEntry);
     builder->get_widget("serverListHostnameEntry",      serverListHostnameEntry);
     builder->get_widget("serverListPortEntry",          serverListPortEntry);
+    builder->get_widget("serverListDefaultChannelEntry",serverListDefaultChannelEntry);
     builder->get_widget("serverListUsernameEntry",      serverListUsernameEntry);
     builder->get_widget("serverListPasswordEntry",      serverListPasswordEntry);
     builder->get_widget("serverListPhoneticEntry",      serverListPhoneticEntry);
@@ -129,6 +133,7 @@ void ManglerServerList::serverListDeleteButton_clicked_cb(void) {
         serverListServerNameEntry->set_sensitive(false);
         serverListHostnameEntry->set_sensitive(false);
         serverListPortEntry->set_sensitive(false);
+        serverListDefaultChannelEntry->set_sensitive(false);
         serverListUsernameEntry->set_sensitive(false);
         serverListPasswordEntry->set_sensitive(false);
         serverListPhoneticEntry->set_sensitive(false);
@@ -157,6 +162,8 @@ void ManglerServerList::serverListCloneButton_clicked_cb(void) {
         server->name = "New Server";
         server->hostname = oldserver->hostname;
         server->port = oldserver->port;
+        server->defaultchannel = oldserver->defaultchannel;
+        server->defaultchannelid = oldserver->defaultchannelid;
         server->username = oldserver->username;
         server->password = oldserver->password;
         server->phonetic = oldserver->phonetic;
@@ -183,6 +190,7 @@ void ManglerServerList::clearEntries(void) {
     serverListServerNameEntry->set_text("");
     serverListHostnameEntry->set_text("");
     serverListPortEntry->set_text("");
+    serverListDefaultChannelEntry->set_text("");
     serverListUsernameEntry->set_text("");
     serverListPasswordEntry->set_text("");
     serverListPhoneticEntry->set_text("");
@@ -237,6 +245,7 @@ void ManglerServerList::editRow(uint32_t id) {
     serverListServerNameEntry->set_sensitive(true);
     serverListHostnameEntry->set_sensitive(true);
     serverListPortEntry->set_sensitive(true);
+    serverListDefaultChannelEntry->set_sensitive(false); //Saving name from right click menu only
     serverListUsernameEntry->set_sensitive(true);
     serverListPasswordEntry->set_sensitive(true);
     serverListPhoneticEntry->set_sensitive(true);
@@ -253,6 +262,7 @@ void ManglerServerList::editRow(uint32_t id) {
     serverListServerNameEntry->set_text(server->name);
     serverListHostnameEntry->set_text(server->hostname);
     serverListPortEntry->set_text(server->port);
+    serverListDefaultChannelEntry->set_text(server->defaultchannel);
     serverListUsernameEntry->set_text(server->username);
     serverListPasswordEntry->set_text(server->password);
     serverListPhoneticEntry->set_text(server->phonetic);
@@ -288,6 +298,7 @@ void ManglerServerList::saveRow() {
     server->name = trim(serverListServerNameEntry->get_text());
     server->hostname = trim(serverListHostnameEntry->get_text());
     server->port = trim(serverListPortEntry->get_text());
+    server->defaultchannel = trim(serverListDefaultChannelEntry->get_text());
     server->username = trim(serverListUsernameEntry->get_text());
     server->password = trim(serverListPasswordEntry->get_text());
     server->phonetic = trim(serverListPhoneticEntry->get_text());

@@ -6,7 +6,7 @@
  * $LastChangedBy$
  * $URL$
  *
- * Copyright 2009-2010 Eric Kilfoil 
+ * Copyright 2009-2010 Eric Kilfoil
  *
  * This file is part of Mangler.
  *
@@ -70,6 +70,8 @@
 #define V3_AWAY_PRIV_CHAT           0x04
 
 #define V3_RANK_LIST                0x00
+#define V3_OPEN_RANK                0x01
+#define V3_CLOSE_RANK               0x02
 #define V3_ADD_RANK                 0x03
 #define V3_REMOVE_RANK              0x04
 #define V3_MODIFY_RANK              0x05
@@ -85,7 +87,7 @@
 #define V3_AUDIO_UNK                0x03
 
 #define V3_PHANTOM_ADD              0x00
-#define V3_PHANTOM_REMOVE           0x01 
+#define V3_PHANTOM_REMOVE           0x01
 
 #define V3_ADMIN_LOGIN              0x00
 #define V3_ADMIN_KICK               0x01
@@ -100,6 +102,10 @@
 #define V3_USERLIST_CLOSE           0x04
 #define V3_USERLIST_LUSER           0x05
 #define V3_USERLIST_CHANGE_OWNER    0x06
+
+#define V3_SERVER_CHAT_FILTER       0x02
+#define V3_SERVER_ALPHABETIC        0x03
+#define V3_SERVER_MOTD_ALWAYS       0x05
 
 #define V3_DEBUG_NONE               0
 #define V3_DEBUG_STATUS             1
@@ -125,8 +131,12 @@ typedef struct __v3_net_message {/*{{{*/
     int (* destroy)(struct __v3_net_message *msg);
     struct __v3_net_message *next;
 } _v3_net_message;/*}}}*/
+
+#ifndef ANDROID
 #pragma pack(push)
 #pragma pack(1)
+#endif
+
 struct _v3_permissions {/*{{{*/
     uint16_t account_id;
     uint16_t replace_owner_id;
@@ -197,7 +207,10 @@ struct _v3_permissions {/*{{{*/
     uint8_t see_user_comment;
     uint8_t unknown_perm_15;
 };/*}}}*/
+
+#ifndef ANDROID
 #pragma pack(pop)
+#endif
 typedef struct _v3_permissions v3_permissions;
 
 /*
@@ -238,6 +251,7 @@ enum _v3_events
     V3_EVENT_USERLIST_MODIFY,
     V3_EVENT_USERLIST_REMOVE,
     V3_EVENT_USERLIST_CHANGE_OWNER,
+    V3_EVENT_USER_GLOBAL_MUTE_CHANGED,
 
     // outbound specific event types
     V3_EVENT_CHANGE_CHANNEL,
@@ -257,7 +271,14 @@ enum _v3_events
     V3_EVENT_CHAN_REMOVED,
     V3_EVENT_CHAN_MODIFIED,
     V3_EVENT_RECV_AUDIO,
+    V3_EVENT_SERVER_PROPERTY_UPDATED,
+    V3_EVENT_RANKLIST_OPEN,
+    V3_EVENT_RANKLIST_CLOSE,
+    V3_EVENT_RANK_ADD,
+    V3_EVENT_RANK_MODIFY,
+    V3_EVENT_RANK_REMOVE,
 };
+
 
 // different boot types for api function v3_admin_boot
 enum _v3_boot_types {
@@ -316,7 +337,12 @@ struct _v3_event {
         uint32_t length;
         uint16_t send_type;
         uint32_t rate;
+        uint8_t  channels;
     } pcm;
+    struct {
+        uint16_t property;
+        uint8_t  value;
+    } serverproperty;
     union {
         struct {
             v3_permissions perms;
@@ -329,9 +355,40 @@ struct _v3_event {
             int chan_auth_count;
             uint16_t chan_auth[32];
         } account;
-        int16_t sample16[8192];
-        uint8_t sample[16384];
-        char    motd[2048]; 
+        struct {
+            uint16_t id;
+            uint16_t parent;
+            uint8_t  unknown_1;
+            uint8_t  password_protected;
+            uint16_t unknown_2;
+            uint16_t allow_recording;
+            uint16_t allow_cross_channel_transmit;
+            uint16_t allow_paging;
+            uint16_t allow_wave_file_binds;
+            uint16_t allow_tts_binds;
+            uint16_t allow_u2u_transmit;
+            uint16_t disable_guest_transmit;
+            uint16_t disable_sound_events;
+            uint16_t voice_mode;
+            uint16_t transmit_time_limit;
+            uint16_t allow_phantoms;
+            uint16_t max_clients;
+            uint16_t allow_guests;
+            uint16_t inactive_exempt;
+            uint16_t protect_mode;
+            uint16_t transmit_rank_level;
+            uint16_t channel_codec;
+            uint16_t channel_format;
+            uint16_t allow_voice_target;
+            uint16_t allow_command_target;
+        } channel;
+        struct {
+            uint16_t id;
+            uint16_t level;
+        } rank;
+        int16_t sample16[16384];
+        uint8_t sample[32768];
+        char    motd[2048];
         char    chatmessage[256];
         char    reason[128];
     } data;
@@ -440,7 +497,7 @@ typedef struct __v3_msg_account {/*{{{*/
     uint16_t *chan_admin;
     int chan_auth_count;
     uint16_t *chan_auth;
-    
+
     /*
      * Put internal variables here
      */
@@ -471,12 +528,12 @@ typedef struct {
 } ventrilo_key_ctx;
 
 typedef struct __v3_codec {
-    uint8_t codec;
-    uint8_t format;
-    uint32_t samplesize;
+    uint8_t  codec;
+    uint8_t  format;
+    uint16_t pcmframesize;
     uint32_t rate;
-    uint8_t quality;
-    char name[128];
+    uint8_t  quality;
+    char     name[128];
 } v3_codec;
 extern v3_codec v3_codecs[];
 
@@ -485,6 +542,7 @@ typedef struct __v3_server {
     uint16_t port;                    // The server's TCP port number
     uint16_t max_clients;             // The maximum number of clients allowed
     uint16_t connected_clients;       // The number of clients currently connected
+    uint16_t is_licensed;             // The server is licensed
     char *name;                       // The name of the server
     char *version;                    // The version of the server
     char *os;                         // The OS the server is running on
@@ -503,10 +561,13 @@ typedef struct __v3_server {
     _v3_net_message *_queue;          // This queue (linked list) is used internally
     _v3_net_message *queue;           // This queue (linked list) stores messages that need to be processed by the client
     struct timeval last_timestamp;    // The time() of the last timestamp, a timestamp is sent every 10 seconds
-    uint32_t recv_packet_count;            // Total amount of packets received from server.
-    uint32_t recv_byte_count;              // Total amount of bytes received from server.
-    uint32_t sent_packet_count;            // Total amount of packets received from server.
-    uint32_t sent_byte_count;              // Total amount of bytes received from server.
+    uint32_t recv_packet_count;       // Total amount of packets received from server.
+    uint32_t recv_byte_count;         // Total amount of bytes received from server.
+    uint32_t sent_packet_count;       // Total amount of packets received from server.
+    uint32_t sent_byte_count;         // Total amount of bytes received from server.
+    uint8_t motd_always;              // Always display MOTD
+    uint8_t global_chat_filter;       // Global or Per Channel chat filter
+    uint8_t channels_alphabetical;    // Display the channels alphabetical or manual
 } _v3_server;
 
 /*
@@ -582,6 +643,7 @@ uint16_t    *v3_get_soundq(uint32_t *len);
 uint32_t    v3_get_soundq_length(void);
 v3_event    *v3_get_event(int block);
 int         v3_get_max_clients(void);
+int         v3_is_licensed(void);
 uint32_t    v3_get_bytes_recv(void);
 uint32_t    v3_get_bytes_sent(void);
 uint32_t    v3_get_packets_recv(void);
@@ -593,12 +655,15 @@ const v3_codec *v3_get_channel_codec(uint16_t channel_id);
 uint16_t    v3_get_user_channel(uint16_t id);
 uint16_t    v3_channel_requires_password(uint16_t channel_id);
 void        v3_start_audio(uint16_t send_type);
-uint32_t    v3_send_audio(uint16_t send_type, uint32_t rate, uint8_t *pcm, uint32_t length);
+uint32_t    v3_send_audio(uint16_t send_type, uint32_t rate, uint8_t *pcm, uint32_t length, uint8_t stereo);
 void        v3_stop_audio(void);
 void        v3_set_server_opts(uint8_t type, uint8_t value);
 const v3_permissions *v3_get_permissions(void);
 uint8_t     v3_is_channel_admin(uint16_t channel_id);
+void        v3_channel_update(v3_channel *channel, const char *password);
+void        v3_channel_remove(uint16_t channel_id);
 
+uint32_t    v3_pcmlength_for_rate(uint32_t rate);
 
 // User list functions
 int         v3_user_count(void);
@@ -611,7 +676,11 @@ void        v3_free_channel(v3_channel *channel);
 v3_channel  *v3_get_channel(uint16_t id);
 
 // Rank list functions
+void        v3_ranklist_open(void);
+void        v3_ranklist_close(void);
 v3_rank     *v3_get_rank(uint16_t id);
+void        v3_rank_update(v3_rank *rank);
+void        v3_rank_remove(uint16_t rankid);
 void        v3_free_rank(v3_rank *rank);
 
 // Account list functions

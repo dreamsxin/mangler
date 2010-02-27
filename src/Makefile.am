@@ -14,19 +14,20 @@ bin_PROGRAMS = mangler
 icon_DATA = ../icons/mangler_logo.svg 
 desktop_DATA = ../mangler.desktop
 
-mangler_SOURCES = manglerui.h mangler.cpp channeltree.cpp  mangleraudio.cpp  manglernetwork.cpp  manglerserverlist.cpp  manglersettings.cpp manglerconfig.cpp manglerchat.cpp manglerprivchat.cpp manglercharset.cpp
+mangler_SOURCES = manglerui.h mangler.cpp channeltree.cpp  mangleraudio.cpp  manglernetwork.cpp  manglerserverlist.cpp  manglersettings.cpp manglerconfig.cpp manglerchat.cpp manglerprivchat.cpp manglercharset.cpp manglerintegration.cpp mangleradmin.cpp inilib.cpp
 
-mangler_LDADD = @top_srcdir@/libventrilo3/libventrilo3.la $(gtkmm_LIBS) $(gthread_LIBS) $(pulse_LIBS) $(alsa_LIBS) $(speex_LIBS)
+mangler_LDADD = @top_srcdir@/libventrilo3/libventrilo3.la $(gtkmm_LIBS) $(gthread_LIBS) $(pulse_LIBS) $(alsa_LIBS) $(speex_LIBS) ${dbus_LIBS}
 
-INCLUDES = -I@top_srcdir@/libventrilo3/ -I@top_srcdir@/icons/ -I@top_srcdir@/sounds/ $(gtkmm_CFLAGS) $(gthread_CFLAGS) $(pulse_CFLAGS) $(alsa_CFLAGS) $(speex_CFLAGS)
+INCLUDES = -I@top_srcdir@/libventrilo3/ -I@top_srcdir@/icons/ -I@top_srcdir@/sounds/ $(gtkmm_CFLAGS) $(gthread_CFLAGS) $(pulse_CFLAGS) $(alsa_CFLAGS) $(speex_CFLAGS) ${dbus_CFLAGS}
 
 dev:
 	cd ../libventrilo3 && make dev
 	gcc -g -Wall -o mangler -I../ -I../libventrilo3/ -I../icons/ -I ../sounds/ -pthread \
 		channeltree.cpp  mangleraudio.cpp  manglerconfig.cpp  mangler.cpp \
 		manglernetwork.cpp  manglerserverlist.cpp  manglersettings.cpp \
-		manglerchat.cpp manglercharset.cpp \
-		../libventrilo3/libventrilo3.a \
-		-lpulse-simple -lpulse -lspeex -lgsm \
+		manglerchat.cpp manglercharset.cpp manglerintegration.cpp manglerprivchat.cpp \
+		mangleradmin.cpp ../libventrilo3/libventrilo3.a \
+		-lpulse-simple -lpulse -lspeex -lgsm -lasound \
+		`pkg-config --cflags --libs dbus-glib-1` \
 		`pkg-config --cflags --libs gthread-2.0` \
 		`pkg-config --cflags --libs gtkmm-2.4`

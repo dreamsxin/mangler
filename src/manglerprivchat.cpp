@@ -6,7 +6,7 @@
  * $LastChangedBy$
  * $URL$
  *
- * Copyright 2009-2010 Eric Kilfoil 
+ * Copyright 2009-2010 Eric Kilfoil
  *
  * This file is part of Mangler.
  *
@@ -26,6 +26,9 @@
 
 #include "mangler.h"
 #include "manglerprivchat.h"
+
+#include "manglercharset.h"
+
 extern const char ManglerUI[];
 
 ManglerPrivChat::ManglerPrivChat(uint16_t userid) {
