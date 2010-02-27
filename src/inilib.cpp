@@ -23,6 +23,18 @@
 
 using namespace std;
 
+bool iniCaselessCmp::operator()(const string &left, const string &right) const {
+    string::const_iterator p = left.begin();
+    string::const_iterator q = right.begin();
+
+    while (p != left.end() && q != right.end() && tolower(*p) == tolower(*q)) {
+        ++p; ++q;
+    }
+    if (p == left.end()) return q != right.end();
+    if (q == right.end()) return false;
+    return tolower(*p) < tolower(*q);
+}
+
 iniVariant::iniVariant() : mValue("") {}
 
 iniVariant::iniVariant(const string &s) : mValue(s) {}
@@ -100,6 +112,8 @@ bool iniVariant::toBool() const {
 
 iniVariant::operator string &() { return mValue; }
 
+iniVariant::operator const string &() { return mValue; }
+
 string iniVariant::toString() const { return mValue; }
 
 string iniVariant::toUpper() const {
@@ -124,6 +138,8 @@ string iniVariant::toLower() const {
 
 const char *iniVariant::toCString() const { return mValue.c_str(); }
 
+iniVariant iniVariant::mNULLvariant;
+
 iniValue::iniValue(const iniVariant &v) {
     append(v);
 }
@@ -139,9 +155,14 @@ iniValue::operator iniVariant &() {
     return at(0);
 }
 
+iniValue::operator const iniVariant &() {
+    if (size() == 0) return iniVariant::null();
+    return at(0);
+}
+
 iniVariant iniValue::value() const {
-     if (size() == 0) return iniVariant();
-     return at(0);
+    if (size() == 0) return iniVariant();
+    return at(0);
 }
 
 iniValue::size_type iniValue::count() const { return size(); }
@@ -157,6 +178,39 @@ iniValue &iniValue::operator+=(const iniVariant &v)
 bool iniValue::operator==(const iniVariant &v) const {
     return (size() == 1 && at(0) == v);
 }
+
+string iniValue::toString() const
+    { return value().toString(); }
+
+string iniValue::toUpper() const
+    { return value().toUpper(); }
+
+string iniValue::toLower() const
+    { return value().toLower(); }
+
+const char *iniValue::toCString() const
+    { return value().toCString(); }
+
+int iniValue::toInt() const
+    { return value().toInt(); }
+
+unsigned iniValue::toUInt() const
+    { return value().toUInt(); }
+
+long iniValue::toLong() const
+    { return value().toLong(); }
+
+unsigned long iniValue::toULong() const
+    { return value().toULong(); }
+
+long long iniValue::toLLong() const
+    { return value().toLLong(); }
+
+double iniValue::toDouble() const
+    { return value().toDouble(); }
+
+bool iniValue::toBool() const
+    { return value().toBool(); }
 
 bool iniSection::contains(const string &s) const {
     return (find(s) != end());
@@ -266,7 +320,10 @@ vector<string> iniSection::parseLine(const string &s) {
         ret[1].append(tokens[i]);
         ++i;
     }
-    return ret;
+    // make all variable names lowercase
+    //int namelen = ret[0].length();
+    //for (int n=0; n < namelen; ++n) ret[0][n] = (char)(tolower(ret[0][n]));
+    //return ret;
 }
 
 iniFile::iniFile(const string &filename) : mFilename( filename ) {

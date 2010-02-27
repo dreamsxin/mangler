@@ -28,6 +28,11 @@ using std::map;
 using std::istream;
 using std::ostream;
 
+class iniCaselessCmp {
+    public:
+    bool operator()(const string &left, const string &right) const;
+};
+
 class iniVariant {
     public:
     iniVariant();
@@ -41,6 +46,7 @@ class iniVariant {
     iniVariant(double d);
     iniVariant(bool b);
     operator string &();
+    operator const string &();
     string toString() const;
     string toUpper() const;
     string toLower() const;
@@ -53,7 +59,9 @@ class iniVariant {
     double toDouble() const;
     bool toBool() const;
     bool operator==(const iniVariant &v) const;
+    static const iniVariant &null() { return mNULLvariant; } 
     private:
+    static iniVariant mNULLvariant;
     string mValue;
 };
 
@@ -64,13 +72,25 @@ class iniValue : public vector<iniVariant> {
     size_type count() const;
     void append(const iniVariant &v);
     operator iniVariant &();
+    operator const iniVariant &();
     iniVariant value() const;
     bool operator==(const iniVariant &v) const;
     iniValue &operator=(const iniVariant &v);
     iniValue &operator+=(const iniVariant &v);
+    string toString() const;
+    string toUpper() const;
+    string toLower() const;
+    const char *toCString() const;
+    int toInt() const;
+    unsigned toUInt() const;
+    long toLong() const;
+    unsigned long toULong() const;
+    long long toLLong() const;
+    double toDouble() const;
+    bool toBool() const;
 };
 
-class iniSection : public map<string, iniValue> {
+class iniSection : public map<string, iniValue, iniCaselessCmp> {
     friend class iniFile;
     public:
     iniSection() {}
@@ -85,7 +105,7 @@ class iniSection : public map<string, iniValue> {
     static void trimString(string &s);
 };
 
-class iniFile : public map<string, iniSection> {
+class iniFile : public map<string, iniSection, iniCaselessCmp> {
     public:
     iniFile() {}
     iniFile(const string &filename);
