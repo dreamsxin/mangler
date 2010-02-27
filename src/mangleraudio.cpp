@@ -473,6 +473,11 @@ ManglerAudio::output(void) {/*{{{*/
                 pa_simple_flush(pulse_stream, &pulse_error);
             }
 #endif
+#ifdef HAVE_ALSA
+            if (alsa_stream) {
+                snd_pcm_drop(alsa_stream);
+            }
+#endif
             g_async_queue_unref(pcm_queue);
             break;
         }
@@ -529,7 +534,7 @@ ManglerAudio::output(void) {/*{{{*/
 #endif
         delete queuedpcm;
     }
-    closeOutput(true);
+    closeOutput(v3_is_loggedin());
     stop_output = true;
     outputStreamOpen = true;
     //throw Glib::Thread::Exit();

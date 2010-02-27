@@ -236,9 +236,12 @@ void *jukebox_player(void *connptr) {
                             v3_send_chat_message("no songs matched your request");
                         } else {
                             int attempts = 0;
-                            v3_stop_audio();
-                            close_mp3(mh);
-                            mh = NULL;
+                            if (playing || mh) {
+                                playing = false;
+                                v3_stop_audio();
+                                close_mp3(mh);
+                                mh = NULL;
+                            }
                             // we have SOMETHING in the filelist that matches, but no guarantee that it's a song... try 10
                             // different matches before giving up
                             for (attempts = 0; attempts < 20; attempts++) {
