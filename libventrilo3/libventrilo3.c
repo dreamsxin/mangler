@@ -1073,6 +1073,9 @@ _v3_recv(int block) {/*{{{*/
                             free(user->comment);
                             free(user->url);
                             free(user->integration_text);
+                            if (ev.flags & 0x100) {
+                                user->bitfield |= 0x100;
+                            }
                             user->name = strdup("");
                             user->phonetic = strdup("");
                             user->comment = strdup(ev.text.comment);
@@ -4262,6 +4265,9 @@ v3_set_text(char *comment, char *url, char *integration_text, uint8_t silent) {/
     memset(&ev, 0, sizeof(v3_event));
     ev.type = V3_EVENT_USER_MODIFY;
     ev.user.id = v3_get_user_id();
+    if (silent) {
+        ev.flags |= 0x100;
+    }
     strncpy(ev.text.comment, comment, 127);
     strncpy(ev.text.url, url, 127);
     strncpy(ev.text.integration_text, integration_text, 127);
