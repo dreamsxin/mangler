@@ -152,6 +152,9 @@ void *jukebox_player(void *connptr) {
     uint32_t bytestosend, bytestoread;
     uint8_t channels;
     int ctr;
+    struct timeval last_audio, now;
+    int politeness = 0; // only slightly polite :)
+    gettimeofday(&last_audio, NULL);
 
     conninfo = connptr;
     for (;;) {
@@ -196,6 +199,10 @@ void *jukebox_player(void *connptr) {
                         }
                     }
                     break;
+                case V3_EVENT_PLAY_AUDIO:
+                    //last_audio = now;
+                    gettimeofday(&last_audio, NULL);
+                    break;
                 case V3_EVENT_CHAT_MESSAGE:
                     if (ev->user.id == v3_get_user_id()) {
                         // ignore commands from ourself
@@ -212,13 +219,37 @@ void *jukebox_player(void *connptr) {
                         v3_send_chat_message("!move -- move to your channel");
                         v3_send_chat_message("!play [song/artist/file name] -- search for a song by filename and play the first random match");
                         v3_send_chat_message("!volume [0-1] -- Set the volume to the specified level: ex: !volume 0.5");
+                        v3_send_chat_message("!polite [off|0-60] -- Pauses playing when audio is received for the specified duration");
+                        break;
+                    } else if (strncmp(ev->data.chatmessage, "!polite", 7) == 0) {
+                        if (ev->data.chatmessage[8]) {
+                            char *level = ev->data.chatmessage + 8;
+                            int newpol = -1;
+                            if (strncmp(level, " off", 4)) {
+                                newpol = atoi(level);
+                                if (newpol > -1 && newpol < 61) politeness = newpol;
+                            } else {
+                                v3_send_chat_message("invalid politeness level");
+                                break;
+                            }
+                        } else politeness = -1;
+                        if (politeness > -1) {
+                            char chat_msg[50];
+                            sprintf(chat_msg, "politeness is now %d seconds", politeness);
+                            v3_send_chat_message(chat_msg);
+                        } else v3_send_chat_message("politeness is now off");
                         break;
                     } else if (! stopped && strncmp(ev->data.chatmessage, "!volume ", 8) == 0) {
                         char *volume = ev->data.chatmessage + 8;
                         if (atof(volume) == 0 || atof(volume) > 1) {
+                            v3_send_chat_message("invalid volume level.");
                             break;
                         }
                         conninfo->volume = atof(volume);
+                        char chat_msg[50];
+                        int vlev = (int)( conninfo->volume * 100.0 );
+                        sprintf(chat_msg, "volume is now %d%%", vlev);
+                        v3_send_chat_message(chat_msg);
                     } else if (strncmp(ev->data.chatmessage, "!play ", 6) == 0) {
                         char *searchspec;
                         int ctr;
@@ -309,7 +340,8 @@ void *jukebox_player(void *connptr) {
             }
             free(ev);
         }
-        if (connected && ! stopped) {
+        gettimeofday(&now, NULL);
+        if (connected && ! stopped && (politeness < 0 || timediff(&last_audio, &now) >= politeness * 1000000 + 500000 )) {
             if (! playing) {
                 while (! mh) {
                     filenum = get_random_number(0, musicfile_count-1);
