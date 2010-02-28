@@ -1550,7 +1550,7 @@ bool Mangler::updateIntegration(void) {/*{{{*/
         if (! config["AudioIntegrationEnabled"].toBool() || integration->client == MusicClient_None) {
             if (integration_text != "") {
                     integration_text = "";
-                    v3_set_text((char *) ustring_to_c(comment).c_str(), (char *) ustring_to_c(url).c_str(), (char *)"", false);
+                    v3_set_text((char *) ustring_to_c(comment).c_str(), (char *) ustring_to_c(url).c_str(), (char *)"", true);
             }
             return true;
         }
@@ -1560,7 +1560,7 @@ bool Mangler::updateIntegration(void) {/*{{{*/
             case 0:
                 if ( ((integration->update(false) || !integration->first()) ) || integration_text != formatted_text ) {
                     integration_text =  integration->format();
-                    v3_set_text((char *) ustring_to_c(comment).c_str(), (char *) ustring_to_c(url).c_str(), (char *) ustring_to_c(integration_text).c_str(), false);
+                    v3_set_text((char *) ustring_to_c(comment).c_str(), (char *) ustring_to_c(url).c_str(), (char *) ustring_to_c(integration_text).c_str(), true);
                 }
                 break;
 
@@ -1568,7 +1568,7 @@ bool Mangler::updateIntegration(void) {/*{{{*/
             case 1:
                 if (integration_text != formatted_text) {
                     integration_text = formatted_text;
-                    v3_set_text((char *) ustring_to_c(comment).c_str(), (char *) ustring_to_c(url).c_str(), (char *) ustring_to_c(integration_text).c_str(), false);
+                    v3_set_text((char *) ustring_to_c(comment).c_str(), (char *) ustring_to_c(url).c_str(), (char *) ustring_to_c(integration_text).c_str(), true);
                 }
                 break;
         }
