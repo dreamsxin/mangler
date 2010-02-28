@@ -33,51 +33,52 @@ using namespace std;
 
 bool ManglerIntegration::update(bool forceUpdate, const gchar *data)
 {
-    switch (client)
-	 {
+    switch (client) {
 #ifdef HAVE_LIBMPDCLIENT
         case MusicClient_MPD:
-        // Get out of idle mode
-        mpd_idle idle_status = mpd_run_noidle (mpd_connection);
-        // If there was no change of song, return false, and go back in idle mode
-        if (idle_status != MPD_IDLE_PLAYER && !forceUpdate)
-        {
+            // Get out of idle mode
+            mpd_idle idle_status = mpd_run_noidle (mpd_connection);
+            // If there was no change of song, return false, and go back in idle mode
+            if (idle_status != MPD_IDLE_PLAYER && !forceUpdate)
+            {
+                mpd_send_idle (mpd_connection);
+                return false;
+            }
+
+            // Retrieve the status object
+            struct mpd_status *status = mpd_run_status (mpd_connection);
+
+            // Playback is stopped, or unknown
+            mpd_state current_state = mpd_status_get_state (status);
+            if (current_state == MPD_STATE_STOP || current_state == MPD_STATE_UNKNOWN)
+                current_status = 0;
+            if (current_state == MPD_STATE_PAUSE)
+                current_status = 1;
+            if (current_state == MPD_STATE_PLAY)
+                current_status = 2;
+
+            // Get the currrent song
+            int current_song_pos = mpd_status_get_song_pos (status);
+            if (current_song_pos == -1)
+                return false;
+            struct mpd_song *current_song = mpd_run_get_queue_song_pos (mpd_connection, current_song_pos);
+            if (current_song == NULL)
+                return false;
+
+            // Fill the strings
+            artist = mpd_song_get_tag (current_song, MPD_TAG_ARTIST, 0);
+            title = mpd_song_get_tag (current_song, MPD_TAG_TITLE, 0);
+            album= mpd_song_get_tag (current_song, MPD_TAG_ALBUM, 0);
+
+            // Free the memory for the status and song objects, and go back in idle mode
+            mpd_status_free (status);
+            mpd_song_free (current_song);
             mpd_send_idle (mpd_connection);
-            return false;
-        }
-
-        // Retrieve the status object
-        struct mpd_status *status = mpd_run_status (mpd_connection);
-
-        // Playback is stopped, or unknown
-        mpd_state current_state = mpd_status_get_state (status);
-        if (current_state == MPD_STATE_STOP || current_state == MPD_STATE_UNKNOWN)
-            current_status = 0;
-        if (current_state == MPD_STATE_PAUSE)
-            current_status = 1;
-        if (current_state == MPD_STATE_PLAY)
-            current_status = 2;
-
-        // Get the currrent song
-        int current_song_pos = mpd_status_get_song_pos (status);
-        if (current_song_pos == -1)
-            return false;
-        struct mpd_song *current_song = mpd_run_get_queue_song_pos (mpd_connection, current_song_pos);
-        if (current_song == NULL)
-            return false;
-
-        // Fill the strings
-        artist = mpd_song_get_tag (current_song, MPD_TAG_ARTIST, 0);
-        title = mpd_song_get_tag (current_song, MPD_TAG_TITLE, 0);
-        album= mpd_song_get_tag (current_song, MPD_TAG_ALBUM, 0);
-
-        // Free the memory for the status and song objects, and go back in idle mode
-        mpd_status_free (status);
-        mpd_song_free (current_song);
-        mpd_send_idle (mpd_connection);
-        return true;
-        break;
+            return true;
+            break;
 #endif
+        default:
+            break;
     }
     return false;
 }
@@ -92,8 +93,7 @@ ManglerIntegration::ManglerIntegration ()
 void ManglerIntegration::setClient (MusicClient _client)
 {
     client = _client;
-    switch (client)
-    {
+    switch (client) {
         case MusicClient_None:
             break;
 #ifdef HAVE_LIBMPDCLIENT
@@ -163,6 +163,8 @@ void ManglerIntegration::setClient (MusicClient _client)
 
             break;
 #endif
+        default:
+            break;
     }
     first_sent = false;
 }
@@ -201,7 +203,7 @@ gchar * ManglerIntegration::get_current_uri_dbus ()
     return uri;
 }
 
-static void dbus_playing_changed_callback (DBusGProxy *proxy, gboolean playing, gpointer data)
+void dbus_playing_changed_callback (DBusGProxy *proxy, gboolean playing, gpointer data)
 {
     ManglerIntegration *integration = (ManglerIntegration *) data;
     gchar *uri;
@@ -218,13 +220,12 @@ static void dbus_playing_changed_callback (DBusGProxy *proxy, gboolean playing, 
     else
         integration->set_current_status (2);
 }
-static void dbus_uri_signal_callback (DBusGProxy *proxy, const gchar *uri, gpointer data)
+void dbus_uri_signal_callback (DBusGProxy *proxy, const gchar *uri, gpointer data)
 {
     ManglerIntegration *integration = (ManglerIntegration *) data;
     GValue *value;
     GHashTable *table = NULL;
     g_return_if_fail (uri != NULL);
-    const gchar *artist, *album, *title = NULL;
     if (!dbus_g_proxy_call(integration->get_shell(), integration->dbus_get_song_properties.c_str(), NULL, G_TYPE_STRING, uri, G_TYPE_INVALID, dbus_g_type_get_map("GHashTable", G_TYPE_STRING, G_TYPE_VALUE), &table, G_TYPE_INVALID))
         return;
 
@@ -251,10 +252,10 @@ Glib::ustring ManglerIntegration::format () const
     int _state = (int) current_status;
     Glib::ustring formatted_text ("");
     if (_state == 0 || _state == 1)
-      return formatted_text;
-//        os <<  "Stopped" << ": ";
-//    if (_state == 1)
-//        os <<  "Paused" << ": ";
+        return formatted_text;
+    //        os <<  "Stopped" << ": ";
+    //    if (_state == 1)
+    //        os <<  "Paused" << ": ";
     os << artist << " - " << title;
     formatted_text = os.str();
     return formatted_text;

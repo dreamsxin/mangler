@@ -112,7 +112,7 @@ class ManglerIntegration{
 };
 
 #ifdef HAVE_DBUS
-static void dbus_uri_signal_callback (DBusGProxy *, const gchar *, gpointer);
-static void dbus_playing_changed_callback (DBusGProxy *, gboolean, gpointer);
+void dbus_uri_signal_callback (DBusGProxy *, const gchar *, gpointer);
+void dbus_playing_changed_callback (DBusGProxy *, gboolean, gpointer);
 #endif
 #endif

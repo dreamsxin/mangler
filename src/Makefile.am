@@ -26,7 +26,7 @@ dev:
 		channeltree.cpp  mangleraudio.cpp  manglerconfig.cpp  mangler.cpp \
 		manglernetwork.cpp  manglerserverlist.cpp  manglersettings.cpp \
 		manglerchat.cpp manglercharset.cpp manglerintegration.cpp manglerprivchat.cpp \
-		mangleradmin.cpp ../libventrilo3/libventrilo3.a \
+		mangleradmin.cpp inilib.cpp ../libventrilo3/libventrilo3.a \
 		-lpulse-simple -lpulse -lspeex -lgsm -lasound \
 		`pkg-config --cflags --libs dbus-glib-1` \
 		`pkg-config --cflags --libs gthread-2.0` \
