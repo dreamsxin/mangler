@@ -2561,6 +2561,8 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                         _v3_lock_luser();
                         v3_luser.perms = msub->perms;
                         _v3_unlock_luser();
+                        v3_event *ev = _v3_create_event(V3_EVENT_PERMS_UPDATED);
+                        v3_queue_event(ev);
                         }
                         break;
                     case V3_USERLIST_CHANGE_OWNER:

@@ -1363,6 +1363,22 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                     admin->rankUpdated(rank);
                 }
                 break;/*}}}*/
+            case V3_EVENT_PERMS_UPDATED:/*{{{*/
+                {
+                    const v3_permissions *perms = v3_get_permissions();
+                    if (perms->srv_admin) {
+                        admin->UserAdd->set_sensitive( perms->add_user );
+                        admin->UsersTab->show();
+                    } else {
+                        admin->UsersTab->hide();
+                    }
+                    if (perms->edit_rank) {
+                        admin->RanksTab->show();
+                    } else {
+                        admin->RanksTab->hide();
+                    }
+                }
+                break;/*}}}*/
             default:
                 fprintf(stderr, "******************************************************** got unknown event type %d\n", ev->type);
         }

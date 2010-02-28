@@ -55,13 +55,14 @@ class ManglerAdmin {
         void rankAdded(v3_rank *rank);
         void rankRemoved(uint16_t rankid);
         void rankRemoved(v3_rank *rank);
-
-    protected:
-        Glib::RefPtr<Gtk::Builder>          builder;
         Gtk::Alignment                      *ServerTab;
         Gtk::Alignment                      *ChannelsTab;
         Gtk::Alignment                      *UsersTab;
         Gtk::Alignment                      *RanksTab;
+        Gtk::Button                         *UserAdd;
+
+    protected:
+        Glib::RefPtr<Gtk::Builder>          builder;
         Gtk::Statusbar                      *AdminStatusbar;
         guint                               StatusbarCount;
         time_t                              StatusbarTime;
@@ -139,7 +140,6 @@ class ManglerAdmin {
         Gtk::VBox                           *UserDisplaySection;
         Gtk::VBox                           *UserAdminSection;
         Gtk::Button                         *UserRemove;
-        Gtk::Button                         *UserAdd;
         uint32_t                            currentUserID;
         
         /* rank editor stuff */
