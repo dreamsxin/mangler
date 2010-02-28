@@ -49,6 +49,8 @@ using namespace std;
 
 Mangler *mangler;
 
+ManglerConfig Mangler::config;
+
 Mangler::Mangler(struct _cli_options *options) {/*{{{*/
     // load all of our icons
     icons.insert(std::make_pair("black_circle",                 Gdk::Pixbuf::create_from_inline(-1, black_circle                )));
@@ -253,24 +255,24 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
 
     // Create our audio control object for managing devices
     audioControl = new ManglerAudio("control");
-    audioControl->getDeviceList(settings->config.audioSubsystem);
+    audioControl->getDeviceList(config["AudioSubsystem"].toUString());
 
     // set the default window size from the settings
-    if (settings->config.windowWidth > 0 && settings->config.windowHeight > 0) {
-        manglerWindow->set_default_size(settings->config.windowWidth, settings->config.windowHeight);
-    }
+    unsigned windowWidth( config["WindowWidth"].toUInt() );
+    unsigned windowHeight( config["WindowHeight"].toUInt() );
+    if (windowWidth > 0 && windowHeight > 0) manglerWindow->set_default_size(windowWidth, windowHeight);
 
     // set the master volume
-    v3_set_volume_master(settings->config.masterVolumeLevel);
+    v3_set_volume_master(config["MasterVolumeLevel"].toUInt());
 
     builder->get_widget("buttonMenuItem", checkmenuitem);
-    checkmenuitem->set_active(settings->config.buttonsHidden);
+    checkmenuitem->set_active(config["ButtonsHidden"].toBool());
 
     builder->get_widget("hideServerInfoMenuItem", checkmenuitem);
-    checkmenuitem->set_active(settings->config.serverInfoHidden);
+    checkmenuitem->set_active(config["ServerInfoHidden"].toBool());
 
     builder->get_widget("hideGuestFlagMenuItem", checkmenuitem);
-    checkmenuitem->set_active(settings->config.guestFlagHidden);
+    checkmenuitem->set_active(config["GuestFlagHidden"].toBool());
 
     // Create Server List Window
     serverList = new ManglerServerList(builder);
@@ -282,18 +284,20 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
     builder->get_widget("serverSelectComboBox", combobox);
     combobox->set_model(serverList->serverListTreeModel);
     combobox->pack_start(serverList->serverListColumns.name);
-    int serverSelection = 0;
-    for (int32_t ctr = 0; ctr < (int32_t)settings->config.serverlist.size(); ctr++) {
-        ManglerServerConfig *server = settings->config.serverlist[ctr];
+    int serverSelection = 0, ctr = 0;
+    iniFile::iterator server = config.servers.begin();
+    while (server != config.servers.end()) {
         Gtk::TreeRow row = *(serverList->serverListTreeModel->append());
+        // is this id useful at all?
         row[serverList->serverListColumns.id] = ctr;
-        row[serverList->serverListColumns.name] = server->name;
-        row[serverList->serverListColumns.hostname] = server->hostname;
-        row[serverList->serverListColumns.port] = server->port;
-        row[serverList->serverListColumns.username] = server->username;
-        if (ctr == settings->config.lastConnectedServerId) {
+        row[serverList->serverListColumns.name] = Glib::locale_to_utf8(server->first);
+        row[serverList->serverListColumns.hostname] = server->second["Hostname"].toUString();
+        row[serverList->serverListColumns.port] = server->second["Port"].toUString();
+        row[serverList->serverListColumns.username] = server->second["Username"].toUString();
+        if (config["LastConnectedServerName"] == server->first) {
             serverSelection = ctr;
         }
+        server++; ++ctr;
     }
     //  Select the last one used (or the first if unknown)
     combobox->set_active(serverSelection);
@@ -305,7 +309,9 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
 
     // Music (Now playing)
     integration = new ManglerIntegration();
-    integration->setClient((MusicClient)settings->config.AudioIntegrationPlayer);
+    //integration->setClient((MusicClient)settings->config.AudioIntegrationPlayer);
+    // TODO: MusicClient?  wants a const char *??
+    integration->setClient((MusicClient)config["AudioIntegrationPlayer"].toUInt());
     integration->update(true);
     Glib::signal_timeout().connect(sigc::mem_fun(this, &Mangler::updateIntegration), 1000);
 
@@ -326,16 +332,16 @@ void Mangler::quickConnectButton_clicked_cb(void) {/*{{{*/
     dialog->set_icon(icons["tray_icon"]);
 
     builder->get_widget("qcServerName", textbox);
-    textbox->set_text(settings->config.qc_lastserver.hostname);
+    textbox->set_text(config["qc_lastserver.hostname"].toCString());
 
     builder->get_widget("qcPort", textbox);
-    textbox->set_text(settings->config.qc_lastserver.port);
+    textbox->set_text(config["qc_lastserver.port"].toCString());
 
     builder->get_widget("qcUsername", textbox);
-    textbox->set_text(settings->config.qc_lastserver.username);
+    textbox->set_text(config["qc_lastserver.username"].toCString());
 
     builder->get_widget("qcPassword", textbox);
-    textbox->set_text(settings->config.qc_lastserver.password);
+    textbox->set_text(config["qc_lastserver.password"].toCString());
 
     if (v3_is_loggedin()) {
         builder->get_widget("qcConnectButton", button);
@@ -370,29 +376,26 @@ void Mangler::connectButton_clicked_cb(void) {/*{{{*/
         iter = combobox->get_active();
         if (iter) {
             Gtk::TreeModel::Row row = *iter;
-            ManglerServerConfig *server;
-
-            uint32_t server_id = row[serverList->serverListColumns.id];
-            connectedServerId = server_id;
-            server = settings->config.getserver(server_id);
-            Glib::ustring hostname = server->hostname;
-            Glib::ustring port     = server->port;
-            Glib::ustring username = server->username;
-            Glib::ustring password = server->password;
-            Glib::ustring phonetic = server->phonetic;
-            if (!server || server->hostname.empty() || server->port.empty() || server->username.empty()) {
+            connectedServerName = Glib::ustring( row[serverList->serverListColumns.name] );
+            iniSection &server( config.servers[connectedServerName] );
+            Glib::ustring hostname = server["hostname"].toCString();
+            Glib::ustring port     = server["port"].toCString();
+            Glib::ustring username = server["username"].toCString();
+            Glib::ustring password = server["password"].toCString();
+            Glib::ustring phonetic = server["phonetic"].toCString();
+            if (!server.size() || hostname.empty() || port.empty() || username.empty()) {
                 builder->get_widget("statusbar", statusbar);
                 statusbar->pop();
                 statusbar->push("Not connected...");
-                if (server->hostname.empty()) {
+                if (hostname.empty()) {
                     errorDialog("You have not specified a hostname for this server.");
                     return;
                 }
-                if (server->port.empty()) {
+                if (port.empty()) {
                     errorDialog("You have not specified a port for this server.");
                     return;
                 }
-                if (server->username.empty()) {
+                if (username.empty()) {
                     errorDialog("You have not specified a username for this server.");
                     return;
                 }
@@ -402,13 +405,13 @@ void Mangler::connectButton_clicked_cb(void) {/*{{{*/
             wantDisconnect = false;
             connectbutton->set_sensitive(false);
 
-            set_charset(server->charset);
-            settings->config.lastConnectedServerId = server_id;
-            settings->config.save();
-            v3_set_server_opts(V3_USER_ACCEPT_PAGES, server->acceptPages);
-            v3_set_server_opts(V3_USER_ACCEPT_U2U, server->acceptU2U);
-            v3_set_server_opts(V3_USER_ACCEPT_CHAT, server->acceptPrivateChat);
-            v3_set_server_opts(V3_USER_ALLOW_RECORD, server->allowRecording);
+            set_charset(server["Charset"].toUString());
+            config["lastConnectedServerName"] = connectedServerName;
+            config.config.save();
+            v3_set_server_opts(V3_USER_ACCEPT_PAGES, server["acceptPages"].toBool());
+            v3_set_server_opts(V3_USER_ACCEPT_U2U, server["acceptU2U"].toBool());
+            v3_set_server_opts(V3_USER_ACCEPT_CHAT, server["acceptPrivateChat"].toBool());
+            v3_set_server_opts(V3_USER_ALLOW_RECORD, server["allowRecording"].toBool());
             isAdmin = false;
             isChanAdmin = false;
             Glib::Thread::create(sigc::bind(sigc::mem_fun(this->network, &ManglerNetwork::connect), hostname, port, username, password, phonetic), FALSE);
@@ -501,34 +504,34 @@ void Mangler::buttonMenuItem_toggled_cb(void) {/*{{{*/
     builder->get_widget("mainWindowButtonVBox", vbox);
     if (checkmenuitem->get_active()) {
         vbox->hide();
-        settings->config.buttonsHidden = true;
+        config["ButtonsHidden"] = true;
     } else {
-        settings->config.buttonsHidden = false;
+        config["ButtonsHidden"] = false;
         vbox->show();
     }
-    settings->config.save();
+    config.config.save();
 }/*}}}*/
 void Mangler::hideServerInfoMenuItem_toggled_cb(void) {/*{{{*/
     builder->get_widget("hideServerInfoMenuItem", checkmenuitem);
     builder->get_widget("serverTable", table);
     if (checkmenuitem->get_active()) {
         table->hide();
-        settings->config.serverInfoHidden = true;
+        config["ServerInfoHidden"] = true;
     } else {
-        settings->config.serverInfoHidden = false;
+        config["ServerInfoHidden"] = false;
         table->show();
     }
-    settings->config.save();
+    config.config.save();
 }/*}}}*/
 void Mangler::hideGuestFlagMenuItem_toggled_cb(void) {/*{{{*/
     builder->get_widget("hideGuestFlagMenuItem", checkmenuitem);
     if (checkmenuitem->get_active()) {
-        settings->config.guestFlagHidden = true;
+        config["GuestFlagHidden"] = true;
     } else {
-        settings->config.guestFlagHidden = false;
+        config["GuestFlagHidden"] = false;
     }
     channelTree->refreshAllUsers();
-    settings->config.save();
+    config.config.save();
 }/*}}}*/
 void Mangler::quitMenuItem_activate_cb(void) {/*{{{*/
     Gtk::Main::quit();
@@ -554,9 +557,9 @@ void Mangler::statusIcon_activate_cb(void) {/*{{{*/
 bool Mangler::mangler_quit_cb(void) {/*{{{*/
     int w, h;
     manglerWindow->get_size(w, h);
-    settings->config.windowWidth = w;
-    settings->config.windowHeight = h;
-    settings->config.save();
+    config["WindowWidth"] = w;
+    config["WindowHeight"] = h;
+    config.save();
     return true;
 }/*}}}*/
 
@@ -633,13 +636,13 @@ void Mangler::qcConnectButton_clicked_cb(void) {/*{{{*/
     builder->get_widget("qcPassword", textbox);
     Glib::ustring password = textbox->get_text();
     //fprintf(stderr, "connecting to: %s:%s\n", server.c_str(), port.c_str());
-    settings->config.qc_lastserver.hostname = server;
-    settings->config.qc_lastserver.port = port;
-    settings->config.qc_lastserver.username = username;
-    settings->config.qc_lastserver.password = password;
-    settings->config.save();
+    config["qc_lastserver.hostname"] = server;
+    config["qc_lastserver.port"] = port;
+    config["qc_lastserver.username"] = username;
+    config["qc_lastserver.password"] = password;
+    config.config.save();
     set_charset("");
-    connectedServerId = -1;
+    connectedServerName = "";
     isAdmin = false;
     isChanAdmin = false;
     v3_set_server_opts(V3_USER_ACCEPT_PAGES, 1);
@@ -685,7 +688,6 @@ bool Mangler::reconnectStatusHandler(void) {/*{{{*/
 
 void Mangler::onDisconnectHandler(void) {/*{{{*/
     Gtk::Button *connectbutton;
-    ManglerServerConfig *server;
 
     builder->get_widget("connectButton", connectbutton);
     if (connectbutton->get_label() == "gtk-disconnect") {
@@ -735,10 +737,10 @@ void Mangler::onDisconnectHandler(void) {/*{{{*/
         builder->get_widget("adminWindowMenuItem", menuitem);
         menuitem->hide();
         chat->clear();
-        if (connectedServerId != -1) {
-            server = settings->config.getserver(connectedServerId);
-            connectedServerId = -1;
-            if (!wantDisconnect && server->persistentConnection) {
+        if (! connectedServerName.empty()) {
+            iniSection &server( config.servers[connectedServerName] );
+            connectedServerName = "";
+            if (!wantDisconnect && server["PersistentConnection"].toBool()) {
                 connectbutton->set_label("Cancel Reconnect");
                 lastAttempt = time(NULL);
                 Glib::signal_timeout().connect_seconds(sigc::mem_fun(*this, &Mangler::reconnectStatusHandler), 1);
@@ -830,15 +832,9 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                         (bool)u->real_user_id,
                         rank);
                 // If we have a per user volume set for this user name, set it now
-                if (connectedServerId != -1) {
-                    ManglerServerConfig *server;
-                    server = settings->config.getserver(connectedServerId);
-                    std::map<Glib::ustring, uint8_t>::iterator it;
-                    it = server->uservolumes.find(u->name);
-                    if (it != server->uservolumes.end()) {
-                        v3_set_volume_user(u->id, server->uservolumes[u->name]);
-                    }
-                }
+                if (! connectedServerName.empty() && config.hasUserVolume(connectedServerName, u->name))
+                    v3_set_volume_user(u->id, config.UserVolume(connectedServerName, u->name).toInt());
+
                 v3_free_user(u);
                 break;/*}}}*/
             case V3_EVENT_USER_MODIFY:/*{{{*/
@@ -957,17 +953,15 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                     }
                     channelTree->expand_all();
                     audioControl->playNotification("login");
-                    if (connectedServerId != -1) {
-                        ManglerServerConfig *server;
-                        server = settings->config.getserver(connectedServerId);
-                        if (server->persistentComments) {
-                            comment = server->comment;
-                            url = server->url;
-                            v3_set_text((char *) ustring_to_c(server->comment).c_str(), (char *) ustring_to_c(server->url).c_str(), (char *) ustring_to_c(integration_text).c_str(), true);
+                    if (! connectedServerName.empty()) {
+                        if (config.servers[connectedServerName]["PersistentComments"].toBool()) {
+                            comment = config.servers[connectedServerName]["Comment"].toUString();
+                            url = config.servers[connectedServerName]["URL"].toUString();
+                            v3_set_text((char *) ustring_to_c(comment).c_str(), (char *) ustring_to_c(url).c_str(), (char *) ustring_to_c(integration_text).c_str(), true);
                         }
 
                         //Default Channel
-                        uint32_t defaultChannelId = server->defaultchannelid;
+                        uint32_t defaultChannelId = config.servers[connectedServerName]["DefaultChannelID"].toULong();
                         if (defaultChannelId) {
                             //For now, only handling right click menu set
                             channelTree->channelView_switchChannel2Default(defaultChannelId);
@@ -1124,17 +1118,15 @@ bool Mangler::getNetworkEvent() {/*{{{*/
             case V3_EVENT_DISPLAY_MOTD:/*{{{*/
                 {
                     uint32_t motdhash = 0;
-                    ManglerServerConfig *server = NULL;
 
-                    if (connectedServerId != -1) {
-                        server = settings->config.getserver(connectedServerId);
+                    if (! connectedServerName.empty()) {
                         // we're not launching a space shuttle here, no need for
                         // anything super complex
                         for (uint32_t ctr = 0; ctr < strlen(ev->data.motd); ctr++) {
                             motdhash += ev->data.motd[ctr] + ctr;
                         }
                     }
-                    if (connectedServerId == -1 || motdAlways || (server && (motdhash != server->motdhash))) {
+                    if (connectedServerName.empty() || motdAlways || motdhash != config.servers[connectedServerName]["MOTDhash"].toULong()) {
                         Glib::RefPtr< Gtk::TextBuffer > tb = Gtk::TextBuffer::create();
                         builder->get_widget("motdWindow", window);
                         window->set_title("Mangler - MOTD");
@@ -1142,9 +1134,9 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                         tb->set_text(c_to_ustring(ev->data.motd));
                         textview->set_buffer(tb);
                         window->show();
-                        if (server) {
-                            server->motdhash = motdhash;
-                            settings->config.save();
+                        if (! connectedServerName.empty()) {
+                            config.servers[connectedServerName]["MOTDhash"] = motdhash;
+                            config.servers.save();
                         }
                     }
                 }
@@ -1386,13 +1378,14 @@ bool Mangler::checkPushToTalkKeys(void) {/*{{{*/
     vector<int>::iterator i;
     bool        ptt_on = true;;
 
-    if (! settings->config.PushToTalkKeyEnabled) {
+    if (! config["PushToTalkKeyEnabled"].toBool()) {
         isTransmittingKey = false;
         return true;
     }
+    vector<int> ptt_keycodes = config.PushToTalkXKeyCodes();
     XQueryKeymap(GDK_WINDOW_XDISPLAY(rootwin), pressed_keys);
-    for (   i = settings->config.PushToTalkXKeyCodes.begin();
-            i < settings->config.PushToTalkXKeyCodes.end();
+    for (   i = ptt_keycodes.begin();
+            i < ptt_keycodes.end();
             i++) {
         if (!((pressed_keys[*i >> 3] >> (*i & 0x07)) & 0x01)) {
             ptt_on = false;
@@ -1420,22 +1413,22 @@ bool Mangler::checkPushToTalkMouse(void) {/*{{{*/
     int ctr;
     int ndevices_return;
     int state = 1;
-    int byte = settings->config.PushToTalkMouseValueInt / 8;
-    int bit = settings->config.PushToTalkMouseValueInt % 8;
+    int byte = config["PushToTalkMouseValue"].toInt() / 8;
+    int bit = config["PushToTalkMouseValue"].toInt() % 8;
     bool        ptt_on = false;
 
-    if (! settings->config.PushToTalkMouseEnabled) {
+    if (! config["PushToTalkMouseEnabled"].toBool()) {
         isTransmittingMouse = false;
         return true;
     }
-    if (settings->config.mouseDeviceName.empty()) {
+    if (config["MouseDeviceName"].empty()) {
         return true;
     }
 
     xdev = XListInputDevices(GDK_WINDOW_XDISPLAY(rootwin), &ndevices_return);
     for (ctr = 0; ctr < ndevices_return; ctr++) {
         Glib::ustring name = xdev[ctr].name;
-        if (name == settings->config.mouseDeviceName && xdev[ctr].use == IsXExtensionPointer) {
+        if (config["MouseDeviceName"] == name && xdev[ctr].use == IsXExtensionPointer) {
             break;
         }
     }
@@ -1554,7 +1547,7 @@ bool Mangler::updateXferAmounts(void) {/*{{{*/
 } }}} */
 bool Mangler::updateIntegration(void) {/*{{{*/
     if (v3_is_loggedin()) {
-        if (!settings->config.AudioIntegrationEnabled || integration->client == MusicClient_None) {
+        if (! config["AudioIntegrationEnabled"].toBool() || integration->client == MusicClient_None) {
             if (integration_text != "") {
                     integration_text = "";
                     v3_set_text((char *) ustring_to_c(comment).c_str(), (char *) ustring_to_c(url).c_str(), (char *)"", false);
@@ -1621,12 +1614,10 @@ void Mangler::textStringChangeDialogOkButton_clicked_cb(void) {/*{{{*/
     comment          = textStringChangeCommentEntry->get_text();
     url              = textStringChangeURLEntry->get_text();
     integration_text = textStringChangeIntegrationEntry->get_text();
-    if (connectedServerId != -1) {
-        ManglerServerConfig *server;
-        server = settings->config.getserver(connectedServerId);
-        if (server->persistentComments) {
-            server->comment = comment;
-            settings->config.save();
+    if (! connectedServerName.empty()) {
+        if (config.servers[connectedServerName]["PersistentComments"].toBool()) {
+            config.servers[connectedServerName]["Comment"] = comment;
+            config.servers.save();
         }
     }
     v3_set_text((char *)ustring_to_c(comment).c_str(), (char *)ustring_to_c(url).c_str(), (char *)ustring_to_c(integration_text).c_str(), true);

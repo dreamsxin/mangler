@@ -26,108 +26,25 @@
 
 #ifndef _MANGLERCONFIG_H
 #define _MANGLERCONFIG_H
+#include "inilib.h"
 
-class ManglerServerConfig/*{{{*/
-{
-    public:
-        uint32_t              id;
-        Glib::ustring         name;
-        Glib::ustring         hostname;
-        Glib::ustring         port;
-        Glib::ustring         defaultchannel;
-        uint32_t              defaultchannelid;
-        Glib::ustring         username;
-        Glib::ustring         password;
-        Glib::ustring         phonetic;
-        Glib::ustring         comment;
-        Glib::ustring         url;
-        Glib::ustring         charset;
-        bool                  acceptU2U;
-        bool                  acceptPages;
-        bool                  acceptPrivateChat;
-        bool                  allowRecording;
-        bool                  persistentConnection;
-        bool                  persistentComments;
-        uint32_t              motdhash;
-        std::map <Glib::ustring, uint8_t> uservolumes;
-        std::map <uint16_t, Glib::ustring> channelpass;
+class ManglerConfigDir;
 
-        ManglerServerConfig() {
-            name = "";
-            hostname = "";
-            port = "";
-            defaultchannel = "";
-            defaultchannelid = 0;
-            username = "";
-            password = "";
-            phonetic = "";
-            comment = "";
-            url = "";
-            charset = "";
-            motdhash = 0;
-            acceptU2U = true;
-            acceptPages = true;
-            acceptPrivateChat = true;
-            allowRecording = true;
-            persistentConnection = true;
-            persistentComments = true;
-        }
-};/*}}}*/
 class ManglerConfig {
 	public:
-		Glib::Mutex     mutex;
-		uint32_t        lv3_debuglevel;
-		uint8_t         masterVolumeLevel;
-		bool            PushToTalkKeyEnabled;
-        Glib::ustring   PushToTalkKeyValue;
-        std::vector<int>    PushToTalkXKeyCodes;
-		bool            PushToTalkMouseEnabled;
-        Glib::ustring   PushToTalkMouseValue;
-        int             PushToTalkMouseValueInt;
-		bool            AudioIntegrationEnabled;
-        uint8_t         AudioIntegrationPlayer;
-        bool            VoiceActivationEnabled;
-        int             VoiceActivationSilenceDuration;
-        uint8_t         VoiceActivationSensitivity;
-        Glib::ustring   inputDeviceName;
-        Glib::ustring   inputDeviceCustomName;
-        Glib::ustring   outputDeviceName;
-        Glib::ustring   outputDeviceCustomName;
-        Glib::ustring   notificationDeviceName;
-        Glib::ustring   notificationDeviceCustomName;
-        Glib::ustring   mouseDeviceName;
-        Glib::ustring   audioSubsystem;
-        bool            notificationLoginLogout;
-        bool            notificationChannelEnterLeave;
-        bool            notificationTransmitStartStop;
-        int32_t         lastConnectedServerId;
-        uint32_t        windowWidth;
-        uint32_t        windowHeight;
-        bool            buttonsHidden;
-        bool            serverInfoHidden;
-        bool            guestFlagHidden;
-        bool            chatTimestamps;
-
-		ManglerServerConfig   qc_lastserver;
-		std::vector<ManglerServerConfig *> serverlist;
-        FILE            *cfgstream;
-
+        iniFile         config, servers;
+		//Glib::Mutex     mutex;
 		ManglerConfig();
-		bool save();
-        Glib::ustring get(Glib::ustring cfgname);
-        std::map <Glib::ustring, uint8_t> get_user_volumes(Glib::ustring serverbase);
-        std::map <uint16_t, Glib::ustring> get_channel_passwords(Glib::ustring serverbase);
-        bool put(Glib::ustring name, bool value);
-        bool put(Glib::ustring name, Glib::ustring value);
-        bool put(Glib::ustring name, uint32_t value);
-        bool put(Glib::ustring name, int32_t value);
-        bool put(uint16_t id, ManglerServerConfig server);
-		void load();
-        void parsePushToTalkValue(Glib::ustring pttString);
-        uint32_t addserver(void);
-        ManglerServerConfig *getserver(uint32_t id);
-        void removeserver(uint32_t id);
-
+        ~ManglerConfig();
+		void save();
+        std::vector<int> PushToTalkXKeyCodes() const;
+        iniValue &operator[](const string &configVar);
+        bool hasUserVolume(const string &server, const string &user) const;
+        iniValue &UserVolume(const string &server, const string &user);
+        iniValue &ChannelPassword(const string &server, uint16_t channel);
+    private:
+        static ManglerConfigDir *confdir;
+        static const char *DefaultConfiguration;
 };
 
 #endif

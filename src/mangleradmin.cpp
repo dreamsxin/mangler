@@ -254,6 +254,7 @@ ManglerAdmin::ManglerAdmin(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
     UserTemplateModel = Gtk::TreeStore::create(UserTemplateColumns);
     UserTemplate->set_model(UserTemplateModel);
     UserTemplate->pack_start(adminRecord.name);
+    UserTemplate->set_text_column(adminRecord.name);
     UserTemplate->signal_changed().connect(sigc::mem_fun(this, &ManglerAdmin::UserTemplate_changed_cb));
 
     builder->get_widget("UserTemplateLoad", button);

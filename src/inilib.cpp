@@ -81,6 +81,14 @@ iniVariant::iniVariant(bool b) {
     mValue = b ? "True" : "False";
 }
 
+#if ADD_GLIB_SUPPORT
+iniVariant::iniVariant(const Glib::ustring &s) : mValue( Glib::locale_from_utf8(s) ) {}
+
+Glib::ustring iniVariant::toUString() const {
+    return Glib::locale_to_utf8(mValue);
+}
+#endif
+
 int iniVariant::toInt() const {
     return atoi(mValue.c_str());
 }
@@ -190,6 +198,9 @@ string iniValue::toLower() const
 
 const char *iniValue::toCString() const
     { return value().toCString(); }
+
+Glib::ustring iniValue::toUString() const
+    { return value().toUString(); }
 
 int iniValue::toInt() const
     { return value().toInt(); }
@@ -327,11 +338,7 @@ vector<string> iniSection::parseLine(const string &s) {
 }
 
 iniFile::iniFile(const string &filename) : mFilename( filename ) {
-    ifstream fin( mFilename.c_str() );
-    if (fin) {
-        load(fin);
-        fin.close();
-    }
+    reload();
 }
 
 void iniFile::setFilename(const string &filename)
@@ -379,6 +386,14 @@ void iniFile::save() const {
         ofstream fout( mFilename.c_str() );
         if (fout) save(fout);
         fout.close();
+    }
+}
+
+void iniFile::reload() {
+    ifstream fin( mFilename.c_str() );
+    if (fin) {
+        load(fin);
+        fin.close();
     }
 }
 

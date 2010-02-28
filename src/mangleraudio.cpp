@@ -91,17 +91,17 @@ bool
 ManglerAudio::openOutput(uint32_t rate) {/*{{{*/
     closeOutput(true); // close any existing output streams
 #ifdef HAVE_PULSE
-    if (mangler->settings->config.audioSubsystem == "pulse") {
+    if (Mangler::config["AudioSubsystem"].toLower() == "pulse") {
         pulse_samplespec.rate = rate;
         //fprintf(stderr, "opening on pulse device %s\n", (char *)mangler->settings->config.outputDeviceName.c_str());
         if (!(pulse_stream = pa_simple_new(
                         NULL,
                         "Mangler",
                         PA_STREAM_PLAYBACK,
-                        (mangler->settings->config.outputDeviceName == "Default" ||
-                            mangler->settings->config.outputDeviceName == ""
+                        (Mangler::config["OutputDeviceName"].toLower() == "Default" ||
+                            Mangler::config["OutputDeviceName"] == ""
                             ? NULL
-                            : (char *)mangler->settings->config.outputDeviceName.c_str()),
+                            : Mangler::config["OutputDeviceName"].toCString()),
                         "User Talking In Ventrilo Channel",
                         &pulse_samplespec,
                         NULL,
@@ -114,13 +114,13 @@ ManglerAudio::openOutput(uint32_t rate) {/*{{{*/
     }
 #endif
 #ifdef HAVE_ALSA
-    if (mangler->settings->config.audioSubsystem == "alsa") {
-        Glib::ustring outputDeviceName = mangler->settings->config.outputDeviceName;
+    if (Mangler::config["AudioSubsystem"].toLower() == "alsa") {
+        Glib::ustring outputDeviceName = Mangler::config["OutputDeviceName"].toUString();
 
         if (outputDeviceName == "Default" || outputDeviceName == "") {
             outputDeviceName = "default";
         } else if (outputDeviceName == "Custom") {
-            outputDeviceName = mangler->settings->config.outputDeviceCustomName;
+            outputDeviceName = Mangler::config["OutputDeviceCustomName"].toUString();
         }
 
         if ((alsa_error = snd_pcm_open(
@@ -180,17 +180,17 @@ bool
 ManglerAudio::openInput(uint32_t rate) {/*{{{*/
     closeInput(true); // close any existing input streams
 #ifdef HAVE_PULSE
-    if (mangler->settings->config.audioSubsystem == "pulse") {
+    if (Mangler::config["AudioSubsystem"].toLower() == "pulse") {
         pulse_samplespec.rate = rate;
         //fprintf(stderr, "on pulse device %s\n", (char *)mangler->settings->config.outputDeviceName.c_str());
         if (!(pulse_stream = pa_simple_new(
                         NULL,
                         "Mangler",
                         PA_STREAM_RECORD,
-                        (mangler->settings->config.inputDeviceName == "Default" ||
-                            mangler->settings->config.inputDeviceName == ""
+                        (Mangler::config["InputDeviceName"] == "Default" ||
+                            Mangler::config["InputDeviceName"] == ""
                             ? NULL
-                            : (char *)mangler->settings->config.inputDeviceName.c_str()),
+                            : Mangler::config["InputDeviceName"].toCString()),
                         "Talking In Ventrilo Channel",
                         &pulse_samplespec,
                         NULL,
@@ -203,13 +203,13 @@ ManglerAudio::openInput(uint32_t rate) {/*{{{*/
     }
 #endif
 #ifdef HAVE_ALSA
-    if (mangler->settings->config.audioSubsystem == "alsa") {
-        Glib::ustring inputDeviceName = mangler->settings->config.inputDeviceName;
+    if (Mangler::config["AudioSubsystem"].toLower() == "alsa") {
+        Glib::ustring inputDeviceName = Mangler::config["InputDeviceName"].toUString();
 
         if (inputDeviceName == "Default" || inputDeviceName == "") {
             inputDeviceName = "default";
         } else if (inputDeviceName == "Custom") {
-            inputDeviceName = mangler->settings->config.inputDeviceCustomName;
+            inputDeviceName = Mangler::config["InputDeviceCustomName"].toUString();
         }
 
         if ((alsa_error = snd_pcm_open(
@@ -326,7 +326,7 @@ ManglerAudio::input(void) {/*{{{*/
             buf = (uint8_t *)realloc(buf, pcm_framesize*(ctr+1));
             //fprintf(stderr, "reading %d bytes of memory to %lu\n", pcm_framesize, (uint64_t) buf+(pcm_framesize*ctr));
 #ifdef HAVE_PULSE
-            if (mangler->settings->config.audioSubsystem == "pulse") {
+            if (Mangler::config["AudioSubsystem"].toLower() == "pulse") {
                 if (!pulse_stream && !openInput(rate)) { // reinitialize input stream for pulse
                     stop_input = true;
                     return;
@@ -342,7 +342,7 @@ ManglerAudio::input(void) {/*{{{*/
             }
 #endif
 #ifdef HAVE_ALSA
-            if (mangler->settings->config.audioSubsystem == "alsa") {
+            if (Mangler::config["AudioSubsystem"].toLower() == "alsa") {
                 if (!alsa_stream && !openInput(rate)) { // reinitialize input stream for alsa
                     stop_input = true;
                     return;
@@ -379,9 +379,9 @@ ManglerAudio::input(void) {/*{{{*/
             pcmpeak = log10(((pcmpeak / 0x7fff) * 9) + 1);
             pcmpeak = (pcmpeak > 1) ? 1 : pcmpeak;
             gdk_threads_enter();
-            if (mangler->settings->config.VoiceActivationEnabled && mangler->isTransmittingButton) {
-                vasilencedur = mangler->settings->config.VoiceActivationSilenceDuration;
-                vapercent = mangler->settings->config.VoiceActivationSensitivity;
+            if (Mangler::config["VoiceActivationEnabled"].toBool() && mangler->isTransmittingButton) {
+                vasilencedur = Mangler::config["VoiceActivationSilenceDuration"].toInt();
+                vapercent = Mangler::config["VoiceActivationSensitivity"].toUInt();
                 if (pcmpeak * 100 >= vapercent) {
                     gettimeofday(&vastart, NULL);
                     if (!xmit) {
@@ -489,7 +489,7 @@ ManglerAudio::output(void) {/*{{{*/
             break;
         }
 #ifdef HAVE_PULSE
-        if (mangler->settings->config.audioSubsystem == "pulse") {
+        if (Mangler::config["AudioSubsystem"].toLower() == "pulse") {
             if (!pulse_stream && !openOutput(rate)) { // reinitialize output stream for pulse
                 g_async_queue_unref(pcm_queue);
                 stop_output = true;
@@ -506,7 +506,7 @@ ManglerAudio::output(void) {/*{{{*/
         }
 #endif
 #ifdef HAVE_ALSA
-        if (mangler->settings->config.audioSubsystem == "alsa") {
+        if (Mangler::config["AudioSubsystem"].toLower() == "alsa") {
             if (!alsa_stream && !openOutput(rate)) { // reinitialize output stream for alsa
                 g_async_queue_unref(pcm_queue);
                 stop_output = true;
@@ -696,13 +696,13 @@ ManglerAudio::playNotification(Glib::ustring name) {/*{{{*/
     if (mangler->muteSound) {
         return;
     }
-    if ((name == "talkstart" || name == "talkend") && ! mangler->settings->config.notificationTransmitStartStop) {
+    if ((name == "talkstart" || name == "talkend") && ! Mangler::config["NotificationTransmitStartStop"].toBool()) {
         return;
     }
-    if ((name == "channelenter" || name == "channelleave") && ! mangler->settings->config.notificationChannelEnterLeave) {
+    if ((name == "channelenter" || name == "channelleave") && ! Mangler::config["NotificationChannelEnterLeave"].toBool()) {
         return;
     }
-    if ((name == "login" || name == "logout") && ! mangler->settings->config.notificationLoginLogout) {
+    if ((name == "login" || name == "logout") && ! Mangler::config["NotificationLoginLogout"].toBool()) {
         return;
     }
     if (sounds.empty()) {
@@ -719,7 +719,7 @@ ManglerAudio::playNotification(Glib::ustring name) {/*{{{*/
 void
 ManglerAudio::playNotification_thread(Glib::ustring name) {/*{{{*/
 #ifdef HAVE_PULSE
-    if (mangler->settings->config.audioSubsystem == "pulse") {
+    if (Mangler::config["AudioSubsystem"].toLower() == "pulse") {
         int pulse_ret;
         pa_simple *pulse_s;
 
@@ -737,10 +737,10 @@ ManglerAudio::playNotification_thread(Glib::ustring name) {/*{{{*/
                         NULL,
                         "Mangler",
                         PA_STREAM_PLAYBACK,
-                        (mangler->settings->config.notificationDeviceName == "Default" ||
-                            mangler->settings->config.notificationDeviceName == ""
+                        (Mangler::config["NotificationDeviceName"] == "Default" ||
+                            Mangler::config["NotificationDeviceName"] == ""
                             ? NULL
-                            : (char *)mangler->settings->config.notificationDeviceName.c_str()),
+                            : Mangler::config["NotificationDeviceName"].toCString()),
                         "Notification Sound",
                         &pulse_samplespec,
                         NULL,
@@ -764,15 +764,15 @@ ManglerAudio::playNotification_thread(Glib::ustring name) {/*{{{*/
     }
 #endif
 #ifdef HAVE_ALSA
-    if (mangler->settings->config.audioSubsystem == "alsa") {
+    if (Mangler::config["AudioSubsystem"].toLower() == "alsa") {
         snd_pcm_sframes_t alsa_ret;
         snd_pcm_t *alsa_s;
-        Glib::ustring notificationDeviceName = mangler->settings->config.notificationDeviceName;
+        Glib::ustring notificationDeviceName = Mangler::config["NotificationDeviceName"].toUString();
 
         if (notificationDeviceName == "Default" || notificationDeviceName == "") {
             notificationDeviceName = "default";
         } else if (notificationDeviceName == "Custom") {
-            notificationDeviceName = mangler->settings->config.notificationDeviceCustomName;
+            notificationDeviceName = Mangler::config["NotificationDeviceCustomName"].toUString();
         }
 
         if ((alsa_error = snd_pcm_open(

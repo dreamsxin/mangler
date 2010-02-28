@@ -29,6 +29,7 @@
 #include <sys/types.h>
 #include <stdint.h>
 #include <iostream>
+#include "manglerconfig.h"
 
 class ManglerChannelTree;
 class ManglerNetwork;
@@ -82,7 +83,8 @@ class Mangler
         ManglerChat                         *chat;
         ManglerChannelTree                  *channelTree;
         ManglerNetwork                      *network;
-        int32_t                             connectedServerId;
+        //int32_t                             connectedServerId;
+        std::string                         connectedServerName;
         std::map<uint32_t, ManglerAudio* >  outputAudio;
         std::map<uint16_t, ManglerPrivChat *> privateChatWindows;
         ManglerAudio                        *inputAudio;
@@ -90,6 +92,7 @@ class Mangler
         ManglerSettings                     *settings;
         ManglerIntegration                  *integration;
         ManglerAdmin                        *admin;
+        static ManglerConfig                config;
 
         bool                                isTransmitting;
         bool                                isTransmittingButton;

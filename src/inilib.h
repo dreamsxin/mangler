@@ -22,6 +22,12 @@
 #include <vector>
 #include <string>
 
+#define ADD_GLIB_SUPPORT 1
+
+#if ADD_GLIB_SUPPORT
+#include <gtkmm.h>
+#endif
+
 using std::string;
 using std::vector;
 using std::map;
@@ -45,6 +51,10 @@ class iniVariant {
     iniVariant(long long n);
     iniVariant(double d);
     iniVariant(bool b);
+#if ADD_GLIB_SUPPORT
+    iniVariant(const Glib::ustring &s);
+    Glib::ustring toUString() const;
+#endif
     operator string &();
     operator const string &();
     string toString() const;
@@ -81,6 +91,9 @@ class iniValue : public vector<iniVariant> {
     string toUpper() const;
     string toLower() const;
     const char *toCString() const;
+#if ADD_GLIB_SUPPORT
+    Glib::ustring toUString() const;
+#endif
     int toInt() const;
     unsigned toUInt() const;
     long toLong() const;
@@ -113,6 +126,7 @@ class iniFile : public map<string, iniSection, iniCaselessCmp> {
     string getFilename() const;
     istream &load(istream &in);
     ostream &save(ostream &out) const;
+    void reload();
     void save() const;
     ~iniFile();
     bool contains(const string &s) const;

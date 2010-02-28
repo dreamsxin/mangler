@@ -497,7 +497,7 @@ ManglerChannelTree::refreshUser(uint32_t id) {/*{{{*/
     if (flags.length()) {
         displayName = "[" + flags + "] " + displayName;
     }
-    if (guest && !mangler->settings->config.guestFlagHidden) {
+    if (guest && !Mangler::config["guestFlagHidden"].toBool()) {
         displayName = displayName + " (GUEST)";
     }
     if (! comment.empty()) {
@@ -727,11 +727,9 @@ ManglerChannelTree::channelView_row_activated_cb(const Gtk::TreeModel::Path& pat
                     password = mangler->getPasswordEntry("Channel Password");
                 }
                 setChannelSavedPassword(pw_cid, password);
-                if (mangler->connectedServerId != -1) {
-                    ManglerServerConfig *server;
-                    server = mangler->settings->config.getserver(mangler->connectedServerId);
-                    server->channelpass[pw_cid] = password;
-                }
+                //if (! mangler->connectedServerName.empty()) {
+                //    Mangler::config.ChannelPassword(mangler->connectedServerName, pw_cid) = password;
+                //}
             }
             v3_free_channel(channel);
         }
@@ -826,14 +824,14 @@ ManglerChannelTree::channelView_buttonpress_event_cb(GdkEventButton* event) {/*{
                 v3_free_user(user);
             } else {
                 builder->get_widget("setDefaultChannel", checkmenuitem);
-                if ( mangler->connectedServerId == -1) { //Hide default channel on quick connects
+                if (mangler->connectedServerName.empty()) { //Hide default channel on quick connects
                     checkmenuitem->set_sensitive(false);
                     checkmenuitem->hide();
                 } else {
                     checkmenuitem->set_sensitive(true);
                     checkmenuitem->show();
-                    ManglerServerConfig *server = mangler->settings->config.getserver(mangler->connectedServerId);
-                    if (server->defaultchannel == row[channelRecord.name] && server->defaultchannelid == row[channelRecord.id] ) {
+                    string server = Mangler::config[mangler->connectedServerName].toString();
+                    if (Mangler::config["DefaultChannelID"].toULong() == row[channelRecord.id]) {
                         signalDefaultChannel.block();
                         checkmenuitem->set_active(true);
                         signalDefaultChannel.unblock();
@@ -996,7 +994,7 @@ ManglerChannelTree::getUserChannelId(uint16_t userid) {/*{{{*/
     Gtk::TreeModel::Row user;
     if (! (user = getUser(userid)) && userid > 0) {
         fprintf(stderr, "getUserChannelId: could not find user id %d\n", userid);
-        return NULL;
+        return 0;
     }
     return(user[channelRecord.parent_id]);
 }/*}}}*/
@@ -1006,10 +1004,8 @@ ManglerChannelTree::getChannelSavedPassword(uint16_t channel_id) {/*{{{*/
     Gtk::TreeModel::Row channel = getChannel(channel_id, channelStore->children());
     Glib::ustring pw = channel[channelRecord.password];
     if (pw.length() == 0) {
-        if (mangler->connectedServerId != -1) {
-            ManglerServerConfig *server;
-            server = mangler->settings->config.getserver(mangler->connectedServerId);
-            pw = server->channelpass[channel_id];
+        if (! mangler->connectedServerName.empty()) {
+            pw = Mangler::config.ChannelPassword(mangler->connectedServerName, channel_id).toCString();
         }
     }
     return(pw);
@@ -1019,11 +1015,9 @@ void
 ManglerChannelTree::setChannelSavedPassword(uint16_t channel_id, Glib::ustring password) {/*{{{*/
     Gtk::TreeModel::Row channel = getChannel(channel_id, channelStore->children());
     channel[channelRecord.password] = password;
-    if (mangler->connectedServerId != -1) {
-        ManglerServerConfig *server;
-        server = mangler->settings->config.getserver(mangler->connectedServerId);
-        server->channelpass[channel_id] = password;
-        mangler->settings->config.save();
+    if (! mangler->connectedServerName.empty()) {
+        Mangler::config.ChannelPassword(mangler->connectedServerName, channel_id) = password;
+        Mangler::config.servers.save();
     }
     return;
 }/*}}}*/
@@ -1036,16 +1030,14 @@ ManglerChannelTree::forgetChannelSavedPassword(uint16_t channel_id) {/*{{{*/
 
 void
 ManglerChannelTree::volumeAdjustment_value_changed_cb(uint16_t id) {/*{{{*/
-    if (mangler->connectedServerId != -1) {
-        ManglerServerConfig *server;
-        server = mangler->settings->config.getserver(mangler->connectedServerId);
+    if (! mangler->connectedServerName.empty()) {
         v3_user *u;
         if ((u = v3_get_user(id)) != NULL) {
-            server->uservolumes[u->name] = volumeAdjustment->get_value();
-            mangler->settings->config.save();
+            Mangler::config.UserVolume(mangler->connectedServerName, u->name) = volumeAdjustment->get_value();
+            Mangler::config.servers.save();
         }
     }
-    v3_set_volume_user(id, volumeAdjustment->get_value());
+    v3_set_volume_user(id, (int)volumeAdjustment->get_value());
 }/*}}}*/
 
 Glib::ustring
@@ -1063,7 +1055,7 @@ ManglerChannelTree::isMuted(uint16_t userid) {/*{{{*/
     Gtk::TreeModel::Row user;
     if (! (user = getUser(userid)) && userid > 0) {
         fprintf(stderr, "isMuted: could not find user id %d\n", userid);
-        return NULL;
+        return false;
     }
     return(user[channelRecord.muted]);
 }/*}}}*/
@@ -1252,19 +1244,17 @@ ManglerChannelTree::setDefaultChannel_toggled_cb(void) {/*{{{*/
     Gtk::TreeModel::iterator iter = sel->get_selected();
     if(iter) {
         Gtk::TreeModel::Row row = *iter;
-        if (row[channelRecord.isUser] || mangler->connectedServerId == -1) {
+        if (row[channelRecord.isUser] || mangler->connectedServerName.empty()) {
             //Silently failing on users, or quick connected servers... they shouldn't happen
             return;
         }
         //Initial checks are done, time to get to work
         bool isDefault = row[channelRecord.isDefault];
         Glib::ustring name = row[channelRecord.name];
-        ManglerServerConfig *server = mangler->settings->config.getserver(mangler->connectedServerId);
         //Already default, so unset it's status
         if(isDefault) {
             row[channelRecord.isDefault] = false;
-            server->defaultchannel = "";
-            server->defaultchannelid = 0;
+            Mangler::config.servers[mangler->connectedServerName]["DefaultChannelID"] = 0;
         } else {
             //Not default, so we need to unset the default if one exists, active status will be handled when its opened
             Gtk::TreeModel::iterator oldDefault;
@@ -1275,10 +1265,10 @@ ManglerChannelTree::setDefaultChannel_toggled_cb(void) {/*{{{*/
             }
             //Now, lets set this one active
             row[channelRecord.isDefault] = true;
-            server->defaultchannel = row[channelRecord.name];
-            server->defaultchannelid = row[channelRecord.id];
+            Mangler::config.servers[mangler->connectedServerName]["DefaultChannelID"]
+                = (unsigned int)( row[channelRecord.id] );
         }
-        mangler->settings->config.save();
+        Mangler::config.servers.save();
     }
 }/*}}}*/
 
@@ -1305,7 +1295,7 @@ ManglerChannelTree::channelView_switchChannel2Default(uint32_t defaultChannelId)
             //No point switching to the same channel
             return;
         }
-        if ((mangler->connectedServerId == -1 )) {
+        if (mangler->connectedServerName.empty()) {
             //No quick connected servers
             return;
         }
@@ -1330,8 +1320,7 @@ ManglerChannelTree::channelView_switchChannel2Default(uint32_t defaultChannelId)
                     password = mangler->getPasswordEntry("Channel Password");
                 }
                 setChannelSavedPassword(pw_cid, password);
-                ManglerServerConfig *server = mangler->settings->config.getserver(mangler->connectedServerId);
-                server->channelpass[pw_cid] = password;
+                //Mangler::config.ChannelPassword(mangler->connectedServerName, pw_cid) = password;
             }
             v3_free_channel(channel);
             if (password_required && password.empty()) {

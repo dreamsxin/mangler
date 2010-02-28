@@ -64,11 +64,11 @@ ManglerServerList::ManglerServerList(Glib::RefPtr<Gtk::Builder> builder) {
     builder->get_widget("serverListAddButton", button);
     button->signal_clicked().connect(sigc::mem_fun(this, &ManglerServerList::serverListAddButton_clicked_cb));
 
-    builder->get_widget("serverListDeleteButton", button);
-    button->signal_clicked().connect(sigc::mem_fun(this, &ManglerServerList::serverListDeleteButton_clicked_cb));
+    builder->get_widget("serverListDeleteButton", serverListServerDeleteButton);
+    serverListServerDeleteButton->signal_clicked().connect(sigc::mem_fun(this, &ManglerServerList::serverListDeleteButton_clicked_cb));
 
-    builder->get_widget("serverListCloneButton", button);
-    button->signal_clicked().connect(sigc::mem_fun(this, &ManglerServerList::serverListCloneButton_clicked_cb));
+    builder->get_widget("serverListCloneButton", serverListServerCloneButton);
+    serverListServerCloneButton->signal_clicked().connect(sigc::mem_fun(this, &ManglerServerList::serverListCloneButton_clicked_cb));
 
     builder->get_widget("serverListCloseButton", button);
     button->signal_clicked().connect(sigc::mem_fun(this, &ManglerServerList::serverListCloseButton_clicked_cb));
@@ -104,7 +104,7 @@ ManglerServerList::ManglerServerList(Glib::RefPtr<Gtk::Builder> builder) {
     }
     serverListCharsetComboBox->get_entry()->set_text("");
 
-    editorId = -1;
+    editorName = "";
 }
 
 void ManglerServerList::serverListWindow_show_cb(void) {
@@ -112,23 +112,27 @@ void ManglerServerList::serverListWindow_show_cb(void) {
 
 void ManglerServerList::serverListSelection_changed_cb(void) {
     Gtk::TreeModel::iterator iter = serverListSelection->get_selected();
-    if(iter) {
+    if (iter) {
         Gtk::TreeModel::Row row = *iter;
-        uint32_t rowId = row[serverListColumns.id];
-        editRow(rowId);
+        editorName = Glib::locale_from_utf8(row[serverListColumns.name]);
+        editRow(editorName);
+        serverListServerCloneButton->set_sensitive(true);
+        serverListServerDeleteButton->set_sensitive(true);
+    } else {
+        serverListServerCloneButton->set_sensitive(false);
+        serverListServerDeleteButton->set_sensitive(false);
     }
 }
 
 void ManglerServerList::serverListDeleteButton_clicked_cb(void) {
-    uint32_t id;
     Gtk::TreeModel::iterator iter = serverListSelection->get_selected();
-    if(iter) {
+    if (iter) {
         Gtk::TreeModel::Row row = *iter;
-        id = row[serverListColumns.id];
+        Glib::ustring name = row[serverListColumns.name];
+        Mangler::config.servers.erase(name);
+        Mangler::config.servers.save();
         serverListTreeModel->erase(row);
-        mangler->settings->config.removeserver(id);
-        mangler->settings->config.save();
-        editorId = -1;
+        editorName = "";
         clearEntries();
         serverListServerNameEntry->set_sensitive(false);
         serverListHostnameEntry->set_sensitive(false);
@@ -146,44 +150,17 @@ void ManglerServerList::serverListDeleteButton_clicked_cb(void) {
         serverListPersistentCommentsCheckButton->set_sensitive(false);
         serverListCharsetComboBox->set_sensitive(false);
         serverListServerSaveButton->set_sensitive(false);
+        serverListServerCloneButton->set_sensitive(false);
+        serverListServerDeleteButton->set_sensitive(false);
     }
 }
 
-// TODO: ManglerServerConfig needs an overloaded = operator
 void ManglerServerList::serverListCloneButton_clicked_cb(void) {
-    uint32_t id;
-    Gtk::TreeModel::Row row;
-    ManglerServerConfig *oldserver, *server;
-    if(editorId >= 0) {
-        oldserver = mangler->settings->config.getserver(editorId);
-        id = mangler->settings->config.addserver();
-        server = mangler->settings->config.getserver(id);
-        row = *(serverListTreeModel->append());
-        server->name = "New Server";
-        server->hostname = oldserver->hostname;
-        server->port = oldserver->port;
-        server->defaultchannel = oldserver->defaultchannel;
-        server->defaultchannelid = oldserver->defaultchannelid;
-        server->username = oldserver->username;
-        server->password = oldserver->password;
-        server->phonetic = oldserver->phonetic;
-        server->comment = oldserver->comment;
-        server->url = oldserver->url;
-        server->charset = oldserver->charset;
-        server->motdhash = oldserver->motdhash;
-        server->acceptU2U = oldserver->acceptU2U;
-        server->acceptPages = oldserver->acceptPages;
-        server->acceptPrivateChat = oldserver->acceptPrivateChat;
-        server->allowRecording = oldserver->allowRecording;
-        server->persistentComments = oldserver->persistentComments;
-        row[serverListColumns.id] = id;
-        row[serverListColumns.name] = "New Server";
-        row[serverListColumns.hostname] = server->hostname;
-        row[serverListColumns.port] = server->port;
-        row[serverListColumns.username] = server->username;
-        serverListSelection->select(row);
-        editRow(id);
-    }
+    Gtk::TreeModel::iterator curIter = serverListSelection->get_selected();
+    if (! curIter) return; // should never happen
+    Glib::ustring server_name = (*curIter)[serverListColumns.name];
+    editorName = "";
+    editRow(server_name);
 }
 
 void ManglerServerList::clearEntries(void) {
@@ -198,22 +175,8 @@ void ManglerServerList::clearEntries(void) {
 }
 
 void ManglerServerList::serverListAddButton_clicked_cb(void) {
-    uint32_t id;
-    ManglerServerConfig *server;
-    Gtk::TreeModel::Row row;
-
-    id = mangler->settings->config.addserver();
-    server = mangler->settings->config.getserver(id);
-    server->name = "New Server";
-    row = *(serverListTreeModel->append());
-    row[serverListColumns.id] = id;
-    row[serverListColumns.name] = "New Server";
-    row[serverListColumns.hostname] = "";
-    row[serverListColumns.port] = "";
-    row[serverListColumns.username] = "";
-    serverListSelection = serverListView->get_selection();
-    serverListSelection->select(row);
-    editRow(id);
+    editorName = "";
+    editRow("");
 }
 
 void ManglerServerList::serverListCloseButton_clicked_cb(void) {
@@ -221,27 +184,14 @@ void ManglerServerList::serverListCloseButton_clicked_cb(void) {
 }
 
 void ManglerServerList::serverListServerSaveButton_clicked_cb(void) {
-    if (editorId >= 0) {
-        saveRow();
-    }
+    saveRow();
 }
 
-void ManglerServerList::editRow(uint32_t id) {
-    Gtk::TreeModel::Row row;
-    Gtk::TreeModel::Children::iterator iter = serverListTreeModel->children().begin();
-    ManglerServerConfig *server;
-
-    while (iter != serverListTreeModel->children().end()) {
-        row = *iter;
-        uint32_t rowId = row[serverListColumns.id];
-        if (rowId == id) {
-            break;
-        }
-        iter++;
-    }
+void ManglerServerList::editRow(const std::string &name) {
+    if (editorName.empty()) serverListSelection->unselect_all();
+    serverListServerCloneButton->set_sensitive(! editorName.empty());
+    serverListServerDeleteButton->set_sensitive(! editorName.empty());
     serverListServerNameEntry->grab_focus();
-    editorId = id;
-    server = mangler->settings->config.getserver(id);
     serverListServerNameEntry->set_sensitive(true);
     serverListHostnameEntry->set_sensitive(true);
     serverListPortEntry->set_sensitive(true);
@@ -258,64 +208,90 @@ void ManglerServerList::editRow(uint32_t id) {
     serverListPersistentCommentsCheckButton->set_sensitive(true);
     serverListCharsetComboBox->set_sensitive(true);
     serverListServerSaveButton->set_sensitive(true);
-
-    serverListServerNameEntry->set_text(server->name);
-    serverListHostnameEntry->set_text(server->hostname);
-    serverListPortEntry->set_text(server->port);
-    serverListDefaultChannelEntry->set_text(server->defaultchannel);
-    serverListUsernameEntry->set_text(server->username);
-    serverListPasswordEntry->set_text(server->password);
-    serverListPhoneticEntry->set_text(server->phonetic);
-    serverListCommentEntry->set_text(server->comment);
-    serverListPageCheckButton->set_active(server->acceptPages);
-    serverListUtUCheckButton->set_active(server->acceptU2U);
-    serverListPrivateChatCheckButton->set_active(server->acceptPrivateChat);
-    serverListRecordCheckButton->set_active(server->allowRecording);
-    serverListPersistentConnectionCheckButton->set_active(server->persistentConnection);
-    serverListPersistentCommentsCheckButton->set_active(server->persistentComments);
-    serverListCharsetComboBox->get_entry()->set_text(server->charset.empty() ? charsetslist[0] : server->charset);
+    
+    iniSection server;
+    if (! name.empty()) server = Mangler::config.servers[name];
+    serverListServerNameEntry->set_text(name);
+    serverListHostnameEntry->set_text(server["Hostname"].toUString());
+    serverListPortEntry->set_text(server["Port"].toUString());
+    // TODO: get the name since i took it out of the config
+    // get the whole path instead of just the name
+    // maybe use something from the admin window code?
+    uint32_t server_defaultchan = server["DefaultChannel"].toULong();
+    serverListDefaultChannelEntry->set_text("");
+    serverListUsernameEntry->set_text(server["Username"].toUString());
+    serverListPasswordEntry->set_text(server["Password"].toUString());
+    serverListPhoneticEntry->set_text(server["Phonetic"].toUString());
+    serverListCommentEntry->set_text(server["Comment"].toUString());
+    serverListPageCheckButton->set_active(server["AcceptPages"].toBool());
+    serverListUtUCheckButton->set_active(server["AcceptU2U"].toBool());
+    serverListPrivateChatCheckButton->set_active(server["AcceptPrivateChat"].toBool());
+    serverListRecordCheckButton->set_active(server["AllowRecording"].toBool());
+    serverListPersistentConnectionCheckButton->set_active(server["PersistentConnection"].toBool());
+    serverListPersistentCommentsCheckButton->set_active(server["PersistentComments"].toBool());
+    std::string server_charset = server["Charset"].toString();
+    if (server_charset.empty()) server_charset = charsetslist[0];
+    serverListCharsetComboBox->get_entry()->set_text(server_charset);
 }
 
 void ManglerServerList::saveRow() {
-    Gtk::TreeModel::Row row;
-    Gtk::TreeModel::Children::iterator iter = serverListTreeModel->children().begin();
-    ManglerServerConfig *server;
     Glib::ustring charset;
+    Gtk::TreeModel::iterator curIter;
+    if (editorName.empty()) curIter = serverListTreeModel->append();
+    else curIter = serverListSelection->get_selected();
+    if (! curIter) return; // should never happen
+    Gtk::TreeModel::Row row = *curIter;
 
     if (serverListServerNameEntry->get_text().empty()) {
         mangler->errorDialog("Cannot save a server without a name");
         return;
     }
-    while (iter != serverListTreeModel->children().end()) {
-        row = *iter;
-        int32_t rowId = row[serverListColumns.id];
-        if (rowId == editorId) {
-            break;
+    
+    Glib::ustring server_name = trim(serverListServerNameEntry->get_text());
+    
+    // check for duplicate
+    Gtk::TreeModel::Children::iterator ckIter = serverListTreeModel->children().begin();
+    while (ckIter != serverListTreeModel->children().end()) {
+        if (ckIter != curIter && (*ckIter)[serverListColumns.name] == server_name) {
+            mangler->errorDialog("Server names must be unique");
+            return;
         }
-        iter++;
+        ckIter++;
     }
-    server = mangler->settings->config.getserver(editorId);
-    server->name = trim(serverListServerNameEntry->get_text());
-    server->hostname = trim(serverListHostnameEntry->get_text());
-    server->port = trim(serverListPortEntry->get_text());
-    server->defaultchannel = trim(serverListDefaultChannelEntry->get_text());
-    server->username = trim(serverListUsernameEntry->get_text());
-    server->password = trim(serverListPasswordEntry->get_text());
-    server->phonetic = trim(serverListPhoneticEntry->get_text());
-    server->comment = trim(serverListCommentEntry->get_text());
-    server->acceptPages = serverListPageCheckButton->get_active();
-    server->acceptU2U = serverListUtUCheckButton->get_active();
-    server->acceptPrivateChat = serverListPrivateChatCheckButton->get_active();
-    server->allowRecording = serverListRecordCheckButton->get_active();
-    server->persistentConnection = serverListPersistentConnectionCheckButton->get_active();
-    server->persistentComments = serverListPersistentCommentsCheckButton->get_active();
-    server->charset = serverListCharsetComboBox->get_active_text();
-
-    row[serverListColumns.name] = server->name;
-    row[serverListColumns.hostname] = server->hostname;
-    row[serverListColumns.port] = server->port;
-    row[serverListColumns.username] = server->username;
-    mangler->settings->config.save();
+    uint32_t server_defaultchan = 0;
+    // if name changed, remove old section first
+    if (! editorName.empty() && server_name != editorName) {
+        server_defaultchan = Mangler::config.servers[Glib::locale_from_utf8(editorName)]["DefaultChannelID"].toULong();
+        Mangler::config.servers.erase(editorName);
+    }
+    
+    // save to config
+    iniSection &server( Mangler::config.servers[server_name] );
+    server["Hostname"] = trim(serverListHostnameEntry->get_text());
+    server["Port"] = trim(serverListPortEntry->get_text());
+    if (server_defaultchan) server["DefaultChannelID"] = server_defaultchan;
+    server["Username"] = trim(serverListUsernameEntry->get_text());
+    server["Password"] = trim(serverListPasswordEntry->get_text());
+    server["Phonetic"] = trim(serverListPhoneticEntry->get_text());
+    server["Comment"] = trim(serverListCommentEntry->get_text());
+    server["AcceptPages"] = serverListPageCheckButton->get_active();
+    server["AcceptU2U"] = serverListUtUCheckButton->get_active();
+    server["AcceptPrivateChat"] = serverListPrivateChatCheckButton->get_active();
+    server["AllowRecording"] = serverListRecordCheckButton->get_active();
+    server["PersistentConnection"] = serverListPersistentConnectionCheckButton->get_active();
+    server["PersistentComments"] = serverListPersistentCommentsCheckButton->get_active();
+    server["Charset"] = serverListCharsetComboBox->get_active_text();
+    
+    row[serverListColumns.name] = server_name;
+    row[serverListColumns.hostname] = server["Hostname"].toUString();
+    row[serverListColumns.port] = server["Port"].toUString();
+    row[serverListColumns.username] = server["Username"].toUString();
+    if (editorName.empty()) {
+        serverListSelection = serverListView->get_selection();
+        serverListSelection->select(curIter);
+    }
+    editorName = server_name;
+    Mangler::config.servers.save();
 }
 
 Glib::ustring ManglerServerList::trim(Glib::ustring const& orig) {

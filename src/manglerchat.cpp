@@ -64,8 +64,8 @@ ManglerChat::ManglerChat(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
 
 void ManglerChat::chatTimestampCheckButton_toggled_cb() {/*{{{*/
     builder->get_widget("chatTimestampCheckButton", checkbutton);
-    mangler->settings->config.chatTimestamps = checkbutton->get_active();
-    mangler->settings->config.save();
+    Mangler::config["ChatTimestamps"] = checkbutton->get_active();
+    Mangler::config.config.save();
 }/*}}}*/
 
 void ManglerChat::chatWindow_show_cb() {/*{{{*/
@@ -75,7 +75,7 @@ void ManglerChat::chatWindow_show_cb() {/*{{{*/
         v3_join_chat();
     }
     builder->get_widget("chatTimestampCheckButton", checkbutton);
-    checkbutton->set_active(mangler->settings->config.chatTimestamps);
+    checkbutton->set_active(Mangler::config["ChatTimestamps"].toBool());
 }/*}}}*/
 
 void ManglerChat::chatWindow_hide_cb() {/*{{{*/
@@ -103,7 +103,7 @@ void ManglerChat::addMessage(Glib::ustring message) {/*{{{*/
     struct timeval tv;
 
     Glib::RefPtr<Gtk::TextBuffer> buffer = chatBox->get_buffer();
-    if(mangler->settings->config.chatTimestamps == true) {
+    if(Mangler::config["ChatTimestamps"].toBool()) {
         gettimeofday(&tv, NULL);
         t = tv.tv_sec;
         tmp = localtime(&t);
