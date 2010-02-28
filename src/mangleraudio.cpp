@@ -98,7 +98,7 @@ ManglerAudio::openOutput(uint32_t rate) {/*{{{*/
                         NULL,
                         "Mangler",
                         PA_STREAM_PLAYBACK,
-                        (Mangler::config["OutputDeviceName"].toLower() == "Default" ||
+                        (Mangler::config["OutputDeviceName"] == "Default" ||
                             Mangler::config["OutputDeviceName"] == ""
                             ? NULL
                             : Mangler::config["OutputDeviceName"].toCString()),
