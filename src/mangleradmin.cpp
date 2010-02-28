@@ -1476,7 +1476,7 @@ ManglerAdmin::UserTemplateSave_clicked_cb(void) {/*{{{*/
     getAdminCheckTree(UserChanAdminModel->children(), chan_admin);
     if (chan_admin.size()) {
         tmpl["ChannelAdmin"] = chan_admin[0];
-        for (int n = 1; n < chan_admin.size(); ++n) {
+        for (unsigned n = 1; n < chan_admin.size(); ++n) {
             tmpl["ChannelAdmin"] += chan_admin[n];
         }
     } else tmpl.erase("ChannelAdmin");
@@ -1484,7 +1484,7 @@ ManglerAdmin::UserTemplateSave_clicked_cb(void) {/*{{{*/
     getAdminCheckTree(UserChanAuthModel->children(), chan_auth);
     if (chan_auth.size()) {
         tmpl["ChannelAuth"] = chan_auth[0];
-        for (int n = 1; n < chan_auth.size(); ++n) {
+        for (unsigned n = 1; n < chan_auth.size(); ++n) {
             tmpl["ChannelAuth"] += chan_auth[n];
         }
     } else tmpl.erase("ChannelAuth");

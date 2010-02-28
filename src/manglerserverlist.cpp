@@ -217,7 +217,7 @@ void ManglerServerList::editRow(const std::string &name) {
     // TODO: get the name since i took it out of the config
     // get the whole path instead of just the name
     // maybe use something from the admin window code?
-    uint32_t server_defaultchan = server["DefaultChannel"].toULong();
+    //uint32_t server_defaultchan = server["DefaultChannel"].toULong();
     serverListDefaultChannelEntry->set_text("");
     serverListUsernameEntry->set_text(server["Username"].toUString());
     serverListPasswordEntry->set_text(server["Password"].toUString());
