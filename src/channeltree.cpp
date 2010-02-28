@@ -52,8 +52,13 @@ ManglerChannelTree::ManglerChannelTree(Glib::RefPtr<Gtk::Builder> builder)/*{{{*
     pColumn->pack_start(channelRecord.icon, false);
     pColumn->pack_start(channelRecord.displayName);
     pColumn->set_expand(true);
+    pColumn->set_reorderable(true);
     channelView->append_column(*pColumn);
-    channelView->append_column("Last Transmit", channelRecord.last_transmit);
+    channelView->set_expander_column(*pColumn);
+    pColumn = Gtk::manage( new Gtk::TreeView::Column("Last Transmit") );
+    pColumn->pack_start(channelRecord.last_transmit);
+    pColumn->set_reorderable(true);
+    channelView->append_column(*pColumn);
 
     // connect our callbacks for clicking on rows
     channelView->signal_row_activated().connect(sigc::mem_fun(this, &ManglerChannelTree::channelView_row_activated_cb));
