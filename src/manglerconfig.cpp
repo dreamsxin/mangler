@@ -67,7 +67,7 @@ ManglerConfigDir::ManglerConfigDir(const string &configdir) {/*{{{*/
     if (! confDIR) {
         if (::mkdir(confdir.c_str(), 0700)) {
             fprintf(stderr, "Unable to make directory '%s'\n", confdir.c_str());
-            fprintf(stderr, "No configuration settings can be saved.\n", confdir.c_str());
+            fprintf(stderr, "No configuration settings can be saved.\n");
         }
     }
     confdir += "/";
@@ -76,7 +76,7 @@ ManglerConfigDir::ManglerConfigDir(const string &configdir) {/*{{{*/
 void ManglerConfigDir::ConvertOldConfig() {/*{{{*/
     //char *convert_command = "[ -d ~/.mangler ] || mkdir ~/.mangler ; egrep ^serverlist ~/.manglerrc | sed -e 's/serverlist\.[0-9]*\.//' | sed -e 's/^name=\([A-Za-z_0-9-]*\)$/\n\[\1\]/' > ~/.mangler/servers.ini ; ( echo '[mangler]' ; egrep -v ^serverlist ~/.manglerrc ) > ~/.mangler/config.ini";
     //char *convert_command = "[ -d ~/.mangler ] || mkdir ~/.mangler ; egrep ^serverlist ~/.manglerrc | sed -e 's/serverlist\\.[0-9]*\\.//' | sed -e 's/^name=\\(.*\\)$/\\n\\[\\1\\]/' > ~/.mangler/servers.ini ; ( echo '[mangler]' ; egrep -v ^serverlist ~/.manglerrc ) > ~/.mangler/config.ini";
-    char *convert_command = "egrep ^serverlist ~/.manglerrc | sed -e 's/serverlist\\.[0-9]*\\.//' | sed -e 's/^name=\\(.*\\)$/\\n\\[\\1\\]/' > ~/.mangler/servers.ini ; ( echo '[mangler]' ; egrep -v ^serverlist ~/.manglerrc | sed -e 's/^window\\.\\(width\\|height\\)=\\(.*\\)$/Window\\1=\\2/' -e 's/^window\\.\\(buttonsHidden\\|serverInfoHidden\\|guestFlagHidden\\)=\\(.*\\)$/\\1=\\2/' -e 's/^notification\\.\\([A-Za-z]*\\)=\\(.*\\)$/Notification\\1=\\2/' -e '/^lastConnectedServerId=.*$/d'; echo -n 'LastConnectedServerName=' ; egrep \"^serverlist.`egrep '^lastConnectedServerId=.*' ~/.manglerrc | cut -d= -f2`.name=\" ~/.manglerrc | cut -d= -f2 ) > ~/.mangler/config.ini";
+    const char *convert_command = "egrep ^serverlist ~/.manglerrc | sed -e 's/serverlist\\.[0-9]*\\.//' | sed -e 's/^name=\\(.*\\)$/\\n\\[\\1\\]/' > ~/.mangler/servers.ini ; ( echo '[mangler]' ; egrep -v ^serverlist ~/.manglerrc | sed -e 's/^window\\.\\(width\\|height\\)=\\(.*\\)$/Window\\1=\\2/' -e 's/^window\\.\\(buttonsHidden\\|serverInfoHidden\\|guestFlagHidden\\)=\\(.*\\)$/\\1=\\2/' -e 's/^notification\\.\\([A-Za-z]*\\)=\\(.*\\)$/Notification\\1=\\2/' -e '/^lastConnectedServerId=.*$/d'; echo -n 'LastConnectedServerName=' ; egrep \"^serverlist.`egrep '^lastConnectedServerId=.*' ~/.manglerrc | cut -d= -f2`.name=\" ~/.manglerrc | cut -d= -f2 ) > ~/.mangler/config.ini";
     ::system(convert_command);
 }/*}}}*/
 

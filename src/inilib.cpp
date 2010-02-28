@@ -239,6 +239,7 @@ ostream &iniSection::save(ostream &out) const {
         for (int i = 0; i < vcnt; ++i)
             saveLine(out, iter->first, iter->second.at(i).toString());
     }
+    return out;
 }
 
 ostream &iniSection::saveLine(ostream &out, const string &keyName, const string &value) {
@@ -247,6 +248,7 @@ ostream &iniSection::saveLine(ostream &out, const string &keyName, const string 
     } else {
         out << quoteString(keyName) << " = " << quoteString(value) << endl;
     }
+    return out;
 }
 
 string iniSection::quoteString(const string &s) {
@@ -270,9 +272,9 @@ void iniSection::trimString(string &s) {
     if (s.empty()) return;
     while (s.length() && (s[0] == ' ' || s[0] == '\t')) s.erase(0, 1);
     if (s.empty()) return;
-    int right = s.length() - 1;
-    while (right > -1 && (s[right] == ' ' || s[right] == '\t')) right--;
-    if (right < s.length() - 1) s.erase(right, s.npos);
+    long right = (long)(s.length()) - 1l;
+    while (right > -1l && (s[right] == ' ' || s[right] == '\t')) right--;
+    if (right < (long)(s.length()) - 1l) s.erase(right, s.npos);
 }
 
 vector<string> iniSection::tokenizeString(const string &s) {
@@ -331,10 +333,7 @@ vector<string> iniSection::parseLine(const string &s) {
         ret[1].append(tokens[i]);
         ++i;
     }
-    // make all variable names lowercase
-    //int namelen = ret[0].length();
-    //for (int n=0; n < namelen; ++n) ret[0][n] = (char)(tolower(ret[0][n]));
-    //return ret;
+    return ret;
 }
 
 iniFile::iniFile(const string &filename) : mFilename( filename ) {
