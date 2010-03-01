@@ -244,10 +244,6 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
     // Create Network Communication Object
     network = new ManglerNetwork(builder);
 
-#ifdef HAVE_XOSD
-    osd = new ManglerOsd();
-#endif
-
     // Create settings object, load the configuration file, and apply.  If the
     // user has PTT key/mouse enabled, start a timer here
     settings = new ManglerSettings(builder);
@@ -285,6 +281,9 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
     // Create Chat Window
     chat = new ManglerChat(builder);
 
+    // Create Admin Window
+    admin = new ManglerAdmin(builder);
+
     // Add our servers to the main window drop down
     builder->get_widget("serverSelectComboBox", combobox);
     combobox->set_model(serverList->serverListTreeModel);
@@ -318,12 +317,15 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
     // TODO: MusicClient?  wants a const char *??
     integration->setClient((MusicClient)config["AudioIntegrationPlayer"].toUInt());
     integration->update(true);
+
+#ifdef HAVE_XOSD
+    // Create XOSD Overlay
+    osd = new ManglerOsd();
+#endif
+
     Glib::signal_timeout().connect(sigc::mem_fun(this, &Mangler::updateIntegration), 1000);
-
-
     Glib::signal_timeout().connect(sigc::mem_fun(*this, &Mangler::updateXferAmounts), 500);
     Glib::signal_timeout().connect(sigc::mem_fun(*this, &Mangler::getNetworkEvent), 10);
-    admin = new ManglerAdmin(builder);
 }/*}}}*/
 
 /*
