@@ -76,7 +76,6 @@ if test "$enable_xosd" != "no" ; then
 		LIBS="$LIBS -lxosd "
 		echo "Enabled optional XOSD support."
 	], [
-		AC_DEFINE(HAVE_XOSD, 0, [have xosd])
 		echo "Optional XOSD support is not enabled."
 	])
 else
