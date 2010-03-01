@@ -68,6 +68,7 @@ class iniVariant {
     long long toLLong() const;
     double toDouble() const;
     bool toBool() const;
+    string::size_type length() const;
     bool operator==(const iniVariant &v) const;
     static const iniVariant &null() { return mNULLvariant; } 
     private:
@@ -101,6 +102,7 @@ class iniValue : public vector<iniVariant> {
     long long toLLong() const;
     double toDouble() const;
     bool toBool() const;
+    string::size_type length() const;
 };
 
 class iniSection : public map<string, iniValue, iniCaselessCmp> {

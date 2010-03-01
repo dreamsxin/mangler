@@ -118,6 +118,10 @@ bool iniVariant::toBool() const {
     return (temp == "yes" || temp == "true" || temp == "1");
 }
 
+string::size_type iniVariant::length() const {
+    return mValue.length();
+}
+
 iniVariant::operator string &() { return mValue; }
 
 iniVariant::operator const string &() { return mValue; }
@@ -222,6 +226,9 @@ double iniValue::toDouble() const
 
 bool iniValue::toBool() const
     { return value().toBool(); }
+
+string::size_type iniValue::length() const
+    { return value().length(); }
 
 bool iniSection::contains(const string &s) const {
     return (find(s) != end());

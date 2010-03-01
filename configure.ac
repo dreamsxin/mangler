@@ -39,6 +39,7 @@ AC_CHECK_HEADER([mpd/client.h],
 
 AC_ARG_ENABLE(gsm,   [  --disable-gsm           disable GSM codec support], [disable_gsm=yes])
 AC_ARG_ENABLE(speex, [  --disable-speex         disable Speex codec support], [disable_speex=yes])
+AC_ARG_ENABLE(xosd,  [  --disable-xosd          disable XOSD overlay support], [disable_xosd=yes])
 
 if test "$enable_gsm" != "no" ; then
 	AC_CHECK_LIB([gsm], [gsm_create], [], [
@@ -67,6 +68,19 @@ if test "$enable_speex" != "no" ; then
 	AC_DEFINE(HAVE_SPEEX, 1, [have speex])
 else
 	AC_DEFINE(HAVE_SPEEX, 0, [have speex])
+fi
+
+if test "$enable_xosd" != "no" ; then
+	AC_CHECK_LIB([xosd], [xosd_create], [
+		AC_DEFINE(HAVE_XOSD, 1, [have xosd])
+		LIBS="$LIBS -lxosd "
+		echo "Enabled optional XOSD support."
+	], [
+		AC_DEFINE(HAVE_XOSD, 0, [have xosd])
+		echo "Optional XOSD support is not enabled."
+	])
+else
+	echo "Disabled optional XOSD support."
 fi
 
 PKG_CHECK_MODULES(gtk, gtk+-2.0 >= 2.16.0)

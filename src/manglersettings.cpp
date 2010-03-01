@@ -99,6 +99,11 @@ ManglerSettings::ManglerSettings(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
     builder->get_widget("settingsEnableVoiceActivationCheckButton", checkbutton);
     checkbutton->signal_toggled().connect(sigc::mem_fun(this, &ManglerSettings::settingsEnableVoiceActivationCheckButton_toggled_cb));
 
+#ifdef HAVE_XOSD
+    builder->get_widget("settingsEnableOnScreenDisplayCheckButton", checkbutton);
+    checkbutton->set_sensitive(true);
+#endif
+
     builder->get_widget("audioSubsystemComboBox", audioSubsystemComboBox);
     audioSubsystemTreeModel = Gtk::ListStore::create(audioSubsystemColumns);
     audioSubsystemComboBox->set_model(audioSubsystemTreeModel);
@@ -226,6 +231,10 @@ void ManglerSettings::applySettings(void) {/*{{{*/
     Mangler::config["VoiceActivationSilenceDuration"] = spinbutton->get_value() * 1000.0;
     builder->get_widget("settingsVoiceActivationSensitivitySpinButton", spinbutton);
     Mangler::config["VoiceActivationSensitivity"] = spinbutton->get_value_as_int();
+
+    // On-Screen Display
+    builder->get_widget("settingsEnableOnScreenDisplayCheckButton", checkbutton);
+    Mangler::config["OnScreenDisplayEnabled"] = checkbutton->get_active();
 
     // Audio Devices
     iter = inputDeviceComboBox->get_active();
@@ -355,6 +364,10 @@ void ManglerSettings::initSettings(void) {/*{{{*/
     spinbutton->set_value(Mangler::config["VoiceActivationSilenceDuration"].toDouble() / 1000.0);
     builder->get_widget("settingsVoiceActivationSensitivitySpinButton", spinbutton);
     spinbutton->set_value(Mangler::config["VoiceActivationSensitivity"].toUInt());
+
+    // On-Screen Display
+    builder->get_widget("settingsEnableOnScreenDisplayCheckButton", checkbutton);
+    checkbutton->set_active(Mangler::config["OnScreenDisplayEnabled"].toBool());
 
     // Audio Devices
     // the proper devices are selected in the window->show() callback

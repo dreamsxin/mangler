@@ -223,12 +223,12 @@ void ManglerServerList::editRow(const std::string &name) {
     serverListPasswordEntry->set_text(server["Password"].toUString());
     serverListPhoneticEntry->set_text(server["Phonetic"].toUString());
     serverListCommentEntry->set_text(server["Comment"].toUString());
-    serverListPageCheckButton->set_active(server["AcceptPages"].toBool());
-    serverListUtUCheckButton->set_active(server["AcceptU2U"].toBool());
-    serverListPrivateChatCheckButton->set_active(server["AcceptPrivateChat"].toBool());
-    serverListRecordCheckButton->set_active(server["AllowRecording"].toBool());
-    serverListPersistentConnectionCheckButton->set_active(server["PersistentConnection"].toBool());
-    serverListPersistentCommentsCheckButton->set_active(server["PersistentComments"].toBool());
+    serverListPageCheckButton->set_active(server["AcceptPages"].length() ? server["AcceptPages"].toBool() : true);
+    serverListUtUCheckButton->set_active(server["AcceptU2U"].length() ? server["AcceptU2U"].toBool() : true);
+    serverListPrivateChatCheckButton->set_active(server["AcceptPrivateChat"].length() ? server["AcceptPrivateChat"].toBool() : true);
+    serverListRecordCheckButton->set_active(server["AllowRecording"].length() ? server["AllowRecording"].toBool() : true);
+    serverListPersistentConnectionCheckButton->set_active(server["PersistentConnection"].length() ? server["PersistentConnection"].toBool() : true);
+    serverListPersistentCommentsCheckButton->set_active(server["PersistentComments"].length() ? server["PersistentComments"].toBool() : true);
     std::string server_charset = server["Charset"].toString();
     if (server_charset.empty()) server_charset = charsetslist[0];
     serverListCharsetComboBox->get_entry()->set_text(server_charset);
@@ -243,7 +243,7 @@ void ManglerServerList::saveRow() {
     Gtk::TreeModel::Row row = *curIter;
 
     if (serverListServerNameEntry->get_text().empty()) {
-        mangler->errorDialog("Cannot save a server without a name");
+        mangler->errorDialog("Cannot save server without a name.");
         return;
     }
     
@@ -253,7 +253,7 @@ void ManglerServerList::saveRow() {
     Gtk::TreeModel::Children::iterator ckIter = serverListTreeModel->children().begin();
     while (ckIter != serverListTreeModel->children().end()) {
         if (ckIter != curIter && (*ckIter)[serverListColumns.name] == server_name) {
-            mangler->errorDialog("Server names must be unique");
+            mangler->errorDialog("Server names must be unique.");
             return;
         }
         ckIter++;

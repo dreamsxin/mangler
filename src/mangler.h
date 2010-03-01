@@ -30,6 +30,9 @@
 #include <stdint.h>
 #include <iostream>
 #include "manglerconfig.h"
+#ifdef HAVE_XOSD
+# include "manglerosd.h"
+#endif
 
 class ManglerChannelTree;
 class ManglerNetwork;
@@ -40,6 +43,9 @@ class ManglerChat;
 class ManglerPrivChat;
 class ManglerIntegration;
 class ManglerAdmin;
+#ifdef HAVE_XOSD
+class ManglerOsd;
+#endif
 
 extern "C" {
 #include <ventrilo3.h>
@@ -76,7 +82,6 @@ class Mangler
         Gtk::CheckButton                    *checkbutton;
         Gtk::ProgressBar                    *inputvumeter;
 
-
         std::map<Glib::ustring, Glib::RefPtr<Gdk::Pixbuf> >  icons;
         Glib::RefPtr<Gtk::StatusIcon>       statusIcon;
         ManglerServerList                   *serverList;
@@ -93,6 +98,9 @@ class Mangler
         ManglerIntegration                  *integration;
         ManglerAdmin                        *admin;
         static ManglerConfig                config;
+#ifdef HAVE_XOSD
+        ManglerOsd                          *osd;
+#endif
 
         bool                                isTransmitting;
         bool                                isTransmittingButton;
@@ -128,6 +136,7 @@ class Mangler
         Gtk::Entry                          *textStringChangeCommentEntry;
         Gtk::Entry                          *textStringChangeURLEntry;
         Gtk::Entry                          *textStringChangeIntegrationEntry;
+        Gtk::CheckButton                    *textStringSilenceCommentCheckButton;
         Glib::ustring                       comment;
         Glib::ustring                       url;
         Glib::ustring                       integration_text;
@@ -211,8 +220,8 @@ class ManglerError
 {
     public:
         uint32_t        code;
-        Glib::ustring     message;
-        Glib::ustring     module;
+        Glib::ustring   message;
+        Glib::ustring   module;
         ManglerError(uint32_t code, Glib::ustring message, Glib::ustring module = "");
 };
 

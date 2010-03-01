@@ -232,6 +232,7 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
     builder->get_widget("textStringChangeCommentEntry", textStringChangeCommentEntry);
     builder->get_widget("textStringChangeURLEntry", textStringChangeURLEntry);
     builder->get_widget("textStringChangeIntegrationEntry", textStringChangeIntegrationEntry);
+    builder->get_widget("textStringSilenceCommentCheckButton", textStringSilenceCommentCheckButton);
     builder->get_widget("textStringOkButton", button);
     button->signal_clicked().connect(sigc::mem_fun(this, &Mangler::textStringChangeDialogOkButton_clicked_cb));
     builder->get_widget("textStringCancelButton", button);
@@ -242,6 +243,10 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
 
     // Create Network Communication Object
     network = new ManglerNetwork(builder);
+
+#ifdef HAVE_XOSD
+    osd = new ManglerOsd();
+#endif
 
     // Create settings object, load the configuration file, and apply.  If the
     // user has PTT key/mouse enabled, start a timer here
@@ -408,10 +413,10 @@ void Mangler::connectButton_clicked_cb(void) {/*{{{*/
             set_charset(server["Charset"].toUString());
             config["lastConnectedServerName"] = connectedServerName;
             config.config.save();
-            v3_set_server_opts(V3_USER_ACCEPT_PAGES, server["acceptPages"].toBool());
-            v3_set_server_opts(V3_USER_ACCEPT_U2U, server["acceptU2U"].toBool());
-            v3_set_server_opts(V3_USER_ACCEPT_CHAT, server["acceptPrivateChat"].toBool());
-            v3_set_server_opts(V3_USER_ALLOW_RECORD, server["allowRecording"].toBool());
+            v3_set_server_opts(V3_USER_ACCEPT_PAGES, server["acceptPages"].length() ? server["acceptPages"].toBool() : true);
+            v3_set_server_opts(V3_USER_ACCEPT_U2U, server["acceptU2U"].length() ? server["acceptU2U"].toBool() : true);
+            v3_set_server_opts(V3_USER_ACCEPT_CHAT, server["acceptPrivateChat"].length() ? server["acceptPrivateChat"].toBool() : true);
+            v3_set_server_opts(V3_USER_ALLOW_RECORD, server["allowRecording"].length() ? server["allowRecording"].toBool() : true);
             isAdmin = false;
             isChanAdmin = false;
             Glib::Thread::create(sigc::bind(sigc::mem_fun(this->network, &ManglerNetwork::connect), hostname, port, username, password, phonetic), FALSE);
@@ -645,10 +650,10 @@ void Mangler::qcConnectButton_clicked_cb(void) {/*{{{*/
     connectedServerName = "";
     isAdmin = false;
     isChanAdmin = false;
-    v3_set_server_opts(V3_USER_ACCEPT_PAGES, 1);
-    v3_set_server_opts(V3_USER_ACCEPT_U2U, 1);
-    v3_set_server_opts(V3_USER_ACCEPT_CHAT, 1);
-    v3_set_server_opts(V3_USER_ALLOW_RECORD, 1);
+    v3_set_server_opts(V3_USER_ACCEPT_PAGES, true);
+    v3_set_server_opts(V3_USER_ACCEPT_U2U, true);
+    v3_set_server_opts(V3_USER_ACCEPT_CHAT, true);
+    v3_set_server_opts(V3_USER_ALLOW_RECORD, true);
     Glib::Thread::create(sigc::bind(sigc::mem_fun(this->network, &ManglerNetwork::connect), server, port, username, password, ""), FALSE);
     // TODO: move this into a thread and use blocking waits
 }/*}}}*/
@@ -1090,6 +1095,9 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                 if (v3_is_loggedin()) {
                     //fprintf(stderr, "user %d stopped talking\n", ev->user.id);
                     channelTree->refreshUser(ev->user.id);
+#ifdef HAVE_XOSD
+                    osd->removeUser(ev->user.id);
+#endif
                     // TODO: this is bad, there must be a flag in the last audio
                     // packet saying that it's the last one.  Need to figure out
                     // what that flag is and close it in V3_EVENT_PLAY_AUDIO
@@ -1102,6 +1110,9 @@ bool Mangler::getNetworkEvent() {/*{{{*/
             case V3_EVENT_PLAY_AUDIO:/*{{{*/
                 if (v3_is_loggedin()) {
                     channelTree->setUserIcon(ev->user.id, "green", true);
+#ifdef HAVE_XOSD
+                    osd->addUser(ev->user.id);
+#endif
                     if (!channelTree->isMuted(ev->user.id) && !muteSound) {
                         // Open a stream if we don't have one for this user
                         if (!outputAudio[ev->user.id]) {
@@ -1636,7 +1647,11 @@ void Mangler::textStringChangeDialogOkButton_clicked_cb(void) {/*{{{*/
             config.servers.save();
         }
     }
-    v3_set_text((char *)ustring_to_c(comment).c_str(), (char *)ustring_to_c(url).c_str(), (char *)ustring_to_c(integration_text).c_str(), true);
+    v3_set_text(
+            (char *)ustring_to_c(comment).c_str(),
+            (char *)ustring_to_c(url).c_str(),
+            (char *)ustring_to_c(integration_text).c_str(),
+            textStringSilenceCommentCheckButton->get_active());
 }/*}}}*/
 void Mangler::textStringChangeDialogCancelButton_clicked_cb(void) {/*{{{*/
     textStringChangeCommentEntry->set_text(comment);

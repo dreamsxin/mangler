@@ -1689,7 +1689,7 @@ out the encryption
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkHSeparator" id="hseparator4">
+                      <object class="GtkHSeparator" id="settingsEnablePTTMouseSeparator">
                         <property name="visible">True</property>
                       </object>
                       <packing>
@@ -1790,7 +1790,7 @@ out the encryption
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkHSeparator" id="hseparator5">
+                      <object class="GtkHSeparator" id="settingsEnableAudioIntegrationSeparator">
                         <property name="visible">True</property>
                       </object>
                       <packing>
@@ -1846,7 +1846,7 @@ out the encryption
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkHSeparator" id="hseparator11">
+                      <object class="GtkHSeparator" id="settingsEnableVoiceActivationSeparator">
                         <property name="visible">True</property>
                       </object>
                       <packing>
@@ -1961,6 +1961,31 @@ out the encryption
                         <property name="expand">False</property>
                         <property name="padding">2</property>
                         <property name="position">11</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkHSeparator" id="settingsEnableOnScreenDisplaySeparator">
+                        <property name="visible">True</property>
+                      </object>
+                      <packing>
+                        <property name="expand">False</property>
+                        <property name="padding">6</property>
+                        <property name="position">12</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkCheckButton" id="settingsEnableOnScreenDisplayCheckButton">
+                        <property name="label" translatable="yes">Enable On-Screen Display</property>
+                        <property name="visible">True</property>
+                        <property name="sensitive">False</property>
+                        <property name="can_focus">True</property>
+                        <property name="receives_default">False</property>
+                        <property name="tooltip_text" translatable="yes">Display status information text overlaid on your screen.</property>
+                        <property name="draw_indicator">True</property>
+                      </object>
+                      <packing>
+                        <property name="expand">False</property>
+                        <property name="position">13</property>
                       </packing>
                     </child>
                   </object>
@@ -2613,6 +2638,7 @@ These are useful for developers.</property>
             <child>
               <object class="GtkHButtonBox" id="hbuttonbox1">
                 <property name="visible">True</property>
+                <property name="spacing">2</property>
                 <child>
                   <object class="GtkButton" id="settingsCancelButton">
                     <property name="label" translatable="yes">_Cancel</property>
@@ -2658,6 +2684,7 @@ These are useful for developers.</property>
               </object>
               <packing>
                 <property name="expand">False</property>
+                <property name="padding">2</property>
                 <property name="position">1</property>
               </packing>
             </child>
@@ -3234,6 +3261,7 @@ These are useful for developers.</property>
               </object>
               <packing>
                 <property name="y_options">GTK_FILL</property>
+                <property name="x_padding">2</property>
               </packing>
             </child>
             <child>
@@ -3246,6 +3274,7 @@ These are useful for developers.</property>
                 <property name="top_attach">1</property>
                 <property name="bottom_attach">2</property>
                 <property name="y_options">GTK_FILL</property>
+                <property name="x_padding">2</property>
               </packing>
             </child>
             <child>
@@ -3258,6 +3287,7 @@ These are useful for developers.</property>
                 <property name="top_attach">2</property>
                 <property name="bottom_attach">3</property>
                 <property name="y_options">GTK_FILL</property>
+                <property name="x_padding">2</property>
               </packing>
             </child>
             <child>
@@ -3317,7 +3347,24 @@ These are useful for developers.</property>
             </child>
           </object>
           <packing>
+            <property name="expand">False</property>
             <property name="position">1</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkCheckButton" id="textStringSilenceCommentCheckButton">
+            <property name="label" translatable="yes">Silence Comment</property>
+            <property name="visible">True</property>
+            <property name="can_focus">True</property>
+            <property name="receives_default">False</property>
+            <property name="active">True</property>
+            <property name="draw_indicator">True</property>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="fill">False</property>
+            <property name="padding">2</property>
+            <property name="position">2</property>
           </packing>
         </child>
         <child internal-child="action_area">
