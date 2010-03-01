@@ -39,61 +39,58 @@
 #include <sys/types.h>
 #include <dirent.h>
 
+// only needed for ConvertOldConfig
+#include <fstream>
+
 // config directory, relative to $HOME
 #define CONFIG_DIRECTORY ".mangler"
 
 using namespace std;
 
 class ManglerConfigDir {/*{{{*/
-    friend class ManglerConfig;
     public:
-    ManglerConfigDir(const string &configdir);
-    private:
-    static void ConvertOldConfig();
+    static void init();
     static string filename(const string &name);
+    private:
+    static bool _init;
     static string confdir;
 };/*}}}*/
 
+bool ManglerConfigDir::_init( false );
 string ManglerConfigDir::confdir;
 
-ManglerConfigDir *ManglerConfig::confdir = new ManglerConfigDir( CONFIG_DIRECTORY );
-
-ManglerConfigDir::ManglerConfigDir(const string &configdir) {/*{{{*/
+void ManglerConfigDir::init() {/*{{{*/
     string homedir = getenv("HOME");
     if (! homedir.length() || homedir[homedir.length()-1] != '/') homedir += "/";
-    confdir = homedir + configdir;
+    confdir = homedir + CONFIG_DIRECTORY;
     if (confdir[confdir.length()-1] == '/') confdir.erase(confdir.length()-1, confdir.npos);
     DIR *confDIR = ::opendir(confdir.c_str());
     if (! confDIR) {
         if (::mkdir(confdir.c_str(), 0700)) {
             fprintf(stderr, "Unable to make directory '%s'\n", confdir.c_str());
             fprintf(stderr, "No configuration settings can be saved.\n");
+            return;
         }
     }
     confdir += "/";
-}/*}}}*/
-
-void ManglerConfigDir::ConvertOldConfig() {/*{{{*/
-    //char *convert_command = "[ -d ~/.mangler ] || mkdir ~/.mangler ; egrep ^serverlist ~/.manglerrc | sed -e 's/serverlist\.[0-9]*\.//' | sed -e 's/^name=\([A-Za-z_0-9-]*\)$/\n\[\1\]/' > ~/.mangler/servers.ini ; ( echo '[mangler]' ; egrep -v ^serverlist ~/.manglerrc ) > ~/.mangler/config.ini";
-    //char *convert_command = "[ -d ~/.mangler ] || mkdir ~/.mangler ; egrep ^serverlist ~/.manglerrc | sed -e 's/serverlist\\.[0-9]*\\.//' | sed -e 's/^name=\\(.*\\)$/\\n\\[\\1\\]/' > ~/.mangler/servers.ini ; ( echo '[mangler]' ; egrep -v ^serverlist ~/.manglerrc ) > ~/.mangler/config.ini";
-    const char *convert_command = "egrep ^serverlist ~/.manglerrc | sed -e 's/serverlist\\.[0-9]*\\.//' | sed -e 's/^name=\\(.*\\)$/\\n\\[\\1\\]/' > ~/.mangler/servers.ini ; ( echo '[mangler]' ; egrep -v ^serverlist ~/.manglerrc | sed -e 's/^window\\.\\(width\\|height\\)=\\(.*\\)$/Window\\1=\\2/' -e 's/^window\\.\\(buttonsHidden\\|serverInfoHidden\\|guestFlagHidden\\)=\\(.*\\)$/\\1=\\2/' -e 's/^notification\\.\\([A-Za-z]*\\)=\\(.*\\)$/Notification\\1=\\2/' -e '/^lastConnectedServerId=.*$/d'; echo -n 'LastConnectedServerName=' ; egrep \"^serverlist.`egrep '^lastConnectedServerId=.*' ~/.manglerrc | cut -d= -f2`.name=\" ~/.manglerrc | cut -d= -f2 ) > ~/.mangler/config.ini";
-    ::system(convert_command);
+    _init = true;
 }/*}}}*/
 
 string ManglerConfigDir::filename(const string &name) {/*{{{*/
+    if (! _init) init();
     return confdir + name;
 }/*}}}*/
 
 ManglerConfig::ManglerConfig() /*{{{*/
-    : config( confdir->filename("config.ini") )
-    , servers( confdir->filename("servers.ini") ) {
+    : config( ManglerConfigDir::filename("config.ini") )
+    , servers( ManglerConfigDir::filename("servers.ini") ) {
     // this is where we check to see if config.ini was loaded
     if (! config.contains("mangler")) {
         struct stat statbuf;
         string oldfile = getenv("HOME");
         if (oldfile[oldfile.length()-1] != '/') oldfile += "/.manglerrc";
         else oldfile += ".manglerrc";
-        if (stat(oldfile.c_str(), &statbuf) == 0) ManglerConfigDir::ConvertOldConfig();
+        if (stat(oldfile.c_str(), &statbuf) == 0) ConvertOldConfig();
         // should have something now!!
         config.reload();
         servers.reload();
@@ -106,6 +103,109 @@ ManglerConfig::ManglerConfig() /*{{{*/
 
 ManglerConfig::~ManglerConfig() {/*{{{*/
     save(); // might as well :)
+}/*}}}*/
+
+void ManglerConfig::ConvertOldConfig() {/*{{{*/
+    string buf;
+    config.clear();
+    servers.clear();
+    map<int, string> serv_names;
+    string oldconf = getenv("HOME");
+    if (! oldconf.length() || oldconf[oldconf.length() - 1] != '/') oldconf += "/";
+    oldconf += ".manglerrc";
+    ifstream fin( oldconf.c_str() );
+    if (! fin) {
+        cerr << "unable to open old .manglerrc file for reading.  can't convert." << endl;
+    }
+    for (int cnt = 1;;++cnt) {
+        getline(fin, buf);
+        if (fin.eof()) break;
+        unsigned eq_pos = 0;
+        while (eq_pos < buf.length() && buf[eq_pos] != '=') ++eq_pos;
+        if (eq_pos == buf.length()) {
+            cerr << "error parsing .manglerrc: line " << cnt << endl;
+            continue;
+        }
+        string var = buf.substr(0, eq_pos);
+        string val = buf.substr(eq_pos + 1, buf.npos);
+        if (var.substr(0, 13) == "notification.") {
+            var.erase(12, 1);
+            var[0] = 'N';
+            var[12] = (char)toupper(var[12]);
+        } else if (var.substr(0, 7) == "window.") {
+            if (var.substr(7, 5) == "width" || var.substr(7, 6) == "height") {
+                var.erase(6, 1);
+                var[0] = 'W';
+                var[6] = (char)toupper(var[6]);
+            } else {
+                var.erase(0, 7);
+                var[0] = (char)toupper(var[0]);
+            }
+        } else if (var.substr(0, 11) == "serverlist.") {
+            int serv_id = 0;
+            string serv_var = "";
+            unsigned i = 11;
+            while (i < var.length() && var[i] != '.') ++i;
+            if (i == var.length()) {
+                cerr << "error parsing .manglerrc: line " << cnt << ": serverlist entry without id" << endl;
+                continue;
+            }
+            serv_id = atoi(var.substr(11, i - 11).c_str());
+            serv_var = var.substr(i+1, var.npos);
+            if (! serv_var.length()) {
+                cerr << "error parsing .manglerrc: line " << cnt << ": serverlist line looks mangled ;)" << endl;
+                continue;
+            }
+            if (serv_var == "name") {
+                serv_names[serv_id] = val;
+                continue;
+            } else if (serv_var == "accept_u2u") {
+                serv_var = "AcceptU2U";
+            } else if (serv_var == "accept_pages") {
+                serv_var = "AcceptPages";
+            } else if (serv_var == "accept_privchat") {
+                serv_var = "AcceptPrivateChat";
+            } else if (serv_var == "allow_recording") {
+                serv_var = "AllowRecording";
+            } else if (serv_var == "persistent_connection") {
+                serv_var = "PersistentConnection";
+            } else if (serv_var == "persistent_comments") {
+                serv_var = "PersistentComments";
+            } else if (serv_var == "motdhash") {
+                serv_var = "MOTDhash";
+            } else if (serv_var == "defaultchannelid") {
+                serv_var = "DefaultChannelID";
+            } else if (serv_var == "defaultchannel") {
+                continue;
+            } else if (serv_var.substr(0, 7) == "volume.") {
+                string vol_usr = serv_var.substr(7, serv_var.npos);
+                serv_var = "UserVolume[" + vol_usr + "]";
+            } else if (serv_var.substr(0, 11) == "channelpass.") {
+                string chan_pass = serv_var.substr(11, serv_var.npos);
+                serv_var = "ChannelPassword[" + chan_pass + "]";
+            } else {
+                serv_var[0] = (char)toupper(serv_var[0]);
+            }
+            string serv_name = serv_names[serv_id];
+            if (serv_name.length()) {
+                servers[serv_name][serv_var] = val;
+                continue;
+            } else {
+                cerr << "error parsing .manglerrc: line " << cnt << ": unknown server id" << endl;
+                continue;
+            }
+        } else if (var.substr(0, 13) != "qc_lastserver" && var.substr(0, 14) != "lv3_debuglevel") {
+            var[0] = (char)toupper(var[0]);
+        }
+        // if we get here, it's a main config option
+        config["mangler"][var] = val;
+    }
+    fin.close();
+    int lcs_id = config["mangler"]["LastConnectedServerID"].toInt();
+    string lcs_name = serv_names[lcs_id];
+    config["mangler"]["LastConnectedServerName"] = lcs_name;
+    config["mangler"].erase("LastConnectedServerID");
+    save();
 }/*}}}*/
 
 void ManglerConfig::save() {/*{{{*/

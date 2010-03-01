@@ -28,8 +28,6 @@
 #define _MANGLERCONFIG_H
 #include "inilib.h"
 
-class ManglerConfigDir;
-
 class ManglerConfig {
 	public:
         iniFile         config, servers;
@@ -43,8 +41,8 @@ class ManglerConfig {
         iniValue &UserVolume(const string &server, const string &user);
         iniValue &ChannelPassword(const string &server, uint16_t channel);
     private:
-        static ManglerConfigDir *confdir;
         static const char *DefaultConfiguration;
+        void ConvertOldConfig();
 };
 
 #endif

@@ -250,11 +250,12 @@ ostream &iniSection::save(ostream &out) const {
 }
 
 ostream &iniSection::saveLine(ostream &out, const string &keyName, const string &value) {
-    if (value.empty()) {
-        out << quoteString(keyName) << endl;
-    } else {
-        out << quoteString(keyName) << " = " << quoteString(value) << endl;
-    }
+    // this is lame, and i've never seen it used outside of mysql's config
+    //if (value.empty()) {
+    //    out << quoteString(keyName) << endl;
+    //} else {
+    out << quoteString(keyName) << " = " << quoteString(value) << endl;
+    //}
     return out;
 }
 
