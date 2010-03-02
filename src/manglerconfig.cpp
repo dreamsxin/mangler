@@ -49,36 +49,36 @@ using namespace std;
 
 class ManglerConfigDir {/*{{{*/
     public:
-    static void init();
+    static void dirInit();
     static string filename(const string &name);
     private:
-    static bool _init;
-    static string confdir;
+    static bool &initialized();
+    static string &confdir();
 };/*}}}*/
 
-bool ManglerConfigDir::_init( false );
-string ManglerConfigDir::confdir;
+bool &ManglerConfigDir::initialized() { static bool myInit( false ); return myInit; }
+string &ManglerConfigDir::confdir() { static string myString; return myString; }
 
-void ManglerConfigDir::init() {/*{{{*/
+void ManglerConfigDir::dirInit() {/*{{{*/
     string homedir = getenv("HOME");
     if (! homedir.length() || homedir[homedir.length()-1] != '/') homedir += "/";
-    confdir = homedir + CONFIG_DIRECTORY;
-    if (confdir[confdir.length()-1] == '/') confdir.erase(confdir.length()-1, confdir.npos);
-    DIR *confDIR = ::opendir(confdir.c_str());
+    confdir() = homedir + CONFIG_DIRECTORY;
+    if (confdir()[confdir().length()-1] == '/') confdir().erase(confdir().length()-1, confdir().npos);
+    DIR *confDIR = ::opendir(confdir().c_str());
     if (! confDIR) {
-        if (::mkdir(confdir.c_str(), 0700)) {
-            fprintf(stderr, "Unable to make directory '%s'\n", confdir.c_str());
+        if (::mkdir(confdir().c_str(), 0700)) {
+            fprintf(stderr, "Unable to make directory '%s'\n", confdir().c_str());
             fprintf(stderr, "No configuration settings can be saved.\n");
             return;
         }
     }
-    confdir += "/";
-    _init = true;
+    confdir() += "/";
+    initialized() = true;
 }/*}}}*/
 
 string ManglerConfigDir::filename(const string &name) {/*{{{*/
-    if (! _init) init();
-    return confdir + name;
+    if (! initialized()) dirInit();
+    return confdir() + name;
 }/*}}}*/
 
 ManglerConfig::ManglerConfig() /*{{{*/
