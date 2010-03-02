@@ -180,8 +180,8 @@ void ManglerConfig::ConvertOldConfig() {/*{{{*/
             } else if (serv_var.substr(0, 7) == "volume.") {
                 string vol_usr = serv_var.substr(7, serv_var.npos);
                 serv_var = "UserVolume[" + vol_usr + "]";
-            } else if (serv_var.substr(0, 11) == "channelpass.") {
-                string chan_pass = serv_var.substr(11, serv_var.npos);
+            } else if (serv_var.substr(0, 12) == "channelpass.") {
+                string chan_pass = serv_var.substr(12, serv_var.npos);
                 serv_var = "ChannelPassword[" + chan_pass + "]";
             } else {
                 serv_var[0] = (char)toupper(serv_var[0]);

@@ -22,7 +22,7 @@ INCLUDES = -I@top_srcdir@/libventrilo3/ -I@top_srcdir@/icons/ -I@top_srcdir@/sou
 
 dev:
 	cd ../libventrilo3 && make dev
-	gcc -g -Wall -o mangler -I../ -I../libventrilo3/ -I../icons/ -I ../sounds/ -pthread \
+	g++ -g -Wall -o mangler -I../ -I../libventrilo3/ -I../icons/ -I ../sounds/ -pthread \
 		channeltree.cpp  mangleraudio.cpp  manglerconfig.cpp  mangler.cpp \
 		manglernetwork.cpp  manglerserverlist.cpp  manglersettings.cpp \
 		manglerchat.cpp manglercharset.cpp manglerintegration.cpp manglerprivchat.cpp \
