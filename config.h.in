@@ -6,6 +6,9 @@
 /* Define to 1 if you have the <arpa/inet.h> header file. */
 #undef HAVE_ARPA_INET_H
 
+/* have celt */
+#undef HAVE_CELT
+
 /* have dbus */
 #undef HAVE_DBUS
 

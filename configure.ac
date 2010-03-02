@@ -39,6 +39,7 @@ AC_CHECK_HEADER([mpd/client.h],
 
 AC_ARG_ENABLE(gsm,   [  --disable-gsm           disable GSM codec support], [disable_gsm=yes])
 AC_ARG_ENABLE(speex, [  --disable-speex         disable Speex codec support], [disable_speex=yes])
+AC_ARG_ENABLE(celt,  [  --disable-celt          disable CELT codec support], [disable_celt=yes])
 AC_ARG_ENABLE(xosd,  [  --disable-xosd          disable XOSD overlay support], [disable_xosd=yes])
 
 if test "$enable_gsm" != "no" ; then
@@ -70,10 +71,24 @@ else
 	AC_DEFINE(HAVE_SPEEX, 0, [have speex])
 fi
 
+if test "$enable_celt" != "no" ; then
+	PKG_CHECK_MODULES(celt, celt = 0.7.1, [
+		AC_DEFINE(HAVE_CELT, 1, [have celt])
+		AC_SUBST(celt_CFLAGS)
+		AC_SUBST(celt_LIBS)
+		echo "Enabled optional CELT support."
+	], [
+		AC_DEFINE(HAVE_CELT, 0, [have celt])
+		echo "Optional CELT support is not enabled."
+	])
+else
+	echo "Disabled optional CELT support."
+fi
+
 if test "$enable_xosd" != "no" ; then
 	AC_CHECK_LIB([xosd], [xosd_create], [
 		AC_DEFINE(HAVE_XOSD, 1, [have xosd])
-		LIBS="$LIBS -lxosd "
+		LIBS="-lxosd $LIBS"
 		echo "Enabled optional XOSD support."
 	], [
 		echo "Optional XOSD support is not enabled."
