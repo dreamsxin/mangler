@@ -293,6 +293,7 @@ vector<string> iniSection::tokenizeString(const string &s) {
     int i = 0;
     while (i < len) {
         if (s[i] == '\"') {
+            ++i;
             while (i < len) {
                 if (s[i] == '\\') {
                     ++i; if (i < len - 1) temp += s[i];
