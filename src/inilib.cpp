@@ -262,14 +262,14 @@ ostream &iniSection::saveLine(ostream &out, const string &keyName, const string 
 string iniSection::quoteString(const string &s) {
     string ret;
     int len = s.length();
-    bool has_space( false );
+    bool has_space_or_eq( false );
     for (int i = 0; i < len; ++i) {
         char c( s[i] );
-        if (c == ' ' || c == '\t') has_space = true;
+        if (c == ' ' || c == '\t' || c == '=') has_space_or_eq = true;
         if (c == '\"') ret.append("\\");
         ret += c;
     }
-    if (has_space) {
+    if (has_space_or_eq) {
         ret.insert(0, "\"");
         ret.append("\"");
     }
