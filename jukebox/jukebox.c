@@ -76,7 +76,7 @@ int debug = 0;
 int should_exit = false;
 musicfile **musiclist;
 int musicfile_count = 0;
-int celt_stereo = false;
+int disable_stereo = false;
 void *resampler = NULL;
 int reset_resampler = true;
 
@@ -105,7 +105,7 @@ void ctrl_c(int signum) {
 }
 
 void usage(char *argv[]) {
-    fprintf(stderr, "usage: %s -h hostname:port -u username [-p password] [-c channelid] [-v volume_multipler] [-s stereo; celt only] /path/to/music\n", argv[0]);
+    fprintf(stderr, "usage: %s -h hostname:port -u username [-p password] [-c channelid] [-v volume_multipler] [-s disable stereo for celt] /path/to/music\n", argv[0]);
     exit(1);
 }
 
@@ -365,6 +365,7 @@ void *jukebox_player(void *connptr) {
             }
             // figure out how much data we need to send
             bytestosend = codec->pcmframesize;
+            channels = 1;
             switch (codec->codec) {
                 case 0:
                     switch (codec->format) {
@@ -381,15 +382,16 @@ void *jukebox_player(void *connptr) {
                     break;
                 case 1:
                     bytestosend *= 15;
+                    channels = (disable_stereo) ? 1 : 2;
                     break;
                 case 2:
                     bytestosend *= 7;
+                    channels = (disable_stereo) ? 1 : 2;
                     break;
                 case 3:
                     bytestosend *= 6;
                     break;
             }
-            channels = (celt_stereo) ? 2 : 1;
             bytestosend *= channels;
             // figure out how much data we need to read in order to get the
             // proper amount of data to send after resampling
@@ -397,14 +399,14 @@ void *jukebox_player(void *connptr) {
             if (debug) {
                 fprintf(stderr, "want to read %d bytes\n", bytestoread);
             }
-            if (get_mp3_frame(mh, 2-celt_stereo, sendbuf, bytestoread)) { // TODO: fix channel count!!!
+            if (get_mp3_frame(mh, (channels == 2) ? 1 : 2, sendbuf, bytestoread)) { // TODO: fix channel count!!!
                 if (musiclist[filenum]->rate != codec->rate) {
                     pcm_resample(sendbuf, bytestoread, bytestosend, channels, musiclist[filenum]->rate, codec->rate);
                 }
                 for (ctr = 0; ctr < bytestosend / sizeof(int16_t); ctr++) {
                     sendbuf[ctr] *= conninfo->volume;
                 }
-                v3_send_audio(V3_AUDIO_SENDTYPE_U2CCUR, codec->rate, (uint8_t *)sendbuf, bytestosend, celt_stereo);
+                v3_send_audio(V3_AUDIO_SENDTYPE_U2CCUR, codec->rate, (uint8_t *)sendbuf, bytestosend, (channels == 2));
                 gettimeofday(&tm_end, NULL);
                 audio_dur = (bytestosend / (double)(codec->rate * sizeof(int16_t) * channels)) * 1000000.0;
                 code_dur = timediff(&tm_start, &tm_end);
@@ -673,7 +675,7 @@ int get_mp3_frame(mpg123_handle *mh, int channels, int16_t *buf, int bytestoread
             return 0;
         }
         readptr = (int16_t *)readbuffer;
-        if (celt_stereo) {
+        if (channels == 1) { // no channels to mix; this is for celt stereo mode
             memcpy((uint8_t *)buf, &readbuffer, bytestoread);
         } else {
             int ctr;
@@ -708,8 +710,8 @@ uint32_t pcm_resample(int16_t *sendbuf, uint32_t bytestoread, uint32_t bytestose
         return 0;
     }
 
-    insamples = bytestoread / sizeof(int16_t);
-    outsamples = bytestosend / sizeof(int16_t);
+    insamples = bytestoread / (sizeof(int16_t) * channels);
+    outsamples = bytestosend / (sizeof(int16_t) * channels);
     err = speex_resampler_process_interleaved_int(resampler, (void *)sendbuf, &insamples, (void *)&temp, &outsamples);
 
     if (err) {
@@ -786,7 +788,7 @@ int main(int argc, char *argv[]) {
                 conninfo.password = strdup(optarg);
                 break;
             case 's':
-                celt_stereo = true;
+                disable_stereo = true;
                 break;
         }
     }
@@ -812,8 +814,8 @@ int main(int argc, char *argv[]) {
     if (!musicfile_count) {
         return 1;
     }
-    if (celt_stereo) {
-        fprintf(stderr, "using 2 channels for the CELT codec\n");
+    if (!disable_stereo) {
+        fprintf(stderr, "will use 2 channels for the CELT codec\n");
     }
     rc = pthread_create(&network, NULL, jukebox_connection, (void *)&conninfo);
     rc = pthread_create(&player, NULL, jukebox_player, (void *)&conninfo);
