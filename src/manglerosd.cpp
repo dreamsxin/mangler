@@ -8,11 +8,10 @@ using namespace std;
 ManglerOsd::ManglerOsd() {/*{{{*/
     userList = list<string>::list();
     osd_max_lines = 10;
+    osd = NULL;
     if (!Mangler::config["OnScreenDisplayEnabled"].toBool()) {
-        osd = NULL;
         return;
     }
-    createOsd();
 }/*}}}*/
 
 void

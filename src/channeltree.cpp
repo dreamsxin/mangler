@@ -182,7 +182,7 @@ ManglerChannelTree::addUser(uint32_t id, uint32_t parent_id, Glib::ustring name,
     channelRow[channelRecord.url]               = url;
     channelRow[channelRecord.integration_text]  = integration_text;
     channelRow[channelRecord.rank]              = rank;
-    channelRow[channelRecord.last_transmit]     = id != 0 ? "unknown" : "";
+    channelRow[channelRecord.last_transmit]     = "";
     channelRow[channelRecord.password]          = "";
     channelRow[channelRecord.phantom]           = phantom;
     refreshUser(id);
