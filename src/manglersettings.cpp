@@ -100,8 +100,35 @@ ManglerSettings::ManglerSettings(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
     checkbutton->signal_toggled().connect(sigc::mem_fun(this, &ManglerSettings::settingsEnableVoiceActivationCheckButton_toggled_cb));
 
 #ifdef HAVE_XOSD
+    builder->get_widget("settingsOSD", vbox);
+    vbox->set_sensitive(true);
     builder->get_widget("settingsEnableOnScreenDisplayCheckButton", checkbutton);
-    checkbutton->set_sensitive(true);
+    //checkbutton->set_sensitive(true);
+    builder->get_widget("settingsOSDverticalPos", osdPosition);
+    osdPositionModel = Gtk::ListStore::create(osdPositionColumns);
+    osdPosition->set_model(osdPositionModel);
+    osdPosition->pack_start(osdPositionColumns.name);
+    Gtk::TreeModel::Row posrow;
+    posrow = *osdPositionModel->append();
+    posrow[osdPositionColumns.id] = XOSD_top;    posrow[osdPositionColumns.name] = "Top";
+    posrow = *osdPositionModel->append();
+    posrow[osdPositionColumns.id] = XOSD_middle; posrow[osdPositionColumns.name] = "Middle";
+    posrow = *osdPositionModel->append();
+    posrow[osdPositionColumns.id] = XOSD_bottom; posrow[osdPositionColumns.name] = "Bottom";
+
+    builder->get_widget("settingsOSDhorizontalPos", osdAlignment);
+    osdAlignmentModel = Gtk::ListStore::create(osdAlignmentColumns);
+    osdAlignment->set_model(osdAlignmentModel);
+    osdAlignment->pack_start(osdAlignmentColumns.name);
+    Gtk::TreeModel::Row alnrow;
+    alnrow = *osdAlignmentModel->append();
+    alnrow[osdAlignmentColumns.id] = XOSD_left;   alnrow[osdAlignmentColumns.name] = "Left";
+    alnrow = *osdAlignmentModel->append();
+    alnrow[osdAlignmentColumns.id] = XOSD_center; alnrow[osdAlignmentColumns.name] = "Center";
+    alnrow = *osdAlignmentModel->append();
+    alnrow[osdAlignmentColumns.id] = XOSD_right;  alnrow[osdAlignmentColumns.name] = "Right";
+
+    builder->get_widget("settingsOSDfontsize", osdFontSize);
 #endif
 
     builder->get_widget("audioSubsystemComboBox", audioSubsystemComboBox);
@@ -232,9 +259,27 @@ void ManglerSettings::applySettings(void) {/*{{{*/
     builder->get_widget("settingsVoiceActivationSensitivitySpinButton", spinbutton);
     Mangler::config["VoiceActivationSensitivity"] = spinbutton->get_value_as_int();
 
+#ifdef HAVE_XOSD
     // On-Screen Display
     builder->get_widget("settingsEnableOnScreenDisplayCheckButton", checkbutton);
-    Mangler::config["OnScreenDisplayEnabled"] = checkbutton->get_active();
+    if (checkbutton->get_active()) {
+        Mangler::config["OnScreenDisplayEnabled"] = true;
+        Gtk::TreeModel::iterator pos_iter = osdPosition->get_active();
+        if (pos_iter) {
+            int vert_pos_int = (*pos_iter)[osdPositionColumns.id];
+            Mangler::config["OnScreenDisplayVerticalPosition"] = vert_pos_int;
+        }
+        Gtk::TreeModel::iterator aln_iter = osdAlignment->get_active();
+        if (aln_iter) {
+            int horz_aln_int = (*aln_iter)[osdAlignmentColumns.id];
+            Mangler::config["OnScreenDisplayHorizontalAlignment"] = horz_aln_int;
+        }
+        Mangler::config["OnScreenDisplayFontSize"] = osdFontSize->get_value();
+        mangler->osd->destroyOsd();
+    } else {
+        Mangler::config["OnScreenDisplayEnabled"] = false;
+    }
+#endif
 
     // Audio Devices
     iter = inputDeviceComboBox->get_active();
@@ -365,9 +410,30 @@ void ManglerSettings::initSettings(void) {/*{{{*/
     builder->get_widget("settingsVoiceActivationSensitivitySpinButton", spinbutton);
     spinbutton->set_value(Mangler::config["VoiceActivationSensitivity"].toUInt());
 
+#ifdef HAVE_XOSD
     // On-Screen Display
     builder->get_widget("settingsEnableOnScreenDisplayCheckButton", checkbutton);
     checkbutton->set_active(Mangler::config["OnScreenDisplayEnabled"].toBool());
+    Gtk::TreeModel::iterator hz_iter = osdAlignmentModel->children().begin();
+    while (hz_iter != osdAlignmentModel->children().end()) {
+        int hzint = (*hz_iter)[osdAlignmentColumns.id];
+        if (Mangler::config["OnScreenDisplayHorizontalAlignment"].toInt() == hzint) {
+            osdAlignment->set_active(hz_iter); break;
+        }
+        hz_iter++;
+    }
+    Gtk::TreeModel::iterator vt_iter = osdPositionModel->children().begin();
+    while (vt_iter != osdPositionModel->children().end()) {
+        int vtint = (*vt_iter)[osdPositionColumns.id];
+        if (Mangler::config["OnScreenDisplayVerticalPosition"].toInt() == vtint) {
+            osdPosition->set_active(vt_iter); break;
+        }
+        vt_iter++;
+    }
+    if (Mangler::config["OnScreenDisplayFontSize"].toInt() < 5)
+        Mangler::config["OnScreenDisplayFontSize"] = 10;
+    osdFontSize->set_value(Mangler::config["OnScreenDisplayFontSize"].toInt());
+#endif
 
     // Audio Devices
     // the proper devices are selected in the window->show() callback
@@ -904,4 +970,12 @@ ManglerSettings::notificationDeviceComboBox_changed_cb(void) {/*{{{*/
     }
     notificationDeviceCustomName->hide();
     label->hide();
+}/*}}}*/
+
+void
+ManglerSettings::settingsEnableOnScreenDisplayCheckButton_changed_cb(void) {/*{{{*/
+    builder->get_widget("settingsEnableOnScreenDisplayCheckButton", checkbutton);
+    bool xosd_enable( checkbutton->get_active() );
+    osdAlignment->set_sensitive(xosd_enable);
+    osdPosition->set_sensitive(xosd_enable);
 }/*}}}*/

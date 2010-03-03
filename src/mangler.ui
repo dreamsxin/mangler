@@ -1964,28 +1964,124 @@ out the encryption
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkHSeparator" id="settingsEnableOnScreenDisplaySeparator">
-                        <property name="visible">True</property>
-                      </object>
-                      <packing>
-                        <property name="expand">False</property>
-                        <property name="padding">6</property>
-                        <property name="position">12</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <object class="GtkCheckButton" id="settingsEnableOnScreenDisplayCheckButton">
-                        <property name="label" translatable="yes">Enable On-Screen Display</property>
+                      <object class="GtkVBox" id="settingsOSD">
                         <property name="visible">True</property>
                         <property name="sensitive">False</property>
-                        <property name="can_focus">True</property>
-                        <property name="receives_default">False</property>
-                        <property name="tooltip_text" translatable="yes">Display status information text overlaid on your screen.</property>
-                        <property name="draw_indicator">True</property>
+                        <property name="orientation">vertical</property>
+                        <child>
+                          <object class="GtkHSeparator" id="settingsEnableOnScreenDisplaySeparator">
+                            <property name="visible">True</property>
+                          </object>
+                          <packing>
+                            <property name="expand">False</property>
+                            <property name="padding">6</property>
+                            <property name="position">0</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkCheckButton" id="settingsEnableOnScreenDisplayCheckButton">
+                            <property name="label" translatable="yes">Enable On-Screen Display</property>
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <property name="receives_default">False</property>
+                            <property name="draw_indicator">True</property>
+                          </object>
+                          <packing>
+                            <property name="expand">False</property>
+                            <property name="position">1</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkTable" id="table6">
+                            <property name="visible">True</property>
+                            <property name="n_rows">3</property>
+                            <property name="n_columns">2</property>
+                            <child>
+                              <object class="GtkLabel" id="label22">
+                                <property name="visible">True</property>
+                                <property name="xalign">0</property>
+                                <property name="label" translatable="yes">Vertical Position</property>
+                              </object>
+                              <packing>
+                                <property name="x_options">GTK_FILL</property>
+                                <property name="y_options"></property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkLabel" id="label23">
+                                <property name="visible">True</property>
+                                <property name="xalign">0</property>
+                                <property name="label" translatable="yes">Horizontal Alignment</property>
+                              </object>
+                              <packing>
+                                <property name="top_attach">1</property>
+                                <property name="bottom_attach">2</property>
+                                <property name="x_options">GTK_FILL</property>
+                                <property name="y_options"></property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkComboBox" id="settingsOSDverticalPos">
+                                <property name="visible">True</property>
+                              </object>
+                              <packing>
+                                <property name="left_attach">1</property>
+                                <property name="right_attach">2</property>
+                                <property name="y_options"></property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkComboBox" id="settingsOSDhorizontalPos">
+                                <property name="visible">True</property>
+                              </object>
+                              <packing>
+                                <property name="left_attach">1</property>
+                                <property name="right_attach">2</property>
+                                <property name="top_attach">1</property>
+                                <property name="bottom_attach">2</property>
+                                <property name="y_options"></property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkLabel" id="label26">
+                                <property name="visible">True</property>
+                                <property name="xalign">0</property>
+                                <property name="label" translatable="yes">OSD Font Size</property>
+                              </object>
+                              <packing>
+                                <property name="top_attach">2</property>
+                                <property name="bottom_attach">3</property>
+                                <property name="x_options">GTK_FILL</property>
+                                <property name="y_options"></property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkSpinButton" id="settingsOSDfontsize">
+                                <property name="visible">True</property>
+                                <property name="can_focus">True</property>
+                                <property name="invisible_char">&#x2022;</property>
+                                <property name="adjustment">settingsOSDfontsizeAdjustment</property>
+                                <property name="climb_rate">0.5</property>
+                                <property name="digits">1</property>
+                                <property name="snap_to_ticks">True</property>
+                                <property name="numeric">True</property>
+                              </object>
+                              <packing>
+                                <property name="left_attach">1</property>
+                                <property name="right_attach">2</property>
+                                <property name="top_attach">2</property>
+                                <property name="bottom_attach">3</property>
+                                <property name="y_options"></property>
+                              </packing>
+                            </child>
+                          </object>
+                          <packing>
+                            <property name="position">2</property>
+                          </packing>
+                        </child>
                       </object>
                       <packing>
-                        <property name="expand">False</property>
-                        <property name="position">13</property>
+                        <property name="position">12</property>
                       </packing>
                     </child>
                   </object>
@@ -6385,5 +6481,11 @@ These are useful for developers.</property>
   </object>
   <object class="GtkArrow" id="UserChanAuthArrow">
     <property name="visible">True</property>
+  </object>
+  <object class="GtkAdjustment" id="settingsOSDfontsizeAdjustment">
+    <property name="value">10</property>
+    <property name="lower">5</property>
+    <property name="upper">30</property>
+    <property name="step_increment">0.5</property>
   </object>
 </interface>

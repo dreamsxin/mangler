@@ -923,6 +923,9 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                     //fprintf(stderr, "removing user id %d\n", ev->user.id);
                     channelTree->removeUser(ev->user.id);
                     chat->removeUser(ev->user.id);
+#ifdef HAVE_XOSD
+                    osd->removeUser(ev->user.id);
+#endif
                 }
                 break;/*}}}*/
             case V3_EVENT_CHAN_REMOVE:/*{{{*/
@@ -1001,6 +1004,9 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                         } else {
                             label->set_text("Unsupported Codec");
                         }
+#ifdef HAVE_XOSD
+                        osd->destroyOsd();
+#endif
                     } else {
                         if (ev->channel.id == v3_get_user_channel(v3_get_user_id())) {
                             // they're joining our channel
@@ -1009,6 +1015,9 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                             // they're leaving our channel
                             audioControl->playNotification("channelleave");
                         }
+#ifdef HAVE_XOSD
+                        osd->removeUser(ev->user.id);
+#endif
                     }
                     if (u->rank_id) {
                         v3_rank *r;

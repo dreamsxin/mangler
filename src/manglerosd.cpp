@@ -20,8 +20,12 @@ ManglerOsd::createOsd(void) {/*{{{*/
         destroyOsd();
     }
     osd = xosd_create(osd_max_lines);
-    xosd_set_pos(osd,XOSD_top);
-    xosd_set_align(osd,XOSD_center);
+    //xosd_set_pos(osd,XOSD_top);
+    //xosd_set_align(osd,XOSD_center);
+    xosd_set_pos(osd, (xosd_pos)(Mangler::config["OnScreenDisplayVerticalPosition"].toInt()));
+    xosd_set_align(osd, (xosd_align)(Mangler::config["OnScreenDisplayHorizontalAlignment"].toInt()));
+    Glib::ustring fontstr = Glib::ustring::compose( "-*-*-*-*-*-*-0-%1-*-*-*-*-*-*", (int)(Mangler::config["OnScreenDisplayFontSize"].toDouble() * 10.0));
+    xosd_set_font(osd, fontstr.c_str());
 }/*}}}*/
 
 void

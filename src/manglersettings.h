@@ -128,6 +128,20 @@ class ManglerSettings
         };
         mouseDeviceModelColumns  mouseColumns;
         Glib::RefPtr<Gtk::ListStore> mouseDeviceTreeModel;
+        
+        // on screen display position/alignment
+        class osdColumns : public Gtk::TreeModel::ColumnRecord
+        {
+            public:
+                osdColumns() { add(id); add(name); }
+                Gtk::TreeModelColumn<int>           id;
+                Gtk::TreeModelColumn<Glib::ustring> name;
+        };
+        osdColumns osdPositionColumns, osdAlignmentColumns;
+        Glib::RefPtr<Gtk::ListStore> osdPositionModel, osdAlignmentModel;
+        Gtk::ComboBox *osdPosition, *osdAlignment;
+        Gtk::SpinButton *osdFontSize;
+        
 
         // members functions
         void showSettingsWindow(void);
@@ -155,6 +169,7 @@ class ManglerSettings
         void inputDeviceComboBox_changed_cb(void);
         void outputDeviceComboBox_changed_cb(void);
         void notificationDeviceComboBox_changed_cb(void);
+        void settingsEnableOnScreenDisplayCheckButton_changed_cb(void);
 };
 
 #endif
