@@ -36,45 +36,47 @@ bool ManglerIntegration::update(bool forceUpdate, const gchar *data)
     switch (client) {
 #ifdef HAVE_LIBMPDCLIENT
         case MusicClient_MPD:
-            // Get out of idle mode
-            mpd_idle idle_status = mpd_run_noidle (mpd_connection);
-            // If there was no change of song, return false, and go back in idle mode
-            if (idle_status != MPD_IDLE_PLAYER && !forceUpdate)
             {
+                // Get out of idle mode
+                mpd_idle idle_status = mpd_run_noidle (mpd_connection);
+                // If there was no change of song, return false, and go back in idle mode
+                if (idle_status != MPD_IDLE_PLAYER && !forceUpdate)
+                {
+                    mpd_send_idle (mpd_connection);
+                    return false;
+                }
+
+                // Retrieve the status object
+                struct mpd_status *status = mpd_run_status (mpd_connection);
+
+                // Playback is stopped, or unknown
+                mpd_state current_state = mpd_status_get_state (status);
+                if (current_state == MPD_STATE_STOP || current_state == MPD_STATE_UNKNOWN)
+                    current_status = 0;
+                if (current_state == MPD_STATE_PAUSE)
+                    current_status = 1;
+                if (current_state == MPD_STATE_PLAY)
+                    current_status = 2;
+
+                // Get the currrent song
+                int current_song_pos = mpd_status_get_song_pos (status);
+                if (current_song_pos == -1)
+                    return false;
+                struct mpd_song *current_song = mpd_run_get_queue_song_pos (mpd_connection, current_song_pos);
+                if (current_song == NULL)
+                    return false;
+
+                // Fill the strings
+                artist = mpd_song_get_tag (current_song, MPD_TAG_ARTIST, 0);
+                title = mpd_song_get_tag (current_song, MPD_TAG_TITLE, 0);
+                album= mpd_song_get_tag (current_song, MPD_TAG_ALBUM, 0);
+
+                // Free the memory for the status and song objects, and go back in idle mode
+                mpd_status_free (status);
+                mpd_song_free (current_song);
                 mpd_send_idle (mpd_connection);
-                return false;
+                return true;
             }
-
-            // Retrieve the status object
-            struct mpd_status *status = mpd_run_status (mpd_connection);
-
-            // Playback is stopped, or unknown
-            mpd_state current_state = mpd_status_get_state (status);
-            if (current_state == MPD_STATE_STOP || current_state == MPD_STATE_UNKNOWN)
-                current_status = 0;
-            if (current_state == MPD_STATE_PAUSE)
-                current_status = 1;
-            if (current_state == MPD_STATE_PLAY)
-                current_status = 2;
-
-            // Get the currrent song
-            int current_song_pos = mpd_status_get_song_pos (status);
-            if (current_song_pos == -1)
-                return false;
-            struct mpd_song *current_song = mpd_run_get_queue_song_pos (mpd_connection, current_song_pos);
-            if (current_song == NULL)
-                return false;
-
-            // Fill the strings
-            artist = mpd_song_get_tag (current_song, MPD_TAG_ARTIST, 0);
-            title = mpd_song_get_tag (current_song, MPD_TAG_TITLE, 0);
-            album= mpd_song_get_tag (current_song, MPD_TAG_ALBUM, 0);
-
-            // Free the memory for the status and song objects, and go back in idle mode
-            mpd_status_free (status);
-            mpd_song_free (current_song);
-            mpd_send_idle (mpd_connection);
-            return true;
             break;
 #endif
         default:
