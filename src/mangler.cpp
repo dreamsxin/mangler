@@ -730,6 +730,9 @@ void Mangler::onDisconnectHandler(void) {/*{{{*/
         menuitem->set_sensitive(false);
 
         connectbutton->set_sensitive(true);
+#ifdef HAVE_XOSD
+        osd->destroyOsd();
+#endif
         channelTree->clear();
         admin->clearChannels();
         builder->get_widget("xmitButton", togglebutton);

@@ -103,7 +103,7 @@ ManglerSettings::ManglerSettings(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
     builder->get_widget("settingsOSD", vbox);
     vbox->set_sensitive(true);
     builder->get_widget("settingsEnableOnScreenDisplayCheckButton", checkbutton);
-    //checkbutton->set_sensitive(true);
+    checkbutton->signal_toggled().connect(sigc::mem_fun(this, &ManglerSettings::settingsEnableOnScreenDisplayCheckButton_toggled_cb));
     builder->get_widget("settingsOSDverticalPos", osdPosition);
     osdPositionModel = Gtk::ListStore::create(osdPositionColumns);
     osdPosition->set_model(osdPositionModel);
@@ -122,9 +122,9 @@ ManglerSettings::ManglerSettings(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
     osdAlignment->pack_start(osdAlignmentColumns.name);
     Gtk::TreeModel::Row alnrow;
     alnrow = *osdAlignmentModel->append();
-    alnrow[osdAlignmentColumns.id] = XOSD_left;   alnrow[osdAlignmentColumns.name] = "Left";
-    alnrow = *osdAlignmentModel->append();
     alnrow[osdAlignmentColumns.id] = XOSD_center; alnrow[osdAlignmentColumns.name] = "Center";
+    alnrow = *osdAlignmentModel->append();
+    alnrow[osdAlignmentColumns.id] = XOSD_left;   alnrow[osdAlignmentColumns.name] = "Left";
     alnrow = *osdAlignmentModel->append();
     alnrow[osdAlignmentColumns.id] = XOSD_right;  alnrow[osdAlignmentColumns.name] = "Right";
 
@@ -201,8 +201,7 @@ ManglerSettings::ManglerSettings(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
 }/*}}}*/
 void ManglerSettings::applySettings(void) {/*{{{*/
     Gtk::TreeModel::iterator iter;
-    GdkWindow   *rootwin = gdk_get_default_root_window();
-
+    GdkWindow *rootwin = gdk_get_default_root_window();
 
     // Push to Talk
     builder->get_widget("settingsEnablePTTKeyCheckButton", checkbutton);
@@ -262,8 +261,8 @@ void ManglerSettings::applySettings(void) {/*{{{*/
 #ifdef HAVE_XOSD
     // On-Screen Display
     builder->get_widget("settingsEnableOnScreenDisplayCheckButton", checkbutton);
+    Mangler::config["OnScreenDisplayEnabled"] = checkbutton->get_active();
     if (checkbutton->get_active()) {
-        Mangler::config["OnScreenDisplayEnabled"] = true;
         Gtk::TreeModel::iterator pos_iter = osdPosition->get_active();
         if (pos_iter) {
             int vert_pos_int = (*pos_iter)[osdPositionColumns.id];
@@ -276,8 +275,6 @@ void ManglerSettings::applySettings(void) {/*{{{*/
         }
         Mangler::config["OnScreenDisplayFontSize"] = osdFontSize->get_value();
         mangler->osd->destroyOsd();
-    } else {
-        Mangler::config["OnScreenDisplayEnabled"] = false;
     }
 #endif
 
@@ -417,22 +414,28 @@ void ManglerSettings::initSettings(void) {/*{{{*/
     Gtk::TreeModel::iterator hz_iter = osdAlignmentModel->children().begin();
     while (hz_iter != osdAlignmentModel->children().end()) {
         int hzint = (*hz_iter)[osdAlignmentColumns.id];
-        if (Mangler::config["OnScreenDisplayHorizontalAlignment"].toInt() == hzint) {
-            osdAlignment->set_active(hz_iter); break;
+        if (Mangler::config["OnScreenDisplayHorizontalAlignment"].toInt() == hzint ||
+            (!Mangler::config["OnScreenDisplayHorizontalAlignment"].length() && hzint == XOSD_center)) {
+            osdAlignment->set_active(hz_iter);
+            break;
         }
         hz_iter++;
     }
     Gtk::TreeModel::iterator vt_iter = osdPositionModel->children().begin();
     while (vt_iter != osdPositionModel->children().end()) {
         int vtint = (*vt_iter)[osdPositionColumns.id];
-        if (Mangler::config["OnScreenDisplayVerticalPosition"].toInt() == vtint) {
-            osdPosition->set_active(vt_iter); break;
+        if (Mangler::config["OnScreenDisplayVerticalPosition"].toInt() == vtint ||
+            (!Mangler::config["OnScreenDisplayVerticalPosition"].length() && vtint == XOSD_top)) {
+            osdPosition->set_active(vt_iter);
+            break;
         }
         vt_iter++;
     }
-    if (Mangler::config["OnScreenDisplayFontSize"].toInt() < 5)
-        Mangler::config["OnScreenDisplayFontSize"] = 10;
-    osdFontSize->set_value(Mangler::config["OnScreenDisplayFontSize"].toInt());
+    if (Mangler::config["OnScreenDisplayFontSize"].length()) {
+        osdFontSize->set_value(Mangler::config["OnScreenDisplayFontSize"].toDouble());
+    } else {
+        osdFontSize->set_value(8.0);
+    }
 #endif
 
     // Audio Devices
@@ -598,6 +601,11 @@ void ManglerSettings::settingsEnableVoiceActivationCheckButton_toggled_cb(void) 
         builder->get_widget("settingsVoiceActivationTable", table);
         table->set_sensitive(false);
     }
+}/*}}}*/
+void ManglerSettings::settingsEnableOnScreenDisplayCheckButton_toggled_cb(void) {/*{{{*/
+    builder->get_widget("settingsEnableOnScreenDisplayCheckButton", checkbutton);
+    builder->get_widget("settingsOSDTable", table);
+    table->set_sensitive(checkbutton->get_active());
 }/*}}}*/
 /*
  * When this button is pressed, we need to disable all of the other items on
@@ -972,10 +980,3 @@ ManglerSettings::notificationDeviceComboBox_changed_cb(void) {/*{{{*/
     label->hide();
 }/*}}}*/
 
-void
-ManglerSettings::settingsEnableOnScreenDisplayCheckButton_changed_cb(void) {/*{{{*/
-    builder->get_widget("settingsEnableOnScreenDisplayCheckButton", checkbutton);
-    bool xosd_enable( checkbutton->get_active() );
-    osdAlignment->set_sensitive(xosd_enable);
-    osdPosition->set_sensitive(xosd_enable);
-}/*}}}*/

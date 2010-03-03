@@ -18,7 +18,6 @@ class ManglerOsd {/*{{{*/
         int                              osd_max_lines;
         std::list<std::string>           userList;
         void createOsd(void);
-        //void destroyOsd(void);
 
     public:
         ManglerOsd();

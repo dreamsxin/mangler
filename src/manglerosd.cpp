@@ -9,9 +9,6 @@ ManglerOsd::ManglerOsd() {/*{{{*/
     userList = list<string>::list();
     osd_max_lines = 10;
     osd = NULL;
-    if (!Mangler::config["OnScreenDisplayEnabled"].toBool()) {
-        return;
-    }
 }/*}}}*/
 
 void
@@ -24,8 +21,10 @@ ManglerOsd::createOsd(void) {/*{{{*/
     //xosd_set_align(osd,XOSD_center);
     xosd_set_pos(osd, (xosd_pos)(Mangler::config["OnScreenDisplayVerticalPosition"].toInt()));
     xosd_set_align(osd, (xosd_align)(Mangler::config["OnScreenDisplayHorizontalAlignment"].toInt()));
-    Glib::ustring fontstr = Glib::ustring::compose( "-*-*-*-*-*-*-0-%1-*-*-*-*-*-*", (int)(Mangler::config["OnScreenDisplayFontSize"].toDouble() * 10.0));
-    xosd_set_font(osd, fontstr.c_str());
+    if (Mangler::config["OnScreenDisplayFontSize"].toDouble() > 8.0) {
+        Glib::ustring fontstr = Glib::ustring::compose( "-*-*-*-*-*-*-0-%1-*-*-*-*-*-*", (int)(Mangler::config["OnScreenDisplayFontSize"].toDouble() * 10.0));
+        xosd_set_font(osd, fontstr.c_str());
+    }
 }/*}}}*/
 
 void
