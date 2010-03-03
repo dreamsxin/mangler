@@ -309,6 +309,7 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
     // Statusbar Icon
     statusIcon = Gtk::StatusIcon::create(icons["tray_icon_grey"]);
     statusIcon->signal_activate().connect(sigc::mem_fun(this, &Mangler::statusIcon_activate_cb));
+    statusIcon->signal_scroll_event().connect_notify(sigc::mem_fun(this, &Mangler::statusIcon_scroll_event_cb));
     iconified = false;
 
     // Music (Now playing)
@@ -559,6 +560,20 @@ void Mangler::statusIcon_activate_cb(void) {/*{{{*/
         manglerWindow->set_skip_pager_hint(true);
         manglerWindow->set_skip_taskbar_hint(true);
         iconified = true;
+    }
+}/*}}}*/
+void Mangler::statusIcon_scroll_event_cb(GdkEventScroll* event) {/*{{{*/
+    int volume;
+    if ((event->type == GDK_SCROLL) && (event->direction == GDK_SCROLL_UP)) {
+        volume = Mangler::config["MasterVolumeLevel"].toInt();
+        volume+=5;
+        Mangler::config["MasterVolumeLevel"] = volume;
+        v3_set_volume_master(Mangler::config["MasterVolumeLevel"].toInt());
+    } else if ((event->type == GDK_SCROLL) && (event->direction == GDK_SCROLL_DOWN)) {
+        volume = Mangler::config["MasterVolumeLevel"].toInt();
+        volume-=5;
+        Mangler::config["MasterVolumeLevel"] = volume;
+        v3_set_volume_master(Mangler::config["MasterVolumeLevel"].toInt());
     }
 }/*}}}*/
 bool Mangler::mangler_quit_cb(void) {/*{{{*/

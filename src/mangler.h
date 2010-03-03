@@ -165,6 +165,7 @@ class Mangler
         void aboutButton_clicked_cb(void);
         void xmitButton_toggled_cb(void);
         void statusIcon_activate_cb(void);
+        void statusIcon_scroll_event_cb(GdkEventScroll* event);
         void errorOKButton_clicked_cb(void);
 
 
