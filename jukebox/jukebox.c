@@ -739,17 +739,74 @@ int get_random_number(int min, int max) {
     return min + (int)( ((float)max) * rand() / ( RAND_MAX + 1.0 ) );
 }
 
+typedef struct _channel_node {
+    char name[40];
+    uint16_t id;
+    struct _channel_node *children[200];
+    int childcount;
+} channel_node;
+
+channel_node *find_channel(channel_node *node, uint16_t id) {
+    int i = 0;
+    channel_node *p = NULL;
+    if (node->id == id) return node;
+    while (i < node->childcount) {
+        p = find_channel(node->children[i], id);
+        if (p) return p;
+        ++i;
+    }
+    return NULL;
+}
+
+void add_channel(channel_node *lobby_node, v3_channel *chan) {
+    channel_node *p = lobby_node;
+    if (chan->parent) {
+        p = find_channel(lobby_node, chan->parent);
+        if (!p) p = lobby_node;
+    }
+    if (p) {
+        p->children[p->childcount] = malloc(sizeof(channel_node));
+        if (p->children[p->childcount]) {
+            strncpy(p->children[p->childcount]->name, chan->name, 40);
+            p->children[p->childcount]->id = chan->id;
+            ++p->childcount;
+        }
+    } else {
+        //if (debug)
+        fprintf(stderr, "error adding channel %u to tree.\n", chan->id);
+    }
+}
+
+void print_channels(channel_node *node, int indentlevel) {
+    int i;
+    for (i = 0; i < indentlevel; ++i) fprintf(stdout, "    ");
+    fprintf(stdout, "%d: %s\n", node->id, node->name);
+    for (i = 0; i < node->childcount; ++i) print_channels(node->children[i], indentlevel+1);
+}
+
+void free_channels(channel_node *node) {
+    int i;
+    for (i = 0; i < node->childcount; ++i) free_channels(node->children[i]);
+    free(node);
+}
+
 int select_channel(void) {
     int ctr;
     v3_channel *c;
     char buf[16];
+    channel_node *chantree = malloc(sizeof(channel_node));
+    strcpy(chantree->name, "(Lobby)");
+    chantree->id = 0;
 
     for (ctr = 0; ctr < 32768; ctr++) {
         if ((c = v3_get_channel(ctr))) {
-            fprintf(stdout, "%d: %s\n", c->id, c->name);
+            //fprintf(stdout, "%d: %s\n", c->id, c->name);
+            add_channel(chantree, c);
             v3_free_channel(c);
         }
     }
+    print_channels(chantree, 0);
+    free_channels(chantree);
     fprintf(stdout, "Enter a channel id: ");
     fgets(buf, 15, stdin);
     return atoi(buf);
