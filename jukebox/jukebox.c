@@ -797,6 +797,7 @@ int select_channel(void) {
     channel_node *chantree = malloc(sizeof(channel_node));
     strcpy(chantree->name, "(Lobby)");
     chantree->id = 0;
+    chantree->childcount = 0;
 
     for (ctr = 0; ctr < 32768; ctr++) {
         if ((c = v3_get_channel(ctr))) {
