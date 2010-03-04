@@ -766,6 +766,7 @@ void add_channel(channel_node *lobby_node, v3_channel *chan) {
     }
     if (p) {
         p->children[p->childcount] = malloc(sizeof(channel_node));
+        memset(p->children[p->childcount], 0, sizeof(channel_node));
         if (p->children[p->childcount]) {
             strncpy(p->children[p->childcount]->name, chan->name, 40);
             p->children[p->childcount]->id = chan->id;
@@ -795,6 +796,7 @@ int select_channel(void) {
     v3_channel *c;
     char buf[16];
     channel_node *chantree = malloc(sizeof(channel_node));
+    memset(chantree, 0, sizeof(channel_node));
     strcpy(chantree->name, "(Lobby)");
     chantree->id = 0;
     chantree->childcount = 0;
