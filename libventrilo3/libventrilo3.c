@@ -2887,7 +2887,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                                         while (celtdatalen) {
                                             celt_frame_size = *celtdataptr++;
                                             celtdatalen--;
-                                            if (!celt_frame_size || celtdatalen - celt_frame_size < 0) {
+                                            if (!celt_frame_size || celtdatalen - celt_frame_size < 0 || ev->pcm.length + pcm_frame_size > sizeof(ev->data.sample)) {
                                                 _v3_error("received a malformed celt packet");
                                                 _v3_destroy_0x52(msg);
                                                 _v3_destroy_packet(msg);

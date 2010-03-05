@@ -913,8 +913,9 @@ int main(int argc, char *argv[]) {
     pthread_t network;
     pthread_t player;
     struct _conninfo conninfo;
-    int nshuf = -1;
+    int shuffle = true;
 
+    memset(&conninfo, 0, sizeof(conninfo));
     conninfo.channelid = 0;
     conninfo.volume = 1;
     while ((opt = getopt(argc, argv, "dh:p:u:c:nsv:")) != -1) {
@@ -940,7 +941,7 @@ int main(int argc, char *argv[]) {
                 conninfo.password = strdup(optarg);
                 break;
             case 'n':
-                nshuf = 0;
+                shuffle = false;
                 break;
             case 's':
                 disable_stereo = true;
@@ -969,10 +970,13 @@ int main(int argc, char *argv[]) {
     if (!musicfile_count) {
         return 1;
     }
-    if (nshuf == -1) nshuf = get_random_number(2, 5);
-    while (nshuf) {
-        shuffle_musiclist();
-        --nshuf;
+    if (shuffle) {
+        shuffle = get_random_number(2, 5);
+        while (shuffle--) {
+            shuffle_musiclist();
+        }
+    } else {
+        fprintf(stderr, "not shuffling musiclist\n");
     }
     if (!disable_stereo) {
         fprintf(stderr, "will use 2 channels for the CELT codec\n");
