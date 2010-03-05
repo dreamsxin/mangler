@@ -3373,7 +3373,6 @@ These are useful for developers.</property>
             </child>
             <child>
               <object class="GtkLabel" id="textStringChangeIntegrationLabel">
-                <property name="visible">True</property>
                 <property name="xalign">0.94999998807907104</property>
                 <property name="label" translatable="yes">Integration (music):</property>
               </object>
@@ -3422,7 +3421,6 @@ These are useful for developers.</property>
             </child>
             <child>
               <object class="GtkEntry" id="textStringChangeIntegrationEntry">
-                <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="max_length">127</property>
                 <property name="invisible_char">&#x25CF;</property>
