@@ -84,6 +84,7 @@ class Mangler
 
         std::map<Glib::ustring, Glib::RefPtr<Gdk::Pixbuf> >  icons;
         Glib::RefPtr<Gtk::StatusIcon>       statusIcon;
+        Gtk::Menu                           *statusIconMenu;
         ManglerServerList                   *serverList;
         ManglerChat                         *chat;
         ManglerChannelTree                  *channelTree;
@@ -166,6 +167,7 @@ class Mangler
         void xmitButton_toggled_cb(void);
         void statusIcon_activate_cb(void);
         void statusIcon_scroll_event_cb(GdkEventScroll* event);
+        void statusIcon_buttonpress_event_cb(GdkEventButton* event);
         void errorOKButton_clicked_cb(void);
 
 
@@ -189,6 +191,8 @@ class Mangler
         // quick mute options
         void muteSoundCheckButton_toggled_cb(void);
         void muteMicCheckButton_toggled_cb(void);
+        void muteSoundCheckMenuItem_toggled_cb(void);
+        void muteMicCheckMenuItem_toggled_cb(void);
 
         // quick connect signal handlers
         void qcConnectButton_clicked_cb(void);

@@ -310,6 +310,12 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
     statusIcon = Gtk::StatusIcon::create(icons["tray_icon_grey"]);
     statusIcon->signal_activate().connect(sigc::mem_fun(this, &Mangler::statusIcon_activate_cb));
     statusIcon->signal_scroll_event().connect_notify(sigc::mem_fun(this, &Mangler::statusIcon_scroll_event_cb));
+    statusIcon->signal_button_press_event().connect_notify(sigc::mem_fun(this, &Mangler::statusIcon_buttonpress_event_cb));
+    builder->get_widget("statusIconMenu", statusIconMenu);
+    builder->get_widget("muteMicCheckMenuItem", checkmenuitem);
+    checkmenuitem->signal_toggled().connect(sigc::mem_fun(this, &Mangler::muteMicCheckMenuItem_toggled_cb));
+    builder->get_widget("muteSoundCheckMenuItem", checkmenuitem);
+    checkmenuitem->signal_toggled().connect(sigc::mem_fun(this, &Mangler::muteSoundCheckMenuItem_toggled_cb));
     iconified = false;
 
     // Music (Now playing)
@@ -562,6 +568,21 @@ void Mangler::statusIcon_activate_cb(void) {/*{{{*/
         iconified = true;
     }
 }/*}}}*/
+void
+Mangler::statusIcon_buttonpress_event_cb(GdkEventButton* event) {/*{{{*/
+    if ((event->type == GDK_BUTTON_PRESS) && (event->button == 3)) {
+        builder->get_widget("statusIconMenu", statusIconMenu);
+        builder->get_widget("muteMicCheckButton", checkbutton);
+        builder->get_widget("muteMicCheckMenuItem", checkmenuitem);
+        checkmenuitem->set_active(checkbutton->get_active());
+
+        builder->get_widget("muteSoundCheckButton", checkbutton);
+        builder->get_widget("muteSoundCheckMenuItem", checkmenuitem);
+        checkmenuitem->set_active(checkbutton->get_active());
+        statusIconMenu->popup(event->button, event->time);
+    }
+}
+/*}}}*/
 void Mangler::statusIcon_scroll_event_cb(GdkEventScroll* event) {/*{{{*/
     int volume;
     if ((event->type == GDK_SCROLL) && (event->direction == GDK_SCROLL_UP)) {
@@ -642,6 +663,20 @@ void Mangler::muteMicCheckButton_toggled_cb(void) {/*{{{*/
     } else if (!muteMic && (isTransmittingMouse || isTransmittingKey || isTransmittingButton)) {
         startTransmit();
     }
+}/*}}}*/
+
+// Status Icon Sound Mute
+void Mangler::muteSoundCheckMenuItem_toggled_cb(void) {/*{{{*/
+    builder->get_widget("muteSoundCheckButton", checkbutton);
+    builder->get_widget("muteSoundCheckMenuItem", checkmenuitem);
+    checkbutton->set_active(checkmenuitem->get_active());
+}/*}}}*/
+
+// Status Icon Mic Mute
+void Mangler::muteMicCheckMenuItem_toggled_cb(void) {/*{{{*/
+    builder->get_widget("muteMicCheckButton", checkbutton);
+    builder->get_widget("muteMicCheckMenuItem", checkmenuitem);
+    checkbutton->set_active(checkmenuitem->get_active());
 }/*}}}*/
 
 // Quick Connect callbacks

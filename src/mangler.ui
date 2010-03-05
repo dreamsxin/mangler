@@ -6484,4 +6484,21 @@ These are useful for developers.</property>
     <property name="upper">30</property>
     <property name="step_increment">0.5</property>
   </object>
+  <object class="GtkMenu" id="statusIconMenu">
+    <property name="visible">True</property>
+    <child>
+      <object class="GtkCheckMenuItem" id="muteMicCheckMenuItem">
+        <property name="visible">True</property>
+        <property name="label" translatable="yes">Mute Mic</property>
+        <property name="use_underline">True</property>
+      </object>
+    </child>
+    <child>
+      <object class="GtkCheckMenuItem" id="muteSoundCheckMenuItem">
+        <property name="visible">True</property>
+        <property name="label" translatable="yes">Mute Sound</property>
+        <property name="use_underline">True</property>
+      </object>
+    </child>
+  </object>
 </interface>
