@@ -25,7 +25,7 @@
  *
  *
  ******************************************************************
- *         All hope abandon ye who open this source code          *
+ *         All hope abandon ye who open this source code.         *
  ******************************************************************
  *                                                                *
  *                           _,.-------.,_                        *
@@ -226,7 +226,7 @@ void *jukebox_player(void *connptr) {
                                 playing = false;
                             }
                         } else {
-                            v3_send_chat_message("This channel sucks.  I'm not playing here.");
+                            v3_send_chat_message("This channel sucks. I'm not playing here.");
                             stopped = true;
                         }
                     }
@@ -250,7 +250,7 @@ void *jukebox_player(void *connptr) {
                         v3_send_chat_message("!next -- play a new random track");
                         v3_send_chat_message("!move -- move to your channel");
                         v3_send_chat_message("!play [song/artist/file name] -- search for a song by filename and play the first random match");
-                        v3_send_chat_message("!volume [0-1] -- Set the volume to the specified level: ex: !volume 0.5");
+                        v3_send_chat_message("!volume [0.0-1.0] -- Set the volume to the specified level: ex: !volume 0.5");
                         v3_send_chat_message("!polite [off|0-60] -- Pauses playing when audio is received for the specified duration");
                         break;
                     } else if (strncmp(ev->data.chatmessage, "!polite", 7) == 0) {
@@ -343,28 +343,32 @@ void *jukebox_player(void *connptr) {
                                 v3_start_audio(V3_AUDIO_SENDTYPE_U2CCUR);
                             }
                         }
-                    } else if (! stopped && (strcmp(ev->data.chatmessage, "!next") == 0 || strcmp(ev->data.chatmessage, "!next track") == 0)) {
-                        v3_stop_audio();
-                        close_mp3(mh);
-                        mh = NULL;
+                    } else if (! stopped && strcmp(ev->data.chatmessage, "!next") == 0) {
+                        if (mh) {
+                            v3_stop_audio();
+                            close_mp3(mh);
+                            mh = NULL;
+                        }
                         playing = false;
                     } else if (strcmp(ev->data.chatmessage, "!move") == 0) {
                         user = v3_get_user(ev->user.id);
-                        v3_send_chat_message("Moving"); v3_change_channel(user->channel, "");
+                        v3_change_channel(user->channel, "");
                         v3_free_user(user);
-                    } else if (strcmp(ev->data.chatmessage, "!start") == 0) {
+                    } else if (stopped && strcmp(ev->data.chatmessage, "!start") == 0) {
                         if (codec->rate >= 11025) {
                             stopped = false;
-                            v3_send_chat_message("Starting jukebox");
+                            v3_send_chat_message("Starting jukebox...");
                         } else {
-                            v3_send_chat_message("This channel sucks.  I'm not playing here.");
+                            v3_send_chat_message("This channel sucks. I'm not playing here.");
                         }
-                    } else if (strcmp(ev->data.chatmessage, "!stop") == 0) {
-                        v3_send_chat_message("Stopping jukebox");
-                        v3_stop_audio();
+                    } else if (! stopped && strcmp(ev->data.chatmessage, "!stop") == 0) {
+                        v3_send_chat_message("Stopping jukebox...");
+                        if (mh) {
+                            v3_stop_audio();
+                            close_mp3(mh);
+                            mh = NULL;
+                        }
                         v3_set_text("", "", "", true);
-                        close_mp3(mh);
-                        mh = NULL;
                         playing = false;
                         stopped = true;
                     } else {
@@ -451,10 +455,12 @@ void *jukebox_player(void *connptr) {
                 }
                 gettimeofday(&tm_start, NULL);
             } else {
-                v3_stop_audio();
                 fprintf(stderr, "no more frames or some error\n");
-                close_mp3(mh);
-                mh = NULL;
+                if (mh) {
+                    v3_stop_audio();
+                    close_mp3(mh);
+                    mh = NULL;
+                }
                 playing = false;
             }
         }
