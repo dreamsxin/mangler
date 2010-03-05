@@ -37,6 +37,7 @@
 #include <sys/stat.h>
 #include <getopt.h>
 #include <pthread.h>
+#include <libgen.h>
 
 #include <mpg123.h>
 #include <speex/speex_resampler.h>
@@ -105,7 +106,7 @@ void ctrl_c(int signum) {
 }
 
 void usage(char *argv[]) {
-    fprintf(stderr, "usage: %s -h hostname:port -u username [-p password] [-c channelid] [-v volume_multipler] [-s disable stereo for celt] /path/to/music\n", argv[0]);
+    fprintf(stderr, "usage: %s -h hostname:port -u username [-p password] [-c channelid] [-v volume_multipler] [-s disable stereo for celt] [-n don't shuffle] /path/to/music\n", argv[0]);
     exit(1);
 }
 
@@ -459,12 +460,85 @@ void send_now_playing(int filenum) {
     v3_send_chat_message(msgbuf);
 }
 
+void read_playlist_file(char *path) {
+    char *basepath, *pathcp, *temp;
+    char buf[4096];
+    struct stat s;
+    FILE *f;
+    int i;
+
+    pathcp = strdup(path);
+    basepath = dirname(pathcp);
+
+    if (! (f = fopen(path, "r"))) {
+        fprintf(stderr, "could not open playlist file: %s\n", path);
+        exit(1);
+    }
+    
+    while (fgets(buf, 4096, f)) {
+        if (buf[0] == '#') continue;
+        i = strlen(buf) - 1;
+        while (i > 0 && (buf[i] == '\n' || buf[i] == '\t' || buf[i] == '\r' || buf[i] == ' ')) --i;
+        if (i < 1) continue;
+        buf[i+1] = '\0';
+        i = 0;
+        while (i < 4096 && (buf[i] == ' ' || buf[i] == '\t' || buf[i] == '\r')) ++i;
+        if (i) {
+            temp = strdup(buf+i);
+            strcpy(buf, temp);
+            free(temp);
+        }
+        if (buf[0] != '/') {
+            // contains relative path
+            temp = strdup(buf);
+            strcpy(buf, basepath);
+            i = strlen(buf);
+            buf[i] = '/';
+            i++;
+            strncpy(buf + i, temp, 4096 - i);
+            free(temp);
+        }
+        
+        if (stat(buf, &s)) {
+            if (debug) fprintf(stderr, "could not stat '%s', skipping.\n", buf);
+            continue;
+        }
+        
+        if (! S_ISREG(s.st_mode)) {
+            if (debug) fprintf(stderr, "'%s' is not a regular file, skipping.\n", buf);
+            continue;
+        }
+
+        musiclist = realloc(musiclist, (musicfile_count+1) * sizeof(musicfile *));
+        musiclist[musicfile_count] = malloc(sizeof(musicfile));
+        memset(musiclist[musicfile_count], 0, sizeof(musicfile));
+        musiclist[musicfile_count]->path = strdup(buf);
+        musicfile_count++;
+        if (debug) {
+            fprintf(stderr, "added file #%d: %s\n", musicfile_count, buf);
+        }
+    }
+
+    fclose(f);
+    free(pathcp);
+}
+
 void scan_media_path(char *path) {
     DIR *dir;
     struct dirent *ent;
     char namebuf[2048];
     char *cptr;
     struct stat s;
+    
+    if (stat(path, &s)) {
+        fprintf(stderr, "could not stat: %s\n", path);
+        exit(1);
+    }
+
+    if (S_ISREG(s.st_mode)) {
+        read_playlist_file(path);
+        return;
+    }
 
     if (! (dir = opendir(path))) {
         fprintf(stderr, "could not open diretory: %s\n", path);
@@ -839,11 +913,11 @@ int main(int argc, char *argv[]) {
     pthread_t network;
     pthread_t player;
     struct _conninfo conninfo;
-    int nshuf;
+    int nshuf = -1;
 
     conninfo.channelid = 0;
     conninfo.volume = 1;
-    while ((opt = getopt(argc, argv, "dh:p:u:c:sv:")) != -1) {
+    while ((opt = getopt(argc, argv, "dh:p:u:c:nsv:")) != -1) {
         switch (opt) {
             case 'd':
                 debug++;
@@ -864,6 +938,9 @@ int main(int argc, char *argv[]) {
                 break;
             case 'p':
                 conninfo.password = strdup(optarg);
+                break;
+            case 'n':
+                nshuf = 0;
                 break;
             case 's':
                 disable_stereo = true;
@@ -892,7 +969,7 @@ int main(int argc, char *argv[]) {
     if (!musicfile_count) {
         return 1;
     }
-    nshuf = get_random_number(2, 5);
+    if (nshuf == -1) nshuf = get_random_number(2, 5);
     while (nshuf) {
         shuffle_musiclist();
         --nshuf;
