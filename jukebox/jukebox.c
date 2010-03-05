@@ -276,7 +276,9 @@ void *jukebox_player(void *connptr) {
                             // we have SOMETHING in the filelist that matches, but no guarantee that it's a song... try 10
                             // different matches before giving up
                             for (attempts = 0; attempts < 20; attempts++) {
-                                filenum = get_random_number(0, musicfile_count-1);
+                                //filenum = get_random_number(0, musicfile_count-1);
+                                filenum++;
+                                if (filenum >= musicfile_count) filenum = 0;
                                 if (debug) {
                                     fprintf(stderr, "checking for %s: %s\n", searchspec, musiclist[filenum]->path);
                                 }
@@ -344,7 +346,9 @@ void *jukebox_player(void *connptr) {
         if (connected && ! stopped && (politeness < 0 || timediff(&last_audio, &now) >= politeness * 1000000 + 500000 )) {
             if (! playing) {
                 while (! mh) {
-                    filenum = get_random_number(0, musicfile_count-1);
+                    //filenum = get_random_number(0, musicfile_count-1);
+                    filenum++;
+                    if (filenum >= musicfile_count) filenum = 0;
                     if (!(mh = open_mp3(musiclist[filenum], codec))) {
                         if (debug) {
                             fprintf(stderr, "could not open: %s\n", musiclist[filenum]->path);
@@ -739,6 +743,19 @@ int get_random_number(int min, int max) {
     return min + (int)( ((float)max) * rand() / ( RAND_MAX + 1.0 ) );
 }
 
+void shuffle_musiclist(void) {
+    musicfile *temp;
+    int i, j;
+    for (i = 0; i < musicfile_count; ++i) {
+        j = get_random_number(0, musicfile_count-1);
+        if (i != j) {
+            temp = musiclist[i];
+            musiclist[i] = musiclist[j];
+            musiclist[j] = temp;
+        }
+    }
+}
+
 typedef struct _channel_node {
     char name[40];
     uint16_t id;
@@ -822,6 +839,7 @@ int main(int argc, char *argv[]) {
     pthread_t network;
     pthread_t player;
     struct _conninfo conninfo;
+    int nshuf;
 
     conninfo.channelid = 0;
     conninfo.volume = 1;
@@ -873,6 +891,11 @@ int main(int argc, char *argv[]) {
     fprintf(stderr, "found %d files in music path\n", musicfile_count);
     if (!musicfile_count) {
         return 1;
+    }
+    nshuf = get_random_number(2, 5);
+    while (nshuf) {
+        shuffle_musiclist();
+        --nshuf;
     }
     if (!disable_stereo) {
         fprintf(stderr, "will use 2 channels for the CELT codec\n");
