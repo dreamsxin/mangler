@@ -54,17 +54,23 @@ ManglerOsd::updateOsd(void) {/*{{{*/
     if (!checkOsdEnabled()) {
         return;
     }
+    if (userList.empty()) {
+        xosd_hide(osd);
+        return;
+    }
+    xosd_pos mosd_pos = (xosd_pos)(Mangler::config["OnScreenDisplayVerticalPosition"].toInt());
 
-    int i = 0;
+    int i = (mosd_pos == XOSD_bottom) ? osd_max_lines - 1 : 0;
     list<string>::iterator it;
     for(it=userList.begin(); it!= userList.end(); ++it) {
-        xosd_display(osd,++i,XOSD_string,it->c_str());
-        if ( i >= osd_max_lines ) {
-            break;
-        }
+        xosd_display(osd,i,XOSD_string,it->c_str());
+        i += (mosd_pos == XOSD_bottom) ? -1 : 1;
+        if ( i >= osd_max_lines || i < 0) break;
     }
-    while (++i <= osd_max_lines) {
-        xosd_display(osd,i,XOSD_string,"");
+    
+    while (i >= 0 && i < osd_max_lines) {
+        xosd_display(osd,i,XOSD_string," ");
+        i += (mosd_pos == XOSD_bottom) ? -1 : 1;
     }
 }/*}}}*/
 
