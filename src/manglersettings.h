@@ -141,6 +141,7 @@ class ManglerSettings
         Glib::RefPtr<Gtk::ListStore> osdPositionModel, osdAlignmentModel;
         Gtk::ComboBox *osdPosition, *osdAlignment;
         Gtk::SpinButton *osdFontSize;
+        Gtk::ColorButton *osdColor;
         
 
         // members functions

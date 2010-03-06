@@ -1988,7 +1988,7 @@ out the encryption
                           <object class="GtkTable" id="settingsOSDTable">
                             <property name="visible">True</property>
                             <property name="sensitive">False</property>
-                            <property name="n_columns">7</property>
+                            <property name="n_columns">4</property>
                             <child>
                               <object class="GtkLabel" id="settingsOSDverticalPosLabel">
                                 <property name="visible">True</property>
@@ -2029,6 +2029,26 @@ out the encryption
                                 <property name="x_padding">5</property>
                               </packing>
                             </child>
+                          </object>
+                          <packing>
+                            <property name="expand">False</property>
+                            <property name="padding">2</property>
+                            <property name="position">2</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkHBox" id="hbox24">
+                            <property name="visible">True</property>
+                            <child>
+                              <object class="GtkLabel" id="settingsOSDfontsizeLabel">
+                                <property name="visible">True</property>
+                                <property name="xalign">0.94999998807907104</property>
+                                <property name="label" translatable="yes">Font Size:</property>
+                              </object>
+                              <packing>
+                                <property name="position">0</property>
+                              </packing>
+                            </child>
                             <child>
                               <object class="GtkSpinButton" id="settingsOSDfontsize">
                                 <property name="visible">True</property>
@@ -2041,21 +2061,7 @@ out the encryption
                                 <property name="numeric">True</property>
                               </object>
                               <packing>
-                                <property name="left_attach">5</property>
-                                <property name="right_attach">6</property>
-                                <property name="x_options">GTK_FILL</property>
-                                <property name="x_padding">5</property>
-                              </packing>
-                            </child>
-                            <child>
-                              <object class="GtkLabel" id="settingsOSDfontsizeLabel">
-                                <property name="visible">True</property>
-                                <property name="xalign">0.94999998807907104</property>
-                                <property name="label" translatable="yes">Font Size:</property>
-                              </object>
-                              <packing>
-                                <property name="left_attach">4</property>
-                                <property name="right_attach">5</property>
+                                <property name="position">1</property>
                               </packing>
                             </child>
                             <child>
@@ -2065,15 +2071,23 @@ out the encryption
                                 <property name="label" translatable="yes">pt</property>
                               </object>
                               <packing>
-                                <property name="left_attach">6</property>
-                                <property name="right_attach">7</property>
+                                <property name="position">2</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkColorButton" id="settingsOSDcolor">
+                                <property name="visible">True</property>
+                                <property name="can_focus">True</property>
+                                <property name="receives_default">True</property>
+                                <property name="color">#0000ffff0000</property>
+                              </object>
+                              <packing>
+                                <property name="position">3</property>
                               </packing>
                             </child>
                           </object>
                           <packing>
-                            <property name="expand">False</property>
-                            <property name="padding">2</property>
-                            <property name="position">2</property>
+                            <property name="position">3</property>
                           </packing>
                         </child>
                       </object>

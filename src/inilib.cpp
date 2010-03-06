@@ -262,14 +262,15 @@ ostream &iniSection::saveLine(ostream &out, const string &keyName, const string 
 string iniSection::quoteString(const string &s) {
     string ret;
     int len = s.length();
-    bool has_space_or_eq( false );
+    bool needs_quotes( false );
     for (int i = 0; i < len; ++i) {
         char c( s[i] );
-        if (c == ' ' || c == '\t' || c == '=') has_space_or_eq = true;
+        if (c == ' ' || c == '\t' || c == '=' || c == '#' || c == ';')
+            needs_quotes = true;
         if (c == '\"') ret.append("\\");
         ret += c;
     }
-    if (has_space_or_eq) {
+    if (needs_quotes) {
         ret.insert(0, "\"");
         ret.append("\"");
     }
@@ -429,7 +430,7 @@ void iniFile::cleanLine(string &s) {
     bool in_quotes( false );
     for (int i = 0; i < len; ++i) {
         if (s[i] == '\"') in_quotes = ! in_quotes;
-        else if (s[i] == '#' || s[i] == ';') {
+        else if (! in_quotes && (s[i] == '#' || s[i] == ';')) {
             s.erase(i, s.npos);
             break;
         }

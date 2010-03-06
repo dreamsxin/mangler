@@ -25,6 +25,8 @@ ManglerOsd::createOsd(void) {/*{{{*/
         Glib::ustring fontstr = Glib::ustring::compose( "-*-*-*-*-*-*-0-%1-*-*-*-*-*-*", (int)(Mangler::config["OnScreenDisplayFontSize"].toDouble() * 10.0));
         xosd_set_font(osd, fontstr.c_str());
     }
+    if (Mangler::config["OnScreenDisplayColor"].length())
+        xosd_set_colour(osd, Mangler::config["OnScreenDisplayColor"].toCString());
 }/*}}}*/
 
 void

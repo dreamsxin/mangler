@@ -129,6 +129,7 @@ ManglerSettings::ManglerSettings(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
     alnrow[osdAlignmentColumns.id] = XOSD_right;  alnrow[osdAlignmentColumns.name] = "Right";
 
     builder->get_widget("settingsOSDfontsize", osdFontSize);
+    builder->get_widget("settingsOSDcolor", osdColor);
 #endif
 
     builder->get_widget("audioSubsystemComboBox", audioSubsystemComboBox);
@@ -274,6 +275,10 @@ void ManglerSettings::applySettings(void) {/*{{{*/
             Mangler::config["OnScreenDisplayHorizontalAlignment"] = horz_aln_int;
         }
         Mangler::config["OnScreenDisplayFontSize"] = osdFontSize->get_value();
+        Gdk::Color color = osdColor->get_color();
+        char colorstr[8];
+        sprintf(colorstr, "#%02x%02x%02x", color.get_red() / 256, color.get_green() / 256, color.get_blue() / 256);
+        Mangler::config["OnScreenDisplayColor"] = colorstr;
         mangler->osd->destroyOsd();
     }
 #endif
@@ -435,6 +440,11 @@ void ManglerSettings::initSettings(void) {/*{{{*/
         osdFontSize->set_value(Mangler::config["OnScreenDisplayFontSize"].toDouble());
     } else {
         osdFontSize->set_value(8.0);
+    }
+    if (Mangler::config["OnScreenDisplayColor"].length()) {
+        Gdk::Color color;
+        color.set(Mangler::config["OnScreenDisplayColor"].toUString());
+        osdColor->set_color(color);
     }
 #endif
 
