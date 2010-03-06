@@ -143,6 +143,7 @@ class ManglerChannelTree
         void setSort(bool);
 
         void channelView_row_activated_cb(const Gtk::TreeModel::Path& path, Gtk::TreeViewColumn* column);
+        void channelView_columns_changed_cb(void);
         void userSettingsMenuItem_activate_cb(void);
         void channelView_buttonpress_event_cb(GdkEventButton* event);
         void copyCommentMenuItem_activate_cb(void);

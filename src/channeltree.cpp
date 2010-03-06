@@ -59,6 +59,10 @@ ManglerChannelTree::ManglerChannelTree(Glib::RefPtr<Gtk::Builder> builder)/*{{{*
     pColumn->pack_start(channelRecord.last_transmit);
     pColumn->set_reorderable(true);
     channelView->append_column(*pColumn);
+    channelView->signal_columns_changed().connect(sigc::mem_fun(this, &ManglerChannelTree::channelView_columns_changed_cb));
+    if (Mangler::config["ChannelViewReverseHeaderOrder"].toBool()) {
+        channelView->move_column_to_start(*pColumn);
+    }
 
     // connect our callbacks for clicking on rows
     channelView->signal_row_activated().connect(sigc::mem_fun(this, &ManglerChannelTree::channelView_row_activated_cb));
@@ -744,6 +748,17 @@ ManglerChannelTree::channelView_row_activated_cb(const Gtk::TreeModel::Path& pat
         v3_change_channel(id, (char *)password.c_str());
     }
 }/*}}}*/
+
+void
+ManglerChannelTree::channelView_columns_changed_cb(void) {/*{{{*/
+    Gtk::TreeViewColumn *col0 = channelView->get_column(0);
+    if (col0->get_title() == "Last Transmit") {
+            Mangler::config["ChannelViewReverseHeaderOrder"] = true;
+    } else {
+            Mangler::config["ChannelViewReverseHeaderOrder"] = false;
+    }
+}
+/*}}}*/
 
 /*
  * Right-click menu is handled here
