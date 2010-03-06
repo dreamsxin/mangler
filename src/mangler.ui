@@ -4925,6 +4925,7 @@ These are useful for developers.</property>
                                     <property name="visible">True</property>
                                   </object>
                                   <packing>
+                                    <property name="expand">False</property>
                                     <property name="position">1</property>
                                   </packing>
                                 </child>
@@ -5102,6 +5103,7 @@ These are useful for developers.</property>
                                                 <property name="right_attach">2</property>
                                                 <property name="top_attach">3</property>
                                                 <property name="bottom_attach">4</property>
+                                                <property name="x_options">GTK_FILL</property>
                                               </packing>
                                             </child>
                                             <child>
@@ -5113,6 +5115,7 @@ These are useful for developers.</property>
                                                 <property name="right_attach">2</property>
                                                 <property name="top_attach">2</property>
                                                 <property name="bottom_attach">3</property>
+                                                <property name="x_options">GTK_FILL</property>
                                               </packing>
                                             </child>
                                           </object>
@@ -6124,17 +6127,125 @@ These are useful for developers.</property>
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkScrolledWindow" id="scrolledwindow4">
+                          <object class="GtkVBox" id="vbox7">
                             <property name="visible">True</property>
-                            <property name="can_focus">True</property>
-                            <property name="hscrollbar_policy">automatic</property>
-                            <property name="vscrollbar_policy">automatic</property>
-                            <property name="shadow_type">in</property>
+                            <property name="orientation">vertical</property>
                             <child>
-                              <object class="GtkTreeView" id="RankTree">
+                              <object class="GtkScrolledWindow" id="scrolledwindow4">
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
+                                <property name="hscrollbar_policy">automatic</property>
+                                <property name="vscrollbar_policy">automatic</property>
+                                <property name="shadow_type">in</property>
+                                <child>
+                                  <object class="GtkTreeView" id="RankTree">
+                                    <property name="visible">True</property>
+                                    <property name="can_focus">True</property>
+                                  </object>
+                                </child>
                               </object>
+                              <packing>
+                                <property name="position">0</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkVBox" id="RankEditor">
+                                <property name="visible">True</property>
+                                <property name="orientation">vertical</property>
+                                <child>
+                                  <object class="GtkTable" id="RankTable">
+                                    <property name="visible">True</property>
+                                    <property name="n_rows">3</property>
+                                    <property name="n_columns">2</property>
+                                    <child>
+                                      <object class="GtkLabel" id="label22">
+                                        <property name="visible">True</property>
+                                        <property name="label" translatable="yes">Name</property>
+                                      </object>
+                                    </child>
+                                    <child>
+                                      <object class="GtkLabel" id="label23">
+                                        <property name="visible">True</property>
+                                        <property name="label" translatable="yes">Level</property>
+                                      </object>
+                                      <packing>
+                                        <property name="top_attach">1</property>
+                                        <property name="bottom_attach">2</property>
+                                      </packing>
+                                    </child>
+                                    <child>
+                                      <object class="GtkEntry" id="RankName">
+                                        <property name="visible">True</property>
+                                        <property name="can_focus">True</property>
+                                        <property name="invisible_char">&#x2022;</property>
+                                      </object>
+                                      <packing>
+                                        <property name="left_attach">1</property>
+                                        <property name="right_attach">2</property>
+                                      </packing>
+                                    </child>
+                                    <child>
+                                      <object class="GtkEntry" id="RankDescription">
+                                        <property name="visible">True</property>
+                                        <property name="can_focus">True</property>
+                                        <property name="invisible_char">&#x2022;</property>
+                                      </object>
+                                      <packing>
+                                        <property name="left_attach">1</property>
+                                        <property name="right_attach">2</property>
+                                        <property name="top_attach">2</property>
+                                        <property name="bottom_attach">3</property>
+                                      </packing>
+                                    </child>
+                                    <child>
+                                      <object class="GtkSpinButton" id="RankLevel">
+                                        <property name="visible">True</property>
+                                        <property name="can_focus">True</property>
+                                        <property name="invisible_char">&#x2022;</property>
+                                        <property name="adjustment">adminRankLevelAdjustment</property>
+                                        <property name="climb_rate">1</property>
+                                        <property name="snap_to_ticks">True</property>
+                                        <property name="numeric">True</property>
+                                      </object>
+                                      <packing>
+                                        <property name="left_attach">1</property>
+                                        <property name="right_attach">2</property>
+                                        <property name="top_attach">1</property>
+                                        <property name="bottom_attach">2</property>
+                                      </packing>
+                                    </child>
+                                    <child>
+                                      <object class="GtkLabel" id="label26">
+                                        <property name="visible">True</property>
+                                        <property name="label" translatable="yes">Description</property>
+                                      </object>
+                                      <packing>
+                                        <property name="top_attach">2</property>
+                                        <property name="bottom_attach">3</property>
+                                      </packing>
+                                    </child>
+                                  </object>
+                                  <packing>
+                                    <property name="expand">False</property>
+                                    <property name="position">0</property>
+                                  </packing>
+                                </child>
+                                <child>
+                                  <object class="GtkButton" id="RankUpdate">
+                                    <property name="label" translatable="yes">Update</property>
+                                    <property name="visible">True</property>
+                                    <property name="can_focus">True</property>
+                                    <property name="receives_default">True</property>
+                                  </object>
+                                  <packing>
+                                    <property name="position">1</property>
+                                  </packing>
+                                </child>
+                              </object>
+                              <packing>
+                                <property name="expand">False</property>
+                                <property name="position">1</property>
+                              </packing>
                             </child>
                           </object>
                           <packing>
@@ -6483,6 +6594,10 @@ These are useful for developers.</property>
     <property name="lower">8</property>
     <property name="upper">30</property>
     <property name="step_increment">0.5</property>
+  </object>
+  <object class="GtkAdjustment" id="adminRankLevelAdjustment">
+    <property name="upper">100</property>
+    <property name="step_increment">1</property>
   </object>
   <object class="GtkMenu" id="statusIconMenu">
     <property name="visible">True</property>

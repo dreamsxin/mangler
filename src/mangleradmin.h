@@ -155,8 +155,9 @@ class ManglerAdmin {
         rankModelColumns                    RankEditorColumns;
         Glib::RefPtr<Gtk::TreeStore>        RankEditorModel;
         Gtk::TreeView                       *RankEditorTree;
-        sigc::connection                    RankModelSigConn;
-        
+        Gtk::VBox                           *RankEditor;
+        uint16_t                            currentRankID;
+
         /* generic pointers and window pointer */
         Gtk::Button         *button;
         Gtk::Entry          *entry;
@@ -221,10 +222,10 @@ class ManglerAdmin {
 
         /* rank editor callbacks */
         Gtk::TreeModel::iterator getRank(uint16_t id, Gtk::TreeModel::Children children);
-        void RankEditorModel_row_changed_cb(const Gtk::TreeModel::Path &path, const Gtk::TreeModel::iterator &iter);
         void RankEditorTree_cursor_changed_cb(void);
         void RankAdd_clicked_cb(void);
         void RankRemove_clicked_cb(void);
+        void RankUpdate_clicked_cb(void);
 
 };
 

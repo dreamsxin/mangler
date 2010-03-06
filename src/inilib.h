@@ -22,6 +22,8 @@
 #include <vector>
 #include <string>
 
+#include <pthread.h>
+
 #define ADD_GLIB_SUPPORT 1
 
 #if ADD_GLIB_SUPPORT
@@ -122,7 +124,7 @@ class iniSection : public map<string, iniValue, iniCaselessCmp> {
 
 class iniFile : public map<string, iniSection, iniCaselessCmp> {
     public:
-    iniFile() {}
+    iniFile();
     iniFile(const string &filename);
     void setFilename(const string &filename);
     string getFilename() const;
@@ -137,6 +139,7 @@ class iniFile : public map<string, iniSection, iniCaselessCmp> {
     static void removeBrackets(string &s);
     private:
     string mFilename;
+    pthread_mutex_t mymutex;
 };
 
 istream &operator>>(istream &in, iniFile &f);

@@ -267,11 +267,13 @@ ManglerAdmin::ManglerAdmin(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
     RankEditorModel = Gtk::TreeStore::create(RankEditorColumns);
     builder->get_widget("RankTree", RankEditorTree);
     RankEditorTree->set_model(RankEditorModel);
-    RankEditorTree->append_column_editable("Name", rankRecord.name);
-    RankEditorTree->append_column_numeric_editable("Level", rankRecord.level, "%ld");
-    RankEditorTree->append_column_editable("Description", rankRecord.description);
-    RankModelSigConn = RankEditorModel->signal_row_changed().connect(sigc::mem_fun(this, &ManglerAdmin::RankEditorModel_row_changed_cb));
+    RankEditorTree->append_column("Name", rankRecord.name);
+    RankEditorTree->append_column("Level", rankRecord.level);
+    RankEditorTree->append_column("Description", rankRecord.description);
     RankEditorTree->signal_cursor_changed().connect(sigc::mem_fun(this, &ManglerAdmin::RankEditorTree_cursor_changed_cb));
+
+    builder->get_widget("RankEditor", RankEditor);
+    RankEditor->set_sensitive(false);
 
     builder->get_widget("RankAdd", button);
     button->signal_clicked().connect(sigc::mem_fun(this, &ManglerAdmin::RankAdd_clicked_cb));
@@ -279,6 +281,11 @@ ManglerAdmin::ManglerAdmin(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
     builder->get_widget("RankRemove", button);
     button->signal_clicked().connect(sigc::mem_fun(this, &ManglerAdmin::RankRemove_clicked_cb));
     button->set_sensitive(false);
+
+    builder->get_widget("RankUpdate", button);
+    button->signal_clicked().connect(sigc::mem_fun(this, &ManglerAdmin::RankUpdate_clicked_cb));
+    
+    currentRankID = 0xff;
 
     /* set up the channel lists */
     readUserTemplates();
@@ -681,6 +688,8 @@ ManglerAdmin::populateChannelEditor(v3_channel *channel) {/*{{{*/
 }/*}}}*/
 void
 ManglerAdmin::AddChannel_clicked_cb(void) {/*{{{*/
+    Glib::RefPtr<Gtk::TreeSelection> chanSelection = ChannelEditorTree->get_selection();
+    chanSelection->unselect_all();
     builder->get_widget("ChannelName", entry);
     entry->set_text("");
     builder->get_widget("ChannelPhonetic", entry);
@@ -1120,6 +1129,8 @@ ManglerAdmin::getAdminCheckTree(Gtk::TreeModel::Children children, uint16_t *&ch
 }/*}}}*/
 void
 ManglerAdmin::UserAdd_clicked_cb(void) {/*{{{*/
+    Glib::RefPtr<Gtk::TreeSelection> userSelection = UserEditorTree->get_selection();
+    userSelection->unselect_all();
     v3_account blankAcct;
     ::memset(&blankAcct, 0, sizeof(v3_account));
     label->set_text("Editing: NEW USER");
@@ -1505,7 +1516,6 @@ ManglerAdmin::getRank(uint16_t id, Gtk::TreeModel::Children children) {/*{{{*/
 }/*}}}*/
 void
 ManglerAdmin::rankUpdated(v3_rank *rank) {/*{{{*/
-    RankModelSigConn.block();
     Gtk::TreeModel::iterator iter = getRank(rank->id, RankEditorModel->children());
     if (! iter) iter = RankEditorModel->append();
     (*iter)[rankRecord.id] = rank->id;
@@ -1519,11 +1529,9 @@ ManglerAdmin::rankUpdated(v3_rank *rank) {/*{{{*/
     row[adminRecord.id] = rank->id; row[adminRecord.name] = c_to_ustring(rank->name);
     /* update status bar */
     statusbarPush(Glib::ustring::compose("Rank %1 (%2) Updated.", Glib::ustring::format(rank->id), c_to_ustring(rank->name)));
-    RankModelSigConn.unblock();
 }/*}}}*/
 void
 ManglerAdmin::rankAdded(v3_rank *rank) {/*{{{*/
-    RankModelSigConn.block();
     Gtk::TreeModel::iterator iter = RankEditorModel->append();
     (*iter)[rankRecord.id] = rank->id;
     (*iter)[rankRecord.level] = rank->level;
@@ -1534,11 +1542,9 @@ ManglerAdmin::rankAdded(v3_rank *rank) {/*{{{*/
     (*iter)[adminRecord.id] = rank->id; (*iter)[adminRecord.name] = c_to_ustring(rank->name);
     /* update status bar */
     statusbarPush(Glib::ustring::compose("Rank %1 (%2) Added.", Glib::ustring::format(rank->id), c_to_ustring(rank->name)));
-    RankModelSigConn.unblock();
 }/*}}}*/
 void
 ManglerAdmin::rankRemoved(uint16_t rankid) {/*{{{*/
-    RankModelSigConn.block();
     Gtk::TreeModel::iterator iter = getRank(rankid, RankEditorModel->children());
     if (iter) RankEditorModel->erase(*iter);
     /* now handle the User Rank combo box */
@@ -1547,22 +1553,18 @@ ManglerAdmin::rankRemoved(uint16_t rankid) {/*{{{*/
     if (row) UserRankModel->erase(row);
     /* update status bar */
     statusbarPush(Glib::ustring::compose("Rank %1 Removed.", Glib::ustring::format(rankid)));
-    RankModelSigConn.unblock();
 }/*}}}*/
 void
 ManglerAdmin::rankRemoved(v3_rank *rank) {/*{{{*/
     rankRemoved(rank->id);
 }/*}}}*/
 void
-ManglerAdmin::RankEditorModel_row_changed_cb(const Gtk::TreeModel::Path &path, const Gtk::TreeModel::iterator &iter) {/*{{{*/
+ManglerAdmin::RankUpdate_clicked_cb(void) {/*{{{*/
     v3_rank rank;
-    rank.id = (*iter)[rankRecord.id];
-    rank.level = uint16_t( (*iter)[rankRecord.level] );
-    Glib::ustring rankname = (*iter)[rankRecord.name];
-    rank.name = ::strdup(ustring_to_c(rankname).c_str());
-    Glib::ustring rankdesc = (*iter)[rankRecord.description];
-    rank.description = ::strdup(ustring_to_c(rankdesc).c_str());
-    //fprintf(stderr, "rank changed : id %u, level %u, name '%s', description '%s'\n", rank.id, rank.level, rank.name, rank.description);
+    rank.id = currentRankID;
+    rank.name = ::strdup(ustring_to_c(getFromEntry("RankName")).c_str());
+    rank.description = ::strdup(ustring_to_c(getFromEntry("RankDescription")).c_str());
+    rank.level = uint16_t( getFromSpinbutton("RankLevel") );
     v3_rank_update(&rank);
     ::free(rank.name);
     ::free(rank.description);
@@ -1573,20 +1575,29 @@ ManglerAdmin::RankEditorTree_cursor_changed_cb(void) {/*{{{*/
     Gtk::TreeViewColumn *column;
     RankEditorTree->get_cursor(path, column);
     Gtk::TreeModel::iterator iter = RankEditorModel->get_iter(path);
-    uint16_t rankid = 0;
-    if (iter) rankid = (*iter)[rankRecord.id];
-    setWidgetSensitive("RankRemove", rankid);
+    bool isRank( false );
+    if (iter) {
+        isRank = true;
+        currentRankID = (*iter)[rankRecord.id];
+        copyToEntry("RankName", (*iter)[rankRecord.name]);
+        copyToEntry("RankDescription", (*iter)[rankRecord.description]);
+        copyToSpinbutton("RankLevel", (*iter)[rankRecord.level]);
+    }
+    setWidgetSensitive("RankAdd", true);
+    setWidgetSensitive("RankRemove", isRank);
+    RankEditor->set_sensitive(isRank);
 }/*}}}*/
 void
 ManglerAdmin::RankAdd_clicked_cb(void) {/*{{{*/
-    v3_rank rank;
-    rank.id = 0;
-    rank.level = 0;
-    rank.name = ::strdup("new rank");
-    rank.description = ::strdup("description");
-    v3_rank_update(&rank);
-    ::free(rank.name);
-    ::free(rank.description);
+    Glib::RefPtr<Gtk::TreeSelection> rankSelection = RankEditorTree->get_selection();
+    rankSelection->unselect_all();
+    currentRankID = 0;
+    copyToEntry("RankName", "");
+    copyToEntry("RankDescription", "");
+    copyToSpinbutton("RankLevel", 0);
+    setWidgetSensitive("RankRemove", false);
+    setWidgetSensitive("RankAdd", false);
+    RankEditor->set_sensitive(true);
 }/*}}}*/
 void
 ManglerAdmin::RankRemove_clicked_cb(void) {/*{{{*/

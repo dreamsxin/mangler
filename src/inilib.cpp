@@ -345,9 +345,15 @@ vector<string> iniSection::parseLine(const string &s) {
     return ret;
 }
 
+iniFile::iniFile() {
+    pthread_mutex_init(&mymutex, NULL);
+}
+
 iniFile::iniFile(const string &filename) : mFilename( filename ) {
+    pthread_mutex_init(&mymutex, NULL);
     reload();
 }
+
 
 void iniFile::setFilename(const string &filename)
     { mFilename = filename; }
@@ -390,23 +396,28 @@ ostream &iniFile::save(ostream &out) const {
 }
 
 void iniFile::save() const {
+    pthread_mutex_lock((pthread_mutex_t *)&mymutex);
     if (! mFilename.empty()) {
         ofstream fout( mFilename.c_str() );
         if (fout) save(fout);
         fout.close();
     }
+    pthread_mutex_unlock((pthread_mutex_t *)&mymutex);
 }
 
 void iniFile::reload() {
+    pthread_mutex_lock(&mymutex);
     ifstream fin( mFilename.c_str() );
     if (fin) {
         load(fin);
         fin.close();
     }
+    pthread_mutex_unlock(&mymutex);
 }
 
 iniFile::~iniFile() {
     save();
+    pthread_mutex_destroy(&mymutex);
 }
 
 bool iniFile::contains(const string &s) const {
