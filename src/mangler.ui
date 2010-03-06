@@ -4833,6 +4833,8 @@ These are useful for developers.</property>
                       <object class="GtkHPaned" id="hpaned1">
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
+                        <property name="position">125</property>
+                        <property name="position_set">True</property>
                         <child>
                           <object class="GtkVBox" id="vbox6">
                             <property name="visible">True</property>
@@ -6601,6 +6603,13 @@ These are useful for developers.</property>
   </object>
   <object class="GtkMenu" id="statusIconMenu">
     <property name="visible">True</property>
+    <child>
+      <object class="GtkMenuItem" id="settingsStatusIconMenuItem">
+        <property name="visible">True</property>
+        <property name="label" translatable="yes">Settings</property>
+        <property name="use_underline">True</property>
+      </object>
+    </child>
     <child>
       <object class="GtkCheckMenuItem" id="muteMicCheckMenuItem">
         <property name="visible">True</property>

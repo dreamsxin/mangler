@@ -217,6 +217,9 @@ ManglerAdmin::ManglerAdmin(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
     UserDefaultChannelModel = Gtk::TreeStore::create(UserDefaultChannelColumns);
     combobox->set_model(UserDefaultChannelModel);
     combobox->pack_start(adminRecord.name);
+    Gtk::CellRendererText *renderer = (Gtk::CellRendererText*)(*(combobox->get_cells().begin()));
+    renderer->property_ellipsize() = Pango::ELLIPSIZE_MIDDLE;
+    renderer->property_ellipsize_set() = Pango::ELLIPSIZE_MIDDLE;
 
     builder->get_widget("UserAdd", UserAdd);
     UserAdd->signal_clicked().connect(sigc::mem_fun(this, &ManglerAdmin::UserAdd_clicked_cb));
