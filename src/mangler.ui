@@ -3649,8 +3649,8 @@ These are useful for developers.</property>
   </object>
   <object class="GtkImage" id="image1">
     <property name="visible">True</property>
+    <property name="stock">gtk-edit</property>
     <property name="pixel_size">16</property>
-    <property name="icon_name">address-book-new</property>
   </object>
   <object class="GtkImage" id="image2">
     <property name="visible">True</property>
