@@ -185,6 +185,7 @@ void *jukebox_player(void *connptr) {
     uint8_t channels;
     int ctr;
     struct timeval last_audio, now;
+    char playonly[64];
     int politeness = 0; // only slightly polite :)
     gettimeofday(&last_audio, NULL);
 
@@ -250,6 +251,7 @@ void *jukebox_player(void *connptr) {
                         v3_send_chat_message("!next -- play a new random track");
                         v3_send_chat_message("!move -- move to your channel");
                         v3_send_chat_message("!play [song/artist/file name] -- search for a song by filename and play the first random match");
+                        v3_send_chat_message("!playonly [song/artist/file name] -- don't play anything that doesn't match the given string");
                         v3_send_chat_message("!volume [0.0-1.0] -- Set the volume to the specified level: ex: !volume 0.5");
                         v3_send_chat_message("!polite [off|0-60] -- Pauses playing when audio is received for the specified duration");
                         break;
@@ -282,11 +284,16 @@ void *jukebox_player(void *connptr) {
                         int vlev = (int)( conninfo->volume * 100.0 );
                         sprintf(chat_msg, "volume is now %d%%", vlev);
                         v3_send_chat_message(chat_msg);
-                    } else if (strncmp(ev->data.chatmessage, "!play ", 6) == 0) {
+                    } else if (strncmp(ev->data.chatmessage, "!play ", 6) == 0 || strncmp(ev->data.chatmessage, "!playonly ", 10) == 0) {
                         char *searchspec;
                         int ctr;
                         int found = false;
-                        searchspec = ev->data.chatmessage + 6;
+                        if (strncmp(ev->data.chatmessage, "!playonly ", 10) == 0) {
+                            strncpy(playonly, ev->data.chatmessage + 10, 64);
+                            searchspec = playonly;
+                        } else {
+                            searchspec = ev->data.chatmessage + 6;
+                        }
                         for (ctr = 0; ctr < musicfile_count; ctr++) {
                             // make sure we have at least 1 thing that matches
                             // so  we don't end up in an endless loop
@@ -297,6 +304,7 @@ void *jukebox_player(void *connptr) {
                         }
                         if (! found) {
                             v3_send_chat_message("no songs matched your request");
+                            playonly[0] = 0;
                         } else {
                             int attempts = 0;
                             if (playing || mh) {
@@ -385,6 +393,9 @@ void *jukebox_player(void *connptr) {
                     //filenum = get_random_number(0, musicfile_count-1);
                     filenum++;
                     if (filenum >= musicfile_count) filenum = 0;
+                    if (strlen(playonly) && !strcasestr(musiclist[filenum]->path, playonly)) {
+                        continue;
+                    }
                     if (!(mh = open_mp3(musiclist[filenum], codec))) {
                         if (debug) {
                             fprintf(stderr, "could not open: %s\n", musiclist[filenum]->path);
@@ -955,6 +966,7 @@ int main(int argc, char *argv[]) {
     memset(&conninfo, 0, sizeof(conninfo));
     conninfo.channelid = 0;
     conninfo.volume = 1;
+    srand(time(NULL));
     while ((opt = getopt(argc, argv, "dh:p:u:c:nsv:")) != -1) {
         switch (opt) {
             case 'd':
