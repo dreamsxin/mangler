@@ -1832,6 +1832,9 @@ out the encryption
                           <object class="GtkComboBox" id="settingsAudioIntegrationComboBox">
                             <property name="visible">True</property>
                             <property name="sensitive">False</property>
+                            <accessibility>
+                              <relation type="labelled-by" target="settingsAudioIntegrationLabel"/>
+                            </accessibility>
                           </object>
                           <packing>
                             <property name="padding">5</property>
@@ -1890,6 +1893,9 @@ out the encryption
                             <property name="climb_rate">0.5</property>
                             <property name="digits">2</property>
                             <property name="numeric">True</property>
+                            <accessibility>
+                              <relation type="labelled-by" target="settingsVoiceActivationSilenceDurationLabel"/>
+                            </accessibility>
                           </object>
                           <packing>
                             <property name="left_attach">1</property>
@@ -1929,6 +1935,9 @@ out the encryption
                             <property name="adjustment">settingsVoiceActivationSensitivitySpinButtonAdjustment</property>
                             <property name="climb_rate">1</property>
                             <property name="numeric">True</property>
+                            <accessibility>
+                              <relation type="labelled-by" target="settingsVoiceActivationSensitivityLabel"/>
+                            </accessibility>
                           </object>
                           <packing>
                             <property name="left_attach">4</property>
@@ -1988,13 +1997,71 @@ out the encryption
                           <object class="GtkTable" id="settingsOSDTable">
                             <property name="visible">True</property>
                             <property name="sensitive">False</property>
-                            <property name="n_columns">8</property>
+                            <property name="n_rows">2</property>
+                            <property name="n_columns">4</property>
+                            <property name="row_spacing">5</property>
+                            <property name="homogeneous">True</property>
                             <child>
                               <object class="GtkLabel" id="settingsOSDverticalPosLabel">
                                 <property name="visible">True</property>
                                 <property name="xalign">0.94999998807907104</property>
                                 <property name="label" translatable="yes">Vertical:</property>
                               </object>
+                            </child>
+                            <child>
+                              <object class="GtkComboBox" id="settingsOSDverticalPos">
+                                <property name="visible">True</property>
+                                <accessibility>
+                                  <relation type="labelled-by" target="settingsOSDverticalPosLabel"/>
+                                </accessibility>
+                              </object>
+                              <packing>
+                                <property name="left_attach">1</property>
+                                <property name="right_attach">2</property>
+                                <property name="x_padding">5</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkComboBox" id="settingsOSDhorizontalPos">
+                                <property name="visible">True</property>
+                                <accessibility>
+                                  <relation type="labelled-by" target="settingsOSDhorizontalPosLabel"/>
+                                </accessibility>
+                              </object>
+                              <packing>
+                                <property name="left_attach">3</property>
+                                <property name="right_attach">4</property>
+                                <property name="x_padding">5</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkLabel" id="settingsOSDfontsizeLabel">
+                                <property name="visible">True</property>
+                                <property name="xalign">0.94999998807907104</property>
+                                <property name="label" translatable="yes">Font Size:</property>
+                              </object>
+                              <packing>
+                                <property name="top_attach">1</property>
+                                <property name="bottom_attach">2</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkColorButton" id="settingsOSDcolor">
+                                <property name="visible">True</property>
+                                <property name="can_focus">True</property>
+                                <property name="receives_default">True</property>
+                                <property name="color">#0000ffff0000</property>
+                                <accessibility>
+                                  <relation type="labelled-by" target="settingsOSDcolorLabel"/>
+                                </accessibility>
+                              </object>
+                              <packing>
+                                <property name="left_attach">3</property>
+                                <property name="right_attach">4</property>
+                                <property name="top_attach">1</property>
+                                <property name="bottom_attach">2</property>
+                                <property name="x_padding">5</property>
+                              </packing>
                             </child>
                             <child>
                               <object class="GtkLabel" id="settingsOSDhorizontalPosLabel">
@@ -2008,75 +2075,56 @@ out the encryption
                               </packing>
                             </child>
                             <child>
-                              <object class="GtkComboBox" id="settingsOSDverticalPos">
+                              <object class="GtkLabel" id="settingsOSDcolorLabel">
                                 <property name="visible">True</property>
+                                <property name="xalign">0.94999998807907104</property>
+                                <property name="label" translatable="yes">Text Color:</property>
+                              </object>
+                              <packing>
+                                <property name="left_attach">2</property>
+                                <property name="right_attach">3</property>
+                                <property name="top_attach">1</property>
+                                <property name="bottom_attach">2</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkHBox" id="hbox24">
+                                <property name="visible">True</property>
+                                <child>
+                                  <object class="GtkSpinButton" id="settingsOSDfontsize">
+                                    <property name="visible">True</property>
+                                    <property name="can_focus">True</property>
+                                    <property name="invisible_char">&#x25CF;</property>
+                                    <property name="adjustment">settingsOSDfontsizeAdjustment</property>
+                                    <property name="climb_rate">0.5</property>
+                                    <property name="digits">1</property>
+                                    <property name="snap_to_ticks">True</property>
+                                    <property name="numeric">True</property>
+                                    <accessibility>
+                                      <relation type="labelled-by" target="settingsOSDfontsizePointLabel"/>
+                                    </accessibility>
+                                  </object>
+                                  <packing>
+                                    <property name="position">0</property>
+                                  </packing>
+                                </child>
+                                <child>
+                                  <object class="GtkLabel" id="settingsOSDfontsizePointLabel">
+                                    <property name="visible">True</property>
+                                    <property name="xalign">0.0099999997764825821</property>
+                                    <property name="label" translatable="yes">pt</property>
+                                  </object>
+                                  <packing>
+                                    <property name="position">1</property>
+                                  </packing>
+                                </child>
                               </object>
                               <packing>
                                 <property name="left_attach">1</property>
                                 <property name="right_attach">2</property>
-                                <property name="x_options">GTK_FILL</property>
+                                <property name="top_attach">1</property>
+                                <property name="bottom_attach">2</property>
                                 <property name="x_padding">5</property>
-                              </packing>
-                            </child>
-                            <child>
-                              <object class="GtkComboBox" id="settingsOSDhorizontalPos">
-                                <property name="visible">True</property>
-                              </object>
-                              <packing>
-                                <property name="left_attach">3</property>
-                                <property name="right_attach">4</property>
-                                <property name="x_options">GTK_FILL</property>
-                                <property name="x_padding">5</property>
-                              </packing>
-                            </child>
-                            <child>
-                              <object class="GtkLabel" id="settingsOSDfontsizeLabel">
-                                <property name="visible">True</property>
-                                <property name="xalign">0.94999998807907104</property>
-                                <property name="label" translatable="yes">Font Size:</property>
-                              </object>
-                              <packing>
-                                <property name="left_attach">4</property>
-                                <property name="right_attach">5</property>
-                              </packing>
-                            </child>
-                            <child>
-                              <object class="GtkSpinButton" id="settingsOSDfontsize">
-                                <property name="visible">True</property>
-                                <property name="can_focus">True</property>
-                                <property name="invisible_char">&#x2022;</property>
-                                <property name="adjustment">settingsOSDfontsizeAdjustment</property>
-                                <property name="climb_rate">0.5</property>
-                                <property name="digits">1</property>
-                                <property name="snap_to_ticks">True</property>
-                                <property name="numeric">True</property>
-                              </object>
-                              <packing>
-                                <property name="left_attach">5</property>
-                                <property name="right_attach">6</property>
-                              </packing>
-                            </child>
-                            <child>
-                              <object class="GtkLabel" id="settingsOSDfontsizePointLabel">
-                                <property name="visible">True</property>
-                                <property name="xalign">0.0099999997764825821</property>
-                                <property name="label" translatable="yes">pt</property>
-                              </object>
-                              <packing>
-                                <property name="left_attach">6</property>
-                                <property name="right_attach">7</property>
-                              </packing>
-                            </child>
-                            <child>
-                              <object class="GtkColorButton" id="settingsOSDcolor">
-                                <property name="visible">True</property>
-                                <property name="can_focus">True</property>
-                                <property name="receives_default">True</property>
-                                <property name="color">#0000ffff0000</property>
-                              </object>
-                              <packing>
-                                <property name="left_attach">7</property>
-                                <property name="right_attach">8</property>
                               </packing>
                             </child>
                           </object>
