@@ -481,15 +481,18 @@ void Mangler::adminButton_clicked_cb(void) {/*{{{*/
         if (password.length()) {
             v3_admin_login((char *)password.c_str());
             admin->adminWindow->show();
+            admin->adminWindow->set_icon(icons["tray_icon"]);
             // if we tried sending a password, the only options are either
             // success or get booted from the server
         }
     } else {
         admin->adminWindow->show();
+        admin->adminWindow->set_icon(icons["tray_icon"]);
     }
 }/*}}}*/
 void Mangler::adminWindowMenuItem_activated_cb(void) {/*{{{*/
     admin->adminWindow->show();
+    admin->adminWindow->set_icon(icons["tray_icon"]);
 }/*}}}*/
 void Mangler::settingsButton_clicked_cb(void) {/*{{{*/
     settings->settingsWindow->show();
