@@ -113,6 +113,7 @@ class Mangler
         bool                                muteSound;
         bool                                muteMic;
         bool                                motdAlways;
+        bool                                wantAdminWindow;
 
         // Autoreconnect feature stuff - Need ID's to kill threads if needed
         bool                                wantDisconnect;

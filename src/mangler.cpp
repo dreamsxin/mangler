@@ -285,6 +285,7 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
 
     // Create Admin Window
     admin = new ManglerAdmin(builder);
+    wantAdminWindow = false;
 
     // Add our servers to the main window drop down
     builder->get_widget("serverSelectComboBox", combobox);
@@ -480,8 +481,9 @@ void Mangler::adminButton_clicked_cb(void) {/*{{{*/
         password = mangler->getPasswordEntry("Admin Password");
         if (password.length()) {
             v3_admin_login((char *)password.c_str());
-            admin->adminWindow->show();
-            admin->adminWindow->set_icon(icons["tray_icon"]);
+            //admin->adminWindow->show();
+            //admin->adminWindow->set_icon(icons["tray_icon"]);
+            wantAdminWindow = true;
             // if we tried sending a password, the only options are either
             // success or get booted from the server
         }
@@ -1365,6 +1367,11 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                         menuitem->hide();
                         builder->get_widget("adminWindowMenuItem", menuitem);
                         menuitem->show();
+                        if (wantAdminWindow) {
+                            admin->adminWindow->show();
+                            admin->adminWindow->set_icon(icons["tray_icon"]);
+                            wantAdminWindow = false;
+                        }
                     } else {
                         isAdmin = false;
                         builder->get_widget("adminLoginMenuItem", menuitem);
