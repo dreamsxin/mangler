@@ -1466,6 +1466,40 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                     }
                 }
                 break;/*}}}*/
+            case V3_EVENT_USER_RANK_CHANGE:
+                {
+                    if (v3_is_loggedin()) {
+                        u = v3_get_user(ev->user.id);
+                        if (!u) {
+                            fprintf(stderr, "couldn't retreive user id %d\n", ev->user.id);
+                            break;
+                        }
+                        if (u->id == 0) {
+                            channelTree->updateLobby(c_to_ustring(u->name), c_to_ustring(u->comment), u->phonetic);
+                        } else {
+                            if (u->rank_id) {
+                                v3_rank *r;
+                                if ((r = v3_get_rank(u->rank_id))) {
+                                    rank = c_to_ustring(r->name);
+                                    v3_free_rank(r);
+                                }
+                            }
+                            channelTree->updateUser(
+                                    (uint32_t)u->id,
+                                    (uint32_t)u->channel,
+                                    c_to_ustring(u->name),
+                                    c_to_ustring(u->comment),
+                                    u->phonetic,
+                                    u->url,
+                                    c_to_ustring(u->integration_text),
+                                    (bool)u->guest,
+                                    (bool)u->real_user_id,
+                                    rank);
+                        }
+                        v3_free_user(u);
+                    }
+                }
+                break;
             default:
                 fprintf(stderr, "******************************************************** got unknown event type %d\n", ev->type);
         }

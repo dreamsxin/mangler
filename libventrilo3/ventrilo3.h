@@ -80,6 +80,7 @@
 #define V3_ADD_USER                 0x01
 #define V3_MODIFY_USER              0x02
 #define V3_USER_LIST                0x04
+#define V3_RANKCHANGE_USER          0x06
 
 #define V3_AUDIO_START              0x00
 #define V3_AUDIO_DATA               0x01
@@ -253,6 +254,7 @@ enum _v3_events
     V3_EVENT_USERLIST_CHANGE_OWNER,
     V3_EVENT_USER_GLOBAL_MUTE_CHANGED,
     V3_EVENT_PERMS_UPDATED,
+    V3_EVENT_USER_RANK_CHANGE,
 
     // outbound specific event types
     V3_EVENT_CHANGE_CHANNEL,

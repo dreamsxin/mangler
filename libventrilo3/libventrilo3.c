@@ -3339,6 +3339,21 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                             v3_queue_event(ev);
                         }
                         break;
+                    case V3_RANKCHANGE_USER:
+                        _v3_debug(V3_DEBUG_INFO, "changing rank for %d users on user list",  m->user_count);
+                        {
+                            v3_user *u;
+                            for (ctr = 0; ctr < m->user_count; ctr++) {
+                                if ((u = _v3_get_user(m->user_list[ctr].id))) {
+                                    u->rank_id = m->user_list[ctr].rank_id;
+                                }
+                                v3_event *ev = _v3_create_event(V3_EVENT_USER_RANK_CHANGE);
+                                ev->user.id = m->user_list[ctr].id;
+                                _v3_debug(V3_DEBUG_INFO, "queuing event type %d for user %d", ev->type, ev->user.id);
+                                v3_queue_event(ev);
+                            }
+                        }
+                        break;
                 }
                 free(ul);
                 _v3_unlock_userlist();
