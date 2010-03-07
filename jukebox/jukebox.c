@@ -293,6 +293,7 @@ void *jukebox_player(void *connptr) {
                             searchspec = playonly;
                         } else {
                             searchspec = ev->data.chatmessage + 6;
+                            playonly[0] = 0;
                         }
                         for (ctr = 0; ctr < musicfile_count; ctr++) {
                             // make sure we have at least 1 thing that matches
