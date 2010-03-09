@@ -44,6 +44,9 @@ ManglerChat::ManglerChat(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
     builder->get_widget("chatClose", button);
     button->signal_clicked().connect(sigc::mem_fun(this, &ManglerChat::chatClose_clicked_cb));
 
+    builder->get_widget("chatHide", button);
+    button->signal_clicked().connect(sigc::mem_fun(this, &ManglerChat::chatHide_clicked_cb));
+
     builder->get_widget("chatMessage", chatMessage);
     chatMessage->set_activates_default(true);
 
@@ -60,39 +63,45 @@ ManglerChat::ManglerChat(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
 
     builder->get_widget("chatBox", chatBox);
     isOpen = false;
+    isJoined = false;
 }/*}}}*/
 
-void ManglerChat::chatTimestampCheckButton_toggled_cb() {/*{{{*/
+void ManglerChat::chatTimestampCheckButton_toggled_cb(void) {/*{{{*/
     builder->get_widget("chatTimestampCheckButton", checkbutton);
     Mangler::config["ChatTimestamps"] = checkbutton->get_active();
     Mangler::config.config.save();
 }/*}}}*/
 
-void ManglerChat::chatWindow_show_cb() {/*{{{*/
+void ManglerChat::chatWindow_show_cb(void) {/*{{{*/
     isOpen = true;
-
-    if(v3_is_loggedin()) {
+    if (v3_is_loggedin() && !isJoined) {
         v3_join_chat();
+        isJoined = true;
     }
     builder->get_widget("chatTimestampCheckButton", checkbutton);
     checkbutton->set_active(Mangler::config["ChatTimestamps"].toBool());
 }/*}}}*/
 
-void ManglerChat::chatWindow_hide_cb() {/*{{{*/
+void ManglerChat::chatWindow_hide_cb(void) {/*{{{*/
     isOpen = false;
-    if(v3_is_loggedin()) {
-        v3_leave_chat();
-    }
 }/*}}}*/
 
-void ManglerChat::chatWindowSendChat_clicked_cb() {/*{{{*/
-    if(chatMessage->get_text_length()) {
+void ManglerChat::chatWindowSendChat_clicked_cb(void) {/*{{{*/
+    if (chatMessage->get_text_length()) {
         v3_send_chat_message((char *)ustring_to_c(chatMessage->get_text()).c_str());
         chatMessage->set_text("");
     }
 }/*}}}*/
 
-void ManglerChat::chatClose_clicked_cb() {/*{{{*/
+void ManglerChat::chatClose_clicked_cb(void) {/*{{{*/
+    if (v3_is_loggedin()) {
+        v3_leave_chat();
+    }
+    isJoined = false;
+    chatWindow->hide();
+}/*}}}*/
+
+void ManglerChat::chatHide_clicked_cb(void) {/*{{{*/
     chatWindow->hide();
 }/*}}}*/
 
@@ -189,6 +198,7 @@ void ManglerChat::clear(void) {/*{{{*/
     chatUserTreeModel->clear();
     addMessage("*** disconnected from server");
     //chatBox->get_buffer()->set_text("");
+    isJoined = false;
 }/*}}}*/
 
 bool ManglerChat::isUserInChat(uint16_t user_id) {/*{{{*/
@@ -206,7 +216,7 @@ bool ManglerChat::isUserInChat(uint16_t user_id) {/*{{{*/
     return false;
 }/*}}}*/
 
-void ManglerChat::updateUser (uint16_t user_id) {/*{{{*/
+void ManglerChat::updateUser(uint16_t user_id) {/*{{{*/
     Gtk::TreeModel::Children::iterator iter = chatUserTreeModel->children().begin();
     while (iter != chatUserTreeModel->children().end()) {
         if ((*iter)[chatUserColumns.id] == user_id) {

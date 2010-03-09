@@ -591,6 +591,7 @@
                             <property name="draw_indicator">True</property>
                           </object>
                           <packing>
+                            <property name="expand">False</property>
                             <property name="position">2</property>
                           </packing>
                         </child>
@@ -3571,7 +3572,7 @@ These are useful for developers.</property>
     </action-widgets>
   </object>
   <object class="GtkWindow" id="chatWindow">
-    <property name="title" translatable="yes">Mangler Chat Window</property>
+    <property name="title" translatable="yes">Mangler - Chat</property>
     <property name="default_width">500</property>
     <property name="default_height">300</property>
     <child>
@@ -3656,9 +3657,6 @@ These are useful for developers.</property>
                     <property name="position">0</property>
                   </packing>
                 </child>
-                <child>
-                  <placeholder/>
-                </child>
               </object>
               <packing>
                 <property name="expand">False</property>
@@ -3700,16 +3698,28 @@ These are useful for developers.</property>
                 </child>
                 <child>
                   <object class="GtkButton" id="chatClose">
-                    <property name="label">gtk-close</property>
+                    <property name="label">Close</property>
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
                     <property name="receives_default">True</property>
-                    <property name="use_stock">True</property>
-                    <accelerator key="w" signal="activate" modifiers="GDK_CONTROL_MASK"/>
+                    <accelerator key="q" signal="activate" modifiers="GDK_CONTROL_MASK"/>
                   </object>
                   <packing>
                     <property name="expand">False</property>
                     <property name="position">2</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton" id="chatHide">
+                    <property name="label" translatable="yes">Hide</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                    <accelerator key="w" signal="activate" modifiers="GDK_CONTROL_MASK"/>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="position">3</property>
                   </packing>
                 </child>
               </object>
@@ -6464,7 +6474,7 @@ These are useful for developers.</property>
     </child>
   </object>
   <object class="GtkWindow" id="privChatWindow">
-    <property name="title" translatable="yes">Mangler Chat Window</property>
+    <property name="title" translatable="yes">Mangler - Private Chat</property>
     <property name="default_width">500</property>
     <property name="default_height">300</property>
     <child>
@@ -6535,11 +6545,10 @@ These are useful for developers.</property>
                 </child>
                 <child>
                   <object class="GtkButton" id="privChatClose">
-                    <property name="label">gtk-close</property>
+                    <property name="label">Close</property>
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
                     <property name="receives_default">True</property>
-                    <property name="use_stock">True</property>
                     <accelerator key="w" signal="activate" modifiers="GDK_CONTROL_MASK"/>
                   </object>
                   <packing>
@@ -6773,5 +6782,658 @@ These are useful for developers.</property>
         <property name="use_underline">True</property>
       </object>
     </child>
+  </object>
+  <object class="GtkWindow" id="recWindow">
+    <property name="width_request">300</property>
+    <property name="height_request">400</property>
+    <property name="title" translatable="yes">Mangler - Recorder</property>
+    <child>
+      <object class="GtkVBox" id="recVBox1">
+        <property name="visible">True</property>
+        <property name="orientation">vertical</property>
+        <child>
+          <object class="GtkMenuBar" id="recMenuBar">
+            <property name="visible">True</property>
+            <child>
+              <object class="GtkMenuItem" id="recFileMenuItem">
+                <property name="visible">True</property>
+                <property name="label" translatable="yes">_File</property>
+                <property name="use_underline">True</property>
+                <child type="submenu">
+                  <object class="GtkMenu" id="recFileMenu">
+                    <property name="visible">True</property>
+                    <child>
+                      <object class="GtkImageMenuItem" id="recNew">
+                        <property name="label">gtk-new</property>
+                        <property name="use_underline">True</property>
+                        <property name="use_stock">True</property>
+                        <accelerator key="n" signal="activate" modifiers="GDK_CONTROL_MASK"/>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkImageMenuItem" id="recOpen">
+                        <property name="label">gtk-open</property>
+                        <property name="visible">True</property>
+                        <property name="use_underline">True</property>
+                        <property name="use_stock">True</property>
+                        <accelerator key="o" signal="activate" modifiers="GDK_CONTROL_MASK"/>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkSeparatorMenuItem" id="recSeparatorMenuItem1">
+                        <property name="visible">True</property>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkImageMenuItem" id="recSave">
+                        <property name="label">gtk-save</property>
+                        <property name="visible">True</property>
+                        <property name="use_underline">True</property>
+                        <property name="use_stock">True</property>
+                        <accelerator key="s" signal="activate" modifiers="GDK_CONTROL_MASK"/>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkImageMenuItem" id="recSaveAs">
+                        <property name="label">gtk-save-as</property>
+                        <property name="visible">True</property>
+                        <property name="use_underline">True</property>
+                        <property name="use_stock">True</property>
+                        <accelerator key="s" signal="activate" modifiers="GDK_SHIFT_MASK | GDK_CONTROL_MASK"/>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkSeparatorMenuItem" id="recSeparatorMenuItem2">
+                        <property name="visible">True</property>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkMenuItem" id="recHide">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">_Hide</property>
+                        <property name="use_underline">True</property>
+                        <accelerator key="q" signal="activate" modifiers="GDK_CONTROL_MASK"/>
+                      </object>
+                    </child>
+                  </object>
+                </child>
+              </object>
+            </child>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="position">0</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkNotebook" id="recNotebook">
+            <property name="visible">True</property>
+            <property name="can_focus">True</property>
+            <property name="show_tabs">False</property>
+            <child>
+              <object class="GtkVBox" id="recTabContent">
+                <property name="visible">True</property>
+                <property name="border_width">2</property>
+                <property name="orientation">vertical</property>
+                <child>
+                  <object class="GtkFileChooserButton" id="recFileChooserButton">
+                    <property name="visible">True</property>
+                    <property name="title" translatable="yes">Open...</property>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="position">0</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkFrame" id="recFrame1">
+                    <property name="visible">True</property>
+                    <property name="label_xalign">0</property>
+                    <property name="label_yalign">0.10000000149011612</property>
+                    <property name="shadow_type">in</property>
+                    <child>
+                      <object class="GtkAlignment" id="recAlignment1">
+                        <property name="visible">True</property>
+                        <property name="top_padding">2</property>
+                        <property name="bottom_padding">2</property>
+                        <child>
+                          <object class="GtkTable" id="recInfos">
+                            <property name="visible">True</property>
+                            <property name="sensitive">False</property>
+                            <property name="n_rows">5</property>
+                            <property name="n_columns">4</property>
+                            <property name="homogeneous">True</property>
+                            <child>
+                              <object class="GtkLabel" id="recTypeLabel">
+                                <property name="visible">True</property>
+                                <property name="xalign">0.94999998807907104</property>
+                                <property name="label" translatable="yes">Type:</property>
+                              </object>
+                              <packing>
+                                <property name="y_options">GTK_FILL</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkLabel" id="recSizeLabel">
+                                <property name="visible">True</property>
+                                <property name="xalign">0.94999998807907104</property>
+                                <property name="label" translatable="yes">Size:</property>
+                              </object>
+                              <packing>
+                                <property name="left_attach">2</property>
+                                <property name="right_attach">3</property>
+                                <property name="y_options">GTK_FILL</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkLabel" id="recCountLabel">
+                                <property name="visible">True</property>
+                                <property name="xalign">0.94999998807907104</property>
+                                <property name="label" translatable="yes">Count:</property>
+                              </object>
+                              <packing>
+                                <property name="top_attach">1</property>
+                                <property name="bottom_attach">2</property>
+                                <property name="y_options">GTK_FILL</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkLabel" id="recDurationLabel">
+                                <property name="visible">True</property>
+                                <property name="xalign">0.94999998807907104</property>
+                                <property name="label" translatable="yes">Duration:</property>
+                              </object>
+                              <packing>
+                                <property name="left_attach">2</property>
+                                <property name="right_attach">3</property>
+                                <property name="top_attach">1</property>
+                                <property name="bottom_attach">2</property>
+                                <property name="y_options">GTK_FILL</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkLabel" id="recPlatformLabel">
+                                <property name="visible">True</property>
+                                <property name="xalign">0.94999998807907104</property>
+                                <property name="label" translatable="yes">Platform:</property>
+                              </object>
+                              <packing>
+                                <property name="top_attach">2</property>
+                                <property name="bottom_attach">3</property>
+                                <property name="y_options">GTK_FILL</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkLabel" id="recVersionLabel">
+                                <property name="visible">True</property>
+                                <property name="xalign">0.94999998807907104</property>
+                                <property name="label" translatable="yes">Version:</property>
+                              </object>
+                              <packing>
+                                <property name="left_attach">2</property>
+                                <property name="right_attach">3</property>
+                                <property name="top_attach">2</property>
+                                <property name="bottom_attach">3</property>
+                                <property name="y_options">GTK_FILL</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkLabel" id="recCodecLabel">
+                                <property name="visible">True</property>
+                                <property name="xalign">0.94999998807907104</property>
+                                <property name="label" translatable="yes">Codec:</property>
+                              </object>
+                              <packing>
+                                <property name="top_attach">4</property>
+                                <property name="bottom_attach">5</property>
+                                <property name="y_options">GTK_FILL</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkLabel" id="recType">
+                                <property name="visible">True</property>
+                                <property name="xalign">0.05000000074505806</property>
+                                <property name="label" translatable="yes">N/A</property>
+                              </object>
+                              <packing>
+                                <property name="left_attach">1</property>
+                                <property name="right_attach">2</property>
+                                <property name="y_options">GTK_FILL</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkLabel" id="recSize">
+                                <property name="visible">True</property>
+                                <property name="xalign">0.05000000074505806</property>
+                                <property name="label" translatable="yes">N/A</property>
+                              </object>
+                              <packing>
+                                <property name="left_attach">3</property>
+                                <property name="right_attach">4</property>
+                                <property name="y_options">GTK_FILL</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkLabel" id="recCount">
+                                <property name="visible">True</property>
+                                <property name="xalign">0.05000000074505806</property>
+                                <property name="label" translatable="yes">N/A</property>
+                              </object>
+                              <packing>
+                                <property name="left_attach">1</property>
+                                <property name="right_attach">2</property>
+                                <property name="top_attach">1</property>
+                                <property name="bottom_attach">2</property>
+                                <property name="y_options">GTK_FILL</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkLabel" id="recDuration">
+                                <property name="visible">True</property>
+                                <property name="xalign">0.05000000074505806</property>
+                                <property name="label" translatable="yes">N/A</property>
+                              </object>
+                              <packing>
+                                <property name="left_attach">3</property>
+                                <property name="right_attach">4</property>
+                                <property name="top_attach">1</property>
+                                <property name="bottom_attach">2</property>
+                                <property name="y_options">GTK_FILL</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkLabel" id="recPlatform">
+                                <property name="visible">True</property>
+                                <property name="xalign">0.05000000074505806</property>
+                                <property name="label" translatable="yes">N/A</property>
+                              </object>
+                              <packing>
+                                <property name="left_attach">1</property>
+                                <property name="right_attach">2</property>
+                                <property name="top_attach">2</property>
+                                <property name="bottom_attach">3</property>
+                                <property name="y_options">GTK_FILL</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkLabel" id="recVersion">
+                                <property name="visible">True</property>
+                                <property name="xalign">0.05000000074505806</property>
+                                <property name="label" translatable="yes">N/A</property>
+                              </object>
+                              <packing>
+                                <property name="left_attach">3</property>
+                                <property name="right_attach">4</property>
+                                <property name="top_attach">2</property>
+                                <property name="bottom_attach">3</property>
+                                <property name="y_options">GTK_FILL</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkLabel" id="recCodec">
+                                <property name="visible">True</property>
+                                <property name="xalign">0.014999999664723873</property>
+                                <property name="label" translatable="yes">N/A</property>
+                              </object>
+                              <packing>
+                                <property name="left_attach">1</property>
+                                <property name="right_attach">4</property>
+                                <property name="top_attach">4</property>
+                                <property name="bottom_attach">5</property>
+                                <property name="y_options">GTK_FILL</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkHSeparator" id="recHSeparator1">
+                                <property name="visible">True</property>
+                              </object>
+                              <packing>
+                                <property name="right_attach">4</property>
+                                <property name="top_attach">3</property>
+                                <property name="bottom_attach">4</property>
+                                <property name="y_padding">4</property>
+                              </packing>
+                            </child>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+                    <child type="label_item">
+                      <placeholder/>
+                    </child>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="position">1</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkScrolledWindow" id="recScrolledWindow">
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="hscrollbar_policy">automatic</property>
+                    <property name="vscrollbar_policy">automatic</property>
+                    <child>
+                      <placeholder/>
+                    </child>
+                  </object>
+                  <packing>
+                    <property name="position">2</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkFrame" id="recFrame2">
+                    <property name="visible">True</property>
+                    <property name="label_xalign">0</property>
+                    <property name="label_yalign">0.10000000149011612</property>
+                    <property name="shadow_type">in</property>
+                    <child>
+                      <object class="GtkAlignment" id="recAlignment2">
+                        <property name="visible">True</property>
+                        <child>
+                          <object class="GtkHBox" id="recHBox1">
+                            <property name="visible">True</property>
+                            <property name="sensitive">False</property>
+                            <property name="border_width">5</property>
+                            <property name="spacing">5</property>
+                            <child>
+                              <object class="GtkButton" id="recPlayPause">
+                                <property name="label">gtk-media-play</property>
+                                <property name="visible">True</property>
+                                <property name="can_focus">True</property>
+                                <property name="receives_default">True</property>
+                                <property name="use_stock">True</property>
+                              </object>
+                              <packing>
+                                <property name="position">0</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkButton" id="recStop">
+                                <property name="label">gtk-media-stop</property>
+                                <property name="visible">True</property>
+                                <property name="can_focus">True</property>
+                                <property name="receives_default">True</property>
+                                <property name="use_stock">True</property>
+                              </object>
+                              <packing>
+                                <property name="position">1</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkVSeparator" id="recVSeparator1">
+                                <property name="visible">True</property>
+                                <property name="orientation">vertical</property>
+                              </object>
+                              <packing>
+                                <property name="expand">False</property>
+                                <property name="position">2</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkToggleButton" id="recRecord">
+                                <property name="label">gtk-media-record</property>
+                                <property name="visible">True</property>
+                                <property name="can_focus">True</property>
+                                <property name="receives_default">True</property>
+                                <property name="use_stock">True</property>
+                              </object>
+                              <packing>
+                                <property name="position">3</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkVSeparator" id="recVSeparator2">
+                                <property name="visible">True</property>
+                                <property name="orientation">vertical</property>
+                              </object>
+                              <packing>
+                                <property name="expand">False</property>
+                                <property name="position">4</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkButton" id="recInfo">
+                                <property name="label" translatable="yes">Info...</property>
+                                <property name="visible">True</property>
+                                <property name="can_focus">True</property>
+                                <property name="receives_default">True</property>
+                              </object>
+                              <packing>
+                                <property name="position">5</property>
+                              </packing>
+                            </child>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+                    <child type="label_item">
+                      <placeholder/>
+                    </child>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="position">3</property>
+                  </packing>
+                </child>
+              </object>
+            </child>
+            <child type="tab">
+              <object class="GtkLabel" id="recTab1">
+                <property name="visible">True</property>
+              </object>
+              <packing>
+                <property name="tab_fill">False</property>
+              </packing>
+            </child>
+          </object>
+          <packing>
+            <property name="padding">2</property>
+            <property name="position">1</property>
+          </packing>
+        </child>
+      </object>
+    </child>
+  </object>
+  <object class="GtkDialog" id="recInfoDialog">
+    <property name="border_width">5</property>
+    <property name="title" translatable="yes">Mangler - Recording Info</property>
+    <property name="type_hint">normal</property>
+    <property name="has_separator">False</property>
+    <child internal-child="vbox">
+      <object class="GtkVBox" id="dialog-vbox12">
+        <property name="visible">True</property>
+        <property name="orientation">vertical</property>
+        <property name="spacing">2</property>
+        <child>
+          <object class="GtkVBox" id="recInfoVBox1">
+            <property name="visible">True</property>
+            <property name="orientation">vertical</property>
+            <property name="spacing">5</property>
+            <child>
+              <object class="GtkFrame" id="recInfoCommentFrame">
+                <property name="visible">True</property>
+                <property name="label_xalign">0</property>
+                <property name="shadow_type">in</property>
+                <child>
+                  <object class="GtkAlignment" id="recInfoCommentAlignment">
+                    <property name="visible">True</property>
+                    <property name="top_padding">2</property>
+                    <property name="left_padding">12</property>
+                    <child>
+                      <object class="GtkScrolledWindow" id="recInfoCommentScrolledWindow">
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <property name="hscrollbar_policy">automatic</property>
+                        <property name="vscrollbar_policy">automatic</property>
+                        <child>
+                          <object class="GtkTextView" id="recInfoComment">
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <accessibility>
+                              <relation type="labelled-by" target="recInfoCommentLabel"/>
+                            </accessibility>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+                  </object>
+                </child>
+                <child type="label">
+                  <object class="GtkLabel" id="recInfoCommentLabel">
+                    <property name="visible">True</property>
+                    <property name="label" translatable="yes">Comment</property>
+                    <property name="use_markup">True</property>
+                    <attributes>
+                      <attribute name="weight" value="bold"/>
+                    </attributes>
+                  </object>
+                </child>
+              </object>
+              <packing>
+                <property name="position">0</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkFrame" id="recInfoURLFrame">
+                <property name="visible">True</property>
+                <property name="label_xalign">0</property>
+                <property name="shadow_type">in</property>
+                <child>
+                  <object class="GtkAlignment" id="recInfoURLAlignment">
+                    <property name="visible">True</property>
+                    <property name="top_padding">2</property>
+                    <property name="left_padding">12</property>
+                    <child>
+                      <object class="GtkScrolledWindow" id="recInfoURLScrolledWindow">
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <property name="hscrollbar_policy">automatic</property>
+                        <property name="vscrollbar_policy">automatic</property>
+                        <child>
+                          <object class="GtkTextView" id="recInfoURL">
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <accessibility>
+                              <relation type="labelled-by" target="recInfoURLLabel"/>
+                            </accessibility>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+                  </object>
+                </child>
+                <child type="label">
+                  <object class="GtkLabel" id="recInfoURLLabel">
+                    <property name="visible">True</property>
+                    <property name="label" translatable="yes">URL</property>
+                    <property name="use_markup">True</property>
+                    <attributes>
+                      <attribute name="weight" value="bold"/>
+                    </attributes>
+                  </object>
+                </child>
+              </object>
+              <packing>
+                <property name="position">1</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkFrame" id="recInfoCopyrightFrame">
+                <property name="visible">True</property>
+                <property name="label_xalign">0</property>
+                <property name="shadow_type">in</property>
+                <child>
+                  <object class="GtkAlignment" id="recInfoCopyrightAlignment">
+                    <property name="visible">True</property>
+                    <property name="top_padding">2</property>
+                    <property name="left_padding">12</property>
+                    <child>
+                      <object class="GtkScrolledWindow" id="recInfoCopyrightScrolledWindow">
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <property name="hscrollbar_policy">automatic</property>
+                        <property name="vscrollbar_policy">automatic</property>
+                        <child>
+                          <object class="GtkTextView" id="recInfoCopyright">
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <accessibility>
+                              <relation type="labelled-by" target="recInfoCopyrightLabel"/>
+                            </accessibility>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+                  </object>
+                </child>
+                <child type="label">
+                  <object class="GtkLabel" id="recInfoCopyrightLabel">
+                    <property name="visible">True</property>
+                    <property name="label" translatable="yes">Copyright</property>
+                    <property name="use_markup">True</property>
+                    <attributes>
+                      <attribute name="weight" value="bold"/>
+                    </attributes>
+                  </object>
+                </child>
+              </object>
+              <packing>
+                <property name="position">2</property>
+              </packing>
+            </child>
+          </object>
+          <packing>
+            <property name="position">1</property>
+          </packing>
+        </child>
+        <child internal-child="action_area">
+          <object class="GtkHButtonBox" id="dialog-action_area12">
+            <property name="visible">True</property>
+            <property name="layout_style">end</property>
+            <child>
+              <object class="GtkButton" id="recInfoCancelButton">
+                <property name="label">gtk-cancel</property>
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="receives_default">True</property>
+                <property name="use_stock">True</property>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">False</property>
+                <property name="position">0</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkButton" id="recInfoSaveButton">
+                <property name="label">gtk-save</property>
+                <property name="visible">True</property>
+                <property name="sensitive">False</property>
+                <property name="can_focus">True</property>
+                <property name="can_default">True</property>
+                <property name="has_default">True</property>
+                <property name="receives_default">True</property>
+                <property name="use_stock">True</property>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">False</property>
+                <property name="position">1</property>
+              </packing>
+            </child>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="pack_type">end</property>
+            <property name="position">0</property>
+          </packing>
+        </child>
+      </object>
+    </child>
+    <action-widgets>
+      <action-widget response="0">recInfoCancelButton</action-widget>
+      <action-widget response="0">recInfoSaveButton</action-widget>
+    </action-widgets>
   </object>
 </interface>
