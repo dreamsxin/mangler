@@ -1167,9 +1167,13 @@ ManglerAdmin::UserUpdate_clicked_cb(void) {/*{{{*/
     account.perms.rank_id = getFromCombobox("UserRank", 0);
     uint16_t ownerID = getFromCombobox("UserOwner", 0);
     account.perms.replace_owner_id = ownerID;
-    Gtk::TreeModel::Row ownerRow = getAccount(ownerID, UserEditorTreeModel->children());
-    Glib::ustring ownerName = ownerRow[adminRecord.name];
-    account.owner = ::strdup(ownerName.c_str());
+    if (ownerID) {
+        Gtk::TreeModel::Row ownerRow = getAccount(ownerID, UserEditorTreeModel->children());
+        Glib::ustring ownerName = ownerRow[adminRecord.name];
+        account.owner = ::strdup(ownerName.c_str());
+    } else {
+        account.owner = ::strdup("");
+    }
     Gtk::TextView *textview;
     builder->get_widget("UserNotes", textview);
     account.notes = ::strdup(ustring_to_c(textview->get_buffer()->get_text()).c_str());
