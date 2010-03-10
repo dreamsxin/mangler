@@ -28,13 +28,14 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <signal.h>
-#ifdef HAVE_PULSE
-#include <pulse/simple.h>
-#include <pulse/error.h>
-#include <pulse/gccmacro.h>
-#endif
-#include <speex/speex.h>
+
 #include "ventrilo3.h"
+
+#ifdef HAVE_PULSE
+# include <pulse/simple.h>
+# include <pulse/error.h>
+# include <pulse/gccmacro.h>
+#endif
 
 extern _v3_luser v3_luser;
 
@@ -42,15 +43,12 @@ extern _v3_luser v3_luser;
 #define true    1
 
 void
-ctrl_c (int signum)
-{
-    printf("disconnecting... ");
+ctrl_c(int signum) {
+    fprintf(stderr, "disconnecting... ");
     v3_logout();
-    printf("done\n");
+    fprintf(stderr, "done\n");
     exit(0);
 }
-
-
 
 int main(int argc, char *argv[]) {
     _v3_net_message *msg;
@@ -87,8 +85,7 @@ int main(int argc, char *argv[]) {
             V3_DEBUG_EVENT
             );
 
-
-    signal (SIGINT, ctrl_c);
+    signal(SIGINT, ctrl_c);
     username = strdup(getenv("USER"));
     //if (! v3_login("evolve.typefrag.com:54174", username, "password", "phonetic")) {
     if (! v3_login("localhost:3784", "lv3test", "test", "phonetic")) {

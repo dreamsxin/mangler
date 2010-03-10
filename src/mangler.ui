@@ -3586,7 +3586,6 @@ These are useful for developers.</property>
           <object class="GtkVBox" id="chatVBox">
             <property name="visible">True</property>
             <property name="orientation">vertical</property>
-            <property name="spacing">2</property>
             <child>
               <object class="GtkHPaned" id="chatHPaned">
                 <property name="visible">True</property>
@@ -3627,6 +3626,7 @@ These are useful for developers.</property>
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="headers_visible">False</property>
+                        <property name="enable_search">False</property>
                       </object>
                     </child>
                   </object>
@@ -3641,11 +3641,11 @@ These are useful for developers.</property>
               </packing>
             </child>
             <child>
-              <object class="GtkHBox" id="hbox24">
+              <object class="GtkHBox" id="chatHBox">
                 <property name="visible">True</property>
                 <child>
                   <object class="GtkCheckButton" id="chatTimestampCheckButton">
-                    <property name="label" translatable="yes">Show Timestamps</property>
+                    <property name="label" translatable="yes">Timestamp</property>
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
                     <property name="receives_default">False</property>
@@ -3673,6 +3673,9 @@ These are useful for developers.</property>
                     <property name="can_focus">True</property>
                     <property name="has_focus">True</property>
                     <property name="is_focus">True</property>
+                    <property name="can_default">True</property>
+                    <property name="has_default">True</property>
+                    <property name="receives_default">True</property>
                     <property name="max_length">255</property>
                     <property name="invisible_char">&#x25CF;</property>
                     <property name="activates_default">True</property>
@@ -3682,14 +3685,11 @@ These are useful for developers.</property>
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkButton" id="sendChat">
-                    <property name="label" translatable="yes">Send</property>
+                  <object class="GtkButton" id="chatClear">
+                    <property name="label" translatable="yes">Clear</property>
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
-                    <property name="can_default">True</property>
-                    <property name="has_default">True</property>
                     <property name="receives_default">True</property>
-                    <property name="focus_on_click">False</property>
                   </object>
                   <packing>
                     <property name="expand">False</property>
@@ -3698,7 +3698,7 @@ These are useful for developers.</property>
                 </child>
                 <child>
                   <object class="GtkButton" id="chatClose">
-                    <property name="label">Close</property>
+                    <property name="label" translatable="yes">Close</property>
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
                     <property name="receives_default">True</property>

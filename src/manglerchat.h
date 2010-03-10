@@ -60,7 +60,8 @@ class ManglerChat {
         void chatTimestampCheckButton_toggled_cb(void);
         void chatWindow_show_cb(void);
         void chatWindow_hide_cb(void);
-        void chatWindowSendChat_clicked_cb(void);
+        void chatMessage_activate_cb(void);
+        void chatClear_clicked_cb(void);
         void chatClose_clicked_cb(void);
         void chatHide_clicked_cb(void);
 
@@ -74,7 +75,6 @@ class ManglerChat {
         bool isUserInChat(uint16_t user_id);
         Glib::ustring nameFromId(uint16_t user_id);
         bool filterVisible(const Gtk::TreeIter& iter);
-
 
 };
 
