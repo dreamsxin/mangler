@@ -169,6 +169,4 @@ class ManglerChannelTree
 Glib::ustring getTimeString(void);
 int natsort(const char *l, const char *r);
 
-
-
 #endif

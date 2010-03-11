@@ -31,7 +31,7 @@
 #include "manglersettings.h"
 #include "manglercharset.h"
 
-ManglerNetwork::ManglerNetwork(        Glib::RefPtr<Gtk::Builder>          builder) {
+ManglerNetwork::ManglerNetwork(Glib::RefPtr<Gtk::Builder> builder) {
     this->builder = builder;
 }
 
@@ -105,3 +105,4 @@ void
 ManglerNetwork::disconnect(void) {
     v3_logout();
 }
+

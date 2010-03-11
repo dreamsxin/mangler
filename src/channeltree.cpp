@@ -458,12 +458,14 @@ ManglerChannelTree::refreshUser(uint32_t id) {/*{{{*/
     bool phantom;
     bool muted;
     bool global_mute;
+    bool channel_mute;
 
     if (!(user = getUser(id)) && id > 0) {
         fprintf(stderr, "channel missing: id: %d\n", id);
     }
     if ((u = v3_get_user(id))) {
         global_mute = u->global_mute;
+        channel_mute = u->channel_mute;
         // update xmit icons
         if (id == v3_get_user_id() && mangler->isTransmitting) {
             // we're transmitting
@@ -477,31 +479,34 @@ ManglerChannelTree::refreshUser(uint32_t id) {/*{{{*/
         }
         v3_free_user(u);
     }
-    name = user[channelRecord.name];
-    comment = user[channelRecord.comment];
-    url = user[channelRecord.url];
+    name             = user[channelRecord.name];
+    comment          = user[channelRecord.comment];
+    url              = user[channelRecord.url];
     integration_text = user[channelRecord.integration_text];
-    phonetic = user[channelRecord.phonetic];
-    rank = user[channelRecord.rank];
-    phantom = user[channelRecord.phantom];
-    guest = user[channelRecord.isGuest];
-    muted = user[channelRecord.muted];
-    displayName = name;
+    phonetic         = user[channelRecord.phonetic];
+    rank             = user[channelRecord.rank];
+    phantom          = user[channelRecord.phantom];
+    guest            = user[channelRecord.isGuest];
+    muted            = user[channelRecord.muted];
+    displayName      = name;
     if (!rank.empty()) {
         displayName = "[" + rank + "] " + displayName;
     }
     flags = "";
     if (phantom) {
-        flags = "P" + flags;
+        flags += "P";
+    }
+    if (channel_mute) {
+        flags += "N";
     }
     if (global_mute) {
-        flags = "G" + flags;
-    }
-    if (mangler->chat->isUserInChat(id)) {
-        flags = "C" + flags;
+        flags += "G";
     }
     if (muted) {
-        flags = "M" + flags;
+        flags += "M";
+    }
+    if (mangler->chat->isUserInChat(id)) {
+        flags += "C";
     }
     if (flags.length()) {
         displayName = "[" + flags + "] " + displayName;

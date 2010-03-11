@@ -253,6 +253,7 @@ enum _v3_events
     V3_EVENT_USERLIST_REMOVE,
     V3_EVENT_USERLIST_CHANGE_OWNER,
     V3_EVENT_USER_GLOBAL_MUTE_CHANGED,
+    V3_EVENT_USER_CHANNEL_MUTE_CHANGED,
     V3_EVENT_PERMS_UPDATED,
     V3_EVENT_USER_RANK_CHANGE,
 
@@ -409,6 +410,7 @@ struct _v3_event {
 #define V3_USER_ALLOW_RECORD        0x02
 #define V3_USER_ACCEPT_CHAT         0x03
 #define V3_USER_GLOBAL_MUTE         0x04
+#define V3_USER_CHANNEL_MUTE        0x05
 
 #define V3_MAX_USER_SIZE            512
 #define V3_MAX_CHANNEL_SIZE         512
@@ -434,6 +436,7 @@ typedef struct __v3_msg_user {/*{{{*/
     uint8_t  accept_chat;
     uint8_t  allow_recording;
     uint8_t  global_mute;
+    uint8_t  channel_mute;
     uint8_t  guest;
     void     *next;
     uint16_t real_user_id; // used for phantom users

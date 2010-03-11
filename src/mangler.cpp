@@ -43,6 +43,9 @@
 #include "manglercharset.h"
 #include "manglerintegration.h"
 #include "mangleradmin.h"
+#ifdef HAVE_XOSD
+# include "manglerosd.h"
+#endif
 #include "locale.h"
 
 using namespace std;
@@ -52,6 +55,8 @@ Mangler *mangler;
 ManglerConfig Mangler::config;
 
 Mangler::Mangler(struct _cli_options *options) {/*{{{*/
+    this->options = options;
+
     // load all of our icons
     icons.insert(std::make_pair("black_circle",                 Gdk::Pixbuf::create_from_inline(-1, black_circle                )));
     icons.insert(std::make_pair("blue_circle",                  Gdk::Pixbuf::create_from_inline(-1, blue_circle                 )));
@@ -84,10 +89,11 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
         }
         builder->get_widget("manglerWindow", manglerWindow);
         manglerWindow->set_icon(icons["tray_icon"]);
-    } catch(const Glib::Error& e) {
+    } catch (const Glib::Error& e) {
         std::cerr << e.what() << std::endl;
-        exit(0);
+        exit(EXIT_FAILURE);
     }
+    manglerWindow->signal_show().connect(sigc::mem_fun(this, &Mangler::mangler_show_cb));
     //manglerWindow->signal_hide().connect(sigc::mem_fun(this, &Mangler::manglerWindow_hide_cb));
     Gtk::Main::signal_quit().connect(sigc::mem_fun(this, &Mangler::mangler_quit_cb));
 
@@ -150,7 +156,7 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
     // Input VU Meter
     builder->get_widget("inputVUMeterProgressBar", inputvumeter);
 
-    // Quick mute options
+    // Quick Mute Options
     muteMic   = false;
     muteSound = false;
     builder->get_widget("muteMicCheckButton", checkbutton);
@@ -306,7 +312,7 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
         }
         server++; ++ctr;
     }
-    //  Select the last one used (or the first if unknown)
+    // Select the last one used (or the first if unknown)
     combobox->set_active(serverSelection);
 
     // Statusbar Icon
@@ -339,26 +345,165 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
 }/*}}}*/
 
 /*
+ * Main Window Callbacks
+ */
+void Mangler::mangler_show_cb(void) {/*{{{*/
+    if (options) {
+        // Command Line Quick Connect
+        if (!options->qc_server.empty()) {
+            Glib::ustring::size_type separator = options->qc_server.find_last_of(":");
+            if (separator > 0 && options->qc_server.length() != separator + 1 && options->qc_username.length()) {
+                onConnectHandler(
+                        options->qc_server.substr(0, separator),
+                        options->qc_server.substr(separator + 1),
+                        options->qc_username,
+                        options->qc_password);
+            }
+        }
+        options = NULL;
+    }
+}/*}}}*/
+bool Mangler::mangler_quit_cb(void) {/*{{{*/
+    int w, h;
+    manglerWindow->get_size(w, h);
+    config["WindowWidth"] = w;
+    config["WindowHeight"] = h;
+    config.save();
+
+    return true;
+}/*}}}*/
+
+/* 
+ * Connection Handling
+ */
+void Mangler::onConnectHandler(
+        Glib::ustring hostname,
+        Glib::ustring port,
+        Glib::ustring username,
+        Glib::ustring password,
+        Glib::ustring phonetic,
+        Glib::ustring charset,
+        bool acceptPages,
+        bool acceptU2U,
+        bool acceptPrivateChat,
+        bool allowRecording) {/*{{{*/
+    set_charset(charset);
+    isAdmin = false;
+    isChanAdmin = false;
+    v3_set_server_opts(V3_USER_ACCEPT_PAGES, acceptPages);
+    v3_set_server_opts(V3_USER_ACCEPT_U2U,   acceptU2U);
+    v3_set_server_opts(V3_USER_ACCEPT_CHAT,  acceptPrivateChat);
+    v3_set_server_opts(V3_USER_ALLOW_RECORD, allowRecording);
+
+    channelTree->updateLobby("Connecting...");
+    Glib::Thread::create(sigc::bind(sigc::mem_fun(this->network, &ManglerNetwork::connect), hostname, port, username, password, phonetic), FALSE);
+}/*}}}*/
+void Mangler::onDisconnectHandler(void) {/*{{{*/
+    Gtk::Button *connectbutton;
+
+    builder->get_widget("connectButton", connectbutton);
+    if (connectbutton->get_label() == "gtk-disconnect") {
+        admin->adminWindow->hide();
+        builder->get_widget("adminButton", button);
+        button->set_sensitive(false);
+        builder->get_widget("adminLoginMenuItem", menuitem);
+        menuitem->set_sensitive(false);
+        builder->get_widget("adminWindowMenuItem", menuitem);
+        menuitem->set_sensitive(false);
+        builder->get_widget("chatButton", button);
+        button->set_sensitive(false);
+        builder->get_widget("chatMenuItem", menuitem);
+        menuitem->set_sensitive(false);
+        builder->get_widget("commentButton", button);
+        button->set_sensitive(false);
+        builder->get_widget("commentMenuItem", menuitem);
+        menuitem->set_sensitive(false);
+
+        connectbutton->set_sensitive(true);
+#ifdef HAVE_XOSD
+        osd->destroyOsd();
+#endif
+        channelTree->clear();
+        admin->clearChannels();
+        builder->get_widget("xmitButton", togglebutton);
+        togglebutton->set_active(false);
+        builder->get_widget("progressbar", progressbar);
+        progressbar->set_text("");
+        progressbar->set_fraction(0);
+        builder->get_widget("statusbar", statusbar);
+        statusbar->pop();
+        statusbar->push("Disconnected");
+        //builder->get_widget("serverTabLabel", label);
+        //label->set_label("Not Connected");
+        builder->get_widget("pingLabel", label);
+        label->set_label("N/A");
+        builder->get_widget("userCountLabel", label);
+        label->set_label("N/A");
+        builder->get_widget("codecLabel", label);
+        label->set_label("N/A");
+        mangler->statusIcon->set(icons["tray_icon_grey"]);
+        audioControl->playNotification("logout");
+        isAdmin = false;
+        isChanAdmin = false;
+        builder->get_widget("adminSeparatorMenuItem", menuitem);
+        menuitem->hide();
+        builder->get_widget("adminLoginMenuItem", menuitem);
+        menuitem->hide();
+        builder->get_widget("adminWindowMenuItem", menuitem);
+        menuitem->hide();
+        chat->clear();
+        if (! connectedServerName.empty()) {
+            iniSection &server( config.servers[connectedServerName] );
+            connectedServerName = "";
+            if (!wantDisconnect && server["PersistentConnection"].toBool()) {
+                connectbutton->set_label("Cancel Reconnect");
+                lastAttempt = time(NULL);
+                Glib::signal_timeout().connect_seconds(sigc::mem_fun(*this, &Mangler::reconnectStatusHandler), 1);
+                return;
+            }
+        }
+    }
+    connectbutton->set_label("gtk-connect");
+    builder->get_widget("serverSelectComboBox", combobox);
+    combobox->set_sensitive(true);
+}/*}}}*/
+bool Mangler::reconnectStatusHandler(void) {/*{{{*/
+    Gtk::Button *connectbutton;
+    char buf[64] = "";
+    int reconnectTimer = (15 - (time(NULL) - lastAttempt));
+
+    builder->get_widget("connectButton", connectbutton);
+    if (connectbutton->get_label() == "gtk-disconnect" || wantDisconnect) {
+        return false;
+    }
+    builder->get_widget("statusbar", statusbar);
+    snprintf(buf, 63, "Attempting reconnect in %d seconds", reconnectTimer);
+    statusbar->pop();
+    statusbar->push(buf);
+    if (!reconnectTimer) {
+        lastAttempt = time(NULL);
+        connectbutton->set_label("gtk-connect");
+        Mangler::connectButton_clicked_cb();
+    }
+
+    return true;
+}/*}}}*/
+
+/*
  * Button signal handler callbacks
  */
 void Mangler::quickConnectButton_clicked_cb(void) {/*{{{*/
-    Gtk::Dialog *dialog;
-    Gtk::Entry *textbox;
-
     builder->get_widget("quickConnectDialog", dialog);
     dialog->set_icon(icons["tray_icon"]);
 
-    builder->get_widget("qcServerName", textbox);
-    textbox->set_text(config["qc_lastserver.hostname"].toCString());
-
-    builder->get_widget("qcPort", textbox);
-    textbox->set_text(config["qc_lastserver.port"].toCString());
-
-    builder->get_widget("qcUsername", textbox);
-    textbox->set_text(config["qc_lastserver.username"].toCString());
-
-    builder->get_widget("qcPassword", textbox);
-    textbox->set_text(config["qc_lastserver.password"].toCString());
+    builder->get_widget("qcServerName", entry);
+    entry->set_text(config["qc_lastserver.hostname"].toCString());
+    builder->get_widget("qcPort", entry);
+    entry->set_text(config["qc_lastserver.port"].toCString());
+    builder->get_widget("qcUsername", entry);
+    entry->set_text(config["qc_lastserver.username"].toCString());
+    builder->get_widget("qcPassword", entry);
+    entry->set_text(config["qc_lastserver.password"].toCString());
 
     if (v3_is_loggedin()) {
         builder->get_widget("qcConnectButton", button);
@@ -367,10 +512,10 @@ void Mangler::quickConnectButton_clicked_cb(void) {/*{{{*/
         builder->get_widget("qcConnectButton", button);
         button->set_sensitive(true);
     }
+
     dialog->set_keep_above(true);
     dialog->run();
     dialog->hide();
-
 }/*}}}*/
 void Mangler::serverConfigButton_clicked_cb(void) {/*{{{*/
     builder->get_widget("serverListWindow", window);
@@ -418,20 +563,21 @@ void Mangler::connectButton_clicked_cb(void) {/*{{{*/
                 }
                 return;
             }
-            channelTree->updateLobby("Connecting...");
-            wantDisconnect = false;
-            connectbutton->set_sensitive(false);
-
-            set_charset(server["Charset"].toUString());
             config["lastConnectedServerName"] = connectedServerName;
             config.config.save();
-            v3_set_server_opts(V3_USER_ACCEPT_PAGES, server["acceptPages"].length() ? server["acceptPages"].toBool() : true);
-            v3_set_server_opts(V3_USER_ACCEPT_U2U, server["acceptU2U"].length() ? server["acceptU2U"].toBool() : true);
-            v3_set_server_opts(V3_USER_ACCEPT_CHAT, server["acceptPrivateChat"].length() ? server["acceptPrivateChat"].toBool() : true);
-            v3_set_server_opts(V3_USER_ALLOW_RECORD, server["allowRecording"].length() ? server["allowRecording"].toBool() : true);
-            isAdmin = false;
-            isChanAdmin = false;
-            Glib::Thread::create(sigc::bind(sigc::mem_fun(this->network, &ManglerNetwork::connect), hostname, port, username, password, phonetic), FALSE);
+            wantDisconnect = false;
+            connectbutton->set_sensitive(false);
+            onConnectHandler(
+                    hostname,
+                    port,
+                    username,
+                    password,
+                    phonetic,
+                    server["Charset"].toUString(),
+                    server["acceptPages"].length() ? server["acceptPages"].toBool() : true,
+                    server["acceptU2U"].length() ? server["acceptU2U"].toBool() : true,
+                    server["acceptPrivateChat"].length() ? server["acceptPrivateChat"].toBool() : true,
+                    server["allowRecording"].length() ? server["allowRecording"].toBool() : true);
         }
     } else {
         wantDisconnect = true;
@@ -450,7 +596,7 @@ void Mangler::commentButton_clicked_cb(void) {/*{{{*/
 }/*}}}*/
 void Mangler::chatButton_clicked_cb(void) {/*{{{*/
     if (v3_is_loggedin()) {
-        if(!chat->isOpen) {
+        if (!chat->isOpen) {
             chat->chatWindow->set_icon(icons["tray_icon"]);
             chat->chatWindow->show();
         } else {
@@ -485,7 +631,7 @@ void Mangler::adminButton_clicked_cb(void) {/*{{{*/
             //admin->adminWindow->set_icon(icons["tray_icon"]);
             wantAdminWindow = true;
             // if we tried sending a password, the only options are either
-            // success or get booted from the server
+            // success or get booted from the server.
         }
     } else {
         admin->adminWindow->show();
@@ -575,8 +721,7 @@ void Mangler::statusIcon_activate_cb(void) {/*{{{*/
         iconified = true;
     }
 }/*}}}*/
-void
-Mangler::statusIcon_buttonpress_event_cb(GdkEventButton* event) {/*{{{*/
+void Mangler::statusIcon_buttonpress_event_cb(GdkEventButton* event) {/*{{{*/
     if ((event->type == GDK_BUTTON_PRESS) && (event->button == 3)) {
         builder->get_widget("statusIconMenu", statusIconMenu);
         builder->get_widget("muteMicCheckButton", checkbutton);
@@ -604,18 +749,9 @@ void Mangler::statusIcon_scroll_event_cb(GdkEventScroll* event) {/*{{{*/
         v3_set_volume_master(Mangler::config["MasterVolumeLevel"].toInt());
     }
 }/*}}}*/
-bool Mangler::mangler_quit_cb(void) {/*{{{*/
-    int w, h;
-    manglerWindow->get_size(w, h);
-    config["WindowWidth"] = w;
-    config["WindowHeight"] = h;
-    config.save();
-    return true;
-}/*}}}*/
-
 void Mangler::startTransmit(void) {/*{{{*/
     const v3_codec *codec;
-    v3_user  *user;
+    v3_user *user;
 
     if (! v3_is_loggedin()) {
         return;
@@ -686,35 +822,24 @@ void Mangler::muteMicCheckMenuItem_toggled_cb(void) {/*{{{*/
     checkbutton->set_active(checkmenuitem->get_active());
 }/*}}}*/
 
-// Quick Connect callbacks
+// Quick Connect Callbacks
 void Mangler::qcConnectButton_clicked_cb(void) {/*{{{*/
-    Gtk::Entry *textbox;
-
-    channelTree->updateLobby("Connecting...");
-    builder->get_widget("qcServerName", textbox);
-    Glib::ustring server = textbox->get_text();
-    builder->get_widget("qcPort", textbox);
-    Glib::ustring port = textbox->get_text();
-    builder->get_widget("qcUsername", textbox);
-    Glib::ustring username = textbox->get_text();
-    builder->get_widget("qcPassword", textbox);
-    Glib::ustring password = textbox->get_text();
+    builder->get_widget("qcServerName", entry);
+    Glib::ustring hostname = entry->get_text();
+    builder->get_widget("qcPort", entry);
+    Glib::ustring port = entry->get_text();
+    builder->get_widget("qcUsername", entry);
+    Glib::ustring username = entry->get_text();
+    builder->get_widget("qcPassword", entry);
+    Glib::ustring password = entry->get_text();
     //fprintf(stderr, "connecting to: %s:%s\n", server.c_str(), port.c_str());
-    config["qc_lastserver.hostname"] = server;
-    config["qc_lastserver.port"] = port;
+    config["qc_lastserver.hostname"] = hostname;
+    config["qc_lastserver.port"]     = port;
     config["qc_lastserver.username"] = username;
     config["qc_lastserver.password"] = password;
     config.config.save();
-    set_charset("");
     connectedServerName = "";
-    isAdmin = false;
-    isChanAdmin = false;
-    v3_set_server_opts(V3_USER_ACCEPT_PAGES, true);
-    v3_set_server_opts(V3_USER_ACCEPT_U2U, true);
-    v3_set_server_opts(V3_USER_ACCEPT_CHAT, true);
-    v3_set_server_opts(V3_USER_ALLOW_RECORD, true);
-    Glib::Thread::create(sigc::bind(sigc::mem_fun(this->network, &ManglerNetwork::connect), server, port, username, password, ""), FALSE);
-    // TODO: move this into a thread and use blocking waits
+    onConnectHandler(hostname, port, username, password);
 }/*}}}*/
 void Mangler::qcCancelButton_clicked_cb(void) {/*{{{*/
 }/*}}}*/
@@ -726,103 +851,9 @@ void Mangler::motdOkButton_clicked_cb(void) {/*{{{*/
 }/*}}}*/
 
 /*
- * Auto reconnect handling
- */
-bool Mangler::reconnectStatusHandler(void) {/*{{{*/
-    Gtk::Button *connectbutton;
-    char buf[64] = "";
-    int reconnectTimer = (15 - (time(NULL) - lastAttempt));
-
-    builder->get_widget("connectButton", connectbutton);
-    if (connectbutton->get_label() == "gtk-disconnect" || wantDisconnect) {
-        return false;
-    }
-    builder->get_widget("statusbar", statusbar);
-    snprintf(buf, 63, "Attempting reconnect in %d seconds", reconnectTimer);
-    statusbar->pop();
-    statusbar->push(buf);
-    if (!reconnectTimer) {
-        lastAttempt = time(NULL);
-        connectbutton->set_label("gtk-connect");
-        Mangler::connectButton_clicked_cb();
-    }
-
-    return true;
-}/*}}}*/
-
-void Mangler::onDisconnectHandler(void) {/*{{{*/
-    Gtk::Button *connectbutton;
-
-    builder->get_widget("connectButton", connectbutton);
-    if (connectbutton->get_label() == "gtk-disconnect") {
-        admin->adminWindow->hide();
-        builder->get_widget("adminButton", button);
-        button->set_sensitive(false);
-        builder->get_widget("adminLoginMenuItem", menuitem);
-        menuitem->set_sensitive(false);
-        builder->get_widget("adminWindowMenuItem", menuitem);
-        menuitem->set_sensitive(false);
-        builder->get_widget("chatButton", button);
-        button->set_sensitive(false);
-        builder->get_widget("chatMenuItem", menuitem);
-        menuitem->set_sensitive(false);
-        builder->get_widget("commentButton", button);
-        button->set_sensitive(false);
-        builder->get_widget("commentMenuItem", menuitem);
-        menuitem->set_sensitive(false);
-
-        connectbutton->set_sensitive(true);
-#ifdef HAVE_XOSD
-        osd->destroyOsd();
-#endif
-        channelTree->clear();
-        admin->clearChannels();
-        builder->get_widget("xmitButton", togglebutton);
-        togglebutton->set_active(false);
-        builder->get_widget("progressbar", progressbar);
-        progressbar->set_text("");
-        progressbar->set_fraction(0);
-        builder->get_widget("statusbar", statusbar);
-        statusbar->pop();
-        statusbar->push("Disconnected");
-        //builder->get_widget("serverTabLabel", label);
-        //label->set_label("Not Connected");
-        builder->get_widget("pingLabel", label);
-        label->set_label("N/A");
-        builder->get_widget("userCountLabel", label);
-        label->set_label("N/A");
-        builder->get_widget("codecLabel", label);
-        label->set_label("N/A");
-        mangler->statusIcon->set(icons["tray_icon_grey"]);
-        audioControl->playNotification("logout");
-        isAdmin = false;
-        isChanAdmin = false;
-        builder->get_widget("adminSeparatorMenuItem", menuitem);
-        menuitem->hide();
-        builder->get_widget("adminLoginMenuItem", menuitem);
-        menuitem->hide();
-        builder->get_widget("adminWindowMenuItem", menuitem);
-        menuitem->hide();
-        chat->clear();
-        if (! connectedServerName.empty()) {
-            iniSection &server( config.servers[connectedServerName] );
-            connectedServerName = "";
-            if (!wantDisconnect && server["PersistentConnection"].toBool()) {
-                connectbutton->set_label("Cancel Reconnect");
-                lastAttempt = time(NULL);
-                Glib::signal_timeout().connect_seconds(sigc::mem_fun(*this, &Mangler::reconnectStatusHandler), 1);
-                return;
-            }
-        }
-    }
-    connectbutton->set_label("gtk-connect");
-    builder->get_widget("serverSelectComboBox", combobox);
-    combobox->set_sensitive(true);
-}/*}}}*/
-
-// Timeout Callbacks
-/*
- * Inbound event processing happens here
+ * Timeout Callbacks
+ *
+ * Inbound event processing happens here.
  */
 bool Mangler::getNetworkEvent() {/*{{{*/
     v3_event *ev;
@@ -1002,7 +1033,10 @@ bool Mangler::getNetworkEvent() {/*{{{*/
 
                     builder->get_widget("adminButton", button);
                     button->set_sensitive(true);
+                    builder->get_widget("adminSeparatorMenuItem", menuitem);
+                    menuitem->show();
                     builder->get_widget("adminLoginMenuItem", menuitem);
+                    menuitem->show();
                     menuitem->set_sensitive(true);
                     builder->get_widget("adminWindowMenuItem", menuitem);
                     menuitem->set_sensitive(true);
@@ -1027,25 +1061,22 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                         if (config.servers[connectedServerName]["PersistentComments"].toBool()) {
                             comment = config.servers[connectedServerName]["Comment"].toUString();
                             url = config.servers[connectedServerName]["URL"].toUString();
-                            v3_set_text((char *) ustring_to_c(comment).c_str(), (char *) ustring_to_c(url).c_str(), (char *) ustring_to_c(integration_text).c_str(), true);
+                            v3_set_text(
+                                    (char *)ustring_to_c(comment).c_str(),
+                                    (char *)ustring_to_c(url).c_str(),
+                                    (char *)ustring_to_c(integration_text).c_str(),
+                                    true);
                         }
-
-                        //Default Channel
+                        // default channel
                         uint32_t defaultChannelId = config.servers[connectedServerName]["DefaultChannelID"].toULong();
                         if (defaultChannelId) {
-                            //For now, only handling right click menu set
+                            // for now, only handling right click menu set
                             channelTree->channelView_switchChannel2Default(defaultChannelId);
                         }
                     }
-                    builder->get_widget("chatWindow", window);
-                    if(chat->isOpen) {
+                    if (chat->isOpen) {
                         v3_join_chat();
                     }
-                    myID = v3_get_user_id();
-                    builder->get_widget("adminSeparatorMenuItem", menuitem);
-                    menuitem->show();
-                    builder->get_widget("adminLoginMenuItem", menuitem);
-                    menuitem->show();
                 }
                 break;/*}}}*/
             case V3_EVENT_USER_CHAN_MOVE:/*{{{*/
@@ -1393,7 +1424,8 @@ bool Mangler::getNetworkEvent() {/*{{{*/
             case V3_EVENT_CHAN_ADMIN_UPDATED:/*{{{*/
                 channelTree->refreshAllChannels();
                 break;/*}}}*/
-            case V3_EVENT_USER_GLOBAL_MUTE_CHANGED:/*{{{*/
+            case V3_EVENT_USER_GLOBAL_MUTE_CHANGED:
+            case V3_EVENT_USER_CHANNEL_MUTE_CHANGED:/*{{{*/
                 channelTree->refreshUser(ev->user.id);
                 break;/*}}}*/
             case V3_EVENT_SERVER_PROPERTY_UPDATED:/*{{{*/
@@ -1509,6 +1541,7 @@ bool Mangler::getNetworkEvent() {/*{{{*/
     }
     return true;
 }/*}}}*/
+
 bool Mangler::checkPushToTalkKeys(void) {/*{{{*/
     char        pressed_keys[32];
     GdkWindow   *rootwin = gdk_get_default_root_window();
@@ -1687,7 +1720,11 @@ bool Mangler::updateIntegration(void) {/*{{{*/
         if (! config["AudioIntegrationEnabled"].toBool() || integration->client == MusicClient_None) {
             if (integration_text != "") {
                     integration_text = "";
-                    v3_set_text((char *) ustring_to_c(comment).c_str(), (char *) ustring_to_c(url).c_str(), (char *)"", true);
+                    v3_set_text(
+                            (char *)ustring_to_c(comment).c_str(),
+                            (char *)ustring_to_c(url).c_str(),
+                            (char *)"",
+                            true);
             }
             return true;
         }
@@ -1697,7 +1734,11 @@ bool Mangler::updateIntegration(void) {/*{{{*/
             case 0:
                 if ( ((integration->update(false) || !integration->first()) ) || integration_text != formatted_text ) {
                     integration_text =  integration->format();
-                    v3_set_text((char *) ustring_to_c(comment).c_str(), (char *) ustring_to_c(url).c_str(), (char *) ustring_to_c(integration_text).c_str(), true);
+                    v3_set_text(
+                            (char *)ustring_to_c(comment).c_str(),
+                            (char *)ustring_to_c(url).c_str(),
+                            (char *)ustring_to_c(integration_text).c_str(),
+                            true);
                 }
                 break;
 
@@ -1705,7 +1746,11 @@ bool Mangler::updateIntegration(void) {/*{{{*/
             case 1:
                 if (integration_text != formatted_text) {
                     integration_text = formatted_text;
-                    v3_set_text((char *) ustring_to_c(comment).c_str(), (char *) ustring_to_c(url).c_str(), (char *) ustring_to_c(integration_text).c_str(), true);
+                    v3_set_text(
+                            (char *)ustring_to_c(comment).c_str(),
+                            (char *)ustring_to_c(url).c_str(),
+                            (char *)ustring_to_c(integration_text).c_str(),
+                            true);
                 }
                 break;
         }
@@ -1769,7 +1814,6 @@ void Mangler::textStringChangeDialogCancelButton_clicked_cb(void) {/*{{{*/
     textStringChangeIntegrationEntry->set_text(integration_text);
 }/*}}}*/
 
-
 // Misc Functions
 uint32_t Mangler::getActiveServer(void) {/*{{{*/
     builder->get_widget("serverSelectComboBox", combobox);
@@ -1807,27 +1851,41 @@ ManglerError::ManglerError(uint32_t code, Glib::ustring message, Glib::ustring m
 }/*}}}*/
 
 int
-main (int argc, char *argv[])
-{
+main(int argc, char **argv) {
     Gtk::Main kit(argc, argv);
-    struct _cli_options options;
+    struct _cli_options options = { 0 };
     char *locale;
 
-    // TODO: use getopt()
-    if (argc > 1) {
-        options.uifilename = argv[1];
-        options.uifromfile = true;
-        fprintf(stderr, "using ui file: %s\n", options.uifilename.c_str());
-    } else {
-        options.uifromfile = false;
+    extern char *optarg;
+    int opt;
+
+    while ((opt = getopt(argc, argv, "hd:s:u:p:")) != -1) {
+        switch (opt) {
+          case 'h':
+            fprintf(stderr, "%s: optional arguments: -d <ui definition>.ui -s hostname:port -u username -p password\n", argv[0]);
+            exit(EXIT_FAILURE);
+          case 'd':
+            options.uifilename = c_to_ustring(optarg);
+            options.uifromfile = true;
+            fprintf(stderr, "using ui definition file: %s\n", optarg);
+            break;
+          case 's':
+            options.qc_server = c_to_ustring(optarg);
+            break;
+          case 'u':
+            options.qc_username = c_to_ustring(optarg);
+            break;
+          case 'p':
+            options.qc_password = c_to_ustring(optarg);
+            break;
+        }
     }
-    if ((locale = setlocale (LC_ALL, ""))) {
-              //fprintf(stderr, "initialized locale: %s\n", locale);
-    } else {
-              fprintf(stderr, "Can't set the specified locale! " "Check LANG, LC_CTYPE, LC_ALL.\n");
-              return 1;
+    if (!(locale = setlocale(LC_ALL, ""))) {
+        fprintf(stderr, "Can't set the specified locale! " "Check LANG, LC_CTYPE, LC_ALL.\n");
+        exit(EXIT_FAILURE);
     }
-    if(!Glib::thread_supported()) {
+    //fprintf(stderr, "initialized locale: %s\n", locale);
+    if (!Glib::thread_supported()) {
         Glib::thread_init();
     }
     gdk_threads_init();
@@ -1835,5 +1893,8 @@ main (int argc, char *argv[])
     gdk_threads_enter();
     Gtk::Main::run(*mangler->manglerWindow);
     gdk_threads_leave();
+
+    exit(EXIT_SUCCESS);
+    return 0;
 }
 

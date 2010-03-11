@@ -30,9 +30,6 @@
 #include <stdint.h>
 #include <iostream>
 #include "manglerconfig.h"
-#ifdef HAVE_XOSD
-# include "manglerosd.h"
-#endif
 
 class ManglerChannelTree;
 class ManglerNetwork;
@@ -53,6 +50,14 @@ extern "C" {
 
 #ifndef _MANGLER_H
 #define _MANGLER_H
+
+struct _cli_options {
+    bool uifromfile;
+    Glib::ustring uifilename;
+    Glib::ustring qc_server;
+    Glib::ustring qc_username;
+    Glib::ustring qc_password;
+};
 
 class Mangler
 {
@@ -145,9 +150,6 @@ class Mangler
 
         Glib::Thread                        *networkThread;
 
-        //Less intensive than looking it up every time
-        uint16_t                            myID;
-
         Glib::ustring getPasswordEntry(Glib::ustring title = "Password", Glib::ustring prompt = "Password");
         bool getReasonEntry(Glib::ustring title = "Reason", Glib::ustring prompt = "Reason");
         uint32_t getActiveServer(void);
@@ -155,6 +157,27 @@ class Mangler
         void errorDialog(Glib::ustring message);
 
     protected:
+        struct _cli_options *options;
+
+        // main window callbacks
+        void mangler_show_cb(void);
+        bool mangler_quit_cb(void);
+
+        // connection handlers
+        void onConnectHandler(
+                Glib::ustring hostname,
+                Glib::ustring port,
+                Glib::ustring username,
+                Glib::ustring password,
+                Glib::ustring phonetic = "",
+                Glib::ustring charset = "",
+                bool acceptPages = true,
+                bool acceptU2U = true,
+                bool acceptPrivateChat = true,
+                bool allowRecording = true);
+        void onDisconnectHandler(void);
+        bool reconnectStatusHandler(void);
+
         // button signal handlers
         void quickConnectButton_clicked_cb(void);
         void serverConfigButton_clicked_cb(void);
@@ -171,7 +194,6 @@ class Mangler
         void statusIcon_buttonpress_event_cb(GdkEventButton* event);
         void errorOKButton_clicked_cb(void);
 
-
         // menu bar signal handlers
         void buttonMenuItem_toggled_cb(void);
         void hideServerInfoMenuItem_toggled_cb(void);
@@ -184,10 +206,6 @@ class Mangler
         bool checkPushToTalkKeys(void);
         bool checkPushToTalkMouse(void);
         bool updateXferAmounts(void);
-
-        // autoreconnect implementation
-        bool reconnectStatusHandler(void);
-        void onDisconnectHandler(void);
 
         // quick mute options
         void muteSoundCheckButton_toggled_cb(void);
@@ -212,14 +230,6 @@ class Mangler
         // text string change dialog signal handlers
         void textStringChangeDialogOkButton_clicked_cb(void);
         void textStringChangeDialogCancelButton_clicked_cb(void);
-
-        // program quit callback
-        bool mangler_quit_cb(void);
-};
-
-struct _cli_options {
-    bool uifromfile;
-    Glib::ustring uifilename;
 };
 
 class ManglerError

@@ -31,6 +31,9 @@
 
 #include "manglerintegration.h"
 #include "mangleraudio.h"
+#ifdef HAVE_XOSD
+# include "manglerosd.h"
+#endif
 
 ManglerSettings::ManglerSettings(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
 

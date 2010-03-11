@@ -172,7 +172,7 @@ void ManglerChat::addUser(uint16_t user_id) {/*{{{*/
     chatUserRow[chatUserColumns.name] = name;
     chatUserRow[chatUserColumns.channel] = v3_get_user_channel(user_id);
     chatUserTreeModelFilter->refilter();
-    if (isGlobal || (v3_get_user_channel(user_id) == v3_get_user_channel(mangler->myID)) ) {
+    if (isGlobal || (v3_get_user_channel(user_id) == v3_get_user_channel(v3_get_user_id())) ) {
         addMessage("* " + name + " has joined the chat.");
     }
 }/*}}}*/
@@ -185,7 +185,7 @@ void ManglerChat::removeUser(uint16_t user_id) {/*{{{*/
         row = *iter;
         uint32_t rowId = row[chatUserColumns.id];
         if (rowId == user_id) {
-            if (isGlobal || (v3_get_user_channel(user_id) == v3_get_user_channel(mangler->myID)) ) {
+            if (isGlobal || (v3_get_user_channel(user_id) == v3_get_user_channel(v3_get_user_id())) ) {
                 addMessage("* " + row[chatUserColumns.name] + " has left the chat.");
             }
             chatUserTreeModel->erase(row);
@@ -199,7 +199,7 @@ void ManglerChat::removeUser(uint16_t user_id) {/*{{{*/
 
 bool ManglerChat::filterVisible(const Gtk::TreeIter& iter) {/*{{{*/
     uint16_t theirChannel = (*iter)[chatUserColumns.channel];
-    if (((*iter)[chatUserColumns.id] == mangler->myID) || isGlobal || (theirChannel == v3_get_user_channel(mangler->myID))) {
+    if (((*iter)[chatUserColumns.id] == v3_get_user_id()) || isGlobal || (theirChannel == v3_get_user_channel(v3_get_user_id()))) {
         return true;
     }
     return false;

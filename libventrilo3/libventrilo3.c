@@ -667,8 +667,8 @@ _v3_recv(int block) {/*{{{*/
                             _v3_destroy_packet(msg);
                         }
                         break;/*}}}*/
-                    case V3_EVENT_CHAN_MODIFY:/*{{{*/
-                    case V3_EVENT_CHAN_ADD:
+                    case V3_EVENT_CHAN_MODIFY:
+                    case V3_EVENT_CHAN_ADD:/*{{{*/
                         {
                             _v3_net_message *msg;
                             v3_channel channel;
@@ -2437,6 +2437,16 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                                 _v3_debug(V3_DEBUG_INFO, "setting user %d as globally muted = %d", m->user_id, m->value);
                                 u->global_mute = m->value;
                                 v3_event *ev = _v3_create_event(V3_EVENT_USER_GLOBAL_MUTE_CHANGED);
+                                ev->user.id = u->id;
+                                _v3_debug(V3_DEBUG_INFO, "queuing event type %d for user %d", ev->type, ev->user.id);
+                                v3_queue_event(ev);
+                            }
+                            break;
+                        case V3_USER_CHANNEL_MUTE:
+                            {
+                                _v3_debug(V3_DEBUG_INFO, "setting user %d as channel muted = %d", m->user_id, m->value);
+                                u->channel_mute = m->value;
+                                v3_event *ev = _v3_create_event(V3_EVENT_USER_CHANNEL_MUTE_CHANGED);
                                 ev->user.id = u->id;
                                 _v3_debug(V3_DEBUG_INFO, "queuing event type %d for user %d", ev->type, ev->user.id);
                                 v3_queue_event(ev);
