@@ -25,8 +25,9 @@ ManglerOsd::createOsd(void) {/*{{{*/
         Glib::ustring fontstr = Glib::ustring::compose( "-*-*-*-*-*-*-0-%1-*-*-*-*-*-*", (int)(Mangler::config["OnScreenDisplayFontSize"].toDouble() * 10.0));
         xosd_set_font(osd, fontstr.c_str());
     }
-    if (Mangler::config["OnScreenDisplayColor"].length())
+    if (Mangler::config["OnScreenDisplayColor"].length()) {
         xosd_set_colour(osd, Mangler::config["OnScreenDisplayColor"].toCString());
+    }
 }/*}}}*/
 
 void
@@ -67,7 +68,9 @@ ManglerOsd::updateOsd(void) {/*{{{*/
     for(it=userList.begin(); it!= userList.end(); ++it) {
         xosd_display(osd,i,XOSD_string,it->c_str());
         i += (mosd_pos == XOSD_bottom) ? -1 : 1;
-        if ( i >= osd_max_lines || i < 0) break;
+        if ( i >= osd_max_lines || i < 0) {
+            break;
+        }
     }
     
     while (i >= 0 && i < osd_max_lines) {
