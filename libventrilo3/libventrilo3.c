@@ -5090,7 +5090,7 @@ v3_get_codec(uint16_t codec, uint16_t format) {/*{{{*/
         ctr++;
     }
 
-    return NULL;
+    return &v3_codecs[ctr];
 }/*}}}*/
 
 const v3_codec*
