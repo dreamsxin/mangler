@@ -278,7 +278,6 @@ ManglerAudio::queue(uint32_t length, uint8_t *sample) {/*{{{*/
 
 void
 ManglerAudio::input(void) {/*{{{*/
-    int ret;
     uint8_t *buf = NULL;
     uint32_t ret_rate;
     float seconds = 0;
@@ -332,7 +331,7 @@ ManglerAudio::input(void) {/*{{{*/
                     return;
                 }
                 //fprintf(stderr, "reading %d bytes from pulse source\n", pcm_framesize);
-                if ((ret = pa_simple_read(pulse_stream, buf+(pcm_framesize*ctr), pcm_framesize, &pulse_error)) < 0) {
+                if (pa_simple_read(pulse_stream, buf+(pcm_framesize*ctr), pcm_framesize, &pulse_error) < 0) {
                     //fprintf(stderr, __FILE__": pa_simple_read() failed: %s\n", pa_strerror(pulse_error));
                     closeInput();
                     stop_input = true;
@@ -446,7 +445,6 @@ ManglerAudio::input(void) {/*{{{*/
 
 void
 ManglerAudio::output(void) {/*{{{*/
-    int ret;
     ManglerPCM *queuedpcm;
 
     //fprintf(stderr, "playing audio\n");
@@ -495,7 +493,7 @@ ManglerAudio::output(void) {/*{{{*/
                 stop_output = true;
                 return;
             }
-            if ((ret = pa_simple_write(pulse_stream, queuedpcm->sample, queuedpcm->length, &pulse_error)) < 0) {
+            if (pa_simple_write(pulse_stream, queuedpcm->sample, queuedpcm->length, &pulse_error) < 0) {
                 fprintf(stderr, __FILE__": pa_simple_write() failed: %s\n", pa_strerror(pulse_error));
                 g_async_queue_unref(pcm_queue);
                 closeOutput();
@@ -720,7 +718,6 @@ void
 ManglerAudio::playNotification_thread(Glib::ustring name) {/*{{{*/
 #ifdef HAVE_PULSE
     if (Mangler::config["AudioSubsystem"].toLower() == "pulse") {
-        int pulse_ret;
         pa_simple *pulse_s;
 
         pulse_samplespec.format = PA_SAMPLE_S16LE;
@@ -750,7 +747,7 @@ ManglerAudio::playNotification_thread(Glib::ustring name) {/*{{{*/
             //throw Glib::Thread::Exit();
             return;
         }
-        if ((pulse_ret = pa_simple_write(pulse_s, sounds[name]->sample, sounds[name]->length, &pulse_error)) < 0) {
+        if (pa_simple_write(pulse_s, sounds[name]->sample, sounds[name]->length, &pulse_error) < 0) {
             fprintf(stderr, __FILE__": pa_simple_write() failed: %s\n", pa_strerror(pulse_error));
             pa_simple_free(pulse_s);
             //throw Glib::Thread::Exit();

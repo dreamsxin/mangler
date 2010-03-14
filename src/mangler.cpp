@@ -1017,6 +1017,7 @@ bool Mangler::getNetworkEvent() {/*{{{*/
 #ifdef HAVE_XOSD
                     osd->removeUser(ev->user.id);
 #endif
+                    channelTree->refreshAllUsers();
                 }
                 break;/*}}}*/
             case V3_EVENT_CHAN_REMOVE:/*{{{*/

@@ -121,7 +121,7 @@ _v3_debug(uint32_t level, const char *format, ...) {/*{{{*/
     }
     
 #ifndef ANDROID
-    fprintf(stderr, "libventrilo3: %s.%06d: %s\n", timestamp, (uint32_t)tv.tv_usec, buf); //print with timestamp
+    fprintf(stderr, "libventrilo3: %s.%06d: %s\n", timestamp, (uint32_t)tv.tv_usec, buf); // print with timestamp
 #else
     __android_log_print(ANDROID_LOG_VERBOSE, "libventrilo3", " %s.%06d: %s", timestamp, (uint32_t)tv.tv_usec, buf);
 #endif
@@ -418,7 +418,7 @@ _v3_print_permissions(v3_permissions *perms) {/*{{{*/
     _v3_debug(V3_DEBUG_PACKET_PARSE, "start_priv_chat.....: %d",   perms->start_priv_chat);
     _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown_perm_11.....: %d",   perms->unknown_perm_11);
     _v3_debug(V3_DEBUG_PACKET_PARSE, "eq_out..............: %d",   perms->eq_out);
-    _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown_perm_1r.....: %d",   perms->unknown_perm_12);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown_perm_12.....: %d",   perms->unknown_perm_12);
     _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown_perm_13.....: %d",   perms->unknown_perm_13);
     _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown_perm_14.....: %d",   perms->unknown_perm_14);
     _v3_debug(V3_DEBUG_PACKET_PARSE, "see_guest...........: %d",   perms->see_guest);
@@ -790,263 +790,72 @@ _v3_recv(int block) {/*{{{*/
                     case V3_EVENT_PLAY_AUDIO:/*{{{*/
                         {
                             _v3_net_message *msg;
-                            const v3_codec  *codec;
-                            int             ctr;
-                            int             send = false;
+                            const v3_codec *codec = v3_get_channel_codec(v3_get_user_channel(v3_get_user_id()));
+                            uint8_t *data         = NULL;
+                            uint16_t datalen      = 0;
+                            uint16_t framecount   = 0;
+                            uint8_t celtfragsize  = 0;
 
-                            codec = v3_get_channel_codec(v3_get_user_channel(v3_get_user_id()));
                             _v3_debug(V3_DEBUG_INFO, "got outbound play audio event");
-                            // TODO: this is too messy to do here, make it a function
-                            switch (codec->codec) {
-#if HAVE_GSM
-                                case 0x00: // GSM
-                                    {
-                                        static void *gsmenc  = NULL;
-                                        uint16_t frame_count = ev.pcm.length / 640;
-                                        uint16_t gsmdatabuf  = frame_count * 65;
-                                        uint8_t *gsmdata     = NULL;
+                            if ((data = _v3_audio_encode(
+                                            /* pcm input */
+                                            (void *)&ev.data.sample,
+                                            ev.pcm.length,
+                                            /* encoded output */
+                                            codec,
+                                            &datalen,
+                                            /* optional args */
+                                            ev.pcm.channels,
+                                            &framecount,
+                                            &celtfragsize))) {
+                                switch (codec->codec) {
+                                  case 0x01: // CELT
+                                  case 0x02:
+                                  {
+                                    uint8_t *celtdataptr = data;
+                                    uint16_t pktlen      = (codec->codec == 0x01) ? 198 : 108; // max data length for packet
+                                    uint8_t pktframes    = pktlen / celtfragsize; // max celt frames per packet
+                                    pktlen               = pktframes * celtfragsize; // new length for frames to fill a packet
 
-                                        _v3_debug(V3_DEBUG_INFO, "encoding %d bytes of PCM to GSM @ %lu", ev.pcm.length, codec->rate);
-                                        if (ev.pcm.channels != 1) {
-                                            _v3_debug(V3_DEBUG_INFO, "mono only supported for gsm");
-                                            send = false;
-                                            break;
+                                    while (framecount && pktframes) {
+                                        if (framecount < pktframes) {
+                                            pktframes = framecount;
+                                            pktlen = pktframes * celtfragsize;
                                         }
-                                        if (!gsmenc) {
-                                            if (!(gsmenc = gsm_create())) {
-                                                _v3_debug(V3_DEBUG_INFO, "failed to create gsm encoder");
-                                                send = false;
-                                                break;
-                                            }
-                                            int one = 1;
-                                            gsm_option(gsmenc, GSM_OPT_WAV49, &one);
-                                        }
-                                        _v3_debug(V3_DEBUG_MEMORY, "allocating %lu bytes for %d gsm frames", gsmdatabuf, frame_count);
-                                        gsmdata = malloc(gsmdatabuf);
-                                        memset(gsmdata, 0, gsmdatabuf);
-                                        for (ctr = 0; ctr < frame_count; ctr++) {
-                                            _v3_debug(V3_DEBUG_INFO, "encoding gsm frame %d", ctr+1);
-                                            gsm_encode(gsmenc, ((void *)&ev.data.sample)+(ctr*640), gsmdata+(ctr*65));
-                                            gsm_encode(gsmenc, ((void *)&ev.data.sample)+(ctr*640)+320, gsmdata+(ctr*65)+32);
-                                        }
-                                        //gsm_destroy(gsmenc);
-                                        //gsmenc = NULL;
                                         msg = _v3_put_0x52(
                                                         V3_AUDIO_DATA,
                                                         codec->codec,
                                                         codec->format,
                                                         ev.pcm.send_type,
-                                                        ev.pcm.length,
-                                                        gsmdatabuf,
-                                                        gsmdata);
-                                        free(gsmdata);
+                                                        2000 + ev.pcm.channels, // max: <= 3000
+                                                        pktlen, // max: 0x01: < 200; 0x02: < 110
+                                                        celtdataptr);
+                                        celtdataptr += pktlen;
+                                        if (!_v3_send(msg)) {
+                                            _v3_debug(V3_DEBUG_SOCKET, "failed to send audio message");
+                                        }
+                                        _v3_destroy_packet(msg);
+                                        framecount -= pktframes;
                                     }
-                                    send = true;
                                     break;
-#endif
-#if HAVE_CELT
-                                case 0x01: // CELT
-                                case 0x02:
-                                    {
-                                        static void *celtmode    = NULL;
-                                        static void *celtenc     = NULL;
-                                        static uint8_t last_chan = 0;
-                                        const int prediction     = 2;
-                                        const int complexity     = 10;
-                                        uint8_t channels         = (ev.pcm.channels == 2) ? 2 : 1;
-                                        uint16_t pcm_frame_size  = codec->pcmframesize * channels;
-                                        uint16_t frame_count     = ev.pcm.length / pcm_frame_size;
-                                        uint8_t celt_frag_size   = (codec->codec == 0x01) ? 60 : 54;
-                                        uint8_t celt_frame_size;
-                                        uint16_t celtdatabuf     = frame_count * celt_frag_size;
-                                        uint8_t *celtdata        = NULL;
-                                        uint8_t *celtdataptr     = NULL;
-                                        uint16_t celtdatalen     = 0;
-                                        uint16_t pktlen          = (codec->codec == 0x01) ? 198 : 108; // max data length for packet
-                                        uint8_t pktframes        = pktlen / celt_frag_size; // max celt frames per packet
-                                        pktlen                   = pktframes * celt_frag_size; // new data length for frames to fill a packet
-
-                                        _v3_debug(V3_DEBUG_INFO, "encoding %d bytes of PCM to CELT @ %lu", ev.pcm.length, codec->rate);
-                                        if (!celtmode || !celtenc || channels != last_chan) {
-                                            if (celtenc) {
-                                                celt_encoder_destroy(celtenc);
-                                                celtenc = NULL;
-                                            }
-                                            if (celtmode) {
-                                                celt_mode_destroy(celtmode);
-                                                celtmode = NULL;
-                                            }
-                                            if (!(celtmode = celt_mode_create(44100, codec->pcmframesize / sizeof(int16_t), NULL)) ||
-                                                !(celtenc = celt_encoder_create(celtmode, channels, NULL))) {
-                                                _v3_debug(V3_DEBUG_INFO, "failed to create celt encoder");
-                                                celtmode = NULL;
-                                                celtenc = NULL;
-                                                send = false;
-                                                break;
-                                            }
-                                            if (celt_encoder_ctl(celtenc, CELT_SET_PREDICTION(prediction)) != CELT_OK) {
-                                                _v3_debug(V3_DEBUG_INFO, "celt_encoder_ctl: prediction request failed");
-                                                celt_encoder_destroy(celtenc);
-                                                celt_mode_destroy(celtmode);
-                                                celtmode = NULL;
-                                                celtenc = NULL;
-                                                send = false;
-                                                break;
-                                            }
-                                            if (celt_encoder_ctl(celtenc, CELT_SET_COMPLEXITY(complexity)) != CELT_OK) {
-                                                _v3_debug(V3_DEBUG_INFO, "celt_encoder_ctl: complexity 0 through 10 is only supported");
-                                                celt_encoder_destroy(celtenc);
-                                                celt_mode_destroy(celtmode);
-                                                celtmode = NULL;
-                                                celtenc = NULL;
-                                                send = false;
-                                                break;
-                                            }
-                                            last_chan = channels;
-                                        }
-                                        _v3_debug(V3_DEBUG_MEMORY, "allocating %lu bytes for %d celt frames", celtdatabuf, frame_count);
-                                        celtdata = malloc(celtdatabuf);
-                                        memset(celtdata, 0, celtdatabuf);
-                                        celtdataptr = celtdata;
-                                        for (ctr = 0; ctr <= frame_count; ctr++) {
-                                            if (ctr && (!(ctr % pktframes) || ctr == frame_count)) {
-                                                if (ctr == frame_count && frame_count % pktframes) {
-                                                    pktframes = frame_count % pktframes;
-                                                    pktlen = pktframes * celt_frag_size;
-                                                }
-                                                msg = _v3_put_0x52(
-                                                                V3_AUDIO_DATA,
-                                                                codec->codec,
-                                                                codec->format,
-                                                                ev.pcm.send_type,
-                                                                2000 + channels, // max: <= 3000
-                                                                pktlen, // max: 0x01: < 200; 0x02: < 110
-                                                                celtdata + celtdatalen);
-                                                celtdatalen += pktlen;
-                                                if (!_v3_send(msg)) {
-                                                    _v3_debug(V3_DEBUG_SOCKET, "failed to send audio message");
-                                                }
-                                                _v3_destroy_packet(msg);
-                                            }
-                                            if (ctr < frame_count) {
-                                                _v3_debug(V3_DEBUG_INFO, "encoding celt frame %d", ctr+1);
-                                                celt_frame_size = celt_frag_size - 1;
-                                                *celtdataptr++ = celt_frame_size;
-                                                if (celt_encode(
-                                                                celtenc,
-                                                                ((void *)&ev.data.sample)+(ctr*pcm_frame_size),
-                                                                NULL,
-                                                                (void *)celtdataptr,
-                                                                celt_frame_size) < 0) {
-                                                    _v3_debug(V3_DEBUG_INFO, "failed to encode celt frame %d", ctr+1);
-                                                }
-                                                celtdataptr += celt_frame_size;
-                                            }
-                                        }
-                                        //celt_encoder_destroy(celtenc);
-                                        //celt_mode_destroy(celtmode);
-                                        //celtmode = NULL;
-                                        //celtenc = NULL;
-                                        free(celtdata);
+                                  }
+                                  default:
+                                    msg = _v3_put_0x52(
+                                                    V3_AUDIO_DATA,
+                                                    codec->codec,
+                                                    codec->format,
+                                                    ev.pcm.send_type,
+                                                    ev.pcm.length,
+                                                    datalen,
+                                                    data);
+                                    if (!_v3_send(msg)) {
+                                        _v3_debug(V3_DEBUG_SOCKET, "failed to send audio message");
                                     }
-                                    send = false;
+                                    _v3_destroy_packet(msg);
                                     break;
-#endif
-#if HAVE_SPEEX
-                                case 0x03: // SPEEX
-                                    {
-                                        static void *spxenc      = NULL;
-                                        static uint32_t rate     = 0;
-                                        static uint8_t format    = -1;
-                                        int quality              = -1;
-                                        uint16_t frame_count     = ev.pcm.length / codec->pcmframesize;
-                                        uint16_t pcm_frame_size  = codec->pcmframesize / sizeof(int16_t);
-                                        uint16_t spx_frame_size;
-                                        const uint16_t spxmaxbuf = 200;
-                                        uint16_t spxdatabuf      = (frame_count + 1) * spxmaxbuf;
-                                        uint8_t *spxdata         = NULL;
-                                        uint16_t spxdatalen      = 0;
-                                        uint16_t *spxhead        = NULL;
-                                        SpeexBits bits;
-
-                                        _v3_debug(V3_DEBUG_INFO, "encoding %d bytes of PCM to SPEEX @ %lu", ev.pcm.length, codec->rate);
-                                        if (ev.pcm.channels != 1) {
-                                            _v3_debug(V3_DEBUG_INFO, "mono only supported for speex");
-                                            send = false;
-                                            break;
-                                        }
-                                        if (!spxenc || codec->rate != rate || codec->format != format) {
-                                            if (spxenc) {
-                                                speex_encoder_destroy(spxenc);
-                                                spxenc = NULL;
-                                            }
-                                            switch (codec->rate) {
-                                              case 8000:
-                                                _v3_debug(V3_DEBUG_INFO, "using narrow band mode");
-                                                spxenc = speex_encoder_init(&speex_nb_mode);
-                                                break;
-                                              case 16000:
-                                                _v3_debug(V3_DEBUG_INFO, "using wide band mode");
-                                                spxenc = speex_encoder_init(&speex_wb_mode);
-                                                break;
-                                              case 32000:
-                                                _v3_debug(V3_DEBUG_INFO, "using ultra-wide band mode");
-                                                spxenc = speex_encoder_init(&speex_uwb_mode);
-                                                break;
-                                            }
-                                            if (!spxenc) {
-                                                _v3_debug(V3_DEBUG_INFO, "failed to create speex encoder");
-                                                send = false;
-                                                break;
-                                            }
-                                            rate = codec->rate;
-                                            format = codec->format;
-                                            quality = codec->quality;
-                                            speex_encoder_ctl(spxenc, SPEEX_SET_QUALITY, &quality);
-                                        }
-                                        _v3_debug(V3_DEBUG_MEMORY, "allocating %lu bytes of data buffer for %d speex frames", spxdatabuf, frame_count);
-                                        spxdata = malloc(spxdatabuf);
-                                        memset(spxdata, 0, spxdatabuf);
-                                        spxhead = (void *)spxdata;
-                                        *spxhead++ = htons(frame_count);
-                                        *spxhead++ = htons(pcm_frame_size);
-                                        spxdatalen = (void *)spxhead - (void *)spxdata;
-                                        speex_bits_init(&bits);
-                                        for (ctr = 0; ctr < frame_count; ctr++) {
-                                            speex_bits_reset(&bits);
-                                            _v3_debug(V3_DEBUG_INFO, "encoding speex frame %d", ctr+1);
-                                            speex_encode_int(spxenc, ((void *)&ev.data.sample)+(ctr*codec->pcmframesize), &bits);
-                                            spx_frame_size = speex_bits_write(&bits, (void *)spxdata+(spxdatalen+sizeof(uint16_t)), spxmaxbuf);
-                                            *((uint16_t *)(spxdata + spxdatalen)) = htons(spx_frame_size);
-                                            spxdatalen += sizeof(uint16_t) + spx_frame_size;
-                                        }
-                                        speex_bits_destroy(&bits);
-                                        //speex_encoder_destroy(spxenc);
-                                        //spxenc = NULL;
-                                        _v3_debug(V3_DEBUG_MEMORY, "used %lu out of %lu bytes for %d speex frames", spxdatalen, spxdatabuf, frame_count);
-                                        msg = _v3_put_0x52(
-                                                        V3_AUDIO_DATA,
-                                                        codec->codec,
-                                                        codec->format,
-                                                        ev.pcm.send_type,
-                                                        ev.pcm.length,
-                                                        spxdatalen,
-                                                        spxdata);
-                                        free(spxdata);
-                                    }
-                                    send = true;
-                                    break;
-#endif
-                                default:
-                                    _v3_debug(V3_DEBUG_INFO, "unsupported codec %d/%d", codec->codec, codec->format);
-                                    send = false;
-                                    break;
-                            }
-                            if (send) {
-                                if (!_v3_send(msg)) {
-                                    _v3_debug(V3_DEBUG_SOCKET, "failed to send audio message");
                                 }
-                                _v3_destroy_packet(msg);
+                                free(data);
+                                data = NULL;
                             }
                         }
                         break;/*}}}*/
@@ -2090,12 +1899,6 @@ _v3_destroy_decoders(void) {/*{{{*/
             v3_decoders[ctr].gsm = NULL;
         }
 #endif
-#if HAVE_SPEEX
-        if (v3_decoders[ctr].speex) {
-            speex_decoder_destroy(v3_decoders[ctr].speex);
-            v3_decoders[ctr].speex = NULL;
-        }
-#endif
 #if HAVE_CELT
         if (v3_decoders[ctr].celt) {
             celt_decoder_destroy(v3_decoders[ctr].celt);
@@ -2105,9 +1908,399 @@ _v3_destroy_decoders(void) {/*{{{*/
             celt_mode_destroy(v3_decoders[ctr].celtmode);
             v3_decoders[ctr].celtmode = NULL;
         }
+        v3_decoders[ctr].celtchans = 0;
 #endif
+#if HAVE_SPEEX
+        if (v3_decoders[ctr].speex) {
+            speex_decoder_destroy(v3_decoders[ctr].speex);
+            v3_decoders[ctr].speex = NULL;
+        }
+#endif
+        v3_decoders[ctr].speexrate = 0;
     }
     _v3_func_leave("_v3_destroy_decoders");
+}/*}}}*/
+
+uint8_t *
+_v3_audio_encode(
+        /* pcm input */
+        uint8_t *sample,
+        uint32_t pcmlen,
+        /* encoded output */
+        const v3_codec *codec,
+        uint16_t *datalen,
+        /* optional args */
+        uint8_t channels,
+        uint16_t *framecount,
+        uint8_t *celtfragsize) {/*{{{*/
+    _v3_func_enter("_v3_audio_encode");
+    if (!sample || !pcmlen || !codec || !datalen) {
+        _v3_debug(V3_DEBUG_INFO, "argument missing for _v3_audio_encode");
+        _v3_func_leave("_v3_audio_encode");
+        return NULL;
+    }
+    int ctr;
+
+    channels = (channels == 2) ? 2 : 1;
+    switch (codec->codec) {
+#if HAVE_GSM
+      case 0x00: // GSM
+      {
+        static void *gsmenc  = NULL;
+        uint16_t frame_count = pcmlen / 640;
+        uint16_t gsmdatabuf  = frame_count * 65;
+        uint8_t *gsmdata     = NULL;
+
+        _v3_debug(V3_DEBUG_INFO, "encoding %d bytes of PCM to GSM @ %lu", pcmlen, codec->rate);
+        if (channels > 1) {
+            _v3_debug(V3_DEBUG_INFO, "mono only supported for gsm");
+            break;
+        }
+        if (!gsmenc) {
+            if (!(gsmenc = gsm_create())) {
+                _v3_debug(V3_DEBUG_INFO, "failed to create gsm encoder");
+                break;
+            }
+            int one = 1;
+            gsm_option(gsmenc, GSM_OPT_WAV49, &one);
+        }
+        _v3_debug(V3_DEBUG_MEMORY, "allocating %lu bytes for %d gsm frames", gsmdatabuf, frame_count);
+        gsmdata = malloc(gsmdatabuf);
+        memset(gsmdata, 0, gsmdatabuf);
+        for (ctr = 0; ctr < frame_count; ctr++) {
+            _v3_debug(V3_DEBUG_INFO, "encoding gsm frame %d", ctr+1);
+            gsm_encode(gsmenc, (void *)sample+(ctr*640), gsmdata+(ctr*65));
+            gsm_encode(gsmenc, (void *)sample+(ctr*640)+320, gsmdata+(ctr*65)+32);
+        }
+        //gsm_destroy(gsmenc);
+        //gsmenc = NULL;
+        if (framecount) {
+            *framecount = frame_count;
+        }
+        *datalen = gsmdatabuf;
+        _v3_func_leave("_v3_audio_encode");
+        return gsmdata;
+      }
+#endif
+#if HAVE_CELT
+      case 0x01: // CELT
+      case 0x02:
+      {
+        static void *celtmode    = NULL;
+        static void *celtenc     = NULL;
+        static uint8_t last_chan = 0;
+        const int prediction     = 2;
+        const int complexity     = 10;
+        uint16_t pcm_frame_size  = codec->pcmframesize * channels;
+        uint16_t frame_count     = pcmlen / pcm_frame_size;
+        uint8_t celt_frag_size   = (celtfragsize && *celtfragsize) ? *celtfragsize : ((codec->codec == 0x01) ? 60 : 54);
+        uint8_t celt_frame_size  = celt_frag_size - 1;
+        uint16_t celtdatabuf     = frame_count * celt_frag_size;
+        uint8_t *celtdata        = NULL;
+        uint8_t *celtdataptr     = NULL;
+
+        _v3_debug(V3_DEBUG_INFO, "encoding %d bytes of PCM to CELT @ %lu", pcmlen, codec->rate);
+        if (!celtmode || !celtenc || channels != last_chan) {
+            if (celtenc) {
+                celt_encoder_destroy(celtenc);
+                celtenc = NULL;
+            }
+            if (celtmode) {
+                celt_mode_destroy(celtmode);
+                celtmode = NULL;
+            }
+            if (!(celtmode = celt_mode_create(44100, codec->pcmframesize / sizeof(int16_t), NULL)) ||
+                !(celtenc = celt_encoder_create(celtmode, channels, NULL))) {
+                _v3_debug(V3_DEBUG_INFO, "failed to create celt encoder");
+                celtmode = NULL;
+                celtenc = NULL;
+                break;
+            }
+            if (celt_encoder_ctl(celtenc, CELT_SET_PREDICTION(prediction)) != CELT_OK) {
+                _v3_debug(V3_DEBUG_INFO, "celt_encoder_ctl: prediction request failed");
+                celt_encoder_destroy(celtenc);
+                celt_mode_destroy(celtmode);
+                celtmode = NULL;
+                celtenc = NULL;
+                break;
+            }
+            if (celt_encoder_ctl(celtenc, CELT_SET_COMPLEXITY(complexity)) != CELT_OK) {
+                _v3_debug(V3_DEBUG_INFO, "celt_encoder_ctl: complexity 0 through 10 is only supported");
+                celt_encoder_destroy(celtenc);
+                celt_mode_destroy(celtmode);
+                celtmode = NULL;
+                celtenc = NULL;
+                break;
+            }
+            last_chan = channels;
+        }
+        _v3_debug(V3_DEBUG_MEMORY, "allocating %lu bytes for %d celt frames", celtdatabuf, frame_count);
+        celtdata = malloc(celtdatabuf);
+        memset(celtdata, 0, celtdatabuf);
+        celtdataptr = celtdata;
+        for (ctr = 0; ctr < frame_count; ctr++) {
+            _v3_debug(V3_DEBUG_INFO, "encoding celt frame %d", ctr+1);
+            *celtdataptr++ = celt_frame_size;
+            if (celt_encode(celtenc, (void *)sample+(ctr*pcm_frame_size), NULL, (void *)celtdataptr, celt_frame_size) < 0) {
+                _v3_debug(V3_DEBUG_INFO, "failed to encode celt frame %d", ctr+1);
+            }
+            celtdataptr += celt_frame_size;
+        }
+        //celt_encoder_destroy(celtenc);
+        //celt_mode_destroy(celtmode);
+        //celtmode = NULL;
+        //celtenc = NULL;
+        if (framecount) {
+            *framecount = frame_count;
+        }
+        if (celtfragsize) {
+            *celtfragsize = celt_frag_size;
+        }
+        *datalen = celtdatabuf;
+        _v3_func_leave("_v3_audio_encode");
+        return celtdata;
+      }
+#endif
+#if HAVE_SPEEX
+      case 0x03: // SPEEX
+      {
+        static void *spxenc      = NULL;
+        static uint32_t rate     = 0;
+        static uint8_t format    = -1;
+        int quality              = -1;
+        uint16_t frame_count     = pcmlen / codec->pcmframesize;
+        uint16_t pcm_frame_size  = codec->pcmframesize / sizeof(int16_t);
+        uint16_t spx_frame_size;
+        const uint16_t spxmaxbuf = 200;
+        uint16_t spxdatabuf      = (frame_count + 1) * spxmaxbuf;
+        uint8_t *spxdata         = NULL;
+        uint16_t spxdatalen      = 0;
+        uint16_t *spxhead        = NULL;
+        SpeexBits bits;
+
+        _v3_debug(V3_DEBUG_INFO, "encoding %d bytes of PCM to SPEEX @ %lu", pcmlen, codec->rate);
+        if (channels > 1) {
+            _v3_debug(V3_DEBUG_INFO, "mono only supported for speex");
+            break;
+        }
+        if (!spxenc || codec->rate != rate || codec->format != format) {
+            if (spxenc) {
+                speex_encoder_destroy(spxenc);
+                spxenc = NULL;
+            }
+            switch (codec->rate) {
+              case 8000:
+                _v3_debug(V3_DEBUG_INFO, "using narrow band mode");
+                spxenc = speex_encoder_init(&speex_nb_mode);
+                break;
+              case 16000:
+                _v3_debug(V3_DEBUG_INFO, "using wide band mode");
+                spxenc = speex_encoder_init(&speex_wb_mode);
+                break;
+              case 32000:
+                _v3_debug(V3_DEBUG_INFO, "using ultra-wide band mode");
+                spxenc = speex_encoder_init(&speex_uwb_mode);
+                break;
+            }
+            if (!spxenc) {
+                _v3_debug(V3_DEBUG_INFO, "failed to create speex encoder");
+                break;
+            }
+            rate = codec->rate;
+            format = codec->format;
+            quality = codec->quality;
+            speex_encoder_ctl(spxenc, SPEEX_SET_QUALITY, &quality);
+        }
+        _v3_debug(V3_DEBUG_MEMORY, "allocating %lu bytes of data buffer for %d speex frames", spxdatabuf, frame_count);
+        spxdata = malloc(spxdatabuf);
+        memset(spxdata, 0, spxdatabuf);
+        spxhead = (void *)spxdata;
+        *spxhead++ = htons(frame_count);
+        *spxhead++ = htons(pcm_frame_size);
+        spxdatalen = (void *)spxhead - (void *)spxdata;
+        speex_bits_init(&bits);
+        for (ctr = 0; ctr < frame_count; ctr++) {
+            speex_bits_reset(&bits);
+            _v3_debug(V3_DEBUG_INFO, "encoding speex frame %d", ctr+1);
+            speex_encode_int(spxenc, (void *)sample+(ctr*codec->pcmframesize), &bits);
+            spx_frame_size = speex_bits_write(&bits, (void *)spxdata+(spxdatalen+sizeof(uint16_t)), spxmaxbuf);
+            *((uint16_t *)(spxdata + spxdatalen)) = htons(spx_frame_size);
+            spxdatalen += sizeof(uint16_t) + spx_frame_size;
+        }
+        speex_bits_destroy(&bits);
+        _v3_debug(V3_DEBUG_MEMORY, "used %lu out of %lu bytes for %d speex frames", spxdatalen, spxdatabuf, frame_count);
+        //speex_encoder_destroy(spxenc);
+        //spxenc = NULL;
+        if (framecount) {
+            *framecount = frame_count;
+        }
+        *datalen = spxdatalen;
+        _v3_func_leave("_v3_audio_encode");
+        return spxdata;
+      }
+#endif
+      default:
+        _v3_debug(V3_DEBUG_INFO, "unsupported codec %d/%d", codec->codec, codec->format);
+        break;
+    }
+    _v3_func_leave("_v3_audio_encode");
+    return NULL;
+}/*}}}*/
+
+int
+_v3_audio_decode(
+        /* encoded input */
+        const v3_codec *codec,
+        _v3_decoders *decoder,
+        uint8_t *data,
+        uint16_t datalen,
+        /* pcm output */
+        uint8_t *sample,
+        uint32_t *pcmlen,
+        /* optional args */
+        uint8_t channels) {/*{{{*/
+    _v3_func_enter("_v3_audio_decode");
+    if (!codec || !decoder || !data || !datalen || !sample || !pcmlen || (pcmlen && !*pcmlen)) {
+        _v3_debug(V3_DEBUG_INFO, "argument missing for _v3_audio_decode");
+        _v3_func_leave("_v3_audio_decode");
+        return V3_FAILURE;
+    }
+    uint32_t pcmmaxlen = *pcmlen;
+    int ctr;
+
+    *pcmlen = 0;
+    channels = (channels == 2) ? 2 : 1;
+    switch (codec->codec) {
+#if HAVE_GSM
+      case 0x00: // GSM
+      {
+        if (!decoder->gsm) {
+            if (!(decoder->gsm = gsm_create())) {
+                _v3_debug(V3_DEBUG_INFO, "failed to create gsm decoder");
+                break;
+            }
+            int one = 1;
+            gsm_option(decoder->gsm, GSM_OPT_WAV49, &one);
+        }
+        for (ctr = 0; ctr < datalen / 65; ctr++) {
+            if (gsm_decode(decoder->gsm, data+(ctr*65), (void *)sample+(ctr*640)) ||
+                gsm_decode(decoder->gsm, data+(ctr*65)+33, (void *)sample+(ctr*640)+320)) {
+                _v3_debug(V3_DEBUG_INFO, "failed to decode gsm frame %d", ctr+1);
+            }
+            *pcmlen += 640;
+        }
+        _v3_func_leave("_v3_audio_decode");
+        return V3_OK;
+      }
+#endif
+#if HAVE_CELT
+      case 0x01: // CELT
+      case 0x02:
+      {
+        uint16_t pcm_frame_size  = codec->pcmframesize * channels;
+        uint8_t celt_frame_size;
+        uint8_t *celtdataptr     = data;
+        uint16_t celtdatalen     = datalen;
+
+        if (!decoder->celtmode || !decoder->celt || channels != decoder->celtchans) {
+            if (decoder->celt) {
+                celt_decoder_destroy(decoder->celt);
+                decoder->celt = NULL;
+            }
+            if (decoder->celtmode) {
+                celt_mode_destroy(decoder->celtmode);
+                decoder->celtmode = NULL;
+            }
+            if (!(decoder->celtmode = celt_mode_create(44100, codec->pcmframesize / sizeof(int16_t), NULL)) ||
+                !(decoder->celt = celt_decoder_create(decoder->celtmode, channels, NULL))) {
+                _v3_debug(V3_DEBUG_INFO, "failed to create celt decoder");
+                decoder->celtmode = NULL;
+                decoder->celt = NULL;
+                break;
+            }
+            decoder->celtchans = channels;
+        }
+        while (celtdatalen) {
+            celt_frame_size = *celtdataptr;
+            celtdataptr++;
+            celtdatalen--;
+            if (!celt_frame_size || celtdatalen - celt_frame_size < 0 || *pcmlen + pcm_frame_size > pcmmaxlen) {
+                _v3_debug(V3_DEBUG_INFO, "received a malformed celt packet");
+                _v3_func_leave("_v3_audio_decode");
+                return V3_MALFORMED;
+            }
+            if (celt_decode(decoder->celt, (void *)celtdataptr, celt_frame_size, (void *)sample + *pcmlen)) {
+                _v3_debug(V3_DEBUG_INFO, "failed to decode celt frame");
+            }
+            celtdataptr += celt_frame_size;
+            celtdatalen -= celt_frame_size;
+            *pcmlen += pcm_frame_size;
+        }
+        _v3_func_leave("_v3_audio_decode");
+        return V3_OK;
+      }
+#endif
+#if HAVE_SPEEX
+      case 0x03: // SPEEX
+      {
+        uint16_t pcm_frame_size  = codec->pcmframesize;
+        uint16_t spx_frame_size;
+        uint8_t *spxdataptr      = data;
+        uint16_t spxdatalen      = datalen;
+        SpeexBits bits;
+
+        if (!decoder->speex || codec->rate != decoder->speexrate) {
+            if (decoder->speex) {
+                speex_decoder_destroy(decoder->speex);
+                decoder->speex = NULL;
+            }
+            switch (codec->rate) {
+              case 8000:
+                _v3_debug(V3_DEBUG_INFO, "using narrow band mode");
+                decoder->speex = speex_decoder_init(&speex_nb_mode);
+                break;
+              case 16000:
+                _v3_debug(V3_DEBUG_INFO, "using wide band mode");
+                decoder->speex = speex_decoder_init(&speex_wb_mode);
+                break;
+              case 32000:
+                _v3_debug(V3_DEBUG_INFO, "using ultra-wide band mode");
+                decoder->speex = speex_decoder_init(&speex_uwb_mode);
+                break;
+            }
+            if (!decoder->speex) {
+                _v3_debug(V3_DEBUG_INFO, "received unknown pcm rate for speex %d", codec->rate);
+                break;
+            }
+            decoder->speexrate = codec->rate;
+        }
+        speex_bits_init(&bits);
+        while (spxdatalen) {
+            spx_frame_size = ntohs(*(uint16_t *)spxdataptr);
+            spxdataptr += sizeof(uint16_t);
+            spxdatalen -= sizeof(uint16_t);
+            if (!spx_frame_size || spxdatalen - spx_frame_size < 0 || *pcmlen + pcm_frame_size > pcmmaxlen) {
+                _v3_debug(V3_DEBUG_INFO, "received a malformed speex packet");
+                _v3_func_leave("_v3_audio_decode");
+                return V3_MALFORMED;
+            }
+            speex_bits_read_from(&bits, (void *)spxdataptr, spx_frame_size);
+            speex_decode_int(decoder->speex, &bits, (void *)sample + *pcmlen);
+            spxdataptr += spx_frame_size;
+            spxdatalen -= spx_frame_size;
+            *pcmlen += pcm_frame_size;
+        }
+        speex_bits_destroy(&bits);
+        _v3_func_leave("_v3_audio_decode");
+        return V3_OK;
+      }
+#endif
+      default:
+        _v3_debug(V3_DEBUG_INFO, "unsupported codec %d/%d", codec->codec, codec->format);
+        break;
+    }
+    _v3_func_leave("_v3_audio_decode");
+    return V3_FAILURE;
 }/*}}}*/
 
 /*
@@ -2793,7 +2986,6 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
             } else {
                 _v3_msg_0x52_0x01_in *m = (_v3_msg_0x52_0x01_in *)msg->contents;
                 v3_event *ev = _v3_create_event(0);
-                int queue = true;
                 switch (m->header.subtype) {
                     case 0x00:
                     case 0x04:
@@ -2823,168 +3015,33 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                             ev->type = V3_EVENT_PLAY_AUDIO;
                             ev->user.id = m->header.user_id;
                             ev->pcm.send_type = m->header.send_type;
-                            ev->pcm.rate = v3_get_codec_rate(msub->header.codec, msub->header.codec_format);
+                            ev->pcm.rate = codec->rate;
                             ev->pcm.channels = (msub->header.pcm_length - 2000 == 2) ? 2 : 1;
-                            int ctr;
+                            ev->pcm.length = sizeof(ev->data.sample);
+                            int ret;
 
-                            // TODO: it's too messy to have this here.  Write a function that decodes
-                            switch (msub->header.codec) {
-#if HAVE_GSM
-                                case 0x00: // GSM
-                                    {
-                                        uint8_t *gsmdataptr = msub->data.frames;
-
-                                        if (!v3_decoders[m->header.user_id].gsm) {
-                                            if (!(v3_decoders[m->header.user_id].gsm = gsm_create())) {
-                                                _v3_error("failed to create gsm decoder");
-                                                _v3_destroy_0x52(msg);
-                                                _v3_destroy_packet(msg);
-                                                free(ev);
-                                                _v3_func_leave("_v3_process_message");
-                                                return V3_MALFORMED; // it's not really a malformed packet...
-                                            }
-                                            int one = 1;
-                                            gsm_option(v3_decoders[m->header.user_id].gsm, GSM_OPT_WAV49, &one);
-                                        }
-                                        for (ctr = 0; ctr < msub->header.data_length / 65; ctr++) {
-                                            if (gsm_decode(v3_decoders[m->header.user_id].gsm, gsmdataptr+(ctr*65), (void *)ev->data.sample+(ctr*640)) || 
-                                                gsm_decode(v3_decoders[m->header.user_id].gsm, gsmdataptr+(ctr*65)+33, (void *)ev->data.sample+(ctr*640)+320)) {
-                                                _v3_debug(V3_DEBUG_INFO, "failed to decode gsm frame %d", ctr);
-                                                continue;
-                                            }
-                                        }
-                                        ev->pcm.length = (msub->header.data_length / 65) * 640;
-                                        _v3_debug(V3_DEBUG_EVENT, "queueing pcm msg length %d", ev->pcm.length);
-                                    }
-                                    break;
-#endif
-#if HAVE_CELT
-                                case 0x01: // CELT
-                                case 0x02:
-                                    {
-                                        void *celtmode           = v3_decoders[m->header.user_id].celtmode;
-                                        void *celtdec            = v3_decoders[m->header.user_id].celt;
-                                        static uint8_t last_chan = 0;
-                                        uint8_t channels         = ev->pcm.channels;
-                                        uint16_t pcm_frame_size  = codec->pcmframesize * channels;
-                                        uint16_t frame_size      = pcm_frame_size / channels;
-                                        uint8_t celt_frame_size;
-                                        uint8_t *celtdataptr     = msub->data.frames;
-                                        uint16_t celtdatalen     = msub->header.data_length;
-
-                                        if (!celtmode || !celtdec || channels != last_chan) {
-                                            if (celtdec) {
-                                                celt_decoder_destroy(celtdec);
-                                                celtdec = v3_decoders[m->header.user_id].celt = NULL;
-                                            }
-                                            if (celtmode) {
-                                                celt_mode_destroy(celtmode);
-                                                celtmode = v3_decoders[m->header.user_id].celtmode = NULL;
-                                            }
-                                            if (!(celtmode = celt_mode_create(44100, frame_size / sizeof(int16_t), NULL)) ||
-                                                !(celtdec = celt_decoder_create(celtmode, channels, NULL))) {
-                                                _v3_error("failed to create celt decoder");
-                                                _v3_destroy_0x52(msg);
-                                                _v3_destroy_packet(msg);
-                                                free(ev);
-                                                _v3_func_leave("_v3_process_message");
-                                                return V3_MALFORMED; // it's not really a malformed packet...
-                                            }
-                                            v3_decoders[m->header.user_id].celtmode = celtmode;
-                                            v3_decoders[m->header.user_id].celt = celtdec;
-                                            last_chan = channels;
-                                        }
-                                        while (celtdatalen) {
-                                            celt_frame_size = *celtdataptr++;
-                                            celtdatalen--;
-                                            if (!celt_frame_size || celtdatalen - celt_frame_size < 0 || ev->pcm.length + pcm_frame_size > sizeof(ev->data.sample)) {
-                                                _v3_error("received a malformed celt packet");
-                                                _v3_destroy_0x52(msg);
-                                                _v3_destroy_packet(msg);
-                                                free(ev);
-                                                _v3_func_leave("_v3_process_message");
-                                                return V3_MALFORMED;
-                                            }
-                                            if (celt_decode(
-                                                            celtdec,
-                                                            (void *)celtdataptr,
-                                                            celt_frame_size,
-                                                            (void *)ev->data.sample + ev->pcm.length)) {
-                                                _v3_debug(V3_DEBUG_INFO, "failed to decode celt frame");
-                                            }
-                                            celtdataptr += celt_frame_size;
-                                            celtdatalen -= celt_frame_size;
-                                            ev->pcm.length += pcm_frame_size;
-                                        }
-                                        _v3_debug(V3_DEBUG_EVENT, "queueing pcm msg length %d", ev->pcm.length);
-                                    }
-                                    break;
-#endif
-#if HAVE_SPEEX
-                                case 0x03: // SPEEX
-                                    {
-                                        static uint32_t last_rate = 0;
-                                        uint16_t frame_count      = msub->data.speex.frame_count;
-                                        uint16_t pcm_frame_size   = codec->pcmframesize;
-                                        uint16_t spx_frame_size;
-                                        uint8_t *spxdataptr       = msub->data.speex.frames;
-                                        SpeexBits bits;
-
-                                        /*
-                                         * Two uint16_t as frame count and pcm frame size
-                                         * are prepended at the beginning of the speex data.
-                                         * A uint16_t specifying speex frame size is prepended
-                                         * to every frame but instead we ignore its value and
-                                         * calculate it by the total data length minus two
-                                         * uint16_t by frame count minus a uint16_t we ignore.
-                                         */
-                                        spx_frame_size = ((msub->header.data_length - 4) / frame_count) - 2;
-
-                                        if (!v3_decoders[m->header.user_id].speex || ev->pcm.rate != last_rate) {
-                                            if (v3_decoders[m->header.user_id].speex) {
-                                                speex_decoder_destroy(v3_decoders[m->header.user_id].speex);
-                                                v3_decoders[m->header.user_id].speex = NULL;
-                                            }
-                                            switch (ev->pcm.rate) {
-                                              case 8000:
-                                                v3_decoders[m->header.user_id].speex = speex_decoder_init(&speex_nb_mode);
-                                                break;
-                                              case 16000:
-                                                v3_decoders[m->header.user_id].speex = speex_decoder_init(&speex_wb_mode);
-                                                break;
-                                              case 32000:
-                                                v3_decoders[m->header.user_id].speex = speex_decoder_init(&speex_uwb_mode);
-                                                break;
-                                              default:
-                                                _v3_debug(V3_DEBUG_INFO, "received unknown pcm rate for speex %d", ev->pcm.rate);
-                                                _v3_destroy_0x52(msg);
-                                                _v3_destroy_packet(msg);
-                                                free(ev);
-                                                _v3_func_leave("_v3_process_message");
-                                                return V3_MALFORMED;
-                                            }
-                                            last_rate = ev->pcm.rate;
-                                        }
-                                        speex_bits_init(&bits);
-                                        for (ctr = 0; ctr < frame_count; ctr++) {
-                                            speex_bits_read_from(&bits, (void *)spxdataptr+(ctr*(spx_frame_size+2))+2, spx_frame_size);
-                                            speex_decode_int(v3_decoders[m->header.user_id].speex, &bits, (void *)ev->data.sample+(ctr*pcm_frame_size));
-                                        }
-                                        speex_bits_destroy(&bits);
-                                        ev->pcm.length = frame_count * pcm_frame_size;
-                                        _v3_debug(V3_DEBUG_EVENT, "queueing pcm msg length %d", ev->pcm.length);
-                                    }
-                                    break;
-#endif
-                                default:
-                                    _v3_debug(V3_DEBUG_INFO, "unsupported codec %d/%d", msub->header.codec, msub->header.codec_format);
-                                    queue = false;
-                                    break;
+                            if ((ret = _v3_audio_decode(
+                                            /* encoded input */
+                                            codec,
+                                            &v3_decoders[m->header.user_id],
+                                            (msub->header.codec == 0x03) ? msub->data.speex.frames : msub->data.frames,
+                                            msub->header.data_length - ((msub->header.codec == 0x03) ? 4 : 0),
+                                            /* pcm output */
+                                            (void *)&ev->data.sample,
+                                            &ev->pcm.length,
+                                            /* optional args */
+                                            ev->pcm.channels)) != V3_OK) {
+                                _v3_destroy_0x52(msg);
+                                _v3_destroy_packet(msg);
+                                free(ev);
+                                _v3_func_leave("_v3_process_message");
+                                return ret;
                             }
                             // don't waste resources if we don't need to deal with it
                             static const int16_t maxsample = 0x7fff;
                             static const int16_t minsample = 0x7fff + 1;
                             register float tmpsample = 0;
+                            int ctr;
 
                             if (_v3_master_volume != 79) {
                                 float multiplier = tan(_v3_master_volume/100.0);
@@ -3011,11 +3068,8 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                         }
                         break;
                 }
-                if (queue) {
-                    v3_queue_event(ev);
-                } else {
-                    free(ev);
-                }
+                _v3_debug(V3_DEBUG_EVENT, "queueing pcm msg length %d", ev->pcm.length);
+                v3_queue_event(ev);
                 _v3_destroy_0x52(msg);
             }
             _v3_destroy_packet(msg);
@@ -3411,7 +3465,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
 }/*}}}*/
 
 /*
- * These are functions that are availble via the API for applications to use
+ * These are functions that are available via the API for applications to use.
  */
 int
 v3_login(char *server, char *username, char *password, char *phonetic) {/*{{{*/

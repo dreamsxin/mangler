@@ -101,10 +101,12 @@ class ManglerAudio
         pa_sample_spec  pulse_samplespec;
         pa_buffer_attr  buffer_attr;
         pa_simple       *pulse_stream;
+        int             pulse_error;
 #endif
 #ifdef HAVE_ALSA
-        snd_pcm_sframes_t alsa_frames;
         snd_pcm_t       *alsa_stream;
+        snd_pcm_sframes_t alsa_frames;
+        int             alsa_error;
 #endif
         ManglerPCM      *pcmdata;
 
@@ -112,9 +114,6 @@ class ManglerAudio
 
         std::vector<ManglerAudioDevice*> inputDevices;
         std::vector<ManglerAudioDevice*> outputDevices;
-
-        int             pulse_error;
-        int             alsa_error;
 
         bool            stop_input;
         bool            stop_output;

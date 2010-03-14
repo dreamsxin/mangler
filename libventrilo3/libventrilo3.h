@@ -418,10 +418,12 @@ v3_codec v3_codecs[] = {
 
 typedef struct __v3_decoders {
 #if HAVE_GSM
-    gsm gsm;
+    void *gsm;
 #endif
+    uint32_t speexrate;
     void *speex;
 #if HAVE_CELT
+    uint8_t celtchans;
     void *celtmode;
     void *celt;
 #endif
@@ -498,4 +500,8 @@ int                     v3_queue_event(v3_event *ev);
 v3_event                *_v3_get_last_event(int *len);
 v3_event                *_v3_create_event(uint16_t event);
 
-#endif // _VENTRILO3_H
+uint8_t                 *_v3_audio_encode(uint8_t *sample, uint32_t pcmlen, const v3_codec *codec, uint16_t *datalen, uint8_t channels, uint16_t *framecount, uint8_t *celtfragsize);
+int                     _v3_audio_decode(const v3_codec *codec, _v3_decoders *decoder, uint8_t *data, uint16_t datalen, uint8_t *sample, uint32_t *pcmlen, uint8_t channels);
+
+#endif // _LIBVENTRILO3_H
+

@@ -50,6 +50,7 @@
 #define V3_OK                       0
 #define V3_MALFORMED                1
 #define V3_NOTIMPL                  2
+#define V3_FAILURE                  3
 
 #define V3_ADD_CHANNEL              0x01
 #define V3_REMOVE_CHANNEL           0x02
