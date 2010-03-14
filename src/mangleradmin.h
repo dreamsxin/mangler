@@ -1,10 +1,10 @@
 /*
  * vim: softtabstop=4 shiftwidth=4 cindent foldmethod=marker expandtab
  *
- * $LastChangedDate: 2010-01-27 04:54:08 -0500 (Wed, 27 Jan 2010) $
- * $Revision: 567 $
- * $LastChangedBy: ekilfoil $
- * $URL: http://svn.mangler.org/mangler/trunk/src/manglerchat.h $
+ * $LastChangedDate$
+ * $Revision$
+ * $LastChangedBy$
+ * $URL$
  *
  * Copyright 2009-2010 Eric Kilfoil
  *

@@ -1,13 +1,12 @@
-// MPRIS INTERFACE: http://wiki.xmms2.xmms.se/wiki/MPRIS
 /*
  * vim: softtabstop=4 shiftwidth=4 cindent foldmethod=marker expandtab
  *
- * $LastChangedDate: 2009-11-06 19:53:52 -0500 (Fri, 06 Nov 2009) $
- * $Revision: 212 $
- * $LastChangedBy: ekilfoil $
- * $URL: http://svn.mangler.org/mangler/trunk/src/mangler.cpp $
+ * $LastChangedDate$
+ * $Revision$
+ * $LastChangedBy$
+ * $URL$
  *
- * Copyright 2009 Eric Kilfoil
+ * Copyright 2009-2010 Eric Kilfoil
  *
  * This file is part of Mangler.
  *
@@ -24,6 +23,7 @@
  * You should have received a copy of the GNU General Public License
  * along with Mangler.  If not, see <http://www.gnu.org/licenses/>.
  */
+// MPRIS INTERFACE: http://wiki.xmms2.xmms.se/wiki/MPRIS
 
 #include "manglerintegration.h"
 #include "config.h"

@@ -1,12 +1,12 @@
 /*
  * vim: softtabstop=4 shiftwidth=4 cindent foldmethod=marker expandtab
  *
- * $LastChangedDate: 2009-10-10 12:38:51 -0700 (Sat, 10 Oct 2009) $
- * $Revision: 63 $
- * $LastChangedBy: ekilfoil $
- * $URL: http://svn.mangler.org/mangler/trunk/src/manglersettings.h $
+ * $LastChangedDate$
+ * $Revision$
+ * $LastChangedBy$
+ * $URL$
  *
- * Copyright 2009 Eric Kilfoil
+ * Copyright 2009-2010 Eric Kilfoil
  *
  * This file is part of Mangler.
  *
@@ -24,8 +24,8 @@
  * along with Mangler.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _MANGLER_INTEGRATION_H
-#define _MANGLER_INTEGRATION_H
+#ifndef _MANGLERINTEGRATION_H
+#define _MANGLERINTEGRATION_H
 
 #include "config.h"
 #ifdef HAVE_LIBMPDCLIENT
@@ -115,4 +115,6 @@ class ManglerIntegration{
 void dbus_uri_signal_callback (DBusGProxy *, const gchar *, gpointer);
 void dbus_playing_changed_callback (DBusGProxy *, gboolean, gpointer);
 #endif
+
 #endif
+

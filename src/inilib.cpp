@@ -1,17 +1,27 @@
-/* Copyright 2010 Bob Shaffer II
+/*
+ * vim: softtabstop=4 shiftwidth=4 cindent foldmethod=marker expandtab
  *
- * This file is free software: you can redistribute it and/or modify
+ * $LastChangedDate$
+ * $Revision$
+ * $LastChangedBy$
+ * $URL$
+ *
+ * Copyright 2010 Bob Shaffer II
+ *
+ * This file is part of Mangler.
+ *
+ * Mangler is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * This file is distributed in the hope that it will be useful,
+ * Mangler is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this software.  If not, see <http://www.gnu.org/licenses/>.
+ * along with Mangler.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include "inilib.h"
