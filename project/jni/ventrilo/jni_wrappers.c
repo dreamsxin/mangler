@@ -4,7 +4,9 @@
 #include "debug.h"
 
 JNIEXPORT jboolean JNICALL Java_org_mangler_VentriloInterface_recv() {
-	return _v3_recv(1) != NULL;
+	_v3_net_message *msg = _v3_recv(V3_BLOCK);
+	return msg && _v3_process_message(msg) == V3_OK;
+	
 }
 
 JNIEXPORT jint JNICALL Java_org_mangler_VentriloInterface_pcmlengthforrate(JNIEnv* env, jobject obj, jint rate) {
@@ -80,7 +82,7 @@ JNIEXPORT jint JNICALL Java_org_mangler_VentriloInterface_channelcount() {
 }
 
 JNIEXPORT jint JNICALL Java_org_mangler_VentriloInterface_login(JNIEnv* env, jobject obj, jstring server, jstring username, jstring password, jstring phonetic) {
-	v3_debuglevel(V3_DEBUG_ALL);
+	//v3_debuglevel(V3_DEBUG_ALL);
 	char* _server	= (char*)(*env)->GetStringUTFChars(env, server, 0);
 	char* _username = (char*)(*env)->GetStringUTFChars(env, username, 0);
 	char* _password = (char*)(*env)->GetStringUTFChars(env, password, 0);
