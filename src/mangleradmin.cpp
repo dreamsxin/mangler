@@ -871,7 +871,7 @@ ManglerAdmin::LoadCodecFormats(void) {/*{{{*/
     const v3_codec *codec;
     Gtk::TreeModel::Row row;
     ChannelFormatModel->clear();
-    while ((codec = v3_get_codec(c, f))) {
+    while ((codec = v3_get_codec(c, f)) && codec->codec != (uint8_t)-1) { // TODO: fix v3_get_codec*() !!!
         row = *(ChannelFormatModel->append());
         row[adminRecord.id] = f;
         row[adminRecord.name] = codec->name;
