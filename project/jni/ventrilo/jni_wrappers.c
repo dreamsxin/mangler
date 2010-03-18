@@ -82,7 +82,7 @@ JNIEXPORT jint JNICALL Java_org_mangler_VentriloInterface_channelcount() {
 }
 
 JNIEXPORT jint JNICALL Java_org_mangler_VentriloInterface_login(JNIEnv* env, jobject obj, jstring server, jstring username, jstring password, jstring phonetic) {
-	//v3_debuglevel(V3_DEBUG_ALL);
+	v3_debuglevel(V3_DEBUG_INTERNAL);
 	char* _server	= (char*)(*env)->GetStringUTFChars(env, server, 0);
 	char* _username = (char*)(*env)->GetStringUTFChars(env, username, 0);
 	char* _password = (char*)(*env)->GetStringUTFChars(env, password, 0);
