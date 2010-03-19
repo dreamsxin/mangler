@@ -50,7 +50,7 @@ public class Recorder {
 	
 	private class RecordThread implements Runnable {
 		public void run() {
-			while(is_recording) {
+			while(recording()) {
 		        int offset = 0;
 		        do {
 		        	int pcm_read = audiorecord.read(buffer, offset, pcmlength - offset);
@@ -65,11 +65,19 @@ public class Recorder {
 		}
 	}
 	
+	private synchronized boolean recording() {
+		return this.is_recording;
+	}
+	
+	private synchronized void recording(boolean is_recording) {
+		this.is_recording = is_recording;
+	}
+	
 	public void start() {
-		if(this.is_recording) {
+		if(recording()) {
 			return;
 		}
-		this.is_recording = true;
+		this.recording(true);
 		this.audiorecord.startRecording();
 		VentriloInterface.startaudio((short) 3);
 		(new Thread(new RecordThread())).start();
@@ -77,7 +85,7 @@ public class Recorder {
 	
 	public void stop() {
 		VentriloInterface.stopaudio();
-		this.is_recording = false;
+		this.recording(false);
 		this.audiorecord.stop();
 	}
 	
