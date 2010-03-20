@@ -298,9 +298,6 @@ _v3_net_message_dump(_v3_net_message *msg) {/*{{{*/
     if (! (V3_DEBUG_PACKET & v3_debuglevel(-1))) {
         return;
     }
-    if (msg->type != 0x4c) {
-        return;
-    }
     _v3_debug(V3_DEBUG_PACKET, "PACKET: message type: 0x%02X (%d)", (uint8_t)msg->type, (uint16_t)msg->type);
     _v3_debug(V3_DEBUG_PACKET, "PACKET: data length : %d", msg->len);
     for (ctr = 0; ctr < msg->len; ctr+=16) {
