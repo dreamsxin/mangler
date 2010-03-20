@@ -105,9 +105,38 @@
 #define V3_USERLIST_LUSER           0x05
 #define V3_USERLIST_CHANGE_OWNER    0x06
 
-#define V3_SERVER_CHAT_FILTER       0x02
-#define V3_SERVER_ALPHABETIC        0x03
-#define V3_SERVER_MOTD_ALWAYS       0x05
+#define V3_SERVER_RECV_SETTING      0x00
+#define V3_SERVER_SEND_SETTING      0x01
+#define V3_SERVER_CLIENT_SET        0x02
+#define V3_SERVER_SEND_DONE         0x03
+#define V3_SERVER_TRANSACTION_DONE  0x04
+
+#define V3_SRV_PROP_RECV_INIT         0x00
+#define V3_SRV_PROP_RECV_START        0x01
+#define V3_SRV_PROP_CHAT_FILTER       0x02
+#define V3_SRV_PROP_CHAN_SORT         0x03
+#define V3_SRV_PROP_MOTD_ALWAYS       0x05
+#define V3_SRV_PROP_CHAT_SPAM_FILT    0x07
+#define V3_SRV_PROP_COMMENT_SPAM_FILT 0x08
+#define V3_SRV_PROP_WAVE_SPAM_FILT    0x09
+#define V3_SRV_PROP_TTS_SPAM_FILT     0x0A
+#define V3_SRV_PROP_INACTIVE_TIMEO    0x0B
+#define V3_SRV_PROP_INACTIVE_ACTION   0x0C
+#define V3_SRV_PROP_INACTIVE_CHAN     0x0D
+#define V3_SRV_PROP_REM_SRV_COMMENT   0x0E
+#define V3_SRV_PROP_REM_CHAN_NAMES    0x0F
+#define V3_SRV_PROP_REM_CHAN_COMMENTS 0x10
+#define V3_SRV_PROP_REM_USER_NAMES    0x11
+#define V3_SRV_PROP_REM_USER_COMMENTS 0x12
+#define V3_SRV_PROP_CHKPOINT          0x13
+#define V3_SRV_PROP_WAVE_BIND_FILT    0x14
+#define V3_SRV_PROP_TTS_BIND_FILT     0x15
+#define V3_SRV_PROP_CHAN_SPAM_FILT    0x16
+#define V3_SRV_PROP_REM_SHOW_LOGIN    0x18
+#define V3_SRV_PROP_MAX_GUEST_LOGIN   0x19
+#define V3_SRV_PROP_AUTOKICK_TIME     0x1A
+#define V3_SRV_PROP_AUTOBAN_TIME      0x1B
+#define V3_SRV_PROP_RECV_DONE         0x1C
 
 #define V3_DEBUG_NONE               0
 #define V3_DEBUG_STATUS             1
@@ -270,6 +299,8 @@ enum _v3_events
     V3_EVENT_FORCE_CHAN_MOVE,
     V3_EVENT_USERLIST_OPEN,
     V3_EVENT_USERLIST_CLOSE,
+    V3_EVENT_SRV_PROP_OPEN,
+    V3_EVENT_SRV_PROP_CLOSE,
 
     // not implemented
     V3_EVENT_USER_PAGED,
@@ -573,8 +604,8 @@ typedef struct __v3_server {
     uint32_t sent_packet_count;       // Total amount of packets received from server.
     uint32_t sent_byte_count;         // Total amount of bytes received from server.
     uint8_t motd_always;              // Always display MOTD
-    uint8_t global_chat_filter;       // Global or Per Channel chat filter
-    uint8_t channels_alphabetical;    // Display the channels alphabetical or manual
+    uint8_t per_channel_chat;         // Global or Per Channel chat filter
+    uint8_t channel_manual_sort;      // Display the channels alphabetical or manual
 } _v3_server;
 
 /*
@@ -641,6 +672,8 @@ void        v3_userlist_close(void);
 void        v3_userlist_remove(uint16_t account_id);
 void        v3_userlist_update(v3_account *account);
 void        v3_userlist_change_owner(uint16_t old_owner_id, uint16_t new_owner_id);
+void        v3_serverprop_open(void);
+
 int         v3_debuglevel(uint32_t level);
 int         v3_is_loggedin(void);
 uint16_t    v3_get_user_id(void);

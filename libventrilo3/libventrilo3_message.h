@@ -216,17 +216,16 @@ typedef struct _v3_net_message_0x4b {/*{{{*/
     uint32_t empty;             // 8
 } _v3_msg_0x4b;
 _v3_net_message *_v3_put_0x4b(void);/*}}}*/
-
 typedef struct _v3_net_message_0x4c {/*{{{*/
     uint32_t type;              // 0
     uint16_t subtype;           // 4
     uint16_t property;          // 6
-    uint32_t empty;             // 8
-    uint16_t unknown;           // 12
-    uint8_t  value;             // 14
+    uint16_t ack;               // 8
+    uint16_t transaction_id;    // 10
+    char *value;                // 12
 } _v3_msg_0x4c;
-int _v3_get_0x4c(_v3_net_message *msg);/*}}}*/
-
+int _v3_get_0x4c(_v3_net_message *msg);
+_v3_net_message *_v3_put_0x4c(uint16_t subtype, uint16_t property, uint16_t ack, uint16_t transaction_id, char *value);/*}}}*/
 typedef struct _v3_net_message_0x50 {/*{{{*/
     uint32_t type;              // 0
     uint32_t timestamp;         // 4
@@ -237,7 +236,6 @@ typedef struct _v3_net_message_0x50 {/*{{{*/
     uint8_t  message[256];      // 16
 } _v3_msg_0x50;
 int _v3_get_0x50(_v3_net_message *msg);/*}}}*/
-
 typedef struct _v3_net_message_0x52 {/*{{{*/
     uint32_t type;              // 0
     uint16_t subtype;           // 4
@@ -287,7 +285,6 @@ typedef struct _v3_net_message_0x52_0x03 {/*{{{*/
 int _v3_get_0x52(_v3_net_message *msg);
 _v3_net_message *_v3_put_0x52(uint8_t subtype, uint16_t codec, uint16_t codec_format, uint16_t send_type, uint32_t pcmlength, uint32_t length, void *data);
 int _v3_destroy_0x52(_v3_net_message *msg);
-
 typedef struct _v3_net_message_0x53 {/*{{{*/
     uint32_t type;              // 0
     uint16_t user_id;           // 2

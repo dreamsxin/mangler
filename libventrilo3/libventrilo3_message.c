@@ -897,7 +897,7 @@ _v3_get_0x4a(_v3_net_message *msg) {/*{{{*/
                     _v3_func_leave("_v3_get_0x4a");
                     return false;
                 }
-                _v3_msg_0x4a_perms *msub = (_v3_msg_0x4a_perms *)m;
+                //_v3_msg_0x4a_perms *msub = (_v3_msg_0x4a_perms *)m;
             }
             break;
         default:
@@ -1018,49 +1018,48 @@ _v3_net_message *_v3_put_0x4b(void) {/*{{{*/
 int
 _v3_get_0x4c(_v3_net_message *msg) {/*{{{*/
     _v3_msg_0x4c *m;
+    uint16_t len;
 
     _v3_func_enter("_v3_get_0x4c");
-    if (msg->len != sizeof(_v3_msg_0x4c)) {
-        _v3_debug(V3_DEBUG_PACKET_PARSE, "expected %d bytes, but message is %d bytes", sizeof(_v3_msg_0x4c), msg->len);
-        _v3_func_leave("_v3_get_0x4c");
-        return false;
-    }
     m = msg->contents = msg->data;
-    switch (m->subtype) {
-            case 0x02:
-                switch (m->property) {
-                    case 0x02: // Chat filter
-                        _v3_debug(V3_DEBUG_PACKET_PARSE, "Server Property:");
-                        _v3_debug(V3_DEBUG_PACKET_PARSE, "global chat filter..: %d",   m->value);
-                    break;
-                    case 0x03: // Channel ordering
-                        _v3_debug(V3_DEBUG_PACKET_PARSE, "Server Property:");
-                        _v3_debug(V3_DEBUG_PACKET_PARSE, "channels alphabetic.: %d",   m->value);
-                    break;
-                    case 0x05: // MOTD State
-                        _v3_debug(V3_DEBUG_PACKET_PARSE, "Server Property:");
-                        _v3_debug(V3_DEBUG_PACKET_PARSE, "motd always.........: %d",   m->value);
-                    break;
-                    default:
-                        _v3_debug(V3_DEBUG_PACKET_PARSE, "0x4C 0x02 Server Property - Unknown Property:");
-                        _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown property....: %d",   m->property);
-                        _v3_debug(V3_DEBUG_PACKET_PARSE, "empty...............: %d",   m->empty);
-                        _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown.............: %d",   m->unknown);
-                        _v3_debug(V3_DEBUG_PACKET_PARSE, "value...............: %d",   m->value);
-                    break;
-                }
-            break;
-            default:
-                _v3_debug(V3_DEBUG_PACKET_PARSE, "0x4C Server Property - Unknown Subtype:");
-                _v3_debug(V3_DEBUG_PACKET_PARSE, "subtype.............: %d",   m->subtype);
-                _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown property....: %d",   m->value);
-                _v3_debug(V3_DEBUG_PACKET_PARSE, "empty...............: %d",   m->empty);
-                _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown.............: %d",   m->unknown);
-                _v3_debug(V3_DEBUG_PACKET_PARSE, "value...............: %d",   m->property);
-            break;
+    if (msg->len > 12) {
+        m->value = _v3_get_msg_string(msg->data + 12, &len);
+    } else {
+        m->value = NULL;
     }
     _v3_func_leave("_v3_get_0x4c");
     return true;
+}/*}}}*/
+_v3_net_message *
+_v3_put_0x4c(uint16_t subtype, uint16_t property, uint16_t ack, uint16_t transaction_id, char *value) {/*{{{*/
+    _v3_net_message *m;
+    _v3_msg_0x4c *mc;
+
+    _v3_func_enter("_v3_put_0x4c");
+    m = malloc(sizeof(_v3_net_message));
+    memset(m, 0, sizeof(_v3_net_message));
+    m->type = 0x4c;
+
+    uint16_t base = sizeof(_v3_msg_0x4c) - sizeof(char *)  + sizeof(uint16_t);
+    uint16_t len = base;
+    mc = malloc(base);
+    memset(mc, 0, base);
+    mc->type = 0x4c;
+    mc->subtype = subtype;
+    mc->property = property;
+    mc->ack = ack;
+    mc->transaction_id = transaction_id;
+    if (value) {
+        len += strlen(value) + 2;
+        mc = realloc(mc, len);
+        _v3_put_msg_string((char *)mc + base, value);
+    }
+
+    m->contents = mc;
+    m->data = (char *)mc;
+    m->len = len;
+    _v3_func_leave("_v3_put_0x4c");
+    return m;
 }/*}}}*/
 /*}}}*/
 // Message 0x50 (80) | MOTD /*{{{*/

@@ -298,6 +298,9 @@ _v3_net_message_dump(_v3_net_message *msg) {/*{{{*/
     if (! (V3_DEBUG_PACKET & v3_debuglevel(-1))) {
         return;
     }
+    if (msg->type != 0x4c) {
+        return;
+    }
     _v3_debug(V3_DEBUG_PACKET, "PACKET: message type: 0x%02X (%d)", (uint8_t)msg->type, (uint16_t)msg->type);
     _v3_debug(V3_DEBUG_PACKET, "PACKET: data length : %d", msg->len);
     for (ctr = 0; ctr < msg->len; ctr+=16) {
@@ -1129,6 +1132,17 @@ _v3_recv(int block) {/*{{{*/
                             }
                             v3_free_account(a);
                             v3_free_account(b);
+                            _v3_destroy_packet(msg);
+                        }
+                        break;/*}}}*/
+                    case V3_EVENT_SRV_PROP_OPEN:/*{{{*/
+                        {
+                            _v3_net_message *msg = _v3_put_0x4c(V3_SERVER_RECV_SETTING, 0x00, 0x00, 0x42, NULL);
+                            if (_v3_send(msg)) {
+                                _v3_debug(V3_DEBUG_SOCKET, "sent server property open request to server");
+                            } else {
+                                _v3_debug(V3_DEBUG_SOCKET, "failed to send server property open request");
+                            }
                             _v3_destroy_packet(msg);
                         }
                         break;/*}}}*/
@@ -2832,90 +2846,68 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                 _v3_msg_0x4c *m = msg->contents;
                 _v3_lock_server();
                 switch (m->subtype) {
-                    case 0x02:
+                    case V3_SERVER_RECV_SETTING:
                         switch (m->property) {
-                            case V3_SERVER_CHAT_FILTER:
-                                switch (m->value) {
-                                    case 0x30:
-                                        v3_server.global_chat_filter = true;
-                                    break;
-                                    case 0x31:
-                                        v3_server.global_chat_filter = false;
-                                    break;
-                                    default:
-                                        _v3_func_leave("_v3_get_0x4c");
-                                        _v3_unlock_server();
-                                        _v3_destroy_packet(msg);
-                                        return V3_MALFORMED;
-                                    break;
+                            _v3_net_message *response;
+
+                            case V3_SRV_PROP_RECV_INIT:
+                            case V3_SRV_PROP_RECV_START:
+                            case V3_SRV_PROP_CHAT_FILTER:
+                            case V3_SRV_PROP_CHAN_SORT:
+                            case V3_SRV_PROP_MOTD_ALWAYS:
+                            case V3_SRV_PROP_CHAT_SPAM_FILT:
+                            case V3_SRV_PROP_COMMENT_SPAM_FILT:
+                            case V3_SRV_PROP_WAVE_SPAM_FILT:
+                            case V3_SRV_PROP_TTS_SPAM_FILT:
+                            case V3_SRV_PROP_INACTIVE_TIMEO:
+                            case V3_SRV_PROP_INACTIVE_ACTION:
+                            case V3_SRV_PROP_INACTIVE_CHAN:
+                            case V3_SRV_PROP_REM_SRV_COMMENT:
+                            case V3_SRV_PROP_REM_CHAN_NAMES:
+                            case V3_SRV_PROP_REM_CHAN_COMMENTS:
+                            case V3_SRV_PROP_REM_USER_NAMES:
+                            case V3_SRV_PROP_REM_USER_COMMENTS:
+                            case V3_SRV_PROP_CHKPOINT:
+                            case V3_SRV_PROP_WAVE_BIND_FILT:
+                            case V3_SRV_PROP_TTS_BIND_FILT:
+                            case V3_SRV_PROP_CHAN_SPAM_FILT:
+                            case V3_SRV_PROP_REM_SHOW_LOGIN:
+                            case V3_SRV_PROP_MAX_GUEST_LOGIN:
+                            case V3_SRV_PROP_AUTOKICK_TIME:
+                            case V3_SRV_PROP_AUTOBAN_TIME:
+                                _v3_debug(V3_DEBUG_INFO, "settings recv 0x%02X: %s", m->property, m->value);
+                                // store the setting somewhere
+
+                                if  (m->property == 0x03 || m->property == 0x05 || m->property == 0x16) {
+                                    m->property++;
                                 }
-                            break;
-                            case V3_SERVER_ALPHABETIC:
-                                switch (m->value) {
-                                    case 0x30:
-                                        v3_server.channels_alphabetical = true;
-                                    break;
-                                    case 0x31:
-                                        v3_server.channels_alphabetical = false;
-                                    break;
-                                    default:
-                                        _v3_func_leave("_v3_get_0x4c");
-                                        _v3_unlock_server();
-                                        _v3_destroy_packet(msg);
-                                        return V3_MALFORMED;
-                                    break;
-                                }
-                            break;
-                            case V3_SERVER_MOTD_ALWAYS:
-                                switch (m->value) {
-                                    case 0x30:
-                                        v3_server.motd_always = false;
-                                    break;
-                                    case 0x31:
-                                        v3_server.motd_always = true;
-                                    break;
-                                    default:
-                                        _v3_func_leave("_v3_get_0x4c");
-                                        _v3_unlock_server();
-                                        _v3_destroy_packet(msg);
-                                        return V3_MALFORMED;
-                                    break;
-                                }
-                            break;
-                            default:
-                                _v3_debug(V3_DEBUG_PACKET_PARSE, "Unknown server property sub-type: 0x02 property: %d", m->subtype);
-                                _v3_func_leave("_v3_get_0x4c");
-                                _v3_unlock_server();
-                                _v3_destroy_packet(msg);
-                                return V3_MALFORMED;
-                            break;
+                                response = _v3_put_0x4c(V3_SERVER_RECV_SETTING, m->property + 1, 0x00, 0x42, NULL);
+                                _v3_send(response);
+                                _v3_destroy_packet(response);
+                                break;
+                            case V3_SRV_PROP_RECV_DONE:
+                                break;
                         }
-                    break;
-                    default:
-                        _v3_debug(V3_DEBUG_PACKET_PARSE, "Unknown server property sub-type: %d", m->subtype);
-                        _v3_func_leave("_v3_get_0x4c");
-                        _v3_unlock_server();
-                        _v3_destroy_packet(msg);
-                        return V3_MALFORMED;
-                    break;
+                        break;
+                    case V3_SERVER_CLIENT_SET:
+                        switch (m->property) {
+                            case V3_SRV_PROP_CHAT_FILTER:
+                                v3_server.per_channel_chat = atoi(m->value);
+                                break;
+                            case V3_SRV_PROP_CHAN_SORT:
+                                v3_server.channel_manual_sort = atoi(m->value);
+                                break;
+                            case V3_SRV_PROP_MOTD_ALWAYS:
+                                v3_server.motd_always = atoi(m->value);
+                                break;
+                        }
+                        v3_event *ev = _v3_create_event(V3_EVENT_SERVER_PROPERTY_UPDATED);
+                        ev->serverproperty.property = m->property;
+                        ev->serverproperty.value = atoi(m->value);
+                        _v3_debug(V3_DEBUG_INFO, "queuing event type %d for property %d and value %d", ev->type, ev->serverproperty.property, ev->serverproperty.value);
+                        v3_queue_event(ev);
+                        break;
                 }
-                v3_event *ev = _v3_create_event(V3_EVENT_SERVER_PROPERTY_UPDATED);
-                ev->serverproperty.property = m->property;
-                if (m->value == 0x30) {
-                    if (m->property == V3_SERVER_MOTD_ALWAYS) {
-                            ev->serverproperty.value = false;
-                    } else {
-                        ev->serverproperty.value = true;
-                    }
-                } else {
-                    if (m->property == V3_SERVER_MOTD_ALWAYS) {
-                            ev->serverproperty.value = true;
-                    } else {
-                        ev->serverproperty.value = false;
-                    }
-                }
-                _v3_debug(V3_DEBUG_INFO, "queuing event type %d for property %d and value %d", ev->type, ev->serverproperty.property, ev->serverproperty.value);
-                v3_queue_event(ev);
 
             }
 
@@ -4333,6 +4325,29 @@ v3_userlist_change_owner(uint16_t old_owner_id, uint16_t new_owner_id) {/*{{{*/
 }/*}}}*/
 
 void
+v3_serverprop_open(void) {/*{{{*/
+    v3_event ev;
+
+    _v3_func_enter("v3_serverprop_open");
+    if (!v3_is_loggedin()) {
+        _v3_func_leave("v3_serverprop_open");
+        return;
+    }
+    memset(&ev, 0, sizeof(v3_event));
+    ev.type = V3_EVENT_SRV_PROP_OPEN;
+
+    _v3_lock_sendq();
+    _v3_debug(V3_DEBUG_EVENT, "sending %lu bytes to event pipe", sizeof(v3_event));
+    if (fwrite(&ev, sizeof(struct _v3_event), 1, v3_server.evoutstream) != 1) {
+        _v3_error("could not write to event pipe");
+    }
+    fflush(v3_server.evoutstream);
+    _v3_unlock_sendq();
+    _v3_func_leave("v3_serverprop_open");
+    return;
+}/*}}}*/
+
+void
 v3_set_text(char *comment, char *url, char *integration_text, uint8_t silent) {/*{{{*/
     v3_event ev;
 
@@ -4475,6 +4490,7 @@ v3_free_channel(v3_channel *channel) {/*{{{*/
     free(channel->comment);
     free(channel);
 }/*}}}*/
+
 void
 v3_channel_update(v3_channel *channel, const char *password) {/*{{{*/
     /* update or create channel */
@@ -4512,6 +4528,7 @@ v3_channel_update(v3_channel *channel, const char *password) {/*{{{*/
     _v3_func_leave("v3_channel_update");
     return;
 }/*}}}*/
+
 void
 v3_channel_remove(uint16_t channel_id) {/*{{{*/
     /* remove channel */
@@ -4539,6 +4556,7 @@ v3_channel_remove(uint16_t channel_id) {/*{{{*/
     _v3_func_leave("v3_channel_remove");
     return;
 }/*}}}*/
+
 v3_rank *
 v3_get_rank(uint16_t id) {/*{{{*/
     v3_rank *rank, *ret_rank;
@@ -4555,6 +4573,7 @@ v3_get_rank(uint16_t id) {/*{{{*/
     _v3_unlock_ranklist();
     return NULL;
 }/*}}}*/
+
 void
 v3_ranklist_open(void) {/*{{{*/
     v3_event ev;
@@ -4633,6 +4652,7 @@ v3_rank_update(v3_rank *rank) {/*{{{*/
     return;
     
 }/*}}}*/
+
 void
 v3_rank_remove(uint16_t rankid) {/*{{{*/
     /* remove rank */
@@ -4667,6 +4687,7 @@ v3_rank_remove(uint16_t rankid) {/*{{{*/
     return;
     
 }/*}}}*/
+
 void
 v3_free_rank(v3_rank *rank) {/*{{{*/
     free(rank->name);

@@ -55,7 +55,7 @@ class ManglerChat {
         Gtk::TextView *chatBox;
         bool          isOpen;
         bool          isJoined;
-        bool          isGlobal;
+        bool          isPerChannel;
 
         void chatTimestampCheckButton_toggled_cb(void);
         void chatWindow_show_cb(void);

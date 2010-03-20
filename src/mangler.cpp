@@ -1431,16 +1431,16 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                 break;/*}}}*/
             case V3_EVENT_SERVER_PROPERTY_UPDATED:/*{{{*/
                 switch (ev->serverproperty.property) {
-                    case V3_SERVER_CHAT_FILTER:
-                        chat->isGlobal = ev->serverproperty.value;
+                    case V3_SRV_PROP_CHAT_FILTER:
+                        chat->isPerChannel = ev->serverproperty.value;
                         chat->chatUserTreeModelFilter->refilter();
                         break;
-                    case V3_SERVER_ALPHABETIC:
+                    case V3_SRV_PROP_CHAN_SORT:
                         channelTree->sortAlphanumeric = ev->serverproperty.value;
                         channelTree->refreshAllChannels();
                         admin->channelSort(ev->serverproperty.value);
                         break;
-                    case V3_SERVER_MOTD_ALWAYS:
+                    case V3_SRV_PROP_MOTD_ALWAYS:
                         motdAlways = ev->serverproperty.value;
                         break;
                 }

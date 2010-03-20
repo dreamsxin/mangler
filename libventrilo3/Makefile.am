@@ -11,13 +11,13 @@ libventrilo3_la_LDFLAGS = -version 0:0:0
 
 include_HEADERS = ventrilo3.h
 
-lv3_test_SOURCES = lv3_test.c
+#lv3_test_SOURCES = lv3_test.c
 
 INCLUDES = $(speex_CFLAGS) $(celt_CFLAGS)
 
-lv3_test_LDADD = libventrilo3.la $(pulse_LIBS)
+#lv3_test_LDADD = libventrilo3.la $(pulse_LIBS)
 
-noinst_PROGRAMS = lv3_test
+#noinst_PROGRAMS = lv3_test
 
 dev:
 	gcc -pthread -Wall -g -c -I../ -o libventrilo3.o libventrilo3.c
