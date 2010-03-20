@@ -4714,12 +4714,12 @@ _v3_update_account(v3_account *account) {/*{{{*/
         a->owner        = strdup(account->owner);
         a->notes        = strdup(account->notes);
         a->lock_reason  = strdup(account->lock_reason);
-        a->chan_admin   = malloc(account->chan_admin_count);
+        a->chan_admin   = malloc(account->chan_admin_count * 2);
         memcpy(a->chan_admin, account->chan_admin, account->chan_admin_count * 2);
-        a->chan_auth    = malloc(account->chan_auth_count);
+        a->chan_auth    = malloc(account->chan_auth_count * 2);
         memcpy(a->chan_auth, account->chan_auth, account->chan_auth_count * 2);
 
-        a->next        = NULL;
+        a->next         = NULL;
         v3_account_list = a;
         _v3_debug(V3_DEBUG_INFO, "added first account %s (id %d)",  a->username, a->perms.account_id);
     } else {
@@ -4740,9 +4740,9 @@ _v3_update_account(v3_account *account) {/*{{{*/
                 a->owner        = strdup(account->owner);
                 a->notes        = strdup(account->notes);
                 a->lock_reason  = strdup(account->lock_reason);
-                a->chan_admin   = malloc(account->chan_admin_count);
+                a->chan_admin   = malloc(account->chan_admin_count * 2);
                 memcpy(a->chan_admin, account->chan_admin, account->chan_admin_count * 2);
-                a->chan_auth    = malloc(account->chan_auth_count);
+                a->chan_auth    = malloc(account->chan_auth_count * 2);
                 memcpy(a->chan_auth, account->chan_auth, account->chan_auth_count * 2);
 
                 a->next = tmp;
@@ -4761,11 +4761,11 @@ _v3_update_account(v3_account *account) {/*{{{*/
         a->owner        = strdup(account->owner);
         a->notes        = strdup(account->notes);
         a->lock_reason  = strdup(account->lock_reason);
-        a->chan_admin   = malloc(account->chan_admin_count);
+        a->chan_admin   = malloc(account->chan_admin_count * 2);
         memcpy(a->chan_admin, account->chan_admin, account->chan_admin_count * 2);
-        a->chan_auth    = malloc(account->chan_auth_count);
+        a->chan_auth    = malloc(account->chan_auth_count * 2);
         memcpy(a->chan_auth, account->chan_auth, account->chan_auth_count * 2);
-        a->next           = NULL;
+        a->next         = NULL;
 
         _v3_debug(V3_DEBUG_INFO, "added account %s (id %d)",  a->username, a->perms.account_id);
     }
@@ -4888,11 +4888,11 @@ _v3_copy_account(v3_account *dest, v3_account *src) {/*{{{*/
     dest->owner        = strdup(src->owner);
     dest->notes        = strdup(src->notes);
     dest->lock_reason  = strdup(src->lock_reason);
-    dest->chan_admin   = malloc(src->chan_admin_count);
+    dest->chan_admin   = malloc(src->chan_admin_count * 2);
     memcpy(dest->chan_admin, src->chan_admin, src->chan_admin_count * 2);
-    dest->chan_auth    = malloc(src->chan_auth_count);
+    dest->chan_auth    = malloc(src->chan_auth_count * 2);
     memcpy(dest->chan_auth, src->chan_auth, src->chan_auth_count * 2);
-    dest->next           = NULL;
+    dest->next         = NULL;
 }/*}}}*/
 
 void
