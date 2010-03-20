@@ -674,7 +674,7 @@ _v3_recv(int block) {/*{{{*/
                             v3_channel channel;
                             memset(&channel, 0, sizeof(_v3_msg_channel));
                             /* channel.id = ev.channel.id; */
-                            memcpy(&channel, &ev.data.channel, 48);
+                            memcpy(&channel, &ev.data->channel, 48);
                             channel.name = ev.text.name;
                             channel.phonetic = ev.text.phonetic;
                             channel.comment = ev.text.comment;
@@ -733,8 +733,8 @@ _v3_recv(int block) {/*{{{*/
                             _v3_net_message *msg;
                             v3_rank rank;
                             memset(&rank, 0, sizeof(v3_rank));
-                            rank.id = ev.data.rank.id;
-                            rank.level = ev.data.rank.level;
+                            rank.id = ev.data->rank.id;
+                            rank.level = ev.data->rank.level;
                             msg = _v3_put_0x36(V3_REMOVE_RANK, &rank);
                             if (_v3_send(msg)) {
                                 _v3_debug(V3_DEBUG_SOCKET, "sent rank remove request to server");
@@ -760,8 +760,8 @@ _v3_recv(int block) {/*{{{*/
                             _v3_net_message *msg;
                             v3_rank rank;
                             memset(&rank, 0, sizeof(v3_rank));
-                            rank.id = ev.data.rank.id;
-                            rank.level = ev.data.rank.level;
+                            rank.id = ev.data->rank.id;
+                            rank.level = ev.data->rank.level;
                             rank.name = ev.text.name;
                             rank.description = ev.text.comment;
                             msg = _v3_put_0x36(subtype, &rank);
@@ -799,7 +799,7 @@ _v3_recv(int block) {/*{{{*/
                             _v3_debug(V3_DEBUG_INFO, "got outbound play audio event");
                             if ((data = _v3_audio_encode(
                                             /* pcm input */
-                                            (void *)&ev.data.sample,
+                                            (void *)&ev.data->sample,
                                             ev.pcm.length,
                                             /* encoded output */
                                             codec,
@@ -925,7 +925,7 @@ _v3_recv(int block) {/*{{{*/
                         break;/*}}}*/
                     case V3_EVENT_CHAT_MESSAGE:/*{{{*/
                         {
-                            _v3_net_message *msg = _v3_put_0x42(V3_TALK_CHAT, v3_luser.id, ev.data.chatmessage);
+                            _v3_net_message *msg = _v3_put_0x42(V3_TALK_CHAT, v3_luser.id, ev.data->chatmessage);
                             if (_v3_send(msg)) {
                                 _v3_debug(V3_DEBUG_SOCKET, "sent chat message to server");
                             } else {
@@ -958,7 +958,7 @@ _v3_recv(int block) {/*{{{*/
                         break;/*}}}*/
                     case V3_EVENT_PRIVATE_CHAT_MESSAGE:/*{{{*/
                         {
-                            _v3_net_message *msg = _v3_put_0x5a(V3_TALK_PRIV_CHAT, ev.user.id, v3_luser.id, ev.data.chatmessage);
+                            _v3_net_message *msg = _v3_put_0x5a(V3_TALK_PRIV_CHAT, ev.user.id, v3_luser.id, ev.data->chatmessage);
                             if (_v3_send(msg)) {
                                 _v3_debug(V3_DEBUG_SOCKET, "sent private chat message to server for user %d", ev.user.id);
                             } else {
@@ -1024,7 +1024,7 @@ _v3_recv(int block) {/*{{{*/
                         break;/*}}}*/
                     case V3_EVENT_ADMIN_KICK:/*{{{*/
                         {
-                            _v3_net_message *msg = _v3_put_0x63(V3_ADMIN_KICK, ev.user.id, ev.data.reason);
+                            _v3_net_message *msg = _v3_put_0x63(V3_ADMIN_KICK, ev.user.id, ev.data->reason);
                             if (_v3_send(msg)) {
                                 _v3_debug(V3_DEBUG_SOCKET, "sent admin kick request to server");
                             } else {
@@ -1035,7 +1035,7 @@ _v3_recv(int block) {/*{{{*/
                         break;/*}}}*/
                     case V3_EVENT_ADMIN_BAN:/*{{{*/
                         {
-                            _v3_net_message *msg = _v3_put_0x63(V3_ADMIN_BAN, ev.user.id, ev.data.reason);
+                            _v3_net_message *msg = _v3_put_0x63(V3_ADMIN_BAN, ev.user.id, ev.data->reason);
                             if (_v3_send(msg)) {
                                 _v3_debug(V3_DEBUG_SOCKET, "sent admin ban request to server");
                             } else {
@@ -1046,7 +1046,7 @@ _v3_recv(int block) {/*{{{*/
                         break;/*}}}*/
                     case V3_EVENT_ADMIN_CHANNEL_BAN:/*{{{*/
                         {
-                            _v3_net_message *msg = _v3_put_0x63(V3_ADMIN_CHANNEL_BAN, ev.user.id, ev.data.reason);
+                            _v3_net_message *msg = _v3_put_0x63(V3_ADMIN_CHANNEL_BAN, ev.user.id, ev.data->reason);
                             if (_v3_send(msg)) {
                                 _v3_debug(V3_DEBUG_SOCKET, "sent admin channel ban request to server");
                             } else {
@@ -1095,17 +1095,17 @@ _v3_recv(int block) {/*{{{*/
                         {
                             v3_account a;
                             memset(&a, 0, sizeof(v3_account));
-                            a.perms = ev.data.account.perms;
-                            a.username = strdup(ev.data.account.username);
-                            a.owner = strdup(ev.data.account.owner);
-                            a.notes = strdup(ev.data.account.notes);
-                            a.lock_reason = strdup(ev.data.account.lock_reason);
-                            a.chan_admin_count = ev.data.account.chan_admin_count;
+                            a.perms = ev.data->account.perms;
+                            a.username = strdup(ev.data->account.username);
+                            a.owner = strdup(ev.data->account.owner);
+                            a.notes = strdup(ev.data->account.notes);
+                            a.lock_reason = strdup(ev.data->account.lock_reason);
+                            a.chan_admin_count = ev.data->account.chan_admin_count;
                             a.chan_admin = malloc(a.chan_admin_count * 2);
-                            memcpy(a.chan_admin, ev.data.account.chan_admin, ev.data.account.chan_admin_count * 2);
-                            a.chan_auth_count = ev.data.account.chan_auth_count;
+                            memcpy(a.chan_admin, ev.data->account.chan_admin, ev.data->account.chan_admin_count * 2);
+                            a.chan_auth_count = ev.data->account.chan_auth_count;
                             a.chan_auth = malloc(a.chan_auth_count * 2);
-                            memcpy(a.chan_auth, ev.data.account.chan_auth, ev.data.account.chan_auth_count * 2);
+                            memcpy(a.chan_auth, ev.data->account.chan_auth, ev.data->account.chan_auth_count * 2);
                             a.next = NULL;
 
                             _v3_net_message *msg = _v3_put_0x4a(ev.type == V3_EVENT_USERLIST_ADD ? V3_USERLIST_ADD : V3_USERLIST_MODIFY, &a, NULL);
@@ -1146,6 +1146,9 @@ _v3_recv(int block) {/*{{{*/
                     default:
                         _v3_debug(V3_DEBUG_EVENT, "received unknown event type %d from queue", ev.type);
                         break;
+                }
+                if (ev.data) {
+                    free(ev.data);
                 }
             }
             if (waiting != V3_BOTH_WAITING) {
@@ -2480,7 +2483,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                         for (ctr = 0; ctr < m->rank_count; ctr++) {
                             // do we need to queue an event?
                             v3_event *ev = _v3_create_event(V3_EVENT_RANK_REMOVE);
-                            ev->data.rank.id = m->rank_list[ctr].id;
+                            ev->data->rank.id = m->rank_list[ctr].id;
                             _v3_debug(V3_DEBUG_INFO, "queuing event type %d for user %d", ev->type, ev->user.id);
                             _v3_remove_rank(m->rank_list[ctr].id);
                             v3_queue_event(ev);
@@ -2493,8 +2496,8 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                         for (ctr = 0; ctr < m->rank_count; ctr++) {
                             _v3_update_rank(&m->rank_list[ctr]);
                             v3_event *ev = _v3_create_event(m->subtype == V3_ADD_RANK ? V3_EVENT_RANK_ADD : V3_EVENT_RANK_MODIFY);
-                            ev->data.rank.id = m->rank_list[ctr].id;
-                            ev->data.rank.level = m->rank_list[ctr].level;
+                            ev->data->rank.id = m->rank_list[ctr].id;
+                            ev->data->rank.level = m->rank_list[ctr].level;
                             strncpy(ev->text.name, m->rank_list[ctr].name, 31);
                             strncpy(ev->text.comment, m->rank_list[ctr].description, 127);
                             _v3_debug(V3_DEBUG_INFO, "queuing event type %d for user %d", ev->type, ev->user.id);
@@ -2583,7 +2586,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                         {
                             v3_event *ev = _v3_create_event(V3_EVENT_CHAT_MESSAGE);
                             ev->user.id = m->user_id;
-                            strncpy(ev->data.chatmessage, m->msg, sizeof(ev->data.chatmessage) - 1);
+                            strncpy(ev->data->chatmessage, m->msg, sizeof(ev->data->chatmessage) - 1);
                             free(m->msg);
                             v3_queue_event(ev);
                         }
@@ -2592,7 +2595,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                         {
                             v3_event *ev = _v3_create_event(V3_EVENT_CHAT_MESSAGE);
                             ev->user.id = 0;
-                            strncpy(ev->data.chatmessage, m->msg, sizeof(ev->data.chatmessage) - 1);
+                            strncpy(ev->data->chatmessage, m->msg, sizeof(ev->data->chatmessage) - 1);
                             free(m->msg);
                             v3_queue_event(ev);
                         }
@@ -2958,7 +2961,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                 if ((m->message_id+1) == m->message_num) {
                     // At this point we have our motd, may want to notify the user here :)
                     v3_event *ev = _v3_create_event(V3_EVENT_DISPLAY_MOTD);
-                    strncpy(ev->data.motd, *motd, 2047);
+                    strncpy(ev->data->motd, *motd, 2047);
                     v3_queue_event(ev);
                 }
                 _v3_destroy_packet(msg);
@@ -3006,7 +3009,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                             ev->pcm.send_type = m->header.send_type;
                             ev->pcm.rate = codec->rate;
                             ev->pcm.channels = (msub->header.pcm_length - 2000 == 2) ? 2 : 1;
-                            ev->pcm.length = sizeof(ev->data.sample);
+                            ev->pcm.length = sizeof(ev->data->sample);
                             int ret;
 
                             if ((ret = _v3_audio_decode(
@@ -3016,7 +3019,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                                             (msub->header.codec == 0x03) ? msub->data.speex.frames : msub->data.frames,
                                             msub->header.data_length - ((msub->header.codec == 0x03) ? 4 : 0),
                                             /* pcm output */
-                                            (void *)&ev->data.sample,
+                                            (void *)&ev->data->sample,
                                             &ev->pcm.length,
                                             /* optional args */
                                             ev->pcm.channels)) != V3_OK) {
@@ -3036,9 +3039,9 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                                 float multiplier = tan(_v3_master_volume/100.0);
                                 _v3_debug(V3_DEBUG_INFO, "master: amplifying to level %d (%3.10f multiplier)", _v3_master_volume, multiplier);
                                 for (ctr = 0; ctr < ev->pcm.length / 2; ctr++) {
-                                    tmpsample = ev->data.sample16[ctr];
+                                    tmpsample = ev->data->sample16[ctr];
                                     tmpsample *= multiplier;
-                                    ev->data.sample16[ctr] = (tmpsample > maxsample)
+                                    ev->data->sample16[ctr] = (tmpsample > maxsample)
                                         ? maxsample
                                         : ((tmpsample < minsample) ? minsample : tmpsample);
                                 }
@@ -3047,9 +3050,9 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                                 float multiplier = tan(_v3_user_volumes[ev->user.id]/100.0);
                                 _v3_debug(V3_DEBUG_INFO, "user: amplifying to level %d (%3.10f multiplier)", _v3_user_volumes[ev->user.id], multiplier);
                                 for (ctr = 0; ctr < ev->pcm.length / 2; ctr++) {
-                                    tmpsample = ev->data.sample16[ctr];
+                                    tmpsample = ev->data->sample16[ctr];
                                     tmpsample *= multiplier;
-                                    ev->data.sample16[ctr] = (tmpsample > maxsample)
+                                    ev->data->sample16[ctr] = (tmpsample > maxsample)
                                         ? maxsample
                                         : ((tmpsample < minsample) ? minsample : tmpsample);
                                 }
@@ -3247,7 +3250,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                             ev->user.privchat_user1 = m->user1;
                             ev->user.privchat_user2 = m->user2;
                             ev->flags = m->error;
-                            strncpy(ev->data.chatmessage, m->msg, sizeof(ev->data.chatmessage) - 1);
+                            strncpy(ev->data->chatmessage, m->msg, sizeof(ev->data->chatmessage) - 1);
                             _v3_debug(V3_DEBUG_INFO, "received chat message from user id %d: %s", m->user2, m->msg);
                             free(m->msg);
                             v3_queue_event(ev);
@@ -3765,8 +3768,10 @@ v3_send_chat_message(char* message) {/*{{{*/
         return;
     }
     memset(&ev, 0, sizeof(v3_event));
+    ev.data = malloc(sizeof(v3_event_data));
+    memset(ev.data, 0, sizeof(v3_event_data));
     ev.type = V3_EVENT_CHAT_MESSAGE;
-    strncpy(ev.data.chatmessage, message, sizeof(ev.data.chatmessage)-1);
+    strncpy(ev.data->chatmessage, message, sizeof(ev.data->chatmessage)-1);
     _v3_lock_sendq();
     _v3_debug(V3_DEBUG_EVENT, "sending %lu bytes to event pipe", sizeof(v3_event));
     if (fwrite(&ev, sizeof(struct _v3_event), 1, v3_server.evoutstream) != 1) {
@@ -3840,9 +3845,11 @@ v3_send_privchat_message(uint16_t userid, char* message) {/*{{{*/
         return;
     }
     memset(&ev, 0, sizeof(v3_event));
+    ev.data = malloc(sizeof(v3_event_data));
+    memset(ev.data, 0, sizeof(v3_event_data));
     ev.type = V3_EVENT_PRIVATE_CHAT_MESSAGE;
     ev.user.id = userid;
-    strncpy(ev.data.chatmessage, message, sizeof(ev.data.chatmessage)-1);
+    strncpy(ev.data->chatmessage, message, sizeof(ev.data->chatmessage)-1);
     _v3_lock_sendq();
     _v3_debug(V3_DEBUG_EVENT, "sending %lu bytes to event pipe", sizeof(v3_event));
     if (fwrite(&ev, sizeof(struct _v3_event), 1, v3_server.evoutstream) != 1) {
@@ -4158,8 +4165,10 @@ v3_admin_boot(enum _v3_boot_types type, uint16_t user_id, char *reason) {/*{{{*/
         return;
     }
 
+    ev.data = malloc(sizeof(v3_event_data));
+    memset(ev.data, 0, sizeof(v3_event_data));
     ev.user.id = user_id;
-    strncpy(ev.data.reason, reason ? reason : "", sizeof(ev.data.reason));
+    strncpy(ev.data->reason, reason ? reason : "", sizeof(ev.data->reason));
 
     switch (type) {
         case V3_BOOT_KICK:
@@ -4268,6 +4277,8 @@ v3_userlist_update(v3_account *account) {/*{{{*/
     }
 
     memset(&ev, 0, sizeof(v3_event));
+    ev.data = malloc(sizeof(v3_event_data));
+    memset(ev.data, 0, sizeof(v3_event_data));
 
     if (account->perms.account_id) {
         ev.type = V3_EVENT_USERLIST_MODIFY;
@@ -4275,15 +4286,15 @@ v3_userlist_update(v3_account *account) {/*{{{*/
         ev.type = V3_EVENT_USERLIST_ADD;
     }
 
-    ev.data.account.perms = account->perms;
-    strncpy(ev.data.account.username, account->username, sizeof(ev.data.account.username) - 1);
-    strncpy(ev.data.account.owner, account->owner, sizeof(ev.data.account.owner) - 1);
-    strncpy(ev.data.account.notes, account->notes, sizeof(ev.data.account.notes) - 1);
-    strncpy(ev.data.account.lock_reason, account->lock_reason, sizeof(ev.data.account.lock_reason) - 1);
-    ev.data.account.chan_admin_count = account->chan_admin_count;
-    memcpy(ev.data.account.chan_admin, account->chan_admin, ev.data.account.chan_admin_count * 2);
-    ev.data.account.chan_auth_count = account->chan_auth_count;
-    memcpy(ev.data.account.chan_auth, account->chan_auth, ev.data.account.chan_auth_count * 2);
+    ev.data->account.perms = account->perms;
+    strncpy(ev.data->account.username, account->username, sizeof(ev.data->account.username) - 1);
+    strncpy(ev.data->account.owner, account->owner, sizeof(ev.data->account.owner) - 1);
+    strncpy(ev.data->account.notes, account->notes, sizeof(ev.data->account.notes) - 1);
+    strncpy(ev.data->account.lock_reason, account->lock_reason, sizeof(ev.data->account.lock_reason) - 1);
+    ev.data->account.chan_admin_count = account->chan_admin_count;
+    memcpy(ev.data->account.chan_admin, account->chan_admin, ev.data->account.chan_admin_count * 2);
+    ev.data->account.chan_auth_count = account->chan_auth_count;
+    memcpy(ev.data->account.chan_auth, account->chan_auth, ev.data->account.chan_auth_count * 2);
 
     _v3_lock_sendq();
     _v3_debug(V3_DEBUG_EVENT, "sending %lu bytes to event pipe", sizeof(v3_event));
@@ -4500,6 +4511,8 @@ v3_channel_update(v3_channel *channel, const char *password) {/*{{{*/
     }
 
     memset(&ev, 0, sizeof(v3_event));
+    ev.data = malloc(sizeof(v3_event_data));
+    memset(ev.data, 0, sizeof(v3_event_data));
 
     if (channel->id) {
         ev.type = V3_EVENT_CHAN_MODIFY;
@@ -4507,7 +4520,7 @@ v3_channel_update(v3_channel *channel, const char *password) {/*{{{*/
         ev.type = V3_EVENT_CHAN_ADD;
     }
     
-    memcpy(&(ev.data.channel), channel, sizeof(v3_channel) - sizeof(void*) * 4);
+    memcpy(&(ev.data->channel), channel, sizeof(v3_channel) - sizeof(void*) * 4);
     if (password) {
         strncpy(ev.text.password, password, 31);
     }
@@ -4630,11 +4643,13 @@ v3_rank_update(v3_rank *rank) {/*{{{*/
     }
     
     memset(&ev, 0, sizeof(v3_event));
+    ev.data = malloc(sizeof(v3_event_data));
+    memset(ev.data, 0, sizeof(v3_event_data));
     
     if (rank->id) ev.type = V3_EVENT_RANK_MODIFY;
     else ev.type = V3_EVENT_RANK_ADD;
-    ev.data.rank.id = rank->id;
-    ev.data.rank.level = rank->level;
+    ev.data->rank.id = rank->id;
+    ev.data->rank.level = rank->level;
     strncpy(ev.text.name, rank->name, 31);
     strncpy(ev.text.comment, rank->description, 127);
 
@@ -4662,14 +4677,16 @@ v3_rank_remove(uint16_t rankid) {/*{{{*/
     }
     
     memset(&ev, 0, sizeof(v3_event));
+    ev.data = malloc(sizeof(v3_event_data));
+    memset(ev.data, 0, sizeof(v3_event_data));
     ev.type = V3_EVENT_RANK_REMOVE;
     v3_rank *rank = v3_get_rank(rankid);
     if (! rank) {
         _v3_func_leave("v3_rank_remove");
         return;
     }
-    ev.data.rank.id = rankid;
-    ev.data.rank.level = rank->level;
+    ev.data->rank.id = rankid;
+    ev.data->rank.level = rank->level;
     strncpy(ev.text.name, rank->name, 31);
     strncpy(ev.text.comment, rank->description, 127);
 
@@ -5018,6 +5035,8 @@ _v3_create_event(uint16_t event) {/*{{{*/
     v3_event *ev;
     ev = malloc(sizeof(v3_event));
     memset(ev, 0, sizeof(v3_event));
+    ev->data = malloc(sizeof(v3_event_data));
+    memset(ev->data, 0, sizeof(v3_event_data));
     if(event) {
         ev->type = event;
     }
@@ -5039,6 +5058,12 @@ _v3_get_last_event(int *len) {/*{{{*/
 }/*}}}*/
 
 void
+v3_free_event(v3_event *ev) {/*{{{*/
+    free(ev->data);
+    free(ev);
+}/*}}}*/
+
+void
 v3_clear_events(void) {/*{{{*/
     v3_event *ev;
     if (_v3_eventq == NULL) {
@@ -5046,7 +5071,7 @@ v3_clear_events(void) {/*{{{*/
     }
     while (_v3_eventq != NULL) {
         ev = _v3_eventq->next;
-        free(_v3_eventq);
+        v3_free_event(_v3_eventq);
         _v3_eventq = ev;
     }
     return;
@@ -5269,6 +5294,8 @@ v3_send_audio(uint16_t send_type, uint32_t rate, uint8_t *pcm, uint32_t length, 
         return 0;
     }
     memset(&ev, 0, sizeof(v3_event));
+    ev.data = malloc(sizeof(v3_event_data));
+    memset(ev.data, 0, sizeof(v3_event_data));
     ev.type = V3_EVENT_PLAY_AUDIO;
     ev.pcm.send_type = send_type;
     ev.pcm.rate = rate;
@@ -5307,7 +5334,7 @@ v3_send_audio(uint16_t send_type, uint32_t rate, uint8_t *pcm, uint32_t length, 
         }
         insamples  /= sizeof(int16_t) * channels;
         outsamples /= sizeof(int16_t) * channels;
-        err = speex_resampler_process_interleaved_int(resampler, (void *)pcm, &insamples, (void *)ev.data.sample, &outsamples);
+        err = speex_resampler_process_interleaved_int(resampler, (void *)pcm, &insamples, (void *)ev.data->sample, &outsamples);
         if (err) {
             _v3_error("resampling error: %d: %s\n", err, speex_resampler_strerror(err));
             _v3_func_leave("v3_send_audio");
@@ -5321,7 +5348,7 @@ v3_send_audio(uint16_t send_type, uint32_t rate, uint8_t *pcm, uint32_t length, 
         return codec->rate; // this is still needed for mangleraudio
 #endif
     } else {
-        memcpy(ev.data.sample, pcm, length);
+        memcpy(ev.data->sample, pcm, length);
     }
     _v3_lock_sendq();
     _v3_debug(V3_DEBUG_EVENT, "sending %lu bytes to event pipe for event type %d (pcm length %d)", sizeof(v3_event), ev.type, length);

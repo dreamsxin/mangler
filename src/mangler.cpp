@@ -1224,7 +1224,7 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                         }
                         // And queue the audio
                         if (outputAudio[ev->user.id]) {
-                            outputAudio[ev->user.id]->queue(ev->pcm.length, (uint8_t *)ev->data.sample);
+                            outputAudio[ev->user.id]->queue(ev->pcm.length, (uint8_t *)ev->data->sample);
                         }
                     }
                 }
@@ -1236,8 +1236,8 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                     if (! connectedServerName.empty()) {
                         // we're not launching a space shuttle here, no need for
                         // anything super complex
-                        for (uint32_t ctr = 0; ctr < strlen(ev->data.motd); ctr++) {
-                            motdhash += ev->data.motd[ctr] + ctr;
+                        for (uint32_t ctr = 0; ctr < strlen(ev->data->motd); ctr++) {
+                            motdhash += ev->data->motd[ctr] + ctr;
                         }
                     }
                     if (connectedServerName.empty() || motdAlways || motdhash != config.servers[connectedServerName]["MOTDhash"].toULong()) {
@@ -1245,7 +1245,7 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                         builder->get_widget("motdWindow", window);
                         window->set_title("Mangler - MOTD");
                         builder->get_widget("motdTextView", textview);
-                        tb->set_text(c_to_ustring(ev->data.motd));
+                        tb->set_text(c_to_ustring(ev->data->motd));
                         textview->set_buffer(tb);
                         window->show();
                         if (! connectedServerName.empty()) {
@@ -1323,9 +1323,9 @@ bool Mangler::getNetworkEvent() {/*{{{*/
             case V3_EVENT_CHAT_MESSAGE:/*{{{*/
                 if (v3_is_loggedin()) {
                     if (ev->user.id == 0)
-                        chat->addRconMessage(c_to_ustring(ev->data.chatmessage));
+                        chat->addRconMessage(c_to_ustring(ev->data->chatmessage));
                     else
-                        chat->addChatMessage(ev->user.id, c_to_ustring(ev->data.chatmessage));
+                        chat->addChatMessage(ev->user.id, c_to_ustring(ev->data->chatmessage));
                 }
                 break;/*}}}*/
             case V3_EVENT_PRIVATE_CHAT_START:/*{{{*/
@@ -1381,7 +1381,7 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                     }
                     if (privateChatWindows[remote]) {
                         if (!ev->flags) { // set to true on error
-                            privateChatWindows[remote]->addChatMessage(ev->user.privchat_user2, c_to_ustring(ev->data.chatmessage));
+                            privateChatWindows[remote]->addChatMessage(ev->user.privchat_user2, c_to_ustring(ev->data->chatmessage));
                         } else {
                             privateChatWindows[remote]->addMessage("*** error sending message to remote user");
                         }
@@ -1468,18 +1468,18 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                 break;/*}}}*/
             case V3_EVENT_RANK_ADD:/*{{{*/
                 {
-                    v3_rank *rank = v3_get_rank(ev->data.rank.id);
+                    v3_rank *rank = v3_get_rank(ev->data->rank.id);
                     admin->rankAdded(rank);
                 }
                 break;/*}}}*/
             case V3_EVENT_RANK_REMOVE:/*{{{*/
                 {
-                    admin->rankRemoved(ev->data.rank.id);
+                    admin->rankRemoved(ev->data->rank.id);
                 }
                 break;/*}}}*/
             case V3_EVENT_RANK_MODIFY:/*{{{*/
                 {
-                    v3_rank *rank = v3_get_rank(ev->data.rank.id);
+                    v3_rank *rank = v3_get_rank(ev->data->rank.id);
                     admin->rankUpdated(rank);
                 }
                 break;/*}}}*/
@@ -1537,7 +1537,7 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                 fprintf(stderr, "******************************************************** got unknown event type %d\n", ev->type);
         }
         channelTree->expand_all();
-        free(ev);
+        v3_free_event(ev);
         gdk_threads_leave();
     }
     return true;

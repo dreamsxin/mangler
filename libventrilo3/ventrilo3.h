@@ -334,6 +334,56 @@ enum _v3_boot_types {
 // v3_event.flags values for V3_EVENT_USER_LOGIN
 #define V3_LOGIN_FLAGS_EXISTING (1 << 0)    // user was added from userlist sent at login (existing user)
 
+typedef union _v3_event_data v3_event_data;
+union _v3_event_data {
+    struct {
+        v3_permissions perms;
+        char username[32];
+        char owner[32];
+        char notes[256];
+        char lock_reason[128];
+        int chan_admin_count;
+        uint16_t chan_admin[32];
+        int chan_auth_count;
+        uint16_t chan_auth[32];
+    } account;
+    struct {
+        uint16_t id;
+        uint16_t parent;
+        uint8_t  unknown_1;
+        uint8_t  password_protected;
+        uint16_t unknown_2;
+        uint16_t allow_recording;
+        uint16_t allow_cross_channel_transmit;
+        uint16_t allow_paging;
+        uint16_t allow_wave_file_binds;
+        uint16_t allow_tts_binds;
+        uint16_t allow_u2u_transmit;
+        uint16_t disable_guest_transmit;
+        uint16_t disable_sound_events;
+        uint16_t voice_mode;
+        uint16_t transmit_time_limit;
+        uint16_t allow_phantoms;
+        uint16_t max_clients;
+        uint16_t allow_guests;
+        uint16_t inactive_exempt;
+        uint16_t protect_mode;
+        uint16_t transmit_rank_level;
+        uint16_t channel_codec;
+        uint16_t channel_format;
+        uint16_t allow_voice_target;
+        uint16_t allow_command_target;
+    } channel;
+    struct {
+        uint16_t id;
+        uint16_t level;
+    } rank;
+    int16_t sample16[16384];
+    uint8_t sample[32768];
+    char    motd[2048];
+    char    chatmessage[256];
+    char    reason[128];
+};
 typedef struct _v3_event v3_event;
 struct _v3_event {
     uint16_t type;
@@ -379,57 +429,10 @@ struct _v3_event {
         uint16_t property;
         uint8_t  value;
     } serverproperty;
-    union {
-        struct {
-            v3_permissions perms;
-            char username[32];
-            char owner[32];
-            char notes[256];
-            char lock_reason[128];
-            int chan_admin_count;
-            uint16_t chan_admin[32];
-            int chan_auth_count;
-            uint16_t chan_auth[32];
-        } account;
-        struct {
-            uint16_t id;
-            uint16_t parent;
-            uint8_t  unknown_1;
-            uint8_t  password_protected;
-            uint16_t unknown_2;
-            uint16_t allow_recording;
-            uint16_t allow_cross_channel_transmit;
-            uint16_t allow_paging;
-            uint16_t allow_wave_file_binds;
-            uint16_t allow_tts_binds;
-            uint16_t allow_u2u_transmit;
-            uint16_t disable_guest_transmit;
-            uint16_t disable_sound_events;
-            uint16_t voice_mode;
-            uint16_t transmit_time_limit;
-            uint16_t allow_phantoms;
-            uint16_t max_clients;
-            uint16_t allow_guests;
-            uint16_t inactive_exempt;
-            uint16_t protect_mode;
-            uint16_t transmit_rank_level;
-            uint16_t channel_codec;
-            uint16_t channel_format;
-            uint16_t allow_voice_target;
-            uint16_t allow_command_target;
-        } channel;
-        struct {
-            uint16_t id;
-            uint16_t level;
-        } rank;
-        int16_t sample16[16384];
-        uint8_t sample[32768];
-        char    motd[2048];
-        char    chatmessage[256];
-        char    reason[128];
-    } data;
     v3_event *next;
+    v3_event_data *data;
 };
+
 
 
 /*
@@ -689,6 +692,7 @@ uint32_t    v3_get_bytes_sent(void);
 uint32_t    v3_get_packets_recv(void);
 uint32_t    v3_get_packets_sent(void);
 void        v3_clear_events(void);
+void        v3_free_event(v3_event *ev);
 uint32_t    v3_get_codec_rate(uint16_t codec, uint16_t format);
 const v3_codec *v3_get_codec(uint16_t codec, uint16_t format);
 const v3_codec *v3_get_channel_codec(uint16_t channel_id);
