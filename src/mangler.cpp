@@ -425,6 +425,7 @@ void Mangler::onDisconnectHandler(void) {/*{{{*/
 #ifdef HAVE_XOSD
         osd->destroyOsd();
 #endif
+        outputAudio.clear();
         channelTree->clear();
         admin->clearChannels();
         builder->get_widget("xmitButton", togglebutton);
