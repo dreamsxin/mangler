@@ -159,6 +159,16 @@ char *_v3_permissions_errors[] = {
     "The Guest account can not be locked without having at least one other account defined and is not locked it self. Otherwise, you would be locking everyone out of the server.",
 };
 
+char *_v3_ranks_errors[] = {
+    "Invalid ID specified.",
+    "Duplicate Abbreviation.",
+    "Duplicate Description.",
+    "Insufficient access rights.",
+    NULL,
+    "Maximum number of allowed Ranks has been reached.",
+    "Missing abreviation or description.",
+};
+
 char *_v3_bitmasks[] = {
     "0.0.0.0",
     "128.0.0.0",

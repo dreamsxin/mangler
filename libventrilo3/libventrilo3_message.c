@@ -407,16 +407,17 @@ _v3_get_0x36(_v3_net_message *msg) {/*{{{*/
     _v3_debug(V3_DEBUG_PACKET_PARSE, "packet contains %d ranks.  message subtype %02X", m->rank_count, m->subtype);
     _v3_debug(V3_DEBUG_PACKET_PARSE, "allocating %d bytes for ranklist packet", sizeof(_v3_msg_0x36));
     m = realloc(m, sizeof(_v3_msg_0x36));
-    _v3_debug(V3_DEBUG_PACKET_PARSE, "allocating %d bytes (%d ranks * %d bytes)", m->rank_count*sizeof(_v3_msg_rank), m->rank_count, sizeof(_v3_msg_rank));
-    m->rank_list = calloc(m->rank_count, sizeof(_v3_msg_rank));
-    for (ctr = 0, offset = msg->data + 16; ctr < m->rank_count; ctr++) {
-        offset += _v3_get_msg_rank(offset, &m->rank_list[ctr]);
-        _v3_debug(V3_DEBUG_PACKET_PARSE, "got rank: id: %d | name: %s | description: %s",
+    if (m->rank_count) {
+        _v3_debug(V3_DEBUG_PACKET_PARSE, "allocating %d bytes (%d ranks * %d bytes)", m->rank_count*sizeof(_v3_msg_rank), m->rank_count, sizeof(_v3_msg_rank));
+        m->rank_list = calloc(m->rank_count, sizeof(_v3_msg_rank));
+        for (ctr = 0, offset = msg->data + 16; ctr < m->rank_count; ctr++) {
+            offset += _v3_get_msg_rank(offset, &m->rank_list[ctr]);
+            _v3_debug(V3_DEBUG_PACKET_PARSE, "got rank: id: %d | name: %s | description: %s",
                 m->rank_list[ctr].id,
                 m->rank_list[ctr].name,
                 m->rank_list[ctr].description
                 );
-
+        }
     }
     msg->contents = m;
     _v3_func_leave("_v3_get_0x36");
@@ -426,15 +427,17 @@ int
 _v3_destroy_0x36(_v3_net_message *msg) {/*{{{*/
     _v3_msg_0x36 *m;
     int ctr;
-
     m = msg->contents;
     _v3_func_enter("_v3_destroy_0x36");
-    for (ctr = 0; ctr < m->rank_count; ctr++) {
-        _v3_debug(V3_DEBUG_PACKET_PARSE, "freeing resources for rank %d: %s", m->rank_list[ctr].id, m->rank_list[ctr].name);
-        free(m->rank_list[ctr].name);
-        free(m->rank_list[ctr].description);
+    
+    if (m->rank_count) {
+        for (ctr = 0; ctr < m->rank_count; ctr++) {
+            _v3_debug(V3_DEBUG_PACKET_PARSE, "freeing resources for rank %d: %s", m->rank_list[ctr].id, m->rank_list[ctr].name);
+            free(m->rank_list[ctr].name);
+            free(m->rank_list[ctr].description);
+        }
+        free(m->rank_list);
     }
-    free(m->rank_list);
     _v3_func_leave("_v3_destroy_0x36");
     return true;
 }/*}}}*/

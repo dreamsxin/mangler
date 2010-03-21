@@ -2476,6 +2476,27 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
 
                 _v3_lock_ranklist();
 
+                if (m->error_id) {
+                    if (m->error_id != 5) {
+                        char *error;
+
+                        if (m->error_id > (sizeof(_v3_ranks_errors) / sizeof(_v3_ranks_errors[0])))
+                            error = "Unknown";
+                        else
+                            error = _v3_ranks_errors[m->error_id - 1];
+
+                        v3_event *ev = _v3_create_event(V3_EVENT_ERROR_MSG);
+                        strncpy(ev->error.message, "Rank editor error:\n", sizeof(ev->error.message));
+                        strncat(ev->error.message, error, sizeof(ev->error.message));
+                        v3_queue_event(ev);
+                    }
+
+                    _v3_destroy_0x36(msg);
+                    _v3_destroy_packet(msg);
+                    _v3_func_leave("_v3_process_message");
+                    return V3_OK;
+                }
+
                 rl = calloc(m->rank_count, sizeof(v3_user));
                 switch (m->subtype) {
                     case V3_REMOVE_RANK:
@@ -3936,6 +3957,7 @@ _v3_logout(void) {/*{{{*/
     _v3_destroy_decoders();
     _v3_destroy_channellist();
     _v3_destroy_userlist();
+    _v3_destroy_ranklist();
     _v3_destroy_accountlist();
     memset(v3_luser.channel_admin, 0, 65535);
     v3_luser.id = -1;
