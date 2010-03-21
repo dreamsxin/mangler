@@ -275,20 +275,19 @@ ManglerAdmin::ManglerAdmin(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
     RankEditorTree->signal_cursor_changed().connect(sigc::mem_fun(this, &ManglerAdmin::RankEditorTree_cursor_changed_cb));
 
     builder->get_widget("RankEditor", RankEditor);
-    RankEditor->set_sensitive(false);
 
     builder->get_widget("RankAdd", button);
     button->signal_clicked().connect(sigc::mem_fun(this, &ManglerAdmin::RankAdd_clicked_cb));
     
     builder->get_widget("RankRemove", button);
     button->signal_clicked().connect(sigc::mem_fun(this, &ManglerAdmin::RankRemove_clicked_cb));
-    button->set_sensitive(false);
 
     builder->get_widget("RankUpdate", button);
     button->signal_clicked().connect(sigc::mem_fun(this, &ManglerAdmin::RankUpdate_clicked_cb));
     
-    currentRankID = 0xff;
-
+    /* set up the rank list */
+    clearRanks();
+    
     /* set up the channel lists */
     readUserTemplates();
     clearChannels();
@@ -1618,4 +1617,15 @@ ManglerAdmin::RankRemove_clicked_cb(void) {/*{{{*/
     if (confirmDlg.run() == Gtk::RESPONSE_YES) {
         v3_rank_remove(rankid);
     }
+}/*}}}*/
+void
+ManglerAdmin::clearRanks(void) {/*{{{*/
+    RankEditorModel->clear();
+    
+    RankEditor->set_sensitive(false);
+    setWidgetSensitive("RankAdd", true);
+    setWidgetSensitive("RankRemove", false);
+    setWidgetSensitive("RankUpdate", true);
+
+    currentRankID = 0xff;
 }/*}}}*/

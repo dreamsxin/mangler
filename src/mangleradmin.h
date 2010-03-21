@@ -55,6 +55,7 @@ class ManglerAdmin {
         void rankAdded(v3_rank *rank);
         void rankRemoved(uint16_t rankid);
         void rankRemoved(v3_rank *rank);
+        void clearRanks(void);
         Gtk::Alignment                      *ServerTab;
         Gtk::Alignment                      *ChannelsTab;
         Gtk::Alignment                      *UsersTab;
