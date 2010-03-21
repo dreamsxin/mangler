@@ -373,7 +373,7 @@ ManglerChannelTree::refreshChannel(uint32_t id) {/*{{{*/
 void
 ManglerChannelTree::refreshAllChannels(void) {/*{{{*/
     _refreshAllChannels(channelStore->children());
-    if (sortAlphanumeric) {
+    if (!sortAlphanumeric) {
         channelStore->set_sort_func (0, sigc::mem_fun (*this, &ManglerChannelTree::sortFunction));
         channelStore->set_sort_column(channelRecord.displayName, Gtk::SORT_ASCENDING);
     } else {
@@ -406,7 +406,7 @@ ManglerChannelTree::sortFunction(const Gtk::TreeModel::iterator& a, const Gtk::T
             return 1;
         } else {
             // Both are Channels
-            if (sortAlphanumeric) {
+            if (!sortAlphanumeric) {
                 //Sort alphabetical
                 return natsort(sortName_a, sortName_b);
             } else {
