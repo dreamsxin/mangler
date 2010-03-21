@@ -323,8 +323,10 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
     builder->get_widget("statusIconMenu", statusIconMenu);
     builder->get_widget("muteMicCheckMenuItem", checkmenuitem);
     checkmenuitem->signal_toggled().connect(sigc::mem_fun(this, &Mangler::muteMicCheckMenuItem_toggled_cb));
+    checkmenuitem->set_active(config["muteMic"].toBool());
     builder->get_widget("muteSoundCheckMenuItem", checkmenuitem);
     checkmenuitem->signal_toggled().connect(sigc::mem_fun(this, &Mangler::muteSoundCheckMenuItem_toggled_cb));
+    checkmenuitem->set_active(config["muteSound"].toBool());
     iconified = false;
 
     // Music (Now playing)
@@ -795,12 +797,14 @@ void Mangler::stopTransmit(void) {/*{{{*/
 void Mangler::muteSoundCheckButton_toggled_cb(void) {/*{{{*/
     builder->get_widget("muteSoundCheckButton", checkbutton);
     muteSound = checkbutton->get_active();
+    config["muteSound"] = muteSound;
 }/*}}}*/
 
 // Quick Mic Mute
 void Mangler::muteMicCheckButton_toggled_cb(void) {/*{{{*/
     builder->get_widget("muteMicCheckButton", checkbutton);
     muteMic = checkbutton->get_active();
+    config["muteMic"] = muteMic;
     if (muteMic && isTransmitting) {
         stopTransmit();
     } else if (!muteMic && (isTransmittingMouse || isTransmittingKey || isTransmittingButton)) {
