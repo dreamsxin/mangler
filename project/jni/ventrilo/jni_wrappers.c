@@ -81,6 +81,10 @@ JNIEXPORT jint JNICALL Java_org_mangler_VentriloInterface_channelcount() {
 	return v3_channel_count();
 }
 
+JNIEXPORT int JNICALL Java_org_mangler_VentriloInterface_debuglevel(jint level) {
+	return v3_debuglevel(level);
+}
+
 JNIEXPORT jint JNICALL Java_org_mangler_VentriloInterface_login(JNIEnv* env, jobject obj, jstring server, jstring username, jstring password, jstring phonetic) {
 	v3_debuglevel(V3_DEBUG_INTERNAL);
 	char* _server	= (char*)(*env)->GetStringUTFChars(env, server, 0);
@@ -131,63 +135,86 @@ JNIEXPORT jint JNICALL Java_org_mangler_VentriloInterface_getevent(JNIEnv* env, 
 			ev->type
 		);
 		
-		// Reduce copying by only grabbing what is necessary:
 		switch(ev->type) {
 			case V3_EVENT_PLAY_AUDIO:
 				{
-					_v3_debug(V3_DEBUG_INTERNAL, "%d (%.8X)", ev->pcm.length, ev->pcm.length);
+					// Grab PCM object.
+					jobject pcm = 
+					(*env)->GetObjectField(
+						env, 
+						eventdata, 
+						(*env)->GetFieldID(env, event_class, "pcm", "Lorg/mangler/VentriloEventData$_pcm;")
+					);
+					jclass pcm_class = (*env)->GetObjectClass(env, pcm);
 					
 					// Set PCM fields.
 					(*env)->SetIntField(
 						env, 
-						eventdata, 
-						(*env)->GetFieldID(env, event_class, "pcm_length",	"I"), 
+						pcm, 
+						(*env)->GetFieldID(env, pcm_class, "length", "I"), 
 						ev->pcm.length
 					);
 					(*env)->SetShortField(
 						env, 
-						eventdata, 
-						(*env)->GetFieldID(env, event_class, "pcm_send_type", "S"), 
+						pcm, 
+						(*env)->GetFieldID(env, pcm_class, "send_type", "S"), 
 						ev->pcm.send_type
 					);
 					(*env)->SetIntField(
 						env, 
-						eventdata, 
-						(*env)->GetFieldID(env, event_class, "pcm_rate", "I"), 
+						pcm, 
+						(*env)->GetFieldID(env, pcm_class, "rate", "I"), 
 						ev->pcm.rate
 					);
 					(*env)->SetByteField(
 						env, 
-						eventdata, 
-						(*env)->GetFieldID(env, event_class, "pcm_channels", "B"), 
+						pcm, 
+						(*env)->GetFieldID(env, pcm_class, "channels", "B"), 
 						ev->pcm.channels
 					);
 					
-					// User ID
-					(*env)->SetShortField(
+					// Grab user object.
+					jobject user = 
+					(*env)->GetObjectField(
 						env, 
 						eventdata, 
-						(*env)->GetFieldID(env, event_class, "user_id", "S"), 
+						(*env)->GetFieldID(env, event_class, "user", "Lorg/mangler/VentriloEventData$_user;")
+					);
+					jclass user_class = (*env)->GetObjectClass(env, user);
+					
+					// Set user field(s).
+					(*env)->SetShortField(
+						env, 
+						user, 
+						(*env)->GetFieldID(env, user_class, "id", "S"), 
 						ev->user.id
 					);
 					
-					// Sample
-					/*
+					// Grab data object.
+					jobject data = 
+					(*env)->GetObjectField(
+						env, 
+						eventdata, 
+						(*env)->GetFieldID(env, event_class, "data", "Lorg/mangler/VentriloEventData$_data;")
+					);
+					jclass data_class = (*env)->GetObjectClass(env, data);
+					
+					// Set sample.
 					(*env)->SetByteArrayRegion(
 						env, 
 						(*env)->GetObjectField(
 							env,
-							eventdata,
-							(*env)->GetFieldID(env, event_class, "data_sample", "[B")
+							data,
+							(*env)->GetFieldID(env, data_class, "sample", "[B")
 						), 
 						0, 
 						ev->pcm.length, 
-						ev->data.sample
-					);*/
+						ev->data->sample
+					);
+					 
 				}
 				break;
 		}
-		
 		
 		free(ev);
 	}

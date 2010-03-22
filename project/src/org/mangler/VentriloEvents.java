@@ -1,7 +1,5 @@
 package org.mangler;
 
-/* Cannot use enum due to the way the Java implements it compared to our native implementation. */
-
 public class VentriloEvents {
     public static final int V3_EVENT_STATUS 					= 1;
     public static final int V3_EVENT_PING 						= 2;
