@@ -127,6 +127,7 @@ char *id3strdup(mpg123_string *inlines);
 int get_random_number(int min, int max);
 void send_now_playing(int filenum);
 int select_channel(void);
+void shuffle_musiclist(void);
 
 
 void ctrl_c(int signum) {
@@ -198,7 +199,7 @@ void *jukebox_player(void *connptr) {
             switch (ev->type) {
                 case V3_EVENT_DISCONNECT:
                     should_exit = true;
-                    free(ev);
+                    v3_free_event(ev);
                     pthread_exit(NULL);
                     break;
                 case V3_EVENT_LOGIN_COMPLETE:
@@ -212,6 +213,7 @@ void *jukebox_player(void *connptr) {
                     } else {
                         v3_change_channel(atoi(conninfo->channelid), "");
                     }
+                    sleep(1);
                     v3_join_chat();
                     connected = true;
                     break;
@@ -241,11 +243,11 @@ void *jukebox_player(void *connptr) {
                         // ignore commands from ourself
                         break;
                     }
-                    if (strcmp(ev->data.chatmessage, "!play worst band in the world") == 0) {
+                    if (strcmp(ev->data->chatmessage, "!play worst band in the world") == 0) {
                         v3_send_chat_message("We don't have any Creed songs...");
-                    } else if (strcasecmp(ev->data.chatmessage, "!play creed") == 0) {
+                    } else if (strcasecmp(ev->data->chatmessage, "!play creed") == 0) {
                         v3_send_chat_message("No.");
-                    } else if (strcasecmp(ev->data.chatmessage, "!help") == 0) {
+                    } else if (strcasecmp(ev->data->chatmessage, "!help") == 0) {
                         v3_send_chat_message("!start -- start playing music");
                         v3_send_chat_message("!stop -- stop playing music");
                         v3_send_chat_message("!next -- play a new random track");
@@ -255,9 +257,17 @@ void *jukebox_player(void *connptr) {
                         v3_send_chat_message("!volume [0.0-1.0] -- Set the volume to the specified level: ex: !volume 0.5");
                         v3_send_chat_message("!polite [off|0-60] -- Pauses playing when audio is received for the specified duration");
                         break;
-                    } else if (strncmp(ev->data.chatmessage, "!polite", 7) == 0) {
-                        if (ev->data.chatmessage[8]) {
-                            char *level = ev->data.chatmessage + 8;
+                    } else if (strncmp(ev->data->chatmessage, "!shuffle", 8) == 0) {
+                        if (mh) {
+                            v3_stop_audio();
+                            close_mp3(mh);
+                            mh = NULL;
+                        }
+                        playing = false;
+                        v3_send_chat_message("Playlist has been re-shuffled");
+                    } else if (strncmp(ev->data->chatmessage, "!polite", 7) == 0) {
+                        if (ev->data->chatmessage[8]) {
+                            char *level = ev->data->chatmessage + 8;
                             int newpol = -1;
                             if (strncmp(level, " off", 4)) {
                                 newpol = atoi(level);
@@ -273,8 +283,8 @@ void *jukebox_player(void *connptr) {
                             v3_send_chat_message(chat_msg);
                         } else v3_send_chat_message("politeness is now off");
                         break;
-                    } else if (! stopped && strncmp(ev->data.chatmessage, "!volume ", 8) == 0) {
-                        char *volume = ev->data.chatmessage + 8;
+                    } else if (! stopped && strncmp(ev->data->chatmessage, "!volume ", 8) == 0) {
+                        char *volume = ev->data->chatmessage + 8;
                         if (atof(volume) == 0 || atof(volume) > 1) {
                             v3_send_chat_message("invalid volume level.");
                             break;
@@ -284,15 +294,15 @@ void *jukebox_player(void *connptr) {
                         int vlev = (int)( conninfo->volume * 100.0 );
                         sprintf(chat_msg, "volume is now %d%%", vlev);
                         v3_send_chat_message(chat_msg);
-                    } else if (strncmp(ev->data.chatmessage, "!play ", 6) == 0 || strncmp(ev->data.chatmessage, "!playonly ", 10) == 0) {
+                    } else if (strncmp(ev->data->chatmessage, "!play ", 6) == 0 || strncmp(ev->data->chatmessage, "!playonly ", 10) == 0) {
                         char *searchspec;
                         int ctr;
                         int found = false;
-                        if (strncmp(ev->data.chatmessage, "!playonly ", 10) == 0) {
-                            strncpy(playonly, ev->data.chatmessage + 10, 64);
+                        if (strncmp(ev->data->chatmessage, "!playonly ", 10) == 0) {
+                            strncpy(playonly, ev->data->chatmessage + 10, 64);
                             searchspec = playonly;
                         } else {
-                            searchspec = ev->data.chatmessage + 6;
+                            searchspec = ev->data->chatmessage + 6;
                             playonly[0] = 0;
                         }
                         for (ctr = 0; ctr < musicfile_count; ctr++) {
@@ -352,25 +362,25 @@ void *jukebox_player(void *connptr) {
                                 v3_start_audio(V3_AUDIO_SENDTYPE_U2CCUR);
                             }
                         }
-                    } else if (! stopped && strcmp(ev->data.chatmessage, "!next") == 0) {
+                    } else if (! stopped && strcmp(ev->data->chatmessage, "!next") == 0) {
                         if (mh) {
                             v3_stop_audio();
                             close_mp3(mh);
                             mh = NULL;
                         }
                         playing = false;
-                    } else if (strcmp(ev->data.chatmessage, "!move") == 0) {
+                    } else if (strcmp(ev->data->chatmessage, "!move") == 0) {
                         user = v3_get_user(ev->user.id);
                         v3_change_channel(user->channel, "");
                         v3_free_user(user);
-                    } else if (stopped && strcmp(ev->data.chatmessage, "!start") == 0) {
+                    } else if (stopped && strcmp(ev->data->chatmessage, "!start") == 0) {
                         if (codec->rate >= 11025) {
                             stopped = false;
                             v3_send_chat_message("Starting jukebox...");
                         } else {
                             v3_send_chat_message("This channel sucks. I'm not playing here.");
                         }
-                    } else if (! stopped && strcmp(ev->data.chatmessage, "!stop") == 0) {
+                    } else if (! stopped && strcmp(ev->data->chatmessage, "!stop") == 0) {
                         v3_send_chat_message("Stopping jukebox...");
                         if (mh) {
                             v3_stop_audio();
@@ -381,11 +391,11 @@ void *jukebox_player(void *connptr) {
                         playing = false;
                         stopped = true;
                     } else {
-                        fprintf(stderr, "chat message: '%s'\n", ev->data.chatmessage);
+                        fprintf(stderr, "chat message: '%s'\n", ev->data->chatmessage);
                     }
                     break;
             }
-            free(ev);
+            v3_free_event(ev);
         }
         gettimeofday(&now, NULL);
         if (connected && ! stopped && (politeness < 0 || timediff(&last_audio, &now) >= politeness * 1000000 + 500000 )) {
