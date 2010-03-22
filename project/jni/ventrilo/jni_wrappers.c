@@ -122,21 +122,74 @@ JNIEXPORT jint JNICALL Java_org_mangler_VentriloInterface_getevent(JNIEnv* env, 
 	v3_event *ev = v3_get_event(V3_BLOCK);
 	if(ev != NULL) {
 		jclass event_class = (*env)->GetObjectClass(env, eventdata);
-		jfieldID _data = (*env)->GetFieldID(env, event_class, "data", "Lorg/mangler/EventData$_data;");
-		
-		// Returning NULL when it shouldn't.
-		jobject data  = (*env)->GetObjectField(env, eventdata, _data);
-		jclass object_class = (*env)->GetObjectClass(env, data); 
-		
-		jfieldID _sample = (*env)->GetFieldID(env, object_class, "sample", "[B");
-		jbyteArray sample = (*env)->GetObjectField(env, data, _sample);
-		
-		jfieldID _field = (*env)->GetFieldID(env, event_class, "ping", "S");
-		(*env)->SetShortField(env, eventdata, _field, ev->ping);
 
-		jint type = ev->type;
+		// Event type.
+		(*env)->SetShortField(
+			env, 
+			eventdata, 
+			(*env)->GetFieldID(env, event_class, "type", "S"), 
+			ev->type
+		);
+		
+		// Reduce copying by only grabbing what is necessary:
+		switch(ev->type) {
+			case V3_EVENT_PLAY_AUDIO:
+				{
+					_v3_debug(V3_DEBUG_INTERNAL, "%d (%.8X)", ev->pcm.length, ev->pcm.length);
+					
+					// Set PCM fields.
+					(*env)->SetIntField(
+						env, 
+						eventdata, 
+						(*env)->GetFieldID(env, event_class, "pcm_length",	"I"), 
+						ev->pcm.length
+					);
+					(*env)->SetShortField(
+						env, 
+						eventdata, 
+						(*env)->GetFieldID(env, event_class, "pcm_send_type", "S"), 
+						ev->pcm.send_type
+					);
+					(*env)->SetIntField(
+						env, 
+						eventdata, 
+						(*env)->GetFieldID(env, event_class, "pcm_rate", "I"), 
+						ev->pcm.rate
+					);
+					(*env)->SetByteField(
+						env, 
+						eventdata, 
+						(*env)->GetFieldID(env, event_class, "pcm_channels", "B"), 
+						ev->pcm.channels
+					);
+					
+					// User ID
+					(*env)->SetShortField(
+						env, 
+						eventdata, 
+						(*env)->GetFieldID(env, event_class, "user_id", "S"), 
+						ev->user.id
+					);
+					
+					// Sample
+					/*
+					(*env)->SetByteArrayRegion(
+						env, 
+						(*env)->GetObjectField(
+							env,
+							eventdata,
+							(*env)->GetFieldID(env, event_class, "data_sample", "[B")
+						), 
+						0, 
+						ev->pcm.length, 
+						ev->data.sample
+					);*/
+				}
+				break;
+		}
+		
+		
 		free(ev);
-		return type;
 	}
 	return 0;
 }
@@ -144,8 +197,6 @@ JNIEXPORT jint JNICALL Java_org_mangler_VentriloInterface_getevent(JNIEnv* env, 
 JNIEXPORT void JNICALL Java_org_mangler_VentriloInterface_sendaudio(JNIEnv* env, jobject obj, jbyteArray pcm, jint size, jint rate) {
 	jboolean isCopy;
 	jbyte *data = (*env)->GetByteArrayElements(env, pcm, &isCopy);
-
 	v3_send_audio(V3_AUDIO_SENDTYPE_U2CCUR, rate, data, size, 0);
-
 	(*env)->ReleaseByteArrayElements(env, pcm, data, 0);
 }

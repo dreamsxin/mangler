@@ -29,8 +29,15 @@ public class main extends Activity {
 	    	Thread t = new Thread(runnable);
 	    	t.start();
 	       
-	    	VentriloInterface.changechannel((short)7, "");
+	    	VentriloEventData data = new VentriloEventData();
+	    	for(;;) {
+	    		VentriloInterface.getevent(data);
+		    	if(data.type == VentriloEvents.V3_EVENT_PLAY_AUDIO) {
+		    		Log.i("Audio event", Integer.toString(data.pcm_length));
+		    	}
+	    	}
 	    	
+	    	/*
 	    	try {
 		    	Recorder rec = new Recorder(8000);
 		    	rec.start();
@@ -40,6 +47,7 @@ public class main extends Activity {
 	    	catch(RuntimeException e) {
 	    		Log.e("RuntimeException", e.toString());
 	    	}
+	    	*/
 	        
 	    } 
     }
