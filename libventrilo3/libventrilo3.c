@@ -4994,7 +4994,7 @@ v3_queue_event(v3_event *ev) {/*{{{*/
         // do not queue events if the mutex hasn't been initialized.  This
         // means the client isn't ready (or doesn't want) to receive events
         free(ev);
-        _v3_debug(V3_DEBUG_EVENT, "client does appear to be listening yet... not queueing");
+        _v3_debug(V3_DEBUG_EVENT, "client does not appear to be listening yet... not queueing");
         _v3_func_leave("v3_queue_event");
         return true;
     }

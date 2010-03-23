@@ -64,6 +64,7 @@ ManglerAudio::open(uint32_t rate, bool type, uint32_t pcm_framesize, uint8_t cha
         if (!openOutput(rate)) {
             return;
         }
+        stop_output = false;
         outputStreamOpen = true;
         inputStreamOpen = false;
         //fprintf(stderr, "starting output thread\n");
@@ -298,7 +299,7 @@ ManglerAudio::input(void) {/*{{{*/
         if (!inputStreamOpen) {
             fprintf(stderr, "input stream is not open\n");
             //throw Glib::Thread::Exit();
-            return;
+            break;
         }
         gettimeofday(&start, NULL);
         seconds = 0.0;
@@ -328,7 +329,7 @@ ManglerAudio::input(void) {/*{{{*/
             if (Mangler::config["AudioSubsystem"].toLower() == "pulse") {
                 if (!pulse_stream && !openInput(rate)) { // reinitialize input stream for pulse
                     stop_input = true;
-                    return;
+                    break;
                 }
                 //fprintf(stderr, "reading %d bytes from pulse source\n", pcm_framesize);
                 if (pa_simple_read(pulse_stream, buf+(pcm_framesize*ctr), pcm_framesize, &pulse_error) < 0) {
@@ -336,7 +337,7 @@ ManglerAudio::input(void) {/*{{{*/
                     closeInput();
                     stop_input = true;
                     //throw Glib::Thread::Exit();
-                    return;
+                    break;
                 }
             }
 #endif
@@ -344,7 +345,7 @@ ManglerAudio::input(void) {/*{{{*/
             if (Mangler::config["AudioSubsystem"].toLower() == "alsa") {
                 if (!alsa_stream && !openInput(rate)) { // reinitialize input stream for alsa
                     stop_input = true;
-                    return;
+                    break;
                 }
                 if ((alsa_frames = snd_pcm_readi(alsa_stream, buf+(pcm_framesize*ctr), pcm_framesize / sizeof(int16_t))) < 0) {
                     if (alsa_frames == -EPIPE) {
@@ -353,7 +354,7 @@ ManglerAudio::input(void) {/*{{{*/
                         fprintf(stderr, "snd_pcm_readi() failed: %s\n", snd_strerror(alsa_error));
                         closeInput();
                         stop_input = true;
-                        return;
+                        break;
                     }
                 }
             }
@@ -371,7 +372,7 @@ ManglerAudio::input(void) {/*{{{*/
             }
             ctr++;
         }
-        if (!stop_input) {
+        if (!stop_input && v3_is_loggedin()) {
             for (int16_t *pcmptr = (int16_t *)buf; pcmptr < (int16_t *)(buf+(pcm_framesize*ctr)); pcmptr++) {
                 pcmpeak = abs(*pcmptr) > pcmpeak ? abs(*pcmptr) : pcmpeak;
             }
@@ -429,23 +430,31 @@ ManglerAudio::input(void) {/*{{{*/
         buf = NULL;
     }
     //fprintf(stderr, "done with input\n");
+    closeInput(true);
+    inputStreamOpen = false;
+    gdk_threads_enter();
     if (xmit) {
         xmit = false;
         v3_stop_audio();
         mangler->audioControl->playNotification("talkend");
     }
-    closeInput(true);
-    outputStreamOpen = false;
-    gdk_threads_enter();
+    if (v3_is_loggedin()) {
+        mangler->channelTree->setUserIcon(v3_get_user_id(), "red");
+    }
+    mangler->statusIcon->set(mangler->icons["tray_icon_red"]);
     mangler->inputvumeter->set_fraction(0);
     gdk_threads_leave();
     //throw Glib::Thread::Exit();
+    delete this;
     return;
 }/*}}}*/
 
 void
 ManglerAudio::output(void) {/*{{{*/
-    ManglerPCM *queuedpcm;
+    uint8_t buffer = 4;
+    ManglerPCM *bufferpcm = NULL;
+    ManglerPCM *queuedpcm = NULL;
+    bool needToFinish = false;
 
     //fprintf(stderr, "playing audio\n");
     // If we don't have a pcm queue set up for us, something is very wrong
@@ -460,9 +469,10 @@ ManglerAudio::output(void) {/*{{{*/
     }
 
     g_async_queue_ref(pcm_queue);
-    usleep(500000); // buffer for 0.5 seconds
     for (;;) {
-        stop_output = false;
+        if (stop_output) {
+            break;
+        }
         if (! v3_is_loggedin()) {
             // we were disconnected while playing the stream.  unref the queue
             // and flush the audio buffers
@@ -476,39 +486,62 @@ ManglerAudio::output(void) {/*{{{*/
                 snd_pcm_drop(alsa_stream);
             }
 #endif
-            g_async_queue_unref(pcm_queue);
+            closeOutput();
             break;
         }
-        queuedpcm = (ManglerPCM *)g_async_queue_pop(pcm_queue);
+        if (buffer && !needToFinish) {
+            buffer--;
+            queuedpcm = (ManglerPCM *)g_async_queue_pop(pcm_queue);
+            uint32_t prelen = (bufferpcm) ? bufferpcm->length : 0;
+            uint32_t buflen = prelen + queuedpcm->length;
+            uint8_t *bufpcm = (uint8_t *)malloc(buflen);
+            if (bufferpcm) {
+                memcpy(bufpcm, bufferpcm->sample, bufferpcm->length);
+            }
+            if (queuedpcm->length) {
+                memcpy(bufpcm + prelen, queuedpcm->sample, queuedpcm->length);
+            } else {
+                needToFinish = true;
+            }
+            if (bufferpcm) {
+                delete bufferpcm;
+            }
+            bufferpcm = new ManglerPCM(buflen, bufpcm);
+            free(bufpcm);
+            delete queuedpcm;
+            continue;
+        }
+        queuedpcm = (bufferpcm) ? bufferpcm : (ManglerPCM *)g_async_queue_pop(pcm_queue);
+        bufferpcm = NULL;
         // finish() queues a 0 length packet to notify us that we're done
         if (queuedpcm->length == 0) {
-            g_async_queue_unref(pcm_queue);
-            delete queuedpcm;
+            closeOutput(true);
             break;
+        }
+        if (needToFinish) {
+            needToFinish = false;
+            finish();
         }
 #ifdef HAVE_PULSE
         if (Mangler::config["AudioSubsystem"].toLower() == "pulse") {
             if (!pulse_stream && !openOutput(rate)) { // reinitialize output stream for pulse
-                g_async_queue_unref(pcm_queue);
                 stop_output = true;
-                return;
+                break;
             }
             if (pa_simple_write(pulse_stream, queuedpcm->sample, queuedpcm->length, &pulse_error) < 0) {
                 fprintf(stderr, __FILE__": pa_simple_write() failed: %s\n", pa_strerror(pulse_error));
-                g_async_queue_unref(pcm_queue);
                 closeOutput();
                 stop_output = true;
                 //throw Glib::Thread::Exit();
-                return;
+                break;
             }
         }
 #endif
 #ifdef HAVE_ALSA
         if (Mangler::config["AudioSubsystem"].toLower() == "alsa") {
             if (!alsa_stream && !openOutput(rate)) { // reinitialize output stream for alsa
-                g_async_queue_unref(pcm_queue);
                 stop_output = true;
-                return;
+                break;
             }
             uint32_t buflen;
             uint32_t pcmlen = queuedpcm->length;
@@ -519,10 +552,9 @@ ManglerAudio::output(void) {/*{{{*/
                         snd_pcm_prepare(alsa_stream);
                     } else if ((alsa_error = snd_pcm_recover(alsa_stream, alsa_frames, 0)) < 0) {
                         fprintf(stderr, "snd_pcm_writei() failed: %s\n", snd_strerror(alsa_error));
-                        g_async_queue_unref(pcm_queue);
                         closeOutput();
                         stop_output = true;
-                        return;
+                        break;
                     }
                 }
                 pcmlen -= buflen;
@@ -531,11 +563,17 @@ ManglerAudio::output(void) {/*{{{*/
         }
 #endif
         delete queuedpcm;
+        queuedpcm = NULL;
     }
+    while (queuedpcm || (queuedpcm = (ManglerPCM *)g_async_queue_try_pop(pcm_queue))) {
+        delete queuedpcm;
+        queuedpcm = NULL;
+    }
+    g_async_queue_unref(pcm_queue);
     closeOutput(v3_is_loggedin());
-    stop_output = true;
-    outputStreamOpen = true;
+    outputStreamOpen = false;
     //throw Glib::Thread::Exit();
+    delete this;
     return;
 }/*}}}*/
 
