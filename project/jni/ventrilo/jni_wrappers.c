@@ -309,7 +309,7 @@ JNIEXPORT void JNICALL Java_org_mangler_VentriloInterface_getevent(JNIEnv* env, 
 					// Channel ID.
 					jobject channel = (*env)->GetObjectField(env, eventdata, (*env)->GetFieldID(env, event_class, "channel", "Lorg/mangler/VentriloEventData$_channel;"));
 					jclass channel_class = (*env)->GetObjectClass(env, channel);
-					(*env)->SetShortField(env, user, (*env)->GetFieldID(env, user_class, "id", "S"), ev->channel.id);
+					(*env)->SetShortField(env, channel, (*env)->GetFieldID(env, channel_class, "id", "S"), ev->channel.id);
 					
 					// Error message.
 					jobject error = (*env)->GetObjectField(env, eventdata, (*env)->GetFieldID(env, event_class, "error", "Lorg/mangler/VentriloEventData$_error;"));
