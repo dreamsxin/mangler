@@ -163,11 +163,6 @@ typedef struct __v3_net_message {/*{{{*/
     struct __v3_net_message *next;
 } _v3_net_message;/*}}}*/
 
-#ifndef ANDROID
-#pragma pack(push)
-#pragma pack(1)
-#endif
-
 struct _v3_permissions {/*{{{*/
     uint16_t account_id;
     uint16_t replace_owner_id;
@@ -237,18 +232,13 @@ struct _v3_permissions {/*{{{*/
     uint8_t see_chan_comment;
     uint8_t see_user_comment;
     uint8_t unknown_perm_15;
-};/*}}}*/
-
-#ifndef ANDROID
-#pragma pack(pop)
-#endif
+} __attribute__ ((__packed__));/*}}}*/
 typedef struct _v3_permissions v3_permissions;
 
 /*
-   Define event types to be used by the caller's event handler
+ * Define event types to be used by the caller's event handler.
  */
-enum _v3_events
-{
+enum _v3_events {
     // inbound or outbound event types
     V3_EVENT_STATUS = 1,
     V3_EVENT_PING,
@@ -315,8 +305,9 @@ enum _v3_events
     V3_EVENT_RANK_REMOVE,
 };
 
-
-// different boot types for api function v3_admin_boot
+/*
+ * Different boot types for the v3_admin_boot API.
+ */
 enum _v3_boot_types {
     V3_BOOT_KICK,
     V3_BOOT_BAN,
@@ -433,8 +424,6 @@ struct _v3_event {
     v3_event_data *data;
 };
 
-
-
 /*
  *  These structures are used in multiple message types.  (i.e. _v3_msg_channel
  *  is used in retreiveing the channel list as well as the channel modification
@@ -450,6 +439,7 @@ struct _v3_event {
 #define V3_MAX_USER_SIZE            512
 #define V3_MAX_CHANNEL_SIZE         512
 #define V3_MAX_STRING_SIZE          512
+
 typedef struct __v3_msg_user {/*{{{*/
     uint16_t id;
     uint16_t channel;
@@ -544,14 +534,14 @@ typedef struct __v3_msg_account {/*{{{*/
      */
     void     *next;
 } _v3_msg_account;/*}}}*/
-typedef _v3_msg_account  v3_account;
 typedef _v3_msg_user     v3_user;
 typedef _v3_msg_channel  v3_channel;
 typedef _v3_msg_rank     v3_rank;
+typedef _v3_msg_account  v3_account;
 
 /*
-   This structure defines the bit number of each permission setting, the
-   internal name, and a name suitable for display to a user.
+ * This structure defines the bit number of each permission setting, the
+ * internal name, and a name suitable for display to a user.
  */
 struct _v3_perm_info {
     uint8_t bitnum;
@@ -732,13 +722,12 @@ v3_account *v3_get_account(uint16_t id);
 int         v3_account_count(void);
 void        v3_free_account(v3_account *account);
 
-// audio effects
+// Audio DSP functions
 void v3_set_volume_master(int level);
 void v3_set_volume_user(uint16_t id, int level);
 void v3_set_volume_luser(int level);
 uint8_t v3_get_volume_user(uint16_t id);
 uint8_t v3_get_volume_luser(void);
-
 
 #endif // _VENTRILO3_H
 

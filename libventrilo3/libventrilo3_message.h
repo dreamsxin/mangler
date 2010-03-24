@@ -141,7 +141,7 @@ typedef struct _v3_net_message_0x42 {/*{{{*/
 
     uint16_t msglen;            // 12 - variable length starts here
     char *   msg;               // 14
-} __attribute__ ((__packed__)) _v3_msg_0x42 ;
+} __attribute__ ((__packed__)) _v3_msg_0x42;
 int _v3_get_0x42(_v3_net_message *msg);
 _v3_net_message *_v3_put_0x42(uint16_t subtype, uint16_t user_id, char* message);/*}}}*/
 typedef struct _v3_net_message_0x46 {/*{{{*/
@@ -259,8 +259,8 @@ typedef struct _v3_net_message_0x52_0x01_in {/*{{{*/
             uint16_t frame_count;    // 28
             uint16_t pcm_frame_size; // 30
             void *frames;            // 32 - variable length starts here
-        } speex;
-    } data;
+        } __attribute__ ((__packed__)) speex;
+    } __attribute__ ((__packed__)) data;
 } __attribute__ ((__packed__)) _v3_msg_0x52_0x01_in;/*}}}*/
 typedef struct _v3_net_message_0x52_0x01_out {/*{{{*/
     _v3_msg_0x52 header;        // 0
@@ -386,7 +386,7 @@ typedef struct _v3_net_message_0x63 {/*{{{*/
     union {                     // 12
         uint8_t password_hash[0x20];
         char    reason[0x80];
-    } t;
+    } __attribute__ ((__packed__)) t;
 } __attribute__ ((__packed__)) _v3_msg_0x63;
 _v3_net_message *_v3_put_0x63(uint16_t subtype, uint16_t user_id, char *string);/*}}}*/
 
@@ -400,3 +400,4 @@ int         _v3_get_msg_user(void *offset, _v3_msg_user *user);
 int         _v3_put_msg_user(void *buf, _v3_msg_user *user);
 int         _v3_get_msg_account(void *offset, _v3_msg_account *account);
 int         _v3_put_msg_account(void *buf, _v3_msg_account *account);
+
