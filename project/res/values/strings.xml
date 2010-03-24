@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="hello">Hello World, main!</string>
-    <string name="app_name"></string>
+    
+    <string name="app_name">Mangler</string>
+<string name="add_user">Add new user</string>
+<string name="add_server">Add new server</string>
+<string name="edit_user">Edit User</string>
+<string name="delete_user">Delete User</string>
 </resources>

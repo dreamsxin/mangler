@@ -1,26 +1,45 @@
 package org.mangler;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioTrack;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
+import android.view.View.OnClickListener;
+import android.widget.ImageButton;
 
 import java.lang.Thread;
 import java.lang.Runnable;
 
 public class main extends Activity {
-    /** Called when the activity is first created. */
+    
+	private ManglerDBAdapter dbHelper;
 	
+	/** Called when the activity is first created. */
     @Override
     public void onCreate(Bundle savedInstanceState) {
     	System.loadLibrary("ventrilo_interface");
     	
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
+        
+        // Temporary initialization, uncomment for first run
+        
+        /*dbHelper = new ManglerDBAdapter(this);
+        dbHelper.open();
+        dbHelper.createUser("droid_test", "durr");
+        dbHelper.createServer(1, "mangler_test", "vent.mangler.org", 9047);
+        */
+        
+        Intent intent = new Intent(this, UserList.class);
+        startActivity(intent);
 
-    	if(VentriloInterface.login("vent.mangler.org:9047", "dandroid", "", "") != 0) {
+        // Connection code currently at bottom of ServerList class
+        
+    	/*if(VentriloInterface.login("vent.mangler.org:9047", "droid_test", "", "") != 0) {
 	    	
 	    	Runnable runnable = new Runnable() {
 	    		public void run() {
@@ -31,7 +50,7 @@ public class main extends Activity {
 	    	};
 	    	Thread t = new Thread(runnable);
 	    	t.start();
-	    
+	    */
 	    	/*
 	    	// Play incoming audio.
 	    	AudioTrack at = new AudioTrack(
@@ -66,7 +85,6 @@ public class main extends Activity {
 	    	}
 	    	*/
 	        
-	    } 
-    }
-        
+	    //}
+    }   
 }
