@@ -452,9 +452,7 @@ ManglerAudio::input(void) {/*{{{*/
 void
 ManglerAudio::output(void) {/*{{{*/
     uint8_t buffer = 4;
-    ManglerPCM *bufferpcm = NULL;
     ManglerPCM *queuedpcm = NULL;
-    bool needToFinish = false;
 
     //fprintf(stderr, "playing audio\n");
     // If we don't have a pcm queue set up for us, something is very wrong
@@ -489,38 +487,34 @@ ManglerAudio::output(void) {/*{{{*/
             closeOutput();
             break;
         }
-        if (buffer && !needToFinish) {
+        if (buffer) {
             buffer--;
-            queuedpcm = (ManglerPCM *)g_async_queue_pop(pcm_queue);
-            uint32_t prelen = (bufferpcm) ? bufferpcm->length : 0;
-            uint32_t buflen = prelen + queuedpcm->length;
-            uint8_t *bufpcm = (uint8_t *)malloc(buflen);
-            if (bufferpcm) {
-                memcpy(bufpcm, bufferpcm->sample, bufferpcm->length);
-            }
-            if (queuedpcm->length) {
-                memcpy(bufpcm + prelen, queuedpcm->sample, queuedpcm->length);
-            } else {
-                needToFinish = true;
-            }
-            if (bufferpcm) {
+            ManglerPCM *bufferpcm = (ManglerPCM *)g_async_queue_pop(pcm_queue);
+            if (bufferpcm && bufferpcm->length) {
+                uint32_t prelen = (queuedpcm) ? queuedpcm->length : 0;
+                uint32_t buflen = prelen + bufferpcm->length;
+                uint8_t *bufpcm = (uint8_t *)malloc(buflen);
+                memcpy(bufpcm + prelen, bufferpcm->sample, bufferpcm->length);
+                if (queuedpcm) {
+                    memcpy(bufpcm, queuedpcm->sample, queuedpcm->length);
+                    delete queuedpcm;
+                }
                 delete bufferpcm;
+                queuedpcm = new ManglerPCM(buflen, bufpcm);
+                free(bufpcm);
+                continue;
+            } else {
+                buffer = 0;
+                finish();
             }
-            bufferpcm = new ManglerPCM(buflen, bufpcm);
-            free(bufpcm);
-            delete queuedpcm;
-            continue;
         }
-        queuedpcm = (bufferpcm) ? bufferpcm : (ManglerPCM *)g_async_queue_pop(pcm_queue);
-        bufferpcm = NULL;
+        if (!queuedpcm) {
+            queuedpcm = (ManglerPCM *)g_async_queue_pop(pcm_queue);
+        }
         // finish() queues a 0 length packet to notify us that we're done
         if (queuedpcm->length == 0) {
             closeOutput(true);
             break;
-        }
-        if (needToFinish) {
-            needToFinish = false;
-            finish();
         }
 #ifdef HAVE_PULSE
         if (Mangler::config["AudioSubsystem"].toLower() == "pulse") {

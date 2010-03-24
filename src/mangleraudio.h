@@ -96,6 +96,7 @@ class ManglerAudio
 
         GAsyncQueue*    pcm_queue;
         uint32_t        rate;
+        uint32_t        pcm_framesize;
         uint8_t         channels;
 #ifdef HAVE_PULSE
         pa_sample_spec  pulse_samplespec;
@@ -117,7 +118,6 @@ class ManglerAudio
 
         bool            stop_input;
         bool            stop_output;
-        uint32_t        pcm_framesize;
 
         bool            outputStreamOpen;
         bool            inputStreamOpen;
