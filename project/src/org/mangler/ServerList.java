@@ -93,7 +93,7 @@ public class ServerList extends ListActivity {
         String hostname = servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_HOSTNAME));
         int port = servers.getInt(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_PORTNUMBER));
 
-        if(VentriloInterface.login(hostname + ":" + port, username, "", phonetic) != 0) {
+        if(VentriloInterface.login(hostname + ":" + port, username, "", phonetic)) {
 	    	
 	    	Runnable runnable = new Runnable() {
 	    		public void run() {
