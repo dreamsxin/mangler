@@ -137,6 +137,7 @@ class ManglerChannelTree
         void setChannelSavedPassword(uint16_t channel_id, Glib::ustring password);
         void forgetChannelSavedPassword(uint16_t channel_id);
         bool isMuted(uint16_t userid);
+        void muteUserToggle(uint16_t userid);
         bool expand_all(void);
         bool collapse_all(void);
         void clear(void);

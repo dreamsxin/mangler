@@ -258,6 +258,16 @@ iniValue &ManglerConfig::UserVolume(const string &server, const string &user) {/
     return servers[server][varname];
 }/*}}}*/
 
+bool ManglerConfig::hasUserMuted(const string &server, const string &user) const {/*{{{*/
+    string varname = string( "UserMuted[" ) + user + string( "]" );
+    return servers.contains(server) && servers.at(server).contains(varname);
+}/*}}}*/
+
+iniValue &ManglerConfig::UserMuted(const string &server, const string &user) {/*{{{*/
+    string varname = string( "UserMuted[" ) + user + string( "]" );
+    return servers[server][varname];
+}/*}}}*/
+
 iniValue &ManglerConfig::ChannelPassword(const string &server, uint16_t channel) {/*{{{*/
     string varname = string( "ChannelPassword[" ) + iniVariant( channel ).toString() + string( "]" );
     return servers[server][varname];

@@ -936,8 +936,13 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                         (bool)u->real_user_id,
                         rank);
                 // If we have a per user volume set for this user name, set it now
-                if (! connectedServerName.empty() && config.hasUserVolume(connectedServerName, u->name))
+                if (! connectedServerName.empty() && config.hasUserVolume(connectedServerName, u->name)) {
                     v3_set_volume_user(u->id, config.UserVolume(connectedServerName, u->name).toInt());
+                }
+                // If the user was muted... mute them again
+                if (! connectedServerName.empty() && config.hasUserMuted(connectedServerName, u->name)) {
+                    channelTree->muteUserToggle(u->id);
+                }
 
                 v3_free_user(u);
                 break;/*}}}*/

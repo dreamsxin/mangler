@@ -39,6 +39,8 @@ class ManglerConfig {
         iniValue &operator[](const string &configVar);
         bool hasUserVolume(const string &server, const string &user) const;
         iniValue &UserVolume(const string &server, const string &user);
+        bool hasUserMuted(const string &server, const string &user) const;
+        iniValue &UserMuted(const string &server, const string &user);
         iniValue &ChannelPassword(const string &server, uint16_t channel);
     private:
         static const char *DefaultConfiguration;

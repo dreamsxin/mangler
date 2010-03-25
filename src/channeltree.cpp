@@ -999,6 +999,7 @@ ManglerChannelTree::muteUserMenuItem_activate_cb(void) {/*{{{*/
     Gtk::TreeModel::iterator iter = sel->get_selected();
     if(iter) {
         Gtk::TreeModel::Row row = *iter;
+        Glib::ustring name = row[channelRecord.name];
         bool muted = row[channelRecord.muted];
         uint16_t id = row[channelRecord.id];
         if (muted) {
@@ -1006,6 +1007,8 @@ ManglerChannelTree::muteUserMenuItem_activate_cb(void) {/*{{{*/
         } else {
             row[channelRecord.muted] = true;
         }
+        Mangler::config.UserMuted(mangler->connectedServerName, name) = (bool)row[channelRecord.muted];
+        Mangler::config.servers.save();
         refreshUser(id);
     }
 }/*}}}*/
@@ -1086,6 +1089,17 @@ ManglerChannelTree::isMuted(uint16_t userid) {/*{{{*/
 }/*}}}*/
 
 void
+ManglerChannelTree::muteUserToggle(uint16_t userid) {/*{{{*/
+    Gtk::TreeModel::Row user;
+    if (! (user = getUser(userid)) && userid > 0) {
+        fprintf(stderr, "muteUser: could not find user id %d\n", userid);
+        return;
+    }
+    user[channelRecord.muted] = user[channelRecord.muted] ? false : true;
+    return;
+}/*}}}*/
+
+void
 ManglerChannelTree::setLastTransmit(uint16_t userid, Glib::ustring last_transmit) {/*{{{*/
     Gtk::TreeModel::Row user;
     if (! (user = getUser(userid)) && userid > 0) {
@@ -1115,7 +1129,8 @@ getTimeString(void) {/*{{{*/
     return cppbuf;
 }/*}}}*/
 
-Glib::RefPtr<ManglerChannelStore> ManglerChannelStore::create() {/*{{{*/
+Glib::RefPtr<ManglerChannelStore>
+ManglerChannelStore::create() {/*{{{*/
     return Glib::RefPtr<ManglerChannelStore>( new ManglerChannelStore() );
 }/*}}}*/
 
