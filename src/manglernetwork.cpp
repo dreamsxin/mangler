@@ -50,7 +50,7 @@ ManglerNetwork::connect(Glib::ustring hostname, Glib::ustring port, Glib::ustrin
         button->set_sensitive(true);
         builder->get_widget("errorDialog", msgdialog);
         msgdialog->set_icon(mangler->icons["tray_icon"]);
-        msgdialog->set_message(_v3_error(NULL));
+        msgdialog->set_message(c_to_ustring(_v3_error(NULL)));
         builder->get_widget("progressbar", progressbar);
         progressbar->set_fraction(0);
         progressbar->set_text("");

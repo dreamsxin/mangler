@@ -3217,20 +3217,26 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                 char buf[1024];
                 _v3_msg_0x59 *m = msg->contents;
                 snprintf(buf, 1024, "%s%s", _v3_errors[m->error], m->message);
+
+                if (m->minutes_banned) {
+                    char buf2[1024];
+                    snprintf(buf2, 1024, " You can connect again in %d minutes", m->minutes_banned);
+                    strncat(buf, buf2, 1023);
+                }
+
+                _v3_error(buf);
+
+                if (v3_is_loggedin()) {
+                    v3_event *ev = _v3_create_event(V3_EVENT_ERROR_MSG);
+                    ev->error.disconnected = m->close_connection;
+                    strncpy(ev->error.message, buf, 512);
+                    v3_queue_event(ev);
+                }
+
                 if (m->close_connection) {
-                    if (m->minutes_banned) {
-                        char buf2[1024];
-                        snprintf(buf2, 1024, " You can connect again in %d minutes", m->minutes_banned);
-                        strncat(buf, buf2, 1023);
-                    }
                     _v3_debug(V3_DEBUG_INTERNAL, "disconnecting from server");
                     _v3_logout();
                 }
-                v3_event *ev = _v3_create_event(V3_EVENT_ERROR_MSG);
-                ev->error.disconnected = m->close_connection;
-                strncpy(ev->error.message, buf, 512);
-                v3_queue_event(ev);
-                _v3_error(buf);
             }
             _v3_destroy_packet(msg);
             _v3_func_leave("_v3_process_message");
@@ -3622,6 +3628,10 @@ v3_login(char *server, char *username, char *password, char *phonetic) {/*{{{*/
        Grab server information.
      */
     msg = _v3_recv(V3_BLOCK);
+    if (!msg) {
+        _v3_func_leave("v3_login");
+        return false;
+    }
     type = msg->type;
     _v3_process_message(msg);
 
