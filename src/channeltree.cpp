@@ -786,46 +786,43 @@ ManglerChannelTree::channelView_buttonpress_event_cb(GdkEventButton* event) {/*{
 
             if (isUser) {
                 v3_user *user = v3_get_user(id);
-                builder->get_widget("copyComment", menuitem);
-                menuitem->set_sensitive(comment.empty() ? false : true);
-                builder->get_widget("copyURL", menuitem);
-                menuitem->set_sensitive(url.empty() ? false : true);
+                bool isOurPhantom = user->real_user_id == v3_get_user_id();
                 builder->get_widget("removePhantom", menuitem);
-                if (user->real_user_id == v3_get_user_id()) {
+                if (isOurPhantom) {
                     // we clicked on one of our own phantoms
                     menuitem->show();
                 } else {
                     menuitem->hide();
                 }
+                builder->get_widget("copyComment", menuitem);
+                menuitem->set_sensitive(comment.empty() ? false : true);
+                builder->get_widget("copyURL", menuitem);
+                menuitem->set_sensitive(url.empty() ? false : true);
                 if (user->id == v3_get_user_id()) {
                     // we clicked ourself
+                    builder->get_widget("privateChat", menuitem);
+                    menuitem->hide();
                     builder->get_widget("userSettings", menuitem);
+                    menuitem->hide();
+                    builder->get_widget("muteUser", menuitem);
+                    menuitem->hide();
+                    builder->get_widget("userRightClickMenuSeparator", menuitem);
                     menuitem->hide();
                     builder->get_widget("kickUser", menuitem);
                     menuitem->hide();
                     builder->get_widget("banUser", menuitem);
-                    menuitem->hide();
-                    builder->get_widget("muteUser", menuitem);
                     menuitem->hide();
                     builder->get_widget("muteUserGlobal", menuitem);
                     menuitem->hide();
                 } else {
-                    builder->get_widget("userSettings", menuitem);
-                    menuitem->show();
                     builder->get_widget("privateChat", menuitem);
-                    if (perms->start_priv_chat) {
+                    if (perms->start_priv_chat && !isOurPhantom) {
                         menuitem->show();
                     } else {
                         menuitem->hide();
                     }
-                    builder->get_widget("kickUser", menuitem);
-                    if (perms->kick_user) {
-                        menuitem->show();
-                    } else {
-                        menuitem->hide();
-                    }
-                    builder->get_widget("banUser", menuitem);
-                    if (perms->ban_user) {
+                    builder->get_widget("userSettings", menuitem);
+                    if (!isOurPhantom) {
                         menuitem->show();
                     } else {
                         menuitem->hide();
@@ -836,9 +833,31 @@ ManglerChannelTree::channelView_buttonpress_event_cb(GdkEventButton* event) {/*{
                     } else {
                         menuitem->set_label("Mute");
                     }
-                    menuitem->show();
+                    if (!isOurPhantom) {
+                        menuitem->show();
+                    } else {
+                        menuitem->hide();
+                    }
+                    builder->get_widget("userRightClickMenuSeparator", menuitem);
+                    if ((perms->kick_user || perms->ban_user || perms->mute_glbl) && !isOurPhantom) {
+                        menuitem->show();
+                    } else {
+                        menuitem->hide();
+                    }
+                    builder->get_widget("kickUser", menuitem);
+                    if (perms->kick_user && !isOurPhantom) {
+                        menuitem->show();
+                    } else {
+                        menuitem->hide();
+                    }
+                    builder->get_widget("banUser", menuitem);
+                    if (perms->ban_user && !isOurPhantom) {
+                        menuitem->show();
+                    } else {
+                        menuitem->hide();
+                    }
                     builder->get_widget("muteUserGlobal", menuitem);
-                    if (perms->mute_glbl) {
+                    if (perms->mute_glbl && !isOurPhantom) {
                         menuitem->set_sensitive(false);
                         menuitem->show();
                     } else {

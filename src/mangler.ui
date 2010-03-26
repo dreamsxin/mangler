@@ -3750,9 +3750,9 @@ These are useful for developers.</property>
   <object class="GtkMenu" id="userRightClickMenu">
     <property name="visible">True</property>
     <child>
-      <object class="GtkMenuItem" id="userSettings">
+      <object class="GtkMenuItem" id="removePhantom">
         <property name="visible">True</property>
-        <property name="label" translatable="yes">User Settings</property>
+        <property name="label" translatable="yes">Remove Phantom</property>
         <property name="use_underline">True</property>
       </object>
     </child>
@@ -3780,11 +3780,21 @@ These are useful for developers.</property>
       </object>
     </child>
     <child>
-      <object class="GtkMenuItem" id="removePhantom">
+      <object class="GtkMenuItem" id="userSettings">
         <property name="visible">True</property>
-        <property name="label" translatable="yes">Remove Phantom</property>
+        <property name="label" translatable="yes">User Settings</property>
         <property name="use_underline">True</property>
       </object>
+    </child>
+    <child>
+      <object class="GtkMenuItem" id="muteUser">
+        <property name="visible">True</property>
+        <property name="label" translatable="yes">Mute</property>
+        <property name="use_underline">True</property>
+      </object>
+    </child>
+    <child>
+      <object class="GtkSeparatorMenuItem" id="userRightClickMenuSeparator"/>
     </child>
     <child>
       <object class="GtkMenuItem" id="kickUser">
@@ -3797,13 +3807,6 @@ These are useful for developers.</property>
       <object class="GtkMenuItem" id="banUser">
         <property name="visible">True</property>
         <property name="label" translatable="yes">Ban</property>
-        <property name="use_underline">True</property>
-      </object>
-    </child>
-    <child>
-      <object class="GtkMenuItem" id="muteUser">
-        <property name="visible">True</property>
-        <property name="label" translatable="yes">Mute</property>
         <property name="use_underline">True</property>
       </object>
     </child>
