@@ -85,6 +85,7 @@ JNIEXPORT int JNICALL Java_org_mangler_VentriloInterface_debuglevel(jint level) 
 }
 
 JNIEXPORT jboolean JNICALL Java_org_mangler_VentriloInterface_login(JNIEnv* env, jobject obj, jstring server, jstring username, jstring password, jstring phonetic) {
+	v3_debuglevel(V3_DEBUG_ALL);
 	char* _server	= (char*)(*env)->GetStringUTFChars(env, server, 0);
 	char* _username = (char*)(*env)->GetStringUTFChars(env, username, 0);
 	char* _password = (char*)(*env)->GetStringUTFChars(env, password, 0);
@@ -180,7 +181,6 @@ JNIEXPORT void JNICALL Java_org_mangler_VentriloInterface_getevent(JNIEnv* env, 
 				}
 				break;
 				
-			case V3_EVENT_USER_LOGIN:
 			case V3_EVENT_USER_CHAN_MOVE:
 			case V3_EVENT_USER_LOGOUT:
 			case V3_EVENT_CHAN_REMOVE:
@@ -194,6 +194,33 @@ JNIEXPORT void JNICALL Java_org_mangler_VentriloInterface_getevent(JNIEnv* env, 
 					jobject channel = (*env)->GetObjectField(env, eventdata, (*env)->GetFieldID(env, event_class, "channel", "Lorg/mangler/VentriloEventData$_channel;"));
 					jclass channel_class = (*env)->GetObjectClass(env, channel);
 					(*env)->SetShortField(env, user, (*env)->GetFieldID(env, user_class, "id", "S"), ev->channel.id);
+				}
+				break;
+			
+			case V3_EVENT_USER_MODIFY:
+			case V3_EVENT_USER_LOGIN:
+				{
+					// User ID.
+					jobject user = (*env)->GetObjectField(env, eventdata, (*env)->GetFieldID(env, event_class, "user", "Lorg/mangler/VentriloEventData$_user;"));
+					jclass user_class = (*env)->GetObjectClass(env, user);
+					(*env)->SetShortField(env, user, (*env)->GetFieldID(env, user_class, "id", "S"), ev->user.id);
+					
+					// Channel ID.
+					jobject channel = (*env)->GetObjectField(env, eventdata, (*env)->GetFieldID(env, event_class, "channel", "Lorg/mangler/VentriloEventData$_channel;"));
+					jclass channel_class = (*env)->GetObjectClass(env, channel);
+					(*env)->SetShortField(env, user, (*env)->GetFieldID(env, user_class, "id", "S"), ev->channel.id);
+					
+					v3_user *u = v3_get_user(ev->user.id);
+					if(u) {
+						jobject text = (*env)->GetObjectField(env, eventdata, (*env)->GetFieldID(env, event_class, "text", "Lorg/mangler/VentriloEventData$_text;"));
+						jclass text_class = (*env)->GetObjectClass(env, text);
+						(*env)->SetByteArrayRegion(env, (*env)->GetObjectField(env, text, (*env)->GetFieldID(env, text_class, "name", "[B")), 0, sizeof(ev->text.name), u->name);
+						(*env)->SetByteArrayRegion(env, (*env)->GetObjectField(env, text, (*env)->GetFieldID(env, text_class, "comment", "[B")), 0, sizeof(ev->text.comment), u->comment);
+						(*env)->SetByteArrayRegion(env, (*env)->GetObjectField(env, text, (*env)->GetFieldID(env, text_class, "phonetic", "[B")), 0, sizeof(ev->text.phonetic), u->phonetic);
+						(*env)->SetByteArrayRegion(env, (*env)->GetObjectField(env, text, (*env)->GetFieldID(env, text_class, "url", "[B")), 0, sizeof(ev->text.url), u->url);
+						(*env)->SetByteArrayRegion(env, (*env)->GetObjectField(env, text, (*env)->GetFieldID(env, text_class, "integration_text", "[B")), 0, sizeof(ev->text.integration_text), u->integration_text);
+						v3_free_user(u);
+					}
 				}
 				break;
 				
@@ -215,22 +242,6 @@ JNIEXPORT void JNICALL Java_org_mangler_VentriloInterface_getevent(JNIEnv* env, 
 			case V3_EVENT_PERMS_UPDATED:
 				{
 					// No event data for these types!
-				}
-				break;
-				
-			case V3_EVENT_USER_MODIFY:
-				{
-					// User ID.
-					jobject user = (*env)->GetObjectField(env, eventdata, (*env)->GetFieldID(env, event_class, "user", "Lorg/mangler/VentriloEventData$_user;"));
-					jclass user_class = (*env)->GetObjectClass(env, user);
-					(*env)->SetShortField(env, user, (*env)->GetFieldID(env, user_class, "id", "S"), ev->user.id);
-					
-					// Text fields.
-					jobject text = (*env)->GetObjectField(env, eventdata, (*env)->GetFieldID(env, event_class, "text", "Lorg/mangler/VentriloEventData$_text;"));
-					jclass text_class = (*env)->GetObjectClass(env, text);
-					(*env)->SetByteArrayRegion(env, (*env)->GetObjectField(env, text, (*env)->GetFieldID(env, text_class, "comment", "[B")), 0, sizeof(ev->text.comment), ev->text.comment);
-					(*env)->SetByteArrayRegion(env, (*env)->GetObjectField(env, text, (*env)->GetFieldID(env, text_class, "url", "[B")), 0, sizeof(ev->text.url), ev->text.url);
-					(*env)->SetByteArrayRegion(env, (*env)->GetObjectField(env, text, (*env)->GetFieldID(env, text_class, "integration_text", "[B")), 0, sizeof(ev->text.integration_text), ev->text.integration_text);
 				}
 				break;
 
@@ -255,7 +266,7 @@ JNIEXPORT void JNICALL Java_org_mangler_VentriloInterface_getevent(JNIEnv* env, 
 					// Account fields.
 					jobject data = (*env)->GetObjectField(env, eventdata, (*env)->GetFieldID(env, event_class, "data", "Lorg/mangler/VentriloEventData$_data;"));
 					jclass data_class = (*env)->GetObjectClass(env, data);
-					jobject account = (*env)->GetObjectField(env, data, (*env)->GetFieldID(env, data_class, "account", "Lorg.mangler.VentriloEventData$_data$_account;"));
+					jobject account = (*env)->GetObjectField(env, data, (*env)->GetFieldID(env, data_class, "account", "Lorg/mangler/VentriloEventData$_data$_account;"));
 					jclass account_class = (*env)->GetObjectClass(env, account);
 					(*env)->SetByteArrayRegion(env, (*env)->GetObjectField(env, account, (*env)->GetFieldID(env, account_class, "username", "[B")), 0, sizeof(ev->data->account.username), ev->data->account.username);
 					/*
@@ -275,23 +286,32 @@ JNIEXPORT void JNICALL Java_org_mangler_VentriloInterface_getevent(JNIEnv* env, 
 			case V3_EVENT_CHAN_ADD:
 			case V3_EVENT_CHAN_MODIFY:
 				{
-					// Channel fields.
-					jobject data = (*env)->GetObjectField(env, eventdata, (*env)->GetFieldID(env, event_class, "data", "Lorg/mangler/VentriloEventData$_data;"));
-					jclass data_class = (*env)->GetObjectClass(env, data);
-					jobject channel = (*env)->GetObjectField(env, data, (*env)->GetFieldID(env, data_class, "channel", "Lorg.mangler.VentriloEventData$_data$_channel;"));
+					// Channel id.
+					jobject channel = (*env)->GetObjectField(env, eventdata, (*env)->GetFieldID(env, event_class, "channel", "Lorg/mangler/VentriloEventData$_channel;"));
 					jclass channel_class = (*env)->GetObjectClass(env, channel);
-					(*env)->SetShortField(env, channel, (*env)->GetFieldID(env, channel_class, "id", "S"), ev->data->channel.id);
-					(*env)->SetShortField(env, channel, (*env)->GetFieldID(env, channel_class, "parent", "S"), ev->data->channel.parent);
-					(*env)->SetShortField(env, channel, (*env)->GetFieldID(env, channel_class, "channel_codec", "S"), ev->data->channel.channel_codec);
-					(*env)->SetShortField(env, channel, (*env)->GetFieldID(env, channel_class, "channel_format", "S"), ev->data->channel.channel_format);
-					(*env)->SetBooleanField(env, channel, (*env)->GetFieldID(env, channel_class, "password_protected", "Z"), ev->data->channel.password_protected != 0);
+					(*env)->SetShortField(env, channel, (*env)->GetFieldID(env, channel_class, "id", "S"), ev->channel.id);
 					
-					// Text fields.
-					jobject text = (*env)->GetObjectField(env, eventdata, (*env)->GetFieldID(env, event_class, "text", "Lorg/mangler/VentriloEventData$_text;"));
-					jclass text_class = (*env)->GetObjectClass(env, text);
-					(*env)->SetByteArrayRegion(env, (*env)->GetObjectField(env, text, (*env)->GetFieldID(env, text_class, "name", "[B")), 0, sizeof(ev->text.name), ev->text.name);
-					(*env)->SetByteArrayRegion(env, (*env)->GetObjectField(env, text, (*env)->GetFieldID(env, text_class, "phonetic", "[B")), 0, sizeof(ev->text.phonetic), ev->text.phonetic);
-					(*env)->SetByteArrayRegion(env, (*env)->GetObjectField(env, text, (*env)->GetFieldID(env, text_class, "comment", "[B")), 0, sizeof(ev->text.comment), ev->text.comment);
+					v3_channel *c = v3_get_channel(ev->channel.id);
+					if(c) {
+						// Channel fields.
+						jobject data = (*env)->GetObjectField(env, eventdata, (*env)->GetFieldID(env, event_class, "data", "Lorg/mangler/VentriloEventData$_data;"));
+						jclass data_class = (*env)->GetObjectClass(env, data);
+						jobject channel = (*env)->GetObjectField(env, data, (*env)->GetFieldID(env, data_class, "channel", "Lorg/mangler/VentriloEventData$_data$_channel;"));
+						jclass channel_class = (*env)->GetObjectClass(env, channel);
+						(*env)->SetShortField(env, channel, (*env)->GetFieldID(env, channel_class, "parent", "S"), c->parent);
+						(*env)->SetShortField(env, channel, (*env)->GetFieldID(env, channel_class, "channel_codec", "S"), c->channel_codec);
+						(*env)->SetShortField(env, channel, (*env)->GetFieldID(env, channel_class, "channel_format", "S"), c->channel_format);
+						(*env)->SetBooleanField(env, channel, (*env)->GetFieldID(env, channel_class, "password_protected", "Z"), c->password_protected != 0);
+						
+						// Text fields.
+						jobject text = (*env)->GetObjectField(env, eventdata, (*env)->GetFieldID(env, event_class, "text", "Lorg/mangler/VentriloEventData$_text;"));
+						jclass text_class = (*env)->GetObjectClass(env, text);
+						(*env)->SetByteArrayRegion(env, (*env)->GetObjectField(env, text, (*env)->GetFieldID(env, text_class, "name", "[B")), 0, sizeof(ev->text.name), c->name);
+						(*env)->SetByteArrayRegion(env, (*env)->GetObjectField(env, text, (*env)->GetFieldID(env, text_class, "phonetic", "[B")), 0, sizeof(ev->text.phonetic), c->phonetic);
+						(*env)->SetByteArrayRegion(env, (*env)->GetObjectField(env, text, (*env)->GetFieldID(env, text_class, "comment", "[B")), 0, sizeof(ev->text.comment), c->comment);
+						
+						v3_free_channel(c);
+					}
 				}
 				break;
 				
@@ -363,7 +383,7 @@ JNIEXPORT void JNICALL Java_org_mangler_VentriloInterface_getevent(JNIEnv* env, 
 					// Account ID.
 					jobject data = (*env)->GetObjectField(env, eventdata, (*env)->GetFieldID(env, event_class, "data", "Lorg/mangler/VentriloEventData$_data;"));
 					jclass data_class = (*env)->GetObjectClass(env, data);
-					jobject account = (*env)->GetObjectField(env, data, (*env)->GetFieldID(env, data_class, "account", "Lorg.mangler.VentriloEventData$_data$_account;"));
+					jobject account = (*env)->GetObjectField(env, data, (*env)->GetFieldID(env, data_class, "account", "Lorg/mangler/VentriloEventData$_data$_account;"));
 					jclass account_class = (*env)->GetObjectClass(env, account);
 					(*env)->SetShortField(env, account, (*env)->GetFieldID(env, account_class, "id", "S"), ev->account.id);
 				}
@@ -374,7 +394,7 @@ JNIEXPORT void JNICALL Java_org_mangler_VentriloInterface_getevent(JNIEnv* env, 
 					// Account IDs.
 					jobject data = (*env)->GetObjectField(env, eventdata, (*env)->GetFieldID(env, event_class, "data", "Lorg/mangler/VentriloEventData$_data;"));
 					jclass data_class = (*env)->GetObjectClass(env, data);
-					jobject account = (*env)->GetObjectField(env, data, (*env)->GetFieldID(env, data_class, "account", "Lorg.mangler.VentriloEventData$_data$_account;"));
+					jobject account = (*env)->GetObjectField(env, data, (*env)->GetFieldID(env, data_class, "account", "Lorg/mangler/VentriloEventData$_data$_account;"));
 					jclass account_class = (*env)->GetObjectClass(env, account);
 					(*env)->SetShortField(env, account, (*env)->GetFieldID(env, account_class, "id", "S"), ev->account.id);
 					(*env)->SetShortField(env, account, (*env)->GetFieldID(env, account_class, "id2", "S"), ev->account.id2);

@@ -62,14 +62,6 @@ public class main extends Activity {
 	    		AudioTrack.MODE_STREAM
 	    	);
 	    	at.play();
-	    	
-	    	VentriloEventData data = new VentriloEventData();
-	    	for(;;) {
-	    		VentriloInterface.getevent(data);
-	    		if(data.type == VentriloEvents.V3_EVENT_PLAY_AUDIO) {
-		    		at.write(data.data.sample, 0, data.pcm.length);
-		    	}
-	    	}
 	    	*/
 	    	
 	    	/*

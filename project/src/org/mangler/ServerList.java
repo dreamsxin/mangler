@@ -3,6 +3,7 @@ package org.mangler;
 import android.app.ListActivity;
 import android.database.Cursor;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.ContextMenu;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -80,6 +81,10 @@ public class ServerList extends ListActivity {
 		return super.onContextItemSelected(item);
 	}
     
+    private String StringFromBytes(byte[] bytes) {
+    	return new String(bytes, 0, (new String(bytes).indexOf(0)));
+    }
+    
     // Currently connects to server immediately
     // TODO: Move into seperate activity later
     @Override
@@ -92,18 +97,80 @@ public class ServerList extends ListActivity {
         String phonetic = users.getString(users.getColumnIndexOrThrow(ManglerDBAdapter.KEY_PHONETIC));
         String hostname = servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_HOSTNAME));
         int port = servers.getInt(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_PORTNUMBER));
-
+        
+        // We need to start this -before- calling v3_login. 
+    	Runnable event_runnable = new Runnable() {
+    		public void run() {
+		    	VentriloEventData data = new VentriloEventData();
+		    	while(true) {
+		    		VentriloInterface.getevent(data);
+		    		switch(data.type) {
+		    			case VentriloEvents.V3_EVENT_CHAT_MESSAGE:
+		    				Log.i("mangler", 
+		    						"User sent message: " + Integer.toString(data.user.id) +
+		    						" -> " + StringFromBytes(data.data.chatmessage));
+		    				break;
+		    				
+		    			case VentriloEvents.V3_EVENT_CHAT_JOIN:
+		    				Log.i("mangler", 
+		    						"User joined chat: " + Integer.toString(data.user.id));
+		    				break;
+		    			
+		    			case VentriloEvents.V3_EVENT_PING:
+		    				Log.i("mangler", 
+		    						"Ping: " + Integer.toString(data.ping));
+		    			break;
+		    			
+		    			case VentriloEvents.V3_EVENT_USER_TALK_START:
+		    				Log.i("mangler", 
+		    						"User started talking: " + Integer.toString(data.user.id) + 
+		    						" - Rate: " + Integer.toString(data.pcm.rate));
+		    			break;
+		    			
+		    			case VentriloEvents.V3_EVENT_USER_TALK_END:
+		    				Log.i("mangler", 
+		    						"User stopped talking: " + Integer.toString(data.user.id));
+			    			break;
+			    			
+		    			case VentriloEvents.V3_EVENT_STATUS:
+		    				Log.i("mangler", 
+		    						"Status: " + Integer.toString(data.status.percent) + "%" +
+		    						" -> " + StringFromBytes(data.status.message));
+		    				break;
+		    				
+		    			case VentriloEvents.V3_EVENT_CHAN_ADD:
+		    			case VentriloEvents.V3_EVENT_CHAN_MODIFY:
+		    				Log.i("mangler", 
+		    						"Channel added / modified: " + Short.toString(data.channel.id) +
+		    						" -> " + StringFromBytes(data.text.name));
+		    				break;
+		    				
+		    			case VentriloEvents.V3_EVENT_USER_LOGIN:
+		    				Log.i("mangler", 
+		    						"User logged in: " + Short.toString(data.user.id) +
+		    						" -> " + StringFromBytes(data.text.name));
+		    				break;
+		    			
+		    			default:
+		    				Log.w("mangler", 
+		    						"Unknown event of type: " + Integer.toString(data.type));
+		    		}
+		    	}
+    		}
+    	};
+    	
+    	Runnable recv_runnable = new Runnable() {
+    		public void run() {
+    			while(true) {
+    				if(!VentriloInterface.recv()) break;
+    			}
+    		}
+    	};
+        
+    	(new Thread(event_runnable)).start();
         if(VentriloInterface.login(hostname + ":" + port, username, "", phonetic)) {
-	    	
-	    	Runnable runnable = new Runnable() {
-	    		public void run() {
-	    			while(true) {
-	    				if(!VentriloInterface.recv()) break;
-	    			}
-	    		}
-	    	};
-	    	Thread t = new Thread(runnable);
-	    	t.start();
+	    	(new Thread(recv_runnable)).start();
+        	VentriloInterface.joinchat();
         }
     }
 }
