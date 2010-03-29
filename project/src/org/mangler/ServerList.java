@@ -140,15 +140,44 @@ public class ServerList extends ListActivity {
 		    				
 		    			case VentriloEvents.V3_EVENT_CHAN_ADD:
 		    			case VentriloEvents.V3_EVENT_CHAN_MODIFY:
+		    				VentriloInterface.getchannel(data, data.channel.id);
 		    				Log.i("mangler", 
 		    						"Channel added / modified: " + Short.toString(data.channel.id) +
 		    						" -> " + StringFromBytes(data.text.name));
 		    				break;
 		    				
 		    			case VentriloEvents.V3_EVENT_USER_LOGIN:
+		    				VentriloInterface.getuser(data, data.user.id);
 		    				Log.i("mangler", 
 		    						"User logged in: " + Short.toString(data.user.id) +
 		    						" -> " + StringFromBytes(data.text.name));
+		    				break;
+		    				
+		    			case VentriloEvents.V3_EVENT_LOGIN_COMPLETE:
+		    				Log.i("mangler",
+		    						"Login complete!");
+		    				break;
+		    				
+		    			case VentriloEvents.V3_EVENT_DISPLAY_MOTD:
+		    				Log.i("mangler",
+		    						"MOTD: " + StringFromBytes(data.data.motd));
+		    					
+		    				break;
+		    				
+		    			case VentriloEvents.V3_EVENT_USER_CHAN_MOVE:
+		    				Log.i("mangler",
+		    						"User joined channel: " + Integer.toString(data.user.id) +
+		    						" - channel: " + Integer.toString(data.channel.id));
+		    				break;
+		    				
+		    			case VentriloEvents.V3_EVENT_USER_LOGOUT:
+		    				Log.i("mangler",
+		    						"User left server: " + Integer.toString(data.user.id));
+		    				break;
+		    				
+		    			case VentriloEvents.V3_EVENT_CHAT_LEAVE:
+		    				Log.i("mangler",
+		    						"User left chat: " + Integer.toString(data.user.id));
 		    				break;
 		    			
 		    			default:
@@ -168,9 +197,9 @@ public class ServerList extends ListActivity {
     	};
         
     	(new Thread(event_runnable)).start();
+    	VentriloInterface.debuglevel(VentriloDebugLevels.V3_DEBUG_ALL);
         if(VentriloInterface.login(hostname + ":" + port, username, "", phonetic)) {
 	    	(new Thread(recv_runnable)).start();
-        	VentriloInterface.joinchat();
         }
     }
 }

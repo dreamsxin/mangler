@@ -6,10 +6,12 @@ public class VentriloInterface {
 	public static native short 		channelrequirespassword(short channelid);
 	public static native void 		clearevents();
 	public static native int  		debuglevel(int level);
+	public static native void		getchannel(VentriloEventData data, short channelid);
 	public static native int 		getcodecrate(short codec, short format);
 	public static native void		getevent(VentriloEventData data);
 	public static native int 		getmaxclients();
 	public static native short 		getuserchannel(short id);
+	public static native void		getuser(VentriloEventData data, short userid);
 	public static native short 		getuserid();
 	public static native boolean	isloggedin();
 	public static native void 		joinchat();

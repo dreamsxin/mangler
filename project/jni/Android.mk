@@ -51,7 +51,7 @@ include $(BUILD_STATIC_LIBRARY)
 include $(CLEAR_VARS)
 LOCAL_PATH				:= $(ROOT)/ventrilo
 LOCAL_MODULE    		:= libventrilo_interface
-LOCAL_SRC_FILES 		:= jni_wrappers.c debug.c
+LOCAL_SRC_FILES 		:= jni_wrappers.c
 LOCAL_LDLIBS			:= -llog
 LOCAL_CFLAGS			:= -I$(LIBPATH) -O3
 LOCAL_STATIC_LIBRARIES	:= libventrilo3 libgsm libspeex libcelt
