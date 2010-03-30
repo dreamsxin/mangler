@@ -2392,10 +2392,15 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                 _v3_unlock_server();
 
                 if (error) {
-                    v3_event *ev = _v3_create_event(V3_EVENT_ERROR_MSG);
-                    ev->error.disconnected = disconnected;
-                    strncpy(ev->error.message, buf, 512);
-                    v3_queue_event(ev);
+                    _v3_error("%s", buf);
+
+                    if (v3_is_loggedin()) {
+                        v3_event *ev = _v3_create_event(V3_EVENT_ERROR_MSG);
+                        ev->error.disconnected = disconnected;
+                        strncpy(ev->error.message, buf, 512);
+                        v3_queue_event(ev);
+                    }
+
                     _v3_func_leave("_v3_process_message");
                     return V3_FAILURE;
                 } else {
@@ -3224,7 +3229,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                     strncat(buf, buf2, 1023);
                 }
 
-                _v3_error(buf);
+                _v3_error("%s", buf);
 
                 if (v3_is_loggedin()) {
                     v3_event *ev = _v3_create_event(V3_EVENT_ERROR_MSG);
