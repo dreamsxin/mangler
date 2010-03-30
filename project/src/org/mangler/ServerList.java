@@ -16,11 +16,10 @@ import android.widget.AdapterView.AdapterContextMenuInfo;
 public class ServerList extends ListActivity {
 	
 	private static final int EDIT_ID = Menu.FIRST;
-    private static final int DELETE_ID = Menu.FIRST + 1;
+	private static final int CLONE_ID = Menu.FIRST + 1;
+    private static final int DELETE_ID = Menu.FIRST + 2;
     
 	private ManglerDBAdapter dbHelper;
-	
-	private Long userID;
 	
     /** Called when the activity is first created. */
     @Override
@@ -29,25 +28,19 @@ public class ServerList extends ListActivity {
         setContentView(R.layout.server_list);
         dbHelper = new ManglerDBAdapter(this);
         dbHelper.open();
-        
-        // Fetch userID that was passed in from UserList activity
-        if (userID == null)
-        {
-        	Bundle extras = getIntent().getExtras();   
-        	userID = extras.getLong(ManglerDBAdapter.KEY_USERID);
-        }
-        
         fillData();
         registerForContextMenu(getListView());
     }
     
     // Populate listview with entries from database
     private void fillData() {
-        Cursor serverCursor = dbHelper.fetchServersForUser(userID);
+        Cursor serverCursor = dbHelper.fetchServers();
         startManagingCursor(serverCursor);
         
         // Fields we want to display in the list
         String[] from = new String[]{ManglerDBAdapter.KEY_SERVERNAME};
+        
+        // TODO: Add field to display username as well
         
         // Fields we want to bind the display fields to
         int[] to = new int[]{R.id.srowtext};
@@ -62,7 +55,8 @@ public class ServerList extends ListActivity {
 	public void onCreateContextMenu(ContextMenu menu, View v, ContextMenuInfo menuInfo) {
 		super.onCreateContextMenu(menu, v, menuInfo);
 		menu.add(0, EDIT_ID, 0, "Edit Server");
-		menu.add(0, DELETE_ID, 1, "Delete Server");
+		menu.add(0, CLONE_ID, 1, "Clone Server");
+		menu.add(0, DELETE_ID, 2, "Delete Server");
 	}
     
     @Override
@@ -70,6 +64,10 @@ public class ServerList extends ListActivity {
 		AdapterContextMenuInfo info = (AdapterContextMenuInfo) item.getMenuInfo();
 		switch(item.getItemId()) {
 		case EDIT_ID:
+	        dbHelper.deleteServer(info.id);
+	        fillData();
+	        return true;
+		case CLONE_ID:
 	        dbHelper.deleteServer(info.id);
 	        fillData();
 	        return true;
@@ -91,12 +89,11 @@ public class ServerList extends ListActivity {
     protected void onListItemClick(ListView l, View v, int position, long id) {
         super.onListItemClick(l, v, position, id);
         Cursor servers = dbHelper.fetchServer(id);
-        Cursor users = dbHelper.fetchUser(servers.getLong(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_USERID)));
         startManagingCursor(servers);
-        String username = users.getString(users.getColumnIndexOrThrow(ManglerDBAdapter.KEY_USERNAME));
-        String phonetic = users.getString(users.getColumnIndexOrThrow(ManglerDBAdapter.KEY_PHONETIC));
         String hostname = servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_HOSTNAME));
         int port = servers.getInt(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_PORTNUMBER));
+        String username = servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_USERNAME));
+        String phonetic = servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_PHONETIC));
         
         // We need to start this -before- calling v3_login. 
     	Runnable event_runnable = new Runnable() {

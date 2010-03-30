@@ -28,13 +28,13 @@ public class main extends Activity {
         
         // Temporary initialization, uncomment for first run
         
-        /*dbHelper = new ManglerDBAdapter(this);
+        /*
+        dbHelper = new ManglerDBAdapter(this);
         dbHelper.open();
-        dbHelper.createUser("droid_test", "durr");
-        dbHelper.createServer(1, "mangler_test", "vent.mangler.org", 9047);
+        dbHelper.createServer(1, "mangler_test", "vent.mangler.org", 9047, "droid_test", "droid");
         */
         
-        Intent intent = new Intent(this, UserList.class);
+        Intent intent = new Intent(this, ServerList.class);
         startActivity(intent);
 
         // Connection code currently at bottom of ServerList class
