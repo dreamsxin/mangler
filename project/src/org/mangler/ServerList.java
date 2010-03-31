@@ -194,7 +194,7 @@ public class ServerList extends ListActivity {
     	};
         
     	(new Thread(event_runnable)).start();
-    	VentriloInterface.debuglevel(VentriloDebugLevels.V3_DEBUG_ALL);
+    	VentriloInterface.debuglevel(VentriloDebugLevels.V3_DEBUG_INTERNAL);
         if(VentriloInterface.login(hostname + ":" + port, username, "", phonetic)) {
 	    	(new Thread(recv_runnable)).start();
         }

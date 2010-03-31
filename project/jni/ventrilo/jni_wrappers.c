@@ -36,11 +36,11 @@ inline void set_byte(JNIEnv* env, jobject parent_obj, jclass parent_cls, char *n
 }
 
 inline void set_int(JNIEnv* env, jobject parent_obj, jclass parent_cls, char *name, jint val) {
-	(*env)->SetShortField(env, parent_obj, (*env)->GetFieldID(env, parent_cls, name, "I"), val);	
+	(*env)->SetIntField(env, parent_obj, (*env)->GetFieldID(env, parent_cls, name, "I"), val);	
 }
 
 inline void set_bool(JNIEnv* env, jobject parent_obj, jclass parent_cls, char *name, jboolean val) {
-	(*env)->SetShortField(env, parent_obj, (*env)->GetFieldID(env, parent_cls, name, "Z"), val);	
+	(*env)->SetBooleanField(env, parent_obj, (*env)->GetFieldID(env, parent_cls, name, "Z"), val);	
 }
 
 inline void set_byte_array(JNIEnv* env, jobject parent_obj, jclass parent_cls, char* name, jbyteArray data, jint sz) {
