@@ -3,7 +3,8 @@
     
     <string name="app_name">Mangler</string>
 
+<string name="add_server">Add New Server</string>
+
+
 <string name="server_list">Server List</string>
-
-
 </resources>
