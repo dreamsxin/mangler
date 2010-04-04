@@ -276,6 +276,7 @@ enum _v3_events {
     V3_EVENT_USER_CHANNEL_MUTE_CHANGED,
     V3_EVENT_PERMS_UPDATED,
     V3_EVENT_USER_RANK_CHANGE,
+    V3_EVENT_RECV_SRV_PROP,
 
     // outbound specific event types
     V3_EVENT_CHANGE_CHANNEL,
@@ -326,6 +327,35 @@ enum _v3_boot_types {
 #define V3_LOGIN_FLAGS_EXISTING (1 << 0)    // user was added from userlist sent at login (existing user)
 
 typedef union _v3_event_data v3_event_data;
+typedef struct _v3_sp_filter {
+    uint8_t action;
+    uint16_t interval;
+    uint8_t times;
+} v3_sp_filter;
+typedef struct {
+    uint8_t chat_filter;
+    uint8_t channel_order;
+    uint8_t motd_display;
+    v3_sp_filter chat_spam_filter;
+    v3_sp_filter comment_spam_filter;
+    v3_sp_filter wave_spam_filter;
+    v3_sp_filter tts_spam_filter;
+    uint32_t inactivity_timeout;
+    uint8_t inactivity_action;
+    char  inactivity_channel[1024]; // TODO: this sucks, we should probably resolve the channel path in lv3
+    uint8_t rem_srv_comment;
+    uint8_t rem_chan_names;
+    uint8_t rem_chan_comments;
+    uint8_t rem_user_names;
+    uint8_t rem_user_comments;
+    uint8_t wave_bind_filter;
+    uint8_t tts_bind_filter;
+    v3_sp_filter channel_spam_filter;
+    uint8_t rem_show_login_names;
+    uint8_t max_guest;
+    uint32_t autokick_len;
+    uint32_t autoban_len;
+} v3_server_prop;
 union _v3_event_data {
     struct {
         v3_permissions perms;
@@ -365,6 +395,7 @@ union _v3_event_data {
         uint16_t allow_voice_target;
         uint16_t allow_command_target;
     } channel;
+    v3_server_prop srvprop;
     struct {
         uint16_t id;
         uint16_t level;

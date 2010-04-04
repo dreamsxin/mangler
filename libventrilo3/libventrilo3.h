@@ -509,6 +509,7 @@ void                    _v3_unlock_sendq(void);
 int                     v3_queue_event(v3_event *ev);
 v3_event                *_v3_get_last_event(int *len);
 v3_event                *_v3_create_event(uint16_t event);
+uint8_t                 _v3_parse_filter(v3_sp_filter *f, char *value);
 
 uint8_t                 *_v3_audio_encode(uint8_t *sample, uint32_t pcmlen, const v3_codec *codec, uint16_t *datalen, uint8_t channels, uint16_t *framecount, uint8_t *celtfragsize);
 int                     _v3_audio_decode(const v3_codec *codec, _v3_decoders *decoder, uint8_t *data, uint16_t datalen, uint8_t *sample, uint32_t *pcmlen, uint8_t channels);
