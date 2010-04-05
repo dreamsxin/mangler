@@ -26,15 +26,17 @@
 
 #ifndef _MANGLERCONFIG_H
 #define _MANGLERCONFIG_H
+
 #include "inilib.h"
 
 class ManglerConfig {
-	public:
+    public:
         iniFile         config, servers;
-		//Glib::Mutex     mutex;
-		ManglerConfig();
+        //Glib::Mutex     mutex;
+        ManglerConfig();
         ~ManglerConfig();
-		void save();
+        std::string confdir() const;
+        void save();
         std::vector<int> PushToTalkXKeyCodes() const;
         iniValue &operator[](const string &configVar);
         bool hasUserVolume(const string &server, const string &user) const;

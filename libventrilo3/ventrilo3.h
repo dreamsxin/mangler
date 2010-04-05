@@ -326,7 +326,6 @@ enum _v3_boot_types {
 // v3_event.flags values for V3_EVENT_USER_LOGIN
 #define V3_LOGIN_FLAGS_EXISTING (1 << 0)    // user was added from userlist sent at login (existing user)
 
-typedef union _v3_event_data v3_event_data;
 typedef struct _v3_sp_filter {
     uint8_t action;
     uint16_t interval;
@@ -356,6 +355,7 @@ typedef struct {
     uint32_t autokick_len;
     uint32_t autoban_len;
 } v3_server_prop;
+typedef union _v3_event_data v3_event_data;
 union _v3_event_data {
     struct {
         v3_permissions perms;
@@ -677,10 +677,10 @@ void    _v3_print_permissions(v3_permissions *perms);
 int         v3_login(char *server, char *username, char *password, char *phonetic);
 void        v3_join_chat(void);
 void        v3_leave_chat(void);
-void        v3_send_chat_message(char* message);
+void        v3_send_chat_message(char *message);
 void        v3_start_privchat(uint16_t userid);
 void        v3_end_privchat(uint16_t userid);
-void        v3_send_privchat_message(uint16_t userid, char* message);
+void        v3_send_privchat_message(uint16_t userid, char *message);
 void        v3_send_privchat_away(uint16_t userid);
 void        v3_send_privchat_back(uint16_t userid);
 void        v3_logout(void);
@@ -759,6 +759,50 @@ void v3_set_volume_user(uint16_t id, int level);
 void v3_set_volume_luser(int level);
 uint8_t v3_get_volume_user(uint16_t id);
 uint8_t v3_get_volume_luser(void);
+
+// Recording API functions
+#define V3_VRF_DATA_NULL    0x00
+#define V3_VRF_DATA_AUDIO   0x01
+#define V3_VRF_DATA_TEXT    0x02
+ 
+typedef struct v3_vrf_data {
+    uint32_t size;
+    int8_t   codec;
+    int8_t   codecformat;
+
+    char     platform[64];
+    char     version[64];
+    char     comment[8192];
+    char     url[1024];
+    char     copyright[1024];
+
+    uint32_t id;
+    uint32_t time;
+    uint32_t duration;
+    char     username[32];
+
+    int      type;
+    void     *data;
+    char     *text;
+    uint32_t length;
+    uint32_t rate;
+    uint8_t  channels;
+
+    void     *_audio;
+    void     *_decoder;
+} v3_vrf_data;
+
+void     *v3_vrf_init(const char *filename);
+void     v3_vrf_destroy(void *vrfh);
+void     v3_vrf_data_init(v3_vrf_data *vrfd);
+void     v3_vrf_data_destroy(v3_vrf_data *vrfd);
+uint32_t v3_vrf_get_count(void *vrfh);
+int      v3_vrf_get_info(void *vrfh, v3_vrf_data *vrfd);
+int      v3_vrf_get_segment(void *vrfh, uint32_t id, v3_vrf_data *vrfd);
+int      v3_vrf_get_audio(void *vrfh, uint32_t id, v3_vrf_data *vrfd);
+int      v3_vrf_put_info(void *vrfh, const v3_vrf_data *vrfd);
+int      v3_vrf_record_start(const char *filename);
+void     v3_vrf_record_stop(void);
 
 #endif // _VENTRILO3_H
 

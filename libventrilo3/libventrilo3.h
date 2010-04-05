@@ -216,8 +216,8 @@ char *_v3_bitmasks[] = {
 #define V3_BOTH_WAITING 3
 
 /*
-   This structure defines the bit number of each permission setting, the
-   internal name, and a name suitable for display to a user.
+ * This structure defines the bit number of each permission setting, the
+ * internal name, and a name suitable for display to a user.
  */
 struct _v3_perm_info v3_perm_info[]  = {
     { 1,      "V3_PERM_LOCK_ACCT",               "Lock Account"                             },
@@ -444,6 +444,154 @@ _v3_decoders v3_decoders[65535];
 uint8_t _v3_user_volumes[65535];
 uint8_t _v3_master_volume = 79;
 
+// TODO: it's too messy to have this here. move into new lv3 repo.
+/*{{{*/
+#define V3_VRF_HEADID       "VENTRECD"
+#define V3_VRF_TEMPID       "TEMPRECD"
+ 
+#define V3_VRF_VERSION      0x01
+
+#define V3_VRF_HEADLEN      0x28
+#define V3_VRF_INFOLEN      0x2910
+#define V3_VRF_TEXTLEN      0x100
+
+#define V3_VRF_TYPE_AUDIO   0x01
+#define V3_VRF_TYPE_TEXT    0x02
+#define V3_VRF_TYPE_EXT     0x03
+
+#define V3_VRF_MAX_FRAGLEN  1 << 11 // 1105
+
+enum _v3_vrf_events {
+    V3_VRF_EVENT_DATA_FLUSH = 1,
+    V3_VRF_EVENT_AUDIO_DATA,
+    V3_VRF_EVENT_AUDIO_STOP,
+    V3_VRF_EVENT_TEXT_DATA
+};
+
+typedef struct _v3_vrf_header   v3_vrf_header;
+typedef struct _v3_vrf_segment  v3_vrf_segment;
+typedef struct _v3_vrf_audio    v3_vrf_audio;
+typedef struct _v3_vrf_fragment v3_vrf_fragment;
+typedef struct _v3_vrf_rec      v3_vrf_rec;
+typedef struct _v3_vrf          v3_vrf;
+
+struct _v3_vrf_header {         // 10552
+    char     headid[8];         // 0    - header id (VENTRECD)
+    uint32_t size;              // 8    - file size
+    uint32_t headlen;           // 12   - header length (0x28 / 40)
+    uint32_t unknown1;          // 16   - unused
+    uint32_t segtable;          // 20   - segment table offset
+    uint32_t segcount;          // 24   - segment count
+    uint32_t vrfversion;        // 28   - vrf version
+    uint32_t unknown2;          // 32   - unused
+    uint32_t unknown3;          // 36   - unused
+    uint32_t infolen;           // 40   - info length (0x2910 / 10512)
+    uint32_t codec;             // 44   - codec
+    uint32_t codecformat;       // 48   - codec format
+    uint32_t unknown4;          // 52   - unused
+    char     platform[64];      // 56   - platform
+    char     version[64];       // 120  - client version
+    char     username[128];     // 184  - user name
+    char     comment[8192];     // 312  - info comment
+    char     url[1024];         // 8504 - info url
+    char     copyright[1024];   // 9528 - info copyright
+} __attribute__ ((__packed__));
+
+struct _v3_vrf_segment {        // 64
+    uint32_t headlen;           // 0  - header length (0x40 / 64)
+    uint32_t type;              // 4  - audio type (0x01: v2.x audio | 0x02: text bind | 0x03: v3.x extended audio)
+    uint32_t valid;             // 8  - valid
+    uint32_t offset;            // 12 - audio offset
+    uint32_t time;              // 16 - audio time
+    uint32_t duration;          // 20 - audio duration
+    uint32_t unknown1;          // 24 - unused
+    uint32_t unknown2;          // 28 - unused
+    char     username[32];      // 32 - user name
+} __attribute__ ((__packed__));
+
+struct _v3_vrf_audio {          // 32
+    uint32_t headlen;           // 0  - header length (0x20 / 32)
+    uint32_t type;              // 4  - audio type (0x01: v2.x audio | 0x02: text bind | 0x03: v3.x extended audio)
+    uint32_t unknown1;          // 8  - unused
+    uint32_t index;             // 12 - segment index
+    uint32_t fragcount;         // 16 - fragment count
+    uint32_t unknown2;          // 20 - unused
+    uint32_t unknown3;          // 24 - unused
+    uint32_t offset;            // 28 - unused
+} __attribute__ ((__packed__));
+
+struct _v3_vrf_fragment {       // 24
+    uint32_t headlen;           // 0  - header length (0x01: 0x10 / 16 | 0x02: variable length | 0x03: 0x18 / 24)
+    uint32_t fraglen;           // 4  - fragment length
+    struct {
+        uint32_t pcmlen;        // 8  - pcm buffer length
+        uint32_t unknown1;      // 12 - unused
+        struct {
+            uint16_t codec;       // 16 - codec
+            uint16_t codecformat; // 18 - codec format
+            uint32_t unknown2;    // 20 - unused
+        } __attribute__ ((__packed__)) ext;
+    } __attribute__ ((__packed__)) audio;
+} __attribute__ ((__packed__));
+
+struct _v3_vrf_rec {
+    uint32_t user_id;
+    uint32_t index;
+    uint32_t fragcount;
+
+    uint8_t  stopped;
+
+    uint32_t datalen;
+    void     *data;
+
+    v3_vrf_segment segment;
+
+    v3_vrf_rec *next;
+} __attribute__ ((__packed__));
+
+struct _v3_vrf {
+    FILE    *file;
+    char    *filename;
+    uint32_t filelen;
+
+    pthread_mutex_t mutex;
+
+    v3_vrf_header header;
+    v3_vrf_segment *table;
+    uint32_t tablesize;
+
+    struct timeval start;
+    v3_vrf_rec queue;
+} __attribute__ ((__packed__));
+
+void _v3_vrf_lock(v3_vrf *vrfh);
+void _v3_vrf_unlock(v3_vrf *vrfh);
+void _v3_vrf_print_header(const v3_vrf_header *header);
+void _v3_vrf_print_info(const v3_vrf_header *header);
+void _v3_vrf_print_segment(uint32_t id, const v3_vrf_segment *segment);
+void _v3_vrf_print_audio(const v3_vrf_audio *audio);
+void _v3_vrf_print_fragment(uint32_t type, const v3_vrf_fragment *fragment);
+int  _v3_vrf_get_header(v3_vrf *vrfh);
+int  _v3_vrf_get_table(v3_vrf *vrfh);
+int  _v3_vrf_check_table(v3_vrf *vrfh);
+v3_vrf_segment *_v3_vrf_get_segment(v3_vrf *vrfh, uint32_t id);
+int  _v3_vrf_get_audio(v3_vrf *vrfh, uint32_t offset, v3_vrf_audio *audio);
+int  _v3_vrf_put_header(v3_vrf *vrfh);
+int  _v3_vrf_put_segment(uint32_t id, const v3_vrf_segment *segment, void *offset);
+int  _v3_vrf_put_audio(const v3_vrf_audio *audio, void *offset);
+int  _v3_vrf_put_fragment(uint32_t type, const v3_vrf_fragment *fragment, void *offset);
+void _v3_vrf_put_record(uint32_t user_id, uint32_t index, uint32_t type, const char *username, v3_vrf_rec *rec);
+void _v3_vrf_record_event(
+                int type,
+                uint16_t user_id,
+                uint16_t codec,
+                uint16_t codecformat,
+                uint32_t pcmlen,
+                uint32_t datalen,
+                void *data);
+/*}}}*/
+
+v3_vrf *_v3_vrfh = NULL;
 
 /*
  * Functions in ventrilo3_algo.c
@@ -462,7 +610,7 @@ void                    ventrilo3_algo_scramble(ventrilo_key_ctx *ctx, uint8_t *
 int                     _v3_logout(void);
 
 /*
- *  Internal functions
+ * Internal functions
  */
 void                    _v3_debug(uint32_t level, const char *format, ...);
 char *                  _v3_status(uint8_t percent, const char *format, ...);
@@ -511,8 +659,31 @@ v3_event                *_v3_get_last_event(int *len);
 v3_event                *_v3_create_event(uint16_t event);
 uint8_t                 _v3_parse_filter(v3_sp_filter *f, char *value);
 
-uint8_t                 *_v3_audio_encode(uint8_t *sample, uint32_t pcmlen, const v3_codec *codec, uint16_t *datalen, uint8_t channels, uint16_t *framecount, uint8_t *celtfragsize);
-int                     _v3_audio_decode(const v3_codec *codec, _v3_decoders *decoder, uint8_t *data, uint16_t datalen, uint8_t *sample, uint32_t *pcmlen, uint8_t channels);
+void _v3_init_decoders(void);
+void _v3_destroy_decoder(_v3_decoders *decoder);
+void _v3_destroy_decoders(void);
+uint8_t *_v3_audio_encode(
+                /* pcm input */
+                uint8_t *sample,
+                uint32_t pcmlen,
+                /* encoded output */
+                const v3_codec *codec,
+                uint16_t *datalen,
+                /* optional args */
+                uint8_t channels,
+                uint16_t *framecount,
+                uint8_t *celtfragsize);
+int _v3_audio_decode(
+                /* encoded input */
+                const v3_codec *codec,
+                _v3_decoders *decoder,
+                uint8_t *data,
+                uint16_t datalen,
+                /* pcm output */
+                uint8_t *sample,
+                uint32_t *pcmlen,
+                /* optional args */
+                uint8_t channels);
 
 #endif // _LIBVENTRILO3_H
 

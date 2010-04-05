@@ -76,7 +76,7 @@ class ManglerAudioDevice
 class ManglerAudio
 {
     public:
-        ManglerAudio(Glib::ustring type);
+        ManglerAudio(Glib::ustring type, bool check_loggedin = true, uint8_t buffer = 4);
         ~ManglerAudio();
         void            open(uint32_t rate, bool type, uint32_t pcm_framesize = 0, uint8_t channels = 1);
         bool            openOutput(uint32_t rate);
@@ -92,12 +92,12 @@ class ManglerAudio
         void            playNotification(Glib::ustring name);
         void            playNotification_thread(Glib::ustring name);
 
-
-
+        bool            check_loggedin;
         GAsyncQueue*    pcm_queue;
         uint32_t        rate;
         uint32_t        pcm_framesize;
         uint8_t         channels;
+        uint8_t         buffer;
 #ifdef HAVE_PULSE
         pa_sample_spec  pulse_samplespec;
         pa_buffer_attr  buffer_attr;
@@ -139,6 +139,7 @@ void pa_sourcelist_cb(pa_context *c, const pa_source_info *l, int eol, void *use
 int pa_get_devicelist(pa_devicelist_t *input, pa_devicelist_t *output);
 #endif
 
-int timeval_subtract (struct timeval *result, struct timeval *x, struct timeval *y);
+int timeval_subtract(struct timeval *result, struct timeval *x, struct timeval *y);
 
 #endif
+

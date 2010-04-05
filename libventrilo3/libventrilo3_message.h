@@ -24,10 +24,16 @@
  * along with Mangler.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#ifndef _LIBVENTRILO3_MESSAGE_H
+#define _LIBVENTRILO3_MESSAGE_H
+
 #include <stdint.h>
 #include <string.h>
 #include <stdlib.h>
 #include "ventrilo3.h"
+
+#define V3_CLIENT_VERSION   "3.0.5"
+#define V3_PROTO_VERSION    "3.0.0"
 
 /*
  * This file contains structures for each message type received by the Ventrilo3
@@ -105,10 +111,10 @@ int _v3_get_0x37(_v3_net_message *msg);
 _v3_net_message *_v3_put_0x37(int sequence);/*}}}*/
 typedef struct _v3_net_message_0x3a {/*{{{*/
     uint32_t type;              // 0
-    uint32_t empty;             // 4
-    uint16_t msglen;            // 6
+    uint32_t user_id;           // 4
+    uint16_t msglen;            // 8
 
-    char *   msg;               // 8 - variable length starts here
+    char *   msg;               // 10 - variable length starts here
 } __attribute__ ((__packed__)) _v3_msg_0x3a;/*}}}*/
 typedef struct _v3_net_message_0x3b {/*{{{*/
     uint32_t type;              // 0
@@ -143,7 +149,7 @@ typedef struct _v3_net_message_0x42 {/*{{{*/
     char *   msg;               // 14
 } __attribute__ ((__packed__)) _v3_msg_0x42;
 int _v3_get_0x42(_v3_net_message *msg);
-_v3_net_message *_v3_put_0x42(uint16_t subtype, uint16_t user_id, char* message);/*}}}*/
+_v3_net_message *_v3_put_0x42(uint16_t subtype, uint16_t user_id, char *message);/*}}}*/
 typedef struct _v3_net_message_0x46 {/*{{{*/
     uint32_t type;              // 0
     uint16_t user_id;           // 4
@@ -253,14 +259,7 @@ typedef struct _v3_net_message_0x52_0x01_in {/*{{{*/
     _v3_msg_0x52 header;        // 0
     uint16_t unknown_4;         // 24
     uint16_t unknown_5;         // 26
-    union {
-        void *frames;           // 28 - variable length starts here
-        struct {
-            uint16_t frame_count;    // 28
-            uint16_t pcm_frame_size; // 30
-            void *frames;            // 32 - variable length starts here
-        } __attribute__ ((__packed__)) speex;
-    } __attribute__ ((__packed__)) data;
+    void *   data;              // 28 - variable length starts here
 } __attribute__ ((__packed__)) _v3_msg_0x52_0x01_in;/*}}}*/
 typedef struct _v3_net_message_0x52_0x01_out {/*{{{*/
     _v3_msg_0x52 header;        // 0
@@ -333,7 +332,7 @@ typedef struct _v3_net_message_0x5a {/*{{{*/
     char *   msg;               // 14
 } __attribute__ ((__packed__)) _v3_msg_0x5a;
 int _v3_get_0x5a(_v3_net_message *msg);
-_v3_net_message *_v3_put_0x5a(uint16_t subtype, uint16_t user1, uint16_t user2, char* message);/*}}}*/
+_v3_net_message *_v3_put_0x5a(uint16_t subtype, uint16_t user1, uint16_t user2, char *message);/*}}}*/
 typedef struct _v3_net_message_0x5c {/*{{{*/
     uint32_t type;              // 0
     uint16_t subtype;           // 4
@@ -400,4 +399,6 @@ int         _v3_get_msg_user(void *offset, _v3_msg_user *user);
 int         _v3_put_msg_user(void *buf, _v3_msg_user *user);
 int         _v3_get_msg_account(void *offset, _v3_msg_account *account);
 int         _v3_put_msg_account(void *buf, _v3_msg_account *account);
+
+#endif // _LIBVENTRILO3_MESSAGE_H
 

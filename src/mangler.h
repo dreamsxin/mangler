@@ -40,6 +40,7 @@ class ManglerChat;
 class ManglerPrivChat;
 class ManglerIntegration;
 class ManglerAdmin;
+class ManglerRecorder;
 #ifdef HAVE_XOSD
 class ManglerOsd;
 #endif
@@ -103,6 +104,7 @@ class Mangler
         ManglerSettings                     *settings;
         ManglerIntegration                  *integration;
         ManglerAdmin                        *admin;
+        ManglerRecorder                     *recorder;
         static ManglerConfig                config;
 #ifdef HAVE_XOSD
         ManglerOsd                          *osd;
@@ -198,6 +200,7 @@ class Mangler
         void buttonMenuItem_toggled_cb(void);
         void hideServerInfoMenuItem_toggled_cb(void);
         void hideGuestFlagMenuItem_toggled_cb(void);
+        void recorderMenuItem_activate_cb(void);
         void quitMenuItem_activate_cb(void);
         void adminWindowMenuItem_activated_cb(void);
 

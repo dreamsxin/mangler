@@ -43,6 +43,7 @@
 #include "manglercharset.h"
 #include "manglerintegration.h"
 #include "mangleradmin.h"
+#include "manglerrecorder.h"
 #ifdef HAVE_XOSD
 # include "manglerosd.h"
 #endif
@@ -203,11 +204,14 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
     builder->get_widget("settingsStatusIconMenuItem", menuitem);
     menuitem->signal_activate().connect(sigc::mem_fun(this, &Mangler::settingsButton_clicked_cb));
 
+    builder->get_widget("commentMenuItem", menuitem);
+    menuitem->signal_activate().connect(sigc::mem_fun(this, &Mangler::commentButton_clicked_cb));
+
     builder->get_widget("chatMenuItem", menuitem);
     menuitem->signal_activate().connect(sigc::mem_fun(this, &Mangler::chatButton_clicked_cb));
 
-    builder->get_widget("commentMenuItem", menuitem);
-    menuitem->signal_activate().connect(sigc::mem_fun(this, &Mangler::commentButton_clicked_cb));
+    builder->get_widget("recorderMenuItem", menuitem);
+    menuitem->signal_activate().connect(sigc::mem_fun(this, &Mangler::recorderMenuItem_activate_cb));
 
     builder->get_widget("quitMenuItem", menuitem);
     menuitem->signal_activate().connect(sigc::mem_fun(this, &Mangler::quitMenuItem_activate_cb));
@@ -292,6 +296,9 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
     // Create Admin Window
     admin = new ManglerAdmin(builder);
     wantAdminWindow = false;
+
+    // Create Recording Window
+    recorder = new ManglerRecorder(builder);
 
     // Add our servers to the main window drop down
     builder->get_widget("serverSelectComboBox", combobox);
@@ -456,6 +463,7 @@ void Mangler::onDisconnectHandler(void) {/*{{{*/
         builder->get_widget("adminWindowMenuItem", menuitem);
         menuitem->hide();
         chat->clear();
+        recorder->can_record(false);
         if (! connectedServerName.empty()) {
             iniSection &server( config.servers[connectedServerName] );
             connectedServerName = "";
@@ -631,20 +639,20 @@ void Mangler::adminButton_clicked_cb(void) {/*{{{*/
         password = mangler->getPasswordEntry("Admin Password");
         if (password.length()) {
             v3_admin_login((char *)password.c_str());
-            //admin->adminWindow->show();
             //admin->adminWindow->set_icon(icons["tray_icon"]);
+            //admin->adminWindow->show();
             wantAdminWindow = true;
             // if we tried sending a password, the only options are either
             // success or get booted from the server.
         }
     } else {
-        admin->adminWindow->show();
         admin->adminWindow->set_icon(icons["tray_icon"]);
+        admin->adminWindow->show();
     }
 }/*}}}*/
 void Mangler::adminWindowMenuItem_activated_cb(void) {/*{{{*/
-    admin->adminWindow->show();
     admin->adminWindow->set_icon(icons["tray_icon"]);
+    admin->adminWindow->show();
 }/*}}}*/
 void Mangler::settingsButton_clicked_cb(void) {/*{{{*/
     settings->settingsWindow->show();
@@ -703,6 +711,10 @@ void Mangler::hideGuestFlagMenuItem_toggled_cb(void) {/*{{{*/
     }
     channelTree->refreshAllUsers();
     config.config.save();
+}/*}}}*/
+void Mangler::recorderMenuItem_activate_cb(void) {/*{{{*/
+    recorder->recWindow->set_icon(icons["tray_icon"]);
+    recorder->show();
 }/*}}}*/
 void Mangler::quitMenuItem_activate_cb(void) {/*{{{*/
     Gtk::Main::quit();
@@ -1089,6 +1101,7 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                     if (chat->isOpen) {
                         v3_join_chat();
                     }
+                    recorder->can_record(true);
                 }
                 break;/*}}}*/
             case V3_EVENT_USER_CHAN_MOVE:/*{{{*/

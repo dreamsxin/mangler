@@ -32,8 +32,10 @@
 #include "channeltree.h"
 #include "manglersettings.h"
 
-ManglerAudio::ManglerAudio(Glib::ustring type) {/*{{{*/
+ManglerAudio::ManglerAudio(Glib::ustring type, bool check_loggedin, uint8_t buffer) {/*{{{*/
     //fprintf(stderr, "creating audio object\n");
+    this->check_loggedin = check_loggedin;
+    this->buffer = buffer;
 }/*}}}*/
 ManglerAudio::~ManglerAudio() {/*{{{*/
 }/*}}}*/
@@ -451,7 +453,6 @@ ManglerAudio::input(void) {/*{{{*/
 
 void
 ManglerAudio::output(void) {/*{{{*/
-    uint8_t buffer = 4;
     ManglerPCM *queuedpcm = NULL;
 
     //fprintf(stderr, "playing audio\n");
@@ -460,18 +461,9 @@ ManglerAudio::output(void) {/*{{{*/
         //throw Glib::Thread::Exit();
         return;
     }
-
-    // short circuit if we are muted
-    if (mangler->muteSound) {
-        return;
-    }
-
     g_async_queue_ref(pcm_queue);
     for (;;) {
-        if (stop_output) {
-            break;
-        }
-        if (! v3_is_loggedin()) {
+        if (check_loggedin && !v3_is_loggedin()) {
             // we were disconnected while playing the stream.  unref the queue
             // and flush the audio buffers
 #ifdef HAVE_PULSE
@@ -515,6 +507,11 @@ ManglerAudio::output(void) {/*{{{*/
         if (queuedpcm->length == 0) {
             closeOutput(true);
             break;
+        }
+        if (mangler->muteSound) {
+            delete queuedpcm;
+            queuedpcm = NULL;
+            continue;
         }
 #ifdef HAVE_PULSE
         if (Mangler::config["AudioSubsystem"].toLower() == "pulse") {
@@ -564,7 +561,7 @@ ManglerAudio::output(void) {/*{{{*/
         queuedpcm = NULL;
     }
     g_async_queue_unref(pcm_queue);
-    closeOutput(v3_is_loggedin());
+    closeOutput(!check_loggedin || v3_is_loggedin());
     outputStreamOpen = false;
     //throw Glib::Thread::Exit();
     delete this;
@@ -1035,7 +1032,7 @@ void pa_sourcelist_cb(pa_context *c, const pa_source_info *l, int eol, void *use
 #endif
 
 int
-timeval_subtract (struct timeval *result, struct timeval *x, struct timeval *y) {/*{{{*/
+timeval_subtract(struct timeval *result, struct timeval *x, struct timeval *y) {/*{{{*/
     /* Perform the carry for the later subtraction by updating y. */
     if (x->tv_usec < y->tv_usec) {
         int nsec = (y->tv_usec - x->tv_usec) / 1000000 + 1;
@@ -1056,3 +1053,4 @@ timeval_subtract (struct timeval *result, struct timeval *x, struct timeval *y) 
     /* Return 1 if result is negative. */
     return x->tv_sec < y->tv_sec;
 }/*}}}*/
+

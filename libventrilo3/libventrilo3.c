@@ -854,6 +854,14 @@ _v3_recv(int block) {/*{{{*/
                                     _v3_destroy_packet(msg);
                                     break;
                                 }
+                                _v3_vrf_record_event(
+                                        V3_VRF_EVENT_AUDIO_DATA,
+                                        v3_get_user_id(),
+                                        codec->codec,
+                                        codec->format,
+                                        ev.pcm.length,
+                                        datalen,
+                                        data);
                                 free(data);
                                 data = NULL;
                             }
@@ -869,6 +877,7 @@ _v3_recv(int block) {/*{{{*/
                                  _v3_debug(V3_DEBUG_SOCKET, "failed to send user talk end message");
                             }
                             _v3_destroy_packet(msg);
+                            _v3_vrf_record_event(V3_VRF_EVENT_AUDIO_STOP, v3_get_user_id(), -1, -1, 0, 0, NULL);
                         }
                         break;/*}}}*/
                     case V3_EVENT_USER_MODIFY:/*{{{*/
@@ -1897,41 +1906,53 @@ _v3_unlock_server(void) {/*{{{*/
 void
 _v3_init_decoders(void) {/*{{{*/
     _v3_func_enter("_v3_init_decoders");
+
     memset(v3_decoders, 0, sizeof(v3_decoders));
+
     _v3_func_leave("_v3_init_decoders");
 }/*}}}*/
 
 void
-_v3_destroy_decoders(void) {/*{{{*/
-    int ctr;
+_v3_destroy_decoder(_v3_decoders *decoder) {/*{{{*/
+    //_v3_func_enter("_v3_destroy_decoder");
 
-    _v3_func_enter("_v3_destroy_decoders");
-    for (ctr = 0; ctr < 65535; ctr++) {
 #if HAVE_GSM
-        if (v3_decoders[ctr].gsm) {
-            gsm_destroy(v3_decoders[ctr].gsm);
-            v3_decoders[ctr].gsm = NULL;
-        }
+    if (decoder->gsm) {
+        gsm_destroy(decoder->gsm);
+        decoder->gsm = NULL;
+    }
 #endif
 #if HAVE_CELT
-        if (v3_decoders[ctr].celt) {
-            celt_decoder_destroy(v3_decoders[ctr].celt);
-            v3_decoders[ctr].celt = NULL;
-        }
-        if (v3_decoders[ctr].celtmode) {
-            celt_mode_destroy(v3_decoders[ctr].celtmode);
-            v3_decoders[ctr].celtmode = NULL;
-        }
-        v3_decoders[ctr].celtchans = 0;
+    if (decoder->celt) {
+        celt_decoder_destroy(decoder->celt);
+        decoder->celt = NULL;
+    }
+    if (decoder->celtmode) {
+        celt_mode_destroy(decoder->celtmode);
+        decoder->celtmode = NULL;
+    }
+    decoder->celtchans = 0;
 #endif
 #if HAVE_SPEEX
-        if (v3_decoders[ctr].speex) {
-            speex_decoder_destroy(v3_decoders[ctr].speex);
-            v3_decoders[ctr].speex = NULL;
-        }
-#endif
-        v3_decoders[ctr].speexrate = 0;
+    if (decoder->speex) {
+        speex_decoder_destroy(decoder->speex);
+        decoder->speex = NULL;
     }
+    decoder->speexrate = 0;
+#endif
+
+    //_v3_func_leave("_v3_destroy_decoder");
+}/*}}}*/
+
+void
+_v3_destroy_decoders(void) {/*{{{*/
+    _v3_func_enter("_v3_destroy_decoders");
+
+    int ctr;
+    for (ctr = 0; ctr < 65535; ctr++) {
+        _v3_destroy_decoder(&v3_decoders[ctr]);
+    }
+
     _v3_func_leave("_v3_destroy_decoders");
 }/*}}}*/
 
@@ -1965,7 +1986,6 @@ _v3_parse_filter(v3_sp_filter *f, char *value) {/*{{{*/
     return 1;
 }/*}}}*/
 
-
 uint8_t *
 _v3_audio_encode(
         /* pcm input */
@@ -1979,6 +1999,7 @@ _v3_audio_encode(
         uint16_t *framecount,
         uint8_t *celtfragsize) {/*{{{*/
     _v3_func_enter("_v3_audio_encode");
+
     if (!sample || !pcmlen || !codec || !datalen) {
         _v3_debug(V3_DEBUG_INFO, "argument missing for _v3_audio_encode");
         _v3_func_leave("_v3_audio_encode");
@@ -2188,6 +2209,7 @@ _v3_audio_encode(
         _v3_debug(V3_DEBUG_INFO, "unsupported codec %d/%d", codec->codec, codec->format);
         break;
     }
+
     _v3_func_leave("_v3_audio_encode");
     return NULL;
 }/*}}}*/
@@ -2205,6 +2227,7 @@ _v3_audio_decode(
         /* optional args */
         uint8_t channels) {/*{{{*/
     _v3_func_enter("_v3_audio_decode");
+
     if (!codec || !decoder || !data || !datalen || !sample || !pcmlen || (pcmlen && !*pcmlen)) {
         _v3_debug(V3_DEBUG_INFO, "argument missing for _v3_audio_decode");
         _v3_func_leave("_v3_audio_decode");
@@ -2268,12 +2291,12 @@ _v3_audio_decode(
         while (celtdatalen) {
             celt_frame_size = *celtdataptr;
             celtdataptr++;
-            celtdatalen--;
-            if (!celt_frame_size || celtdatalen - celt_frame_size < 0 || *pcmlen + pcm_frame_size > pcmmaxlen) {
+            if (!celt_frame_size || celtdatalen - celt_frame_size - 1 < 0 || *pcmlen + pcm_frame_size > pcmmaxlen) {
                 _v3_debug(V3_DEBUG_INFO, "received a malformed celt packet");
                 _v3_func_leave("_v3_audio_decode");
                 return V3_MALFORMED;
             }
+            celtdatalen--;
             if (celt_decode(decoder->celt, (void *)celtdataptr, celt_frame_size, (void *)sample + *pcmlen)) {
                 _v3_debug(V3_DEBUG_INFO, "failed to decode celt frame");
             }
@@ -2319,16 +2342,23 @@ _v3_audio_decode(
             }
             decoder->speexrate = codec->rate;
         }
+        spxdataptr += sizeof(uint16_t) * 2;
+        if (spxdatalen - sizeof(uint16_t) * 2 < 0) {
+            _v3_debug(V3_DEBUG_INFO, "received a malformed speex packet");
+            _v3_func_leave("_v3_audio_decode");
+            return V3_MALFORMED;
+        }
+        spxdatalen -= sizeof(uint16_t) * 2;
         speex_bits_init(&bits);
         while (spxdatalen) {
             spx_frame_size = ntohs(*(uint16_t *)spxdataptr);
             spxdataptr += sizeof(uint16_t);
-            spxdatalen -= sizeof(uint16_t);
-            if (!spx_frame_size || spxdatalen - spx_frame_size < 0 || *pcmlen + pcm_frame_size > pcmmaxlen) {
+            if (!spx_frame_size || spxdatalen - spx_frame_size - sizeof(uint16_t) < 0 || *pcmlen + pcm_frame_size > pcmmaxlen) {
                 _v3_debug(V3_DEBUG_INFO, "received a malformed speex packet");
                 _v3_func_leave("_v3_audio_decode");
                 return V3_MALFORMED;
             }
+            spxdatalen -= sizeof(uint16_t);
             speex_bits_read_from(&bits, (void *)spxdataptr, spx_frame_size);
             speex_decode_int(decoder->speex, &bits, (void *)sample + *pcmlen);
             spxdataptr += spx_frame_size;
@@ -2344,8 +2374,1059 @@ _v3_audio_decode(
         _v3_debug(V3_DEBUG_INFO, "unsupported codec %d/%d", codec->codec, codec->format);
         break;
     }
+
     _v3_func_leave("_v3_audio_decode");
     return V3_FAILURE;
+}/*}}}*/
+
+/*
+ * Recording API
+ */
+void *
+v3_vrf_init(const char *filename) {/*{{{*/
+    _v3_func_enter("v3_vrf_init");
+
+    v3_vrf *vrfh = malloc(sizeof(v3_vrf));
+    memset(vrfh, 0, sizeof(v3_vrf));
+    _v3_debug(V3_DEBUG_MUTEX, "initializing vrf mutex");
+    pthread_mutexattr_t mta;
+    pthread_mutexattr_init(&mta);
+    pthread_mutexattr_settype(&mta, PTHREAD_MUTEX_ERRORCHECK);
+    pthread_mutex_init(&vrfh->mutex, &mta);
+    if (filename && strlen(filename)) {
+        if (!(vrfh->file = fopen(filename, "rb+"))) {
+            _v3_error("%s: %s", filename, strerror(errno));
+            free(vrfh);
+            _v3_func_leave("v3_vrf_init");
+            return NULL;
+        }
+        vrfh->filename = strdup(filename);
+        _v3_debug(V3_DEBUG_INFO, "opened file for reading: %s", vrfh->filename);
+        fseek(vrfh->file, 0, SEEK_END);
+        vrfh->filelen = ftell(vrfh->file);
+        rewind(vrfh->file);
+        _v3_debug(V3_DEBUG_INFO, "file size: %u", vrfh->filelen);
+        if (!vrfh->filelen) {
+            _v3_error("%s: file is empty", filename);
+            v3_vrf_destroy(vrfh);
+            _v3_func_leave("v3_vrf_init");
+            return NULL;
+        }
+        if (_v3_vrf_get_header(vrfh) != V3_OK) {
+            v3_vrf_destroy(vrfh);
+            _v3_func_leave("v3_vrf_init");
+            return NULL;
+        }
+    }
+
+    _v3_func_leave("v3_vrf_init");
+    return vrfh;
+}/*}}}*/
+
+void
+v3_vrf_destroy(void *vrfh) {/*{{{*/
+    _v3_func_enter("v3_vrf_destroy");
+
+    v3_vrf *_vrfh = vrfh;
+    if (!vrfh) {
+        _v3_func_leave("v3_vrf_destroy");
+        return;
+    }
+    if (_vrfh->table) {
+        free(_vrfh->table);
+        _vrfh->table = NULL;
+    }
+    if (_vrfh->filename) {
+        free(_vrfh->filename);
+        _vrfh->filename = NULL;
+    }
+    if (_vrfh->file) {
+        fclose(_vrfh->file);
+        _vrfh->file = NULL;
+    }
+    pthread_mutex_destroy(&_vrfh->mutex);
+    free(vrfh);
+    vrfh = NULL;
+
+    _v3_func_leave("v3_vrf_destroy");
+}/*}}}*/
+
+void
+v3_vrf_data_init(v3_vrf_data *vrfd) {/*{{{*/
+    _v3_func_enter("v3_vrf_data_init");
+
+    if (!vrfd) {
+        _v3_func_leave("v3_vrf_data_init");
+        return;
+    }
+    memset(vrfd, 0, sizeof(v3_vrf_data));
+
+    _v3_func_leave("v3_vrf_data_init");
+}/*}}}*/
+
+void
+v3_vrf_data_destroy(v3_vrf_data *vrfd) {/*{{{*/
+    _v3_func_enter("v3_vrf_data_destroy");
+
+    if (!vrfd) {
+        _v3_func_leave("v3_vrf_data_destroy");
+        return;
+    }
+    if (vrfd->text) {
+        free(vrfd->text);
+        vrfd->text = NULL;
+    }
+    if (vrfd->data) {
+        free(vrfd->data);
+        vrfd->data = NULL;
+    }
+    if (vrfd->_decoder) {
+        _v3_destroy_decoder(vrfd->_decoder);
+        free(vrfd->_decoder);
+        vrfd->_decoder = NULL;
+    }
+    if (vrfd->_audio) {
+        free(vrfd->_audio);
+        vrfd->_audio = NULL;
+    }
+    memset(vrfd, 0, sizeof(v3_vrf_data));
+
+    _v3_func_leave("v3_vrf_data_destroy");
+}/*}}}*/
+
+void
+_v3_vrf_lock(v3_vrf *vrfh) {/*{{{*/
+    _v3_func_enter("_v3_vrf_lock");
+
+    _v3_debug(V3_DEBUG_MUTEX, "locking vrf");
+    pthread_mutex_lock(&vrfh->mutex);
+
+    _v3_func_leave("_v3_vrf_lock");
+}/*}}}*/
+
+void
+_v3_vrf_unlock(v3_vrf *vrfh) {/*{{{*/
+    _v3_func_enter("_v3_vrf_unlock");
+
+    _v3_debug(V3_DEBUG_MUTEX, "unlocking vrf");
+    pthread_mutex_unlock(&vrfh->mutex);
+
+    _v3_func_leave("_v3_vrf_unlock");
+}/*}}}*/
+
+void
+_v3_vrf_print_header(const v3_vrf_header *header) {/*{{{*/
+    _v3_func_enter("_v3_vrf_print_header");
+
+    _v3_debug(V3_DEBUG_INFO, "headid.....: %.*s", sizeof(header->headid), header->headid);
+    _v3_debug(V3_DEBUG_INFO, "size.......: %u", header->size);
+    _v3_debug(V3_DEBUG_INFO, "headlen....: %u", header->headlen);
+    _v3_debug(V3_DEBUG_INFO, "unknown1...: %u", header->unknown1);
+    _v3_debug(V3_DEBUG_INFO, "segtable...: 0x%08x", header->segtable);
+    _v3_debug(V3_DEBUG_INFO, "segcount...: %u", header->segcount);
+    _v3_debug(V3_DEBUG_INFO, "vrfversion.: 0x%02x", header->vrfversion);
+    _v3_debug(V3_DEBUG_INFO, "unknown2...: %u", header->unknown2);
+    _v3_debug(V3_DEBUG_INFO, "unknown3...: %u", header->unknown3);
+    _v3_debug(V3_DEBUG_INFO, "infolen....: %u", header->infolen);
+    _v3_debug(V3_DEBUG_INFO, "codec......: 0x%02x", header->codec);
+    _v3_debug(V3_DEBUG_INFO, "codecformat: 0x%02x", header->codecformat);
+    _v3_debug(V3_DEBUG_INFO, "unknown4...: %u", header->unknown4);
+    _v3_debug(V3_DEBUG_INFO, "platform...: %.*s", sizeof(header->platform),  header->platform);
+    _v3_debug(V3_DEBUG_INFO, "version....: %.*s", sizeof(header->version),   header->version);
+    _v3_debug(V3_DEBUG_INFO, "username...: %.*s", sizeof(header->username),  header->username);
+    _v3_debug(V3_DEBUG_INFO, "comment....: %.*s", sizeof(header->comment),   header->comment);
+    _v3_debug(V3_DEBUG_INFO, "url........: %.*s", sizeof(header->url),       header->url);
+    _v3_debug(V3_DEBUG_INFO, "copyright..: %.*s", sizeof(header->copyright), header->copyright);
+
+    _v3_func_leave("_v3_vrf_print_header");
+}/*}}}*/
+
+void
+_v3_vrf_print_info(const v3_vrf_header *header) {/*{{{*/
+    _v3_func_enter("_v3_vrf_print_info");
+
+    _v3_debug(V3_DEBUG_INFO, "size.......: %u", header->size);
+    _v3_debug(V3_DEBUG_INFO, "codec......: 0x%02x", header->codec);
+    _v3_debug(V3_DEBUG_INFO, "codecformat: 0x%02x", header->codecformat);
+    _v3_debug(V3_DEBUG_INFO, "platform...: %.*s", sizeof(header->platform),  header->platform);
+    _v3_debug(V3_DEBUG_INFO, "version....: %.*s", sizeof(header->version),   header->version);
+    _v3_debug(V3_DEBUG_INFO, "username...: %.*s", sizeof(header->username),  header->username);
+    _v3_debug(V3_DEBUG_INFO, "comment....: %.*s", sizeof(header->comment),   header->comment);
+    _v3_debug(V3_DEBUG_INFO, "url........: %.*s", sizeof(header->url),       header->url);
+    _v3_debug(V3_DEBUG_INFO, "copyright..: %.*s", sizeof(header->copyright), header->copyright);
+
+    _v3_func_leave("_v3_vrf_print_info");
+}/*}}}*/
+
+void
+_v3_vrf_print_segment(uint32_t id, const v3_vrf_segment *segment) {/*{{{*/
+    _v3_func_enter("_v3_vrf_print_segment");
+
+    _v3_debug(V3_DEBUG_INFO, "--- segment %i ---", id);
+    _v3_debug(V3_DEBUG_INFO, "headlen.: %u", segment->headlen);
+    _v3_debug(V3_DEBUG_INFO, "type....: 0x%02x", segment->type);
+    _v3_debug(V3_DEBUG_INFO, "valid...: %u", segment->valid);
+    _v3_debug(V3_DEBUG_INFO, "offset..: 0x%08x", segment->offset);
+    _v3_debug(V3_DEBUG_INFO, "time....: %u", segment->time);
+    _v3_debug(V3_DEBUG_INFO, "duration: %u", segment->duration);
+    _v3_debug(V3_DEBUG_INFO, "unknown1: %u", segment->unknown1);
+    _v3_debug(V3_DEBUG_INFO, "unknown2: %u", segment->unknown2);
+    _v3_debug(V3_DEBUG_INFO, "username: %.*s", sizeof(segment->username), segment->username);
+
+    _v3_func_leave("_v3_vrf_print_segment");
+}/*}}}*/
+
+void
+_v3_vrf_print_audio(const v3_vrf_audio *audio) {/*{{{*/
+    _v3_func_enter("_v3_vrf_print_audio");
+
+    _v3_debug(V3_DEBUG_INFO, "headlen..: %u", audio->headlen);
+    _v3_debug(V3_DEBUG_INFO, "type.....: 0x%02x", audio->type);
+    _v3_debug(V3_DEBUG_INFO, "unknown1.: %u", audio->unknown1);
+    _v3_debug(V3_DEBUG_INFO, "index....: %u", audio->index);
+    _v3_debug(V3_DEBUG_INFO, "fragcount: %u", audio->fragcount);
+    _v3_debug(V3_DEBUG_INFO, "unknown2.: %u", audio->unknown2);
+    _v3_debug(V3_DEBUG_INFO, "unknown3.: %u", audio->unknown3);
+    _v3_debug(V3_DEBUG_INFO, "unknown4.: %u", audio->offset);
+
+    _v3_func_leave("_v3_vrf_print_audio");
+}/*}}}*/
+
+void
+_v3_vrf_print_fragment(uint32_t type, const v3_vrf_fragment *fragment) {/*{{{*/
+    _v3_func_enter("_v3_vrf_print_fragment");
+
+    _v3_debug(V3_DEBUG_INFO, "headlen....: %u", fragment->headlen);
+    _v3_debug(V3_DEBUG_INFO, "fraglen....: %u", fragment->fraglen);
+    if (type != V3_VRF_TYPE_TEXT) {
+        _v3_debug(V3_DEBUG_INFO, "pcmlen.....: %u", fragment->audio.pcmlen);
+        _v3_debug(V3_DEBUG_INFO, "unknown1...: %u", fragment->audio.unknown1);
+    }
+    if (type == V3_VRF_TYPE_EXT) {
+        _v3_debug(V3_DEBUG_INFO, "codec......: 0x%02x", fragment->audio.ext.codec);
+        _v3_debug(V3_DEBUG_INFO, "codecformat: 0x%02x", fragment->audio.ext.codecformat);
+        _v3_debug(V3_DEBUG_INFO, "unknown2...: %u", fragment->audio.ext.unknown2);
+    }
+
+    _v3_func_leave("_v3_vrf_print_fragment");
+}/*}}}*/
+
+int
+_v3_vrf_get_header(v3_vrf *vrfh) {/*{{{*/
+    _v3_func_enter("_v3_vrf_get_header");
+
+    if (!vrfh) {
+        _v3_func_leave("_v3_vrf_get_header");
+        return V3_FAILURE;
+    }
+    _v3_vrf_lock(vrfh);
+    rewind(vrfh->file);
+    if (!fread(&vrfh->header, sizeof(v3_vrf_header), 1, vrfh->file)) {
+        _v3_error("%s: failed to get vrf header: %s", vrfh->filename, strerror(errno));
+        _v3_vrf_unlock(vrfh);
+        _v3_func_leave("_v3_vrf_get_header");
+        return V3_FAILURE;
+    }
+    v3_vrf_header *header = &vrfh->header;
+    header->size        = ntohl(header->size);
+    header->headlen     = ntohl(header->headlen);
+    header->unknown1    = ntohl(header->unknown1);
+    header->segtable    = ntohl(header->segtable);
+    header->segcount    = ntohl(header->segcount);
+    header->vrfversion  = ntohl(header->vrfversion);
+    header->unknown2    = ntohl(header->unknown2);
+    header->unknown3    = ntohl(header->unknown3);
+    header->infolen     = ntohl(header->infolen);
+    header->codec       = ntohl(header->codec);
+    header->codecformat = ntohl(header->codecformat);
+    header->unknown4    = ntohl(header->unknown4);
+    _v3_vrf_print_header(header);
+    if (strncmp(header->headid, V3_VRF_HEADID, sizeof(header->headid))) {
+        _v3_error("%s: unrecognized file header id", vrfh->filename);
+        _v3_vrf_unlock(vrfh);
+        _v3_func_leave("_v3_vrf_get_header");
+        return V3_MALFORMED;
+    }
+    _v3_vrf_unlock(vrfh);
+
+    _v3_func_leave("_v3_vrf_get_header");
+    return V3_OK;
+}/*}}}*/
+
+uint32_t
+v3_vrf_get_count(void *vrfh) {/*{{{*/
+    _v3_func_enter("v3_vrf_get_count");
+
+    if (!vrfh) {
+        _v3_func_leave("v3_vrf_get_count");
+        return 0;
+    }
+    v3_vrf *_vrfh = vrfh;
+    _v3_debug(V3_DEBUG_INFO, "segcount: %u", _vrfh->header.segcount);
+
+    _v3_func_leave("v3_vrf_get_count");
+    return _vrfh->header.segcount;
+}/*}}}*/
+
+int
+v3_vrf_get_info(void *vrfh, v3_vrf_data *vrfd) {/*{{{*/
+    _v3_func_enter("v3_vrf_get_info");
+
+    if (!vrfh) {
+        _v3_func_leave("v3_vrf_get_info");
+        return V3_FAILURE;
+    }
+    v3_vrf *_vrfh = vrfh;
+    v3_vrf_header *header = &_vrfh->header;
+    _v3_vrf_print_info(header);
+    if (vrfd) {
+        v3_vrf_data_init(vrfd);
+        vrfd->size = header->size;
+        vrfd->codec = header->codec;
+        vrfd->codecformat = header->codecformat;
+        strncpy(vrfd->platform,  header->platform,  sizeof(vrfd->platform) - 1);
+        strncpy(vrfd->version,   header->version,   sizeof(vrfd->version) - 1);
+        strncpy(vrfd->username,  header->username,  sizeof(vrfd->username) - 1);
+        strncpy(vrfd->comment,   header->comment,   sizeof(vrfd->comment) - 1);
+        strncpy(vrfd->url,       header->url,       sizeof(vrfd->url) - 1);
+        strncpy(vrfd->copyright, header->copyright, sizeof(vrfd->copyright) - 1);
+    }
+
+    _v3_func_leave("v3_vrf_get_info");
+    return V3_OK;
+}/*}}}*/
+
+int
+_v3_vrf_get_table(v3_vrf *vrfh) {/*{{{*/
+    _v3_func_enter("_v3_vrf_get_table");
+
+    if (!vrfh) {
+        _v3_func_leave("_v3_vrf_get_table");
+        return V3_FAILURE;
+    }
+    _v3_vrf_lock(vrfh);
+    if (vrfh->table) {
+        vrfh->tablesize = 0;
+        free(vrfh->table);
+        vrfh->table = NULL;
+    }
+    vrfh->tablesize = sizeof(v3_vrf_segment) * vrfh->header.segcount;
+    if (!vrfh->header.segtable || vrfh->tablesize + vrfh->header.segtable > vrfh->filelen) {
+        _v3_error("%s: vrf is corrupted", vrfh->filename);
+        _v3_vrf_unlock(vrfh);
+        _v3_func_leave("_v3_vrf_get_table");
+        return V3_MALFORMED;
+    }
+    vrfh->table = malloc(vrfh->tablesize);
+    memset(vrfh->table, 0, vrfh->tablesize);
+    fseek(vrfh->file, vrfh->header.segtable, SEEK_SET);
+    if (!fread(vrfh->table, vrfh->tablesize, 1, vrfh->file)) {
+        _v3_error("%s: failed to get vrf segment table: %s", vrfh->filename, strerror(errno));
+        vrfh->tablesize = 0;
+        free(vrfh->table);
+        vrfh->table = NULL;
+        _v3_vrf_unlock(vrfh);
+        _v3_func_leave("_v3_vrf_get_table");
+        return V3_FAILURE;
+    }
+    uint32_t ctr;
+    for (ctr = 0; ctr < vrfh->header.segcount; ctr++) {
+        v3_vrf_segment *segment = &vrfh->table[ctr];
+        segment->headlen  = ntohl(segment->headlen);
+        segment->type     = ntohl(segment->type);
+        segment->valid    = ntohl(segment->valid);
+        segment->offset   = ntohl(segment->offset);
+        segment->time     = ntohl(segment->time);
+        segment->duration = ntohl(segment->duration);
+        segment->unknown1 = ntohl(segment->unknown1);
+        segment->unknown2 = ntohl(segment->unknown2);
+    }
+    _v3_vrf_unlock(vrfh);
+
+    _v3_func_leave("_v3_vrf_get_table");
+    return V3_OK;
+}/*}}}*/
+
+int
+_v3_vrf_check_table(v3_vrf *vrfh) {/*{{{*/
+    _v3_func_enter("_v3_vrf_check_table");
+
+    if (!vrfh) {
+        _v3_func_leave("_v3_vrf_check_table");
+        return V3_FAILURE;
+    }
+    if (!vrfh->table && _v3_vrf_get_table(vrfh) != V3_OK) {
+        _v3_func_leave("_v3_vrf_check_table");
+        return V3_FAILURE;
+    }
+    if (!vrfh->header.segcount || vrfh->header.segtable == vrfh->filelen) {
+        _v3_error("%s: no segments", vrfh->filename);
+        _v3_func_leave("_v3_vrf_check_table");
+        return V3_FAILURE;
+    }
+
+    _v3_func_leave("_v3_vrf_check_table");
+    return V3_OK;
+}/*}}}*/
+
+v3_vrf_segment *
+_v3_vrf_get_segment(v3_vrf *vrfh, uint32_t id) {/*{{{*/
+    _v3_func_enter("_v3_vrf_get_segment");
+
+    if (!vrfh) {
+        _v3_func_leave("_v3_vrf_get_segment");
+        return NULL;
+    }
+    if (!vrfh->file || !vrfh->filename) {
+        _v3_error("%p: no file opened", vrfh);
+        _v3_func_leave("_v3_vrf_get_segment");
+        return NULL;
+    }
+    if (id > vrfh->header.segcount) {
+        _v3_error("%s: requested id greater than segment count", vrfh->filename);
+        _v3_func_leave("_v3_vrf_get_segment");
+        return NULL;
+    }
+    if (_v3_vrf_check_table(vrfh) != V3_OK) {
+        _v3_func_leave("_v3_vrf_get_segment");
+        return NULL;
+    }
+    v3_vrf *_vrfh = vrfh;
+    v3_vrf_segment *segment = &_vrfh->table[id];
+    _v3_vrf_print_segment(id, segment);
+
+    _v3_func_leave("_v3_vrf_get_segment");
+    return segment;
+}/*}}}*/
+
+int
+v3_vrf_get_segment(void *vrfh, uint32_t id, v3_vrf_data *vrfd) {/*{{{*/
+    _v3_func_enter("v3_vrf_get_segment");
+
+    if (!vrfh) {
+        _v3_func_leave("v3_vrf_get_segment");
+        return V3_FAILURE;
+    }
+    v3_vrf_segment *segment;
+    if (!(segment = _v3_vrf_get_segment(vrfh, id))) {
+        _v3_func_leave("v3_vrf_get_segment");
+        return V3_FAILURE;
+    }
+    if (vrfd) {
+        v3_vrf_data_init(vrfd);
+        vrfd->id = id;
+        vrfd->time = segment->time;
+        vrfd->duration = segment->duration;
+        strncpy(vrfd->username, segment->username, sizeof(vrfd->username) - 1);
+    }
+
+    _v3_func_leave("v3_vrf_get_segment");
+    return V3_OK;
+}/*}}}*/
+
+int
+_v3_vrf_get_audio(v3_vrf *vrfh, uint32_t offset, v3_vrf_audio *audio) {/*{{{*/
+    _v3_func_enter("_v3_vrf_get_audio");
+
+    if (!vrfh || !audio) {
+        _v3_func_leave("_v3_vrf_get_audio");
+        return V3_FAILURE;
+    }
+    _v3_vrf_lock(vrfh);
+    fseek(vrfh->file, offset, SEEK_SET);
+    if (!fread(audio, sizeof(v3_vrf_audio), 1, vrfh->file)) {
+        _v3_error("%s: failed to get vrf audio segment: %s", vrfh->filename, strerror(errno));
+        _v3_vrf_unlock(vrfh);
+        _v3_func_leave("_v3_vrf_get_audio");
+        return V3_FAILURE;
+    }
+    audio->headlen   = ntohl(audio->headlen);
+    audio->type      = ntohl(audio->type);
+    audio->unknown1  = ntohl(audio->unknown1);
+    audio->index     = ntohl(audio->index);
+    audio->fragcount = ntohl(audio->fragcount);
+    audio->unknown2  = ntohl(audio->unknown2);
+    audio->unknown3  = ntohl(audio->unknown3);
+    audio->offset    = ntohl(audio->offset);
+    _v3_vrf_print_audio(audio);
+    _v3_vrf_unlock(vrfh);
+
+    _v3_func_leave("_v3_vrf_get_audio");
+    return V3_OK;
+}/*}}}*/
+
+int
+v3_vrf_get_audio(void *vrfh, uint32_t id, v3_vrf_data *vrfd) {/*{{{*/
+    _v3_func_enter("v3_vrf_get_audio");
+
+    if (!vrfh || !vrfd) {
+        _v3_func_leave("v3_vrf_get_audio");
+        return V3_FAILURE;
+    }
+    v3_vrf *_vrfh = vrfh;
+    vrfd->type = V3_VRF_DATA_NULL;
+    v3_vrf_audio *audio = vrfd->_audio;
+    if (!audio) {
+        v3_vrf_segment *segment;
+        if (!(segment = _v3_vrf_get_segment(vrfh, id))) {
+            _v3_func_leave("v3_vrf_get_audio");
+            return V3_FAILURE;
+        }
+        if (!segment->offset || segment->offset >= _vrfh->header.segtable || segment->offset >= _vrfh->filelen) {
+            _v3_error("%s: vrf segment %i is corrupted", _vrfh->filename, id);
+            _v3_func_leave("v3_vrf_get_audio");
+            return V3_MALFORMED;
+        }
+        audio = malloc(sizeof(v3_vrf_audio));
+        memset(audio, 0, sizeof(v3_vrf_audio));
+        if (_v3_vrf_get_audio(vrfh, segment->offset, audio) != V3_OK) {
+            free(audio);
+            _v3_vrf_unlock(vrfh);
+            _v3_func_leave("v3_vrf_get_audio");
+            return V3_FAILURE;
+        }
+        audio->offset = segment->offset + audio->headlen;
+        vrfd->_audio = audio;
+    }
+    if (audio->fragcount --> 0) {
+        v3_vrf_fragment fragment;
+        uint32_t fragread;
+        uint32_t fraglen;
+        void     *fragdata;
+        switch (audio->type) {
+          case V3_VRF_TYPE_AUDIO:
+            fragread = sizeof(v3_vrf_fragment) - sizeof(fragment.audio.ext);
+            break;
+          case V3_VRF_TYPE_TEXT:
+            fragread = sizeof(v3_vrf_fragment) - sizeof(fragment.audio);
+            break;
+          case V3_VRF_TYPE_EXT:
+            fragread = sizeof(v3_vrf_fragment);
+            break;
+          default:
+            _v3_error("%s: unknown audio type: 0x%02x", _vrfh->filename, audio->type);
+            _v3_func_leave("v3_vrf_get_audio");
+            return V3_FAILURE;
+        }
+        _v3_vrf_lock(vrfh);
+        fseek(_vrfh->file, audio->offset, SEEK_SET);
+        if (!fread(&fragment, fragread, 1, _vrfh->file)) {
+            _v3_error("%s: failed to get vrf audio fragment: %s", _vrfh->filename, strerror(errno));
+            _v3_vrf_unlock(vrfh);
+            _v3_func_leave("v3_vrf_get_audio");
+            return V3_FAILURE;
+        }
+        fragment.headlen = ntohl(fragment.headlen);
+        fragment.fraglen = ntohl(fragment.fraglen);
+        if (audio->type != V3_VRF_TYPE_TEXT) {
+            fragment.audio.pcmlen   = ntohl(fragment.audio.pcmlen);
+            fragment.audio.unknown1 = ntohl(fragment.audio.unknown1);
+        }
+        if (audio->type == V3_VRF_TYPE_EXT) {
+            fragment.audio.ext.codec       = ntohs(fragment.audio.ext.codec);
+            fragment.audio.ext.codecformat = ntohs(fragment.audio.ext.codecformat);
+            fragment.audio.ext.unknown2    = ntohl(fragment.audio.ext.unknown2);
+        }
+        _v3_vrf_print_fragment(audio->type, &fragment);
+        switch (audio->type) {
+          case V3_VRF_TYPE_AUDIO:
+          case V3_VRF_TYPE_EXT:
+            fraglen = fragment.fraglen;
+            break;
+          case V3_VRF_TYPE_TEXT:
+            fraglen = fragment.headlen - fragread;
+            break;
+        }
+        if (!fragment.headlen || fraglen > V3_VRF_MAX_FRAGLEN) {
+            _v3_error("%s: vrf fragment is corrupted", _vrfh->filename);
+            _v3_vrf_unlock(vrfh);
+            _v3_func_leave("v3_vrf_get_audio");
+            return V3_MALFORMED;
+        }
+        fragdata = malloc(fraglen);
+        memset(fragdata, 0, fraglen);
+        if (!fread(fragdata, fraglen, 1, _vrfh->file)) {
+            _v3_error("%s: failed to get vrf audio fragment data: %s", _vrfh->filename, strerror(errno));
+            free(fragdata);
+            _v3_vrf_unlock(vrfh);
+            _v3_func_leave("v3_vrf_get_audio");
+            return V3_FAILURE;
+        }
+        audio->offset = ftell(_vrfh->file);
+        _v3_vrf_unlock(vrfh);
+        switch (audio->type) {
+          case V3_VRF_TYPE_AUDIO:
+            fragment.audio.ext.codec       = _vrfh->header.codec;
+            fragment.audio.ext.codecformat = _vrfh->header.codecformat;
+          case V3_VRF_TYPE_EXT:
+            vrfd->type        = V3_VRF_DATA_AUDIO;
+            vrfd->codec       = fragment.audio.ext.codec;
+            vrfd->codecformat = fragment.audio.ext.codecformat;
+            vrfd->rate        = v3_get_codec_rate(vrfd->codec, vrfd->codecformat);
+            vrfd->channels    = (fragment.audio.pcmlen - 2000 == 2) ? 2 : 1;
+            if (!vrfd->_decoder) {
+                vrfd->_decoder = malloc(sizeof(_v3_decoders));
+                memset(vrfd->_decoder, 0, sizeof(_v3_decoders));
+            }
+            v3_event *ev;
+            vrfd->length = sizeof(ev->data->sample);
+            if (!vrfd->data) {
+                vrfd->data = malloc(vrfd->length);
+            }
+            memset(vrfd->data, 0, vrfd->length);
+            int ret;
+            if ((ret = _v3_audio_decode(
+                            /* encoded input */
+                            v3_get_codec(vrfd->codec, vrfd->codecformat),
+                            vrfd->_decoder,
+                            fragdata,
+                            fraglen,
+                            /* pcm output */
+                            vrfd->data,
+                            &vrfd->length,
+                            /* optional args */
+                            vrfd->channels)) != V3_OK) {
+                free(fragdata);
+                _v3_func_leave("v3_vrf_get_audio");
+                return ret;
+            }
+            free(fragdata);
+            break;
+          case V3_VRF_TYPE_TEXT:
+            if (vrfd->text) {
+                free(vrfd->text);
+                vrfd->text = NULL;
+            }
+            vrfd->type   = V3_VRF_DATA_TEXT;
+            vrfd->text   = fragdata;
+            vrfd->length = fraglen;
+            break;
+        }
+        _v3_func_leave("v3_vrf_get_audio");
+        return V3_OK;
+    }
+    audio->fragcount = 0;
+
+    _v3_func_leave("v3_vrf_get_audio");
+    return V3_OK;
+}/*}}}*/
+
+int
+_v3_vrf_put_header(v3_vrf *vrfh) {/*{{{*/
+    _v3_func_enter("_v3_vrf_put_header");
+
+    if (!vrfh) {
+        _v3_func_leave("_v3_vrf_put_header");
+        return V3_FAILURE;
+    }
+    v3_vrf_header _header;
+    memcpy(&_header, &vrfh->header, sizeof(v3_vrf_header));
+    _v3_vrf_print_header(&_header);
+    _header.size        = htonl(_header.size);
+    _header.headlen     = htonl(_header.headlen);
+    _header.unknown1    = htonl(_header.unknown1);
+    _header.segtable    = htonl(_header.segtable);
+    _header.segcount    = htonl(_header.segcount);
+    _header.vrfversion  = htonl(_header.vrfversion);
+    _header.unknown2    = htonl(_header.unknown2);
+    _header.unknown3    = htonl(_header.unknown3);
+    _header.infolen     = htonl(_header.infolen);
+    _header.codec       = htonl(_header.codec);
+    _header.codecformat = htonl(_header.codecformat);
+    _header.unknown4    = htonl(_header.unknown4);
+    _v3_vrf_lock(vrfh);
+    rewind(vrfh->file);
+    if (!fwrite(&_header, sizeof(v3_vrf_header), 1, vrfh->file)) {
+        _v3_error("%s: failed to put vrf header: %s", vrfh->filename, strerror(errno));
+        _v3_vrf_unlock(vrfh);
+        _v3_func_leave("_v3_vrf_put_header");
+        return V3_FAILURE;
+    }
+    fflush(vrfh->file);
+    _v3_vrf_unlock(vrfh);
+
+    _v3_func_leave("_v3_vrf_put_header");
+    return V3_OK;
+}/*}}}*/
+
+int
+v3_vrf_put_info(void *vrfh, const v3_vrf_data *vrfd) {/*{{{*/
+    _v3_func_enter("v3_vrf_put_info");
+
+    if (!vrfh || !vrfd) {
+        _v3_func_leave("v3_vrf_put_info");
+        return V3_FAILURE;
+    }
+    v3_vrf *_vrfh = vrfh;
+    if (!_vrfh->file || !_vrfh->filename) {
+        _v3_error("%p: no file opened", vrfh);
+        _v3_func_leave("v3_vrf_put_info");
+        return V3_FAILURE;
+    }
+    v3_vrf_header *header = &_vrfh->header;
+    strncpy(header->username,  vrfd->username,  sizeof(vrfd->username) - 1);
+    strncpy(header->comment,   vrfd->comment,   sizeof(vrfd->comment) - 1);
+    strncpy(header->url,       vrfd->url,       sizeof(vrfd->url) - 1);
+    strncpy(header->copyright, vrfd->copyright, sizeof(vrfd->copyright) - 1);
+    _v3_vrf_print_info(header);
+    if (_v3_vrf_put_header(vrfh) != V3_OK) {
+        _v3_func_leave("v3_vrf_put_info");
+        return V3_FAILURE;
+    }
+
+    _v3_func_leave("v3_vrf_put_info");
+    return V3_OK;
+}/*}}}*/
+
+int
+_v3_vrf_put_segment(uint32_t id, const v3_vrf_segment *segment, void *offset) {/*{{{*/
+    _v3_func_enter("_v3_vrf_put_segment");
+
+    if (!segment || !offset) {
+        _v3_func_leave("_v3_vrf_put_segment");
+        return 0;
+    }
+    v3_vrf_segment _segment;
+    memcpy(&_segment, segment, sizeof(v3_vrf_segment));
+    _v3_vrf_print_segment(id, &_segment);
+    _segment.headlen  = htonl(_segment.headlen);
+    _segment.type     = htonl(_segment.type);
+    _segment.valid    = htonl(_segment.valid);
+    _segment.offset   = htonl(_segment.offset);
+    _segment.time     = htonl(_segment.time);
+    _segment.duration = htonl(_segment.duration);
+    _segment.unknown1 = htonl(_segment.unknown1);
+    _segment.unknown2 = htonl(_segment.unknown2);
+    memcpy(offset, &_segment, sizeof(v3_vrf_segment));
+
+    _v3_func_leave("_v3_vrf_put_segment");
+    return sizeof(v3_vrf_segment);
+}/*}}}*/
+
+int
+_v3_vrf_put_audio(const v3_vrf_audio *audio, void *offset) {/*{{{*/
+    _v3_func_enter("_v3_vrf_put_audio");
+
+    if (!audio || !offset) {
+        _v3_func_leave("_v3_vrf_put_audio");
+        return 0;
+    }
+    v3_vrf_audio _audio;
+    memcpy(&_audio, audio, sizeof(v3_vrf_audio));
+    _v3_vrf_print_audio(&_audio);
+    _audio.headlen   = htonl(_audio.headlen);
+    _audio.type      = htonl(_audio.type);
+    _audio.unknown1  = htonl(_audio.unknown1);
+    _audio.index     = htonl(_audio.index);
+    _audio.fragcount = htonl(_audio.fragcount);
+    _audio.unknown2  = htonl(_audio.unknown2);
+    _audio.unknown3  = htonl(_audio.unknown3);
+    _audio.offset    = htonl(_audio.offset);
+    memcpy(offset, &_audio, sizeof(v3_vrf_audio));
+
+    _v3_func_leave("_v3_vrf_put_audio");
+    return sizeof(v3_vrf_audio);
+}/*}}}*/
+
+int
+_v3_vrf_put_fragment(uint32_t type, const v3_vrf_fragment *fragment, void *offset) {/*{{{*/
+    _v3_func_enter("_v3_vrf_put_fragment");
+
+    if (!fragment || !offset) {
+        _v3_func_leave("_v3_vrf_put_fragment");
+        return 0;
+    }
+    uint32_t fragwrite;
+    v3_vrf_fragment _fragment;
+    memcpy(&_fragment, fragment, sizeof(v3_vrf_fragment));
+    _v3_vrf_print_fragment(type, &_fragment);
+    fragwrite = sizeof(v3_vrf_fragment) - sizeof(_fragment.audio);
+    _fragment.headlen = htonl(_fragment.headlen);
+    _fragment.fraglen = htonl(_fragment.fraglen);
+    if (type != V3_VRF_TYPE_TEXT) {
+        fragwrite = sizeof(v3_vrf_fragment) - sizeof(_fragment.audio.ext);
+        _fragment.audio.pcmlen   = htonl(_fragment.audio.pcmlen);
+        _fragment.audio.unknown1 = htonl(_fragment.audio.unknown1);
+    }
+    if (type == V3_VRF_TYPE_EXT) {
+        fragwrite = sizeof(v3_vrf_fragment);
+        _fragment.audio.ext.codec       = htons(_fragment.audio.ext.codec);
+        _fragment.audio.ext.codecformat = htons(_fragment.audio.ext.codecformat);
+        _fragment.audio.ext.unknown2    = htonl(_fragment.audio.ext.unknown2);
+    }
+    memcpy(offset, &_fragment, fragwrite);
+
+    _v3_func_leave("_v3_vrf_put_fragment");
+    return fragwrite;
+}/*}}}*/
+
+void
+_v3_vrf_put_record(uint32_t user_id, uint32_t index, uint32_t type, const char *username, v3_vrf_rec *rec) {/*{{{*/
+    _v3_func_enter("_v3_vrf_put_record");
+
+    if (!rec) {
+        _v3_func_leave("_v3_vrf_put_record");
+        return;
+    }
+    v3_vrf_segment *segment = &rec->segment;
+    rec->user_id  = user_id;
+    rec->index    = index;
+    segment->type = type;
+    if (username) {
+        strncpy(segment->username, username, sizeof(segment->username) - 1);
+    }
+    v3_vrf_audio audio;
+    memset(&audio, 0, sizeof(v3_vrf_audio));
+    audio.headlen = sizeof(v3_vrf_audio) + sizeof(segment->username);
+    audio.type    = type;
+    audio.index   = index;
+    rec->data = malloc(audio.headlen);
+    memset(rec->data, 0, audio.headlen);
+    rec->datalen = _v3_vrf_put_audio(&audio, rec->data);
+    if (username) {
+        strncpy(rec->data + rec->datalen, username, sizeof(segment->username) - 1);
+    }
+    rec->datalen = audio.headlen;
+
+    _v3_func_leave("_v3_vrf_put_record");
+}/*}}}*/
+
+void
+_v3_vrf_record_event(
+        int type,
+        uint16_t user_id,
+        uint16_t codec,
+        uint16_t codecformat,
+        uint32_t pcmlen,
+        uint32_t datalen,
+        void *data) {/*{{{*/
+    _v3_func_enter("_v3_vrf_record_event");
+
+    if (!_v3_vrfh) {
+        _v3_func_leave("_v3_vrf_record_event");
+        return;
+    }
+    v3_user *u;
+    if (!(u = _v3_get_user(user_id))) {
+        type = V3_VRF_EVENT_AUDIO_STOP;
+    }
+    uint32_t time;
+    struct timeval now;
+    gettimeofday(&now, NULL);
+    time = now.tv_sec * 1000 + now.tv_usec / 1000 - _v3_vrfh->start.tv_sec * 1000 + _v3_vrfh->start.tv_usec / 1000;
+    _v3_vrf_lock(_v3_vrfh);
+    v3_vrf_rec *queue = &_v3_vrfh->queue;
+    v3_vrf_rec *rec = NULL;
+    switch (type) {
+      case V3_VRF_EVENT_AUDIO_DATA:
+      case V3_VRF_EVENT_TEXT_DATA:
+        if (!data || !u->allow_recording) {
+            break;
+        }
+        for (rec = queue; rec; rec = rec->next) {
+            if (rec->user_id == user_id && !rec->stopped) {
+                break;
+            }
+            if (!rec->user_id || !rec->next) {
+                if (rec->user_id && !rec->next) {
+                    rec->next = malloc(sizeof(v3_vrf_rec));
+                    memset(rec->next, 0, sizeof(v3_vrf_rec));
+                    rec = rec->next;
+                }
+                _v3_vrfh->header.segcount++;
+                break;
+            }
+        }
+    }
+    switch (type) {
+      case V3_VRF_EVENT_AUDIO_DATA:
+      {
+        if (!rec) {
+            break;
+        }
+        if (!rec->user_id) {
+            _v3_vrf_put_record(user_id, _v3_vrfh->header.segcount - 1, V3_VRF_TYPE_EXT, u->name, rec);
+        }
+        v3_vrf_fragment fragment;
+        memset(&fragment, 0, sizeof(v3_vrf_fragment));
+        fragment.headlen = sizeof(v3_vrf_fragment);
+        fragment.fraglen = datalen;
+        fragment.audio.pcmlen   = pcmlen;
+        fragment.audio.unknown1 = time;
+        fragment.audio.ext.codec       = codec;
+        fragment.audio.ext.codecformat = codecformat;
+        rec->data = realloc(rec->data, rec->datalen + fragment.headlen + datalen);
+        rec->datalen += _v3_vrf_put_fragment(V3_VRF_TYPE_EXT, &fragment, rec->data + rec->datalen);
+        memcpy(rec->data + rec->datalen, data, datalen);
+        rec->datalen += datalen;
+        if (!rec->segment.time) {
+            rec->segment.time = time;
+        }
+        rec->segment.duration = time;
+        rec->fragcount++;
+        break;
+      }
+      case V3_VRF_EVENT_TEXT_DATA:
+      {
+        if (!rec) {
+            break;
+        }
+        if (!rec->user_id) {
+            _v3_vrf_put_record(user_id, _v3_vrfh->header.segcount - 1, V3_VRF_TYPE_TEXT, u->name, rec);
+        }
+        v3_vrf_fragment fragment;
+        memset(&fragment, 0, sizeof(v3_vrf_fragment));
+        fragment.headlen = sizeof(v3_vrf_fragment) + V3_VRF_TEXTLEN - sizeof(fragment.audio);
+        fragment.fraglen = time;
+        rec->data = realloc(rec->data, rec->datalen + fragment.headlen);
+        memset(rec->data + rec->datalen, 0, fragment.headlen);
+        rec->datalen += _v3_vrf_put_fragment(V3_VRF_TYPE_TEXT, &fragment, rec->data + rec->datalen);
+        strncpy(rec->data + rec->datalen, data, V3_VRF_TEXTLEN);
+        rec->datalen += V3_VRF_TEXTLEN;
+        rec->segment.time = time;
+        rec->segment.duration = time;
+        rec->fragcount++;
+        rec->stopped = true;
+        break;
+      }
+      case V3_VRF_EVENT_AUDIO_STOP:
+        for (rec = queue; rec; rec = rec->next) {
+            if (rec->user_id == user_id && !rec->stopped) {
+                rec->stopped = true;
+                break;
+            }
+        }
+        break;
+      case V3_VRF_EVENT_DATA_FLUSH:
+      default:
+        for (rec = queue; rec; rec = rec->next) {
+            if (rec->user_id) {
+                rec->stopped = true;
+            }
+        }
+        break;
+    }
+    for (rec = queue; rec; rec = rec->next) {
+        if (rec->data && (rec == queue || rec->stopped)) {
+            fseek(_v3_vrfh->file, 0, SEEK_END);
+            if (!rec->segment.offset) {
+                rec->segment.offset = ftell(_v3_vrfh->file);
+            }
+            if (!fwrite(rec->data, rec->datalen, 1, _v3_vrfh->file)) {
+                _v3_error("%s: FATAL: failed to put vrf data: %s", _v3_vrfh->filename, strerror(errno));
+            }
+            rec->datalen = 0;
+            free(rec->data);
+            rec->data = NULL;
+        }
+        if (!rec->stopped) {
+            break;
+        }
+    }
+    while (queue->stopped) {
+        v3_vrf_segment *segment = &queue->segment;
+        segment->headlen   = sizeof(v3_vrf_segment);
+        segment->valid     = true;
+        segment->duration -= segment->time;
+        _v3_vrfh->table = realloc(_v3_vrfh->table, _v3_vrfh->tablesize + segment->headlen);
+        _v3_vrfh->tablesize += _v3_vrf_put_segment(queue->index, segment, (void *)_v3_vrfh->table + _v3_vrfh->tablesize);
+        v3_vrf_audio audio;
+        memset(&audio, 0, sizeof(v3_vrf_audio));
+        if (_v3_vrf_get_audio(_v3_vrfh, segment->offset, &audio) == V3_OK) {
+            audio.fragcount = queue->fragcount;
+            _v3_vrf_put_audio(&audio, &audio);
+            fseek(_v3_vrfh->file, segment->offset, SEEK_SET);
+            fwrite(&audio, sizeof(v3_vrf_audio), 1, _v3_vrfh->file);
+        }
+        v3_vrf_rec *next;
+        if ((next = queue->next)) {
+            memcpy(queue, next, sizeof(v3_vrf_rec));
+            free(next);
+        } else {
+            memset(queue, 0, sizeof(v3_vrf_rec));
+        }
+    }
+    _v3_vrf_unlock(_v3_vrfh);
+
+    _v3_func_leave("_v3_vrf_record_event");
+}/*}}}*/
+
+int
+v3_vrf_record_start(const char *filename) {/*{{{*/
+    _v3_func_enter("v3_vrf_record_start");
+
+    if (_v3_vrfh) {
+        _v3_error("vrf is recording: %s", _v3_vrfh->filename);
+        _v3_func_leave("v3_vrf_record_start");
+        return V3_FAILURE;
+    }
+    if (!filename || !strlen(filename)) {
+        _v3_error("no filename specified");
+        _v3_func_leave("v3_vrf_record_start");
+        return V3_FAILURE;
+    }
+    v3_vrf *vrfh;
+    if (!(vrfh = v3_vrf_init(NULL))) {
+        _v3_func_leave("v3_vrf_record_start");
+        return V3_FAILURE;
+    }
+    if (!(vrfh->file = fopen(filename, "wb+"))) {
+        _v3_error("%s: %s", filename, strerror(errno));
+        v3_vrf_destroy(vrfh);
+        _v3_func_leave("v3_vrf_record_start");
+        return V3_FAILURE;
+    }
+    vrfh->filename = strdup(filename);
+    _v3_debug(V3_DEBUG_INFO, "opened file for writing: %s", vrfh->filename);
+    gettimeofday(&vrfh->start, NULL);
+    v3_vrf_header *header = &vrfh->header;
+    strncpy(header->headid, V3_VRF_TEMPID, sizeof(header->headid));
+    header->headlen     = V3_VRF_HEADLEN;
+    header->vrfversion  = V3_VRF_VERSION;
+    header->infolen     = V3_VRF_INFOLEN;
+    header->codec       = v3_server.codec;
+    header->codecformat = v3_server.codec_format;
+    strncpy(header->platform, "Linux", sizeof(header->platform) - 1);
+    strncpy(header->version, V3_CLIENT_VERSION, sizeof(header->version) - 1);
+    strncpy(header->username, v3_luser.name, sizeof(header->username) - 1);
+    if (_v3_vrf_put_header(vrfh) != V3_OK) {
+        v3_vrf_destroy(vrfh);
+        _v3_func_leave("v3_vrf_record_start");
+        return V3_FAILURE;
+    }
+    _v3_vrfh = vrfh;
+
+    _v3_func_leave("v3_vrf_record_start");
+    return V3_OK;
+}/*}}}*/
+
+void
+v3_vrf_record_stop(void) {/*{{{*/
+    _v3_func_enter("v3_vrf_record_stop");
+
+    if (!_v3_vrfh) {
+        _v3_func_leave("v3_vrf_record_stop");
+        return;
+    }
+    v3_vrf *vrfh = _v3_vrfh;
+    _v3_vrf_lock(vrfh);
+    _v3_vrf_record_event(V3_VRF_EVENT_DATA_FLUSH, v3_get_user_id(), -1, -1, 0, 0, NULL);
+    _v3_vrfh = NULL;
+    _v3_vrf_unlock(vrfh);
+    fseek(vrfh->file, 0, SEEK_END);
+    vrfh->header.segtable = ftell(vrfh->file);
+    if (vrfh->table) {
+        if (!fwrite(vrfh->table, vrfh->tablesize, 1, vrfh->file)) {
+            _v3_error("%s: FATAL: failed to put vrf segment table: %s", _v3_vrfh->filename, strerror(errno));
+        }
+        fflush(vrfh->file);
+    }
+    vrfh->header.size = vrfh->header.segtable + vrfh->tablesize;
+    strncpy(vrfh->header.headid, V3_VRF_HEADID, sizeof(vrfh->header.headid));
+    _v3_vrf_put_header(vrfh);
+    v3_vrf_destroy(vrfh);
+
+    _v3_func_leave("v3_vrf_record_stop");
 }/*}}}*/
 
 /*
@@ -2483,6 +3564,11 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                         ev->user.id = m->user_id;
                         ev->channel.id = m->channel_id;
                         v3_queue_event(ev);
+                        _v3_vrf_record_event(
+                                (m->user_id == v3_get_user_id())
+                                    ? V3_VRF_EVENT_DATA_FLUSH
+                                    : V3_VRF_EVENT_AUDIO_STOP,
+                                m->user_id, -1, -1, 0, 0, NULL);
                     }
                 }
             }
@@ -3112,7 +4198,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                 _v3_msg_0x52_0x01_in *m = (_v3_msg_0x52_0x01_in *)msg->contents;
                 v3_event *ev = _v3_create_event(0);
                 switch (m->header.subtype) {
-                    case 0x00:
+                    case V3_AUDIO_START:
                     case 0x04:
                         {
                             ev->type = V3_EVENT_USER_TALK_START;
@@ -3124,33 +4210,41 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                             _v3_unlock_userlist();
                         }
                         break;
-                    case 0x02:
+                    case V3_AUDIO_STOP:
                         {
                             ev->type = V3_EVENT_USER_TALK_END;
                             ev->user.id = m->header.user_id;
                             _v3_lock_userlist();
                             _v3_get_user(m->header.user_id)->is_transmitting = false;
                             _v3_unlock_userlist();
+                            _v3_vrf_record_event(V3_VRF_EVENT_AUDIO_STOP, m->header.user_id, -1, -1, 0, 0, NULL);
                         }
                         break;
-                    case 0x01:
+                    case V3_AUDIO_DATA:
                         {
-                            _v3_msg_0x52_0x01_in *msub = (_v3_msg_0x52_0x01_in *)msg->contents;
-                            const v3_codec *codec = v3_get_codec(msub->header.codec, msub->header.codec_format);
+                            const v3_codec *codec = v3_get_codec(m->header.codec, m->header.codec_format);
                             ev->type = V3_EVENT_PLAY_AUDIO;
                             ev->user.id = m->header.user_id;
                             ev->pcm.send_type = m->header.send_type;
                             ev->pcm.rate = codec->rate;
-                            ev->pcm.channels = (msub->header.pcm_length - 2000 == 2) ? 2 : 1;
+                            ev->pcm.channels = (m->header.pcm_length - 2000 == 2) ? 2 : 1;
                             ev->pcm.length = sizeof(ev->data->sample);
                             int ret;
 
+                            _v3_vrf_record_event(
+                                    V3_VRF_EVENT_AUDIO_DATA,
+                                    m->header.user_id,
+                                    m->header.codec,
+                                    m->header.codec_format,
+                                    m->header.pcm_length,
+                                    m->header.data_length,
+                                    m->data);
                             if ((ret = _v3_audio_decode(
                                             /* encoded input */
                                             codec,
                                             &v3_decoders[m->header.user_id],
-                                            (msub->header.codec == 0x03) ? msub->data.speex.frames : msub->data.frames,
-                                            msub->header.data_length - ((msub->header.codec == 0x03) ? 4 : 0),
+                                            m->data,
+                                            m->header.data_length,
                                             /* pcm output */
                                             (void *)&ev->data->sample,
                                             &ev->pcm.length,
@@ -3223,6 +4317,11 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                     ev->user.id = m->user_id;
                     ev->channel.id = m->channel_id;
                     v3_queue_event(ev);
+                    _v3_vrf_record_event(
+                            (m->user_id == v3_get_user_id())
+                                ? V3_VRF_EVENT_DATA_FLUSH
+                                : V3_VRF_EVENT_AUDIO_STOP,
+                            m->user_id, -1, -1, 0, 0, NULL);
                 }
             }
             _v3_destroy_packet(msg);
@@ -3456,6 +4555,9 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                     case V3_REMOVE_USER:
                         _v3_debug(V3_DEBUG_INFO, "removing %d users from user list",  m->user_count);
                         for (ctr = 0; ctr < m->user_count; ctr++) {
+                            if (_v3_get_user(m->user_list[ctr].id)->is_transmitting) {
+                                _v3_vrf_record_event(V3_VRF_EVENT_AUDIO_STOP, m->user_list[ctr].id, -1, -1, 0, 0, NULL);
+                            }
                             v3_event *ev = _v3_create_event(V3_EVENT_USER_LOGOUT);
                             ev->user.id = m->user_list[ctr].id;
                             ev->channel.id = m->user_list[ctr].channel;
@@ -3902,7 +5004,7 @@ v3_leave_chat() {/*{{{*/
 }/*}}}*/
 
 void
-v3_send_chat_message(char* message) {/*{{{*/
+v3_send_chat_message(char *message) {/*{{{*/
     v3_event ev;
 
     _v3_func_enter("v3_send_chat_message");
@@ -3979,7 +5081,7 @@ v3_end_privchat(uint16_t userid) {/*{{{*/
 }/*}}}*/
 
 void
-v3_send_privchat_message(uint16_t userid, char* message) {/*{{{*/
+v3_send_privchat_message(uint16_t userid, char *message) {/*{{{*/
     v3_event ev;
 
     _v3_func_enter("v3_send_privchat_message");
