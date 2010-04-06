@@ -107,7 +107,7 @@ ManglerConfig::~ManglerConfig() {/*{{{*/
 
 std::string ManglerConfig::confdir() const {/*{{{*/
     std::string confdir = getenv("HOME");
-    return confdir + "/" + CONFIG_DIRECTORY + "/";
+    return confdir + "/" + CONFIG_DIRECTORY;
 }/*}}}*/
 
 void ManglerConfig::ConvertOldConfig() {/*{{{*/

@@ -29,6 +29,9 @@
 #include "mangleraudio.h"
 #include "manglercharset.h"
 
+#include <sys/stat.h>
+#include <dirent.h>
+
 ManglerRecorder::ManglerRecorder(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
     this->builder = builder;
 
@@ -70,7 +73,6 @@ ManglerRecorder::ManglerRecorder(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
     all_filter.set_name("All Files");
     all_filter.add_pattern("*");
     filedialog->add_filter(all_filter);
-    filedialog->set_current_folder(mangler->config.confdir());
 
     builder->get_widget("recScrolledWindow", recScrolledWindow);
     recListModel = Gtk::ListStore::create(recRecord);
@@ -93,6 +95,15 @@ ManglerRecorder::ManglerRecorder(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
     builder->get_widget("recInfoSave", button);
     button->signal_clicked().connect(sigc::mem_fun(this, &ManglerRecorder::recInfoDialog_save_clicked_cb));
 
+    recdir = mangler->config.confdir() + "/recordings";
+    DIR *testdir;
+    if ((testdir = opendir(recdir.c_str()))) {
+        closedir(testdir);
+    } else {
+        mkdir(recdir.c_str(), 0700);
+    }
+    filedialog->set_current_folder(recdir);
+
     isOpen      = false;
     isOpenInfo  = false;
     isPlaying   = false;
@@ -102,6 +113,7 @@ ManglerRecorder::ManglerRecorder(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
     player = NULL;
 }/*}}}*/
 ManglerRecorder::~ManglerRecorder() {/*{{{*/
+    reset();
 }/*}}}*/
 void
 ManglerRecorder::recWindow_show_cb(void) {/*{{{*/
@@ -134,25 +146,24 @@ ManglerRecorder::saveas_activate_cb(void) {/*{{{*/
 }/*}}}*/
 void
 ManglerRecorder::playpause_clicked_cb(void) {/*{{{*/
+    if (!vrfh) {
+        return;
+    }
     isPlaying = true;
     player = Glib::Thread::create(sigc::mem_fun(*this, &ManglerRecorder::play), false);
 }/*}}}*/
 void
 ManglerRecorder::stop_clicked_cb(void) {/*{{{*/
     player = NULL;
-    isPlaying = false;
-    isRecording = false;
 }/*}}}*/
 void
 ManglerRecorder::record_toggled_cb(void) {/*{{{*/
     if (recordbutton->get_active()) {
-        Glib::ustring filename = mangler->config.confdir() + "testing.vrf";
-        if (v3_vrf_record_start(filename.c_str()) != V3_OK) {
-            mangler->errorDialog(c_to_ustring(_v3_error(NULL)));
-            recordbutton->set_active(false);
-        }
+        path = recdir;
+        filename = path + "/" + timestamp() + ".vrf";
+        set(true);
     } else {
-        v3_vrf_record_stop();
+        set(false);
     }
 }/*}}}*/
 void
@@ -190,11 +201,17 @@ ManglerRecorder::info_clicked_cb(void) {/*{{{*/
 }/*}}}*/
 void
 ManglerRecorder::recListTree_cursor_changed_cb(void) {/*{{{*/
+    if (!vrfh) {
+        return;
+    }
     builder->get_widget("recPlayPause", widget);
     widget->set_sensitive(recListTree->get_selection()->get_selected());
 }/*}}}*/
 void
 ManglerRecorder::recListTree_row_activated_cb(const Gtk::TreeModel::Path& path, Gtk::TreeViewColumn* column) {/*{{{*/
+    if (!vrfh) {
+        return;
+    }
     isPlaying = false;
     player = Glib::Thread::create(sigc::mem_fun(*this, &ManglerRecorder::play), false);
 }/*}}}*/
@@ -202,6 +219,11 @@ void
 ManglerRecorder::set(bool isRecording) {/*{{{*/
     reset();
     if (isRecording) {
+        if (v3_vrf_record_start(filename.c_str()) != V3_OK) {
+            mangler->errorDialog(c_to_ustring(_v3_error(NULL)));
+            recordbutton->set_active(false);
+            return;
+        }
         this->isRecording = true;
     } else {
         this->isRecording = false;
@@ -215,9 +237,6 @@ ManglerRecorder::set(bool isRecording) {/*{{{*/
             mangler->errorDialog(c_to_ustring(_v3_error(NULL)));
             return;
         }
-        fileentry->set_text(filename.substr(path.length() + 1));
-        builder->get_widget("recType", label);
-        label->set_text("VRF");
         builder->get_widget("recSize", label);
         label->set_text(bytes_to_readable(vrfd.size));
         builder->get_widget("recCount", label);
@@ -248,13 +267,16 @@ ManglerRecorder::set(bool isRecording) {/*{{{*/
         }
         builder->get_widget("recDuration", label);
         label->set_text(float_to_ustring(totalduration / (float)(1000 * 60), 1) + " min");
+        builder->get_widget("recInfo", widget);
+        widget->set_sensitive(true);
     }
+    fileentry->set_text(filename.substr(path.length() + 1));
+    builder->get_widget("recType", label);
+    label->set_text("VRF");
     recListTree->set_sensitive(true);
     builder->get_widget("recClose", widget);
     widget->set_sensitive(true);
     builder->get_widget("recInfos", widget);
-    widget->set_sensitive(true);
-    builder->get_widget("recInfo", widget);
     widget->set_sensitive(true);
     recScrolledWindow->get_vadjustment()->set_value(0);
     if (recListModel->children().size()) {
@@ -265,6 +287,10 @@ void
 ManglerRecorder::reset(void) {/*{{{*/
     player = NULL;
     isPlaying = false;
+    if (isRecording) {
+        v3_vrf_record_stop();
+        recordbutton->set_active(false);
+    }
     isRecording = false;
     v3_vrf_destroy(vrfh);
     vrfh = NULL;
@@ -314,9 +340,44 @@ ManglerRecorder::show(void) {/*{{{*/
 void
 ManglerRecorder::can_record(bool isConnected) {/*{{{*/
     if (!isConnected && isRecording) {
-        isRecording = false;
+        set(false);
     }
     recordbutton->set_sensitive(isConnected);
+}/*}}}*/
+void
+ManglerRecorder::record(Glib::ustring username, Glib::ustring text, uint32_t index, uint32_t time, bool stopped, bool flushed) {/*{{{*/
+    if (!isRecording) {
+        return;
+    }
+    Gtk::TreeModel::Children children = recListModel->children();
+    if (flushed || stopped) {
+        for (Gtk::TreeModel::iterator iter = children.begin(); iter != children.end(); iter++) {
+            if (flushed || (stopped && (*iter)[recRecord.id] == index)) {
+                (*iter)[recRecord.status] = "*";
+            }
+        }
+        return;
+    }
+    Gtk::TreeModel::Row row;
+    if (!children[index]) {
+        row = *(recListModel->append());
+        row[recRecord.id]           = index;
+        row[recRecord.time_val]     = time;
+        row[recRecord.duration_val] = 0;
+        row[recRecord.time]         = msec_to_timestamp(time);
+        row[recRecord.duration]     = float_to_ustring(0, 2);
+        row[recRecord.status]       = "Rec";
+        row[recRecord.username]     = username;
+        row[recRecord.text]         = (text.length()) ? text : "";
+        builder->get_widget("recCount", label);
+        label->set_text(float_to_ustring(children.size(), 0));
+        recListTree->set_cursor(recListModel->get_path(row));
+    }
+    row = children[index];
+    if (row[recRecord.duration_val] + 100 < time - row[recRecord.time_val]) {
+        row[recRecord.duration_val] = time - row[recRecord.time_val];
+        row[recRecord.duration]     = float_to_ustring(row[recRecord.duration_val] / 1000.0, 2);
+    }
 }/*}}}*/
 void
 ManglerRecorder::play(void) {/*{{{*/
@@ -508,6 +569,23 @@ ManglerRecorder::msec_to_timestamp(uint32_t milliseconds) {/*{{{*/
     uint32_t hours   = minutes / 60;
 
     snprintf(timestamp, sizeof(timestamp) - 1, "%02u:%02u:%02u", hours, minutes % 60, seconds % 60);
+
+    return c_to_ustring(timestamp);
+}/*}}}*/
+
+Glib::ustring
+ManglerRecorder::timestamp(Glib::ustring format) {/*{{{*/
+    char timestamp[256] = "";
+    struct timeval tv;
+    time_t t;
+    struct tm *tm;
+
+    gettimeofday(&tv, NULL);
+    t = tv.tv_sec;
+    tm = localtime(&t);
+    if (!strftime(timestamp, sizeof(timestamp) - 1, format.c_str(), tm)) {
+        snprintf(timestamp, sizeof(timestamp) - 1, "%lu", (uint64_t)(tv.tv_sec * 1000000 + tv.tv_usec));
+    }
 
     return c_to_ustring(timestamp);
 }/*}}}*/

@@ -255,6 +255,7 @@ enum _v3_events {
     V3_EVENT_USER_TALK_START,
     V3_EVENT_USER_TALK_END,
     V3_EVENT_PLAY_AUDIO,
+    V3_EVENT_RECORD_UPDATE,
     V3_EVENT_DISPLAY_MOTD,
     V3_EVENT_DISCONNECT,
     V3_EVENT_USER_MODIFY,
@@ -447,6 +448,12 @@ struct _v3_event {
         uint32_t rate;
         uint8_t  channels;
     } pcm;
+    struct {
+        uint32_t index;
+        uint32_t time;
+        uint8_t  stopped;
+        uint8_t  flushed;
+    } record;
     struct {
         uint16_t property;
         uint8_t  value;

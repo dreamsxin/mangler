@@ -3208,7 +3208,7 @@ _v3_vrf_record_event(
     }
     v3_user *u;
     if (!(u = _v3_get_user(user_id))) {
-        type = V3_VRF_EVENT_AUDIO_STOP;
+        type = V3_VRF_EVENT_DATA_FLUSH;
     }
     uint32_t time;
     struct timeval now;
@@ -3217,6 +3217,7 @@ _v3_vrf_record_event(
     _v3_vrf_lock(_v3_vrfh);
     v3_vrf_rec *queue = &_v3_vrfh->queue;
     v3_vrf_rec *rec = NULL;
+    v3_event *ev = _v3_create_event(V3_EVENT_RECORD_UPDATE);
     switch (type) {
       case V3_VRF_EVENT_AUDIO_DATA:
       case V3_VRF_EVENT_TEXT_DATA:
@@ -3242,6 +3243,8 @@ _v3_vrf_record_event(
       case V3_VRF_EVENT_AUDIO_DATA:
       {
         if (!rec) {
+            v3_free_event(ev);
+            ev = NULL;
             break;
         }
         if (!rec->user_id) {
@@ -3264,11 +3267,16 @@ _v3_vrf_record_event(
         }
         rec->segment.duration = time;
         rec->fragcount++;
+        strncpy(ev->text.name, rec->segment.username, sizeof(ev->text.name) - 1);
+        ev->record.index = rec->index;
+        ev->record.time = time;
         break;
       }
       case V3_VRF_EVENT_TEXT_DATA:
       {
         if (!rec) {
+            v3_free_event(ev);
+            ev = NULL;
             break;
         }
         if (!rec->user_id) {
@@ -3287,14 +3295,25 @@ _v3_vrf_record_event(
         rec->segment.duration = time;
         rec->fragcount++;
         rec->stopped = true;
+        strncpy(ev->status.message, data, sizeof(ev->status.message) - 1);
+        strncpy(ev->text.name, rec->segment.username, sizeof(ev->text.name) - 1);
+        ev->record.index = rec->index;
+        ev->record.time = time;
+        ev->record.stopped = true;
         break;
       }
       case V3_VRF_EVENT_AUDIO_STOP:
         for (rec = queue; rec; rec = rec->next) {
             if (rec->user_id == user_id && !rec->stopped) {
                 rec->stopped = true;
+                ev->record.index = rec->index;
+                ev->record.stopped = true;
                 break;
             }
+        }
+        if (!rec) {
+            v3_free_event(ev);
+            ev = NULL;
         }
         break;
       case V3_VRF_EVENT_DATA_FLUSH:
@@ -3304,6 +3323,7 @@ _v3_vrf_record_event(
                 rec->stopped = true;
             }
         }
+        ev->record.flushed = true;
         break;
     }
     for (rec = queue; rec; rec = rec->next) {
@@ -3345,6 +3365,9 @@ _v3_vrf_record_event(
         } else {
             memset(queue, 0, sizeof(v3_vrf_rec));
         }
+    }
+    if (ev) {
+        v3_queue_event(ev);
     }
     _v3_vrf_unlock(_v3_vrfh);
 
@@ -6307,11 +6330,11 @@ void
 v3_free_event(v3_event *ev) {/*{{{*/
     if (ev && ev->data) {
         free(ev->data);
-        ev->data = 0;
+        ev->data = NULL;
     }
     if (ev) {
         free(ev);
-        ev = 0;
+        ev = NULL;
     }
 }/*}}}*/
 

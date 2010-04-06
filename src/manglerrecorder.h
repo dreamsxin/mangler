@@ -51,8 +51,11 @@ class ManglerRecorder {
         bool isRecording;
         void show(void);
         void can_record(bool isConnected);
+        void record(Glib::ustring username, Glib::ustring text, uint32_t index, uint32_t time, bool stopped, bool flushed);
 
     protected:
+        Glib::ustring recdir;
+
         void *vrfh;
         Glib::ustring path;
         Glib::ustring filename;
@@ -121,6 +124,7 @@ class ManglerRecorder {
         Glib::ustring float_to_ustring(float val, int precision = 2);
         Glib::ustring bytes_to_readable(double size);
         Glib::ustring msec_to_timestamp(uint32_t milliseconds);
+        Glib::ustring timestamp(Glib::ustring format = "%Y%m%d-%H%M%S");
 };
 
 #endif

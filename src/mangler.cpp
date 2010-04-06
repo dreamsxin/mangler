@@ -1253,6 +1253,15 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                     }
                 }
                 break;/*}}}*/
+            case V3_EVENT_RECORD_UPDATE:/*{{{*/
+                recorder->record(
+                        c_to_ustring(ev->text.name),
+                        c_to_ustring(ev->status.message),
+                        ev->record.index,
+                        ev->record.time,
+                        ev->record.stopped,
+                        ev->record.flushed);
+                break;/*}}}*/
             case V3_EVENT_DISPLAY_MOTD:/*{{{*/
                 {
                     uint32_t motdhash = 0;
@@ -1523,7 +1532,7 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                     }
                 }
                 break;/*}}}*/
-            case V3_EVENT_USER_RANK_CHANGE:
+            case V3_EVENT_USER_RANK_CHANGE:/*{{{*/
                 {
                     if (v3_is_loggedin()) {
                         u = v3_get_user(ev->user.id);
@@ -1556,7 +1565,7 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                         v3_free_user(u);
                     }
                 }
-                break;
+                break;/*}}}*/
             default:
                 fprintf(stderr, "******************************************************** got unknown event type %d\n", ev->type);
         }
