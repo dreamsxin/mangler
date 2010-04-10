@@ -669,11 +669,11 @@ ManglerChannelTree::setUserIcon(uint16_t id, Glib::ustring color, bool updateLas
         iconname = "user_icon_red";
     }
     if (!user) {
-        fprintf(stderr, "setUserIcon: failed to retrieve row for user id %d", id);
+        fprintf(stderr, "setUserIcon: failed to retrieve row for user id %d\n", id);
         return;
     }
     if (!me) {
-        fprintf(stderr, "setUserIcon: failed to retrieve row for my id %d", v3_get_user_id());
+        fprintf(stderr, "setUserIcon: failed to retrieve row for my id %d\n", v3_get_user_id());
         return;
     }
     user[channelRecord.icon] = mangler->icons[iconname]->scale_simple(15, 15, Gdk::INTERP_BILINEAR);
@@ -719,7 +719,7 @@ ManglerChannelTree::channelView_row_activated_cb(const Gtk::TreeModel::Path& pat
         uint16_t pw_cid;
         Gtk::TreeModel::Row pwrow;
         if (!user) {
-            fprintf(stderr, "failed to retrieve row for id %d", id);
+            fprintf(stderr, "failed to retrieve row for id %d\n", id);
             return;
         }
         if (id == curchannel) {
@@ -730,7 +730,7 @@ ManglerChannelTree::channelView_row_activated_cb(const Gtk::TreeModel::Path& pat
             channel = v3_get_channel(id);
             const v3_permissions *perms = v3_get_permissions();
             if (! channel) {
-                fprintf(stderr, "failed to retrieve channel information for channel id %d", id);
+                fprintf(stderr, "failed to retrieve channel information for channel id %d\n", id);
                 return;
             }
             if (!perms->srv_admin && (pw_cid = v3_channel_requires_password(channel->id))) {  // Channel is password protected
@@ -932,10 +932,10 @@ ManglerChannelTree::privateChatMenuItem_activate_cb(void) {/*{{{*/
             return;
         }
         Glib::ustring name = row[channelRecord.name];
-        fprintf(stderr, "opening chat with %d\n", id);
+        //fprintf(stderr, "opening chat with %d\n", id);
         mangler->privateChatWindows[id] = new ManglerPrivChat(id);
         mangler->privateChatWindows[id]->addMessage("*** opened private chat with " + name);
-        fprintf(stderr, "opened chat window with %d\n", mangler->privateChatWindows[id]->remoteUserId);
+        //fprintf(stderr, "opened chat window with %d\n", mangler->privateChatWindows[id]->remoteUserId);
     }
 }/*}}}*/
 

@@ -1354,10 +1354,11 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                 break;/*}}}*/
             case V3_EVENT_CHAT_MESSAGE:/*{{{*/
                 if (v3_is_loggedin()) {
-                    if (ev->user.id == 0)
+                    if (ev->user.id == 0) {
                         chat->addRconMessage(c_to_ustring(ev->data->chatmessage));
-                    else
+                    } else {
                         chat->addChatMessage(ev->user.id, c_to_ustring(ev->data->chatmessage));
+                    }
                 }
                 break;/*}}}*/
             case V3_EVENT_PRIVATE_CHAT_START:/*{{{*/
@@ -1418,6 +1419,26 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                             privateChatWindows[remote]->addMessage("*** error sending message to remote user");
                         }
                     }
+                }
+                break;/*}}}*/
+            case V3_EVENT_TEXT_TO_SPEECH_MESSAGE:/*{{{*/
+                {
+                    /*
+                    if ((u = v3_get_user(ev->user.id))) {
+                        fprintf(stderr, "TTS: %s: %s\n", u->name, ev->data->chatmessage);
+                        v3_free_user(u);
+                    }
+                    */
+                }
+                break;/*}}}*/
+            case V3_EVENT_PLAY_WAVE_FILE_MESSAGE:/*{{{*/
+                {
+                    /*
+                    if ((u = v3_get_user(ev->user.id))) {
+                        fprintf(stderr, "WAV: %s: %s\n", u->name, ev->data->chatmessage);
+                        v3_free_user(u);
+                    }
+                    */
                 }
                 break;/*}}}*/
             case V3_EVENT_ADMIN_AUTH:/*{{{*/

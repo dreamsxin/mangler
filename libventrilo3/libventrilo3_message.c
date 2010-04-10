@@ -300,7 +300,8 @@ _v3_put_msg_channel(void *buffer, _v3_msg_channel *channel) {/*{{{*/
     return(buffer-start_buffer);
 }/*}}}*/
 
-int _v3_put_msg_rank(void *buffer, _v3_msg_rank *rank) {/*{{{*/
+int
+_v3_put_msg_rank(void *buffer, _v3_msg_rank *rank) {/*{{{*/
     void *start_buffer = buffer;
 
     _v3_func_enter("_v3_put_msg_rank");
@@ -553,6 +554,48 @@ _v3_put_0x37(int sequence) {/*{{{*/
     return m;
 }/*}}}*/
 /*}}}*/
+// Message 0x3a (58) | TEXT TO SPEECH MESSAGE /*{{{*/
+int
+_v3_get_0x3a(_v3_net_message *msg) {/*{{{*/
+    _v3_msg_0x3a *m;
+
+    _v3_func_enter("_v3_get_0x3a");
+    if (msg->len < sizeof(_v3_msg_0x3a)) {
+        msg->data = realloc(msg->data, sizeof(_v3_msg_0x3a));
+    }
+    m = msg->contents = msg->data;
+    m->msg = _v3_get_msg_string(&m->msglen, &m->msglen);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "got text to speech message: %s", m->msg);
+    _v3_func_leave("_v3_get_0x3a");
+    return true;
+}/*}}}*/
+_v3_net_message *
+_v3_put_0x3a(char *message) {/*{{{*/
+    _v3_net_message *m;
+    _v3_msg_0x3a *mc;
+
+    _v3_func_enter("_v3_put_0x3a");
+    m = malloc(sizeof(_v3_net_message));
+    memset(m, 0, sizeof(_v3_net_message));
+    m->type = 0x3a;
+    m->len = sizeof(_v3_msg_0x3a) - sizeof(mc->msg);
+
+    mc = malloc(m->len);
+    memset(mc, 0, m->len);
+    mc->type = 0x3a;
+
+    if (message) {
+        mc = realloc(mc, m->len + strlen(message));
+        m->len -= sizeof(mc->msglen);
+        m->len += _v3_put_msg_string(&mc->msglen, message);
+    }
+
+    m->contents = mc;
+    m->data = (char *)mc;
+    _v3_func_leave("_v3_put_0x3a");
+    return m;
+}/*}}}*/
+/*}}}*/
 // Message 0x3b (59) | FORCE CHANNEL MOVE /*{{{*/
 int
 _v3_get_0x3b(_v3_net_message *msg) {/*{{{*/
@@ -616,16 +659,63 @@ _v3_get_0x3c(_v3_net_message *msg) {/*{{{*/
     return true;
 }/*}}}*/
 /*}}}*/
+// Message 0x3f (63) | PLAY WAVE FILE MESSAGE /*{{{*/
+int
+_v3_get_0x3f(_v3_net_message *msg) {/*{{{*/
+    _v3_msg_0x3f *m;
+
+    _v3_func_enter("_v3_get_0x3f");
+    if (msg->len < sizeof(_v3_msg_0x3f)) {
+        msg->data = realloc(msg->data, sizeof(_v3_msg_0x3f));
+    }
+    m = msg->contents = msg->data;
+    m->msg = _v3_get_msg_string(&m->msglen, &m->msglen);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "got play wave file message: %s", m->msg);
+    _v3_func_leave("_v3_get_0x3f");
+    return true;
+}/*}}}*/
+_v3_net_message *
+_v3_put_0x3f(char *message) {/*{{{*/
+    _v3_net_message *m;
+    _v3_msg_0x3f *mc;
+
+    _v3_func_enter("_v3_put_0x3f");
+    m = malloc(sizeof(_v3_net_message));
+    memset(m, 0, sizeof(_v3_net_message));
+    m->type = 0x3f;
+    m->len = sizeof(_v3_msg_0x3f) - sizeof(mc->msg);
+
+    mc = malloc(m->len);
+    memset(mc, 0, m->len);
+    mc->type = 0x3f;
+
+    if (message) {
+        mc = realloc(mc, m->len + strlen(message));
+        m->len -= sizeof(mc->msglen);
+        m->len += _v3_put_msg_string(&mc->msglen, message);
+    }
+
+    m->contents = mc;
+    m->data = (char *)mc;
+    _v3_func_leave("_v3_put_0x3f");
+    return m;
+}/*}}}*/
+/*}}}*/
 // Message 0x42 (66) | CHAT/RCON /*{{{*/
 int
 _v3_get_0x42(_v3_net_message *msg) {/*{{{*/
     _v3_msg_0x42 *m;
+
     _v3_func_enter("_v3_get_0x42");
+    if (msg->len < sizeof(_v3_msg_0x42)) {
+        msg->data = realloc(msg->data, sizeof(_v3_msg_0x42));
+    }
     m = msg->contents = msg->data;
-    switch(m->subtype) {
+    switch (m->subtype) {
         case 2:
         case 3:
-            m->msg = _v3_get_msg_string(msg->data + 12, &m->msglen);
+            m->msg = _v3_get_msg_string(&m->msglen, &m->msglen);
+            _v3_debug(V3_DEBUG_PACKET_PARSE, "got chat/rcon message: %s", m->msg);
             break;
     }
     _v3_func_leave("_v3_get_0x42");
@@ -651,7 +741,7 @@ _v3_put_0x42(uint16_t subtype, uint16_t user_id, char *message) {/*{{{*/
     mc->subtype = subtype;
     mc->user_id = user_id;
 
-    if(message) {
+    if (message) {
         len += strlen(message) + 2;
         mc = realloc(mc, len);
         _v3_put_msg_string((char *)mc + base, message);
@@ -1197,6 +1287,7 @@ _v3_put_0x52(uint8_t subtype, uint16_t codec, uint16_t codec_format, uint16_t se
             msgdata->header.send_type = send_type;
             break;
         default:
+            _v3_func_leave("_v3_put_0x52");
             return NULL;
     }
     msgdata->header.type = msg->type = 0x52;
@@ -1361,12 +1452,16 @@ _v3_get_0x59(_v3_net_message *msg) {/*{{{*/
 int
 _v3_get_0x5a(_v3_net_message *msg) {/*{{{*/
     _v3_msg_0x5a *m;
+
     _v3_func_enter("_v3_get_0x5a");
+    if (msg->len < sizeof(_v3_msg_0x5a)) {
+        msg->data = realloc(msg->data, sizeof(_v3_msg_0x5a));
+    }
     m = msg->contents = msg->data;
     switch(m->subtype) {
         case 2:
-            m->msg = _v3_get_msg_string(msg->data + 12, &m->msglen);
-            _v3_debug(V3_DEBUG_PACKET_PARSE, "recieved privchat msg: %s", m->msg);
+            m->msg = _v3_get_msg_string(&m->msglen, &m->msglen);
+            _v3_debug(V3_DEBUG_PACKET_PARSE, "got private chat message: %s", m->msg);
             break;
     }
     _v3_func_leave("_v3_get_0x5a");

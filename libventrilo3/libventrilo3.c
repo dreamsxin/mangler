@@ -643,7 +643,7 @@ _v3_recv(int block) {/*{{{*/
             // receiving an event from the event pipe
             v3_event ev;
             memset(&ev, 0, sizeof(v3_event));
-            _v3_debug(V3_DEBUG_EVENT, "event waiting to processed and sent outbound");
+            _v3_debug(V3_DEBUG_EVENT, "event waiting to be processed and sent outbound");
             if (fread(&ev, sizeof(ev), 1, v3_server.evinstream) != 1) {
                 _v3_error("failed to receive from outbound pipe");
             } else {
@@ -823,13 +823,13 @@ _v3_recv(int block) {/*{{{*/
                                             pktlen = pktframes * celtfragsize;
                                         }
                                         msg = _v3_put_0x52(
-                                                        V3_AUDIO_DATA,
-                                                        codec->codec,
-                                                        codec->format,
-                                                        ev.pcm.send_type,
-                                                        2000 + ev.pcm.channels, // max: <= 3000
-                                                        pktlen, // max: 0x01: < 200; 0x02: < 110
-                                                        celtdataptr);
+                                                V3_AUDIO_DATA,
+                                                codec->codec,
+                                                codec->format,
+                                                ev.pcm.send_type,
+                                                2000 + ev.pcm.channels, // max: <= 3000
+                                                pktlen, // max: 0x01: < 200; 0x02: < 110
+                                                celtdataptr);
                                         celtdataptr += pktlen;
                                         if (!_v3_send(msg)) {
                                             _v3_debug(V3_DEBUG_SOCKET, "failed to send audio message");
@@ -841,13 +841,13 @@ _v3_recv(int block) {/*{{{*/
                                   }
                                   default:
                                     msg = _v3_put_0x52(
-                                                    V3_AUDIO_DATA,
-                                                    codec->codec,
-                                                    codec->format,
-                                                    ev.pcm.send_type,
-                                                    ev.pcm.length,
-                                                    datalen,
-                                                    data);
+                                            V3_AUDIO_DATA,
+                                            codec->codec,
+                                            codec->format,
+                                            ev.pcm.send_type,
+                                            ev.pcm.length,
+                                            datalen,
+                                            data);
                                     if (!_v3_send(msg)) {
                                         _v3_debug(V3_DEBUG_SOCKET, "failed to send audio message");
                                     }
@@ -902,9 +902,9 @@ _v3_recv(int block) {/*{{{*/
                             _v3_debug(V3_DEBUG_INFO, "setting cm: %s, url: %s, integration: %s", ev.text.comment, ev.text.url, ev.text.integration_text);
                             msg = _v3_put_0x5d(V3_MODIFY_USER, 1, user);
                             if (_v3_send(msg)) {
-                                _v3_debug(V3_DEBUG_SOCKET, "sent text strings changes to server");
+                                _v3_debug(V3_DEBUG_SOCKET, "sent text string changes to server");
                             } else {
-                                _v3_debug(V3_DEBUG_SOCKET, "failed to send text string change message");
+                                _v3_debug(V3_DEBUG_SOCKET, "failed to send text string changes message");
                             }
                             v3_free_user(user);
                             _v3_destroy_packet(msg);
@@ -938,7 +938,7 @@ _v3_recv(int block) {/*{{{*/
                             if (_v3_send(msg)) {
                                 _v3_debug(V3_DEBUG_SOCKET, "sent chat message to server");
                             } else {
-                                _v3_debug(V3_DEBUG_SOCKET, "failed to chat message message");
+                                _v3_debug(V3_DEBUG_SOCKET, "failed to send chat message");
                             }
                             _v3_destroy_packet(msg);
                         }
@@ -960,7 +960,7 @@ _v3_recv(int block) {/*{{{*/
                             if (_v3_send(msg)) {
                                 _v3_debug(V3_DEBUG_SOCKET, "sent priv chat end request to server for user %d", ev.user.id);
                             } else {
-                                _v3_debug(V3_DEBUG_SOCKET, "failed to send priv end start request message");
+                                _v3_debug(V3_DEBUG_SOCKET, "failed to send priv chat end request message");
                             }
                             _v3_destroy_packet(msg);
                         }
@@ -971,7 +971,29 @@ _v3_recv(int block) {/*{{{*/
                             if (_v3_send(msg)) {
                                 _v3_debug(V3_DEBUG_SOCKET, "sent private chat message to server for user %d", ev.user.id);
                             } else {
-                                _v3_debug(V3_DEBUG_SOCKET, "failed to private chat message message");
+                                _v3_debug(V3_DEBUG_SOCKET, "failed to send private chat message");
+                            }
+                            _v3_destroy_packet(msg);
+                        }
+                        break;/*}}}*/
+                    case V3_EVENT_TEXT_TO_SPEECH_MESSAGE:/*{{{*/
+                        {
+                            _v3_net_message *msg = _v3_put_0x3a(ev.data->chatmessage);
+                            if (_v3_send(msg)) {
+                                _v3_debug(V3_DEBUG_SOCKET, "sent text to speech message to server");
+                            } else {
+                                _v3_debug(V3_DEBUG_SOCKET, "failed to send text to speech message");
+                            }
+                            _v3_destroy_packet(msg);
+                        }
+                        break;/*}}}*/
+                    case V3_EVENT_PLAY_WAVE_FILE_MESSAGE:/*{{{*/
+                        {
+                            _v3_net_message *msg = _v3_put_0x3f(ev.data->chatmessage);
+                            if (_v3_send(msg)) {
+                                _v3_debug(V3_DEBUG_SOCKET, "sent play wave file message to server");
+                            } else {
+                                _v3_debug(V3_DEBUG_SOCKET, "failed to send play wave file message");
                             }
                             _v3_destroy_packet(msg);
                         }
@@ -3564,40 +3586,6 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
             _v3_destroy_packet(msg);
             _v3_func_leave("_v3_process_message");
             return V3_OK;/*}}}*/
-        case 0x3b:/*{{{*/
-            /*
-             *  This is almost identical to 0x53, so whatever you do here probably
-             *  needs to be done there, too.
-             */
-            if (!_v3_get_0x3b(msg)) {
-                _v3_destroy_packet(msg);
-                _v3_func_leave("_v3_process_message");
-                return V3_MALFORMED;
-            } else {
-                _v3_msg_0x3b *m = msg->contents;
-                v3_user *user;
-                if (!m->error_id) {
-                    _v3_debug(V3_DEBUG_INFO, "user %d force moved to channel %d", m->user_id, m->channel_id);
-                    user = v3_get_user(m->user_id);
-                    if (user) {
-                        user->channel = m->channel_id;
-                        _v3_update_user(user);
-                        v3_free_user(user);
-                        v3_event *ev = _v3_create_event(V3_EVENT_USER_CHAN_MOVE);
-                        ev->user.id = m->user_id;
-                        ev->channel.id = m->channel_id;
-                        v3_queue_event(ev);
-                        _v3_vrf_record_event(
-                                (m->user_id == v3_get_user_id())
-                                    ? V3_VRF_EVENT_DATA_FLUSH
-                                    : V3_VRF_EVENT_AUDIO_STOP,
-                                m->user_id, -1, -1, 0, 0, NULL);
-                    }
-                }
-            }
-            _v3_destroy_packet(msg);
-            _v3_func_leave("_v3_process_message");
-            return V3_OK;/*}}}*/
         case 0x34:/*{{{*/
             _v3_lock_server();
             _v3_debug(V3_DEBUG_INTERNAL, "scrambling client encryption keys");
@@ -3713,6 +3701,61 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
             _v3_destroy_packet(msg);
             _v3_func_leave("_v3_process_message");
             return V3_OK;/*}}}*/
+        case 0x3a:/*{{{*/
+            /*
+             *  This is almost identical to 0x3f, so whatever you do here probably
+             *  needs to be done there, too.
+             */
+            if (!_v3_get_0x3a(msg)) {
+                _v3_destroy_packet(msg);
+                _v3_func_leave("_v3_process_message");
+                return V3_MALFORMED;
+            } else {
+                _v3_msg_0x3a *m = msg->contents;
+                v3_event *ev = _v3_create_event(V3_EVENT_TEXT_TO_SPEECH_MESSAGE);
+                ev->user.id = m->user_id;
+                strncpy(ev->data->chatmessage, m->msg, sizeof(ev->data->chatmessage) - 1);
+                v3_queue_event(ev);
+                _v3_vrf_record_event(V3_VRF_EVENT_TEXT_DATA, m->user_id, -1, -1, 0, 0, m->msg);
+                free(m->msg);
+            }
+            _v3_destroy_packet(msg);
+            _v3_func_leave("_v3_process_message");
+            return V3_OK;/*}}}*/
+        case 0x3b:/*{{{*/
+            /*
+             *  This is almost identical to 0x53, so whatever you do here probably
+             *  needs to be done there, too.
+             */
+            if (!_v3_get_0x3b(msg)) {
+                _v3_destroy_packet(msg);
+                _v3_func_leave("_v3_process_message");
+                return V3_MALFORMED;
+            } else {
+                _v3_msg_0x3b *m = msg->contents;
+                v3_user *user;
+                if (!m->error_id) {
+                    _v3_debug(V3_DEBUG_INFO, "user %d force moved to channel %d", m->user_id, m->channel_id);
+                    user = v3_get_user(m->user_id);
+                    if (user) {
+                        user->channel = m->channel_id;
+                        _v3_update_user(user);
+                        v3_free_user(user);
+                        v3_event *ev = _v3_create_event(V3_EVENT_USER_CHAN_MOVE);
+                        ev->user.id = m->user_id;
+                        ev->channel.id = m->channel_id;
+                        v3_queue_event(ev);
+                        _v3_vrf_record_event(
+                                (m->user_id == v3_get_user_id())
+                                    ? V3_VRF_EVENT_DATA_FLUSH
+                                    : V3_VRF_EVENT_AUDIO_STOP,
+                                m->user_id, -1, -1, 0, 0, NULL);
+                    }
+                }
+            }
+            _v3_destroy_packet(msg);
+            _v3_func_leave("_v3_process_message");
+            return V3_OK;/*}}}*/
         case 0x3c:/*{{{*/
             if (!_v3_get_0x3c(msg)) {
                 _v3_destroy_packet(msg);
@@ -3722,6 +3765,26 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                 _v3_msg_0x3c *m = msg->contents;
                 v3_server.codec = m->codec;
                 v3_server.codec_format = m->codec_format;
+            }
+            _v3_destroy_packet(msg);
+            _v3_func_leave("_v3_process_message");
+            return V3_OK;/*}}}*/
+        case 0x3f:/*{{{*/
+            /*
+             *  This is almost identical to 0x3a, so whatever you do here probably
+             *  needs to be done there, too.
+             */
+            if (!_v3_get_0x3f(msg)) {
+                _v3_destroy_packet(msg);
+                _v3_func_leave("_v3_process_message");
+                return V3_MALFORMED;
+            } else {
+                _v3_msg_0x3f *m = msg->contents;
+                v3_event *ev = _v3_create_event(V3_EVENT_PLAY_WAVE_FILE_MESSAGE);
+                ev->user.id = m->user_id;
+                strncpy(ev->data->chatmessage, m->msg, sizeof(ev->data->chatmessage) - 1);
+                v3_queue_event(ev);
+                free(m->msg);
             }
             _v3_destroy_packet(msg);
             _v3_func_leave("_v3_process_message");
@@ -4171,7 +4234,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
 
                 _v3_lock_server();
                 if(m->message_id + 1 > m->message_num) {
-                    _v3_debug(V3_DEBUG_PACKET_PARSE, "Received %d packet but max packets is %d", m->message_id, m->message_num);
+                    _v3_debug(V3_DEBUG_PACKET_PARSE, "received %d packet but max packets is %d", m->message_id, m->message_num);
                     _v3_func_leave("_v3_get_0x50");
                     _v3_unlock_server();
                     return false;
@@ -5003,7 +5066,7 @@ v3_join_chat(void) {/*{{{*/
 }/*}}}*/
 
 void
-v3_leave_chat() {/*{{{*/
+v3_leave_chat(void) {/*{{{*/
     v3_event ev;
 
     _v3_func_enter("v3_leave_chat");
@@ -5178,6 +5241,60 @@ v3_send_privchat_back(uint16_t userid) {/*{{{*/
     fflush(v3_server.evoutstream);
     _v3_unlock_sendq();
     _v3_func_leave("v3_send_privchat_back");
+    return;
+}/*}}}*/
+
+void
+v3_send_tts_message(char *message) {/*{{{*/
+    v3_event ev;
+
+    _v3_func_enter("v3_send_tts_message");
+    if (!v3_is_loggedin()) {
+        _v3_func_leave("v3_send_tts_message");
+        return;
+    }
+    memset(&ev, 0, sizeof(v3_event));
+    ev.data = malloc(sizeof(v3_event_data));
+    memset(ev.data, 0, sizeof(v3_event_data));
+    ev.type = V3_EVENT_TEXT_TO_SPEECH_MESSAGE;
+    strncpy(ev.data->chatmessage, message, sizeof(ev.data->chatmessage) - 1);
+    _v3_lock_sendq();
+    _v3_debug(V3_DEBUG_EVENT, "sending %lu bytes to event pipe", sizeof(v3_event));
+    if (fwrite(&ev, sizeof(struct _v3_event), 1, v3_server.evoutstream) != 1) {
+        _v3_error("could not write to event pipe");
+        _v3_func_leave("v3_send_tts_message");
+        return;
+    }
+    fflush(v3_server.evoutstream);
+    _v3_unlock_sendq();
+    _v3_func_leave("v3_send_tts_message");
+    return;
+}/*}}}*/
+
+void
+v3_send_play_wave_message(char *message) {/*{{{*/
+    v3_event ev;
+
+    _v3_func_enter("v3_send_play_wave_message");
+    if (!v3_is_loggedin()) {
+        _v3_func_leave("v3_send_play_wave_message");
+        return;
+    }
+    memset(&ev, 0, sizeof(v3_event));
+    ev.data = malloc(sizeof(v3_event_data));
+    memset(ev.data, 0, sizeof(v3_event_data));
+    ev.type = V3_EVENT_PLAY_WAVE_FILE_MESSAGE;
+    strncpy(ev.data->chatmessage, message, sizeof(ev.data->chatmessage) - 1);
+    _v3_lock_sendq();
+    _v3_debug(V3_DEBUG_EVENT, "sending %lu bytes to event pipe", sizeof(v3_event));
+    if (fwrite(&ev, sizeof(struct _v3_event), 1, v3_server.evoutstream) != 1) {
+        _v3_error("could not write to event pipe");
+        _v3_func_leave("v3_send_play_wave_message");
+        return;
+    }
+    fflush(v3_server.evoutstream);
+    _v3_unlock_sendq();
+    _v3_func_leave("v3_send_play_wave_message");
     return;
 }/*}}}*/
 
@@ -6697,7 +6814,7 @@ v3_is_channel_admin(uint16_t channel_id) {/*{{{*/
 }/*}}}*/
 
 /*
- * Using these functions may chew up CPU since they perform mathmetical
+ * Using these functions may chew up CPU since they perform mathematical
  * operations on every 16 bit pcm sample.
  */
 void

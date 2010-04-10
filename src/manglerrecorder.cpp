@@ -350,16 +350,8 @@ ManglerRecorder::record(Glib::ustring username, Glib::ustring text, uint32_t ind
         return;
     }
     Gtk::TreeModel::Children children = recListModel->children();
-    if (flushed || stopped) {
-        for (Gtk::TreeModel::iterator iter = children.begin(); iter != children.end(); iter++) {
-            if (flushed || (stopped && (*iter)[recRecord.id] == index)) {
-                (*iter)[recRecord.status] = "*";
-            }
-        }
-        return;
-    }
     Gtk::TreeModel::Row row;
-    if (!children[index]) {
+    if (!flushed && !children[index]) {
         row = *(recListModel->append());
         row[recRecord.id]           = index;
         row[recRecord.time_val]     = time;
@@ -373,7 +365,17 @@ ManglerRecorder::record(Glib::ustring username, Glib::ustring text, uint32_t ind
         label->set_text(float_to_ustring(children.size(), 0));
         recListTree->set_cursor(recListModel->get_path(row));
     }
+    if (flushed) {
+        for (Gtk::TreeModel::iterator iter = children.begin(); iter != children.end(); iter++) {
+            (*iter)[recRecord.status] = "*";
+        }
+        return;
+    }
     row = children[index];
+    if (stopped) {
+        row[recRecord.status] = "*";
+        return;
+    }
     if (row[recRecord.duration_val] + 100 < time - row[recRecord.time_val]) {
         row[recRecord.duration_val] = time - row[recRecord.time_val];
         row[recRecord.duration]     = float_to_ustring(row[recRecord.duration_val] / 1000.0, 2);
@@ -476,7 +478,10 @@ ManglerRecorder::play(void) {/*{{{*/
                 recIter++;
                 break;
               case V3_VRF_DATA_TEXT:
+                gdk_threads_enter();
                 children[recIter->first][recRecord.text] = c_to_ustring(vrfd->text);
+                children[recIter->first][recRecord.status] = "*";
+                gdk_threads_leave();
                 recIter++;
                 break;
               case V3_VRF_DATA_NULL:
@@ -487,11 +492,11 @@ ManglerRecorder::play(void) {/*{{{*/
                 v3_vrf_data_destroy(vrfd);
                 free(vrfd);
                 delete recd;
+                gdk_threads_enter();
                 if (vrfh && children[recIter->first] && children[recIter->first][recRecord.status] == "Play") {
-                    gdk_threads_enter();
                     children[recIter->first][recRecord.status] = "*";
-                    gdk_threads_leave();
                 }
+                gdk_threads_leave();
                 recData.erase(recIter);
                 recIter = recData.begin();
                 break;

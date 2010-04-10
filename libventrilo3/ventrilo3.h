@@ -269,6 +269,8 @@ enum _v3_events {
     V3_EVENT_PRIVATE_CHAT_END,
     V3_EVENT_PRIVATE_CHAT_AWAY,
     V3_EVENT_PRIVATE_CHAT_BACK,
+    V3_EVENT_TEXT_TO_SPEECH_MESSAGE,
+    V3_EVENT_PLAY_WAVE_FILE_MESSAGE,
     V3_EVENT_USERLIST_ADD,
     V3_EVENT_USERLIST_MODIFY,
     V3_EVENT_USERLIST_REMOVE,
@@ -690,6 +692,8 @@ void        v3_end_privchat(uint16_t userid);
 void        v3_send_privchat_message(uint16_t userid, char *message);
 void        v3_send_privchat_away(uint16_t userid);
 void        v3_send_privchat_back(uint16_t userid);
+void        v3_send_tts_message(char *message);
+void        v3_send_play_wave_message(char *message);
 void        v3_logout(void);
 void        v3_change_channel(uint16_t channel_id, char *password);
 void        v3_admin_login(char *password);

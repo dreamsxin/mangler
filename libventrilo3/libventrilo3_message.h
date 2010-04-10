@@ -113,9 +113,10 @@ typedef struct _v3_net_message_0x3a {/*{{{*/
     uint32_t type;              // 0
     uint32_t user_id;           // 4
     uint16_t msglen;            // 8
-
     char *   msg;               // 10 - variable length starts here
 } __attribute__ ((__packed__)) _v3_msg_0x3a;/*}}}*/
+int _v3_get_0x3a(_v3_net_message *msg);
+_v3_net_message *_v3_put_0x3a(char *message);
 typedef struct _v3_net_message_0x3b {/*{{{*/
     uint32_t type;              // 0
     uint16_t user_id;           // 4
@@ -126,25 +127,25 @@ int _v3_get_0x3b(_v3_net_message *msg);
 _v3_net_message *_v3_put_0x3b(uint16_t userid, uint16_t channelid);/*}}}*/
 typedef struct _v3_net_message_0x3c {/*{{{*/
     uint32_t type;              // 0
-    uint8_t  unknown1[4];
-    uint16_t codec;
-    uint16_t codec_format;
-    uint8_t  unknown2[12];
+    uint8_t  unknown1[4];       // 4
+    uint16_t codec;             // 8
+    uint16_t codec_format;      // 10
+    uint8_t  unknown2[12];      // 12
 } __attribute__ ((__packed__)) _v3_msg_0x3c;
 int _v3_get_0x3c(_v3_net_message *msg);/*}}}*/
 typedef struct _v3_net_message_0x3f {/*{{{*/
     uint32_t type;              // 0
-    uint32_t empty;             // 4
-    uint16_t pathlen;           // 6
-
-    char *   filepath;          // 8 - variable length starts here
+    uint32_t user_id;           // 4
+    uint16_t msglen;            // 8
+    char *   msg;               // 10 - variable length starts here
 } __attribute__ ((__packed__)) _v3_msg_0x3f;/*}}}*/
+int _v3_get_0x3f(_v3_net_message *msg);
+_v3_net_message *_v3_put_0x3f(char *message);
 typedef struct _v3_net_message_0x42 {/*{{{*/
     uint32_t type;              // 0
     uint16_t user_id;           // 4
     uint16_t subtype;           // 6
     uint32_t unknown;           // 8
-
     uint16_t msglen;            // 12 - variable length starts here
     char *   msg;               // 14
 } __attribute__ ((__packed__)) _v3_msg_0x42;
@@ -184,7 +185,6 @@ typedef struct _v3_net_message_0x49 {/*{{{*/
     uint16_t user_id;           // 4
     uint16_t subtype;           // 6
     uint8_t  hash_password[32]; // 8
-
     v3_channel *channel;        // 40 - variable length starts here
 } __attribute__ ((__packed__)) _v3_msg_0x49;
 int _v3_get_0x49(_v3_net_message *msg);
@@ -223,7 +223,7 @@ typedef struct _v3_net_message_0x4c {/*{{{*/
     uint16_t property;          // 6
     uint16_t ack;               // 8
     uint16_t transaction_id;    // 10
-    char *value;                // 12
+    char *   value;             // 12
 } __attribute__ ((__packed__)) _v3_msg_0x4c;
 int _v3_get_0x4c(_v3_net_message *msg);
 _v3_net_message *_v3_put_0x4c(uint16_t subtype, uint16_t property, uint16_t ack, uint16_t transaction_id, char *value);/*}}}*/
