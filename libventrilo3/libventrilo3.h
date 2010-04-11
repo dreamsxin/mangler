@@ -564,31 +564,34 @@ struct _v3_vrf {
     v3_vrf_rec queue;
 } __attribute__ ((__packed__));
 
-void _v3_vrf_lock(v3_vrf *vrfh);
-void _v3_vrf_unlock(v3_vrf *vrfh);
-void _v3_vrf_print_header(const v3_vrf_header *header);
-void _v3_vrf_print_info(const v3_vrf_header *header);
-void _v3_vrf_print_segment(uint32_t id, const v3_vrf_segment *segment);
-void _v3_vrf_print_audio(const v3_vrf_audio *audio);
-void _v3_vrf_print_fragment(uint32_t type, const v3_vrf_fragment *fragment);
-int  _v3_vrf_get_header(v3_vrf *vrfh);
-int  _v3_vrf_get_table(v3_vrf *vrfh);
-int  _v3_vrf_check_table(v3_vrf *vrfh);
+void            _v3_vrf_lock(v3_vrf *vrfh);
+void            _v3_vrf_unlock(v3_vrf *vrfh);
+void            _v3_vrf_print_header(const v3_vrf_header *header);
+void            _v3_vrf_print_info(const v3_vrf_header *header);
+void            _v3_vrf_print_segment(uint32_t id, const v3_vrf_segment *segment);
+void            _v3_vrf_print_audio(const v3_vrf_audio *audio);
+void            _v3_vrf_print_fragment(uint32_t type, const v3_vrf_fragment *fragment);
+int             _v3_vrf_get_header(v3_vrf *vrfh);
+int             _v3_vrf_get_table(v3_vrf *vrfh);
+int             _v3_vrf_check_table(v3_vrf *vrfh);
 v3_vrf_segment *_v3_vrf_get_segment(v3_vrf *vrfh, uint32_t id);
-int  _v3_vrf_get_audio(v3_vrf *vrfh, uint32_t offset, v3_vrf_audio *audio);
-int  _v3_vrf_put_header(v3_vrf *vrfh);
-int  _v3_vrf_put_segment(uint32_t id, const v3_vrf_segment *segment, void *offset);
-int  _v3_vrf_put_audio(const v3_vrf_audio *audio, void *offset);
-int  _v3_vrf_put_fragment(uint32_t type, const v3_vrf_fragment *fragment, void *offset);
-void _v3_vrf_put_record(uint32_t user_id, uint32_t index, uint32_t type, const char *username, v3_vrf_rec *rec);
-void _v3_vrf_record_event(
-                int type,
-                uint16_t user_id,
-                uint16_t codec,
-                uint16_t codecformat,
-                uint32_t pcmlen,
-                uint32_t datalen,
-                void *data);
+int             _v3_vrf_get_audio(v3_vrf *vrfh, uint32_t offset, v3_vrf_audio *audio);
+int             _v3_vrf_get_fragment(v3_vrf *vrfh, uint32_t type, uint32_t *offset, v3_vrf_fragment *fragment, uint32_t *fraglen, void **fragdata);
+int             _v3_vrf_put_header(v3_vrf *vrfh);
+uint32_t        _v3_vrf_put_segment(uint32_t id, const v3_vrf_segment *segment, void *offset);
+uint32_t        _v3_vrf_put_audio(const v3_vrf_audio *audio, void *offset);
+uint32_t        _v3_vrf_put_fragment(uint32_t type, const v3_vrf_fragment *fragment, void *offset);
+void            _v3_vrf_put_record(uint32_t user_id, uint32_t index, uint32_t type, const char *username, v3_vrf_rec *rec);
+void            _v3_vrf_record_event(
+                                int type,
+                                uint16_t user_id,
+                                uint16_t codec,
+                                uint16_t codecformat,
+                                uint32_t pcmlen,
+                                uint32_t datalen,
+                                void *data);
+void            _v3_vrf_record_finish(v3_vrf *vrfh, uint32_t segtable);
+int             _v3_vrf_recover(v3_vrf *vrfh);
 /*}}}*/
 
 v3_vrf *_v3_vrfh = NULL;

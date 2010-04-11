@@ -2439,6 +2439,13 @@ v3_vrf_init(const char *filename) {/*{{{*/
             _v3_func_leave("v3_vrf_init");
             return NULL;
         }
+        if (!strncmp(vrfh->header.headid, V3_VRF_TEMPID, sizeof(vrfh->header.headid)) &&
+            _v3_vrf_recover(vrfh) != V3_OK) {
+            _v3_error("%s: failed to recover vrf segment table", filename);
+            v3_vrf_destroy(vrfh);
+            _v3_func_leave("v3_vrf_init");
+            return NULL;
+        }
     }
 
     _v3_func_leave("v3_vrf_init");
@@ -2663,7 +2670,8 @@ _v3_vrf_get_header(v3_vrf *vrfh) {/*{{{*/
     header->codecformat = ntohl(header->codecformat);
     header->unknown4    = ntohl(header->unknown4);
     _v3_vrf_print_header(header);
-    if (strncmp(header->headid, V3_VRF_HEADID, sizeof(header->headid))) {
+    if (strncmp(header->headid, V3_VRF_HEADID, sizeof(header->headid)) &&
+        strncmp(header->headid, V3_VRF_TEMPID, sizeof(header->headid))) {
         _v3_error("%s: unrecognized file header id", vrfh->filename);
         _v3_vrf_unlock(vrfh);
         _v3_func_leave("_v3_vrf_get_header");
@@ -2878,6 +2886,86 @@ _v3_vrf_get_audio(v3_vrf *vrfh, uint32_t offset, v3_vrf_audio *audio) {/*{{{*/
 }/*}}}*/
 
 int
+_v3_vrf_get_fragment(v3_vrf *vrfh, uint32_t type, uint32_t *offset, v3_vrf_fragment *fragment, uint32_t *fraglen, void **fragdata) {/*{{{*/
+    _v3_func_enter("_v3_vrf_get_fragment");
+
+    if (!vrfh || !offset || !fragment) {
+        _v3_func_leave("_v3_vrf_get_fragment");
+        return V3_FAILURE;
+    }
+    uint32_t fragread;
+    switch (type) {
+      case V3_VRF_TYPE_AUDIO:
+        fragread = sizeof(v3_vrf_fragment) - sizeof(fragment->audio.ext);
+        break;
+      case V3_VRF_TYPE_TEXT:
+        fragread = sizeof(v3_vrf_fragment) - sizeof(fragment->audio);
+        break;
+      case V3_VRF_TYPE_EXT:
+        fragread = sizeof(v3_vrf_fragment);
+        break;
+      default:
+        _v3_error("%s: unknown audio type: 0x%02x", vrfh->filename, type);
+        _v3_func_leave("_v3_vrf_get_fragment");
+        return V3_FAILURE;
+    }
+    _v3_vrf_lock(vrfh);
+    fseek(vrfh->file, *offset, SEEK_SET);
+    if (!fread(fragment, fragread, 1, vrfh->file)) {
+        _v3_error("%s: failed to get vrf audio fragment: %s", vrfh->filename, strerror(errno));
+        _v3_vrf_unlock(vrfh);
+        _v3_func_leave("_v3_vrf_get_fragment");
+        return V3_FAILURE;
+    }
+    fragment->headlen = ntohl(fragment->headlen);
+    fragment->fraglen = ntohl(fragment->fraglen);
+    if (type != V3_VRF_TYPE_TEXT) {
+        fragment->audio.pcmlen   = ntohl(fragment->audio.pcmlen);
+        fragment->audio.unknown1 = ntohl(fragment->audio.unknown1);
+    }
+    if (type == V3_VRF_TYPE_EXT) {
+        fragment->audio.ext.codec       = ntohs(fragment->audio.ext.codec);
+        fragment->audio.ext.codecformat = ntohs(fragment->audio.ext.codecformat);
+        fragment->audio.ext.unknown2    = ntohl(fragment->audio.ext.unknown2);
+    }
+    _v3_vrf_print_fragment(type, fragment);
+    uint32_t _fraglen;
+    switch (type) {
+      case V3_VRF_TYPE_AUDIO:
+      case V3_VRF_TYPE_EXT:
+        _fraglen = fragment->fraglen;
+        break;
+      case V3_VRF_TYPE_TEXT:
+        _fraglen = fragment->headlen - fragread;
+        break;
+    }
+    if (fraglen && fragdata) {
+        if (!fragment->headlen || _fraglen > V3_VRF_MAX_FRAGLEN) {
+            _v3_error("%s: vrf fragment is corrupted", vrfh->filename);
+            _v3_vrf_unlock(vrfh);
+            _v3_func_leave("_v3_vrf_get_fragment");
+            return V3_MALFORMED;
+        }
+        *fragdata = malloc(_fraglen);
+        memset(*fragdata, 0, _fraglen);
+        if (!fread(*fragdata, _fraglen, 1, vrfh->file)) {
+            _v3_error("%s: failed to get vrf audio fragment data: %s", vrfh->filename, strerror(errno));
+            free(*fragdata);
+            *fragdata = NULL;
+            _v3_vrf_unlock(vrfh);
+            _v3_func_leave("_v3_vrf_get_fragment");
+            return V3_FAILURE;
+        }
+        *fraglen = _fraglen;
+    }
+    *offset += fragread + _fraglen;
+    _v3_vrf_unlock(vrfh);
+
+    _v3_func_leave("_v3_vrf_get_fragment");
+    return V3_OK;
+}/*}}}*/
+
+int
 v3_vrf_get_audio(void *vrfh, uint32_t id, v3_vrf_data *vrfd) {/*{{{*/
     _v3_func_enter("v3_vrf_get_audio");
 
@@ -2912,70 +3000,12 @@ v3_vrf_get_audio(void *vrfh, uint32_t id, v3_vrf_data *vrfd) {/*{{{*/
     }
     if (audio->fragcount --> 0) {
         v3_vrf_fragment fragment;
-        uint32_t fragread;
         uint32_t fraglen;
-        void     *fragdata;
-        switch (audio->type) {
-          case V3_VRF_TYPE_AUDIO:
-            fragread = sizeof(v3_vrf_fragment) - sizeof(fragment.audio.ext);
-            break;
-          case V3_VRF_TYPE_TEXT:
-            fragread = sizeof(v3_vrf_fragment) - sizeof(fragment.audio);
-            break;
-          case V3_VRF_TYPE_EXT:
-            fragread = sizeof(v3_vrf_fragment);
-            break;
-          default:
-            _v3_error("%s: unknown audio type: 0x%02x", _vrfh->filename, audio->type);
+        void *fragdata;
+        if (_v3_vrf_get_fragment(vrfh, audio->type, &audio->offset, &fragment, &fraglen, &fragdata) != V3_OK) {
             _v3_func_leave("v3_vrf_get_audio");
             return V3_FAILURE;
         }
-        _v3_vrf_lock(vrfh);
-        fseek(_vrfh->file, audio->offset, SEEK_SET);
-        if (!fread(&fragment, fragread, 1, _vrfh->file)) {
-            _v3_error("%s: failed to get vrf audio fragment: %s", _vrfh->filename, strerror(errno));
-            _v3_vrf_unlock(vrfh);
-            _v3_func_leave("v3_vrf_get_audio");
-            return V3_FAILURE;
-        }
-        fragment.headlen = ntohl(fragment.headlen);
-        fragment.fraglen = ntohl(fragment.fraglen);
-        if (audio->type != V3_VRF_TYPE_TEXT) {
-            fragment.audio.pcmlen   = ntohl(fragment.audio.pcmlen);
-            fragment.audio.unknown1 = ntohl(fragment.audio.unknown1);
-        }
-        if (audio->type == V3_VRF_TYPE_EXT) {
-            fragment.audio.ext.codec       = ntohs(fragment.audio.ext.codec);
-            fragment.audio.ext.codecformat = ntohs(fragment.audio.ext.codecformat);
-            fragment.audio.ext.unknown2    = ntohl(fragment.audio.ext.unknown2);
-        }
-        _v3_vrf_print_fragment(audio->type, &fragment);
-        switch (audio->type) {
-          case V3_VRF_TYPE_AUDIO:
-          case V3_VRF_TYPE_EXT:
-            fraglen = fragment.fraglen;
-            break;
-          case V3_VRF_TYPE_TEXT:
-            fraglen = fragment.headlen - fragread;
-            break;
-        }
-        if (!fragment.headlen || fraglen > V3_VRF_MAX_FRAGLEN) {
-            _v3_error("%s: vrf fragment is corrupted", _vrfh->filename);
-            _v3_vrf_unlock(vrfh);
-            _v3_func_leave("v3_vrf_get_audio");
-            return V3_MALFORMED;
-        }
-        fragdata = malloc(fraglen);
-        memset(fragdata, 0, fraglen);
-        if (!fread(fragdata, fraglen, 1, _vrfh->file)) {
-            _v3_error("%s: failed to get vrf audio fragment data: %s", _vrfh->filename, strerror(errno));
-            free(fragdata);
-            _v3_vrf_unlock(vrfh);
-            _v3_func_leave("v3_vrf_get_audio");
-            return V3_FAILURE;
-        }
-        audio->offset = ftell(_vrfh->file);
-        _v3_vrf_unlock(vrfh);
         switch (audio->type) {
           case V3_VRF_TYPE_AUDIO:
             fragment.audio.ext.codec       = _vrfh->header.codec;
@@ -3100,7 +3130,7 @@ v3_vrf_put_info(void *vrfh, const v3_vrf_data *vrfd) {/*{{{*/
     return V3_OK;
 }/*}}}*/
 
-int
+uint32_t
 _v3_vrf_put_segment(uint32_t id, const v3_vrf_segment *segment, void *offset) {/*{{{*/
     _v3_func_enter("_v3_vrf_put_segment");
 
@@ -3125,7 +3155,7 @@ _v3_vrf_put_segment(uint32_t id, const v3_vrf_segment *segment, void *offset) {/
     return sizeof(v3_vrf_segment);
 }/*}}}*/
 
-int
+uint32_t
 _v3_vrf_put_audio(const v3_vrf_audio *audio, void *offset) {/*{{{*/
     _v3_func_enter("_v3_vrf_put_audio");
 
@@ -3150,7 +3180,7 @@ _v3_vrf_put_audio(const v3_vrf_audio *audio, void *offset) {/*{{{*/
     return sizeof(v3_vrf_audio);
 }/*}}}*/
 
-int
+uint32_t
 _v3_vrf_put_fragment(uint32_t type, const v3_vrf_fragment *fragment, void *offset) {/*{{{*/
     _v3_func_enter("_v3_vrf_put_fragment");
 
@@ -3396,6 +3426,34 @@ _v3_vrf_record_event(
     _v3_func_leave("_v3_vrf_record_event");
 }/*}}}*/
 
+void
+_v3_vrf_record_finish(v3_vrf *vrfh, uint32_t segtable) {/*{{{*/
+    _v3_func_enter("_v3_vrf_record_finish");
+
+    if (!vrfh) {
+        _v3_func_leave("_v3_vrf_record_finish");
+        return;
+    }
+    if (vrfh->table) {
+        fseek(vrfh->file, segtable, SEEK_SET);
+        if (!fwrite(vrfh->table, vrfh->tablesize, 1, vrfh->file)) {
+            _v3_error("%s: FATAL: failed to put vrf segment table: %s", vrfh->filename, strerror(errno));
+        }
+        fflush(vrfh->file);
+        vrfh->tablesize = 0;
+        free(vrfh->table);
+        vrfh->table = NULL;
+    }
+    vrfh->header.segtable = segtable;
+    strncpy(vrfh->header.headid, V3_VRF_HEADID, sizeof(vrfh->header.headid));
+    fseek(vrfh->file, 0, SEEK_END);
+    vrfh->filelen = ftell(vrfh->file);
+    vrfh->header.size = vrfh->filelen;
+    _v3_vrf_put_header(vrfh);
+
+    _v3_func_leave("_v3_vrf_record_finish");
+}/*}}}*/
+
 int
 v3_vrf_record_start(const char *filename) {/*{{{*/
     _v3_func_enter("v3_vrf_record_start");
@@ -3459,19 +3517,101 @@ v3_vrf_record_stop(void) {/*{{{*/
     _v3_vrfh = NULL;
     _v3_vrf_unlock(vrfh);
     fseek(vrfh->file, 0, SEEK_END);
-    vrfh->header.segtable = ftell(vrfh->file);
-    if (vrfh->table) {
-        if (!fwrite(vrfh->table, vrfh->tablesize, 1, vrfh->file)) {
-            _v3_error("%s: FATAL: failed to put vrf segment table: %s", _v3_vrfh->filename, strerror(errno));
-        }
-        fflush(vrfh->file);
-    }
-    vrfh->header.size = vrfh->header.segtable + vrfh->tablesize;
-    strncpy(vrfh->header.headid, V3_VRF_HEADID, sizeof(vrfh->header.headid));
-    _v3_vrf_put_header(vrfh);
+    _v3_vrf_record_finish(vrfh, ftell(vrfh->file));
     v3_vrf_destroy(vrfh);
 
     _v3_func_leave("v3_vrf_record_stop");
+}/*}}}*/
+
+int
+_v3_vrf_recover(v3_vrf *vrfh) {/*{{{*/
+    _v3_func_enter("_v3_vrf_recover");
+
+    if (!vrfh || !vrfh->filelen || vrfh->table || vrfh->header.segcount) {
+        _v3_func_leave("_v3_vrf_recover");
+        return V3_FAILURE;
+    }
+    if (strncmp(vrfh->header.headid, V3_VRF_TEMPID, sizeof(vrfh->header.headid))) {
+        _v3_func_leave("_v3_vrf_recover");
+        return V3_FAILURE;
+    }
+    uint32_t offset = sizeof(v3_vrf_header);
+    if (fseek(vrfh->file, offset, SEEK_SET)) {
+        _v3_func_leave("_v3_vrf_recover");
+        return V3_FAILURE;
+    }
+    uint32_t headlen;
+    v3_vrf_audio audio;
+    v3_vrf_fragment fragment;
+    v3_vrf_segment *segment;
+    while (offset + sizeof(headlen) < vrfh->filelen) {
+        if (fseek(vrfh->file, offset, SEEK_SET)) {
+            break;
+        }
+        if (!fread(&headlen, sizeof(headlen), 1, vrfh->file)) {
+            break;
+        }
+        switch (ntohl(headlen)) {
+          case (sizeof(v3_vrf_audio) + sizeof(segment->username)):
+            memset(&audio, 0, sizeof(v3_vrf_audio));
+            if (_v3_vrf_get_audio(vrfh, offset, &audio) != V3_OK) {
+                _v3_func_leave("_v3_vrf_recover");
+                return V3_FAILURE;
+            }
+            vrfh->table = realloc(vrfh->table, vrfh->tablesize + sizeof(v3_vrf_segment));
+            vrfh->header.segcount++;
+            segment = &vrfh->table[vrfh->header.segcount - 1];
+            memset(segment, 0, sizeof(v3_vrf_segment));
+            segment->headlen = sizeof(v3_vrf_segment);
+            segment->type    = audio.type;
+            segment->offset  = offset;
+            fread(segment->username, sizeof(segment->username) - 1, 1, vrfh->file);
+            vrfh->tablesize += segment->headlen;
+            offset += audio.headlen;
+            break;
+          case (sizeof(v3_vrf_fragment)):
+          case (V3_VRF_TEXTLEN + (sizeof(v3_vrf_fragment) - sizeof(fragment.audio))):
+            if (!vrfh->header.segcount) {
+                _v3_func_leave("_v3_vrf_recover");
+                return V3_FAILURE;
+            }
+            segment = &vrfh->table[vrfh->header.segcount - 1];
+            segment->valid = true;
+            memset(&fragment, 0, sizeof(v3_vrf_fragment));
+            if (_v3_vrf_get_fragment(vrfh, segment->type, &offset, &fragment, NULL, NULL) != V3_OK) {
+                _v3_func_leave("_v3_vrf_recover");
+                return V3_FAILURE;
+            }
+            switch (segment->type) {
+              case V3_VRF_TYPE_AUDIO:
+              case V3_VRF_TYPE_EXT:
+                if (!segment->time) {
+                    segment->time = fragment.audio.unknown1;
+                } else {
+                    segment->duration = fragment.audio.unknown1 - segment->time;
+                }
+                break;
+              case V3_VRF_TYPE_TEXT:
+                segment->time = fragment.fraglen;
+                break;
+            }
+            break;
+          default:
+            _v3_func_leave("_v3_vrf_recover");
+            return V3_FAILURE;
+        }
+    }
+    if (vrfh->header.segcount) {
+        uint32_t ctr;
+        for (ctr = 0; ctr < vrfh->header.segcount; ctr++) {
+            _v3_vrf_put_segment(ctr, &vrfh->table[ctr], &vrfh->table[ctr]);
+        }
+    }
+    fseek(vrfh->file, 0, SEEK_END);
+    _v3_vrf_record_finish(vrfh, ftell(vrfh->file));
+
+    _v3_func_leave("_v3_vrf_recover");
+    return V3_OK;
 }/*}}}*/
 
 /*
