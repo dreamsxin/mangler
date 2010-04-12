@@ -27,6 +27,10 @@
 #ifndef _MANGLERG15_H
 #define _MANGLERG15_H
 
+#include "config.h"
+
+#ifdef HAVE_G15
+
 #include <g15daemon_client.h>
 #include <libg15render.h>
 #include <vector>
@@ -116,3 +120,6 @@ const char g15_blank[] = {
 };
 
 #endif
+
+#endif
+

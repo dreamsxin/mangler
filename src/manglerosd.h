@@ -26,6 +26,7 @@
 
 #ifndef _MANGLEROSD_H
 #define _MANGLEROSD_H
+
 #include "config.h"
 
 #ifdef HAVE_XOSD
