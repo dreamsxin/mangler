@@ -43,14 +43,14 @@ ManglerG15::addevent(Glib::ustring text) {
     vector<Glib::ustring>::iterator it;
     int ctr;
 
-    if (events.size() > 5) {
+    if (events.size() > 6) {
         events.erase(events.begin());
     }
     events.push_back(text);
     memset(&canvas, 0, sizeof(g15canvas));
     memcpy(&canvas.buffer, g15_blank, G15_BUFFER_LEN);
-    for (ctr = 7, it = events.begin(); it < events.end(); it++, ctr+=6) {
-        g15r_renderString(&canvas, (unsigned char *)((Glib::ustring)*it).c_str(), 0, G15_TEXT_SMALL, 45, ctr);
+    for (ctr = 1, it = events.begin(); it < events.end(); it++, ctr+=7) {
+        g15r_renderString(&canvas, (unsigned char *)((Glib::ustring)*it).c_str(), 0, G15_TEXT_SMALL, 43, ctr);
         //fprintf(stderr, "%s\n", ((Glib::ustring)*it).c_str() );
     }
     g15_send(fd, (char *)&canvas.buffer, G15_BUFFER_LEN);

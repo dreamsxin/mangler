@@ -353,7 +353,6 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
 #ifdef HAVE_G15
     // Create XOSD Overlay
     g15 = new ManglerG15();
-    g15->addevent("test");
 #endif
 
     Glib::signal_timeout().connect(sigc::mem_fun(this, &Mangler::updateIntegration), 1000);
