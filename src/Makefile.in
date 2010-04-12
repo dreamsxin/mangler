@@ -59,7 +59,7 @@ am_mangler_OBJECTS = mangler.$(OBJEXT) channeltree.$(OBJEXT) \
 	manglerprivchat.$(OBJEXT) manglercharset.$(OBJEXT) \
 	manglerintegration.$(OBJEXT) mangleradmin.$(OBJEXT) \
 	manglerrecorder.$(OBJEXT) manglerosd.$(OBJEXT) \
-	inilib.$(OBJEXT)
+	manglerg15.$(OBJEXT) inilib.$(OBJEXT)
 mangler_OBJECTS = $(am_mangler_OBJECTS)
 am__DEPENDENCIES_1 =
 mangler_DEPENDENCIES = @top_srcdir@/libventrilo3/libventrilo3.la \
@@ -263,7 +263,7 @@ icondir = $(datadir)/pixmaps
 desktopdir = $(datadir)/applications
 icon_DATA = ../icons/mangler_logo.svg 
 desktop_DATA = ../mangler.desktop
-mangler_SOURCES = manglerui.h mangler.cpp channeltree.cpp mangleraudio.cpp manglernetwork.cpp manglerserverlist.cpp manglersettings.cpp manglerconfig.cpp manglerchat.cpp manglerprivchat.cpp manglercharset.cpp manglerintegration.cpp mangleradmin.cpp manglerrecorder.cpp manglerosd.cpp inilib.cpp
+mangler_SOURCES = manglerui.h mangler.cpp channeltree.cpp mangleraudio.cpp manglernetwork.cpp manglerserverlist.cpp manglersettings.cpp manglerconfig.cpp manglerchat.cpp manglerprivchat.cpp manglercharset.cpp manglerintegration.cpp mangleradmin.cpp manglerrecorder.cpp manglerosd.cpp manglerg15.cpp inilib.cpp
 mangler_LDADD = @top_srcdir@/libventrilo3/libventrilo3.la $(gtkmm_LIBS) $(gthread_LIBS) $(pulse_LIBS) $(alsa_LIBS) $(dbus_LIBS)
 INCLUDES = -I@top_srcdir@/libventrilo3/ -I@top_srcdir@/icons/ -I@top_srcdir@/sounds/ $(gtkmm_CFLAGS) $(gthread_CFLAGS) $(pulse_CFLAGS) $(alsa_CFLAGS) $(dbus_CFLAGS)
 all: all-am
@@ -361,6 +361,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/manglercharset.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/manglerchat.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/manglerconfig.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/manglerg15.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/manglerintegration.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/manglernetwork.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/manglerosd.Po@am__quote@

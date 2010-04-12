@@ -41,6 +41,7 @@ AC_ARG_ENABLE(gsm,   [  --disable-gsm           disable GSM codec support], [dis
 AC_ARG_ENABLE(speex, [  --disable-speex         disable Speex codec support], [disable_speex=yes])
 AC_ARG_ENABLE(celt,  [  --disable-celt          disable CELT codec support], [disable_celt=yes])
 AC_ARG_ENABLE(xosd,  [  --disable-xosd          disable XOSD overlay support], [disable_xosd=yes])
+AC_ARG_ENABLE(g15,   [  --disable-g15           disable Logitech G15 keyboard support], [disable_g15=yes])
 
 if test "$enable_gsm" != "no" ; then
 	AC_CHECK_LIB([gsm], [gsm_create], [], [
@@ -95,6 +96,20 @@ if test "$enable_xosd" != "no" ; then
 	])
 else
 	echo "Disabled optional XOSD support."
+fi
+
+if test "$enable_g15" != "no" ; then
+	AC_CHECK_LIB([g15daemon_client], [new_g15_screen], [
+		AC_CHECK_LIB([g15render], [g15r_clearScreen], [
+			AC_DEFINE(HAVE_G15, 1, [have g15 kb support])
+			LIBS="-lg15daemon_client -lg15render $LIBS"
+			echo "Enabled optional Logitech G15 support."
+		])
+	], [
+		echo "Optional Logitech G15 support is not enabled."
+	])
+else
+	echo "Disabled optional Logitech G15 support."
 fi
 
 PKG_CHECK_MODULES(gtk, gtk+-2.0 >= 2.16.0)

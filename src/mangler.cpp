@@ -47,6 +47,9 @@
 #ifdef HAVE_XOSD
 # include "manglerosd.h"
 #endif
+#ifdef HAVE_G15
+# include "manglerg15.h"
+#endif
 #include "locale.h"
 
 using namespace std;
@@ -346,6 +349,11 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
 #ifdef HAVE_XOSD
     // Create XOSD Overlay
     osd = new ManglerOsd();
+#endif
+#ifdef HAVE_G15
+    // Create XOSD Overlay
+    g15 = new ManglerG15();
+    g15->addevent("test");
 #endif
 
     Glib::signal_timeout().connect(sigc::mem_fun(this, &Mangler::updateIntegration), 1000);
@@ -1101,6 +1109,9 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                         v3_join_chat();
                     }
                     recorder->can_record(true);
+#ifdef HAVE_G15
+                    g15->addevent("connected to server");
+#endif
                 }
                 break;/*}}}*/
             case V3_EVENT_USER_CHAN_MOVE:/*{{{*/
@@ -1119,6 +1130,14 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                         } else {
                             label->set_text("Unsupported Codec");
                         }
+#ifdef HAVE_G15
+                        if ((c = v3_get_channel(ev->channel.id))) {
+                            string event = "switched to: ";
+                            event.append(c->name);
+                            g15->addevent(event);
+                            free(c);
+                        }
+#endif
 #ifdef HAVE_XOSD
                         osd->destroyOsd();
 #endif
@@ -1126,9 +1145,19 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                         if (ev->channel.id == v3_get_user_channel(v3_get_user_id())) {
                             // they're joining our channel
                             audioControl->playNotification("channelenter");
+#ifdef HAVE_G15
+                            string event = "joined channel: ";
+                            event.append(u->name);
+                            g15->addevent(event);
+#endif
                         } else if (channelTree->getUserChannelId(ev->user.id) == v3_get_user_channel(v3_get_user_id())) {
                             // they're leaving our channel
                             audioControl->playNotification("channelleave");
+#ifdef HAVE_G15
+                            string event = "left channel: ";
+                            event.append(u->name);
+                            g15->addevent(event);
+#endif
                         }
 #ifdef HAVE_XOSD
                         osd->removeUser(ev->user.id);
@@ -1242,6 +1271,14 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                     if (!channelTree->isMuted(ev->user.id) && !muteSound) {
                         // Open a stream if we don't have one for this user
                         if (!outputAudio[ev->user.id]) {
+#ifdef HAVE_G15
+                            if ((u = v3_get_user(ev->user.id))) {
+                                string event = "talking: ";
+                                event.append(u->name);
+                                g15->addevent(event);
+                                free(u);
+                            }
+#endif
                             outputAudio[ev->user.id] = new ManglerAudio("output");
                             outputAudio[ev->user.id]->open(ev->pcm.rate, AUDIO_OUTPUT, 0, ev->pcm.channels);
                         }

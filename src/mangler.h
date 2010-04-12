@@ -44,6 +44,9 @@ class ManglerRecorder;
 #ifdef HAVE_XOSD
 class ManglerOsd;
 #endif
+#ifdef HAVE_G15
+class ManglerG15;
+#endif
 
 extern "C" {
 #include <ventrilo3.h>
@@ -108,6 +111,9 @@ class Mangler
         static ManglerConfig                config;
 #ifdef HAVE_XOSD
         ManglerOsd                          *osd;
+#endif
+#ifdef HAVE_G15
+        ManglerG15                          *g15;
 #endif
 
         bool                                isTransmitting;
