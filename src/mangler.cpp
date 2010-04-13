@@ -351,7 +351,7 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
     osd = new ManglerOsd();
 #endif
 #ifdef HAVE_G15
-    // Create XOSD Overlay
+    // Create G15 Keyboard LCD Handler
     g15 = new ManglerG15();
 #endif
 

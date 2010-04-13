@@ -288,6 +288,7 @@ ManglerAudio::input(void) {/*{{{*/
     int ctr;
     bool drop, xmit = false;
     register float pcmpeak = 0;
+    float midpeak = 0;
     uint8_t vapercent;
     float vasilencedur, vasilenceelapsed;
 
@@ -306,6 +307,8 @@ ManglerAudio::input(void) {/*{{{*/
         gettimeofday(&start, NULL);
         seconds = 0.0;
         ctr = 0;
+        pcmpeak = 0;
+        midpeak = 0;
         // As best as I can tell, we're supposed to send ~0.11 seconds of audio in each packet
         for (;;) {
             /*
@@ -365,19 +368,19 @@ ManglerAudio::input(void) {/*{{{*/
             timeval_subtract(&diff, &now, &start);
             seconds = (float)diff.tv_sec + ((float)diff.tv_usec / 1000000.0);
             //fprintf(stderr, "iteration after %f seconds with %d bytes\n", seconds, pcm_framesize*ctr);
-            if (seconds >= 0.115 / 2 && pcmpeak) {
-                pcmpeak -= pcmpeak * (0.115 / 2);
+            for (int16_t *pcmptr = (int16_t *)(buf+(pcm_framesize*ctr)); pcmptr < (int16_t *)(buf+(pcm_framesize*(ctr+1))); pcmptr++) {
+                pcmpeak = abs(*pcmptr) > pcmpeak ? abs(*pcmptr) : pcmpeak;
+            }
+            if (seconds >= 0.115 / 2 && !midpeak && pcmpeak) {
+                midpeak = log10(((pcmpeak / 0x7fff) * 9) + 1);
+                midpeak = (midpeak > 1) ? 1 : midpeak;
                 gdk_threads_enter();
-                mangler->inputvumeter->set_fraction(pcmpeak);
+                mangler->inputvumeter->set_fraction(midpeak);
                 gdk_threads_leave();
-                pcmpeak = 0;
             }
             ctr++;
         }
         if (!stop_input && v3_is_loggedin()) {
-            for (int16_t *pcmptr = (int16_t *)buf; pcmptr < (int16_t *)(buf+(pcm_framesize*ctr)); pcmptr++) {
-                pcmpeak = abs(*pcmptr) > pcmpeak ? abs(*pcmptr) : pcmpeak;
-            }
             pcmpeak = log10(((pcmpeak / 0x7fff) * 9) + 1);
             pcmpeak = (pcmpeak > 1) ? 1 : pcmpeak;
             gdk_threads_enter();

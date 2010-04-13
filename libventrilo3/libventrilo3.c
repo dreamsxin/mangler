@@ -3409,6 +3409,7 @@ _v3_vrf_record_event(
             _v3_vrf_put_audio(&audio, &audio);
             fseek(_v3_vrfh->file, segment->offset, SEEK_SET);
             fwrite(&audio, sizeof(v3_vrf_audio), 1, _v3_vrfh->file);
+            fflush(_v3_vrfh->file);
         }
         v3_vrf_rec *next;
         if ((next = queue->next)) {
@@ -3577,6 +3578,7 @@ _v3_vrf_recover(v3_vrf *vrfh) {/*{{{*/
             }
             segment = &vrfh->table[vrfh->header.segcount - 1];
             segment->valid = true;
+            segment->unknown1++;
             memset(&fragment, 0, sizeof(v3_vrf_fragment));
             if (_v3_vrf_get_fragment(vrfh, segment->type, &offset, &fragment, NULL, NULL) != V3_OK) {
                 _v3_func_leave("_v3_vrf_recover");
@@ -3604,7 +3606,16 @@ _v3_vrf_recover(v3_vrf *vrfh) {/*{{{*/
     if (vrfh->header.segcount) {
         uint32_t ctr;
         for (ctr = 0; ctr < vrfh->header.segcount; ctr++) {
-            _v3_vrf_put_segment(ctr, &vrfh->table[ctr], &vrfh->table[ctr]);
+            segment = &vrfh->table[ctr];
+            memset(&audio, 0, sizeof(v3_vrf_audio));
+            if (_v3_vrf_get_audio(vrfh, segment->offset, &audio) == V3_OK) {
+                audio.fragcount = segment->unknown1;
+                _v3_vrf_put_audio(&audio, &audio);
+                fseek(vrfh->file, segment->offset, SEEK_SET);
+                fwrite(&audio, sizeof(v3_vrf_audio), 1, vrfh->file);
+            }
+            segment->unknown1 = 0;
+            _v3_vrf_put_segment(ctr, segment, segment);
         }
     }
     fseek(vrfh->file, 0, SEEK_END);
