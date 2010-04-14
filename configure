@@ -15423,12 +15423,7 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_m_tan" >&5
 $as_echo "$ac_cv_lib_m_tan" >&6; }
 if test "x$ac_cv_lib_m_tan" = x""yes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_LIBM 1
-_ACEOF
-
-  LIBS="-lm $LIBS"
-
+  :
 else
 
 	echo "error: cannot find a working math library"
@@ -16211,7 +16206,7 @@ fi
 
 # Check whether --with-pulseaudio was given.
 if test "${with_pulseaudio+set}" = set; then :
-  withval=$with_pulseaudio;
+  withval=$with_pulseaudio; :
 else
   with_pulseaudio=yes
 fi
@@ -16220,7 +16215,7 @@ fi
 
 # Check whether --with-alsa was given.
 if test "${with_alsa+set}" = set; then :
-  withval=$with_alsa;
+  withval=$with_alsa; :
 else
   with_alsa=yes
 fi
@@ -16318,6 +16313,9 @@ fi
 
 
 
+else
+  :
+
 fi
 if test "x$with_alsa" != xno; then :
 
@@ -16410,6 +16408,9 @@ $as_echo "#define HAVE_ALSA 1" >>confdefs.h
 fi
 
 
+
+else
+  :
 
 fi
 

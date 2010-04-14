@@ -29,7 +29,7 @@ CC="$PTHREAD_CC"
 AM_PATH_GLIB_2_0([], [], [], [gthread])
 AC_CHECK_HEADERS([arpa/inet.h fcntl.h netdb.h netinet/in.h stdint.h stdlib.h string.h sys/socket.h sys/time.h unistd.h])
 
-AC_CHECK_LIB([m], [tan], [], [
+AC_CHECK_LIB([m], [tan], [:], [
 	echo "error: cannot find a working math library"
 	exit -1
 	])
@@ -124,12 +124,12 @@ AC_SUBST(gtkmm_LIBS)
 
 AC_ARG_WITH([pulseaudio],
 	[AS_HELP_STRING([--without-pulseaudio], [disable support for PulseAudio])],
-	[],
+	[:],
 	[with_pulseaudio=yes])
 
 AC_ARG_WITH([alsa],
 	[AS_HELP_STRING([--without-alsa], [disable support for ALSA])],
-	[],
+	[:],
 	[with_alsa=yes])
 
 AS_IF(
@@ -145,7 +145,7 @@ AS_IF(
 		])
 		AC_SUBST(pulse_CFLAGS)
 		AC_SUBST(pulse_LIBS)
-	],[]
+	],[:]
 )
 AS_IF(
 	[test "x$with_alsa" != xno],
@@ -160,7 +160,7 @@ AS_IF(
 		])
 		AC_SUBST(alsa_CFLAGS)
 		AC_SUBST(alsa_LIBS)
-	],[]
+	],[:]
 )
 
 PKG_CHECK_MODULES(gthread, gthread-2.0 >= 2.20.1)
