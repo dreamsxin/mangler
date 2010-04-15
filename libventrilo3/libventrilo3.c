@@ -5476,10 +5476,14 @@ _v3_logout(void) {/*{{{*/
     _v3_destroy_accountlist();
     memset(v3_luser.channel_admin, 0, 65535);
     v3_luser.id = -1;
-    fclose(v3_server.evinstream);
-    fclose(v3_server.evoutstream);
-    close(v3_server.evpipe[0]);
-    close(v3_server.evpipe[1]);
+    if (v3_server.evinstream) {
+        fclose(v3_server.evinstream);
+        close(v3_server.evpipe[0]);
+    }
+    if (v3_server.evinstream) {
+        fclose(v3_server.evoutstream);
+        close(v3_server.evpipe[1]);
+    }
     v3_server.evpipe[0] = -1;
     v3_server.evpipe[1] = -1;
     _v3_func_leave("_v3_logout");
