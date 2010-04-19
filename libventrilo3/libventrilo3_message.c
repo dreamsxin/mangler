@@ -1113,9 +1113,12 @@ _v3_get_0x4c(_v3_net_message *msg) {/*{{{*/
     uint16_t len;
 
     _v3_func_enter("_v3_get_0x4c");
+    if (msg->len < sizeof(_v3_msg_0x4c)) {
+        msg->data = realloc(msg->data, sizeof(_v3_msg_0x4c));
+    }
     m = msg->contents = msg->data;
-    if (msg->len > 12) {
-        m->value = _v3_get_msg_string(msg->data + 12, &len);
+    if (msg->len > sizeof(_v3_msg_0x4c) - sizeof(m->value)) {
+        m->value = _v3_get_msg_string(&m->value, &len);
     } else {
         m->value = NULL;
     }
