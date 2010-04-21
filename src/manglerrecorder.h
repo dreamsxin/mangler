@@ -40,6 +40,7 @@ class ManglerRecorder {
         Gtk::Label             *label;
         Gtk::Entry             *entry;
         Gtk::Widget            *widget;
+        Gtk::CheckMenuItem     *flagcheckitem;
         Gtk::ToggleButton      *recordbutton;
         Gtk::Entry             *fileentry;
         Gtk::FileChooserDialog *filedialog;
@@ -69,6 +70,7 @@ class ManglerRecorder {
                     add(id);
                     add(time_val);
                     add(duration_val);
+                    add(diff_val);
                     add(time);
                     add(duration);
                     add(status);
@@ -78,6 +80,7 @@ class ManglerRecorder {
                 Gtk::TreeModelColumn<uint32_t>      id;
                 Gtk::TreeModelColumn<uint32_t>      time_val;
                 Gtk::TreeModelColumn<uint32_t>      duration_val;
+                Gtk::TreeModelColumn<uint32_t>      diff_val;
                 Gtk::TreeModelColumn<Glib::ustring> time;
                 Gtk::TreeModelColumn<Glib::ustring> duration;
                 Gtk::TreeModelColumn<Glib::ustring> status;
@@ -106,6 +109,8 @@ class ManglerRecorder {
         void open_activate_cb(void);
         void close_activate_cb(void);
         void saveas_activate_cb(void);
+        void delete_activate_cb(void);
+        void flags_toggled_cb(void);
         void playpause_clicked_cb(void);
         void stop_clicked_cb(void);
         void record_toggled_cb(void);

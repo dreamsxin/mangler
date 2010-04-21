@@ -812,7 +812,7 @@ int      v3_vrf_get_info(void *vrfh, v3_vrf_data *vrfd);
 int      v3_vrf_get_segment(void *vrfh, uint32_t id, v3_vrf_data *vrfd);
 int      v3_vrf_get_audio(void *vrfh, uint32_t id, v3_vrf_data *vrfd);
 int      v3_vrf_put_info(void *vrfh, const v3_vrf_data *vrfd);
-int      v3_vrf_record_start(const char *filename);
+int      v3_vrf_record_start(const char *filename, uint8_t dishonor);
 void     v3_vrf_record_stop(void);
 
 #endif // _VENTRILO3_H

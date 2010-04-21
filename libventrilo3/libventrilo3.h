@@ -33,6 +33,8 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <string.h>
+#include <fcntl.h>
+#include <sys/stat.h>
 #include <time.h>
 #include <sys/time.h>
 #include <sys/socket.h>
@@ -448,7 +450,7 @@ uint8_t _v3_master_volume = 79;
 /*{{{*/
 #define V3_VRF_HEADID       "VENTRECD"
 #define V3_VRF_TEMPID       "TEMPRECD"
- 
+
 #define V3_VRF_VERSION      0x01
 
 #define V3_VRF_HEADLEN      0x28
@@ -468,12 +470,12 @@ enum _v3_vrf_events {
     V3_VRF_EVENT_TEXT_DATA
 };
 
-typedef struct _v3_vrf_header   v3_vrf_header;
-typedef struct _v3_vrf_segment  v3_vrf_segment;
-typedef struct _v3_vrf_audio    v3_vrf_audio;
-typedef struct _v3_vrf_fragment v3_vrf_fragment;
-typedef struct _v3_vrf_rec      v3_vrf_rec;
-typedef struct _v3_vrf          v3_vrf;
+typedef struct _v3_vrf_header   _v3_vrf_header;
+typedef struct _v3_vrf_segment  _v3_vrf_segment;
+typedef struct _v3_vrf_audio    _v3_vrf_audio;
+typedef struct _v3_vrf_fragment _v3_vrf_fragment;
+typedef struct _v3_vrf_rec      _v3_vrf_rec;
+typedef struct _v3_vrf          _v3_vrf;
 
 struct _v3_vrf_header {         // 10552
     char     headid[8];         // 0    - header id (VENTRECD)
@@ -535,66 +537,71 @@ struct _v3_vrf_fragment {       // 24
 } __attribute__ ((__packed__));
 
 struct _v3_vrf_rec {
-    uint32_t user_id;
-    uint32_t index;
-    uint32_t fragcount;
+    uint32_t        user_id;
+    uint32_t        index;
+    uint32_t        fragcount;
 
-    uint8_t  stopped;
+    uint8_t         stopped;
 
-    uint32_t datalen;
-    void     *data;
+    void            *data;
+    uint32_t        datalen;
 
-    v3_vrf_segment segment;
+    _v3_vrf_segment segment;
 
-    v3_vrf_rec *next;
-} __attribute__ ((__packed__));
+    _v3_vrf_rec     *next;
+};
 
 struct _v3_vrf {
-    FILE    *file;
-    char    *filename;
-    uint32_t filelen;
+    int             file;
+    char            *filename;
+    uint32_t        filelen;
 
     pthread_mutex_t mutex;
 
-    v3_vrf_header header;
-    v3_vrf_segment *table;
-    uint32_t tablesize;
+    _v3_vrf_header  header;
+    _v3_vrf_segment *table;
+    uint32_t        tablesize;
 
-    struct timeval start;
-    v3_vrf_rec queue;
-} __attribute__ ((__packed__));
+    struct timeval  start;
+    _v3_vrf_rec     queue;
 
-void            _v3_vrf_lock(v3_vrf *vrfh);
-void            _v3_vrf_unlock(v3_vrf *vrfh);
-void            _v3_vrf_print_header(const v3_vrf_header *header);
-void            _v3_vrf_print_info(const v3_vrf_header *header);
-void            _v3_vrf_print_segment(uint32_t id, const v3_vrf_segment *segment);
-void            _v3_vrf_print_audio(const v3_vrf_audio *audio);
-void            _v3_vrf_print_fragment(uint32_t type, const v3_vrf_fragment *fragment);
-int             _v3_vrf_get_header(v3_vrf *vrfh);
-int             _v3_vrf_get_table(v3_vrf *vrfh);
-int             _v3_vrf_check_table(v3_vrf *vrfh);
-v3_vrf_segment *_v3_vrf_get_segment(v3_vrf *vrfh, uint32_t id);
-int             _v3_vrf_get_audio(v3_vrf *vrfh, uint32_t offset, v3_vrf_audio *audio);
-int             _v3_vrf_get_fragment(v3_vrf *vrfh, uint32_t type, uint32_t *offset, v3_vrf_fragment *fragment, uint32_t *fraglen, void **fragdata);
-int             _v3_vrf_put_header(v3_vrf *vrfh);
-uint32_t        _v3_vrf_put_segment(uint32_t id, const v3_vrf_segment *segment, void *offset);
-uint32_t        _v3_vrf_put_audio(const v3_vrf_audio *audio, void *offset);
-uint32_t        _v3_vrf_put_fragment(uint32_t type, const v3_vrf_fragment *fragment, void *offset);
-void            _v3_vrf_put_record(uint32_t user_id, uint32_t index, uint32_t type, const char *username, v3_vrf_rec *rec);
-void            _v3_vrf_record_event(
-                                int type,
-                                uint16_t user_id,
-                                uint16_t codec,
-                                uint16_t codecformat,
-                                uint32_t pcmlen,
-                                uint32_t datalen,
-                                void *data);
-void            _v3_vrf_record_finish(v3_vrf *vrfh, uint32_t segtable);
-int             _v3_vrf_recover(v3_vrf *vrfh);
+    uint8_t         honored;
+    uint8_t         stopped;
+};
+
+void     _v3_vrf_lock(_v3_vrf *vrfh);
+void     _v3_vrf_unlock(_v3_vrf *vrfh);
+void     _v3_vrf_print_header(const _v3_vrf_header *header);
+void     _v3_vrf_print_info(const _v3_vrf_header *header);
+void     _v3_vrf_print_segment(uint32_t id, const _v3_vrf_segment *segment);
+void     _v3_vrf_print_audio(const _v3_vrf_audio *audio);
+void     _v3_vrf_print_fragment(uint32_t type, const _v3_vrf_fragment *fragment);
+int      _v3_vrf_get_header(_v3_vrf *vrfh);
+int      _v3_vrf_get_table(_v3_vrf *vrfh);
+int      _v3_vrf_check_table(_v3_vrf *vrfh);
+int      _v3_vrf_get_segment(_v3_vrf *vrfh, uint32_t id, _v3_vrf_segment **segment);
+int      _v3_vrf_get_audio(_v3_vrf *vrfh, uint32_t offset, _v3_vrf_audio *audio);
+int      _v3_vrf_get_fragment(_v3_vrf *vrfh, uint32_t type, uint32_t *offset, _v3_vrf_fragment *fragment, uint32_t *fraglen, void **fragdata);
+int      _v3_vrf_put_header(_v3_vrf *vrfh);
+uint32_t _v3_vrf_put_segment(uint32_t id, const _v3_vrf_segment *segment, void *offset);
+uint32_t _v3_vrf_put_audio(const _v3_vrf_audio *audio, void *offset);
+uint32_t _v3_vrf_put_fragment(uint32_t type, const _v3_vrf_fragment *fragment, void *offset);
+void     _v3_vrf_put_record(uint32_t user_id, uint32_t index, uint32_t type, const char *username, _v3_vrf_rec *rec);
+void     _v3_vrf_record_event(
+                int type,
+                uint16_t user_id,
+                uint16_t codec,
+                uint16_t codecformat,
+                uint32_t pcmlen,
+                uint32_t datalen,
+                const void *data);
+void     _v3_vrf_record_finish(_v3_vrf *vrfh, uint32_t segtable);
+int      _v3_vrf_recover(_v3_vrf *vrfh);
 /*}}}*/
 
-v3_vrf *_v3_vrfh = NULL;
+_v3_vrf                 *v3_vrfh = NULL;
+
+pthread_mutex_t         *vrfh_mutex = NULL;
 
 /*
  * Functions in ventrilo3_algo.c

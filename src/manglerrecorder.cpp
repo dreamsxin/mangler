@@ -29,6 +29,7 @@
 #include "mangleraudio.h"
 #include "manglercharset.h"
 
+#include <unistd.h>
 #include <sys/stat.h>
 #include <dirent.h>
 
@@ -48,6 +49,11 @@ ManglerRecorder::ManglerRecorder(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
     menuitem->signal_activate().connect(sigc::mem_fun(this, &ManglerRecorder::close_activate_cb));
     builder->get_widget("recSaveAs", menuitem);
     menuitem->signal_activate().connect(sigc::mem_fun(this, &ManglerRecorder::saveas_activate_cb));
+    builder->get_widget("recDelete", menuitem);
+    menuitem->signal_activate().connect(sigc::mem_fun(this, &ManglerRecorder::delete_activate_cb));
+    builder->get_widget("recFlags", flagcheckitem);
+    flagcheckitem->signal_toggled().connect(sigc::mem_fun(this, &ManglerRecorder::flags_toggled_cb));
+    flagcheckitem->set_active(Mangler::config["recordingFlagDishonor"].toBool());
 
     builder->get_widget("recPlayPause", button);
     button->signal_clicked().connect(sigc::mem_fun(this, &ManglerRecorder::playpause_clicked_cb));
@@ -145,6 +151,15 @@ void
 ManglerRecorder::saveas_activate_cb(void) {/*{{{*/
 }/*}}}*/
 void
+ManglerRecorder::delete_activate_cb(void) {/*{{{*/
+    reset();
+    unlink(filename.c_str());
+}/*}}}*/
+void
+ManglerRecorder::flags_toggled_cb(void) {/*{{{*/
+    Mangler::config["recordingFlagDishonor"] = flagcheckitem->get_active();
+}/*}}}*/
+void
 ManglerRecorder::playpause_clicked_cb(void) {/*{{{*/
     if (!vrfh) {
         return;
@@ -176,22 +191,14 @@ ManglerRecorder::info_clicked_cb(void) {/*{{{*/
         mangler->errorDialog(c_to_ustring(_v3_error(NULL)));
         return;
     }
-    if (strlen(vrfd.username)) {
-        builder->get_widget("recInfoByEntry", entry);
-        entry->set_text(c_to_ustring(vrfd.username));
-    }
-    if (strlen(vrfd.comment)) {
-        builder->get_widget("recInfoComment", textview);
-        textview->get_buffer()->set_text(c_to_ustring(vrfd.comment));
-    }
-    if (strlen(vrfd.url)) {
-        builder->get_widget("recInfoURL", textview);
-        textview->get_buffer()->set_text(c_to_ustring(vrfd.url));
-    }
-    if (strlen(vrfd.copyright)) {
-        builder->get_widget("recInfoCopyright", textview);
-        textview->get_buffer()->set_text(c_to_ustring(vrfd.copyright));
-    }
+    builder->get_widget("recInfoByEntry", entry);
+    entry->set_text(c_to_ustring(vrfd.username));
+    builder->get_widget("recInfoComment", textview);
+    textview->get_buffer()->set_text(c_to_ustring(vrfd.comment));
+    builder->get_widget("recInfoURL", textview);
+    textview->get_buffer()->set_text(c_to_ustring(vrfd.url));
+    builder->get_widget("recInfoCopyright", textview);
+    textview->get_buffer()->set_text(c_to_ustring(vrfd.copyright));
     if (!isOpenInfo) {
         recInfoDialog->set_icon(mangler->icons["tray_icon"]);
         recInfoDialog->show();
@@ -219,7 +226,8 @@ void
 ManglerRecorder::set(bool isRecording) {/*{{{*/
     reset();
     if (isRecording) {
-        if (v3_vrf_record_start(filename.c_str()) != V3_OK) {
+        bool dishonor = Mangler::config["recordingFlagDishonor"].toBool();
+        if (v3_vrf_record_start(filename.c_str(), dishonor) != V3_OK) {
             mangler->errorDialog(c_to_ustring(_v3_error(NULL)));
             recordbutton->set_active(false);
             return;
@@ -276,6 +284,8 @@ ManglerRecorder::set(bool isRecording) {/*{{{*/
     recListTree->set_sensitive(true);
     builder->get_widget("recClose", widget);
     widget->set_sensitive(true);
+    builder->get_widget("recDelete", widget);
+    widget->set_sensitive(true);
     builder->get_widget("recInfos", widget);
     widget->set_sensitive(true);
     recScrolledWindow->get_vadjustment()->set_value(0);
@@ -292,8 +302,10 @@ ManglerRecorder::reset(void) {/*{{{*/
         recordbutton->set_active(false);
     }
     isRecording = false;
-    v3_vrf_destroy(vrfh);
-    vrfh = NULL;
+    if (vrfh) {
+        v3_vrf_destroy(vrfh);
+        vrfh = NULL;
+    }
     fileentry->set_text("");
     recListModel->clear();
     recListTree->set_sensitive(false);
@@ -312,6 +324,8 @@ ManglerRecorder::reset(void) {/*{{{*/
     builder->get_widget("recCodec", label);
     label->set_text("N/A");
     builder->get_widget("recClose", widget);
+    widget->set_sensitive(false);
+    builder->get_widget("recDelete", widget);
     widget->set_sensitive(false);
     builder->get_widget("recInfos", widget);
     widget->set_sensitive(false);
@@ -356,6 +370,7 @@ ManglerRecorder::record(Glib::ustring username, Glib::ustring text, uint32_t ind
         row[recRecord.id]           = index;
         row[recRecord.time_val]     = time;
         row[recRecord.duration_val] = 0;
+        row[recRecord.diff_val]     = 0;
         row[recRecord.time]         = msec_to_timestamp(time);
         row[recRecord.duration]     = float_to_ustring(0, 2);
         row[recRecord.status]       = "Rec";
@@ -374,11 +389,12 @@ ManglerRecorder::record(Glib::ustring username, Glib::ustring text, uint32_t ind
     row = children[index];
     if (stopped) {
         row[recRecord.status] = "*";
-        return;
-    }
-    if (row[recRecord.duration_val] + 100 < time - row[recRecord.time_val]) {
+    } else {
         row[recRecord.duration_val] = time - row[recRecord.time_val];
-        row[recRecord.duration]     = float_to_ustring(row[recRecord.duration_val] / 1000.0, 2);
+    }
+    if (stopped || row[recRecord.diff_val] + 100 < row[recRecord.duration_val]) {
+        row[recRecord.diff_val] = time - row[recRecord.time_val];
+        row[recRecord.duration] = float_to_ustring(row[recRecord.duration_val] / 1000.0, 2);
     }
 }/*}}}*/
 void
@@ -589,7 +605,7 @@ ManglerRecorder::timestamp(Glib::ustring format) {/*{{{*/
     t = tv.tv_sec;
     tm = localtime(&t);
     if (!strftime(timestamp, sizeof(timestamp) - 1, format.c_str(), tm)) {
-        snprintf(timestamp, sizeof(timestamp) - 1, "%lu", (uint64_t)(tv.tv_sec * 1000000 + tv.tv_usec));
+        snprintf(timestamp, sizeof(timestamp) - 1, "%lu", tv.tv_sec * 1000000 + tv.tv_usec);
     }
 
     return c_to_ustring(timestamp);

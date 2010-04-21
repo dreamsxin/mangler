@@ -27,16 +27,18 @@
                     <property name="visible">True</property>
                     <child>
                       <object class="GtkImageMenuItem" id="serverListMenuItem">
-                        <property name="label">Server List</property>
+                        <property name="label">_Server List</property>
                         <property name="visible">True</property>
+                        <property name="use_underline">True</property>
                         <property name="image">image1</property>
                         <property name="use_stock">False</property>
                       </object>
                     </child>
                     <child>
                       <object class="GtkImageMenuItem" id="quickConnectMenuItem">
-                        <property name="label" translatable="yes">Quick Connect</property>
+                        <property name="label" translatable="yes">_Quick Connect</property>
                         <property name="visible">True</property>
+                        <property name="use_underline">True</property>
                         <property name="image">image8</property>
                         <property name="use_stock">False</property>
                       </object>
@@ -46,14 +48,16 @@
                     </child>
                     <child>
                       <object class="GtkImageMenuItem" id="adminLoginMenuItem">
-                        <property name="label" translatable="yes">Admin Login</property>
+                        <property name="label" translatable="yes">_Admin Login</property>
+                        <property name="use_underline">True</property>
                         <property name="image">image7</property>
                         <property name="use_stock">False</property>
                       </object>
                     </child>
                     <child>
                       <object class="GtkImageMenuItem" id="adminWindowMenuItem">
-                        <property name="label" translatable="yes">Admin Window</property>
+                        <property name="label" translatable="yes">_Admin Window</property>
+                        <property name="use_underline">True</property>
                         <property name="image">image5</property>
                         <property name="use_stock">False</property>
                       </object>
@@ -86,9 +90,10 @@
                     <property name="visible">True</property>
                     <child>
                       <object class="GtkImageMenuItem" id="commentMenuItem">
-                        <property name="label">Comment</property>
+                        <property name="label">Co_mment</property>
                         <property name="visible">True</property>
                         <property name="sensitive">False</property>
+                        <property name="use_underline">True</property>
                         <property name="image">image2</property>
                         <property name="use_stock">False</property>
                       </object>
@@ -100,8 +105,9 @@
                     </child>
                     <child>
                       <object class="GtkImageMenuItem" id="settingsMenuItem">
-                        <property name="label" translatable="yes">Settings</property>
+                        <property name="label" translatable="yes">Se_ttings</property>
                         <property name="visible">True</property>
+                        <property name="use_underline">True</property>
                         <property name="image">image3</property>
                         <property name="use_stock">False</property>
                       </object>
@@ -121,20 +127,21 @@
                     <child>
                       <object class="GtkCheckMenuItem" id="buttonMenuItem">
                         <property name="visible">True</property>
-                        <property name="label" translatable="yes">Hide Buttons</property>
+                        <property name="label" translatable="yes">Hide _Buttons</property>
+                        <property name="use_underline">True</property>
                       </object>
                     </child>
                     <child>
                       <object class="GtkCheckMenuItem" id="hideServerInfoMenuItem">
                         <property name="visible">True</property>
-                        <property name="label" translatable="yes">Hide Server Info</property>
+                        <property name="label" translatable="yes">Hide _Server Info</property>
                         <property name="use_underline">True</property>
                       </object>
                     </child>
                     <child>
                       <object class="GtkCheckMenuItem" id="hideGuestFlagMenuItem">
                         <property name="visible">True</property>
-                        <property name="label" translatable="yes">Hide Guest Flag</property>
+                        <property name="label" translatable="yes">Hide _Guest Flag</property>
                         <property name="use_underline">True</property>
                       </object>
                     </child>
@@ -147,14 +154,14 @@
                       <object class="GtkMenuItem" id="chatMenuItem">
                         <property name="visible">True</property>
                         <property name="sensitive">False</property>
-                        <property name="label" translatable="yes">Global Chat</property>
+                        <property name="label" translatable="yes">Global _Chat</property>
                         <property name="use_underline">True</property>
                       </object>
                     </child>
                     <child>
                       <object class="GtkMenuItem" id="recorderMenuItem">
                         <property name="visible">True</property>
-                        <property name="label" translatable="yes">Recorder</property>
+                        <property name="label" translatable="yes">_Recorder</property>
                         <property name="use_underline">True</property>
                       </object>
                     </child>
@@ -197,7 +204,7 @@
                 <property name="orientation">vertical</property>
                 <child>
                   <object class="GtkVBox" id="vbox4">
-                    <property name="width_request">110</property>
+                    <property name="width_request">100</property>
                     <property name="visible">True</property>
                     <property name="orientation">vertical</property>
                     <property name="spacing">10</property>
@@ -216,8 +223,8 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkButton" id="serverConfigButton">
-                        <property name="label" translatable="yes">_Server Config</property>
+                      <object class="GtkButton" id="serverListButton">
+                        <property name="label" translatable="yes">_Server List</property>
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
@@ -297,6 +304,7 @@
                         <property name="sensitive">False</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
+                        <property name="tooltip_text" translatable="yes">Gain administrator status and show admin window...</property>
                         <property name="use_underline">True</property>
                       </object>
                       <packing>
@@ -662,7 +670,7 @@
   </object>
   <object class="GtkWindow" id="serverListWindow">
     <property name="border_width">5</property>
-    <property name="title" translatable="yes">Mangler Server List</property>
+    <property name="title" translatable="yes">Mangler - Server List</property>
     <property name="type_hint">dialog</property>
     <property name="skip_taskbar_hint">True</property>
     <property name="skip_pager_hint">True</property>
@@ -1253,6 +1261,7 @@ to the server to set the default channel.</property>
                 </child>
               </object>
               <packing>
+                <property name="expand">False</property>
                 <property name="position">1</property>
               </packing>
             </child>
@@ -1340,18 +1349,22 @@ You should have received a copy of the GNU General Public License along with Man
     <property name="authors">Eric Kilfoil
 Daniel Sloof
 
-Everyone from Spux, without which this
-would not have been possible.
+humbaba (anonymous)
+Haxar (anonymous)
+Felyza Wishbringer
+Bob Shaffer II
+
+With everyone else from Spux, without it
+which Mangler would not have been possible.
 
 Specifically:
 - Michael Sierks
 - Cris Favero
 
-And of course Luigi Auriemma who figured
-out the encryption
-
+And, of course, Luigi Auriemma
+who figured out the encryption.
 </property>
-    <property name="documenters">Documentation?  What documentation?</property>
+    <property name="documenters">The source code is the documentation.</property>
     <property name="artists"></property>
     <property name="wrap_license">True</property>
     <child internal-child="vbox">
@@ -1378,7 +1391,7 @@ out the encryption
   </object>
   <object class="GtkMessageDialog" id="errorDialog">
     <property name="border_width">5</property>
-    <property name="title" translatable="yes">Server Error Message</property>
+    <property name="title" translatable="yes">Mangler - Error Message</property>
     <property name="resizable">False</property>
     <property name="window_position">center-on-parent</property>
     <property name="destroy_with_parent">True</property>
@@ -1416,8 +1429,7 @@ out the encryption
   </object>
   <object class="GtkDialog" id="quickConnectDialog">
     <property name="border_width">5</property>
-    <property name="title" translatable="yes">Quick Connect</property>
-    <property name="resizable">False</property>
+    <property name="title" translatable="yes">Mangler - Quick Connect</property>
     <property name="modal">True</property>
     <property name="window_position">center-on-parent</property>
     <property name="type_hint">dialog</property>
@@ -1581,13 +1593,12 @@ out the encryption
             <property name="visible">True</property>
             <property name="layout_style">end</property>
             <child>
-              <object class="GtkButton" id="qcConnectButton">
-                <property name="label">gtk-connect</property>
+              <object class="GtkButton" id="qcCancelButton">
+                <property name="label">gtk-cancel</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
                 <property name="use_stock">True</property>
-                <accelerator key="Return" signal="activate"/>
               </object>
               <packing>
                 <property name="expand">False</property>
@@ -1596,12 +1607,13 @@ out the encryption
               </packing>
             </child>
             <child>
-              <object class="GtkButton" id="qcCancelButton">
-                <property name="label">gtk-cancel</property>
+              <object class="GtkButton" id="qcConnectButton">
+                <property name="label">gtk-connect</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
                 <property name="use_stock">True</property>
+                <accelerator key="Return" signal="activate"/>
               </object>
               <packing>
                 <property name="expand">False</property>
@@ -1619,12 +1631,12 @@ out the encryption
       </object>
     </child>
     <action-widgets>
-      <action-widget response="0">qcConnectButton</action-widget>
       <action-widget response="0">qcCancelButton</action-widget>
+      <action-widget response="0">qcConnectButton</action-widget>
     </action-widgets>
   </object>
   <object class="GtkWindow" id="settingsWindow">
-    <property name="title" translatable="yes">Settings</property>
+    <property name="title" translatable="yes">Mangler - Settings</property>
     <property name="resizable">False</property>
     <property name="modal">True</property>
     <property name="destroy_with_parent">True</property>
@@ -3046,7 +3058,7 @@ These are useful for developers.</property>
   </object>
   <object class="GtkWindow" id="userSettingsWindow">
     <property name="height_request">300</property>
-    <property name="title" translatable="yes">User Settings Window</property>
+    <property name="title" translatable="yes">Mangler - User Settings</property>
     <property name="destroy_with_parent">True</property>
     <property name="type_hint">dialog</property>
     <property name="transient_for">manglerWindow</property>
@@ -3391,7 +3403,7 @@ These are useful for developers.</property>
   </object>
   <object class="GtkDialog" id="textStringChangeDialog">
     <property name="border_width">5</property>
-    <property name="title" translatable="yes">Change Text</property>
+    <property name="title" translatable="yes">Mangler - Change Text</property>
     <property name="window_position">center-on-parent</property>
     <property name="type_hint">dialog</property>
     <property name="skip_taskbar_hint">True</property>
@@ -3417,6 +3429,7 @@ These are useful for developers.</property>
                 <property name="label" translatable="yes">Comment:</property>
               </object>
               <packing>
+                <property name="x_options">GTK_FILL</property>
                 <property name="y_options">GTK_FILL</property>
                 <property name="x_padding">2</property>
               </packing>
@@ -3430,6 +3443,7 @@ These are useful for developers.</property>
               <packing>
                 <property name="top_attach">1</property>
                 <property name="bottom_attach">2</property>
+                <property name="x_options">GTK_FILL</property>
                 <property name="y_options">GTK_FILL</property>
                 <property name="x_padding">2</property>
               </packing>
@@ -3442,6 +3456,7 @@ These are useful for developers.</property>
               <packing>
                 <property name="top_attach">2</property>
                 <property name="bottom_attach">3</property>
+                <property name="x_options">GTK_FILL</property>
                 <property name="y_options">GTK_FILL</property>
                 <property name="x_padding">2</property>
               </packing>
@@ -3837,7 +3852,7 @@ These are useful for developers.</property>
   </object>
   <object class="GtkDialog" id="reasonDialog">
     <property name="border_width">5</property>
-    <property name="title" translatable="yes">Reason</property>
+    <property name="title" translatable="yes">Mangler - Reason</property>
     <property name="modal">True</property>
     <property name="window_position">center-on-parent</property>
     <property name="destroy_with_parent">True</property>
@@ -3892,6 +3907,7 @@ These are useful for developers.</property>
             <child>
               <object class="GtkButton" id="reasonCancelButton">
                 <property name="label">gtk-cancel</property>
+                <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
                 <property name="use_stock">True</property>
@@ -3936,7 +3952,7 @@ These are useful for developers.</property>
   </object>
   <object class="GtkWindow" id="adminWindow">
     <property name="border_width">2</property>
-    <property name="title" translatable="yes">Mangler - Server Admin</property>
+    <property name="title" translatable="yes">Mangler - Admin Window</property>
     <property name="default_width">640</property>
     <property name="default_height">480</property>
     <child>
@@ -3962,7 +3978,7 @@ These are useful for developers.</property>
                     <property name="left_padding">5</property>
                     <property name="right_padding">5</property>
                     <child>
-                      <object class="GtkTable" id="table5">
+                      <object class="GtkTable" id="adminServerTable">
                         <property name="visible">True</property>
                         <property name="n_rows">11</property>
                         <property name="n_columns">2</property>
@@ -3979,10 +3995,13 @@ These are useful for developers.</property>
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkEntry" id="adminServerCommentEntry">
+                          <object class="GtkEntry" id="adminServerComment">
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="invisible_char">&#x25CF;</property>
+                            <accessibility>
+                              <relation type="labelled-by" target="adminServerCommentLabel"/>
+                            </accessibility>
                           </object>
                           <packing>
                             <property name="left_attach">1</property>
@@ -4003,11 +4022,14 @@ These are useful for developers.</property>
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkEntry" id="adminServerMaxGuestLabel">
+                          <object class="GtkEntry" id="adminServerMaxGuests">
                             <property name="width_request">50</property>
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="invisible_char">&#x25CF;</property>
+                            <accessibility>
+                              <relation type="labelled-by" target="adminServerMaxGuestsLabel"/>
+                            </accessibility>
                           </object>
                           <packing>
                             <property name="left_attach">1</property>
@@ -4018,7 +4040,7 @@ These are useful for developers.</property>
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkLabel" id="adminServerKickGuestLabel">
+                          <object class="GtkLabel" id="adminServerKickGuestsLabel">
                             <property name="visible">True</property>
                             <property name="xalign">0.94999998807907104</property>
                             <property name="label" translatable="yes">Kick Guests after:</property>
@@ -4030,7 +4052,7 @@ These are useful for developers.</property>
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkLabel" id="adminServerBanGuestLabel">
+                          <object class="GtkLabel" id="adminServerBanGuestsLabel">
                             <property name="visible">True</property>
                             <property name="xalign">0.94999998807907104</property>
                             <property name="label" translatable="yes">Ban Guests for:</property>
@@ -4042,28 +4064,31 @@ These are useful for developers.</property>
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkHBox" id="hbox13">
+                          <object class="GtkHBox" id="adminServerKickGuestsHBox">
                             <property name="visible">True</property>
                             <child>
-                              <object class="GtkEntry" id="adminServerMaxGuestLabel1">
+                              <object class="GtkEntry" id="adminServerKickGuests">
                                 <property name="width_request">50</property>
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
                                 <property name="invisible_char">&#x25CF;</property>
+                                <accessibility>
+                                  <relation type="labelled-by" target="adminServerKickGuestsLabel"/>
+                                </accessibility>
                               </object>
                               <packing>
                                 <property name="position">0</property>
                               </packing>
                             </child>
                             <child>
-                              <object class="GtkLabel" id="adminServerKickGuestLabel1">
+                              <object class="GtkLabel" id="adminServerKickGuestsMinutesLabel">
                                 <property name="visible">True</property>
                                 <property name="xalign">0</property>
                                 <property name="label" translatable="yes">minutes</property>
                               </object>
                               <packing>
                                 <property name="expand">False</property>
-                                <property name="padding">4</property>
+                                <property name="padding">5</property>
                                 <property name="position">1</property>
                               </packing>
                             </child>
@@ -4077,28 +4102,31 @@ These are useful for developers.</property>
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkHBox" id="hbox14">
+                          <object class="GtkHBox" id="adminServerBanGuestsHBox">
                             <property name="visible">True</property>
                             <child>
-                              <object class="GtkEntry" id="adminServerMaxGuestLabel2">
+                              <object class="GtkEntry" id="adminServerBanGuests">
                                 <property name="width_request">50</property>
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
                                 <property name="invisible_char">&#x25CF;</property>
+                                <accessibility>
+                                  <relation type="labelled-by" target="adminServerBanGuestsLabel"/>
+                                </accessibility>
                               </object>
                               <packing>
                                 <property name="position">0</property>
                               </packing>
                             </child>
                             <child>
-                              <object class="GtkLabel" id="adminServerKickGuestLabel2">
+                              <object class="GtkLabel" id="adminServerBanGuestsMinutesLabel">
                                 <property name="visible">True</property>
                                 <property name="xalign">0</property>
                                 <property name="label" translatable="yes">minutes</property>
                               </object>
                               <packing>
                                 <property name="expand">False</property>
-                                <property name="padding">4</property>
+                                <property name="padding">5</property>
                                 <property name="position">1</property>
                               </packing>
                             </child>
@@ -4112,7 +4140,7 @@ These are useful for developers.</property>
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkHSeparator" id="hseparator7">
+                          <object class="GtkHSeparator" id="adminServerSeparator">
                             <property name="visible">True</property>
                           </object>
                           <packing>
@@ -4123,7 +4151,7 @@ These are useful for developers.</property>
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkLabel" id="label2">
+                          <object class="GtkLabel" id="adminServerGuestAccounts">
                             <property name="visible">True</property>
                             <property name="xalign">0.05000000074505806</property>
                             <property name="yalign">0.94999998807907104</property>
@@ -4139,7 +4167,7 @@ These are useful for developers.</property>
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkLabel" id="label1">
+                          <object class="GtkLabel" id="adminServerInactivity">
                             <property name="visible">True</property>
                             <property name="xalign">0.05000000074505806</property>
                             <property name="yalign">0.94999998807907104</property>
@@ -4155,7 +4183,7 @@ These are useful for developers.</property>
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkHSeparator" id="hseparator8">
+                          <object class="GtkHSeparator" id="adminServerSeparator2">
                             <property name="visible">True</property>
                           </object>
                           <packing>
@@ -4166,7 +4194,7 @@ These are useful for developers.</property>
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkLabel" id="adminServerKickGuestLabel3">
+                          <object class="GtkLabel" id="adminServerTimeoutLabel">
                             <property name="visible">True</property>
                             <property name="xalign">0.94999998807907104</property>
                             <property name="label" translatable="yes">Timeout:</property>
@@ -4178,28 +4206,31 @@ These are useful for developers.</property>
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkHBox" id="hbox15">
+                          <object class="GtkHBox" id="adminServerTimeoutHBox">
                             <property name="visible">True</property>
                             <child>
-                              <object class="GtkEntry" id="adminServerMaxGuestLabel3">
+                              <object class="GtkEntry" id="adminServerTimeout">
                                 <property name="width_request">50</property>
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
                                 <property name="invisible_char">&#x25CF;</property>
+                                <accessibility>
+                                  <relation type="labelled-by" target="adminServerTimeoutLabel"/>
+                                </accessibility>
                               </object>
                               <packing>
                                 <property name="position">0</property>
                               </packing>
                             </child>
                             <child>
-                              <object class="GtkLabel" id="adminServerKickGuestLabel4">
+                              <object class="GtkLabel" id="adminServerTimeoutMinutesLabel">
                                 <property name="visible">True</property>
                                 <property name="xalign">0.05000000074505806</property>
                                 <property name="label" translatable="yes">minutes</property>
                               </object>
                               <packing>
                                 <property name="expand">False</property>
-                                <property name="padding">4</property>
+                                <property name="padding">5</property>
                                 <property name="position">1</property>
                               </packing>
                             </child>
@@ -4213,7 +4244,7 @@ These are useful for developers.</property>
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkLabel" id="label3">
+                          <object class="GtkLabel" id="adminServerActionLabel">
                             <property name="visible">True</property>
                             <property name="xalign">0.94999998807907104</property>
                             <property name="label" translatable="yes">Action:</property>
@@ -4225,8 +4256,11 @@ These are useful for developers.</property>
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkComboBox" id="combobox2">
+                          <object class="GtkComboBox" id="adminServerChannel">
                             <property name="visible">True</property>
+                            <accessibility>
+                              <relation type="labelled-by" target="adminServerChannelLabel"/>
+                            </accessibility>
                           </object>
                           <packing>
                             <property name="left_attach">1</property>
@@ -4237,8 +4271,11 @@ These are useful for developers.</property>
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkComboBox" id="combobox1">
+                          <object class="GtkComboBox" id="adminServerAction">
                             <property name="visible">True</property>
+                            <accessibility>
+                              <relation type="labelled-by" target="adminServerActionLabel"/>
+                            </accessibility>
                           </object>
                           <packing>
                             <property name="left_attach">1</property>
@@ -4249,7 +4286,7 @@ These are useful for developers.</property>
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkLabel" id="label4">
+                          <object class="GtkLabel" id="adminServerChannelLabel">
                             <property name="visible">True</property>
                             <property name="xalign">0.94999998807907104</property>
                             <property name="label" translatable="yes">Channel:</property>
@@ -4281,9 +4318,11 @@ These are useful for developers.</property>
                     <property name="left_padding">5</property>
                     <property name="right_padding">5</property>
                     <child>
-                      <object class="GtkHBox" id="hbox16">
+                      <object class="GtkHPaned" id="ChannelHPaned">
                         <property name="visible">True</property>
-                        <property name="spacing">7</property>
+                        <property name="can_focus">True</property>
+                        <property name="position">175</property>
+                        <property name="position_set">True</property>
                         <child>
                           <object class="GtkVBox" id="vbox12">
                             <property name="visible">True</property>
@@ -4315,7 +4354,6 @@ These are useful for developers.</property>
                               </object>
                               <packing>
                                 <property name="expand">False</property>
-                                <property name="fill">False</property>
                                 <property name="padding">5</property>
                                 <property name="position">1</property>
                               </packing>
@@ -4329,13 +4367,13 @@ These are useful for developers.</property>
                               </object>
                               <packing>
                                 <property name="expand">False</property>
-                                <property name="fill">False</property>
                                 <property name="position">2</property>
                               </packing>
                             </child>
                           </object>
                           <packing>
-                            <property name="position">0</property>
+                            <property name="resize">True</property>
+                            <property name="shrink">True</property>
                           </packing>
                         </child>
                         <child>
@@ -4372,15 +4410,15 @@ These are useful for developers.</property>
                                           </packing>
                                         </child>
                                         <child>
-                                          <object class="GtkTable" id="table7">
+                                          <object class="GtkTable" id="ChannelTable">
                                             <property name="visible">True</property>
                                             <property name="border_width">5</property>
-                                            <property name="n_rows">6</property>
+                                            <property name="n_rows">14</property>
                                             <property name="n_columns">2</property>
                                             <property name="column_spacing">4</property>
                                             <property name="row_spacing">2</property>
                                             <child>
-                                              <object class="GtkLabel" id="label6">
+                                              <object class="GtkLabel" id="ChannelNameLabel">
                                                 <property name="visible">True</property>
                                                 <property name="xalign">0.94999998807907104</property>
                                                 <property name="label" translatable="yes">Name:</property>
@@ -4390,7 +4428,7 @@ These are useful for developers.</property>
                                               </packing>
                                             </child>
                                             <child>
-                                              <object class="GtkLabel" id="label7">
+                                              <object class="GtkLabel" id="ChannelPhoneticLabel">
                                                 <property name="visible">True</property>
                                                 <property name="xalign">0.94999998807907104</property>
                                                 <property name="label" translatable="yes">Phonetic:</property>
@@ -4402,7 +4440,7 @@ These are useful for developers.</property>
                                               </packing>
                                             </child>
                                             <child>
-                                              <object class="GtkLabel" id="label8">
+                                              <object class="GtkLabel" id="ChannelCommentLabel">
                                                 <property name="visible">True</property>
                                                 <property name="xalign">0.94999998807907104</property>
                                                 <property name="label" translatable="yes">Comment:</property>
@@ -4414,7 +4452,7 @@ These are useful for developers.</property>
                                               </packing>
                                             </child>
                                             <child>
-                                              <object class="GtkLabel" id="label9">
+                                              <object class="GtkLabel" id="ChannelPasswordLabel">
                                                 <property name="visible">True</property>
                                                 <property name="xalign">0.94999998807907104</property>
                                                 <property name="label" translatable="yes">Password:</property>
@@ -4431,6 +4469,9 @@ These are useful for developers.</property>
                                                 <property name="can_focus">True</property>
                                                 <property name="visibility">False</property>
                                                 <property name="invisible_char">&#x2022;</property>
+                                                <accessibility>
+                                                  <relation type="labelled-by" target="ChannelPasswordLabel"/>
+                                                </accessibility>
                                               </object>
                                               <packing>
                                                 <property name="left_attach">1</property>
@@ -4444,6 +4485,9 @@ These are useful for developers.</property>
                                                 <property name="visible">True</property>
                                                 <property name="can_focus">True</property>
                                                 <property name="invisible_char">&#x2022;</property>
+                                                <accessibility>
+                                                  <relation type="labelled-by" target="ChannelCommentLabel"/>
+                                                </accessibility>
                                               </object>
                                               <packing>
                                                 <property name="left_attach">1</property>
@@ -4457,6 +4501,9 @@ These are useful for developers.</property>
                                                 <property name="visible">True</property>
                                                 <property name="can_focus">True</property>
                                                 <property name="invisible_char">&#x2022;</property>
+                                                <accessibility>
+                                                  <relation type="labelled-by" target="ChannelPhoneticLabel"/>
+                                                </accessibility>
                                               </object>
                                               <packing>
                                                 <property name="left_attach">1</property>
@@ -4470,6 +4517,9 @@ These are useful for developers.</property>
                                                 <property name="visible">True</property>
                                                 <property name="can_focus">True</property>
                                                 <property name="invisible_char">&#x2022;</property>
+                                                <accessibility>
+                                                  <relation type="labelled-by" target="ChannelNameLabel"/>
+                                                </accessibility>
                                               </object>
                                               <packing>
                                                 <property name="left_attach">1</property>
@@ -4477,7 +4527,7 @@ These are useful for developers.</property>
                                               </packing>
                                             </child>
                                             <child>
-                                              <object class="GtkLabel" id="label24">
+                                              <object class="GtkLabel" id="ChannelProtModeLabel">
                                                 <property name="visible">True</property>
                                                 <property name="xalign">0.94999998807907104</property>
                                                 <property name="label" translatable="yes">Protected Mode:</property>
@@ -4489,7 +4539,7 @@ These are useful for developers.</property>
                                               </packing>
                                             </child>
                                             <child>
-                                              <object class="GtkLabel" id="label25">
+                                              <object class="GtkLabel" id="ChannelVoiceModeLabel">
                                                 <property name="visible">True</property>
                                                 <property name="xalign">0.94999998807907104</property>
                                                 <property name="label" translatable="yes">Voice Mode:</property>
@@ -4503,6 +4553,9 @@ These are useful for developers.</property>
                                             <child>
                                               <object class="GtkComboBox" id="ChannelProtMode">
                                                 <property name="visible">True</property>
+                                                <accessibility>
+                                                  <relation type="labelled-by" target="ChannelProtModeLabel"/>
+                                                </accessibility>
                                               </object>
                                               <packing>
                                                 <property name="left_attach">1</property>
@@ -4514,6 +4567,9 @@ These are useful for developers.</property>
                                             <child>
                                               <object class="GtkComboBox" id="ChannelVoiceMode">
                                                 <property name="visible">True</property>
+                                                <accessibility>
+                                                  <relation type="labelled-by" target="ChannelVoiceModeLabel"/>
+                                                </accessibility>
                                               </object>
                                               <packing>
                                                 <property name="left_attach">1</property>
@@ -4522,230 +4578,233 @@ These are useful for developers.</property>
                                                 <property name="bottom_attach">6</property>
                                               </packing>
                                             </child>
-                                          </object>
-                                          <packing>
-                                            <property name="position">1</property>
-                                          </packing>
-                                        </child>
-                                        <child>
-                                          <placeholder/>
-                                        </child>
-                                        <child>
-                                          <object class="GtkFrame" id="ChannelSpecificCodec">
-                                            <property name="visible">True</property>
-                                            <property name="border_width">2</property>
-                                            <property name="label_xalign">0</property>
-                                            <property name="shadow_type">none</property>
                                             <child>
-                                              <object class="GtkAlignment" id="alignment21">
+                                              <object class="GtkLabel" id="ChannelCodecLabel">
                                                 <property name="visible">True</property>
-                                                <property name="top_padding">5</property>
-                                                <property name="left_padding">10</property>
-                                                <child>
-                                                  <object class="GtkTable" id="table12">
-                                                    <property name="visible">True</property>
-                                                    <property name="n_rows">2</property>
-                                                    <property name="n_columns">2</property>
-                                                    <property name="column_spacing">4</property>
-                                                    <property name="row_spacing">2</property>
-                                                    <child>
-                                                      <object class="GtkLabel" id="label14">
-                                                        <property name="visible">True</property>
-                                                        <property name="xalign">0.94999998807907104</property>
-                                                        <property name="label" translatable="yes">Codec:</property>
-                                                      </object>
-                                                      <packing>
-                                                        <property name="x_options">GTK_FILL</property>
-                                                      </packing>
-                                                    </child>
-                                                    <child>
-                                                      <object class="GtkLabel" id="label19">
-                                                        <property name="visible">True</property>
-                                                        <property name="xalign">0.94999998807907104</property>
-                                                        <property name="label" translatable="yes">Format:</property>
-                                                      </object>
-                                                      <packing>
-                                                        <property name="top_attach">1</property>
-                                                        <property name="bottom_attach">2</property>
-                                                        <property name="x_options">GTK_FILL</property>
-                                                      </packing>
-                                                    </child>
-                                                    <child>
-                                                      <object class="GtkComboBox" id="ChannelCodec">
-                                                        <property name="visible">True</property>
-                                                      </object>
-                                                      <packing>
-                                                        <property name="left_attach">1</property>
-                                                        <property name="right_attach">2</property>
-                                                      </packing>
-                                                    </child>
-                                                    <child>
-                                                      <object class="GtkComboBox" id="ChannelFormat">
-                                                        <property name="visible">True</property>
-                                                      </object>
-                                                      <packing>
-                                                        <property name="left_attach">1</property>
-                                                        <property name="right_attach">2</property>
-                                                        <property name="top_attach">1</property>
-                                                        <property name="bottom_attach">2</property>
-                                                      </packing>
-                                                    </child>
-                                                  </object>
-                                                </child>
+                                                <property name="xalign">0.94999998807907104</property>
+                                                <property name="label" translatable="yes">Codec:</property>
                                               </object>
+                                              <packing>
+                                                <property name="top_attach">7</property>
+                                                <property name="bottom_attach">8</property>
+                                                <property name="x_options">GTK_FILL</property>
+                                              </packing>
                                             </child>
-                                            <child type="label">
-                                              <object class="GtkLabel" id="label13">
-                                                <property name="visible">True</property>
-                                                <property name="label" translatable="yes">Channel Specific Codec</property>
-                                                <attributes>
-                                                  <attribute name="weight" value="bold"/>
-                                                </attributes>
-                                              </object>
-                                            </child>
-                                          </object>
-                                          <packing>
-                                            <property name="padding">2</property>
-                                            <property name="position">3</property>
-                                          </packing>
-                                        </child>
-                                        <child>
-                                          <placeholder/>
-                                        </child>
-                                        <child>
-                                          <object class="GtkTable" id="table11">
-                                            <property name="visible">True</property>
-                                            <property name="border_width">5</property>
-                                            <property name="n_rows">3</property>
-                                            <property name="n_columns">3</property>
-                                            <property name="column_spacing">4</property>
-                                            <property name="row_spacing">2</property>
                                             <child>
-                                              <object class="GtkLabel" id="label10">
+                                              <object class="GtkComboBox" id="ChannelCodec">
+                                                <property name="visible">True</property>
+                                                <accessibility>
+                                                  <relation type="labelled-by" target="ChannelCodecLabel"/>
+                                                </accessibility>
+                                              </object>
+                                              <packing>
+                                                <property name="left_attach">1</property>
+                                                <property name="right_attach">2</property>
+                                                <property name="top_attach">7</property>
+                                                <property name="bottom_attach">8</property>
+                                              </packing>
+                                            </child>
+                                            <child>
+                                              <object class="GtkLabel" id="ChannelFormatLabel">
+                                                <property name="visible">True</property>
+                                                <property name="xalign">0.94999998807907104</property>
+                                                <property name="label" translatable="yes">Format:</property>
+                                              </object>
+                                              <packing>
+                                                <property name="top_attach">8</property>
+                                                <property name="bottom_attach">9</property>
+                                                <property name="x_options">GTK_FILL</property>
+                                              </packing>
+                                            </child>
+                                            <child>
+                                              <object class="GtkComboBox" id="ChannelFormat">
+                                                <property name="visible">True</property>
+                                                <accessibility>
+                                                  <relation type="labelled-by" target="ChannelFormatLabel"/>
+                                                </accessibility>
+                                              </object>
+                                              <packing>
+                                                <property name="left_attach">1</property>
+                                                <property name="right_attach">2</property>
+                                                <property name="top_attach">8</property>
+                                                <property name="bottom_attach">9</property>
+                                              </packing>
+                                            </child>
+                                            <child>
+                                              <object class="GtkHSeparator" id="ChannelSeparator">
+                                                <property name="visible">True</property>
+                                              </object>
+                                              <packing>
+                                                <property name="right_attach">2</property>
+                                                <property name="top_attach">6</property>
+                                                <property name="bottom_attach">7</property>
+                                                <property name="y_padding">4</property>
+                                              </packing>
+                                            </child>
+                                            <child>
+                                              <object class="GtkHSeparator" id="ChannelSeparator2">
+                                                <property name="visible">True</property>
+                                              </object>
+                                              <packing>
+                                                <property name="right_attach">2</property>
+                                                <property name="top_attach">9</property>
+                                                <property name="bottom_attach">10</property>
+                                                <property name="y_padding">4</property>
+                                              </packing>
+                                            </child>
+                                            <child>
+                                              <object class="GtkLabel" id="TransmitLimitLabel">
                                                 <property name="visible">True</property>
                                                 <property name="xalign">0.94999998807907104</property>
                                                 <property name="label" translatable="yes">Transmit Time Limit:</property>
                                               </object>
                                               <packing>
+                                                <property name="top_attach">10</property>
+                                                <property name="bottom_attach">11</property>
                                                 <property name="x_options">GTK_FILL</property>
                                               </packing>
                                             </child>
                                             <child>
-                                              <object class="GtkLabel" id="label11">
+                                              <object class="GtkLabel" id="TransmitRankLabel">
                                                 <property name="visible">True</property>
                                                 <property name="xalign">0.94999998807907104</property>
                                                 <property name="label" translatable="yes">Transmit Rank Level:</property>
                                               </object>
                                               <packing>
-                                                <property name="top_attach">1</property>
-                                                <property name="bottom_attach">2</property>
+                                                <property name="top_attach">11</property>
+                                                <property name="bottom_attach">12</property>
                                                 <property name="x_options">GTK_FILL</property>
                                               </packing>
                                             </child>
                                             <child>
-                                              <object class="GtkLabel" id="label12">
+                                              <object class="GtkLabel" id="MaxClientsLabel">
                                                 <property name="visible">True</property>
                                                 <property name="xalign">0.94999998807907104</property>
                                                 <property name="label" translatable="yes">Max Clients:</property>
                                               </object>
                                               <packing>
-                                                <property name="top_attach">2</property>
-                                                <property name="bottom_attach">3</property>
+                                                <property name="top_attach">12</property>
+                                                <property name="bottom_attach">13</property>
                                                 <property name="x_options">GTK_FILL</property>
                                               </packing>
                                             </child>
                                             <child>
-                                              <object class="GtkLabel" id="label16">
+                                              <object class="GtkTable" id="TransmitTable">
                                                 <property name="visible">True</property>
-                                                <property name="xalign">0</property>
-                                                <property name="label" translatable="yes">seconds</property>
-                                              </object>
-                                              <packing>
-                                                <property name="left_attach">2</property>
-                                                <property name="right_attach">3</property>
-                                                <property name="x_options">GTK_FILL</property>
-                                              </packing>
-                                            </child>
-                                            <child>
-                                              <object class="GtkLabel" id="label17">
-                                                <property name="visible">True</property>
-                                                <property name="xalign">0</property>
-                                                <property name="label" translatable="yes">0 to 100</property>
-                                              </object>
-                                              <packing>
-                                                <property name="left_attach">2</property>
-                                                <property name="right_attach">3</property>
-                                                <property name="top_attach">1</property>
-                                                <property name="bottom_attach">2</property>
-                                                <property name="x_options">GTK_FILL</property>
-                                              </packing>
-                                            </child>
-                                            <child>
-                                              <object class="GtkLabel" id="label18">
-                                                <property name="visible">True</property>
-                                                <property name="xalign">0</property>
-                                                <property name="label" translatable="yes">0 to N</property>
-                                              </object>
-                                              <packing>
-                                                <property name="left_attach">2</property>
-                                                <property name="right_attach">3</property>
-                                                <property name="top_attach">2</property>
-                                                <property name="bottom_attach">3</property>
-                                                <property name="x_options">GTK_FILL</property>
-                                              </packing>
-                                            </child>
-                                            <child>
-                                              <object class="GtkSpinButton" id="TransmitLimit">
-                                                <property name="visible">True</property>
-                                                <property name="can_focus">True</property>
-                                                <property name="invisible_char">&#x2022;</property>
-                                                <property name="adjustment">adminTransmitTimeLimitAdjustment</property>
-                                                <property name="climb_rate">1</property>
-                                                <property name="snap_to_ticks">True</property>
-                                                <property name="numeric">True</property>
+                                                <property name="n_rows">3</property>
+                                                <property name="n_columns">2</property>
+                                                <child>
+                                                  <object class="GtkSpinButton" id="TransmitLimit">
+                                                    <property name="visible">True</property>
+                                                    <property name="can_focus">True</property>
+                                                    <property name="invisible_char">&#x25CF;</property>
+                                                    <property name="adjustment">adminTransmitTimeLimitAdjustment</property>
+                                                    <property name="climb_rate">1</property>
+                                                    <property name="snap_to_ticks">True</property>
+                                                    <property name="numeric">True</property>
+                                                    <accessibility>
+                                                      <relation type="labelled-by" target="TransmitLimitLabel"/>
+                                                    </accessibility>
+                                                  </object>
+                                                </child>
+                                                <child>
+                                                  <object class="GtkLabel" id="TransmitLimitSecondsLabel">
+                                                    <property name="visible">True</property>
+                                                    <property name="label" translatable="yes">seconds</property>
+                                                  </object>
+                                                  <packing>
+                                                    <property name="left_attach">1</property>
+                                                    <property name="right_attach">2</property>
+                                                    <property name="x_options">GTK_FILL</property>
+                                                    <property name="x_padding">5</property>
+                                                  </packing>
+                                                </child>
+                                                <child>
+                                                  <object class="GtkSpinButton" id="TransmitRank">
+                                                    <property name="visible">True</property>
+                                                    <property name="can_focus">True</property>
+                                                    <property name="invisible_char">&#x25CF;</property>
+                                                    <property name="adjustment">adminTransmitRankLevelAdjustment</property>
+                                                    <property name="climb_rate">1</property>
+                                                    <property name="snap_to_ticks">True</property>
+                                                    <property name="numeric">True</property>
+                                                    <accessibility>
+                                                      <relation type="labelled-by" target="TransmitRankLabel"/>
+                                                    </accessibility>
+                                                  </object>
+                                                  <packing>
+                                                    <property name="top_attach">1</property>
+                                                    <property name="bottom_attach">2</property>
+                                                  </packing>
+                                                </child>
+                                                <child>
+                                                  <object class="GtkLabel" id="TransmitRankNLabel">
+                                                    <property name="visible">True</property>
+                                                    <property name="label" translatable="yes">0 to 100</property>
+                                                  </object>
+                                                  <packing>
+                                                    <property name="left_attach">1</property>
+                                                    <property name="right_attach">2</property>
+                                                    <property name="top_attach">1</property>
+                                                    <property name="bottom_attach">2</property>
+                                                    <property name="x_options">GTK_FILL</property>
+                                                    <property name="x_padding">5</property>
+                                                  </packing>
+                                                </child>
+                                                <child>
+                                                  <object class="GtkSpinButton" id="MaxClients">
+                                                    <property name="visible">True</property>
+                                                    <property name="can_focus">True</property>
+                                                    <property name="invisible_char">&#x25CF;</property>
+                                                    <property name="adjustment">adminMaxClientsAdjustment</property>
+                                                    <property name="climb_rate">1</property>
+                                                    <property name="snap_to_ticks">True</property>
+                                                    <property name="numeric">True</property>
+                                                    <accessibility>
+                                                      <relation type="labelled-by" target="MaxClientsLabel"/>
+                                                    </accessibility>
+                                                  </object>
+                                                  <packing>
+                                                    <property name="top_attach">2</property>
+                                                    <property name="bottom_attach">3</property>
+                                                  </packing>
+                                                </child>
+                                                <child>
+                                                  <object class="GtkLabel" id="MaxClientsNLabel">
+                                                    <property name="visible">True</property>
+                                                    <property name="label" translatable="yes">0 to N</property>
+                                                  </object>
+                                                  <packing>
+                                                    <property name="left_attach">1</property>
+                                                    <property name="right_attach">2</property>
+                                                    <property name="top_attach">2</property>
+                                                    <property name="bottom_attach">3</property>
+                                                    <property name="x_options">GTK_FILL</property>
+                                                    <property name="x_padding">5</property>
+                                                  </packing>
+                                                </child>
                                               </object>
                                               <packing>
                                                 <property name="left_attach">1</property>
                                                 <property name="right_attach">2</property>
+                                                <property name="top_attach">10</property>
+                                                <property name="bottom_attach">13</property>
                                               </packing>
                                             </child>
                                             <child>
-                                              <object class="GtkSpinButton" id="TransmitRank">
+                                              <object class="GtkHSeparator" id="ChannelSeparator3">
                                                 <property name="visible">True</property>
-                                                <property name="can_focus">True</property>
-                                                <property name="invisible_char">&#x2022;</property>
-                                                <property name="adjustment">adminTransmitRankLevelAdjustment</property>
-                                                <property name="climb_rate">1</property>
-                                                <property name="snap_to_ticks">True</property>
-                                                <property name="numeric">True</property>
                                               </object>
                                               <packing>
-                                                <property name="left_attach">1</property>
                                                 <property name="right_attach">2</property>
-                                                <property name="top_attach">1</property>
-                                                <property name="bottom_attach">2</property>
-                                              </packing>
-                                            </child>
-                                            <child>
-                                              <object class="GtkSpinButton" id="MaxClients">
-                                                <property name="visible">True</property>
-                                                <property name="can_focus">True</property>
-                                                <property name="invisible_char">&#x2022;</property>
-                                                <property name="adjustment">adminMaxClientsAdjustment</property>
-                                                <property name="climb_rate">1</property>
-                                                <property name="snap_to_ticks">True</property>
-                                                <property name="numeric">True</property>
-                                              </object>
-                                              <packing>
-                                                <property name="left_attach">1</property>
-                                                <property name="right_attach">2</property>
-                                                <property name="top_attach">2</property>
-                                                <property name="bottom_attach">3</property>
+                                                <property name="top_attach">13</property>
+                                                <property name="bottom_attach">14</property>
+                                                <property name="y_padding">4</property>
                                               </packing>
                                             </child>
                                           </object>
                                           <packing>
-                                            <property name="position">5</property>
+                                            <property name="position">1</property>
                                           </packing>
                                         </child>
                                         <child>
@@ -4760,7 +4819,7 @@ These are useful for developers.</property>
                                             <property name="draw_indicator">True</property>
                                           </object>
                                           <packing>
-                                            <property name="position">7</property>
+                                            <property name="position">3</property>
                                           </packing>
                                         </child>
                                         <child>
@@ -4772,7 +4831,7 @@ These are useful for developers.</property>
                                             <property name="draw_indicator">True</property>
                                           </object>
                                           <packing>
-                                            <property name="position">8</property>
+                                            <property name="position">4</property>
                                           </packing>
                                         </child>
                                         <child>
@@ -4784,7 +4843,7 @@ These are useful for developers.</property>
                                             <property name="draw_indicator">True</property>
                                           </object>
                                           <packing>
-                                            <property name="position">9</property>
+                                            <property name="position">5</property>
                                           </packing>
                                         </child>
                                         <child>
@@ -4796,7 +4855,7 @@ These are useful for developers.</property>
                                             <property name="draw_indicator">True</property>
                                           </object>
                                           <packing>
-                                            <property name="position">10</property>
+                                            <property name="position">6</property>
                                           </packing>
                                         </child>
                                         <child>
@@ -4808,7 +4867,7 @@ These are useful for developers.</property>
                                             <property name="draw_indicator">True</property>
                                           </object>
                                           <packing>
-                                            <property name="position">11</property>
+                                            <property name="position">7</property>
                                           </packing>
                                         </child>
                                         <child>
@@ -4820,7 +4879,7 @@ These are useful for developers.</property>
                                             <property name="draw_indicator">True</property>
                                           </object>
                                           <packing>
-                                            <property name="position">12</property>
+                                            <property name="position">8</property>
                                           </packing>
                                         </child>
                                         <child>
@@ -4832,7 +4891,7 @@ These are useful for developers.</property>
                                             <property name="draw_indicator">True</property>
                                           </object>
                                           <packing>
-                                            <property name="position">13</property>
+                                            <property name="position">9</property>
                                           </packing>
                                         </child>
                                         <child>
@@ -4844,7 +4903,7 @@ These are useful for developers.</property>
                                             <property name="draw_indicator">True</property>
                                           </object>
                                           <packing>
-                                            <property name="position">14</property>
+                                            <property name="position">10</property>
                                           </packing>
                                         </child>
                                         <child>
@@ -4856,7 +4915,7 @@ These are useful for developers.</property>
                                             <property name="draw_indicator">True</property>
                                           </object>
                                           <packing>
-                                            <property name="position">15</property>
+                                            <property name="position">11</property>
                                           </packing>
                                         </child>
                                         <child>
@@ -4868,7 +4927,7 @@ These are useful for developers.</property>
                                             <property name="draw_indicator">True</property>
                                           </object>
                                           <packing>
-                                            <property name="position">16</property>
+                                            <property name="position">12</property>
                                           </packing>
                                         </child>
                                         <child>
@@ -4880,7 +4939,7 @@ These are useful for developers.</property>
                                             <property name="draw_indicator">True</property>
                                           </object>
                                           <packing>
-                                            <property name="position">17</property>
+                                            <property name="position">13</property>
                                           </packing>
                                         </child>
                                         <child>
@@ -4895,7 +4954,7 @@ These are useful for developers.</property>
                                             <property name="draw_indicator">True</property>
                                           </object>
                                           <packing>
-                                            <property name="position">19</property>
+                                            <property name="position">15</property>
                                           </packing>
                                         </child>
                                         <child>
@@ -4907,7 +4966,7 @@ These are useful for developers.</property>
                                             <property name="draw_indicator">True</property>
                                           </object>
                                           <packing>
-                                            <property name="position">20</property>
+                                            <property name="position">16</property>
                                           </packing>
                                         </child>
                                         <child>
@@ -4931,13 +4990,13 @@ These are useful for developers.</property>
                               </object>
                               <packing>
                                 <property name="expand">False</property>
-                                <property name="fill">False</property>
                                 <property name="position">1</property>
                               </packing>
                             </child>
                           </object>
                           <packing>
-                            <property name="position">1</property>
+                            <property name="resize">True</property>
+                            <property name="shrink">True</property>
                           </packing>
                         </child>
                       </object>
@@ -4965,10 +5024,10 @@ These are useful for developers.</property>
                     <property name="left_padding">5</property>
                     <property name="right_padding">5</property>
                     <child>
-                      <object class="GtkHPaned" id="hpaned1">
+                      <object class="GtkHPaned" id="UserHPaned">
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
-                        <property name="position">125</property>
+                        <property name="position">175</property>
                         <property name="position_set">True</property>
                         <child>
                           <object class="GtkVBox" id="vbox6">
@@ -5001,7 +5060,6 @@ These are useful for developers.</property>
                               </object>
                               <packing>
                                 <property name="expand">False</property>
-                                <property name="fill">False</property>
                                 <property name="padding">5</property>
                                 <property name="position">1</property>
                               </packing>
@@ -5015,14 +5073,12 @@ These are useful for developers.</property>
                               </object>
                               <packing>
                                 <property name="expand">False</property>
-                                <property name="fill">False</property>
-                                <property name="padding">5</property>
                                 <property name="position">2</property>
                               </packing>
                             </child>
                           </object>
                           <packing>
-                            <property name="resize">False</property>
+                            <property name="resize">True</property>
                             <property name="shrink">True</property>
                           </packing>
                         </child>
@@ -5138,7 +5194,7 @@ These are useful for developers.</property>
                                             <property name="column_spacing">2</property>
                                             <property name="row_spacing">2</property>
                                             <child>
-                                              <object class="GtkLabel" id="label27">
+                                              <object class="GtkLabel" id="UserLoginLabel">
                                                 <property name="visible">True</property>
                                                 <property name="xalign">0.94999998807907104</property>
                                                 <property name="xpad">10</property>
@@ -5149,7 +5205,7 @@ These are useful for developers.</property>
                                               </packing>
                                             </child>
                                             <child>
-                                              <object class="GtkLabel" id="label28">
+                                              <object class="GtkLabel" id="UserPasswordLabel">
                                                 <property name="visible">True</property>
                                                 <property name="xalign">0.94999998807907104</property>
                                                 <property name="xpad">10</property>
@@ -5162,7 +5218,7 @@ These are useful for developers.</property>
                                               </packing>
                                             </child>
                                             <child>
-                                              <object class="GtkLabel" id="label29">
+                                              <object class="GtkLabel" id="UserOwnerLabel">
                                                 <property name="visible">True</property>
                                                 <property name="xalign">0.94999998807907104</property>
                                                 <property name="xpad">10</property>
@@ -5179,6 +5235,9 @@ These are useful for developers.</property>
                                                 <property name="visible">True</property>
                                                 <property name="can_focus">True</property>
                                                 <property name="invisible_char">&#x2022;</property>
+                                                <accessibility>
+                                                  <relation type="labelled-by" target="UserLoginLabel"/>
+                                                </accessibility>
                                               </object>
                                               <packing>
                                                 <property name="left_attach">1</property>
@@ -5191,6 +5250,9 @@ These are useful for developers.</property>
                                                 <property name="can_focus">True</property>
                                                 <property name="visibility">False</property>
                                                 <property name="invisible_char">&#x2022;</property>
+                                                <accessibility>
+                                                  <relation type="labelled-by" target="UserPasswordLabel"/>
+                                                </accessibility>
                                               </object>
                                               <packing>
                                                 <property name="left_attach">1</property>
@@ -5206,6 +5268,9 @@ These are useful for developers.</property>
                                                 <property name="can_focus">True</property>
                                                 <property name="border_width">2</property>
                                                 <property name="wrap_mode">char</property>
+                                                <accessibility>
+                                                  <relation type="labelled-by" target="UserNotesLabel"/>
+                                                </accessibility>
                                               </object>
                                               <packing>
                                                 <property name="left_attach">1</property>
@@ -5215,7 +5280,7 @@ These are useful for developers.</property>
                                               </packing>
                                             </child>
                                             <child>
-                                              <object class="GtkLabel" id="label30">
+                                              <object class="GtkLabel" id="UserNotesLabel">
                                                 <property name="visible">True</property>
                                                 <property name="xalign">0.94999998807907104</property>
                                                 <property name="xpad">10</property>
@@ -5228,7 +5293,7 @@ These are useful for developers.</property>
                                               </packing>
                                             </child>
                                             <child>
-                                              <object class="GtkLabel" id="label31">
+                                              <object class="GtkLabel" id="UserRankLabel">
                                                 <property name="visible">True</property>
                                                 <property name="xalign">0.94999998807907104</property>
                                                 <property name="xpad">10</property>
@@ -5243,6 +5308,9 @@ These are useful for developers.</property>
                                             <child>
                                               <object class="GtkComboBox" id="UserRank">
                                                 <property name="visible">True</property>
+                                                <accessibility>
+                                                  <relation type="labelled-by" target="UserRankLabel"/>
+                                                </accessibility>
                                               </object>
                                               <packing>
                                                 <property name="left_attach">1</property>
@@ -5255,6 +5323,9 @@ These are useful for developers.</property>
                                             <child>
                                               <object class="GtkComboBox" id="UserOwner">
                                                 <property name="visible">True</property>
+                                                <accessibility>
+                                                  <relation type="labelled-by" target="UserOwnerLabel"/>
+                                                </accessibility>
                                               </object>
                                               <packing>
                                                 <property name="left_attach">1</property>
@@ -5313,10 +5384,10 @@ These are useful for developers.</property>
                                               </packing>
                                             </child>
                                             <child>
-                                              <object class="GtkHBox" id="hbox21">
+                                              <object class="GtkHBox" id="UserLockedReasonHBox">
                                                 <property name="visible">True</property>
                                                 <child>
-                                                  <object class="GtkLabel" id="label5">
+                                                  <object class="GtkLabel" id="UserLockedReasonLabel">
                                                     <property name="visible">True</property>
                                                     <property name="xalign">0.94999998807907104</property>
                                                     <property name="label" translatable="yes">Reason:</property>
@@ -5332,6 +5403,9 @@ These are useful for developers.</property>
                                                     <property name="visible">True</property>
                                                     <property name="can_focus">True</property>
                                                     <property name="invisible_char">&#x2022;</property>
+                                                    <accessibility>
+                                                      <relation type="labelled-by" target="UserLockedReasonLabel"/>
+                                                    </accessibility>
                                                   </object>
                                                   <packing>
                                                     <property name="position">1</property>
@@ -5428,10 +5502,10 @@ These are useful for developers.</property>
                                               </packing>
                                             </child>
                                             <child>
-                                              <object class="GtkHBox" id="hbox22">
+                                              <object class="GtkHBox" id="UserDuplicateIPsHBox">
                                                 <property name="visible">True</property>
                                                 <child>
-                                                  <object class="GtkLabel" id="label15">
+                                                  <object class="GtkLabel" id="UserDuplicateIPsLabel">
                                                     <property name="visible">True</property>
                                                     <property name="xalign">0.94999998807907104</property>
                                                     <property name="label" translatable="yes">Duplicate IPs:</property>
@@ -5445,6 +5519,9 @@ These are useful for developers.</property>
                                                 <child>
                                                   <object class="GtkComboBox" id="UserDuplicateIPs">
                                                     <property name="visible">True</property>
+                                                    <accessibility>
+                                                      <relation type="labelled-by" target="UserDuplicateIPsLabel"/>
+                                                    </accessibility>
                                                   </object>
                                                   <packing>
                                                     <property name="padding">4</property>
@@ -5472,10 +5549,10 @@ These are useful for developers.</property>
                                               </packing>
                                             </child>
                                             <child>
-                                              <object class="GtkHBox" id="hbox23">
+                                              <object class="GtkHBox" id="UserDefaultChannelHBox">
                                                 <property name="visible">True</property>
                                                 <child>
-                                                  <object class="GtkLabel" id="label20">
+                                                  <object class="GtkLabel" id="UserDefaultChannelLabel">
                                                     <property name="visible">True</property>
                                                     <property name="xalign">0.94999998807907104</property>
                                                     <property name="label" translatable="yes">Default Channel:</property>
@@ -5489,6 +5566,9 @@ These are useful for developers.</property>
                                                 <child>
                                                   <object class="GtkComboBox" id="UserDefaultChannel">
                                                     <property name="visible">True</property>
+                                                    <accessibility>
+                                                      <relation type="labelled-by" target="UserDefaultChannelLabel"/>
+                                                    </accessibility>
                                                   </object>
                                                   <packing>
                                                     <property name="padding">4</property>
@@ -6171,16 +6251,6 @@ These are useful for developers.</property>
                               </packing>
                             </child>
                             <child>
-                              <object class="GtkHSeparator" id="hseparator19">
-                                <property name="visible">True</property>
-                              </object>
-                              <packing>
-                                <property name="expand">False</property>
-                                <property name="padding">4</property>
-                                <property name="position">3</property>
-                              </packing>
-                            </child>
-                            <child>
                               <object class="GtkButton" id="UserUpdate">
                                 <property name="label" translatable="yes">Update</property>
                                 <property name="visible">True</property>
@@ -6189,7 +6259,7 @@ These are useful for developers.</property>
                               </object>
                               <packing>
                                 <property name="expand">False</property>
-                                <property name="position">4</property>
+                                <property name="position">3</property>
                               </packing>
                             </child>
                           </object>
@@ -6309,7 +6379,7 @@ These are useful for developers.</property>
                                     <property name="column_spacing">4</property>
                                     <property name="row_spacing">2</property>
                                     <child>
-                                      <object class="GtkLabel" id="label22">
+                                      <object class="GtkLabel" id="RankNameLabel">
                                         <property name="visible">True</property>
                                         <property name="xalign">0.94999998807907104</property>
                                         <property name="label" translatable="yes">Name:</property>
@@ -6319,7 +6389,7 @@ These are useful for developers.</property>
                                       </packing>
                                     </child>
                                     <child>
-                                      <object class="GtkLabel" id="label23">
+                                      <object class="GtkLabel" id="RankLevelLabel">
                                         <property name="visible">True</property>
                                         <property name="xalign">0.94999998807907104</property>
                                         <property name="label" translatable="yes">Level:</property>
@@ -6335,6 +6405,9 @@ These are useful for developers.</property>
                                         <property name="visible">True</property>
                                         <property name="can_focus">True</property>
                                         <property name="invisible_char">&#x2022;</property>
+                                        <accessibility>
+                                          <relation type="labelled-by" target="RankNameLabel"/>
+                                        </accessibility>
                                       </object>
                                       <packing>
                                         <property name="left_attach">1</property>
@@ -6346,6 +6419,9 @@ These are useful for developers.</property>
                                         <property name="visible">True</property>
                                         <property name="can_focus">True</property>
                                         <property name="invisible_char">&#x2022;</property>
+                                        <accessibility>
+                                          <relation type="labelled-by" target="RankDescriptionLabel"/>
+                                        </accessibility>
                                       </object>
                                       <packing>
                                         <property name="left_attach">1</property>
@@ -6363,6 +6439,9 @@ These are useful for developers.</property>
                                         <property name="climb_rate">1</property>
                                         <property name="snap_to_ticks">True</property>
                                         <property name="numeric">True</property>
+                                        <accessibility>
+                                          <relation type="labelled-by" target="RankLevelLabel"/>
+                                        </accessibility>
                                       </object>
                                       <packing>
                                         <property name="left_attach">1</property>
@@ -6372,7 +6451,7 @@ These are useful for developers.</property>
                                       </packing>
                                     </child>
                                     <child>
-                                      <object class="GtkLabel" id="label26">
+                                      <object class="GtkLabel" id="RankDescriptionLabel">
                                         <property name="visible">True</property>
                                         <property name="xalign">0.94999998807907104</property>
                                         <property name="label" translatable="yes">Description:</property>
@@ -6439,6 +6518,7 @@ These are useful for developers.</property>
         <child>
           <object class="GtkHBox" id="hbox18">
             <property name="visible">True</property>
+            <property name="spacing">2</property>
             <child>
               <object class="GtkViewport" id="viewport1">
                 <property name="visible">True</property>
@@ -6447,6 +6527,7 @@ These are useful for developers.</property>
                   <object class="GtkStatusbar" id="AdminStatusbar">
                     <property name="visible">True</property>
                     <property name="spacing">2</property>
+                    <property name="has_resize_grip">False</property>
                   </object>
                 </child>
               </object>
@@ -6463,7 +6544,6 @@ These are useful for developers.</property>
               </object>
               <packing>
                 <property name="expand">False</property>
-                <property name="fill">False</property>
                 <property name="position">1</property>
               </packing>
             </child>
@@ -6572,7 +6652,7 @@ These are useful for developers.</property>
   </object>
   <object class="GtkWindow" id="errorWindow">
     <property name="border_width">5</property>
-    <property name="title" translatable="yes">Error Message</property>
+    <property name="title" translatable="yes">Mangler - Error Message</property>
     <property name="resizable">False</property>
     <property name="modal">True</property>
     <property name="type_hint">dialog</property>
@@ -6765,24 +6845,44 @@ These are useful for developers.</property>
   <object class="GtkMenu" id="statusIconMenu">
     <property name="visible">True</property>
     <child>
-      <object class="GtkMenuItem" id="settingsStatusIconMenuItem">
-        <property name="visible">True</property>
-        <property name="label" translatable="yes">Settings</property>
-        <property name="use_underline">True</property>
-      </object>
-    </child>
-    <child>
       <object class="GtkCheckMenuItem" id="muteMicCheckMenuItem">
         <property name="visible">True</property>
-        <property name="label" translatable="yes">Mute Mic</property>
+        <property name="label" translatable="yes">Mute _Mic</property>
         <property name="use_underline">True</property>
       </object>
     </child>
     <child>
       <object class="GtkCheckMenuItem" id="muteSoundCheckMenuItem">
         <property name="visible">True</property>
-        <property name="label" translatable="yes">Mute Sound</property>
+        <property name="label" translatable="yes">Mute _Sound</property>
         <property name="use_underline">True</property>
+      </object>
+    </child>
+    <child>
+      <object class="GtkSeparatorMenuItem" id="settingsSeparatorMenuItem">
+        <property name="visible">True</property>
+      </object>
+    </child>
+    <child>
+      <object class="GtkImageMenuItem" id="statusIconSettingsMenuItem">
+        <property name="label" translatable="yes">Se_ttings</property>
+        <property name="visible">True</property>
+        <property name="use_underline">True</property>
+        <property name="image">image9</property>
+        <property name="use_stock">False</property>
+      </object>
+    </child>
+    <child>
+      <object class="GtkSeparatorMenuItem" id="settingsSeparatorMenuItem2">
+        <property name="visible">True</property>
+      </object>
+    </child>
+    <child>
+      <object class="GtkImageMenuItem" id="statusIconQuitMenuItem">
+        <property name="label">gtk-quit</property>
+        <property name="visible">True</property>
+        <property name="use_underline">True</property>
+        <property name="use_stock">True</property>
       </object>
     </child>
   </object>
@@ -6823,7 +6923,7 @@ These are useful for developers.</property>
                       </object>
                     </child>
                     <child>
-                      <object class="GtkSeparatorMenuItem" id="recSeparatorMenuItem1">
+                      <object class="GtkSeparatorMenuItem" id="recSeparatorMenuItem">
                         <property name="visible">True</property>
                       </object>
                     </child>
@@ -6847,6 +6947,21 @@ These are useful for developers.</property>
                       <object class="GtkSeparatorMenuItem" id="recSeparatorMenuItem2"/>
                     </child>
                     <child>
+                      <object class="GtkImageMenuItem" id="recDelete">
+                        <property name="label">gtk-delete</property>
+                        <property name="visible">True</property>
+                        <property name="sensitive">False</property>
+                        <property name="use_underline">True</property>
+                        <property name="use_stock">True</property>
+                        <accelerator key="Delete" signal="activate" modifiers="GDK_SHIFT_MASK"/>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkSeparatorMenuItem" id="recSeparatorMenuItem3">
+                        <property name="visible">True</property>
+                      </object>
+                    </child>
+                    <child>
                       <object class="GtkImageMenuItem" id="recClose">
                         <property name="label">gtk-close</property>
                         <property name="visible">True</property>
@@ -6862,6 +6977,25 @@ These are useful for developers.</property>
                         <property name="label" translatable="yes">_Hide</property>
                         <property name="use_underline">True</property>
                         <accelerator key="q" signal="activate" modifiers="GDK_CONTROL_MASK"/>
+                      </object>
+                    </child>
+                  </object>
+                </child>
+              </object>
+            </child>
+            <child>
+              <object class="GtkMenuItem" id="recMiscMenuItem">
+                <property name="visible">True</property>
+                <property name="right_justified">True</property>
+                <property name="label" translatable="yes">...</property>
+                <child type="submenu">
+                  <object class="GtkMenu" id="recMiscMenu">
+                    <property name="visible">True</property>
+                    <child>
+                      <object class="GtkCheckMenuItem" id="recFlags">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">Dishonor Recording _Flags</property>
+                        <property name="use_underline">True</property>
                       </object>
                     </child>
                   </object>
@@ -7219,6 +7353,8 @@ These are useful for developers.</property>
                                 <property name="can_focus">True</property>
                                 <property name="receives_default">True</property>
                                 <property name="use_stock">True</property>
+                                <property name="focus_on_click">False</property>
+                                <accelerator key="r" signal="activate" modifiers="GDK_CONTROL_MASK"/>
                               </object>
                               <packing>
                                 <property name="position">3</property>
@@ -7513,5 +7649,9 @@ These are useful for developers.</property>
       <action-widget response="0">recInfoCancel</action-widget>
       <action-widget response="0">recInfoSave</action-widget>
     </action-widgets>
+  </object>
+  <object class="GtkImage" id="image9">
+    <property name="visible">True</property>
+    <property name="stock">gtk-properties</property>
   </object>
 </interface>

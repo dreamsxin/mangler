@@ -108,9 +108,9 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
     builder->get_widget("quickConnectButton", button);
     button->signal_clicked().connect(sigc::mem_fun(this, &Mangler::quickConnectButton_clicked_cb));
 
-    // Server Button
-    builder->get_widget("serverConfigButton", button);
-    button->signal_clicked().connect(sigc::mem_fun(this, &Mangler::serverConfigButton_clicked_cb));
+    // Server List Button
+    builder->get_widget("serverListButton", button);
+    button->signal_clicked().connect(sigc::mem_fun(this, &Mangler::serverListButton_clicked_cb));
 
     // Connect Button
     builder->get_widget("connectButton", button);
@@ -192,7 +192,7 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
     menuitem->signal_activate().connect(sigc::mem_fun(this, &Mangler::quickConnectButton_clicked_cb));
 
     builder->get_widget("serverListMenuItem", menuitem);
-    menuitem->signal_activate().connect(sigc::mem_fun(this, &Mangler::serverConfigButton_clicked_cb));
+    menuitem->signal_activate().connect(sigc::mem_fun(this, &Mangler::serverListButton_clicked_cb));
 
     builder->get_widget("adminSeparatorMenuItem", menuitem);
 
@@ -204,7 +204,7 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
 
     builder->get_widget("settingsMenuItem", menuitem);
     menuitem->signal_activate().connect(sigc::mem_fun(this, &Mangler::settingsButton_clicked_cb));
-    builder->get_widget("settingsStatusIconMenuItem", menuitem);
+    builder->get_widget("statusIconSettingsMenuItem", menuitem);
     menuitem->signal_activate().connect(sigc::mem_fun(this, &Mangler::settingsButton_clicked_cb));
 
     builder->get_widget("commentMenuItem", menuitem);
@@ -217,6 +217,8 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
     menuitem->signal_activate().connect(sigc::mem_fun(this, &Mangler::recorderMenuItem_activate_cb));
 
     builder->get_widget("quitMenuItem", menuitem);
+    menuitem->signal_activate().connect(sigc::mem_fun(this, &Mangler::quitMenuItem_activate_cb));
+    builder->get_widget("statusIconQuitMenuItem", menuitem);
     menuitem->signal_activate().connect(sigc::mem_fun(this, &Mangler::quitMenuItem_activate_cb));
 
     builder->get_widget("aboutMenuItem", menuitem);
@@ -325,7 +327,7 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
     // Select the last one used (or the first if unknown)
     combobox->set_active(serverSelection);
 
-    // Statusbar Icon
+    // Status Tray Icon
     statusIcon = Gtk::StatusIcon::create(icons["tray_icon_grey"]);
     statusIcon->signal_activate().connect(sigc::mem_fun(this, &Mangler::statusIcon_activate_cb));
     statusIcon->signal_scroll_event().connect_notify(sigc::mem_fun(this, &Mangler::statusIcon_scroll_event_cb));
@@ -475,7 +477,7 @@ void Mangler::onDisconnectHandler(void) {/*{{{*/
             iniSection &server( config.servers[connectedServerName] );
             connectedServerName = "";
             if (!wantDisconnect && server["PersistentConnection"].toBool()) {
-                connectbutton->set_label("Cancel Reconnect");
+                connectbutton->set_label("gtk-cancel");
                 lastAttempt = time(NULL);
                 Glib::signal_timeout().connect_seconds(sigc::mem_fun(*this, &Mangler::reconnectStatusHandler), 1);
                 return;
@@ -524,19 +526,14 @@ void Mangler::quickConnectButton_clicked_cb(void) {/*{{{*/
     builder->get_widget("qcPassword", entry);
     entry->set_text(config["qc_lastserver.password"].toCString());
 
-    if (v3_is_loggedin()) {
-        builder->get_widget("qcConnectButton", button);
-        button->set_sensitive(false);
-    } else {
-        builder->get_widget("qcConnectButton", button);
-        button->set_sensitive(true);
-    }
+    builder->get_widget("qcConnectButton", button);
+    button->set_sensitive(!v3_is_loggedin());
 
     dialog->set_keep_above(true);
     dialog->run();
     dialog->hide();
 }/*}}}*/
-void Mangler::serverConfigButton_clicked_cb(void) {/*{{{*/
+void Mangler::serverListButton_clicked_cb(void) {/*{{{*/
     builder->get_widget("serverListWindow", window);
     window->set_icon(icons["tray_icon"]);
     window->show();
@@ -546,7 +543,7 @@ void Mangler::connectButton_clicked_cb(void) {/*{{{*/
     Gtk::TreeModel::iterator iter;
 
     builder->get_widget("connectButton", connectbutton);
-    if (connectbutton->get_label() == "Cancel Reconnect") {
+    if (connectbutton->get_label() == "gtk-cancel") {
         wantDisconnect = true;
         onDisconnectHandler();
         builder->get_widget("statusbar", statusbar);
@@ -654,12 +651,12 @@ void Mangler::adminButton_clicked_cb(void) {/*{{{*/
         }
     } else {
         admin->adminWindow->set_icon(icons["tray_icon"]);
-        admin->adminWindow->show();
+        admin->show();
     }
 }/*}}}*/
 void Mangler::adminWindowMenuItem_activated_cb(void) {/*{{{*/
     admin->adminWindow->set_icon(icons["tray_icon"]);
-    admin->adminWindow->show();
+    admin->show();
 }/*}}}*/
 void Mangler::settingsButton_clicked_cb(void) {/*{{{*/
     settings->settingsWindow->show();
@@ -807,8 +804,8 @@ void Mangler::stopTransmit(void) {/*{{{*/
     isTransmitting = false;
     if (v3_is_loggedin()) {
         channelTree->setUserIcon(v3_get_user_id(), "red");
+        statusIcon->set(icons["tray_icon_red"]);
     }
-    statusIcon->set(icons["tray_icon_red"]);
     if (inputAudio) {
         inputAudio->finish();
     }
@@ -1046,7 +1043,6 @@ bool Mangler::getNetworkEvent() {/*{{{*/
 #ifdef HAVE_XOSD
                     osd->removeUser(ev->user.id);
 #endif
-                    channelTree->refreshAllUsers();
                 }
                 break;/*}}}*/
             case V3_EVENT_CHAN_REMOVE:/*{{{*/
@@ -1481,17 +1477,15 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                 {
                     const v3_permissions *perms = v3_get_permissions();
                     if (perms->srv_admin) {
-                        builder->get_widget("adminButton", button);
-                        button->set_label("Admin");
                         isAdmin = true;
                         builder->get_widget("adminLoginMenuItem", menuitem);
                         menuitem->hide();
                         builder->get_widget("adminWindowMenuItem", menuitem);
                         menuitem->show();
                         if (wantAdminWindow) {
-                            admin->adminWindow->show();
-                            admin->adminWindow->set_icon(icons["tray_icon"]);
                             wantAdminWindow = false;
+                            admin->adminWindow->set_icon(icons["tray_icon"]);
+                            admin->show();
                         }
                     } else {
                         isAdmin = false;
@@ -1872,7 +1866,7 @@ bool Mangler::getReasonEntry(Glib::ustring title, Glib::ustring prompt) {/*{{{*/
     reasonDialog->set_title(title);
     reasonDialog->run();
     reasonDialog->hide();
-    return(reasonValid);
+    return reasonValid;
 }/*}}}*/
 void Mangler::reasonDialogOkButton_clicked_cb(void) {/*{{{*/
     reason = reasonEntry->get_text();

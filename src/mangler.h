@@ -188,7 +188,7 @@ class Mangler
 
         // button signal handlers
         void quickConnectButton_clicked_cb(void);
-        void serverConfigButton_clicked_cb(void);
+        void serverListButton_clicked_cb(void);
         void connectButton_clicked_cb(void);
         void commentButton_clicked_cb(void);
         void chatButton_clicked_cb(void);

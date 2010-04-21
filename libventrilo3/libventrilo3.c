@@ -661,7 +661,9 @@ _v3_recv(int block) {/*{{{*/
                             channel.id = ev.channel.id;
                             _v3_debug(V3_DEBUG_INFO, "changing to channel id %d", channel.id);
                             msg = _v3_put_0x49(V3_CHANGE_CHANNEL, v3_get_user_id(), ev.text.password, &channel);
-                            if (!_v3_send(msg)) {
+                            if (_v3_send(msg)) {
+                                _v3_debug(V3_DEBUG_SOCKET, "sent channel change message to server");
+                            } else {
                                 _v3_debug(V3_DEBUG_SOCKET, "failed to send channel change message");
                             }
                             _v3_destroy_packet(msg);
@@ -684,7 +686,9 @@ _v3_recv(int block) {/*{{{*/
                                 _v3_debug(V3_DEBUG_INFO, "add channel '%s'", channel.name);
                             }
                             msg = _v3_put_0x49(channel.id ? V3_MODIFY_CHANNEL : V3_ADD_CHANNEL, v3_get_user_id(), ev.text.password, &channel);
-                            if (!_v3_send(msg)) {
+                            if (_v3_send(msg)) {
+                                _v3_debug(V3_DEBUG_SOCKET, "sent channel modify/add message to server");
+                            } else {
                                 _v3_debug(V3_DEBUG_SOCKET, "failed to send channel modify/add message");
                             }
                             _v3_destroy_packet(msg);
@@ -698,7 +702,9 @@ _v3_recv(int block) {/*{{{*/
                             channel.id = ev.channel.id;
                             _v3_debug(V3_DEBUG_INFO, "removing channel id %d", channel.id);
                             msg = _v3_put_0x49(V3_REMOVE_CHANNEL, v3_get_user_id(), NULL, &channel);
-                            if (!_v3_send(msg)) {
+                            if (_v3_send(msg)) {
+                                _v3_debug(V3_DEBUG_SOCKET, "sent channel remove message to server");
+                            } else {
                                 _v3_debug(V3_DEBUG_SOCKET, "failed to send channel remove message");
                             }
                             _v3_destroy_packet(msg);
@@ -781,7 +787,9 @@ _v3_recv(int block) {/*{{{*/
                             codec = v3_get_channel_codec(v3_get_user_channel(v3_get_user_id()));
                             _v3_debug(V3_DEBUG_INFO, "got outbound user talk start event");
                             msg = _v3_put_0x52(V3_AUDIO_START, codec->codec, codec->format, ev.pcm.send_type, 0, 0, NULL);
-                            if (!_v3_send(msg)) {
+                            if (_v3_send(msg)) {
+                                _v3_debug(V3_DEBUG_SOCKET, "sent user talk start message to server");
+                            } else {
                                 _v3_debug(V3_DEBUG_SOCKET, "failed to send user talk start message");
                             }
                             _v3_destroy_packet(msg);
@@ -830,11 +838,21 @@ _v3_recv(int block) {/*{{{*/
                                                 2000 + ev.pcm.channels, // max: <= 3000
                                                 pktlen, // max: 0x01: < 200; 0x02: < 110
                                                 celtdataptr);
-                                        celtdataptr += pktlen;
-                                        if (!_v3_send(msg)) {
+                                        if (_v3_send(msg)) {
+                                            _v3_debug(V3_DEBUG_SOCKET, "sent audio message to server");
+                                        } else {
                                             _v3_debug(V3_DEBUG_SOCKET, "failed to send audio message");
                                         }
                                         _v3_destroy_packet(msg);
+                                        _v3_vrf_record_event(
+                                                V3_VRF_EVENT_AUDIO_DATA,
+                                                v3_get_user_id(),
+                                                codec->codec,
+                                                codec->format,
+                                                2000 + ev.pcm.channels,
+                                                pktlen,
+                                                celtdataptr);
+                                        celtdataptr += pktlen;
                                         framecount -= pktframes;
                                     }
                                     break;
@@ -848,20 +866,22 @@ _v3_recv(int block) {/*{{{*/
                                             ev.pcm.length,
                                             datalen,
                                             data);
-                                    if (!_v3_send(msg)) {
+                                    if (_v3_send(msg)) {
+                                        _v3_debug(V3_DEBUG_SOCKET, "sent audio message to server");
+                                    } else {
                                         _v3_debug(V3_DEBUG_SOCKET, "failed to send audio message");
                                     }
                                     _v3_destroy_packet(msg);
+                                    _v3_vrf_record_event(
+                                            V3_VRF_EVENT_AUDIO_DATA,
+                                            v3_get_user_id(),
+                                            codec->codec,
+                                            codec->format,
+                                            ev.pcm.length,
+                                            datalen,
+                                            data);
                                     break;
                                 }
-                                _v3_vrf_record_event(
-                                        V3_VRF_EVENT_AUDIO_DATA,
-                                        v3_get_user_id(),
-                                        codec->codec,
-                                        codec->format,
-                                        ev.pcm.length,
-                                        datalen,
-                                        data);
                                 free(data);
                                 data = NULL;
                             }
@@ -873,8 +893,10 @@ _v3_recv(int block) {/*{{{*/
 
                             _v3_debug(V3_DEBUG_INFO, "got outbound user talk end event");
                             msg = _v3_put_0x52(V3_AUDIO_STOP, -1, -1, 0, 0, 0, NULL);
-                            if (!_v3_send(msg)) {
-                                 _v3_debug(V3_DEBUG_SOCKET, "failed to send user talk end message");
+                            if (_v3_send(msg)) {
+                                _v3_debug(V3_DEBUG_SOCKET, "sent user talk end message to server");
+                            } else {
+                                _v3_debug(V3_DEBUG_SOCKET, "failed to send user talk end message");
                             }
                             _v3_destroy_packet(msg);
                             _v3_vrf_record_event(V3_VRF_EVENT_AUDIO_STOP, v3_get_user_id(), -1, -1, 0, 0, NULL);
@@ -893,6 +915,8 @@ _v3_recv(int block) {/*{{{*/
                             free(user->integration_text);
                             if (ev.flags & 0x100) {
                                 user->bitfield |= 0x100;
+                            } else {
+                                user->bitfield &= ~0x100;
                             }
                             user->name = strdup("");
                             user->phonetic = strdup("");
@@ -902,9 +926,9 @@ _v3_recv(int block) {/*{{{*/
                             _v3_debug(V3_DEBUG_INFO, "setting cm: %s, url: %s, integration: %s", ev.text.comment, ev.text.url, ev.text.integration_text);
                             msg = _v3_put_0x5d(V3_MODIFY_USER, 1, user);
                             if (_v3_send(msg)) {
-                                _v3_debug(V3_DEBUG_SOCKET, "sent text string changes to server");
+                                _v3_debug(V3_DEBUG_SOCKET, "sent text string change message to server");
                             } else {
-                                _v3_debug(V3_DEBUG_SOCKET, "failed to send text string changes message");
+                                _v3_debug(V3_DEBUG_SOCKET, "failed to send text string change message");
                             }
                             v3_free_user(user);
                             _v3_destroy_packet(msg);
@@ -914,7 +938,7 @@ _v3_recv(int block) {/*{{{*/
                         {
                             _v3_net_message *msg = _v3_put_0x42(V3_JOIN_CHAT, v3_luser.id, NULL);
                             if (_v3_send(msg)) {
-                                _v3_debug(V3_DEBUG_SOCKET, "sent join chat request to server");
+                                _v3_debug(V3_DEBUG_SOCKET, "sent join chat request message to server");
                             } else {
                                 _v3_debug(V3_DEBUG_SOCKET, "failed to send join chat request message");
                             }
@@ -925,7 +949,7 @@ _v3_recv(int block) {/*{{{*/
                         {
                             _v3_net_message *msg = _v3_put_0x42(V3_LEAVE_CHAT, v3_luser.id, NULL);
                             if (_v3_send(msg)) {
-                                _v3_debug(V3_DEBUG_SOCKET, "sent leave chat request to server");
+                                _v3_debug(V3_DEBUG_SOCKET, "sent leave chat request message to server");
                             } else {
                                 _v3_debug(V3_DEBUG_SOCKET, "failed to send leave chat request message");
                             }
@@ -2408,40 +2432,41 @@ void *
 v3_vrf_init(const char *filename) {/*{{{*/
     _v3_func_enter("v3_vrf_init");
 
-    v3_vrf *vrfh = malloc(sizeof(v3_vrf));
-    memset(vrfh, 0, sizeof(v3_vrf));
+    _v3_vrf *vrfh = malloc(sizeof(_v3_vrf));
+    memset(vrfh, 0, sizeof(_v3_vrf));
+    vrfh->file = -1;
     _v3_debug(V3_DEBUG_MUTEX, "initializing vrf mutex");
     pthread_mutexattr_t mta;
     pthread_mutexattr_init(&mta);
-    pthread_mutexattr_settype(&mta, PTHREAD_MUTEX_ERRORCHECK);
+    pthread_mutexattr_settype(&mta, PTHREAD_MUTEX_RECURSIVE);
     pthread_mutex_init(&vrfh->mutex, &mta);
-    if (filename && strlen(filename)) {
-        if (!(vrfh->file = fopen(filename, "rb+"))) {
-            _v3_error("%s: %s", filename, strerror(errno));
-            free(vrfh);
-            _v3_func_leave("v3_vrf_init");
-            return NULL;
-        }
-        vrfh->filename = strdup(filename);
-        _v3_debug(V3_DEBUG_INFO, "opened file for reading: %s", vrfh->filename);
-        fseek(vrfh->file, 0, SEEK_END);
-        vrfh->filelen = ftell(vrfh->file);
-        rewind(vrfh->file);
-        _v3_debug(V3_DEBUG_INFO, "file size: %u", vrfh->filelen);
-        if (!vrfh->filelen) {
-            _v3_error("%s: file is empty", filename);
+    if (filename) {
+        if ((vrfh->file = open(filename, O_RDONLY)) < 0) {
+            _v3_error("%s: open file for reading failed: %s", filename, strerror(errno));
             v3_vrf_destroy(vrfh);
             _v3_func_leave("v3_vrf_init");
             return NULL;
         }
+        vrfh->filename = strdup(filename);
+        _v3_debug(V3_DEBUG_INFO, "opened file %i for reading: %s", vrfh->file, vrfh->filename);
+        int64_t ret;
+        if ((ret = lseek(vrfh->file, 0, SEEK_END)) <= 0) {
+            _v3_error("%s: %s", vrfh->filename, (!ret) ? "file is empty" : strerror(errno));
+            v3_vrf_destroy(vrfh);
+            _v3_func_leave("v3_vrf_init");
+            return NULL;
+        }
+        vrfh->filelen = ret;
+        _v3_debug(V3_DEBUG_INFO, "file size: %u", vrfh->filelen);
         if (_v3_vrf_get_header(vrfh) != V3_OK) {
             v3_vrf_destroy(vrfh);
             _v3_func_leave("v3_vrf_init");
             return NULL;
         }
-        if (!strncmp(vrfh->header.headid, V3_VRF_TEMPID, sizeof(vrfh->header.headid)) &&
-            _v3_vrf_recover(vrfh) != V3_OK) {
-            _v3_error("%s: failed to recover vrf segment table", filename);
+        if (_v3_vrf_recover(vrfh) != V3_OK) {
+            char *error_text = strdup(_v3_error(NULL));
+            _v3_error("failed to recover vrf segment table: %s", error_text);
+            free(error_text);
             v3_vrf_destroy(vrfh);
             _v3_func_leave("v3_vrf_init");
             return NULL;
@@ -2456,11 +2481,11 @@ void
 v3_vrf_destroy(void *vrfh) {/*{{{*/
     _v3_func_enter("v3_vrf_destroy");
 
-    v3_vrf *_vrfh = vrfh;
     if (!vrfh) {
         _v3_func_leave("v3_vrf_destroy");
         return;
     }
+    _v3_vrf *_vrfh = vrfh;
     if (_vrfh->table) {
         free(_vrfh->table);
         _vrfh->table = NULL;
@@ -2469,13 +2494,12 @@ v3_vrf_destroy(void *vrfh) {/*{{{*/
         free(_vrfh->filename);
         _vrfh->filename = NULL;
     }
-    if (_vrfh->file) {
-        fclose(_vrfh->file);
-        _vrfh->file = NULL;
+    if (_vrfh->file >= 0) {
+        close(_vrfh->file);
+        _vrfh->file = -1;
     }
     pthread_mutex_destroy(&_vrfh->mutex);
     free(vrfh);
-    vrfh = NULL;
 
     _v3_func_leave("v3_vrf_destroy");
 }/*}}}*/
@@ -2524,7 +2548,7 @@ v3_vrf_data_destroy(v3_vrf_data *vrfd) {/*{{{*/
 }/*}}}*/
 
 void
-_v3_vrf_lock(v3_vrf *vrfh) {/*{{{*/
+_v3_vrf_lock(_v3_vrf *vrfh) {/*{{{*/
     _v3_func_enter("_v3_vrf_lock");
 
     _v3_debug(V3_DEBUG_MUTEX, "locking vrf");
@@ -2534,7 +2558,7 @@ _v3_vrf_lock(v3_vrf *vrfh) {/*{{{*/
 }/*}}}*/
 
 void
-_v3_vrf_unlock(v3_vrf *vrfh) {/*{{{*/
+_v3_vrf_unlock(_v3_vrf *vrfh) {/*{{{*/
     _v3_func_enter("_v3_vrf_unlock");
 
     _v3_debug(V3_DEBUG_MUTEX, "unlocking vrf");
@@ -2544,7 +2568,7 @@ _v3_vrf_unlock(v3_vrf *vrfh) {/*{{{*/
 }/*}}}*/
 
 void
-_v3_vrf_print_header(const v3_vrf_header *header) {/*{{{*/
+_v3_vrf_print_header(const _v3_vrf_header *header) {/*{{{*/
     _v3_func_enter("_v3_vrf_print_header");
 
     _v3_debug(V3_DEBUG_INFO, "headid.....: %.*s", sizeof(header->headid), header->headid);
@@ -2571,7 +2595,7 @@ _v3_vrf_print_header(const v3_vrf_header *header) {/*{{{*/
 }/*}}}*/
 
 void
-_v3_vrf_print_info(const v3_vrf_header *header) {/*{{{*/
+_v3_vrf_print_info(const _v3_vrf_header *header) {/*{{{*/
     _v3_func_enter("_v3_vrf_print_info");
 
     _v3_debug(V3_DEBUG_INFO, "size.......: %u", header->size);
@@ -2588,10 +2612,10 @@ _v3_vrf_print_info(const v3_vrf_header *header) {/*{{{*/
 }/*}}}*/
 
 void
-_v3_vrf_print_segment(uint32_t id, const v3_vrf_segment *segment) {/*{{{*/
+_v3_vrf_print_segment(uint32_t id, const _v3_vrf_segment *segment) {/*{{{*/
     _v3_func_enter("_v3_vrf_print_segment");
 
-    _v3_debug(V3_DEBUG_INFO, "--- segment %i ---", id);
+    _v3_debug(V3_DEBUG_INFO, "--- segment %u ---", id);
     _v3_debug(V3_DEBUG_INFO, "headlen.: %u", segment->headlen);
     _v3_debug(V3_DEBUG_INFO, "type....: 0x%02x", segment->type);
     _v3_debug(V3_DEBUG_INFO, "valid...: %u", segment->valid);
@@ -2606,7 +2630,7 @@ _v3_vrf_print_segment(uint32_t id, const v3_vrf_segment *segment) {/*{{{*/
 }/*}}}*/
 
 void
-_v3_vrf_print_audio(const v3_vrf_audio *audio) {/*{{{*/
+_v3_vrf_print_audio(const _v3_vrf_audio *audio) {/*{{{*/
     _v3_func_enter("_v3_vrf_print_audio");
 
     _v3_debug(V3_DEBUG_INFO, "headlen..: %u", audio->headlen);
@@ -2622,7 +2646,7 @@ _v3_vrf_print_audio(const v3_vrf_audio *audio) {/*{{{*/
 }/*}}}*/
 
 void
-_v3_vrf_print_fragment(uint32_t type, const v3_vrf_fragment *fragment) {/*{{{*/
+_v3_vrf_print_fragment(uint32_t type, const _v3_vrf_fragment *fragment) {/*{{{*/
     _v3_func_enter("_v3_vrf_print_fragment");
 
     _v3_debug(V3_DEBUG_INFO, "headlen....: %u", fragment->headlen);
@@ -2641,7 +2665,7 @@ _v3_vrf_print_fragment(uint32_t type, const v3_vrf_fragment *fragment) {/*{{{*/
 }/*}}}*/
 
 int
-_v3_vrf_get_header(v3_vrf *vrfh) {/*{{{*/
+_v3_vrf_get_header(_v3_vrf *vrfh) {/*{{{*/
     _v3_func_enter("_v3_vrf_get_header");
 
     if (!vrfh) {
@@ -2649,14 +2673,15 @@ _v3_vrf_get_header(v3_vrf *vrfh) {/*{{{*/
         return V3_FAILURE;
     }
     _v3_vrf_lock(vrfh);
-    rewind(vrfh->file);
-    if (!fread(&vrfh->header, sizeof(v3_vrf_header), 1, vrfh->file)) {
-        _v3_error("%s: failed to get vrf header: %s", vrfh->filename, strerror(errno));
+    int64_t ret;
+    if ((ret = lseek(vrfh->file, 0, SEEK_SET)) < 0 ||
+        (ret = read(vrfh->file, &vrfh->header, sizeof(_v3_vrf_header))) < sizeof(_v3_vrf_header)) {
+        _v3_error("%s: failed to get vrf header: %s", vrfh->filename, (ret >= 0) ? "EOF reached" : strerror(errno));
         _v3_vrf_unlock(vrfh);
         _v3_func_leave("_v3_vrf_get_header");
         return V3_FAILURE;
     }
-    v3_vrf_header *header = &vrfh->header;
+    _v3_vrf_header *header = &vrfh->header;
     header->size        = ntohl(header->size);
     header->headlen     = ntohl(header->headlen);
     header->unknown1    = ntohl(header->unknown1);
@@ -2672,7 +2697,7 @@ _v3_vrf_get_header(v3_vrf *vrfh) {/*{{{*/
     _v3_vrf_print_header(header);
     if (strncmp(header->headid, V3_VRF_HEADID, sizeof(header->headid)) &&
         strncmp(header->headid, V3_VRF_TEMPID, sizeof(header->headid))) {
-        _v3_error("%s: unrecognized file header id", vrfh->filename);
+        _v3_error("%s: file header not recognized as a vrf", vrfh->filename);
         _v3_vrf_unlock(vrfh);
         _v3_func_leave("_v3_vrf_get_header");
         return V3_MALFORMED;
@@ -2691,7 +2716,7 @@ v3_vrf_get_count(void *vrfh) {/*{{{*/
         _v3_func_leave("v3_vrf_get_count");
         return 0;
     }
-    v3_vrf *_vrfh = vrfh;
+    _v3_vrf *_vrfh = vrfh;
     _v3_debug(V3_DEBUG_INFO, "segcount: %u", _vrfh->header.segcount);
 
     _v3_func_leave("v3_vrf_get_count");
@@ -2706,8 +2731,8 @@ v3_vrf_get_info(void *vrfh, v3_vrf_data *vrfd) {/*{{{*/
         _v3_func_leave("v3_vrf_get_info");
         return V3_FAILURE;
     }
-    v3_vrf *_vrfh = vrfh;
-    v3_vrf_header *header = &_vrfh->header;
+    _v3_vrf *_vrfh = vrfh;
+    _v3_vrf_header *header = &_vrfh->header;
     _v3_vrf_print_info(header);
     if (vrfd) {
         v3_vrf_data_init(vrfd);
@@ -2727,7 +2752,7 @@ v3_vrf_get_info(void *vrfh, v3_vrf_data *vrfd) {/*{{{*/
 }/*}}}*/
 
 int
-_v3_vrf_get_table(v3_vrf *vrfh) {/*{{{*/
+_v3_vrf_get_table(_v3_vrf *vrfh) {/*{{{*/
     _v3_func_enter("_v3_vrf_get_table");
 
     if (!vrfh) {
@@ -2740,18 +2765,19 @@ _v3_vrf_get_table(v3_vrf *vrfh) {/*{{{*/
         free(vrfh->table);
         vrfh->table = NULL;
     }
-    vrfh->tablesize = sizeof(v3_vrf_segment) * vrfh->header.segcount;
-    if (!vrfh->header.segtable || vrfh->tablesize + vrfh->header.segtable > vrfh->filelen) {
-        _v3_error("%s: vrf is corrupted", vrfh->filename);
+    vrfh->tablesize = sizeof(_v3_vrf_segment) * vrfh->header.segcount;
+    if (!vrfh->header.segtable || !vrfh->tablesize || vrfh->header.segtable + vrfh->tablesize > vrfh->filelen) {
+        _v3_error("%s: %s", vrfh->filename, (!vrfh->tablesize) ? "no segment count" : "invalid vrf segment table offset");
         _v3_vrf_unlock(vrfh);
         _v3_func_leave("_v3_vrf_get_table");
         return V3_MALFORMED;
     }
     vrfh->table = malloc(vrfh->tablesize);
     memset(vrfh->table, 0, vrfh->tablesize);
-    fseek(vrfh->file, vrfh->header.segtable, SEEK_SET);
-    if (!fread(vrfh->table, vrfh->tablesize, 1, vrfh->file)) {
-        _v3_error("%s: failed to get vrf segment table: %s", vrfh->filename, strerror(errno));
+    int64_t ret;
+    if ((ret = lseek(vrfh->file, vrfh->header.segtable, SEEK_SET)) < 0 ||
+        (ret = read(vrfh->file, vrfh->table, vrfh->tablesize)) < vrfh->tablesize) {
+        _v3_error("%s: failed to get vrf segment table: %s", vrfh->filename, (ret >= 0) ? "EOF reached" : strerror(errno));
         vrfh->tablesize = 0;
         free(vrfh->table);
         vrfh->table = NULL;
@@ -2761,7 +2787,7 @@ _v3_vrf_get_table(v3_vrf *vrfh) {/*{{{*/
     }
     uint32_t ctr;
     for (ctr = 0; ctr < vrfh->header.segcount; ctr++) {
-        v3_vrf_segment *segment = &vrfh->table[ctr];
+        _v3_vrf_segment *segment = &vrfh->table[ctr];
         segment->headlen  = ntohl(segment->headlen);
         segment->type     = ntohl(segment->type);
         segment->valid    = ntohl(segment->valid);
@@ -2778,7 +2804,7 @@ _v3_vrf_get_table(v3_vrf *vrfh) {/*{{{*/
 }/*}}}*/
 
 int
-_v3_vrf_check_table(v3_vrf *vrfh) {/*{{{*/
+_v3_vrf_check_table(_v3_vrf *vrfh) {/*{{{*/
     _v3_func_enter("_v3_vrf_check_table");
 
     if (!vrfh) {
@@ -2789,44 +2815,39 @@ _v3_vrf_check_table(v3_vrf *vrfh) {/*{{{*/
         _v3_func_leave("_v3_vrf_check_table");
         return V3_FAILURE;
     }
-    if (!vrfh->header.segcount || vrfh->header.segtable == vrfh->filelen) {
-        _v3_error("%s: no segments", vrfh->filename);
-        _v3_func_leave("_v3_vrf_check_table");
-        return V3_FAILURE;
-    }
 
     _v3_func_leave("_v3_vrf_check_table");
     return V3_OK;
 }/*}}}*/
 
-v3_vrf_segment *
-_v3_vrf_get_segment(v3_vrf *vrfh, uint32_t id) {/*{{{*/
+int
+_v3_vrf_get_segment(_v3_vrf *vrfh, uint32_t id, _v3_vrf_segment **segment) {/*{{{*/
     _v3_func_enter("_v3_vrf_get_segment");
 
-    if (!vrfh) {
+    if (!vrfh || !segment) {
         _v3_func_leave("_v3_vrf_get_segment");
-        return NULL;
+        return V3_FAILURE;
     }
-    if (!vrfh->file || !vrfh->filename) {
+    if (vrfh->file < 0 || !vrfh->filename) {
         _v3_error("%p: no file opened", vrfh);
         _v3_func_leave("_v3_vrf_get_segment");
-        return NULL;
+        return V3_FAILURE;
     }
     if (id > vrfh->header.segcount) {
         _v3_error("%s: requested id greater than segment count", vrfh->filename);
         _v3_func_leave("_v3_vrf_get_segment");
-        return NULL;
+        return V3_FAILURE;
     }
     if (_v3_vrf_check_table(vrfh) != V3_OK) {
         _v3_func_leave("_v3_vrf_get_segment");
-        return NULL;
+        return V3_FAILURE;
     }
-    v3_vrf *_vrfh = vrfh;
-    v3_vrf_segment *segment = &_vrfh->table[id];
-    _v3_vrf_print_segment(id, segment);
+    _v3_vrf *_vrfh = vrfh;
+    *segment = &_vrfh->table[id];
+    _v3_vrf_print_segment(id, *segment);
 
     _v3_func_leave("_v3_vrf_get_segment");
-    return segment;
+    return V3_OK;
 }/*}}}*/
 
 int
@@ -2837,8 +2858,8 @@ v3_vrf_get_segment(void *vrfh, uint32_t id, v3_vrf_data *vrfd) {/*{{{*/
         _v3_func_leave("v3_vrf_get_segment");
         return V3_FAILURE;
     }
-    v3_vrf_segment *segment;
-    if (!(segment = _v3_vrf_get_segment(vrfh, id))) {
+    _v3_vrf_segment *segment;
+    if (_v3_vrf_get_segment(vrfh, id, &segment) != V3_OK) {
         _v3_func_leave("v3_vrf_get_segment");
         return V3_FAILURE;
     }
@@ -2855,7 +2876,7 @@ v3_vrf_get_segment(void *vrfh, uint32_t id, v3_vrf_data *vrfd) {/*{{{*/
 }/*}}}*/
 
 int
-_v3_vrf_get_audio(v3_vrf *vrfh, uint32_t offset, v3_vrf_audio *audio) {/*{{{*/
+_v3_vrf_get_audio(_v3_vrf *vrfh, uint32_t offset, _v3_vrf_audio *audio) {/*{{{*/
     _v3_func_enter("_v3_vrf_get_audio");
 
     if (!vrfh || !audio) {
@@ -2863,9 +2884,10 @@ _v3_vrf_get_audio(v3_vrf *vrfh, uint32_t offset, v3_vrf_audio *audio) {/*{{{*/
         return V3_FAILURE;
     }
     _v3_vrf_lock(vrfh);
-    fseek(vrfh->file, offset, SEEK_SET);
-    if (!fread(audio, sizeof(v3_vrf_audio), 1, vrfh->file)) {
-        _v3_error("%s: failed to get vrf audio segment: %s", vrfh->filename, strerror(errno));
+    int64_t ret;
+    if ((ret = lseek(vrfh->file, offset, SEEK_SET)) < 0 ||
+        (ret = read(vrfh->file, audio, sizeof(_v3_vrf_audio))) < sizeof(_v3_vrf_audio)) {
+        _v3_error("%s: failed to get vrf audio segment: %s", vrfh->filename, (ret >= 0) ? "EOF reached" : strerror(errno));
         _v3_vrf_unlock(vrfh);
         _v3_func_leave("_v3_vrf_get_audio");
         return V3_FAILURE;
@@ -2886,7 +2908,7 @@ _v3_vrf_get_audio(v3_vrf *vrfh, uint32_t offset, v3_vrf_audio *audio) {/*{{{*/
 }/*}}}*/
 
 int
-_v3_vrf_get_fragment(v3_vrf *vrfh, uint32_t type, uint32_t *offset, v3_vrf_fragment *fragment, uint32_t *fraglen, void **fragdata) {/*{{{*/
+_v3_vrf_get_fragment(_v3_vrf *vrfh, uint32_t type, uint32_t *offset, _v3_vrf_fragment *fragment, uint32_t *fraglen, void **fragdata) {/*{{{*/
     _v3_func_enter("_v3_vrf_get_fragment");
 
     if (!vrfh || !offset || !fragment) {
@@ -2896,23 +2918,24 @@ _v3_vrf_get_fragment(v3_vrf *vrfh, uint32_t type, uint32_t *offset, v3_vrf_fragm
     uint32_t fragread;
     switch (type) {
       case V3_VRF_TYPE_AUDIO:
-        fragread = sizeof(v3_vrf_fragment) - sizeof(fragment->audio.ext);
+        fragread = sizeof(_v3_vrf_fragment) - sizeof(fragment->audio.ext);
         break;
       case V3_VRF_TYPE_TEXT:
-        fragread = sizeof(v3_vrf_fragment) - sizeof(fragment->audio);
+        fragread = sizeof(_v3_vrf_fragment) - sizeof(fragment->audio);
         break;
       case V3_VRF_TYPE_EXT:
-        fragread = sizeof(v3_vrf_fragment);
+        fragread = sizeof(_v3_vrf_fragment);
         break;
       default:
-        _v3_error("%s: unknown audio type: 0x%02x", vrfh->filename, type);
+        _v3_error("%s: unknown vrf audio type: 0x%02x", vrfh->filename, type);
         _v3_func_leave("_v3_vrf_get_fragment");
         return V3_FAILURE;
     }
     _v3_vrf_lock(vrfh);
-    fseek(vrfh->file, *offset, SEEK_SET);
-    if (!fread(fragment, fragread, 1, vrfh->file)) {
-        _v3_error("%s: failed to get vrf audio fragment: %s", vrfh->filename, strerror(errno));
+    int64_t ret;
+    if ((ret = lseek(vrfh->file, *offset, SEEK_SET)) < 0 ||
+        (ret = read(vrfh->file, fragment, fragread)) < fragread) {
+        _v3_error("%s: failed to get vrf audio fragment: %s", vrfh->filename, (ret >= 0) ? "EOF reached" : strerror(errno));
         _v3_vrf_unlock(vrfh);
         _v3_func_leave("_v3_vrf_get_fragment");
         return V3_FAILURE;
@@ -2940,16 +2963,16 @@ _v3_vrf_get_fragment(v3_vrf *vrfh, uint32_t type, uint32_t *offset, v3_vrf_fragm
         break;
     }
     if (fraglen && fragdata) {
-        if (!fragment->headlen || _fraglen > V3_VRF_MAX_FRAGLEN) {
-            _v3_error("%s: vrf fragment is corrupted", vrfh->filename);
+        if (!fragment->headlen || !_fraglen || _fraglen > V3_VRF_MAX_FRAGLEN) {
+            _v3_error("%s: invalid vrf audio fragment length", vrfh->filename);
             _v3_vrf_unlock(vrfh);
             _v3_func_leave("_v3_vrf_get_fragment");
             return V3_MALFORMED;
         }
         *fragdata = malloc(_fraglen);
         memset(*fragdata, 0, _fraglen);
-        if (!fread(*fragdata, _fraglen, 1, vrfh->file)) {
-            _v3_error("%s: failed to get vrf audio fragment data: %s", vrfh->filename, strerror(errno));
+        if ((ret = read(vrfh->file, *fragdata, _fraglen)) < _fraglen) {
+            _v3_error("%s: failed to get vrf audio fragment data: %s", vrfh->filename, (ret >= 0) ? "EOF reached" : strerror(errno));
             free(*fragdata);
             *fragdata = NULL;
             _v3_vrf_unlock(vrfh);
@@ -2973,25 +2996,24 @@ v3_vrf_get_audio(void *vrfh, uint32_t id, v3_vrf_data *vrfd) {/*{{{*/
         _v3_func_leave("v3_vrf_get_audio");
         return V3_FAILURE;
     }
-    v3_vrf *_vrfh = vrfh;
+    _v3_vrf *_vrfh = vrfh;
     vrfd->type = V3_VRF_DATA_NULL;
-    v3_vrf_audio *audio = vrfd->_audio;
+    _v3_vrf_audio *audio = vrfd->_audio;
     if (!audio) {
-        v3_vrf_segment *segment;
-        if (!(segment = _v3_vrf_get_segment(vrfh, id))) {
+        _v3_vrf_segment *segment;
+        if (_v3_vrf_get_segment(vrfh, id, &segment) != V3_OK) {
             _v3_func_leave("v3_vrf_get_audio");
             return V3_FAILURE;
         }
         if (!segment->offset || segment->offset >= _vrfh->header.segtable || segment->offset >= _vrfh->filelen) {
-            _v3_error("%s: vrf segment %i is corrupted", _vrfh->filename, id);
+            _v3_error("%s: invalid vrf segment offset", _vrfh->filename);
             _v3_func_leave("v3_vrf_get_audio");
             return V3_MALFORMED;
         }
-        audio = malloc(sizeof(v3_vrf_audio));
-        memset(audio, 0, sizeof(v3_vrf_audio));
+        audio = malloc(sizeof(_v3_vrf_audio));
+        memset(audio, 0, sizeof(_v3_vrf_audio));
         if (_v3_vrf_get_audio(vrfh, segment->offset, audio) != V3_OK) {
             free(audio);
-            _v3_vrf_unlock(vrfh);
             _v3_func_leave("v3_vrf_get_audio");
             return V3_FAILURE;
         }
@@ -2999,7 +3021,7 @@ v3_vrf_get_audio(void *vrfh, uint32_t id, v3_vrf_data *vrfd) {/*{{{*/
         vrfd->_audio = audio;
     }
     if (audio->fragcount --> 0) {
-        v3_vrf_fragment fragment;
+        _v3_vrf_fragment fragment;
         uint32_t fraglen;
         void *fragdata;
         if (_v3_vrf_get_fragment(vrfh, audio->type, &audio->offset, &fragment, &fraglen, &fragdata) != V3_OK) {
@@ -3064,15 +3086,15 @@ v3_vrf_get_audio(void *vrfh, uint32_t id, v3_vrf_data *vrfd) {/*{{{*/
 }/*}}}*/
 
 int
-_v3_vrf_put_header(v3_vrf *vrfh) {/*{{{*/
+_v3_vrf_put_header(_v3_vrf *vrfh) {/*{{{*/
     _v3_func_enter("_v3_vrf_put_header");
 
     if (!vrfh) {
         _v3_func_leave("_v3_vrf_put_header");
         return V3_FAILURE;
     }
-    v3_vrf_header _header;
-    memcpy(&_header, &vrfh->header, sizeof(v3_vrf_header));
+    _v3_vrf_header _header;
+    memcpy(&_header, &vrfh->header, sizeof(_v3_vrf_header));
     _v3_vrf_print_header(&_header);
     _header.size        = htonl(_header.size);
     _header.headlen     = htonl(_header.headlen);
@@ -3087,14 +3109,15 @@ _v3_vrf_put_header(v3_vrf *vrfh) {/*{{{*/
     _header.codecformat = htonl(_header.codecformat);
     _header.unknown4    = htonl(_header.unknown4);
     _v3_vrf_lock(vrfh);
-    rewind(vrfh->file);
-    if (!fwrite(&_header, sizeof(v3_vrf_header), 1, vrfh->file)) {
-        _v3_error("%s: failed to put vrf header: %s", vrfh->filename, strerror(errno));
+    int64_t ret;
+    if ((ret = lseek(vrfh->file, 0, SEEK_SET)) < 0 ||
+        (ret = write(vrfh->file, &_header, sizeof(_v3_vrf_header))) < sizeof(_v3_vrf_header)) {
+        _v3_error("%s: failed to put vrf header: %s", vrfh->filename, (ret >= 0) ? "FATAL partial write" : strerror(errno));
         _v3_vrf_unlock(vrfh);
         _v3_func_leave("_v3_vrf_put_header");
         return V3_FAILURE;
     }
-    fflush(vrfh->file);
+    fdatasync(vrfh->file);
     _v3_vrf_unlock(vrfh);
 
     _v3_func_leave("_v3_vrf_put_header");
@@ -3109,37 +3132,52 @@ v3_vrf_put_info(void *vrfh, const v3_vrf_data *vrfd) {/*{{{*/
         _v3_func_leave("v3_vrf_put_info");
         return V3_FAILURE;
     }
-    v3_vrf *_vrfh = vrfh;
-    if (!_vrfh->file || !_vrfh->filename) {
+    _v3_vrf *_vrfh = vrfh;
+    if (_vrfh->file < 0 || !_vrfh->filename) {
         _v3_error("%p: no file opened", vrfh);
         _v3_func_leave("v3_vrf_put_info");
         return V3_FAILURE;
     }
-    v3_vrf_header *header = &_vrfh->header;
+    _v3_vrf_lock(vrfh);
+    int fd = _vrfh->file;
+    if ((_vrfh->file = open(_vrfh->filename, O_RDWR)) < 0) {
+        _v3_error("%s: open file for writing failed: %s", _vrfh->filename, strerror(errno));
+        _vrfh->file = fd;
+        _v3_vrf_unlock(vrfh);
+        _v3_func_leave("v3_vrf_put_info");
+        return V3_FAILURE;
+    }
+    _v3_vrf_header *header = &_vrfh->header;
     strncpy(header->username,  vrfd->username,  sizeof(vrfd->username) - 1);
     strncpy(header->comment,   vrfd->comment,   sizeof(vrfd->comment) - 1);
     strncpy(header->url,       vrfd->url,       sizeof(vrfd->url) - 1);
     strncpy(header->copyright, vrfd->copyright, sizeof(vrfd->copyright) - 1);
     _v3_vrf_print_info(header);
     if (_v3_vrf_put_header(vrfh) != V3_OK) {
+        close(_vrfh->file);
+        _vrfh->file = fd;
+        _v3_vrf_unlock(vrfh);
         _v3_func_leave("v3_vrf_put_info");
         return V3_FAILURE;
     }
+    close(_vrfh->file);
+    _vrfh->file = fd;
+    _v3_vrf_unlock(vrfh);
 
     _v3_func_leave("v3_vrf_put_info");
     return V3_OK;
 }/*}}}*/
 
 uint32_t
-_v3_vrf_put_segment(uint32_t id, const v3_vrf_segment *segment, void *offset) {/*{{{*/
+_v3_vrf_put_segment(uint32_t id, const _v3_vrf_segment *segment, void *offset) {/*{{{*/
     _v3_func_enter("_v3_vrf_put_segment");
 
     if (!segment || !offset) {
         _v3_func_leave("_v3_vrf_put_segment");
         return 0;
     }
-    v3_vrf_segment _segment;
-    memcpy(&_segment, segment, sizeof(v3_vrf_segment));
+    _v3_vrf_segment _segment;
+    memcpy(&_segment, segment, sizeof(_v3_vrf_segment));
     _v3_vrf_print_segment(id, &_segment);
     _segment.headlen  = htonl(_segment.headlen);
     _segment.type     = htonl(_segment.type);
@@ -3149,22 +3187,22 @@ _v3_vrf_put_segment(uint32_t id, const v3_vrf_segment *segment, void *offset) {/
     _segment.duration = htonl(_segment.duration);
     _segment.unknown1 = htonl(_segment.unknown1);
     _segment.unknown2 = htonl(_segment.unknown2);
-    memcpy(offset, &_segment, sizeof(v3_vrf_segment));
+    memcpy(offset, &_segment, sizeof(_v3_vrf_segment));
 
     _v3_func_leave("_v3_vrf_put_segment");
-    return sizeof(v3_vrf_segment);
+    return sizeof(_v3_vrf_segment);
 }/*}}}*/
 
 uint32_t
-_v3_vrf_put_audio(const v3_vrf_audio *audio, void *offset) {/*{{{*/
+_v3_vrf_put_audio(const _v3_vrf_audio *audio, void *offset) {/*{{{*/
     _v3_func_enter("_v3_vrf_put_audio");
 
     if (!audio || !offset) {
         _v3_func_leave("_v3_vrf_put_audio");
         return 0;
     }
-    v3_vrf_audio _audio;
-    memcpy(&_audio, audio, sizeof(v3_vrf_audio));
+    _v3_vrf_audio _audio;
+    memcpy(&_audio, audio, sizeof(_v3_vrf_audio));
     _v3_vrf_print_audio(&_audio);
     _audio.headlen   = htonl(_audio.headlen);
     _audio.type      = htonl(_audio.type);
@@ -3174,14 +3212,14 @@ _v3_vrf_put_audio(const v3_vrf_audio *audio, void *offset) {/*{{{*/
     _audio.unknown2  = htonl(_audio.unknown2);
     _audio.unknown3  = htonl(_audio.unknown3);
     _audio.offset    = htonl(_audio.offset);
-    memcpy(offset, &_audio, sizeof(v3_vrf_audio));
+    memcpy(offset, &_audio, sizeof(_v3_vrf_audio));
 
     _v3_func_leave("_v3_vrf_put_audio");
-    return sizeof(v3_vrf_audio);
+    return sizeof(_v3_vrf_audio);
 }/*}}}*/
 
 uint32_t
-_v3_vrf_put_fragment(uint32_t type, const v3_vrf_fragment *fragment, void *offset) {/*{{{*/
+_v3_vrf_put_fragment(uint32_t type, const _v3_vrf_fragment *fragment, void *offset) {/*{{{*/
     _v3_func_enter("_v3_vrf_put_fragment");
 
     if (!fragment || !offset) {
@@ -3189,19 +3227,19 @@ _v3_vrf_put_fragment(uint32_t type, const v3_vrf_fragment *fragment, void *offse
         return 0;
     }
     uint32_t fragwrite;
-    v3_vrf_fragment _fragment;
-    memcpy(&_fragment, fragment, sizeof(v3_vrf_fragment));
+    _v3_vrf_fragment _fragment;
+    memcpy(&_fragment, fragment, sizeof(_v3_vrf_fragment));
     _v3_vrf_print_fragment(type, &_fragment);
-    fragwrite = sizeof(v3_vrf_fragment) - sizeof(_fragment.audio);
+    fragwrite = sizeof(_v3_vrf_fragment) - sizeof(_fragment.audio);
     _fragment.headlen = htonl(_fragment.headlen);
     _fragment.fraglen = htonl(_fragment.fraglen);
     if (type != V3_VRF_TYPE_TEXT) {
-        fragwrite = sizeof(v3_vrf_fragment) - sizeof(_fragment.audio.ext);
+        fragwrite = sizeof(_v3_vrf_fragment) - sizeof(_fragment.audio.ext);
         _fragment.audio.pcmlen   = htonl(_fragment.audio.pcmlen);
         _fragment.audio.unknown1 = htonl(_fragment.audio.unknown1);
     }
     if (type == V3_VRF_TYPE_EXT) {
-        fragwrite = sizeof(v3_vrf_fragment);
+        fragwrite = sizeof(_v3_vrf_fragment);
         _fragment.audio.ext.codec       = htons(_fragment.audio.ext.codec);
         _fragment.audio.ext.codecformat = htons(_fragment.audio.ext.codecformat);
         _fragment.audio.ext.unknown2    = htonl(_fragment.audio.ext.unknown2);
@@ -3213,23 +3251,23 @@ _v3_vrf_put_fragment(uint32_t type, const v3_vrf_fragment *fragment, void *offse
 }/*}}}*/
 
 void
-_v3_vrf_put_record(uint32_t user_id, uint32_t index, uint32_t type, const char *username, v3_vrf_rec *rec) {/*{{{*/
+_v3_vrf_put_record(uint32_t user_id, uint32_t index, uint32_t type, const char *username, _v3_vrf_rec *rec) {/*{{{*/
     _v3_func_enter("_v3_vrf_put_record");
 
     if (!rec) {
         _v3_func_leave("_v3_vrf_put_record");
         return;
     }
-    v3_vrf_segment *segment = &rec->segment;
+    _v3_vrf_segment *segment = &rec->segment;
     rec->user_id  = user_id;
     rec->index    = index;
     segment->type = type;
     if (username) {
         strncpy(segment->username, username, sizeof(segment->username) - 1);
     }
-    v3_vrf_audio audio;
-    memset(&audio, 0, sizeof(v3_vrf_audio));
-    audio.headlen = sizeof(v3_vrf_audio) + sizeof(segment->username);
+    _v3_vrf_audio audio;
+    memset(&audio, 0, sizeof(_v3_vrf_audio));
+    audio.headlen = sizeof(_v3_vrf_audio) + sizeof(segment->username);
     audio.type    = type;
     audio.index   = index;
     rec->data = malloc(audio.headlen);
@@ -3251,29 +3289,34 @@ _v3_vrf_record_event(
         uint16_t codecformat,
         uint32_t pcmlen,
         uint32_t datalen,
-        void *data) {/*{{{*/
+        const void *data) {/*{{{*/
     _v3_func_enter("_v3_vrf_record_event");
 
-    if (!_v3_vrfh) {
+    if (!v3_vrfh) {
         _v3_func_leave("_v3_vrf_record_event");
         return;
     }
+    struct timeval now;
+    gettimeofday(&now, NULL);
+    uint32_t time = now.tv_sec * 1000 + now.tv_usec / 1000 - v3_vrfh->start.tv_sec * 1000 + v3_vrfh->start.tv_usec / 1000;
+    pthread_mutex_lock(vrfh_mutex);
+    if (!v3_vrfh) {
+        pthread_mutex_unlock(vrfh_mutex);
+        _v3_func_leave("_v3_vrf_record_event");
+        return;
+    }
+    _v3_vrf_lock(v3_vrfh);
     v3_user *u;
     if (!(u = _v3_get_user(user_id))) {
         type = V3_VRF_EVENT_DATA_FLUSH;
     }
-    uint32_t time;
-    struct timeval now;
-    gettimeofday(&now, NULL);
-    time = now.tv_sec * 1000 + now.tv_usec / 1000 - _v3_vrfh->start.tv_sec * 1000 + _v3_vrfh->start.tv_usec / 1000;
-    _v3_vrf_lock(_v3_vrfh);
-    v3_vrf_rec *queue = &_v3_vrfh->queue;
-    v3_vrf_rec *rec = NULL;
+    _v3_vrf_rec *queue = &v3_vrfh->queue;
+    _v3_vrf_rec *rec = NULL;
     v3_event *ev = _v3_create_event(V3_EVENT_RECORD_UPDATE);
     switch (type) {
       case V3_VRF_EVENT_AUDIO_DATA:
       case V3_VRF_EVENT_TEXT_DATA:
-        if (!data || !u->allow_recording) {
+        if (!data || (!u->allow_recording && v3_vrfh->honored)) {
             break;
         }
         for (rec = queue; rec; rec = rec->next) {
@@ -3282,11 +3325,11 @@ _v3_vrf_record_event(
             }
             if (!rec->user_id || !rec->next) {
                 if (rec->user_id && !rec->next) {
-                    rec->next = malloc(sizeof(v3_vrf_rec));
-                    memset(rec->next, 0, sizeof(v3_vrf_rec));
+                    rec->next = malloc(sizeof(_v3_vrf_rec));
+                    memset(rec->next, 0, sizeof(_v3_vrf_rec));
                     rec = rec->next;
                 }
-                _v3_vrfh->header.segcount++;
+                v3_vrfh->header.segcount++;
                 break;
             }
         }
@@ -3300,11 +3343,11 @@ _v3_vrf_record_event(
             break;
         }
         if (!rec->user_id) {
-            _v3_vrf_put_record(user_id, _v3_vrfh->header.segcount - 1, V3_VRF_TYPE_EXT, u->name, rec);
+            _v3_vrf_put_record(user_id, v3_vrfh->header.segcount - 1, V3_VRF_TYPE_EXT, u->name, rec);
         }
-        v3_vrf_fragment fragment;
-        memset(&fragment, 0, sizeof(v3_vrf_fragment));
-        fragment.headlen = sizeof(v3_vrf_fragment);
+        _v3_vrf_fragment fragment;
+        memset(&fragment, 0, sizeof(_v3_vrf_fragment));
+        fragment.headlen = sizeof(_v3_vrf_fragment);
         fragment.fraglen = datalen;
         fragment.audio.pcmlen   = pcmlen;
         fragment.audio.unknown1 = time;
@@ -3332,11 +3375,11 @@ _v3_vrf_record_event(
             break;
         }
         if (!rec->user_id) {
-            _v3_vrf_put_record(user_id, _v3_vrfh->header.segcount - 1, V3_VRF_TYPE_TEXT, u->name, rec);
+            _v3_vrf_put_record(user_id, v3_vrfh->header.segcount - 1, V3_VRF_TYPE_TEXT, u->name, rec);
         }
-        v3_vrf_fragment fragment;
-        memset(&fragment, 0, sizeof(v3_vrf_fragment));
-        fragment.headlen = sizeof(v3_vrf_fragment) + V3_VRF_TEXTLEN - sizeof(fragment.audio);
+        _v3_vrf_fragment fragment;
+        memset(&fragment, 0, sizeof(_v3_vrf_fragment));
+        fragment.headlen = sizeof(_v3_vrf_fragment) + V3_VRF_TEXTLEN - sizeof(fragment.audio);
         fragment.fraglen = time;
         rec->data = realloc(rec->data, rec->datalen + fragment.headlen);
         memset(rec->data + rec->datalen, 0, fragment.headlen);
@@ -3380,12 +3423,17 @@ _v3_vrf_record_event(
     }
     for (rec = queue; rec; rec = rec->next) {
         if (rec->data && (rec == queue || rec->stopped)) {
-            fseek(_v3_vrfh->file, 0, SEEK_END);
-            if (!rec->segment.offset) {
-                rec->segment.offset = ftell(_v3_vrfh->file);
-            }
-            if (!fwrite(rec->data, rec->datalen, 1, _v3_vrfh->file)) {
-                _v3_error("%s: FATAL: failed to put vrf data: %s", _v3_vrfh->filename, strerror(errno));
+            int64_t ret;
+            if ((ret = lseek(v3_vrfh->file, 0, SEEK_END)) >= 0) {
+                if (!rec->segment.valid) {
+                    rec->segment.valid = true;
+                    rec->segment.offset = ret;
+                }
+                if ((ret = write(v3_vrfh->file, rec->data, rec->datalen)) < rec->datalen) {
+                    _v3_error("%s: FATAL: failed to put vrf data: %s", v3_vrfh->filename, (ret >= 0) ? "FATAL partial write" : strerror(errno));
+                }
+            } else {
+                _v3_error("%s: FATAL: failed to seek to EOF: %s", v3_vrfh->filename, strerror(errno));
             }
             rec->datalen = 0;
             free(rec->data);
@@ -3396,39 +3444,42 @@ _v3_vrf_record_event(
         }
     }
     while (queue->stopped) {
-        v3_vrf_segment *segment = &queue->segment;
-        segment->headlen   = sizeof(v3_vrf_segment);
-        segment->valid     = true;
+        _v3_vrf_segment *segment = &queue->segment;
+        segment->headlen   = sizeof(_v3_vrf_segment);
         segment->duration -= segment->time;
-        _v3_vrfh->table = realloc(_v3_vrfh->table, _v3_vrfh->tablesize + segment->headlen);
-        _v3_vrfh->tablesize += _v3_vrf_put_segment(queue->index, segment, (void *)_v3_vrfh->table + _v3_vrfh->tablesize);
-        v3_vrf_audio audio;
-        memset(&audio, 0, sizeof(v3_vrf_audio));
-        if (_v3_vrf_get_audio(_v3_vrfh, segment->offset, &audio) == V3_OK) {
+        v3_vrfh->table = realloc(v3_vrfh->table, v3_vrfh->tablesize + segment->headlen);
+        v3_vrfh->tablesize += _v3_vrf_put_segment(queue->index, segment, (void *)v3_vrfh->table + v3_vrfh->tablesize);
+        _v3_vrf_audio audio;
+        memset(&audio, 0, sizeof(_v3_vrf_audio));
+        if (_v3_vrf_get_audio(v3_vrfh, segment->offset, &audio) == V3_OK) {
             audio.fragcount = queue->fragcount;
             _v3_vrf_put_audio(&audio, &audio);
-            fseek(_v3_vrfh->file, segment->offset, SEEK_SET);
-            fwrite(&audio, sizeof(v3_vrf_audio), 1, _v3_vrfh->file);
-            fflush(_v3_vrfh->file);
+            int64_t ret;
+            if ((ret = lseek(v3_vrfh->file, segment->offset, SEEK_SET)) < 0 ||
+                (ret = write(v3_vrfh->file, &audio, sizeof(_v3_vrf_audio))) < sizeof(_v3_vrf_audio)) {
+                _v3_error("%s: FATAL: failed to put vrf audio segment: %s", v3_vrfh->filename, (ret >= 0) ? "FATAL partial write" : strerror(errno));
+            }
+            fdatasync(v3_vrfh->file);
         }
-        v3_vrf_rec *next;
+        _v3_vrf_rec *next;
         if ((next = queue->next)) {
-            memcpy(queue, next, sizeof(v3_vrf_rec));
+            memcpy(queue, next, sizeof(_v3_vrf_rec));
             free(next);
         } else {
-            memset(queue, 0, sizeof(v3_vrf_rec));
+            memset(queue, 0, sizeof(_v3_vrf_rec));
         }
     }
     if (ev) {
         v3_queue_event(ev);
     }
-    _v3_vrf_unlock(_v3_vrfh);
+    _v3_vrf_unlock(v3_vrfh);
+    pthread_mutex_unlock(vrfh_mutex);
 
     _v3_func_leave("_v3_vrf_record_event");
 }/*}}}*/
 
 void
-_v3_vrf_record_finish(v3_vrf *vrfh, uint32_t segtable) {/*{{{*/
+_v3_vrf_record_finish(_v3_vrf *vrfh, uint32_t segtable) {/*{{{*/
     _v3_func_enter("_v3_vrf_record_finish");
 
     if (!vrfh) {
@@ -3436,19 +3487,19 @@ _v3_vrf_record_finish(v3_vrf *vrfh, uint32_t segtable) {/*{{{*/
         return;
     }
     if (vrfh->table) {
-        fseek(vrfh->file, segtable, SEEK_SET);
-        if (!fwrite(vrfh->table, vrfh->tablesize, 1, vrfh->file)) {
-            _v3_error("%s: FATAL: failed to put vrf segment table: %s", vrfh->filename, strerror(errno));
+        int64_t ret;
+        if ((ret = lseek(vrfh->file, segtable, SEEK_SET)) < 0 ||
+            (ret = write(vrfh->file, vrfh->table, vrfh->tablesize)) < vrfh->tablesize) {
+            _v3_error("%s: FATAL: failed to put vrf segment table: %s", vrfh->filename, (ret >= 0) ? "FATAL partial write" : strerror(errno));
         }
-        fflush(vrfh->file);
+        fdatasync(vrfh->file);
         vrfh->tablesize = 0;
         free(vrfh->table);
         vrfh->table = NULL;
     }
     vrfh->header.segtable = segtable;
     strncpy(vrfh->header.headid, V3_VRF_HEADID, sizeof(vrfh->header.headid));
-    fseek(vrfh->file, 0, SEEK_END);
-    vrfh->filelen = ftell(vrfh->file);
+    vrfh->filelen = lseek(vrfh->file, 0, SEEK_END);
     vrfh->header.size = vrfh->filelen;
     _v3_vrf_put_header(vrfh);
 
@@ -3456,11 +3507,11 @@ _v3_vrf_record_finish(v3_vrf *vrfh, uint32_t segtable) {/*{{{*/
 }/*}}}*/
 
 int
-v3_vrf_record_start(const char *filename) {/*{{{*/
+v3_vrf_record_start(const char *filename, uint8_t dishonor) {/*{{{*/
     _v3_func_enter("v3_vrf_record_start");
 
-    if (_v3_vrfh) {
-        _v3_error("vrf is recording: %s", _v3_vrfh->filename);
+    if (v3_vrfh) {
+        _v3_error("vrf is recording: %s", v3_vrfh->filename);
         _v3_func_leave("v3_vrf_record_start");
         return V3_FAILURE;
     }
@@ -3469,21 +3520,21 @@ v3_vrf_record_start(const char *filename) {/*{{{*/
         _v3_func_leave("v3_vrf_record_start");
         return V3_FAILURE;
     }
-    v3_vrf *vrfh;
+    _v3_vrf *vrfh;
     if (!(vrfh = v3_vrf_init(NULL))) {
         _v3_func_leave("v3_vrf_record_start");
         return V3_FAILURE;
     }
-    if (!(vrfh->file = fopen(filename, "wb+"))) {
-        _v3_error("%s: %s", filename, strerror(errno));
+    if ((vrfh->file = open(filename, O_RDWR | O_CREAT | O_EXCL, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH)) < 0) {
+        _v3_error("%s: create file for writing failed: %s", filename, strerror(errno));
         v3_vrf_destroy(vrfh);
         _v3_func_leave("v3_vrf_record_start");
         return V3_FAILURE;
     }
     vrfh->filename = strdup(filename);
-    _v3_debug(V3_DEBUG_INFO, "opened file for writing: %s", vrfh->filename);
+    _v3_debug(V3_DEBUG_INFO, "created file %i for writing: %s", vrfh->file, vrfh->filename);
     gettimeofday(&vrfh->start, NULL);
-    v3_vrf_header *header = &vrfh->header;
+    _v3_vrf_header *header = &vrfh->header;
     strncpy(header->headid, V3_VRF_TEMPID, sizeof(header->headid));
     header->headlen     = V3_VRF_HEADLEN;
     header->vrfversion  = V3_VRF_VERSION;
@@ -3498,7 +3549,16 @@ v3_vrf_record_start(const char *filename) {/*{{{*/
         _v3_func_leave("v3_vrf_record_start");
         return V3_FAILURE;
     }
-    _v3_vrfh = vrfh;
+    if (!vrfh_mutex) {
+        _v3_debug(V3_DEBUG_MUTEX, "initializing vrf mutex");
+        pthread_mutexattr_t mta;
+        pthread_mutexattr_init(&mta);
+        pthread_mutexattr_settype(&mta, PTHREAD_MUTEX_RECURSIVE);
+        vrfh_mutex = malloc(sizeof(pthread_mutex_t));
+        pthread_mutex_init(vrfh_mutex, &mta);
+    }
+    vrfh->honored = !dishonor;
+    v3_vrfh = vrfh;
 
     _v3_func_leave("v3_vrf_record_start");
     return V3_OK;
@@ -3508,79 +3568,98 @@ void
 v3_vrf_record_stop(void) {/*{{{*/
     _v3_func_enter("v3_vrf_record_stop");
 
-    if (!_v3_vrfh) {
+    if (!v3_vrfh || v3_vrfh->stopped) {
         _v3_func_leave("v3_vrf_record_stop");
         return;
     }
-    v3_vrf *vrfh = _v3_vrfh;
-    _v3_vrf_lock(vrfh);
+    v3_vrfh->stopped = true;
+    pthread_mutex_lock(vrfh_mutex);
     _v3_vrf_record_event(V3_VRF_EVENT_DATA_FLUSH, v3_get_user_id(), -1, -1, 0, 0, NULL);
-    _v3_vrfh = NULL;
-    _v3_vrf_unlock(vrfh);
-    fseek(vrfh->file, 0, SEEK_END);
-    _v3_vrf_record_finish(vrfh, ftell(vrfh->file));
-    v3_vrf_destroy(vrfh);
+    int64_t ret;
+    if ((ret = lseek(v3_vrfh->file, 0, SEEK_END)) >= 0) {
+        _v3_vrf_record_finish(v3_vrfh, ret);
+        fsync(v3_vrfh->file);
+    }
+    v3_vrf_destroy(v3_vrfh);
+    v3_vrfh = NULL;
+    pthread_mutex_unlock(vrfh_mutex);
 
     _v3_func_leave("v3_vrf_record_stop");
 }/*}}}*/
 
 int
-_v3_vrf_recover(v3_vrf *vrfh) {/*{{{*/
+_v3_vrf_recover(_v3_vrf *vrfh) {/*{{{*/
     _v3_func_enter("_v3_vrf_recover");
 
-    if (!vrfh || !vrfh->filelen || vrfh->table || vrfh->header.segcount) {
+    if (!vrfh || !vrfh->filelen || vrfh->table) {
         _v3_func_leave("_v3_vrf_recover");
         return V3_FAILURE;
     }
     if (strncmp(vrfh->header.headid, V3_VRF_TEMPID, sizeof(vrfh->header.headid))) {
         _v3_func_leave("_v3_vrf_recover");
+        return V3_OK;
+    }
+    int fd = vrfh->file;
+    if ((vrfh->file = open(vrfh->filename, O_RDWR)) < 0) {
+        _v3_error("%s: open file for writing failed: %s", vrfh->filename, strerror(errno));
+        vrfh->file = fd;
+        _v3_func_leave("_v3_vrf_recover");
         return V3_FAILURE;
     }
-    uint32_t offset = sizeof(v3_vrf_header);
-    if (fseek(vrfh->file, offset, SEEK_SET)) {
+    uint32_t offset = sizeof(_v3_vrf_header);
+    if (lseek(vrfh->file, offset, SEEK_SET) < 0) {
+        _v3_error("%s: failed to seek to offset %u: %s", vrfh->filename, offset, strerror(errno));
+        close(vrfh->file);
+        vrfh->file = fd;
         _v3_func_leave("_v3_vrf_recover");
         return V3_FAILURE;
     }
     uint32_t headlen;
-    v3_vrf_audio audio;
-    v3_vrf_fragment fragment;
-    v3_vrf_segment *segment;
+    _v3_vrf_audio audio;
+    _v3_vrf_fragment fragment;
+    _v3_vrf_segment *segment;
+    vrfh->header.segcount = 0;
     while (offset + sizeof(headlen) < vrfh->filelen) {
-        if (fseek(vrfh->file, offset, SEEK_SET)) {
-            break;
-        }
-        if (!fread(&headlen, sizeof(headlen), 1, vrfh->file)) {
+        if (lseek(vrfh->file, offset, SEEK_SET) < 0 ||
+            read(vrfh->file, &headlen, sizeof(headlen)) < sizeof(headlen)) {
             break;
         }
         switch (ntohl(headlen)) {
-          case (sizeof(v3_vrf_audio) + sizeof(segment->username)):
-            memset(&audio, 0, sizeof(v3_vrf_audio));
+          case (sizeof(_v3_vrf_audio) + sizeof(segment->username)):
+            memset(&audio, 0, sizeof(_v3_vrf_audio));
             if (_v3_vrf_get_audio(vrfh, offset, &audio) != V3_OK) {
+                close(vrfh->file);
+                vrfh->file = fd;
                 _v3_func_leave("_v3_vrf_recover");
                 return V3_FAILURE;
             }
-            vrfh->table = realloc(vrfh->table, vrfh->tablesize + sizeof(v3_vrf_segment));
+            vrfh->table = realloc(vrfh->table, vrfh->tablesize + sizeof(_v3_vrf_segment));
             vrfh->header.segcount++;
             segment = &vrfh->table[vrfh->header.segcount - 1];
-            memset(segment, 0, sizeof(v3_vrf_segment));
-            segment->headlen = sizeof(v3_vrf_segment);
+            memset(segment, 0, sizeof(_v3_vrf_segment));
+            segment->headlen = sizeof(_v3_vrf_segment);
             segment->type    = audio.type;
             segment->offset  = offset;
-            fread(segment->username, sizeof(segment->username) - 1, 1, vrfh->file);
+            read(vrfh->file, segment->username, sizeof(segment->username) - 1);
             vrfh->tablesize += segment->headlen;
             offset += audio.headlen;
             break;
-          case (sizeof(v3_vrf_fragment)):
-          case (V3_VRF_TEXTLEN + (sizeof(v3_vrf_fragment) - sizeof(fragment.audio))):
+          case (sizeof(_v3_vrf_fragment)):
+          case (V3_VRF_TEXTLEN + (sizeof(_v3_vrf_fragment) - sizeof(fragment.audio))):
             if (!vrfh->header.segcount) {
+                _v3_error("%s: got fragment first", vrfh->filename);
+                close(vrfh->file);
+                vrfh->file = fd;
                 _v3_func_leave("_v3_vrf_recover");
                 return V3_FAILURE;
             }
             segment = &vrfh->table[vrfh->header.segcount - 1];
             segment->valid = true;
             segment->unknown1++;
-            memset(&fragment, 0, sizeof(v3_vrf_fragment));
+            memset(&fragment, 0, sizeof(_v3_vrf_fragment));
             if (_v3_vrf_get_fragment(vrfh, segment->type, &offset, &fragment, NULL, NULL) != V3_OK) {
+                close(vrfh->file);
+                vrfh->file = fd;
                 _v3_func_leave("_v3_vrf_recover");
                 return V3_FAILURE;
             }
@@ -3599,6 +3678,9 @@ _v3_vrf_recover(v3_vrf *vrfh) {/*{{{*/
             }
             break;
           default:
+            _v3_error("%s: unknown header length: %u", vrfh->filename, ntohl(headlen));
+            close(vrfh->file);
+            vrfh->file = fd;
             _v3_func_leave("_v3_vrf_recover");
             return V3_FAILURE;
         }
@@ -3607,19 +3689,25 @@ _v3_vrf_recover(v3_vrf *vrfh) {/*{{{*/
         uint32_t ctr;
         for (ctr = 0; ctr < vrfh->header.segcount; ctr++) {
             segment = &vrfh->table[ctr];
-            memset(&audio, 0, sizeof(v3_vrf_audio));
+            memset(&audio, 0, sizeof(_v3_vrf_audio));
             if (_v3_vrf_get_audio(vrfh, segment->offset, &audio) == V3_OK) {
                 audio.fragcount = segment->unknown1;
                 _v3_vrf_put_audio(&audio, &audio);
-                fseek(vrfh->file, segment->offset, SEEK_SET);
-                fwrite(&audio, sizeof(v3_vrf_audio), 1, vrfh->file);
+                if (lseek(vrfh->file, segment->offset, SEEK_SET) >= 0) {
+                    write(vrfh->file, &audio, sizeof(_v3_vrf_audio));
+                }
             }
             segment->unknown1 = 0;
             _v3_vrf_put_segment(ctr, segment, segment);
         }
     }
-    fseek(vrfh->file, 0, SEEK_END);
-    _v3_vrf_record_finish(vrfh, ftell(vrfh->file));
+    int64_t ret;
+    if ((ret = lseek(vrfh->file, 0, SEEK_END)) >= 0) {
+        _v3_vrf_record_finish(vrfh, ret);
+        fsync(vrfh->file);
+    }
+    close(vrfh->file);
+    vrfh->file = fd;
 
     _v3_func_leave("_v3_vrf_recover");
     return V3_OK;
@@ -4320,11 +4408,11 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                             _v3_debug(V3_DEBUG_INFO, "chat_filter...................: %d", prop.chat_filter);
                             _v3_debug(V3_DEBUG_INFO, "channel_order.................: %d", prop.channel_order);
                             _v3_debug(V3_DEBUG_INFO, "motd_display..................: %d", prop.motd_display);
-                            _v3_debug(V3_DEBUG_INFO, "chat spam filt................: %d, %d, %d", prop.chat_spam_filter.action, prop.chat_spam_filter.interval, prop.chat_spam_filter.times);
-                            _v3_debug(V3_DEBUG_INFO, "comment spam filt.............: %d, %d, %d", prop.comment_spam_filter.action, prop.comment_spam_filter.interval, prop.comment_spam_filter.times);
-                            _v3_debug(V3_DEBUG_INFO, "wave spam filt................: %d, %d, %d", prop.wave_spam_filter.action, prop.wave_spam_filter.interval, prop.wave_spam_filter.times);
-                            _v3_debug(V3_DEBUG_INFO, "tts spam filt.................: %d, %d, %d", prop.tts_spam_filter.action, prop.tts_spam_filter.interval, prop.tts_spam_filter.times);
-                            _v3_debug(V3_DEBUG_INFO, "inactive timeout..............: %d",  prop.inactivity_timeout);
+                            _v3_debug(V3_DEBUG_INFO, "chat spam filter..............: %d, %d, %d", prop.chat_spam_filter.action, prop.chat_spam_filter.interval, prop.chat_spam_filter.times);
+                            _v3_debug(V3_DEBUG_INFO, "comment spam filter...........: %d, %d, %d", prop.comment_spam_filter.action, prop.comment_spam_filter.interval, prop.comment_spam_filter.times);
+                            _v3_debug(V3_DEBUG_INFO, "wave spam filter..............: %d, %d, %d", prop.wave_spam_filter.action, prop.wave_spam_filter.interval, prop.wave_spam_filter.times);
+                            _v3_debug(V3_DEBUG_INFO, "tts spam filter...............: %d, %d, %d", prop.tts_spam_filter.action, prop.tts_spam_filter.interval, prop.tts_spam_filter.times);
+                            _v3_debug(V3_DEBUG_INFO, "inactive timeout..............: %d", prop.inactivity_timeout);
                             _v3_debug(V3_DEBUG_INFO, "inactive action...............: %d", prop.inactivity_action);
                             _v3_debug(V3_DEBUG_INFO, "inactive chan.................: %d", prop.inactivity_channel[1024]); // TODO: this sucks, we should probably resolve the channel path in lv3
                             _v3_debug(V3_DEBUG_INFO, "rem srv comments..............: %d", prop.rem_srv_comment);
@@ -4332,13 +4420,13 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                             _v3_debug(V3_DEBUG_INFO, "rem chan comments.............: %d", prop.rem_chan_comments);
                             _v3_debug(V3_DEBUG_INFO, "rem user names................: %d", prop.rem_user_names);
                             _v3_debug(V3_DEBUG_INFO, "rem user comments.............: %d", prop.rem_user_comments);
-                            _v3_debug(V3_DEBUG_INFO, "wave bind filt................: %d", prop.wave_bind_filter);
-                            _v3_debug(V3_DEBUG_INFO, "tts bind filt.................: %d", prop.tts_bind_filter);
-                            _v3_debug(V3_DEBUG_INFO, "channel spam filt.............: %d, %d, %d", prop.channel_spam_filter.action, prop.channel_spam_filter.interval, prop.channel_spam_filter.times);
+                            _v3_debug(V3_DEBUG_INFO, "wave bind filter..............: %d", prop.wave_bind_filter);
+                            _v3_debug(V3_DEBUG_INFO, "tts bind filter...............: %d", prop.tts_bind_filter);
+                            _v3_debug(V3_DEBUG_INFO, "channel spam filter...........: %d, %d, %d", prop.channel_spam_filter.action, prop.channel_spam_filter.interval, prop.channel_spam_filter.times);
                             _v3_debug(V3_DEBUG_INFO, "rem show login names..........: %d", prop.rem_show_login_names);
                             _v3_debug(V3_DEBUG_INFO, "max guest.....................: %d", prop.max_guest);
-                            _v3_debug(V3_DEBUG_INFO, "autokick len..................: %d",  prop.autokick_len);
-                            _v3_debug(V3_DEBUG_INFO, "autoban len...................: %d",  prop.autoban_len);
+                            _v3_debug(V3_DEBUG_INFO, "autokick len..................: %d", prop.autokick_len);
+                            _v3_debug(V3_DEBUG_INFO, "autoban len...................: %d", prop.autoban_len);
 
                             v3_event *ev = _v3_create_event(V3_EVENT_RECV_SRV_PROP);
                             memcpy(&ev->data->srvprop, &prop, sizeof(v3_server_prop));
@@ -4364,12 +4452,13 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                         v3_queue_event(ev);
                         break;
                 }
-
+                if (m->value) {
+                    free(m->value);
+                }
+                _v3_unlock_server();
             }
-
-            _v3_func_leave("_v3_process_message");
-            _v3_unlock_server();
             _v3_destroy_packet(msg);
+            _v3_func_leave("_v3_process_message");
             return V3_OK;/*}}}*/
         case 0x50:/*{{{*/
             if (!_v3_get_0x50(msg)) {
@@ -5480,7 +5569,7 @@ _v3_logout(void) {/*{{{*/
         fclose(v3_server.evinstream);
         close(v3_server.evpipe[0]);
     }
-    if (v3_server.evinstream) {
+    if (v3_server.evoutstream) {
         fclose(v3_server.evoutstream);
         close(v3_server.evpipe[1]);
     }

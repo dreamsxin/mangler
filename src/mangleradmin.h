@@ -40,6 +40,15 @@ class ManglerAdmin {
         ManglerAdmin(Glib::RefPtr<Gtk::Builder> builder);
         ~ManglerAdmin();
         Gtk::Window         *adminWindow;
+        Gtk::Alignment      *ServerTab;
+        Gtk::Alignment      *ChannelsTab;
+        Gtk::Alignment      *UsersTab;
+        Gtk::Alignment      *RanksTab;
+        Gtk::Button         *UserAdd;
+
+        bool isOpen;
+        void show(void);
+
         void channelUpdated(v3_channel *channel);
         void channelRemoved(uint32_t chanid);
         void channelRemoved(v3_channel *channel);
@@ -56,11 +65,6 @@ class ManglerAdmin {
         void rankRemoved(uint16_t rankid);
         void rankRemoved(v3_rank *rank);
         void clearRanks(void);
-        Gtk::Alignment                      *ServerTab;
-        Gtk::Alignment                      *ChannelsTab;
-        Gtk::Alignment                      *UsersTab;
-        Gtk::Alignment                      *RanksTab;
-        Gtk::Button                         *UserAdd;
 
     protected:
         Glib::RefPtr<Gtk::Builder>          builder;
@@ -78,7 +82,6 @@ class ManglerAdmin {
         } adminRecord;
         adminModelColumns                   ChannelEditorColumns;
         Glib::RefPtr<Gtk::TreeStore>        ChannelEditorTreeModel;
-        Gtk::Frame                          *ChannelSpecificCodec;
         adminModelColumns                   ChannelCodecColumns;
         Glib::RefPtr<Gtk::TreeStore>        ChannelCodecModel;
         adminModelColumns                   ChannelFormatColumns;
@@ -160,6 +163,7 @@ class ManglerAdmin {
         uint16_t                            currentRankID;
 
         /* generic pointers and window pointer */
+        Gtk::Widget         *widget;
         Gtk::Button         *button;
         Gtk::Entry          *entry;
         Gtk::CheckButton    *checkbutton;
@@ -227,7 +231,7 @@ class ManglerAdmin {
         void RankAdd_clicked_cb(void);
         void RankRemove_clicked_cb(void);
         void RankUpdate_clicked_cb(void);
-
 };
 
 #endif
+

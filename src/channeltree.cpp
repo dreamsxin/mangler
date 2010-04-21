@@ -122,7 +122,7 @@ ManglerChannelTree::ManglerChannelTree(Glib::RefPtr<Gtk::Builder> builder)/*{{{*
 void
 ManglerChannelTree::renderCellData(Gtk::CellRenderer *cell, const Gtk::TreeModel::iterator& iter) {/*{{{*/
     Gtk::CellRendererText *crt = dynamic_cast<Gtk::CellRendererText*>(cell);
-    if(iter) {
+    if (iter) {
         Gtk::TreeModel::Row row = *iter;
         Glib::ustring value = row[channelRecord.displayName];
         bool isUser = row[channelRecord.isUser];
@@ -626,7 +626,7 @@ ManglerChannelTree::getUser(uint32_t id) {/*{{{*/
 
 bool
 ManglerChannelTree::_getUser(const Gtk::TreeModel::iterator &iter, uint32_t id, Gtk::TreeModel::iterator *r_iter) {/*{{{*/
-    if((uint32_t)(*iter)[channelRecord.id] == id) {
+    if ((uint32_t)(*iter)[channelRecord.id] == id) {
         *r_iter = iter;
         return true;
     }
@@ -896,7 +896,7 @@ void
 ManglerChannelTree::userSettingsMenuItem_activate_cb(void) {/*{{{*/
     Glib::RefPtr<Gtk::TreeSelection> sel = channelView->get_selection();
     Gtk::TreeModel::iterator iter = sel->get_selected();
-    if(iter) {
+    if (iter) {
         Gtk::TreeModel::Row row = *iter;
         userSettingsWindow(row);
     }
@@ -907,7 +907,7 @@ ManglerChannelTree::copyCommentMenuItem_activate_cb(void) {/*{{{*/
     Glib::RefPtr<Gtk::Clipboard> clipboard = Gtk::Clipboard::get();
     Glib::RefPtr<Gtk::TreeSelection> sel = channelView->get_selection();
     Gtk::TreeModel::iterator iter = sel->get_selected();
-    if(iter) {
+    if (iter) {
         Gtk::TreeModel::Row row = *iter;
         Glib::ustring comment = row[channelRecord.comment];
         clipboard->set_text(comment);
@@ -918,7 +918,7 @@ void
 ManglerChannelTree::privateChatMenuItem_activate_cb(void) {/*{{{*/
     Glib::RefPtr<Gtk::TreeSelection> sel = channelView->get_selection();
     Gtk::TreeModel::iterator iter = sel->get_selected();
-    if(iter) {
+    if (iter) {
         Gtk::TreeModel::Row row = *iter;
         v3_user *u;
         uint16_t id = row[channelRecord.id];
@@ -944,7 +944,7 @@ ManglerChannelTree::copyURLMenuItem_activate_cb(void) {/*{{{*/
     Glib::RefPtr<Gtk::Clipboard> clipboard = Gtk::Clipboard::get();
     Glib::RefPtr<Gtk::TreeSelection> sel = channelView->get_selection();
     Gtk::TreeModel::iterator iter = sel->get_selected();
-    if(iter) {
+    if (iter) {
         Gtk::TreeModel::Row row = *iter;
         Glib::ustring url = row[channelRecord.url];
         clipboard->set_text(url);
@@ -955,7 +955,7 @@ void
 ManglerChannelTree::addPhantomMenuItem_activate_cb(void) {/*{{{*/
     Glib::RefPtr<Gtk::TreeSelection> sel = channelView->get_selection();
     Gtk::TreeModel::iterator iter = sel->get_selected();
-    if(iter) {
+    if (iter) {
         Gtk::TreeModel::Row row = *iter;
         bool isUser = row[channelRecord.isUser];
         uint16_t id = row[channelRecord.id];
@@ -970,7 +970,7 @@ void
 ManglerChannelTree::removePhantomMenuItem_activate_cb(void) {/*{{{*/
     Glib::RefPtr<Gtk::TreeSelection> sel = channelView->get_selection();
     Gtk::TreeModel::iterator iter = sel->get_selected();
-    if(iter) {
+    if (iter) {
         Gtk::TreeModel::Row row = *iter;
         uint16_t parent_id = row[channelRecord.parent_id];
         //fprintf(stderr, "removing phantom id %d\n", parent_id);
@@ -982,15 +982,13 @@ void
 ManglerChannelTree::kickUserMenuItem_activate_cb(void) {/*{{{*/
     Glib::RefPtr<Gtk::TreeSelection> sel = channelView->get_selection();
     Gtk::TreeModel::iterator iter = sel->get_selected();
-    if(iter) {
+    if (iter) {
         Gtk::TreeModel::Row row = *iter;
         bool isUser = row[channelRecord.isUser];
         uint16_t id = row[channelRecord.id];
         Glib::ustring name = row[channelRecord.name];
-        if (isUser) {
-            if ( mangler->getReasonEntry("Kick Reason") ) {
-               v3_admin_boot(V3_BOOT_KICK, id, (char *)ustring_to_c(mangler->reason).c_str());
-            }
+        if (isUser && mangler->getReasonEntry("Kick Reason")) {
+            v3_admin_boot(V3_BOOT_KICK, id, (char *)ustring_to_c(mangler->reason).c_str());
         }
     }
 }/*}}}*/
@@ -999,15 +997,13 @@ void
 ManglerChannelTree::banUserMenuItem_activate_cb(void) {/*{{{*/
     Glib::RefPtr<Gtk::TreeSelection> sel = channelView->get_selection();
     Gtk::TreeModel::iterator iter = sel->get_selected();
-    if(iter) {
+    if (iter) {
         Gtk::TreeModel::Row row = *iter;
         bool isUser = row[channelRecord.isUser];
         uint16_t id = row[channelRecord.id];
         Glib::ustring name = row[channelRecord.name];
-        if (isUser) {
-            if ( mangler->getReasonEntry("Ban Reason") ) {
-               v3_admin_boot(V3_BOOT_BAN, id, (char *)ustring_to_c(mangler->reason).c_str());
-            }
+        if (isUser && mangler->getReasonEntry("Ban Reason")) {
+            v3_admin_boot(V3_BOOT_BAN, id, (char *)ustring_to_c(mangler->reason).c_str());
         }
     }
 }/*}}}*/
@@ -1016,7 +1012,7 @@ void
 ManglerChannelTree::muteUserMenuItem_activate_cb(void) {/*{{{*/
     Glib::RefPtr<Gtk::TreeSelection> sel = channelView->get_selection();
     Gtk::TreeModel::iterator iter = sel->get_selected();
-    if(iter) {
+    if (iter) {
         Gtk::TreeModel::Row row = *iter;
         Glib::ustring name = row[channelRecord.name];
         bool muted = row[channelRecord.muted];
@@ -1171,7 +1167,7 @@ bool
 ManglerChannelStore::row_drop_possible_vfunc(const Gtk::TreeModel::Path& dest, const Gtk::SelectionData& selection_data) const {/*{{{*/
     Gtk::TreeModel::Path dest_parent = dest;
     bool dest_is_not_top_level = dest_parent.up();
-    if(!dest_is_not_top_level || dest_parent.empty()) {
+    if (!dest_is_not_top_level || dest_parent.empty()) {
         return false;
     }
     return true;
@@ -1281,7 +1277,7 @@ ManglerChannelTree::userSettingsWindow(Gtk::TreeModel::Row row) {/*{{{*/
 bool
 ManglerChannelTree::channelView_getPathFromId(const Gtk::TreeModel::Path &path, uint32_t id, Glib::ustring *r_path) {/*{{{*/
     Gtk::TreeModel::iterator iter = channelStore->get_iter(path);
-    if((uint32_t)(*iter)[channelRecord.id] == id) {
+    if ((uint32_t)(*iter)[channelRecord.id] == id) {
         r_path->assign(path.to_string());
         return true;
     }
@@ -1290,7 +1286,7 @@ ManglerChannelTree::channelView_getPathFromId(const Gtk::TreeModel::Path &path, 
 
 bool
 ManglerChannelTree::channelView_findDefault(const Gtk::TreeModel::iterator &iter, Gtk::TreeModel::iterator *oldDefault) {/*{{{*/
-    if((bool)(*iter)[channelRecord.isDefault] && !(bool)(*iter)[channelRecord.isUser]) {
+    if ((bool)(*iter)[channelRecord.isDefault] && !(bool)(*iter)[channelRecord.isUser]) {
         *oldDefault = iter;
         return true;
     }
@@ -1301,7 +1297,7 @@ void
 ManglerChannelTree::setDefaultChannel_toggled_cb(void) {/*{{{*/
     Glib::RefPtr<Gtk::TreeSelection> sel = channelView->get_selection();
     Gtk::TreeModel::iterator iter = sel->get_selected();
-    if(iter) {
+    if (iter) {
         Gtk::TreeModel::Row row = *iter;
         if (row[channelRecord.isUser] || mangler->connectedServerName.empty()) {
             //Silently failing on users, or quick connected servers... they shouldn't happen
@@ -1311,7 +1307,7 @@ ManglerChannelTree::setDefaultChannel_toggled_cb(void) {/*{{{*/
         bool isDefault = row[channelRecord.isDefault];
         Glib::ustring name = row[channelRecord.name];
         //Already default, so unset it's status
-        if(isDefault) {
+        if (isDefault) {
             row[channelRecord.isDefault] = false;
             Mangler::config.servers[mangler->connectedServerName]["DefaultChannelID"] = 0;
         } else {
@@ -1340,7 +1336,7 @@ ManglerChannelTree::channelView_switchChannel2Default(uint32_t defaultChannelId)
         return;
     }
     Gtk::TreeModel::iterator iter = channelStore->get_iter(defaultChannelPath);
-    if(iter) {
+    if (iter) {
         Gtk::TreeModel::Row row  = *iter;
         Gtk::TreeModel::Row user;
         if (! (user = getUser(v3_get_user_id()))) {

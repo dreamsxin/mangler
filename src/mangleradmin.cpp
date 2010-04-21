@@ -61,7 +61,7 @@ ManglerAdmin::ManglerAdmin(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
     builder->get_widget("RanksTab", RanksTab);
     builder->get_widget("AdminStatusbar", AdminStatusbar);
     AdminStatusbar->set_has_resize_grip(false);
-    
+
     StatusbarTime = ::time(NULL);
     StatusbarCount = 0;
 
@@ -83,17 +83,17 @@ ManglerAdmin::ManglerAdmin(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
     builder->get_widget("ChannelRemove", ChannelRemove);
     ChannelRemove->set_sensitive(false);
     ChannelRemove->signal_clicked().connect(sigc::mem_fun(this, &ManglerAdmin::RemoveChannel_clicked_cb));
-    
+
     builder->get_widget("ChannelAdd", ChannelAdd);
     ChannelAdd->set_sensitive(false);
     ChannelAdd->signal_clicked().connect(sigc::mem_fun(this, &ManglerAdmin::AddChannel_clicked_cb));
-    
+
     builder->get_widget("ChannelUpdate", button);
     button->signal_clicked().connect(sigc::mem_fun(this, &ManglerAdmin::UpdateChannel_clicked_cb));
-    
+
     currentChannelID = 0xffff;
     currentChannelParent = 0xffff;
-    
+
     builder->get_widget("ChannelProtMode", combobox);
     ChannelProtModel = Gtk::TreeStore::create(ChannelProtColumns);
     combobox->set_model(ChannelProtModel);
@@ -117,8 +117,6 @@ ManglerAdmin::ManglerAdmin(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
     row = *(ChannelVoiceModel->append());
     row[adminRecord.id] = 2; row[adminRecord.name] = "Muted";
     combobox->signal_changed().connect(sigc::mem_fun(this, &ManglerAdmin::ChannelVoiceMode_changed_cb));
-    
-    builder->get_widget("ChannelSpecificCodec", ChannelSpecificCodec);
 
     builder->get_widget("ChannelCodec", combobox);
     ChannelCodecModel = Gtk::TreeStore::create(ChannelCodecColumns);
@@ -135,12 +133,12 @@ ManglerAdmin::ManglerAdmin(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
     row = *(ChannelCodecModel->append());
     row[adminRecord.id] = 4; row[adminRecord.name] = "Server Default";
     combobox->signal_changed().connect(sigc::mem_fun(this, &ManglerAdmin::LoadCodecFormats));
-    
+
     builder->get_widget("ChannelFormat", combobox);
     ChannelFormatModel = Gtk::TreeStore::create(ChannelCodecColumns);
     combobox->set_model(ChannelFormatModel);
     combobox->pack_start(adminRecord.name);
-    
+
     /* set up the user editor stuff */
     UserEditorTreeModel = Gtk::TreeStore::create(UserEditorColumns);
     builder->get_widget("UserEditorTree", UserEditorTree);
@@ -150,7 +148,7 @@ ManglerAdmin::ManglerAdmin(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
     pColumn->set_expand(true);
     UserEditorTree->append_column(*pColumn);
     UserEditorTree->signal_cursor_changed().connect(sigc::mem_fun(this, &ManglerAdmin::UserTree_cursor_changed_cb));
-    
+
     UserChanAdminModel = Gtk::TreeStore::create(UserChanAdminColumns);
     builder->get_widget("UserChanAdminTree", UserChanAdminTree);
     UserChanAdminTree->set_model(UserChanAdminModel);
@@ -176,7 +174,7 @@ ManglerAdmin::ManglerAdmin(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
     builder->get_widget("UserAdminSection", UserAdminSection);
 
     builder->get_widget("UserEditor", UserEditor);
-    
+
     builder->get_widget("UserOwner", combobox);
     UserOwnerModel = Gtk::TreeStore::create(UserEditorColumns);
     combobox->set_model(UserOwnerModel);
@@ -184,14 +182,14 @@ ManglerAdmin::ManglerAdmin(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
     pColumn->pack_start(adminCheckRecord.name);
     pColumn->set_expand(true);
     combobox->pack_start(adminRecord.name);
-    
+
     builder->get_widget("UserRank", combobox);
     UserRankModel = Gtk::TreeStore::create(UserRankColumns);
     combobox->set_model(UserRankModel);
     combobox->pack_start(adminRecord.name);
     row = *(UserRankModel->append());
     row[adminRecord.id] = 0; row[adminRecord.name] = "None";
-    
+
     builder->get_widget("UserDuplicateIPs", combobox);
     UserDuplicateIPsModel = Gtk::TreeStore::create(UserDuplicateIPsColumns);
     combobox->set_model(UserDuplicateIPsModel);
@@ -261,7 +259,7 @@ ManglerAdmin::ManglerAdmin(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
 
     builder->get_widget("UserTemplateLoad", button);
     button->signal_clicked().connect(sigc::mem_fun(this, &ManglerAdmin::UserTemplateLoad_clicked_cb));
-    
+
     builder->get_widget("UserTemplateSave", button);
     button->signal_clicked().connect(sigc::mem_fun(this, &ManglerAdmin::UserTemplateSave_clicked_cb));
 
@@ -278,23 +276,26 @@ ManglerAdmin::ManglerAdmin(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
 
     builder->get_widget("RankAdd", button);
     button->signal_clicked().connect(sigc::mem_fun(this, &ManglerAdmin::RankAdd_clicked_cb));
-    
+
     builder->get_widget("RankRemove", button);
     button->signal_clicked().connect(sigc::mem_fun(this, &ManglerAdmin::RankRemove_clicked_cb));
 
     builder->get_widget("RankUpdate", button);
     button->signal_clicked().connect(sigc::mem_fun(this, &ManglerAdmin::RankUpdate_clicked_cb));
-    
+
     /* set up the rank list */
     clearRanks();
-    
+
     /* set up the channel lists */
     readUserTemplates();
     clearChannels();
 
+    isOpen = false;
 }/*}}}*/
 ManglerAdmin::~ManglerAdmin() {/*{{{*/
-    if (usertemplates) delete usertemplates;
+    if (usertemplates) {
+        delete usertemplates;
+    }
 }/*}}}*/
 void
 ManglerAdmin::adminWindow_show_cb(void) {/*{{{*/
@@ -325,6 +326,7 @@ ManglerAdmin::adminWindow_show_cb(void) {/*{{{*/
         Gtk::TreeModel::Path lobbypath = ChannelEditorTreeModel->get_path(iter);
         ChannelEditorTree->set_cursor(lobbypath);
     }
+    isOpen = true;
 }/*}}}*/
 void
 ManglerAdmin::adminWindow_hide_cb(void) {/*{{{*/
@@ -340,6 +342,15 @@ ManglerAdmin::adminWindow_hide_cb(void) {/*{{{*/
     }
     if (perms->edit_rank) {
         v3_ranklist_close();
+    }
+    isOpen = false;
+}/*}}}*/
+void
+ManglerAdmin::show(void) {/*{{{*/
+    if (!isOpen) {
+        adminWindow->show();
+    } else {
+        adminWindow->present();
     }
 }/*}}}*/
 void
@@ -668,14 +679,28 @@ ManglerAdmin::populateChannelEditor(v3_channel *channel) {/*{{{*/
         copyToCombobox("ChannelCodec" , channel->channel_codec, 4);
         if (channel->channel_codec != 0xffff)
             copyToCombobox("ChannelFormat", channel->channel_format);
-        ChannelSpecificCodec->set_sensitive(true);
-        builder->get_widget("AllowVoiceTargets", checkbutton);
+        builder->get_widget("ChannelCodecLabel", widget);
+        widget->set_sensitive(true);
+        builder->get_widget("ChannelCodec", widget);
+        widget->set_sensitive(true);
+        builder->get_widget("ChannelFormatLabel", widget);
+        widget->set_sensitive(true);
+        builder->get_widget("ChannelFormat", widget);
+        widget->set_sensitive(true);
+        builder->get_widget("AllowVoiceTargets", widget);
         checkbutton->set_sensitive(true);
         builder->get_widget("AllowCommandTargets", checkbutton);
         checkbutton->set_sensitive(true);
     } else {
         copyToCombobox("ChannelCodec" , 4);
-        ChannelSpecificCodec->set_sensitive(false);
+        builder->get_widget("ChannelCodecLabel", widget);
+        widget->set_sensitive(false);
+        builder->get_widget("ChannelCodec", widget);
+        widget->set_sensitive(false);
+        builder->get_widget("ChannelFormatLabel", widget);
+        widget->set_sensitive(false);
+        builder->get_widget("ChannelFormat", widget);
+        widget->set_sensitive(false);
         builder->get_widget("AllowVoiceTargets", checkbutton);
         checkbutton->set_sensitive(false);
         builder->get_widget("AllowCommandTargets", checkbutton);
@@ -732,7 +757,14 @@ ManglerAdmin::AddChannel_clicked_cb(void) {/*{{{*/
     builder->get_widget("ChannelCodec", combobox);
     combobox->set_active(4);
     bool isLicensed( v3_is_licensed() );
-    ChannelSpecificCodec->set_sensitive(isLicensed);
+    builder->get_widget("ChannelCodecLabel", widget);
+    widget->set_sensitive(isLicensed);
+    builder->get_widget("ChannelCodec", widget);
+    widget->set_sensitive(isLicensed);
+    builder->get_widget("ChannelFormatLabel", widget);
+    widget->set_sensitive(isLicensed);
+    builder->get_widget("ChannelFormat", widget);
+    widget->set_sensitive(isLicensed);
     builder->get_widget("AllowVoiceTargets", checkbutton);
     checkbutton->set_sensitive(isLicensed);
     builder->get_widget("AllowCommandTargets", checkbutton);
@@ -1621,7 +1653,7 @@ ManglerAdmin::RankRemove_clicked_cb(void) {/*{{{*/
 void
 ManglerAdmin::clearRanks(void) {/*{{{*/
     RankEditorModel->clear();
-    
+
     RankEditor->set_sensitive(false);
     setWidgetSensitive("RankAdd", true);
     setWidgetSensitive("RankRemove", false);
@@ -1629,3 +1661,4 @@ ManglerAdmin::clearRanks(void) {/*{{{*/
 
     currentRankID = 0xff;
 }/*}}}*/
+
