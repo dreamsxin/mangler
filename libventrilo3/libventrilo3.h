@@ -538,15 +538,14 @@ struct _v3_vrf_fragment {       // 24
 
 struct _v3_vrf_rec {
     uint32_t        user_id;
-    uint32_t        index;
-    uint32_t        fragcount;
 
-    uint8_t         stopped;
+    _v3_vrf_audio   audio;
+    _v3_vrf_segment segment;
 
     void            *data;
     uint32_t        datalen;
 
-    _v3_vrf_segment segment;
+    uint8_t         stopped;
 
     _v3_vrf_rec     *next;
 };

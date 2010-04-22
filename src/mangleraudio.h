@@ -39,8 +39,14 @@
 # include <alsa/asoundlib.h>
 # define ALSA_BUF 640
 #endif
+#ifdef HAVE_OSS
+# include <fcntl.h>
+# include <sys/ioctl.h>
+# include <sys/soundcard.h>
+#endif
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 
 #define AUDIO_INPUT  false
 #define AUDIO_OUTPUT true
@@ -90,7 +96,6 @@ class ManglerAudio
 
         void            getDeviceList(Glib::ustring audioSubsystem);
         void            playNotification(Glib::ustring name);
-        void            playNotification_thread(Glib::ustring name);
 
         bool            check_loggedin;
         GAsyncQueue*    pcm_queue;
@@ -108,6 +113,9 @@ class ManglerAudio
         snd_pcm_t       *alsa_stream;
         snd_pcm_sframes_t alsa_frames;
         int             alsa_error;
+#endif
+#ifdef HAVE_OSS
+        int             oss_fd;
 #endif
         ManglerPCM      *pcmdata;
 

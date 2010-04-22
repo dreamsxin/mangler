@@ -190,7 +190,14 @@ ManglerSettings::ManglerSettings(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
         audioSubsystemComboBox->set_active(audioSubsystemRow);
     }
 #endif
-
+#ifdef HAVE_OSS
+    audioSubsystemRow = *(audioSubsystemTreeModel->append());
+    audioSubsystemRow[audioSubsystemColumns.id] = "oss";
+    audioSubsystemRow[audioSubsystemColumns.name] = "OSS";
+    if (Mangler::config["AudioSubsystem"].toLower() == "oss") {
+        audioSubsystemComboBox->set_active(audioSubsystemRow);
+    }
+#endif
 
     volumeAdjustment = new Gtk::Adjustment(79, 0, 158, 1, 10, 10);
     volumehscale = new Gtk::HScale(*volumeAdjustment);
@@ -872,7 +879,7 @@ ManglerSettings::updateDeviceComboBoxes(void) {/*{{{*/
         }
     }
     iter = audioSubsystemComboBox->get_active();
-    if (iter && (*iter)[audioSubsystemColumns.id] == "alsa") {
+    if (iter && (*iter)[audioSubsystemColumns.id] != "pulse") {
         row = *(inputDeviceTreeModel->append());
         row[inputColumns.id] = -2;
         row[inputColumns.name] = "Custom";
@@ -905,7 +912,7 @@ ManglerSettings::updateDeviceComboBoxes(void) {/*{{{*/
         }
     }
     iter = audioSubsystemComboBox->get_active();
-    if (iter && (*iter)[audioSubsystemColumns.id] == "alsa") {
+    if (iter && (*iter)[audioSubsystemColumns.id] != "pulse") {
         row = *(outputDeviceTreeModel->append());
         row[outputColumns.id] = -2;
         row[outputColumns.name] = "Custom";
@@ -938,7 +945,7 @@ ManglerSettings::updateDeviceComboBoxes(void) {/*{{{*/
         }
     }
     iter = audioSubsystemComboBox->get_active();
-    if (iter && (*iter)[audioSubsystemColumns.id] == "alsa") {
+    if (iter && (*iter)[audioSubsystemColumns.id] != "pulse") {
         row = *(notificationDeviceTreeModel->append());
         row[notificationColumns.id] = -2;
         row[notificationColumns.name] = "Custom";

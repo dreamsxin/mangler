@@ -302,6 +302,8 @@ const char *ManglerConfig::DefaultConfiguration = "[mangler]\n"
 "AudioSubsystem=pulse\n"
 #elif HAVE_ALSA
 "AudioSubsystem=alsa\n"
+#elif HAVE_OSS
+"AudioSubsystem=oss\n"
 #endif
 "qc_lastserver.hostname=\n"
 "qc_lastserver.port=\n"

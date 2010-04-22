@@ -687,7 +687,7 @@ ManglerAdmin::populateChannelEditor(v3_channel *channel) {/*{{{*/
         widget->set_sensitive(true);
         builder->get_widget("ChannelFormat", widget);
         widget->set_sensitive(true);
-        builder->get_widget("AllowVoiceTargets", widget);
+        builder->get_widget("AllowVoiceTargets", checkbutton);
         checkbutton->set_sensitive(true);
         builder->get_widget("AllowCommandTargets", checkbutton);
         checkbutton->set_sensitive(true);

@@ -61,6 +61,9 @@ ManglerAudio::open(uint32_t rate, bool type, uint32_t pcm_framesize, uint8_t cha
 #ifdef HAVE_ALSA
     alsa_stream = NULL;
 #endif
+#ifdef HAVE_OSS
+    oss_fd = -1;
+#endif
     if (type == AUDIO_OUTPUT) {
         //fprintf(stderr, "opening audio output\n");
         if (!openOutput(rate)) {
@@ -73,11 +76,11 @@ ManglerAudio::open(uint32_t rate, bool type, uint32_t pcm_framesize, uint8_t cha
         pcm_queue = g_async_queue_new();
         Glib::Thread::create(sigc::mem_fun(*this, &ManglerAudio::output), FALSE);
     } else {
-        this->pcm_framesize = pcm_framesize;
-        if (this->pcm_framesize == 0) {
-            fprintf(stderr, "framesize not specified on input stream open\n");
+        if (!pcm_framesize) {
+            fprintf(stderr, "framesize not specified on input stream open. unsupported codec?\n");
             return;
         }
+        this->pcm_framesize = pcm_framesize;
         //fprintf(stderr, "starting input with rate %d and framesize %d\n", rate, pcm_framesize);
         if (!openInput(rate)) {
             return;
@@ -154,6 +157,41 @@ ManglerAudio::openOutput(uint32_t rate) {/*{{{*/
         }
     }
 #endif
+#ifdef HAVE_OSS
+    if (Mangler::config["AudioSubsystem"].toLower() == "oss") {
+        Glib::ustring outputDeviceName = Mangler::config["OutputDeviceName"].toUString();
+
+        if (outputDeviceName == "Default" || outputDeviceName == "") {
+            outputDeviceName = "/dev/dsp";
+        } else if (outputDeviceName == "Custom") {
+            outputDeviceName = Mangler::config["OutputDeviceCustomName"].toUString();
+        }
+
+        if ((oss_fd = ::open(outputDeviceName.c_str(), O_WRONLY)) < 0) {
+            fprintf(stderr, "oss: open() %s failed: %s\n", outputDeviceName.c_str(), strerror(errno));
+            return false;
+        }
+        int opt;
+        opt = AFMT_S16_NE;
+        if ((::ioctl(oss_fd, SNDCTL_DSP_SETFMT, &opt) < 0) || opt != AFMT_S16_NE) {
+            fprintf(stderr, "oss: ioctl() SNDCTL_DSP_SETFMT failed: %s\n", strerror(errno));
+            closeOutput();
+            return false;
+        }
+        opt = channels;
+        if ((::ioctl(oss_fd, SNDCTL_DSP_CHANNELS, &opt) < 0) || opt != channels) {
+            fprintf(stderr, "oss: ioctl() SNDCTL_DSP_CHANNELS failed: %s\n", strerror(errno));
+            closeOutput();
+            return false;
+        }
+        opt = rate;
+        if ((::ioctl(oss_fd, SNDCTL_DSP_SPEED, &opt) < 0) || opt != (int)rate) {
+            fprintf(stderr, "oss: ioctl() SNDCTL_DSP_SPEED failed: %s\n", strerror(errno));
+            closeOutput();
+            return false;
+        }
+    }
+#endif
     return true;
 }/*}}}*/
 
@@ -175,6 +213,12 @@ ManglerAudio::closeOutput(bool drain) {/*{{{*/
         }
         snd_pcm_close(alsa_stream);
         alsa_stream = NULL;
+    }
+#endif
+#ifdef HAVE_OSS
+    if (oss_fd >= 0) {
+        ::close(oss_fd);
+        oss_fd = -1;
     }
 #endif
 }/*}}}*/
@@ -248,6 +292,41 @@ ManglerAudio::openInput(uint32_t rate) {/*{{{*/
         }
     }
 #endif
+#ifdef HAVE_OSS
+    if (Mangler::config["AudioSubsystem"].toLower() == "oss") {
+        Glib::ustring inputDeviceName = Mangler::config["InputDeviceName"].toUString();
+
+        if (inputDeviceName == "Default" || inputDeviceName == "") {
+            inputDeviceName = "/dev/dsp";
+        } else if (inputDeviceName == "Custom") {
+            inputDeviceName = Mangler::config["InputDeviceCustomName"].toUString();
+        }
+
+        if ((oss_fd = ::open(inputDeviceName.c_str(), O_RDONLY)) < 0) {
+            fprintf(stderr, "oss: open() %s failed: %s\n", inputDeviceName.c_str(), strerror(errno));
+            return false;
+        }
+        int opt;
+        opt = AFMT_S16_NE;
+        if ((::ioctl(oss_fd, SNDCTL_DSP_SETFMT, &opt) < 0) || opt != AFMT_S16_NE) {
+            fprintf(stderr, "oss: ioctl() SNDCTL_DSP_SETFMT failed: %s\n", strerror(errno));
+            closeInput();
+            return false;
+        }
+        opt = 1;
+        if ((::ioctl(oss_fd, SNDCTL_DSP_CHANNELS, &opt) < 0) || opt != 1) {
+            fprintf(stderr, "oss: ioctl() SNDCTL_DSP_CHANNELS failed: %s\n", strerror(errno));
+            closeInput();
+            return false;
+        }
+        opt = rate;
+        if ((::ioctl(oss_fd, SNDCTL_DSP_SPEED, &opt) < 0) || opt != (int)rate) {
+            fprintf(stderr, "oss: ioctl() SNDCTL_DSP_SPEED failed: %s\n", strerror(errno));
+            closeInput();
+            return false;
+        }
+    }
+#endif
     return true;
 }/*}}}*/
 
@@ -266,6 +345,12 @@ ManglerAudio::closeInput(bool drain) {/*{{{*/
         }
         snd_pcm_close(alsa_stream);
         alsa_stream = NULL;
+    }
+#endif
+#ifdef HAVE_OSS
+    if (oss_fd >= 0) {
+        ::close(oss_fd);
+        oss_fd = -1;
     }
 #endif
 }/*}}}*/
@@ -361,6 +446,20 @@ ManglerAudio::input(void) {/*{{{*/
                         stop_input = true;
                         break;
                     }
+                }
+            }
+#endif
+#ifdef HAVE_OSS
+            if (Mangler::config["AudioSubsystem"].toLower() == "oss") {
+                if (oss_fd < 0 && !openInput(rate)) { // reinitialize input stream for oss
+                    stop_input = true;
+                    break;
+                }
+                if (::read(oss_fd, buf+(pcm_framesize*ctr), pcm_framesize) < 0) {
+                    fprintf(stderr, "oss: read() failed: %s\n", strerror(errno));
+                    closeInput();
+                    stop_input = true;
+                    break;
                 }
             }
 #endif
@@ -556,6 +655,20 @@ ManglerAudio::output(void) {/*{{{*/
             }
         }
 #endif
+#ifdef HAVE_OSS
+        if (Mangler::config["AudioSubsystem"].toLower() == "oss") {
+            if (oss_fd < 0 && !openOutput(rate)) { // reinitialize output stream for oss
+                stop_output = true;
+                break;
+            }
+            if (::write(oss_fd, queuedpcm->sample, queuedpcm->length) < 0) {
+                fprintf(stderr, "oss: write() failed: %s\n", strerror(errno));
+                closeOutput();
+                stop_output = true;
+                break;
+            }
+        }
+#endif
         delete queuedpcm;
         queuedpcm = NULL;
     }
@@ -586,13 +699,13 @@ ManglerAudio::finish(void) {/*{{{*/
 
 void
 ManglerAudio::getDeviceList(Glib::ustring audioSubsystem) {/*{{{*/
-    int ctr;
-
     inputDevices.clear();
     outputDevices.clear();
 
 #ifdef HAVE_PULSE
     if (audioSubsystem == "pulse") {
+        int ctr;
+
         // This is where we'll store the input device list
         pa_devicelist_t pa_input_devicelist[16];
 
@@ -633,6 +746,7 @@ ManglerAudio::getDeviceList(Glib::ustring audioSubsystem) {/*{{{*/
 #ifdef HAVE_ALSA
     if (audioSubsystem == "alsa") {
         snd_pcm_stream_t stream[2] = { SND_PCM_STREAM_PLAYBACK, SND_PCM_STREAM_CAPTURE };
+        int ctr;
 
         for (ctr = 0; ctr < 2; ctr++) { // the rest is just copypasta, with bad code from alsa
             snd_ctl_t *handle;
@@ -644,7 +758,7 @@ ManglerAudio::getDeviceList(Glib::ustring audioSubsystem) {/*{{{*/
             snd_ctl_card_info_alloca(&info);
             snd_pcm_info_alloca(&pcminfo);
             if (snd_card_next(&card) < 0 || card < 0) {
-                fputs("alsa: no sound cards found...\n", stderr);
+                fputs("alsa: no sound cards found!\n", stderr);
                 return;
             }
             while (card >= 0) {
@@ -719,6 +833,57 @@ ManglerAudio::getDeviceList(Glib::ustring audioSubsystem) {/*{{{*/
         }
     }
 #endif
+#if defined(HAVE_OSS) && SOUND_VERSION >= 0x040000
+    if (audioSubsystem == "oss") {
+        oss_sysinfo sysinfo;
+        oss_audioinfo ainfo;
+        int fd, dev, idx_p = 0, idx_c = 0, version = 0;
+
+        if ((fd = ::open("/dev/mixer", O_RDONLY)) < 0) {
+            fprintf(stderr, "oss: open() /dev/mixer failed: %s\n", strerror(errno));
+            return;
+        }
+        if ((::ioctl(fd, OSS_GETVERSION, &version) < 0) || version < 0x040000) {
+            fprintf(stderr, "oss: ioctl() failed: version too old for device enumeration\n");
+            ::close(fd);
+            return;
+        }
+        if (::ioctl(fd, SNDCTL_SYSINFO, &sysinfo) < 0) {
+            fprintf(stderr, "oss: ioctl() failed: %s\n", strerror(errno));
+            ::close(fd);
+            return;
+        }
+        if (!sysinfo.numaudios) {
+            fprintf(stderr, "oss: no sound cards found!\n");
+            ::close(fd);
+            return;
+        }
+        for (dev = 0; dev < sysinfo.numaudios; dev++) {
+            ainfo.dev = dev;
+            ::ioctl(fd, SNDCTL_AUDIOINFO, &ainfo);
+            if (!ainfo.enabled) {
+                continue;
+            }
+            if (ainfo.caps & PCM_CAP_OUTPUT) {
+                outputDevices.push_back(
+                    new ManglerAudioDevice(
+                        idx_p++,
+                        ainfo.devnode,
+                        ainfo.name)
+                    );
+            }
+            if (ainfo.caps & PCM_CAP_INPUT) {
+                inputDevices.push_back(
+                    new ManglerAudioDevice(
+                        idx_c++,
+                        ainfo.devnode,
+                        ainfo.name)
+                    );
+            }
+        }
+        ::close(fd);
+    }
+#endif
 }/*}}}*/
 
 void
@@ -743,116 +908,10 @@ ManglerAudio::playNotification(Glib::ustring name) {/*{{{*/
         sounds["login"]        = new ManglerPCM(sizeof(sound_login),        sound_login);
         sounds["logout"]       = new ManglerPCM(sizeof(sound_logout),       sound_logout);
     }
-    Glib::Thread::create(sigc::bind(sigc::mem_fun(this, &ManglerAudio::playNotification_thread), name), FALSE);
-}/*}}}*/
-
-void
-ManglerAudio::playNotification_thread(Glib::ustring name) {/*{{{*/
-#ifdef HAVE_PULSE
-    if (Mangler::config["AudioSubsystem"].toLower() == "pulse") {
-        pa_simple *pulse_s;
-
-        pulse_samplespec.format = PA_SAMPLE_S16LE;
-        pulse_samplespec.rate = 44100;
-        pulse_samplespec.channels = 1;
-        pa_buffer_attr buffer_attr;
-        buffer_attr.maxlength = -1;
-        buffer_attr.tlength = -1;
-        buffer_attr.prebuf = -1;
-        buffer_attr.minreq = -1;
-        buffer_attr.fragsize = pcm_framesize;
-
-        if (!(pulse_s = pa_simple_new(
-                        NULL,
-                        "Mangler",
-                        PA_STREAM_PLAYBACK,
-                        (Mangler::config["NotificationDeviceName"] == "Default" ||
-                            Mangler::config["NotificationDeviceName"] == ""
-                            ? NULL
-                            : Mangler::config["NotificationDeviceName"].toCString()),
-                        "Notification Sound",
-                        &pulse_samplespec,
-                        NULL,
-                        NULL,
-                        &pulse_error))) {
-            fprintf(stderr, __FILE__": pa_simple_new() failed: %s\n", pa_strerror(pulse_error));
-            //throw Glib::Thread::Exit();
-            return;
-        }
-        if (pa_simple_write(pulse_s, sounds[name]->sample, sounds[name]->length, &pulse_error) < 0) {
-            fprintf(stderr, __FILE__": pa_simple_write() failed: %s\n", pa_strerror(pulse_error));
-            pa_simple_free(pulse_s);
-            //throw Glib::Thread::Exit();
-            return;
-        }
-        if (pa_simple_drain(pulse_s, &pulse_error) < 0) {
-            fprintf(stderr, __FILE__": pa_simple_drain() failed: %s\n", pa_strerror(pulse_error));
-        }
-
-        pa_simple_free(pulse_s);
-    }
-#endif
-#ifdef HAVE_ALSA
-    if (Mangler::config["AudioSubsystem"].toLower() == "alsa") {
-        snd_pcm_sframes_t alsa_ret;
-        snd_pcm_t *alsa_s;
-        Glib::ustring notificationDeviceName = Mangler::config["NotificationDeviceName"].toUString();
-
-        if (notificationDeviceName == "Default" || notificationDeviceName == "") {
-            notificationDeviceName = "default";
-        } else if (notificationDeviceName == "Custom") {
-            notificationDeviceName = Mangler::config["NotificationDeviceCustomName"].toUString();
-        }
-
-        if ((alsa_error = snd_pcm_open(
-                        &alsa_s,
-                        notificationDeviceName.c_str(),
-                        SND_PCM_STREAM_PLAYBACK,
-                        0)) < 0) {
-            fprintf(stderr, "snd_pcm_open() failed: %s\n", snd_strerror(alsa_error));
-            return;
-        }
-        if ((alsa_error = snd_pcm_set_params(
-                        alsa_s,                        // pcm handle
-                        SND_PCM_FORMAT_S16_LE,         // format
-                        SND_PCM_ACCESS_RW_INTERLEAVED, // access
-                        1,                             // channels
-                        44100,                         // rate
-                        true,                          // soft_resample
-                        150000)) < 0) {                // latency in usec (0.15 sec)
-            fprintf(stderr, "snd_pcm_set_params() failed: %s\n", snd_strerror(alsa_error));
-            snd_pcm_close(alsa_s);
-            return;
-        }
-        if ((alsa_error = snd_pcm_prepare(alsa_s)) < 0) {
-            fprintf(stderr, "snd_pcm_prepare() failed: %s\n", snd_strerror(alsa_error));
-            snd_pcm_close(alsa_s);
-            return;
-        }
-
-        uint32_t buflen;
-        uint32_t pcmlen = sounds[name]->length;
-        uint8_t *pcmptr = sounds[name]->sample;
-        while ((buflen = pcmlen >= ALSA_BUF ? ALSA_BUF : pcmlen)) {
-            if ((alsa_ret = snd_pcm_writei(alsa_s, pcmptr, buflen / sizeof(int16_t))) < 0) {
-                if (alsa_ret == -EPIPE) {
-                    snd_pcm_prepare(alsa_s);
-                } else if ((alsa_error = snd_pcm_recover(alsa_s, alsa_ret, 0)) < 0) {
-                    fprintf(stderr, "snd_pcm_writei() failed: %s\n", snd_strerror(alsa_error));
-                    snd_pcm_close(alsa_s);
-                    return;
-                }
-            }
-            pcmlen -= buflen;
-            pcmptr += buflen;
-        }
-
-        snd_pcm_drain(alsa_s);
-        snd_pcm_close(alsa_s);
-    }
-#endif
-    //throw Glib::Thread::Exit();
-    return;
+    ManglerAudio *output = new ManglerAudio("output", false, 0);
+    output->open(44100, AUDIO_OUTPUT, 0, 1);
+    output->queue(sounds[name]->length, sounds[name]->sample);
+    output->finish();
 }/*}}}*/
 
 #ifdef HAVE_PULSE

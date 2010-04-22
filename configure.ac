@@ -46,7 +46,7 @@ AC_ARG_ENABLE(g15,   [  --disable-g15           disable Logitech G15 keyboard su
 if test "$enable_gsm" != "no" ; then
 	AC_CHECK_LIB([gsm], [gsm_create], [], [
 		echo "error: cannot find libgsm: Is it installed? Also make sure you have the"
-		echo "       libgsm development packages installed"
+		echo "       libgsm development packages installed."
 		exit -1
 		])
 	AC_CHECK_HEADER([gsm.h], [AC_DEFINE(HAVE_GSM_H, 1, [location of gsm.h])], [
@@ -132,34 +132,48 @@ AC_ARG_WITH([alsa],
 	[:],
 	[with_alsa=yes])
 
+AC_ARG_WITH([oss],
+	[AS_HELP_STRING([--without-oss], [disable support for OSS])],
+	[:],
+	[with_oss=yes])
+
 AS_IF(
 	[test "x$with_pulseaudio" != xno],
 	[
-		PKG_CHECK_MODULES(pulse, libpulse-simple >= 0.9.14, [AC_DEFINE(HAVE_PULSE, 1, [have pulse audio])], [
-			echo "**************************************************************************"
-			echo "*** ERROR: pulse audio development libraries or headers were not found ***"
-			echo "*** on your system.  You can disable PulseAudio support with           ***"
-			echo "*** ./configure --without-pulseaudio                                   ***"
-			echo "**************************************************************************"
-			exit 1
+		PKG_CHECK_MODULES(pulse, libpulse-simple >= 0.9.14, [
+			AC_DEFINE(HAVE_PULSE, 1, [have pulse])
+			AC_SUBST(pulse_CFLAGS)
+			AC_SUBST(pulse_LIBS)
+		], [
+			echo "warning: PulseAudio development libraries or headers were not found."
+			echo "         PulseAudio support is disabled."
 		])
-		AC_SUBST(pulse_CFLAGS)
-		AC_SUBST(pulse_LIBS)
 	],[:]
 )
 AS_IF(
 	[test "x$with_alsa" != xno],
 	[
-		PKG_CHECK_MODULES(alsa, alsa >= 1.0.0, [AC_DEFINE(HAVE_ALSA, 1, [have alsa])], [
-			echo "**************************************************************************"
-			echo "*** ERROR: ALSA audio development libraries or headers were not found  ***"
-			echo "*** on your system.  You can disable ALSA support with                 ***"
-			echo "*** ./configure --without-alsa                                         ***"
-			echo "**************************************************************************"
-			exit 1
+		PKG_CHECK_MODULES(alsa, alsa >= 1.0.0, [
+			AC_DEFINE(HAVE_ALSA, 1, [have alsa])
+			AC_SUBST(alsa_CFLAGS)
+			AC_SUBST(alsa_LIBS)
+		], [
+			echo "warning: ALSA development libraries or headers were not found."
+			echo "         ALSA support is disabled."
 		])
-		AC_SUBST(alsa_CFLAGS)
-		AC_SUBST(alsa_LIBS)
+		
+	],[:]
+)
+AS_IF(
+	[test "x$with_oss" != xno],
+	[
+		AC_CHECK_HEADER([sys/soundcard.h], [
+			AC_DEFINE(HAVE_OSS, 1, [have oss])
+		], [
+			echo "warning: OSS required headers were not found."
+			echo "         OSS support is disabled."
+		])
+		
 	],[:]
 )
 
@@ -188,12 +202,12 @@ AC_CONFIG_FILES([src/Makefile
                  Makefile
                  libventrilo3/Makefile])
 
-if test "x$with_pulseaudio" = xno -a "x$with_alsa" = "xno" ; then
+if test "x$with_pulseaudio" = "xno" -a "x$with_alsa" = "xno" -a "x$with_oss" = "xno" ; then
 	echo "**************************************************************************"
-	echo "*** WARNING: You have disabled support for both PulseAudio and ALSA.   ***"
+	echo "*** WARNING: You have disabled support for PulseAudio, ALSA and OSS.   ***"
 	echo "***          You can compile and use Mangler without an audio          ***"
-	echo "***          subsystem, but you will not have any sound, which more    ***"
-	echo "***          more or less makes the program useless.                   ***"
+	echo "***          subsystem but you will not have any sound, which more     ***"
+	echo "***          or less makes the program useless.                        ***"
 	echo "**************************************************************************"
 fi
 

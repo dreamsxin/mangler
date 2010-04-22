@@ -3258,25 +3258,23 @@ _v3_vrf_put_record(uint32_t user_id, uint32_t index, uint32_t type, const char *
         _v3_func_leave("_v3_vrf_put_record");
         return;
     }
+    rec->user_id = user_id;
     _v3_vrf_segment *segment = &rec->segment;
-    rec->user_id  = user_id;
-    rec->index    = index;
     segment->type = type;
     if (username) {
         strncpy(segment->username, username, sizeof(segment->username) - 1);
     }
-    _v3_vrf_audio audio;
-    memset(&audio, 0, sizeof(_v3_vrf_audio));
-    audio.headlen = sizeof(_v3_vrf_audio) + sizeof(segment->username);
-    audio.type    = type;
-    audio.index   = index;
-    rec->data = malloc(audio.headlen);
-    memset(rec->data, 0, audio.headlen);
-    rec->datalen = _v3_vrf_put_audio(&audio, rec->data);
+    _v3_vrf_audio *audio = &rec->audio;
+    audio->headlen = sizeof(_v3_vrf_audio) + sizeof(segment->username);
+    audio->type = type;
+    audio->index = index;
+    rec->data = malloc(audio->headlen);
+    memset(rec->data, 0, audio->headlen);
+    rec->datalen = _v3_vrf_put_audio(audio, rec->data);
     if (username) {
         strncpy(rec->data + rec->datalen, username, sizeof(segment->username) - 1);
     }
-    rec->datalen = audio.headlen;
+    rec->datalen = audio->headlen;
 
     _v3_func_leave("_v3_vrf_put_record");
 }/*}}}*/
@@ -3361,9 +3359,9 @@ _v3_vrf_record_event(
             rec->segment.time = time;
         }
         rec->segment.duration = time;
-        rec->fragcount++;
+        rec->audio.fragcount++;
         strncpy(ev->text.name, rec->segment.username, sizeof(ev->text.name) - 1);
-        ev->record.index = rec->index;
+        ev->record.index = rec->audio.index;
         ev->record.time = time;
         break;
       }
@@ -3388,11 +3386,11 @@ _v3_vrf_record_event(
         rec->datalen += V3_VRF_TEXTLEN;
         rec->segment.time = time;
         rec->segment.duration = time;
-        rec->fragcount++;
+        rec->audio.fragcount++;
         rec->stopped = true;
         strncpy(ev->status.message, data, sizeof(ev->status.message) - 1);
         strncpy(ev->text.name, rec->segment.username, sizeof(ev->text.name) - 1);
-        ev->record.index = rec->index;
+        ev->record.index = rec->audio.index;
         ev->record.time = time;
         ev->record.stopped = true;
         break;
@@ -3401,7 +3399,7 @@ _v3_vrf_record_event(
         for (rec = queue; rec; rec = rec->next) {
             if (rec->user_id == user_id && !rec->stopped) {
                 rec->stopped = true;
-                ev->record.index = rec->index;
+                ev->record.index = rec->audio.index;
                 ev->record.stopped = true;
                 break;
             }
@@ -3447,20 +3445,16 @@ _v3_vrf_record_event(
         _v3_vrf_segment *segment = &queue->segment;
         segment->headlen   = sizeof(_v3_vrf_segment);
         segment->duration -= segment->time;
+        _v3_vrf_audio *audio = &queue->audio;
         v3_vrfh->table = realloc(v3_vrfh->table, v3_vrfh->tablesize + segment->headlen);
-        v3_vrfh->tablesize += _v3_vrf_put_segment(queue->index, segment, (void *)v3_vrfh->table + v3_vrfh->tablesize);
-        _v3_vrf_audio audio;
-        memset(&audio, 0, sizeof(_v3_vrf_audio));
-        if (_v3_vrf_get_audio(v3_vrfh, segment->offset, &audio) == V3_OK) {
-            audio.fragcount = queue->fragcount;
-            _v3_vrf_put_audio(&audio, &audio);
-            int64_t ret;
-            if ((ret = lseek(v3_vrfh->file, segment->offset, SEEK_SET)) < 0 ||
-                (ret = write(v3_vrfh->file, &audio, sizeof(_v3_vrf_audio))) < sizeof(_v3_vrf_audio)) {
-                _v3_error("%s: FATAL: failed to put vrf audio segment: %s", v3_vrfh->filename, (ret >= 0) ? "FATAL partial write" : strerror(errno));
-            }
-            fdatasync(v3_vrfh->file);
+        v3_vrfh->tablesize += _v3_vrf_put_segment(audio->index, segment, (void *)v3_vrfh->table + v3_vrfh->tablesize);
+        _v3_vrf_put_audio(audio, audio);
+        int64_t ret;
+        if ((ret = lseek(v3_vrfh->file, segment->offset, SEEK_SET)) < 0 ||
+            (ret = write(v3_vrfh->file, audio, sizeof(_v3_vrf_audio))) < sizeof(_v3_vrf_audio)) {
+            _v3_error("%s: FATAL: failed to put vrf audio segment: %s", v3_vrfh->filename, (ret >= 0) ? "FATAL partial write" : strerror(errno));
         }
+        fdatasync(v3_vrfh->file);
         _v3_vrf_rec *next;
         if ((next = queue->next)) {
             memcpy(queue, next, sizeof(_v3_vrf_rec));
@@ -3614,11 +3608,11 @@ _v3_vrf_recover(_v3_vrf *vrfh) {/*{{{*/
         _v3_func_leave("_v3_vrf_recover");
         return V3_FAILURE;
     }
+    vrfh->header.segcount = 0;
     uint32_t headlen;
     _v3_vrf_audio audio;
-    _v3_vrf_fragment fragment;
     _v3_vrf_segment *segment;
-    vrfh->header.segcount = 0;
+    _v3_vrf_fragment fragment;
     while (offset + sizeof(headlen) < vrfh->filelen) {
         if (lseek(vrfh->file, offset, SEEK_SET) < 0 ||
             read(vrfh->file, &headlen, sizeof(headlen)) < sizeof(headlen)) {
