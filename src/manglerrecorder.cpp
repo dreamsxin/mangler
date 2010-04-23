@@ -476,8 +476,7 @@ ManglerRecorder::play(void) {/*{{{*/
             switch ((player == self) ? vrfd->type : V3_VRF_DATA_NULL) {
               case V3_VRF_DATA_AUDIO:
                 if (!recd->outputAudio) {
-                    recd->outputAudio = new ManglerAudio("output", false, 0);
-                    recd->outputAudio->open(vrfd->rate, AUDIO_OUTPUT, 0, vrfd->channels);
+                    recd->outputAudio = new ManglerAudio(AUDIO_OUTPUT, vrfd->rate, vrfd->channels, 0, 0, false);
                 }
                 if (vrfd->length) {
                     recd->outputAudio->queue(vrfd->length, (uint8_t *)vrfd->data);

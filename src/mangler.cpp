@@ -272,7 +272,7 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
     Glib::signal_timeout().connect(sigc::mem_fun(this, &Mangler::checkPushToTalkMouse), 100);
 
     // Create our audio control object for managing devices
-    audioControl = new ManglerAudio("control");
+    audioControl = new ManglerAudio(AUDIO_CONTROL);
     audioControl->getDeviceList(config["AudioSubsystem"].toUString());
 
     // set the default window size from the settings
@@ -793,8 +793,7 @@ void Mangler::startTransmit(void) {/*{{{*/
         v3_free_user(user);
         channelTree->setUserIcon(v3_get_user_id(), "orange");
         statusIcon->set(icons["tray_icon_yellow"]);
-        inputAudio = new ManglerAudio("input");
-        inputAudio->open(codec->rate, AUDIO_INPUT, codec->pcmframesize);
+        inputAudio = new ManglerAudio(AUDIO_INPUT, codec->rate, 1, codec->pcmframesize);
     }
 }/*}}}*/
 void Mangler::stopTransmit(void) {/*{{{*/
@@ -808,6 +807,7 @@ void Mangler::stopTransmit(void) {/*{{{*/
     }
     if (inputAudio) {
         inputAudio->finish();
+        inputAudio = NULL;
     }
 }/*}}}*/
 
@@ -1274,8 +1274,7 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                                 free(u);
                             }
 #endif
-                            outputAudio[ev->user.id] = new ManglerAudio("output");
-                            outputAudio[ev->user.id]->open(ev->pcm.rate, AUDIO_OUTPUT, 0, ev->pcm.channels);
+                            outputAudio[ev->user.id] = new ManglerAudio(AUDIO_OUTPUT, ev->pcm.rate, ev->pcm.channels);
                         }
                         // And queue the audio
                         if (outputAudio[ev->user.id]) {

@@ -48,8 +48,10 @@
 #include <string.h>
 #include <errno.h>
 
-#define AUDIO_INPUT  false
-#define AUDIO_OUTPUT true
+#define AUDIO_CONTROL   -2
+#define AUDIO_INPUT     -1
+#define AUDIO_OUTPUT    0
+#define AUDIO_NOTIFY    1
 
 class ManglerPCM
 {
@@ -82,27 +84,16 @@ class ManglerAudioDevice
 class ManglerAudio
 {
     public:
-        ManglerAudio(Glib::ustring type, bool check_loggedin = true, uint8_t buffer = 4);
+        ManglerAudio(int type, uint32_t rate = 0, uint8_t channels = 1, uint32_t pcm_framesize = 0, uint8_t buffer = 4, bool check_loggedin = true);
         ~ManglerAudio();
-        void            open(uint32_t rate, bool type, uint32_t pcm_framesize = 0, uint8_t channels = 1);
-        bool            openOutput(uint32_t rate);
-        void            closeOutput(bool drain = false);
-        bool            openInput(uint32_t rate);
-        void            closeInput(bool drain = false);
-        void            queue(uint32_t length, uint8_t *sample);
-        void            output(void);
-        void            input(void);
-        void            finish(void);
 
-        void            getDeviceList(Glib::ustring audioSubsystem);
-        void            playNotification(Glib::ustring name);
-
-        bool            check_loggedin;
-        GAsyncQueue*    pcm_queue;
+        int             type;
         uint32_t        rate;
         uint32_t        pcm_framesize;
         uint8_t         channels;
         uint8_t         buffer;
+        bool            check_loggedin;
+        GAsyncQueue*    pcm_queue;
 #ifdef HAVE_PULSE
         pa_sample_spec  pulse_samplespec;
         pa_buffer_attr  buffer_attr;
@@ -117,20 +108,24 @@ class ManglerAudio
 #ifdef HAVE_OSS
         int             oss_fd;
 #endif
-        ManglerPCM      *pcmdata;
+        bool            outputStreamOpen;
+        bool            inputStreamOpen;
+        bool            stop_input;
 
         std::map<Glib::ustring, ManglerPCM *> sounds;
 
-        std::vector<ManglerAudioDevice*> inputDevices;
         std::vector<ManglerAudioDevice*> outputDevices;
+        std::vector<ManglerAudioDevice*> inputDevices;
 
-        bool            stop_input;
-        bool            stop_output;
-
-        bool            outputStreamOpen;
-        bool            inputStreamOpen;
+        bool            open(void);
+        void            close(bool drain = false);
+        void            queue(uint32_t length, uint8_t *sample);
+        void            finish(void);
+        void            output(void);
+        void            input(void);
+        void            getDeviceList(Glib::ustring audioSubsystem);
+        void            playNotification(Glib::ustring name);
 };
-
 
 // this is easier in C
 #ifdef HAVE_PULSE
