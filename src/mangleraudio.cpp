@@ -704,8 +704,7 @@ ManglerAudio::getDeviceList(Glib::ustring audioSubsystem) {/*{{{*/
             }
             for (dev = 0; dev < sysinfo.numaudios; dev++) {
                 ainfo.dev = dev;
-                ::ioctl(fd, SNDCTL_AUDIOINFO, &ainfo);
-                if (!ainfo.enabled) {
+                if (::ioctl(fd, SNDCTL_AUDIOINFO, &ainfo) < 0 || !ainfo.enabled) {
                     continue;
                 }
                 if (ainfo.caps & PCM_CAP_OUTPUT) {
