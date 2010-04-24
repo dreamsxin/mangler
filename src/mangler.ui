@@ -3981,6 +3981,7 @@ These are useful for developers.</property>
                       <object class="GtkVBox" id="vbox13">
                         <property name="visible">True</property>
                         <property name="orientation">vertical</property>
+                        <property name="spacing">4</property>
                         <child>
                           <object class="GtkScrolledWindow" id="scrolledwindow5">
                             <property name="visible">True</property>
@@ -3988,382 +3989,399 @@ These are useful for developers.</property>
                             <property name="hscrollbar_policy">automatic</property>
                             <property name="vscrollbar_policy">automatic</property>
                             <child>
-                              <object class="GtkTable" id="adminServerTable">
+                              <object class="GtkViewport" id="viewport7">
                                 <property name="visible">True</property>
-                                <property name="n_rows">14</property>
-                                <property name="n_columns">2</property>
-                                <property name="column_spacing">4</property>
-                                <property name="row_spacing">2</property>
+                                <property name="resize_mode">queue</property>
                                 <child>
-                                  <object class="GtkLabel" id="adminServerCommentLabel">
+                                  <object class="GtkTable" id="adminServerTable">
                                     <property name="visible">True</property>
-                                    <property name="xalign">0.94999998807907104</property>
-                                    <property name="label" translatable="yes">Server Comment:</property>
-                                  </object>
-                                  <packing>
-                                    <property name="y_options">GTK_FILL</property>
-                                  </packing>
-                                </child>
-                                <child>
-                                  <object class="GtkEntry" id="adminServerComment">
-                                    <property name="visible">True</property>
-                                    <property name="can_focus">True</property>
-                                    <property name="invisible_char">&#x2022;</property>
-                                    <accessibility>
-                                      <relation type="labelled-by" target="adminServerCommentLabel"/>
-                                    </accessibility>
-                                  </object>
-                                  <packing>
-                                    <property name="left_attach">1</property>
-                                    <property name="right_attach">2</property>
-                                    <property name="y_options">GTK_FILL</property>
-                                  </packing>
-                                </child>
-                                <child>
-                                  <object class="GtkLabel" id="adminServerMaxGuestsLabel">
-                                    <property name="visible">True</property>
-                                    <property name="xalign">0.94999998807907104</property>
-                                    <property name="label" translatable="yes">Max Guests:</property>
-                                  </object>
-                                  <packing>
-                                    <property name="top_attach">6</property>
-                                    <property name="bottom_attach">7</property>
-                                    <property name="y_options">GTK_FILL</property>
-                                  </packing>
-                                </child>
-                                <child>
-                                  <object class="GtkEntry" id="adminServerMaxGuests">
-                                    <property name="width_request">50</property>
-                                    <property name="visible">True</property>
-                                    <property name="can_focus">True</property>
-                                    <property name="invisible_char">&#x2022;</property>
-                                    <accessibility>
-                                      <relation type="labelled-by" target="adminServerMaxGuestsLabel"/>
-                                    </accessibility>
-                                  </object>
-                                  <packing>
-                                    <property name="left_attach">1</property>
-                                    <property name="right_attach">2</property>
-                                    <property name="top_attach">6</property>
-                                    <property name="bottom_attach">7</property>
-                                    <property name="y_options">GTK_FILL</property>
-                                  </packing>
-                                </child>
-                                <child>
-                                  <object class="GtkLabel" id="adminServerKickGuestsLabel">
-                                    <property name="visible">True</property>
-                                    <property name="xalign">0.94999998807907104</property>
-                                    <property name="label" translatable="yes">Kick Guests after:</property>
-                                  </object>
-                                  <packing>
-                                    <property name="top_attach">7</property>
-                                    <property name="bottom_attach">8</property>
-                                    <property name="y_options">GTK_FILL</property>
-                                  </packing>
-                                </child>
-                                <child>
-                                  <object class="GtkLabel" id="adminServerBanGuestsLabel">
-                                    <property name="visible">True</property>
-                                    <property name="xalign">0.94999998807907104</property>
-                                    <property name="label" translatable="yes">Ban Guests for:</property>
-                                  </object>
-                                  <packing>
-                                    <property name="top_attach">8</property>
-                                    <property name="bottom_attach">9</property>
-                                    <property name="y_options">GTK_FILL</property>
-                                  </packing>
-                                </child>
-                                <child>
-                                  <object class="GtkHBox" id="adminServerKickGuestsHBox">
-                                    <property name="visible">True</property>
+                                    <property name="n_rows">14</property>
+                                    <property name="n_columns">2</property>
+                                    <property name="column_spacing">4</property>
+                                    <property name="row_spacing">2</property>
                                     <child>
-                                      <object class="GtkEntry" id="adminServerKickGuests">
-                                        <property name="width_request">50</property>
+                                      <object class="GtkLabel" id="adminServerCommentLabel">
+                                        <property name="visible">True</property>
+                                        <property name="xalign">0.94999998807907104</property>
+                                        <property name="label" translatable="yes">Server Comment:</property>
+                                      </object>
+                                      <packing>
+                                        <property name="y_options">GTK_FILL</property>
+                                      </packing>
+                                    </child>
+                                    <child>
+                                      <object class="GtkEntry" id="adminServerComment">
                                         <property name="visible">True</property>
                                         <property name="can_focus">True</property>
-                                        <property name="invisible_char">&#x2022;</property>
+                                        <property name="invisible_char">&#x25CF;</property>
                                         <accessibility>
-                                          <relation type="labelled-by" target="adminServerKickGuestsLabel"/>
+                                          <relation type="labelled-by" target="adminServerCommentLabel"/>
                                         </accessibility>
                                       </object>
                                       <packing>
-                                        <property name="position">0</property>
+                                        <property name="left_attach">1</property>
+                                        <property name="right_attach">2</property>
+                                        <property name="y_options">GTK_FILL</property>
                                       </packing>
                                     </child>
                                     <child>
-                                      <object class="GtkLabel" id="adminServerKickGuestsMinutesLabel">
+                                      <object class="GtkLabel" id="adminServerMaxGuestsLabel">
                                         <property name="visible">True</property>
-                                        <property name="xalign">0</property>
-                                        <property name="label" translatable="yes">minutes</property>
+                                        <property name="xalign">0.94999998807907104</property>
+                                        <property name="label" translatable="yes">Max Guests:</property>
                                       </object>
                                       <packing>
-                                        <property name="expand">False</property>
-                                        <property name="padding">5</property>
-                                        <property name="position">1</property>
+                                        <property name="top_attach">6</property>
+                                        <property name="bottom_attach">7</property>
+                                        <property name="y_options">GTK_FILL</property>
                                       </packing>
                                     </child>
-                                  </object>
-                                  <packing>
-                                    <property name="left_attach">1</property>
-                                    <property name="right_attach">2</property>
-                                    <property name="top_attach">7</property>
-                                    <property name="bottom_attach">8</property>
-                                    <property name="y_options">GTK_FILL</property>
-                                  </packing>
-                                </child>
-                                <child>
-                                  <object class="GtkHBox" id="adminServerBanGuestsHBox">
-                                    <property name="visible">True</property>
                                     <child>
-                                      <object class="GtkEntry" id="adminServerBanGuests">
+                                      <object class="GtkEntry" id="adminServerMaxGuests">
                                         <property name="width_request">50</property>
                                         <property name="visible">True</property>
                                         <property name="can_focus">True</property>
-                                        <property name="invisible_char">&#x2022;</property>
+                                        <property name="invisible_char">&#x25CF;</property>
                                         <accessibility>
-                                          <relation type="labelled-by" target="adminServerBanGuestsLabel"/>
+                                          <relation type="labelled-by" target="adminServerMaxGuestsLabel"/>
                                         </accessibility>
                                       </object>
                                       <packing>
-                                        <property name="position">0</property>
+                                        <property name="left_attach">1</property>
+                                        <property name="right_attach">2</property>
+                                        <property name="top_attach">6</property>
+                                        <property name="bottom_attach">7</property>
+                                        <property name="y_options">GTK_FILL</property>
                                       </packing>
                                     </child>
                                     <child>
-                                      <object class="GtkLabel" id="adminServerBanGuestsMinutesLabel">
+                                      <object class="GtkLabel" id="adminServerKickGuestsLabel">
                                         <property name="visible">True</property>
-                                        <property name="xalign">0</property>
-                                        <property name="label" translatable="yes">minutes</property>
+                                        <property name="xalign">0.94999998807907104</property>
+                                        <property name="label" translatable="yes">Kick Guests after:</property>
                                       </object>
                                       <packing>
-                                        <property name="expand">False</property>
-                                        <property name="padding">5</property>
-                                        <property name="position">1</property>
+                                        <property name="top_attach">7</property>
+                                        <property name="bottom_attach">8</property>
+                                        <property name="y_options">GTK_FILL</property>
                                       </packing>
                                     </child>
-                                  </object>
-                                  <packing>
-                                    <property name="left_attach">1</property>
-                                    <property name="right_attach">2</property>
-                                    <property name="top_attach">8</property>
-                                    <property name="bottom_attach">9</property>
-                                    <property name="y_options">GTK_FILL</property>
-                                  </packing>
-                                </child>
-                                <child>
-                                  <object class="GtkHSeparator" id="adminServerSeparator">
-                                    <property name="visible">True</property>
-                                  </object>
-                                  <packing>
-                                    <property name="right_attach">2</property>
-                                    <property name="top_attach">5</property>
-                                    <property name="bottom_attach">6</property>
-                                    <property name="y_options">GTK_FILL</property>
-                                  </packing>
-                                </child>
-                                <child>
-                                  <object class="GtkLabel" id="adminServerGuestAccounts">
-                                    <property name="visible">True</property>
-                                    <property name="xalign">0.05000000074505806</property>
-                                    <property name="yalign">0.94999998807907104</property>
-                                    <property name="ypad">3</property>
-                                    <property name="label" translatable="yes">&lt;b&gt;Guest Accounts&lt;/b&gt;</property>
-                                    <property name="use_markup">True</property>
-                                  </object>
-                                  <packing>
-                                    <property name="right_attach">2</property>
-                                    <property name="top_attach">4</property>
-                                    <property name="bottom_attach">5</property>
-                                    <property name="y_options">GTK_FILL</property>
-                                  </packing>
-                                </child>
-                                <child>
-                                  <object class="GtkLabel" id="adminServerInactivity">
-                                    <property name="visible">True</property>
-                                    <property name="xalign">0.05000000074505806</property>
-                                    <property name="yalign">0.94999998807907104</property>
-                                    <property name="ypad">3</property>
-                                    <property name="label" translatable="yes">&lt;b&gt;Inactivity&lt;/b&gt;</property>
-                                    <property name="use_markup">True</property>
-                                  </object>
-                                  <packing>
-                                    <property name="right_attach">2</property>
-                                    <property name="top_attach">9</property>
-                                    <property name="bottom_attach">10</property>
-                                    <property name="y_options">GTK_FILL</property>
-                                  </packing>
-                                </child>
-                                <child>
-                                  <object class="GtkHSeparator" id="adminServerSeparator2">
-                                    <property name="visible">True</property>
-                                  </object>
-                                  <packing>
-                                    <property name="right_attach">2</property>
-                                    <property name="top_attach">10</property>
-                                    <property name="bottom_attach">11</property>
-                                    <property name="y_options">GTK_FILL</property>
-                                  </packing>
-                                </child>
-                                <child>
-                                  <object class="GtkLabel" id="adminServerTimeoutLabel">
-                                    <property name="visible">True</property>
-                                    <property name="xalign">0.94999998807907104</property>
-                                    <property name="label" translatable="yes">Timeout:</property>
-                                  </object>
-                                  <packing>
-                                    <property name="top_attach">11</property>
-                                    <property name="bottom_attach">12</property>
-                                    <property name="y_options">GTK_FILL</property>
-                                  </packing>
-                                </child>
-                                <child>
-                                  <object class="GtkHBox" id="adminServerTimeoutHBox">
-                                    <property name="visible">True</property>
                                     <child>
-                                      <object class="GtkEntry" id="adminServerTimeout">
-                                        <property name="width_request">50</property>
+                                      <object class="GtkLabel" id="adminServerBanGuestsLabel">
                                         <property name="visible">True</property>
-                                        <property name="can_focus">True</property>
-                                        <property name="invisible_char">&#x2022;</property>
-                                        <accessibility>
-                                          <relation type="labelled-by" target="adminServerTimeoutLabel"/>
-                                        </accessibility>
+                                        <property name="xalign">0.94999998807907104</property>
+                                        <property name="label" translatable="yes">Ban Guests for:</property>
                                       </object>
                                       <packing>
-                                        <property name="position">0</property>
+                                        <property name="top_attach">8</property>
+                                        <property name="bottom_attach">9</property>
+                                        <property name="y_options">GTK_FILL</property>
                                       </packing>
                                     </child>
                                     <child>
-                                      <object class="GtkLabel" id="adminServerTimeoutMinutesLabel">
+                                      <object class="GtkHBox" id="adminServerKickGuestsHBox">
+                                        <property name="visible">True</property>
+                                        <child>
+                                          <object class="GtkEntry" id="adminServerKickGuests">
+                                            <property name="width_request">50</property>
+                                            <property name="visible">True</property>
+                                            <property name="can_focus">True</property>
+                                            <property name="invisible_char">&#x25CF;</property>
+                                            <accessibility>
+                                              <relation type="labelled-by" target="adminServerKickGuestsLabel"/>
+                                            </accessibility>
+                                          </object>
+                                          <packing>
+                                            <property name="position">0</property>
+                                          </packing>
+                                        </child>
+                                        <child>
+                                          <object class="GtkLabel" id="adminServerKickGuestsMinutesLabel">
+                                            <property name="visible">True</property>
+                                            <property name="xalign">0</property>
+                                            <property name="label" translatable="yes">minutes</property>
+                                          </object>
+                                          <packing>
+                                            <property name="expand">False</property>
+                                            <property name="padding">5</property>
+                                            <property name="position">1</property>
+                                          </packing>
+                                        </child>
+                                      </object>
+                                      <packing>
+                                        <property name="left_attach">1</property>
+                                        <property name="right_attach">2</property>
+                                        <property name="top_attach">7</property>
+                                        <property name="bottom_attach">8</property>
+                                        <property name="y_options">GTK_FILL</property>
+                                      </packing>
+                                    </child>
+                                    <child>
+                                      <object class="GtkHBox" id="adminServerBanGuestsHBox">
+                                        <property name="visible">True</property>
+                                        <child>
+                                          <object class="GtkEntry" id="adminServerBanGuests">
+                                            <property name="width_request">50</property>
+                                            <property name="visible">True</property>
+                                            <property name="can_focus">True</property>
+                                            <property name="invisible_char">&#x25CF;</property>
+                                            <accessibility>
+                                              <relation type="labelled-by" target="adminServerBanGuestsLabel"/>
+                                            </accessibility>
+                                          </object>
+                                          <packing>
+                                            <property name="position">0</property>
+                                          </packing>
+                                        </child>
+                                        <child>
+                                          <object class="GtkLabel" id="adminServerBanGuestsMinutesLabel">
+                                            <property name="visible">True</property>
+                                            <property name="xalign">0</property>
+                                            <property name="label" translatable="yes">minutes</property>
+                                          </object>
+                                          <packing>
+                                            <property name="expand">False</property>
+                                            <property name="padding">5</property>
+                                            <property name="position">1</property>
+                                          </packing>
+                                        </child>
+                                      </object>
+                                      <packing>
+                                        <property name="left_attach">1</property>
+                                        <property name="right_attach">2</property>
+                                        <property name="top_attach">8</property>
+                                        <property name="bottom_attach">9</property>
+                                        <property name="y_options">GTK_FILL</property>
+                                      </packing>
+                                    </child>
+                                    <child>
+                                      <object class="GtkHSeparator" id="adminServerSeparator">
+                                        <property name="visible">True</property>
+                                      </object>
+                                      <packing>
+                                        <property name="right_attach">2</property>
+                                        <property name="top_attach">5</property>
+                                        <property name="bottom_attach">6</property>
+                                        <property name="y_options">GTK_FILL</property>
+                                      </packing>
+                                    </child>
+                                    <child>
+                                      <object class="GtkLabel" id="adminServerGuestAccounts">
                                         <property name="visible">True</property>
                                         <property name="xalign">0.05000000074505806</property>
-                                        <property name="label" translatable="yes">minutes</property>
+                                        <property name="yalign">0.94999998807907104</property>
+                                        <property name="ypad">3</property>
+                                        <property name="label" translatable="yes">&lt;b&gt;Guest Accounts&lt;/b&gt;</property>
+                                        <property name="use_markup">True</property>
                                       </object>
                                       <packing>
-                                        <property name="expand">False</property>
-                                        <property name="padding">5</property>
-                                        <property name="position">1</property>
+                                        <property name="right_attach">2</property>
+                                        <property name="top_attach">4</property>
+                                        <property name="bottom_attach">5</property>
+                                        <property name="y_options">GTK_FILL</property>
+                                      </packing>
+                                    </child>
+                                    <child>
+                                      <object class="GtkLabel" id="adminServerInactivity">
+                                        <property name="visible">True</property>
+                                        <property name="xalign">0.05000000074505806</property>
+                                        <property name="yalign">0.94999998807907104</property>
+                                        <property name="ypad">3</property>
+                                        <property name="label" translatable="yes">&lt;b&gt;Inactivity&lt;/b&gt;</property>
+                                        <property name="use_markup">True</property>
+                                      </object>
+                                      <packing>
+                                        <property name="right_attach">2</property>
+                                        <property name="top_attach">9</property>
+                                        <property name="bottom_attach">10</property>
+                                        <property name="y_options">GTK_FILL</property>
+                                      </packing>
+                                    </child>
+                                    <child>
+                                      <object class="GtkHSeparator" id="adminServerSeparator2">
+                                        <property name="visible">True</property>
+                                      </object>
+                                      <packing>
+                                        <property name="right_attach">2</property>
+                                        <property name="top_attach">10</property>
+                                        <property name="bottom_attach">11</property>
+                                        <property name="y_options">GTK_FILL</property>
+                                      </packing>
+                                    </child>
+                                    <child>
+                                      <object class="GtkLabel" id="adminServerTimeoutLabel">
+                                        <property name="visible">True</property>
+                                        <property name="xalign">0.94999998807907104</property>
+                                        <property name="label" translatable="yes">Timeout:</property>
+                                      </object>
+                                      <packing>
+                                        <property name="top_attach">11</property>
+                                        <property name="bottom_attach">12</property>
+                                        <property name="y_options">GTK_FILL</property>
+                                      </packing>
+                                    </child>
+                                    <child>
+                                      <object class="GtkHBox" id="adminServerTimeoutHBox">
+                                        <property name="visible">True</property>
+                                        <child>
+                                          <object class="GtkEntry" id="adminServerTimeout">
+                                            <property name="width_request">50</property>
+                                            <property name="visible">True</property>
+                                            <property name="can_focus">True</property>
+                                            <property name="invisible_char">&#x25CF;</property>
+                                            <accessibility>
+                                              <relation type="labelled-by" target="adminServerTimeoutLabel"/>
+                                            </accessibility>
+                                          </object>
+                                          <packing>
+                                            <property name="position">0</property>
+                                          </packing>
+                                        </child>
+                                        <child>
+                                          <object class="GtkLabel" id="adminServerTimeoutMinutesLabel">
+                                            <property name="visible">True</property>
+                                            <property name="xalign">0.05000000074505806</property>
+                                            <property name="label" translatable="yes">minutes</property>
+                                          </object>
+                                          <packing>
+                                            <property name="expand">False</property>
+                                            <property name="padding">5</property>
+                                            <property name="position">1</property>
+                                          </packing>
+                                        </child>
+                                      </object>
+                                      <packing>
+                                        <property name="left_attach">1</property>
+                                        <property name="right_attach">2</property>
+                                        <property name="top_attach">11</property>
+                                        <property name="bottom_attach">12</property>
+                                        <property name="y_options">GTK_FILL</property>
+                                      </packing>
+                                    </child>
+                                    <child>
+                                      <object class="GtkLabel" id="adminServerActionLabel">
+                                        <property name="visible">True</property>
+                                        <property name="xalign">0.94999998807907104</property>
+                                        <property name="label" translatable="yes">Action:</property>
+                                      </object>
+                                      <packing>
+                                        <property name="top_attach">12</property>
+                                        <property name="bottom_attach">13</property>
+                                        <property name="y_options">GTK_FILL</property>
+                                      </packing>
+                                    </child>
+                                    <child>
+                                      <object class="GtkComboBox" id="adminServerChannel">
+                                        <property name="visible">True</property>
+                                        <accessibility>
+                                          <relation type="labelled-by" target="adminServerChannelLabel"/>
+                                        </accessibility>
+                                      </object>
+                                      <packing>
+                                        <property name="left_attach">1</property>
+                                        <property name="right_attach">2</property>
+                                        <property name="top_attach">13</property>
+                                        <property name="bottom_attach">14</property>
+                                        <property name="y_options">GTK_FILL</property>
+                                      </packing>
+                                    </child>
+                                    <child>
+                                      <object class="GtkComboBox" id="adminServerAction">
+                                        <property name="visible">True</property>
+                                        <accessibility>
+                                          <relation type="labelled-by" target="adminServerActionLabel"/>
+                                        </accessibility>
+                                      </object>
+                                      <packing>
+                                        <property name="left_attach">1</property>
+                                        <property name="right_attach">2</property>
+                                        <property name="top_attach">12</property>
+                                        <property name="bottom_attach">13</property>
+                                        <property name="y_options">GTK_FILL</property>
+                                      </packing>
+                                    </child>
+                                    <child>
+                                      <object class="GtkLabel" id="adminServerChannelLabel">
+                                        <property name="visible">True</property>
+                                        <property name="xalign">0.94999998807907104</property>
+                                        <property name="label" translatable="yes">Channel:</property>
+                                      </object>
+                                      <packing>
+                                        <property name="top_attach">13</property>
+                                        <property name="bottom_attach">14</property>
+                                        <property name="y_options">GTK_FILL</property>
+                                      </packing>
+                                    </child>
+                                    <child>
+                                      <object class="GtkLabel" id="adminServerChatFilterLabel">
+                                        <property name="visible">True</property>
+                                        <property name="xalign">0.94999998807907104</property>
+                                        <property name="label" translatable="yes">Chat Filter:</property>
+                                      </object>
+                                      <packing>
+                                        <property name="top_attach">1</property>
+                                        <property name="bottom_attach">2</property>
+                                        <property name="y_options">GTK_FILL</property>
+                                      </packing>
+                                    </child>
+                                    <child>
+                                      <object class="GtkLabel" id="adminServerChannelOrderingLabel">
+                                        <property name="visible">True</property>
+                                        <property name="xalign">0.94999998807907104</property>
+                                        <property name="label" translatable="yes">Channel Ordering:</property>
+                                      </object>
+                                      <packing>
+                                        <property name="top_attach">2</property>
+                                        <property name="bottom_attach">3</property>
+                                        <property name="y_options">GTK_FILL</property>
+                                      </packing>
+                                    </child>
+                                    <child>
+                                      <object class="GtkComboBox" id="adminServerChatFilter">
+                                        <property name="visible">True</property>
+                                        <accessibility>
+                                          <relation type="labelled-by" target="adminServerChatFilterLabel"/>
+                                        </accessibility>
+                                      </object>
+                                      <packing>
+                                        <property name="left_attach">1</property>
+                                        <property name="right_attach">2</property>
+                                        <property name="top_attach">1</property>
+                                        <property name="bottom_attach">2</property>
+                                        <property name="y_options">GTK_FILL</property>
+                                      </packing>
+                                    </child>
+                                    <child>
+                                      <object class="GtkComboBox" id="adminServerChannelOrdering">
+                                        <property name="visible">True</property>
+                                        <accessibility>
+                                          <relation type="labelled-by" target="adminServerChannelOrderingLabel"/>
+                                        </accessibility>
+                                      </object>
+                                      <packing>
+                                        <property name="left_attach">1</property>
+                                        <property name="right_attach">2</property>
+                                        <property name="top_attach">2</property>
+                                        <property name="bottom_attach">3</property>
+                                        <property name="y_options">GTK_FILL</property>
+                                      </packing>
+                                    </child>
+                                    <child>
+                                      <object class="GtkCheckButton" id="adminServerAlwaysDisplayMOTD">
+                                        <property name="label" translatable="yes">Always Display MOTD</property>
+                                        <property name="visible">True</property>
+                                        <property name="can_focus">True</property>
+                                        <property name="receives_default">False</property>
+                                        <property name="draw_indicator">True</property>
+                                      </object>
+                                      <packing>
+                                        <property name="right_attach">2</property>
+                                        <property name="top_attach">3</property>
+                                        <property name="bottom_attach">4</property>
+                                        <property name="y_options">GTK_FILL</property>
                                       </packing>
                                     </child>
                                   </object>
-                                  <packing>
-                                    <property name="left_attach">1</property>
-                                    <property name="right_attach">2</property>
-                                    <property name="top_attach">11</property>
-                                    <property name="bottom_attach">12</property>
-                                    <property name="y_options">GTK_FILL</property>
-                                  </packing>
-                                </child>
-                                <child>
-                                  <object class="GtkLabel" id="adminServerActionLabel">
-                                    <property name="visible">True</property>
-                                    <property name="xalign">0.94999998807907104</property>
-                                    <property name="label" translatable="yes">Action:</property>
-                                  </object>
-                                  <packing>
-                                    <property name="top_attach">12</property>
-                                    <property name="bottom_attach">13</property>
-                                    <property name="y_options">GTK_FILL</property>
-                                  </packing>
-                                </child>
-                                <child>
-                                  <object class="GtkComboBox" id="adminServerChannel">
-                                    <property name="visible">True</property>
-                                    <accessibility>
-                                      <relation type="labelled-by" target="adminServerChannelLabel"/>
-                                    </accessibility>
-                                  </object>
-                                  <packing>
-                                    <property name="left_attach">1</property>
-                                    <property name="right_attach">2</property>
-                                    <property name="top_attach">13</property>
-                                    <property name="bottom_attach">14</property>
-                                    <property name="y_options">GTK_FILL</property>
-                                  </packing>
-                                </child>
-                                <child>
-                                  <object class="GtkComboBox" id="adminServerAction">
-                                    <property name="visible">True</property>
-                                    <accessibility>
-                                      <relation type="labelled-by" target="adminServerActionLabel"/>
-                                    </accessibility>
-                                  </object>
-                                  <packing>
-                                    <property name="left_attach">1</property>
-                                    <property name="right_attach">2</property>
-                                    <property name="top_attach">12</property>
-                                    <property name="bottom_attach">13</property>
-                                    <property name="y_options">GTK_FILL</property>
-                                  </packing>
-                                </child>
-                                <child>
-                                  <object class="GtkLabel" id="adminServerChannelLabel">
-                                    <property name="visible">True</property>
-                                    <property name="xalign">0.94999998807907104</property>
-                                    <property name="label" translatable="yes">Channel:</property>
-                                  </object>
-                                  <packing>
-                                    <property name="top_attach">13</property>
-                                    <property name="bottom_attach">14</property>
-                                    <property name="y_options">GTK_FILL</property>
-                                  </packing>
-                                </child>
-                                <child>
-                                  <object class="GtkLabel" id="label1">
-                                    <property name="visible">True</property>
-                                    <property name="xalign">0.94999998807907104</property>
-                                    <property name="label" translatable="yes">Chat Filter:</property>
-                                  </object>
-                                  <packing>
-                                    <property name="top_attach">1</property>
-                                    <property name="bottom_attach">2</property>
-                                  </packing>
-                                </child>
-                                <child>
-                                  <object class="GtkLabel" id="label2">
-                                    <property name="visible">True</property>
-                                    <property name="xalign">0.94999998807907104</property>
-                                    <property name="label" translatable="yes">Channel Ordering:</property>
-                                  </object>
-                                  <packing>
-                                    <property name="top_attach">2</property>
-                                    <property name="bottom_attach">3</property>
-                                  </packing>
-                                </child>
-                                <child>
-                                  <object class="GtkComboBox" id="adminChatFilter">
-                                    <property name="visible">True</property>
-                                  </object>
-                                  <packing>
-                                    <property name="left_attach">1</property>
-                                    <property name="right_attach">2</property>
-                                    <property name="top_attach">1</property>
-                                    <property name="bottom_attach">2</property>
-                                  </packing>
-                                </child>
-                                <child>
-                                  <object class="GtkComboBox" id="adminChannelOrdering">
-                                    <property name="visible">True</property>
-                                  </object>
-                                  <packing>
-                                    <property name="left_attach">1</property>
-                                    <property name="right_attach">2</property>
-                                    <property name="top_attach">2</property>
-                                    <property name="bottom_attach">3</property>
-                                  </packing>
-                                </child>
-                                <child>
-                                  <object class="GtkCheckButton" id="adminAlwaysDisplayMOTD">
-                                    <property name="label" translatable="yes">Always Display MOTD</property>
-                                    <property name="visible">True</property>
-                                    <property name="can_focus">True</property>
-                                    <property name="receives_default">False</property>
-                                    <property name="draw_indicator">True</property>
-                                  </object>
-                                  <packing>
-                                    <property name="right_attach">2</property>
-                                    <property name="top_attach">3</property>
-                                    <property name="bottom_attach">4</property>
-                                  </packing>
                                 </child>
                               </object>
                             </child>
@@ -4381,7 +4399,6 @@ These are useful for developers.</property>
                           </object>
                           <packing>
                             <property name="expand">False</property>
-                            <property name="fill">False</property>
                             <property name="position">1</property>
                           </packing>
                         </child>
