@@ -954,7 +954,7 @@ _v3_get_0x4a(_v3_net_message *msg) {/*{{{*/
     _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown 3.....: %d", m->unknown_3);
     _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown 4.....: %d", m->unknown_4);
 
-    if ((m->error_id != 0) || (m->count == 0)) {
+    if (m->error_id != 0) {
         _v3_func_leave("_v3_get_0x4a");
         return true;
     }
@@ -966,7 +966,7 @@ _v3_get_0x4a(_v3_net_message *msg) {/*{{{*/
             {
                 int i;
                 _v3_msg_0x4a_account *msub = malloc(sizeof(_v3_msg_0x4a_account));
-                memcpy(msub, m, sizeof(*m));
+                memcpy(msub, m, sizeof(_v3_msg_0x4a));
                 msg->contents = msub;
 
                 msub->acct_list_count = msub->header.count;

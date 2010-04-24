@@ -4224,71 +4224,71 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                         break;
                     case V3_USERLIST_REMOVE:
                         {
-                        _v3_msg_0x4a_perms *msub = msg->contents;
-                        _v3_debug(V3_DEBUG_INFO, "received remove account for %d", msub->perms.account_id);
-                        _v3_remove_account(msub->perms.account_id);
+                            _v3_msg_0x4a_perms *msub = msg->contents;
+                            _v3_debug(V3_DEBUG_INFO, "received remove account for %d", msub->perms.account_id);
+                            _v3_remove_account(msub->perms.account_id);
 
-                        v3_event *ev = _v3_create_event(V3_EVENT_USERLIST_REMOVE);
-                        ev->account.id = msub->perms.account_id;
-                        _v3_debug(V3_DEBUG_INFO, "queuing event type %d for account id %d", ev->type, ev->account.id);
-                        v3_queue_event(ev);
+                            v3_event *ev = _v3_create_event(V3_EVENT_USERLIST_REMOVE);
+                            ev->account.id = msub->perms.account_id;
+                            _v3_debug(V3_DEBUG_INFO, "queuing event type %d for account id %d", ev->type, ev->account.id);
+                            v3_queue_event(ev);
                         }
                         break;
                     case V3_USERLIST_LUSER:
                         {
-                        _v3_msg_0x4a_perms *msub = msg->contents;
-                        _v3_debug(V3_DEBUG_INFO, "received local user permissions");
-                        _v3_print_permissions(&msub->perms);
+                            _v3_msg_0x4a_perms *msub = msg->contents;
+                            _v3_debug(V3_DEBUG_INFO, "received local user permissions");
+                            _v3_print_permissions(&msub->perms);
 
-                        _v3_lock_luser();
-                        v3_luser.perms = msub->perms;
-                        _v3_unlock_luser();
-                        v3_event *ev = _v3_create_event(V3_EVENT_PERMS_UPDATED);
-                        v3_queue_event(ev);
+                            _v3_lock_luser();
+                            v3_luser.perms = msub->perms;
+                            _v3_unlock_luser();
+                            v3_event *ev = _v3_create_event(V3_EVENT_PERMS_UPDATED);
+                            v3_queue_event(ev);
                         }
                         break;
                     case V3_USERLIST_CHANGE_OWNER:
                         {
-                        v3_account *a;
-                        char *old_owner, *new_owner = NULL;
-                        _v3_msg_0x4a_perms *msub = msg->contents;
+                            v3_account *a;
+                            char *old_owner, *new_owner = NULL;
+                            _v3_msg_0x4a_perms *msub = msg->contents;
 
-                        _v3_debug(V3_DEBUG_INFO, "received change owner (%d => %d)", msub->perms.account_id, msub->perms.replace_owner_id);
+                            _v3_debug(V3_DEBUG_INFO, "received change owner (%d => %d)", msub->perms.account_id, msub->perms.replace_owner_id);
 
-                        a = v3_get_account(msub->perms.account_id);
-                        if (a == NULL) {
-                            _v3_debug(V3_DEBUG_INFO, "can't find account id %d", msub->perms.account_id);
-                            break;
-                        }
-                        old_owner = strdup(a->username);
-                        v3_free_account(a);
+                            a = v3_get_account(msub->perms.account_id);
+                            if (a == NULL) {
+                                _v3_debug(V3_DEBUG_INFO, "can't find account id %d", msub->perms.account_id);
+                                break;
+                            }
+                            old_owner = strdup(a->username);
+                            v3_free_account(a);
 
-                        a = v3_get_account(msub->perms.replace_owner_id);
-                        if (new_owner == NULL) {
-                            _v3_debug(V3_DEBUG_INFO, "can't find account id %d", msub->perms.replace_owner_id);
+                            a = v3_get_account(msub->perms.replace_owner_id);
+                            if (new_owner == NULL) {
+                                _v3_debug(V3_DEBUG_INFO, "can't find account id %d", msub->perms.replace_owner_id);
+                                free(old_owner);
+                                break;
+                            }
+                            new_owner = strdup(a->username);
+                            v3_free_account(a);
+
+                            _v3_lock_accountlist();
+                            for (a = v3_account_list; a != NULL; a = a->next) {
+                                if (strcmp(a->owner, old_owner))
+                                    continue;
+
+                                free(a->owner);
+                                a->owner = strdup(new_owner);
+
+                                v3_event *ev = _v3_create_event(V3_EVENT_USERLIST_MODIFY);
+                                ev->account.id = a->perms.account_id;
+                                _v3_debug(V3_DEBUG_INFO, "queuing event type %d for account id %d", ev->type, ev->account.id);
+                                v3_queue_event(ev);
+                            }
+                            _v3_unlock_accountlist();
+
                             free(old_owner);
-                            break;
-                        }
-                        new_owner = strdup(a->username);
-                        v3_free_account(a);
-
-                        _v3_lock_accountlist();
-                        for (a = v3_account_list; a != NULL; a = a->next) {
-                            if (strcmp(a->owner, old_owner))
-                                continue;
-
-                            free(a->owner);
-                            a->owner = strdup(new_owner);
-
-                            v3_event *ev = _v3_create_event(V3_EVENT_USERLIST_MODIFY);
-                            ev->account.id = a->perms.account_id;
-                            _v3_debug(V3_DEBUG_INFO, "queuing event type %d for account id %d", ev->type, ev->account.id);
-                            v3_queue_event(ev);
-                        }
-                        _v3_unlock_accountlist();
-
-                        free(old_owner);
-                        free(new_owner);
+                            free(new_owner);
                         }
                         break;
                     default:
