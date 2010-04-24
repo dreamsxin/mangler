@@ -167,6 +167,13 @@ AS_IF(
 AS_IF(
 	[test "x$with_oss" != xno],
 	[
+		AS_IF(
+			[test -a /usr/lib/oss/include/sys/soundcard.h],
+			[
+				echo "Found OSSv4 include file in /usr/lib/oss/include/sys/soundcard.h";
+				oss_CFLAGS="-I/usr/lib/oss/include"
+				AC_SUBST(oss_CFLAGS)
+			])
 		AC_CHECK_HEADER([sys/soundcard.h], [
 			AC_DEFINE(HAVE_OSS, 1, [have oss])
 		], [
