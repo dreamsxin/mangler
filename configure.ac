@@ -168,18 +168,21 @@ AS_IF(
 	[test "x$with_oss" != xno],
 	[
 		AS_IF(
-			[test -a /usr/lib/oss/include/sys/soundcard.h],
+			[test -r /usr/lib/oss/include/sys/soundcard.h],
 			[
 				echo "Found OSSv4 include file in /usr/lib/oss/include/sys/soundcard.h";
 				oss_CFLAGS="-I/usr/lib/oss/include"
 				AC_SUBST(oss_CFLAGS)
+				# We can't perform any real checks on OSSv4 because their include file is in a retarded location
+				AC_DEFINE(HAVE_OSS, 1, [have oss])
+			],[
+				AC_CHECK_HEADER([sys/soundcard.h], [
+					AC_DEFINE(HAVE_OSS, 1, [have oss])
+				], [
+					echo "warning: OSS required headers were not found."
+					echo "         OSS support is disabled."
+				])
 			])
-		AC_CHECK_HEADER([sys/soundcard.h], [
-			AC_DEFINE(HAVE_OSS, 1, [have oss])
-		], [
-			echo "warning: OSS required headers were not found."
-			echo "         OSS support is disabled."
-		])
 		
 	],[:]
 )
