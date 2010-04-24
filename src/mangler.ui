@@ -686,7 +686,7 @@
             <property name="spacing">5</property>
             <child>
               <object class="GtkButton" id="serverListAddButton">
-                <property name="label" translatable="yes">_Add Server</property>
+                <property name="label" translatable="yes">_New Server</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
@@ -1298,7 +1298,7 @@ to the server to set the default channel.</property>
                 </child>
                 <child>
                   <object class="GtkButton" id="serverListServerSaveButton">
-                    <property name="label" translatable="yes">Save</property>
+                    <property name="label" translatable="yes">Update</property>
                     <property name="width_request">100</property>
                     <property name="visible">True</property>
                     <property name="sensitive">False</property>
@@ -3993,14 +3993,15 @@ These are useful for developers.</property>
                                 <property name="visible">True</property>
                                 <property name="resize_mode">queue</property>
                                 <child>
-                                  <object class="GtkTable" id="adminServerTable">
+                                  <object class="GtkTable" id="ServerTable">
                                     <property name="visible">True</property>
-                                    <property name="n_rows">14</property>
+                                    <property name="border_width">5</property>
+                                    <property name="n_rows">29</property>
                                     <property name="n_columns">2</property>
                                     <property name="column_spacing">4</property>
                                     <property name="row_spacing">2</property>
                                     <child>
-                                      <object class="GtkLabel" id="adminServerCommentLabel">
+                                      <object class="GtkLabel" id="ServerCommentLabel">
                                         <property name="visible">True</property>
                                         <property name="xalign">0.94999998807907104</property>
                                         <property name="label" translatable="yes">Server Comment:</property>
@@ -4010,12 +4011,12 @@ These are useful for developers.</property>
                                       </packing>
                                     </child>
                                     <child>
-                                      <object class="GtkEntry" id="adminServerComment">
+                                      <object class="GtkEntry" id="ServerComment">
                                         <property name="visible">True</property>
                                         <property name="can_focus">True</property>
                                         <property name="invisible_char">&#x25CF;</property>
                                         <accessibility>
-                                          <relation type="labelled-by" target="adminServerCommentLabel"/>
+                                          <relation type="labelled-by" target="ServerCommentLabel"/>
                                         </accessibility>
                                       </object>
                                       <packing>
@@ -4025,7 +4026,7 @@ These are useful for developers.</property>
                                       </packing>
                                     </child>
                                     <child>
-                                      <object class="GtkLabel" id="adminServerMaxGuestsLabel">
+                                      <object class="GtkLabel" id="ServerMaxGuestsLabel">
                                         <property name="visible">True</property>
                                         <property name="xalign">0.94999998807907104</property>
                                         <property name="label" translatable="yes">Max Guests:</property>
@@ -4037,25 +4038,7 @@ These are useful for developers.</property>
                                       </packing>
                                     </child>
                                     <child>
-                                      <object class="GtkEntry" id="adminServerMaxGuests">
-                                        <property name="width_request">50</property>
-                                        <property name="visible">True</property>
-                                        <property name="can_focus">True</property>
-                                        <property name="invisible_char">&#x25CF;</property>
-                                        <accessibility>
-                                          <relation type="labelled-by" target="adminServerMaxGuestsLabel"/>
-                                        </accessibility>
-                                      </object>
-                                      <packing>
-                                        <property name="left_attach">1</property>
-                                        <property name="right_attach">2</property>
-                                        <property name="top_attach">6</property>
-                                        <property name="bottom_attach">7</property>
-                                        <property name="y_options">GTK_FILL</property>
-                                      </packing>
-                                    </child>
-                                    <child>
-                                      <object class="GtkLabel" id="adminServerKickGuestsLabel">
+                                      <object class="GtkLabel" id="ServerKickGuestsLabel">
                                         <property name="visible">True</property>
                                         <property name="xalign">0.94999998807907104</property>
                                         <property name="label" translatable="yes">Kick Guests after:</property>
@@ -4067,7 +4050,7 @@ These are useful for developers.</property>
                                       </packing>
                                     </child>
                                     <child>
-                                      <object class="GtkLabel" id="adminServerBanGuestsLabel">
+                                      <object class="GtkLabel" id="ServerBanGuestsLabel">
                                         <property name="visible">True</property>
                                         <property name="xalign">0.94999998807907104</property>
                                         <property name="label" translatable="yes">Ban Guests for:</property>
@@ -4079,16 +4062,18 @@ These are useful for developers.</property>
                                       </packing>
                                     </child>
                                     <child>
-                                      <object class="GtkHBox" id="adminServerKickGuestsHBox">
+                                      <object class="GtkHBox" id="ServerKickGuestsHBox">
                                         <property name="visible">True</property>
                                         <child>
-                                          <object class="GtkEntry" id="adminServerKickGuests">
-                                            <property name="width_request">50</property>
+                                          <object class="GtkSpinButton" id="ServerKickGuests">
                                             <property name="visible">True</property>
                                             <property name="can_focus">True</property>
                                             <property name="invisible_char">&#x25CF;</property>
+                                            <property name="adjustment">adminServerKickGuestsAdjustment</property>
+                                            <property name="numeric">True</property>
                                             <accessibility>
-                                              <relation type="labelled-by" target="adminServerKickGuestsLabel"/>
+                                              <relation type="labelled-by" target="ServerKickGuestsLabel"/>
+                                              <relation type="labelled-by" target="ServerKickGuestsMinutesLabel"/>
                                             </accessibility>
                                           </object>
                                           <packing>
@@ -4096,7 +4081,7 @@ These are useful for developers.</property>
                                           </packing>
                                         </child>
                                         <child>
-                                          <object class="GtkLabel" id="adminServerKickGuestsMinutesLabel">
+                                          <object class="GtkLabel" id="ServerKickGuestsMinutesLabel">
                                             <property name="visible">True</property>
                                             <property name="xalign">0</property>
                                             <property name="label" translatable="yes">minutes</property>
@@ -4117,16 +4102,18 @@ These are useful for developers.</property>
                                       </packing>
                                     </child>
                                     <child>
-                                      <object class="GtkHBox" id="adminServerBanGuestsHBox">
+                                      <object class="GtkHBox" id="ServerBanGuestsHBox">
                                         <property name="visible">True</property>
                                         <child>
-                                          <object class="GtkEntry" id="adminServerBanGuests">
-                                            <property name="width_request">50</property>
+                                          <object class="GtkSpinButton" id="ServerBanGuests">
                                             <property name="visible">True</property>
                                             <property name="can_focus">True</property>
                                             <property name="invisible_char">&#x25CF;</property>
+                                            <property name="adjustment">adminServerBanGuestsAdjustment</property>
+                                            <property name="numeric">True</property>
                                             <accessibility>
-                                              <relation type="labelled-by" target="adminServerBanGuestsLabel"/>
+                                              <relation type="labelled-by" target="ServerBanGuestsLabel"/>
+                                              <relation type="labelled-by" target="ServerBanGuestsMinutesLabel"/>
                                             </accessibility>
                                           </object>
                                           <packing>
@@ -4134,7 +4121,7 @@ These are useful for developers.</property>
                                           </packing>
                                         </child>
                                         <child>
-                                          <object class="GtkLabel" id="adminServerBanGuestsMinutesLabel">
+                                          <object class="GtkLabel" id="ServerBanGuestsMinutesLabel">
                                             <property name="visible">True</property>
                                             <property name="xalign">0</property>
                                             <property name="label" translatable="yes">minutes</property>
@@ -4155,7 +4142,7 @@ These are useful for developers.</property>
                                       </packing>
                                     </child>
                                     <child>
-                                      <object class="GtkHSeparator" id="adminServerSeparator">
+                                      <object class="GtkHSeparator" id="ServerSeparator">
                                         <property name="visible">True</property>
                                       </object>
                                       <packing>
@@ -4166,7 +4153,7 @@ These are useful for developers.</property>
                                       </packing>
                                     </child>
                                     <child>
-                                      <object class="GtkLabel" id="adminServerGuestAccounts">
+                                      <object class="GtkLabel" id="ServerGuestAccountsLabel">
                                         <property name="visible">True</property>
                                         <property name="xalign">0.05000000074505806</property>
                                         <property name="yalign">0.94999998807907104</property>
@@ -4182,7 +4169,7 @@ These are useful for developers.</property>
                                       </packing>
                                     </child>
                                     <child>
-                                      <object class="GtkLabel" id="adminServerInactivity">
+                                      <object class="GtkLabel" id="ServerInactivityLabel">
                                         <property name="visible">True</property>
                                         <property name="xalign">0.05000000074505806</property>
                                         <property name="yalign">0.94999998807907104</property>
@@ -4198,7 +4185,7 @@ These are useful for developers.</property>
                                       </packing>
                                     </child>
                                     <child>
-                                      <object class="GtkHSeparator" id="adminServerSeparator2">
+                                      <object class="GtkHSeparator" id="ServerSeparator2">
                                         <property name="visible">True</property>
                                       </object>
                                       <packing>
@@ -4209,7 +4196,7 @@ These are useful for developers.</property>
                                       </packing>
                                     </child>
                                     <child>
-                                      <object class="GtkLabel" id="adminServerTimeoutLabel">
+                                      <object class="GtkLabel" id="ServerTimeoutLabel">
                                         <property name="visible">True</property>
                                         <property name="xalign">0.94999998807907104</property>
                                         <property name="label" translatable="yes">Timeout:</property>
@@ -4221,16 +4208,18 @@ These are useful for developers.</property>
                                       </packing>
                                     </child>
                                     <child>
-                                      <object class="GtkHBox" id="adminServerTimeoutHBox">
+                                      <object class="GtkHBox" id="ServerTimeoutHBox">
                                         <property name="visible">True</property>
                                         <child>
-                                          <object class="GtkEntry" id="adminServerTimeout">
-                                            <property name="width_request">50</property>
+                                          <object class="GtkSpinButton" id="ServerTimeout">
                                             <property name="visible">True</property>
                                             <property name="can_focus">True</property>
                                             <property name="invisible_char">&#x25CF;</property>
+                                            <property name="adjustment">adminServerTimeoutAdjustment</property>
+                                            <property name="numeric">True</property>
                                             <accessibility>
-                                              <relation type="labelled-by" target="adminServerTimeoutLabel"/>
+                                              <relation type="labelled-by" target="ServerTimeoutLabel"/>
+                                              <relation type="labelled-by" target="ServerTimeoutMinutesLabel"/>
                                             </accessibility>
                                           </object>
                                           <packing>
@@ -4238,7 +4227,7 @@ These are useful for developers.</property>
                                           </packing>
                                         </child>
                                         <child>
-                                          <object class="GtkLabel" id="adminServerTimeoutMinutesLabel">
+                                          <object class="GtkLabel" id="ServerTimeoutMinutesLabel">
                                             <property name="visible">True</property>
                                             <property name="xalign">0.05000000074505806</property>
                                             <property name="label" translatable="yes">minutes</property>
@@ -4259,7 +4248,7 @@ These are useful for developers.</property>
                                       </packing>
                                     </child>
                                     <child>
-                                      <object class="GtkLabel" id="adminServerActionLabel">
+                                      <object class="GtkLabel" id="ServerActionLabel">
                                         <property name="visible">True</property>
                                         <property name="xalign">0.94999998807907104</property>
                                         <property name="label" translatable="yes">Action:</property>
@@ -4271,10 +4260,10 @@ These are useful for developers.</property>
                                       </packing>
                                     </child>
                                     <child>
-                                      <object class="GtkComboBox" id="adminServerChannel">
+                                      <object class="GtkComboBox" id="ServerChannel">
                                         <property name="visible">True</property>
                                         <accessibility>
-                                          <relation type="labelled-by" target="adminServerChannelLabel"/>
+                                          <relation type="labelled-by" target="ServerChannelLabel"/>
                                         </accessibility>
                                       </object>
                                       <packing>
@@ -4286,10 +4275,10 @@ These are useful for developers.</property>
                                       </packing>
                                     </child>
                                     <child>
-                                      <object class="GtkComboBox" id="adminServerAction">
+                                      <object class="GtkComboBox" id="ServerAction">
                                         <property name="visible">True</property>
                                         <accessibility>
-                                          <relation type="labelled-by" target="adminServerActionLabel"/>
+                                          <relation type="labelled-by" target="ServerActionLabel"/>
                                         </accessibility>
                                       </object>
                                       <packing>
@@ -4301,7 +4290,7 @@ These are useful for developers.</property>
                                       </packing>
                                     </child>
                                     <child>
-                                      <object class="GtkLabel" id="adminServerChannelLabel">
+                                      <object class="GtkLabel" id="ServerChannelLabel">
                                         <property name="visible">True</property>
                                         <property name="xalign">0.94999998807907104</property>
                                         <property name="label" translatable="yes">Channel:</property>
@@ -4313,7 +4302,7 @@ These are useful for developers.</property>
                                       </packing>
                                     </child>
                                     <child>
-                                      <object class="GtkLabel" id="adminServerChatFilterLabel">
+                                      <object class="GtkLabel" id="ServerChatFilterLabel">
                                         <property name="visible">True</property>
                                         <property name="xalign">0.94999998807907104</property>
                                         <property name="label" translatable="yes">Chat Filter:</property>
@@ -4325,7 +4314,7 @@ These are useful for developers.</property>
                                       </packing>
                                     </child>
                                     <child>
-                                      <object class="GtkLabel" id="adminServerChannelOrderingLabel">
+                                      <object class="GtkLabel" id="ServerChannelOrderingLabel">
                                         <property name="visible">True</property>
                                         <property name="xalign">0.94999998807907104</property>
                                         <property name="label" translatable="yes">Channel Ordering:</property>
@@ -4337,10 +4326,10 @@ These are useful for developers.</property>
                                       </packing>
                                     </child>
                                     <child>
-                                      <object class="GtkComboBox" id="adminServerChatFilter">
+                                      <object class="GtkComboBox" id="ServerChatFilter">
                                         <property name="visible">True</property>
                                         <accessibility>
-                                          <relation type="labelled-by" target="adminServerChatFilterLabel"/>
+                                          <relation type="labelled-by" target="ServerChatFilterLabel"/>
                                         </accessibility>
                                       </object>
                                       <packing>
@@ -4352,10 +4341,10 @@ These are useful for developers.</property>
                                       </packing>
                                     </child>
                                     <child>
-                                      <object class="GtkComboBox" id="adminServerChannelOrdering">
+                                      <object class="GtkComboBox" id="ServerChannelOrdering">
                                         <property name="visible">True</property>
                                         <accessibility>
-                                          <relation type="labelled-by" target="adminServerChannelOrderingLabel"/>
+                                          <relation type="labelled-by" target="ServerChannelOrderingLabel"/>
                                         </accessibility>
                                       </object>
                                       <packing>
@@ -4367,7 +4356,7 @@ These are useful for developers.</property>
                                       </packing>
                                     </child>
                                     <child>
-                                      <object class="GtkCheckButton" id="adminServerAlwaysDisplayMOTD">
+                                      <object class="GtkCheckButton" id="ServerAlwaysDisplayMOTD">
                                         <property name="label" translatable="yes">Always Display MOTD</property>
                                         <property name="visible">True</property>
                                         <property name="can_focus">True</property>
@@ -4381,6 +4370,636 @@ These are useful for developers.</property>
                                         <property name="y_options">GTK_FILL</property>
                                       </packing>
                                     </child>
+                                    <child>
+                                      <object class="GtkLabel" id="ServerSpamFiltersLabel">
+                                        <property name="visible">True</property>
+                                        <property name="xalign">0.05000000074505806</property>
+                                        <property name="yalign">0.94999998807907104</property>
+                                        <property name="ypad">3</property>
+                                        <property name="label" translatable="yes">&lt;b&gt;Spam Filters&lt;/b&gt;</property>
+                                        <property name="use_markup">True</property>
+                                      </object>
+                                      <packing>
+                                        <property name="right_attach">2</property>
+                                        <property name="top_attach">14</property>
+                                        <property name="bottom_attach">15</property>
+                                        <property name="y_options">GTK_FILL</property>
+                                      </packing>
+                                    </child>
+                                    <child>
+                                      <object class="GtkHSeparator" id="ServerSeparator3">
+                                        <property name="visible">True</property>
+                                      </object>
+                                      <packing>
+                                        <property name="right_attach">2</property>
+                                        <property name="top_attach">15</property>
+                                        <property name="bottom_attach">16</property>
+                                        <property name="y_options">GTK_FILL</property>
+                                      </packing>
+                                    </child>
+                                    <child>
+                                      <object class="GtkTable" id="ServerSpamFilterTable">
+                                        <property name="visible">True</property>
+                                        <property name="n_rows">6</property>
+                                        <property name="n_columns">4</property>
+                                        <property name="column_spacing">2</property>
+                                        <property name="row_spacing">2</property>
+                                        <child>
+                                          <object class="GtkLabel" id="ServerSpamFilterChannelLabel">
+                                            <property name="visible">True</property>
+                                            <property name="xalign">0.94999998807907104</property>
+                                            <property name="label" translatable="yes">Channel:</property>
+                                          </object>
+                                          <packing>
+                                            <property name="top_attach">1</property>
+                                            <property name="bottom_attach">2</property>
+                                            <property name="y_options">GTK_FILL</property>
+                                          </packing>
+                                        </child>
+                                        <child>
+                                          <object class="GtkLabel" id="ServerSpamFilterChatLabel">
+                                            <property name="visible">True</property>
+                                            <property name="xalign">0.94999998807907104</property>
+                                            <property name="label" translatable="yes">Chat:</property>
+                                          </object>
+                                          <packing>
+                                            <property name="top_attach">2</property>
+                                            <property name="bottom_attach">3</property>
+                                            <property name="y_options">GTK_FILL</property>
+                                          </packing>
+                                        </child>
+                                        <child>
+                                          <object class="GtkLabel" id="ServerSpamFilterCommentLabel">
+                                            <property name="visible">True</property>
+                                            <property name="xalign">0.94999998807907104</property>
+                                            <property name="label" translatable="yes">Comment:</property>
+                                          </object>
+                                          <packing>
+                                            <property name="top_attach">3</property>
+                                            <property name="bottom_attach">4</property>
+                                            <property name="y_options">GTK_FILL</property>
+                                          </packing>
+                                        </child>
+                                        <child>
+                                          <object class="GtkLabel" id="ServerSpamFilterTTSLabel">
+                                            <property name="visible">True</property>
+                                            <property name="xalign">0.94999998807907104</property>
+                                            <property name="label" translatable="yes">Text To Speech Bind:</property>
+                                          </object>
+                                          <packing>
+                                            <property name="top_attach">4</property>
+                                            <property name="bottom_attach">5</property>
+                                            <property name="y_options">GTK_FILL</property>
+                                          </packing>
+                                        </child>
+                                        <child>
+                                          <object class="GtkLabel" id="ServerSpamFilterWaveLabel">
+                                            <property name="visible">True</property>
+                                            <property name="xalign">0.94999998807907104</property>
+                                            <property name="label" translatable="yes">Wave Bind:</property>
+                                          </object>
+                                          <packing>
+                                            <property name="top_attach">5</property>
+                                            <property name="bottom_attach">6</property>
+                                            <property name="y_options">GTK_FILL</property>
+                                          </packing>
+                                        </child>
+                                        <child>
+                                          <object class="GtkHBox" id="ServerSpamFilterActionLabelHBox">
+                                            <property name="visible">True</property>
+                                            <child>
+                                              <object class="GtkLabel" id="ServerSpamFilterActionLabel">
+                                                <property name="visible">True</property>
+                                                <property name="label" translatable="yes">&lt;b&gt;Action&lt;/b&gt;</property>
+                                                <property name="use_markup">True</property>
+                                              </object>
+                                              <packing>
+                                                <property name="position">0</property>
+                                              </packing>
+                                            </child>
+                                            <child>
+                                              <object class="GtkVSeparator" id="ServerSpamFilterSeparator">
+                                                <property name="visible">True</property>
+                                                <property name="orientation">vertical</property>
+                                              </object>
+                                              <packing>
+                                                <property name="expand">False</property>
+                                                <property name="position">1</property>
+                                              </packing>
+                                            </child>
+                                          </object>
+                                          <packing>
+                                            <property name="left_attach">1</property>
+                                            <property name="right_attach">2</property>
+                                          </packing>
+                                        </child>
+                                        <child>
+                                          <object class="GtkHBox" id="ServerSpamFilterIntervalLabelHBox">
+                                            <property name="visible">True</property>
+                                            <child>
+                                              <object class="GtkLabel" id="ServerSpamFilterIntervalLabel">
+                                                <property name="visible">True</property>
+                                                <property name="label" translatable="yes">&lt;b&gt;Interval&lt;/b&gt;</property>
+                                                <property name="use_markup">True</property>
+                                              </object>
+                                              <packing>
+                                                <property name="position">0</property>
+                                              </packing>
+                                            </child>
+                                            <child>
+                                              <object class="GtkVSeparator" id="ServerSpamFilterSeparator2">
+                                                <property name="visible">True</property>
+                                                <property name="orientation">vertical</property>
+                                              </object>
+                                              <packing>
+                                                <property name="expand">False</property>
+                                                <property name="position">1</property>
+                                              </packing>
+                                            </child>
+                                          </object>
+                                          <packing>
+                                            <property name="left_attach">2</property>
+                                            <property name="right_attach">3</property>
+                                          </packing>
+                                        </child>
+                                        <child>
+                                          <object class="GtkLabel" id="ServerSpamFilterTimesLabel">
+                                            <property name="visible">True</property>
+                                            <property name="label" translatable="yes">&lt;b&gt;Times&lt;/b&gt;</property>
+                                            <property name="use_markup">True</property>
+                                          </object>
+                                          <packing>
+                                            <property name="left_attach">3</property>
+                                            <property name="right_attach">4</property>
+                                          </packing>
+                                        </child>
+                                        <child>
+                                          <placeholder/>
+                                        </child>
+                                        <child>
+                                          <object class="GtkComboBox" id="ServerSpamFilterChannelAction">
+                                            <property name="visible">True</property>
+                                            <accessibility>
+                                              <relation type="labelled-by" target="ServerSpamFilterChannelLabel"/>
+                                              <relation type="labelled-by" target="ServerSpamFilterActionLabel"/>
+                                            </accessibility>
+                                          </object>
+                                          <packing>
+                                            <property name="left_attach">1</property>
+                                            <property name="right_attach">2</property>
+                                            <property name="top_attach">1</property>
+                                            <property name="bottom_attach">2</property>
+                                          </packing>
+                                        </child>
+                                        <child>
+                                          <object class="GtkComboBox" id="ServerSpamFilterChatAction">
+                                            <property name="visible">True</property>
+                                            <accessibility>
+                                              <relation type="labelled-by" target="ServerSpamFilterChatLabel"/>
+                                              <relation type="labelled-by" target="ServerSpamFilterActionLabel"/>
+                                            </accessibility>
+                                          </object>
+                                          <packing>
+                                            <property name="left_attach">1</property>
+                                            <property name="right_attach">2</property>
+                                            <property name="top_attach">2</property>
+                                            <property name="bottom_attach">3</property>
+                                          </packing>
+                                        </child>
+                                        <child>
+                                          <object class="GtkComboBox" id="ServerSpamFilterCommentAction">
+                                            <property name="visible">True</property>
+                                            <accessibility>
+                                              <relation type="labelled-by" target="ServerSpamFilterCommentLabel"/>
+                                              <relation type="labelled-by" target="ServerSpamFilterActionLabel"/>
+                                            </accessibility>
+                                          </object>
+                                          <packing>
+                                            <property name="left_attach">1</property>
+                                            <property name="right_attach">2</property>
+                                            <property name="top_attach">3</property>
+                                            <property name="bottom_attach">4</property>
+                                          </packing>
+                                        </child>
+                                        <child>
+                                          <object class="GtkComboBox" id="ServerSpamFilterTTSAction">
+                                            <property name="visible">True</property>
+                                            <accessibility>
+                                              <relation type="labelled-by" target="ServerSpamFilterTTSLabel"/>
+                                              <relation type="labelled-by" target="ServerSpamFilterActionLabel"/>
+                                            </accessibility>
+                                          </object>
+                                          <packing>
+                                            <property name="left_attach">1</property>
+                                            <property name="right_attach">2</property>
+                                            <property name="top_attach">4</property>
+                                            <property name="bottom_attach">5</property>
+                                          </packing>
+                                        </child>
+                                        <child>
+                                          <object class="GtkComboBox" id="ServerSpamFilterWaveAction">
+                                            <property name="visible">True</property>
+                                            <accessibility>
+                                              <relation type="labelled-by" target="ServerSpamFilterWaveLabel"/>
+                                              <relation type="labelled-by" target="ServerSpamFilterActionLabel"/>
+                                            </accessibility>
+                                          </object>
+                                          <packing>
+                                            <property name="left_attach">1</property>
+                                            <property name="right_attach">2</property>
+                                            <property name="top_attach">5</property>
+                                            <property name="bottom_attach">6</property>
+                                          </packing>
+                                        </child>
+                                        <child>
+                                          <object class="GtkSpinButton" id="ServerSpamFilterChannelInterval">
+                                            <property name="visible">True</property>
+                                            <property name="can_focus">True</property>
+                                            <property name="invisible_char">&#x25CF;</property>
+                                            <property name="adjustment">adminServerSpamFilterChannelIntervalAdjustment</property>
+                                            <property name="numeric">True</property>
+                                            <accessibility>
+                                              <relation type="labelled-by" target="ServerSpamFilterChannelLabel"/>
+                                              <relation type="labelled-by" target="ServerSpamFilterIntervalLabel"/>
+                                            </accessibility>
+                                          </object>
+                                          <packing>
+                                            <property name="left_attach">2</property>
+                                            <property name="right_attach">3</property>
+                                            <property name="top_attach">1</property>
+                                            <property name="bottom_attach">2</property>
+                                          </packing>
+                                        </child>
+                                        <child>
+                                          <object class="GtkSpinButton" id="ServerSpamFilterChatInterval">
+                                            <property name="visible">True</property>
+                                            <property name="can_focus">True</property>
+                                            <property name="invisible_char">&#x25CF;</property>
+                                            <property name="adjustment">adminServerSpamFilterChatIntervalAdjustment</property>
+                                            <property name="numeric">True</property>
+                                            <accessibility>
+                                              <relation type="labelled-by" target="ServerSpamFilterChatLabel"/>
+                                              <relation type="labelled-by" target="ServerSpamFilterIntervalLabel"/>
+                                            </accessibility>
+                                          </object>
+                                          <packing>
+                                            <property name="left_attach">2</property>
+                                            <property name="right_attach">3</property>
+                                            <property name="top_attach">2</property>
+                                            <property name="bottom_attach">3</property>
+                                          </packing>
+                                        </child>
+                                        <child>
+                                          <object class="GtkSpinButton" id="ServerSpamFilterCommentInterval">
+                                            <property name="visible">True</property>
+                                            <property name="can_focus">True</property>
+                                            <property name="invisible_char">&#x25CF;</property>
+                                            <property name="adjustment">adminServerSpamFilterCommentIntervalAdjustment</property>
+                                            <property name="numeric">True</property>
+                                            <accessibility>
+                                              <relation type="labelled-by" target="ServerSpamFilterCommentLabel"/>
+                                              <relation type="labelled-by" target="ServerSpamFilterIntervalLabel"/>
+                                            </accessibility>
+                                          </object>
+                                          <packing>
+                                            <property name="left_attach">2</property>
+                                            <property name="right_attach">3</property>
+                                            <property name="top_attach">3</property>
+                                            <property name="bottom_attach">4</property>
+                                          </packing>
+                                        </child>
+                                        <child>
+                                          <object class="GtkSpinButton" id="ServerSpamFilterTTSInterval">
+                                            <property name="visible">True</property>
+                                            <property name="can_focus">True</property>
+                                            <property name="invisible_char">&#x25CF;</property>
+                                            <property name="adjustment">adminServerSpamFilterTTSIntervalAdjustment</property>
+                                            <property name="numeric">True</property>
+                                            <accessibility>
+                                              <relation type="labelled-by" target="ServerSpamFilterTTSLabel"/>
+                                              <relation type="labelled-by" target="ServerSpamFilterIntervalLabel"/>
+                                            </accessibility>
+                                          </object>
+                                          <packing>
+                                            <property name="left_attach">2</property>
+                                            <property name="right_attach">3</property>
+                                            <property name="top_attach">4</property>
+                                            <property name="bottom_attach">5</property>
+                                          </packing>
+                                        </child>
+                                        <child>
+                                          <object class="GtkSpinButton" id="ServerSpamFilterWaveInterval">
+                                            <property name="visible">True</property>
+                                            <property name="can_focus">True</property>
+                                            <property name="invisible_char">&#x25CF;</property>
+                                            <property name="adjustment">adminServerSpamFilterWaveIntervalAdjustment</property>
+                                            <property name="numeric">True</property>
+                                            <accessibility>
+                                              <relation type="labelled-by" target="ServerSpamFilterWaveLabel"/>
+                                              <relation type="labelled-by" target="ServerSpamFilterIntervalLabel"/>
+                                            </accessibility>
+                                          </object>
+                                          <packing>
+                                            <property name="left_attach">2</property>
+                                            <property name="right_attach">3</property>
+                                            <property name="top_attach">5</property>
+                                            <property name="bottom_attach">6</property>
+                                          </packing>
+                                        </child>
+                                        <child>
+                                          <object class="GtkSpinButton" id="ServerSpamFilterChannelTimes">
+                                            <property name="visible">True</property>
+                                            <property name="can_focus">True</property>
+                                            <property name="invisible_char">&#x25CF;</property>
+                                            <property name="adjustment">adminServerSpamFilterChannelTimesAdjustment</property>
+                                            <property name="numeric">True</property>
+                                            <accessibility>
+                                              <relation type="labelled-by" target="ServerSpamFilterChannelLabel"/>
+                                              <relation type="labelled-by" target="ServerSpamFilterTimesLabel"/>
+                                            </accessibility>
+                                          </object>
+                                          <packing>
+                                            <property name="left_attach">3</property>
+                                            <property name="right_attach">4</property>
+                                            <property name="top_attach">1</property>
+                                            <property name="bottom_attach">2</property>
+                                          </packing>
+                                        </child>
+                                        <child>
+                                          <object class="GtkSpinButton" id="ServerSpamFilterChatTimes">
+                                            <property name="visible">True</property>
+                                            <property name="can_focus">True</property>
+                                            <property name="invisible_char">&#x25CF;</property>
+                                            <property name="adjustment">adminServerSpamFilterChatTimesAdjustment</property>
+                                            <property name="numeric">True</property>
+                                            <accessibility>
+                                              <relation type="labelled-by" target="ServerSpamFilterChatLabel"/>
+                                              <relation type="labelled-by" target="ServerSpamFilterTimesLabel"/>
+                                            </accessibility>
+                                          </object>
+                                          <packing>
+                                            <property name="left_attach">3</property>
+                                            <property name="right_attach">4</property>
+                                            <property name="top_attach">2</property>
+                                            <property name="bottom_attach">3</property>
+                                          </packing>
+                                        </child>
+                                        <child>
+                                          <object class="GtkSpinButton" id="ServerSpamFilterCommentTimes">
+                                            <property name="visible">True</property>
+                                            <property name="can_focus">True</property>
+                                            <property name="invisible_char">&#x25CF;</property>
+                                            <property name="adjustment">adminServerSpamFilterCommentTimesAdjustment</property>
+                                            <property name="numeric">True</property>
+                                            <accessibility>
+                                              <relation type="labelled-by" target="ServerSpamFilterCommentLabel"/>
+                                              <relation type="labelled-by" target="ServerSpamFilterTimesLabel"/>
+                                            </accessibility>
+                                          </object>
+                                          <packing>
+                                            <property name="left_attach">3</property>
+                                            <property name="right_attach">4</property>
+                                            <property name="top_attach">3</property>
+                                            <property name="bottom_attach">4</property>
+                                          </packing>
+                                        </child>
+                                        <child>
+                                          <object class="GtkSpinButton" id="ServerSpamFilterTTSTimes">
+                                            <property name="visible">True</property>
+                                            <property name="can_focus">True</property>
+                                            <property name="invisible_char">&#x25CF;</property>
+                                            <property name="adjustment">adminServerSpamFilterTTSTimesAdjustment</property>
+                                            <property name="numeric">True</property>
+                                            <accessibility>
+                                              <relation type="labelled-by" target="ServerSpamFilterTTSLabel"/>
+                                              <relation type="labelled-by" target="ServerSpamFilterTimesLabel"/>
+                                            </accessibility>
+                                          </object>
+                                          <packing>
+                                            <property name="left_attach">3</property>
+                                            <property name="right_attach">4</property>
+                                            <property name="top_attach">4</property>
+                                            <property name="bottom_attach">5</property>
+                                          </packing>
+                                        </child>
+                                        <child>
+                                          <object class="GtkSpinButton" id="ServerSpamFilterWaveTimes">
+                                            <property name="visible">True</property>
+                                            <property name="can_focus">True</property>
+                                            <property name="invisible_char">&#x25CF;</property>
+                                            <property name="adjustment">adminServerSpamFilterWaveTimesAdjustment</property>
+                                            <property name="numeric">True</property>
+                                            <accessibility>
+                                              <relation type="labelled-by" target="ServerSpamFilterWaveLabel"/>
+                                              <relation type="labelled-by" target="ServerSpamFilterTimesLabel"/>
+                                            </accessibility>
+                                          </object>
+                                          <packing>
+                                            <property name="left_attach">3</property>
+                                            <property name="right_attach">4</property>
+                                            <property name="top_attach">5</property>
+                                            <property name="bottom_attach">6</property>
+                                          </packing>
+                                        </child>
+                                      </object>
+                                      <packing>
+                                        <property name="right_attach">2</property>
+                                        <property name="top_attach">16</property>
+                                        <property name="bottom_attach">17</property>
+                                      </packing>
+                                    </child>
+                                    <child>
+                                      <object class="GtkLabel" id="ServerBindFiltersLabel">
+                                        <property name="visible">True</property>
+                                        <property name="xalign">0.05000000074505806</property>
+                                        <property name="yalign">0.94999998807907104</property>
+                                        <property name="ypad">3</property>
+                                        <property name="label" translatable="yes">&lt;b&gt;Bind Filters&lt;/b&gt;</property>
+                                        <property name="use_markup">True</property>
+                                      </object>
+                                      <packing>
+                                        <property name="right_attach">2</property>
+                                        <property name="top_attach">17</property>
+                                        <property name="bottom_attach">18</property>
+                                        <property name="y_options">GTK_FILL</property>
+                                      </packing>
+                                    </child>
+                                    <child>
+                                      <object class="GtkHSeparator" id="ServerSeparator4">
+                                        <property name="visible">True</property>
+                                      </object>
+                                      <packing>
+                                        <property name="right_attach">2</property>
+                                        <property name="top_attach">18</property>
+                                        <property name="bottom_attach">19</property>
+                                        <property name="y_options">GTK_FILL</property>
+                                      </packing>
+                                    </child>
+                                    <child>
+                                      <object class="GtkCheckButton" id="ServerBindFilterTTS">
+                                        <property name="label" translatable="yes">Disable Text To Speech Binds</property>
+                                        <property name="visible">True</property>
+                                        <property name="can_focus">True</property>
+                                        <property name="receives_default">False</property>
+                                        <property name="draw_indicator">True</property>
+                                      </object>
+                                      <packing>
+                                        <property name="right_attach">2</property>
+                                        <property name="top_attach">19</property>
+                                        <property name="bottom_attach">20</property>
+                                        <property name="y_options">GTK_FILL</property>
+                                      </packing>
+                                    </child>
+                                    <child>
+                                      <object class="GtkCheckButton" id="ServerBindFilterWave">
+                                        <property name="label" translatable="yes">Disable Wave Binds</property>
+                                        <property name="visible">True</property>
+                                        <property name="can_focus">True</property>
+                                        <property name="receives_default">False</property>
+                                        <property name="draw_indicator">True</property>
+                                      </object>
+                                      <packing>
+                                        <property name="right_attach">2</property>
+                                        <property name="top_attach">20</property>
+                                        <property name="bottom_attach">21</property>
+                                        <property name="y_options">GTK_FILL</property>
+                                      </packing>
+                                    </child>
+                                    <child>
+                                      <object class="GtkLabel" id="ServerRemoteStatusLabel">
+                                        <property name="visible">True</property>
+                                        <property name="xalign">0.05000000074505806</property>
+                                        <property name="yalign">0.94999998807907104</property>
+                                        <property name="ypad">3</property>
+                                        <property name="label" translatable="yes">&lt;b&gt;Remote Status&lt;/b&gt;</property>
+                                        <property name="use_markup">True</property>
+                                      </object>
+                                      <packing>
+                                        <property name="right_attach">2</property>
+                                        <property name="top_attach">21</property>
+                                        <property name="bottom_attach">22</property>
+                                        <property name="y_options">GTK_FILL</property>
+                                      </packing>
+                                    </child>
+                                    <child>
+                                      <object class="GtkHSeparator" id="ServerSeparator5">
+                                        <property name="visible">True</property>
+                                      </object>
+                                      <packing>
+                                        <property name="right_attach">2</property>
+                                        <property name="top_attach">22</property>
+                                        <property name="bottom_attach">23</property>
+                                        <property name="y_options">GTK_FILL</property>
+                                      </packing>
+                                    </child>
+                                    <child>
+                                      <object class="GtkCheckButton" id="ServerRemoteStatusServerComment">
+                                        <property name="label" translatable="yes">Return Server Comment</property>
+                                        <property name="visible">True</property>
+                                        <property name="can_focus">True</property>
+                                        <property name="receives_default">False</property>
+                                        <property name="draw_indicator">True</property>
+                                      </object>
+                                      <packing>
+                                        <property name="right_attach">2</property>
+                                        <property name="top_attach">23</property>
+                                        <property name="bottom_attach">24</property>
+                                        <property name="y_options">GTK_FILL</property>
+                                      </packing>
+                                    </child>
+                                    <child>
+                                      <object class="GtkCheckButton" id="ServerRemoteStatusChannelNames">
+                                        <property name="label" translatable="yes">Return Channel Names</property>
+                                        <property name="visible">True</property>
+                                        <property name="can_focus">True</property>
+                                        <property name="receives_default">False</property>
+                                        <property name="draw_indicator">True</property>
+                                      </object>
+                                      <packing>
+                                        <property name="right_attach">2</property>
+                                        <property name="top_attach">24</property>
+                                        <property name="bottom_attach">25</property>
+                                        <property name="y_options">GTK_FILL</property>
+                                      </packing>
+                                    </child>
+                                    <child>
+                                      <object class="GtkCheckButton" id="ServerRemoteStatusChannelComments">
+                                        <property name="label" translatable="yes">Return Channel Comments</property>
+                                        <property name="visible">True</property>
+                                        <property name="can_focus">True</property>
+                                        <property name="receives_default">False</property>
+                                        <property name="draw_indicator">True</property>
+                                      </object>
+                                      <packing>
+                                        <property name="right_attach">2</property>
+                                        <property name="top_attach">25</property>
+                                        <property name="bottom_attach">26</property>
+                                        <property name="y_options">GTK_FILL</property>
+                                      </packing>
+                                    </child>
+                                    <child>
+                                      <object class="GtkCheckButton" id="ServerRemoteStatusUserNames">
+                                        <property name="label" translatable="yes">Return User Names</property>
+                                        <property name="visible">True</property>
+                                        <property name="can_focus">True</property>
+                                        <property name="receives_default">False</property>
+                                        <property name="draw_indicator">True</property>
+                                      </object>
+                                      <packing>
+                                        <property name="right_attach">2</property>
+                                        <property name="top_attach">26</property>
+                                        <property name="bottom_attach">27</property>
+                                        <property name="y_options">GTK_FILL</property>
+                                      </packing>
+                                    </child>
+                                    <child>
+                                      <object class="GtkCheckButton" id="ServerRemoteStatusUserComments">
+                                        <property name="label" translatable="yes">Return User Comments</property>
+                                        <property name="visible">True</property>
+                                        <property name="can_focus">True</property>
+                                        <property name="receives_default">False</property>
+                                        <property name="draw_indicator">True</property>
+                                      </object>
+                                      <packing>
+                                        <property name="right_attach">2</property>
+                                        <property name="top_attach">27</property>
+                                        <property name="bottom_attach">28</property>
+                                        <property name="y_options">GTK_FILL</property>
+                                      </packing>
+                                    </child>
+                                    <child>
+                                      <object class="GtkCheckButton" id="ServerRemoteStatusUseless">
+                                        <property name="label" translatable="yes">Kick logins who don't show their user name for remote status requests.</property>
+                                        <property name="visible">True</property>
+                                        <property name="can_focus">True</property>
+                                        <property name="receives_default">False</property>
+                                        <property name="draw_indicator">True</property>
+                                      </object>
+                                      <packing>
+                                        <property name="right_attach">2</property>
+                                        <property name="top_attach">28</property>
+                                        <property name="bottom_attach">29</property>
+                                        <property name="y_options">GTK_FILL</property>
+                                      </packing>
+                                    </child>
+                                    <child>
+                                      <object class="GtkSpinButton" id="ServerMaxGuests">
+                                        <property name="visible">True</property>
+                                        <property name="can_focus">True</property>
+                                        <property name="invisible_char">&#x25CF;</property>
+                                        <property name="adjustment">adminServerMaxGuestsAdjustment</property>
+                                        <property name="numeric">True</property>
+                                        <accessibility>
+                                          <relation type="labelled-by" target="ServerMaxGuestsLabel"/>
+                                        </accessibility>
+                                      </object>
+                                      <packing>
+                                        <property name="left_attach">1</property>
+                                        <property name="right_attach">2</property>
+                                        <property name="top_attach">6</property>
+                                        <property name="bottom_attach">7</property>
+                                      </packing>
+                                    </child>
                                   </object>
                                 </child>
                               </object>
@@ -4391,7 +5010,7 @@ These are useful for developers.</property>
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkButton" id="adminServerUpdate">
+                          <object class="GtkButton" id="ServerUpdate">
                             <property name="label" translatable="yes">Update</property>
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
@@ -5276,6 +5895,7 @@ These are useful for developers.</property>
                                     <child>
                                       <object class="GtkVBox" id="UserEditorExpArea">
                                         <property name="visible">True</property>
+                                        <property name="border_width">5</property>
                                         <property name="orientation">vertical</property>
                                         <child>
                                           <object class="GtkToggleButton" id="UserInfoButton">
@@ -6907,14 +7527,17 @@ These are useful for developers.</property>
   <object class="GtkAdjustment" id="adminTransmitTimeLimitAdjustment">
     <property name="upper">65535</property>
     <property name="step_increment">1</property>
+    <property name="page_increment">10</property>
   </object>
   <object class="GtkAdjustment" id="adminTransmitRankLevelAdjustment">
     <property name="upper">100</property>
     <property name="step_increment">1</property>
+    <property name="page_increment">10</property>
   </object>
   <object class="GtkAdjustment" id="adminMaxClientsAdjustment">
     <property name="upper">65535</property>
     <property name="step_increment">1</property>
+    <property name="page_increment">10</property>
   </object>
   <object class="GtkArrow" id="UserInfoArrow">
     <property name="visible">True</property>
@@ -6942,10 +7565,12 @@ These are useful for developers.</property>
     <property name="lower">8</property>
     <property name="upper">30</property>
     <property name="step_increment">0.5</property>
+    <property name="page_increment">1</property>
   </object>
   <object class="GtkAdjustment" id="adminRankLevelAdjustment">
     <property name="upper">100</property>
     <property name="step_increment">1</property>
+    <property name="page_increment">10</property>
   </object>
   <object class="GtkMenu" id="statusIconMenu">
     <property name="visible">True</property>
@@ -7758,5 +8383,95 @@ These are useful for developers.</property>
   <object class="GtkImage" id="image9">
     <property name="visible">True</property>
     <property name="stock">gtk-properties</property>
+  </object>
+  <object class="GtkAdjustment" id="adminServerMaxGuestsAdjustment">
+    <property name="upper">65535</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">10</property>
+  </object>
+  <object class="GtkAdjustment" id="adminServerKickGuestsAdjustment">
+    <property name="upper">65535</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">10</property>
+  </object>
+  <object class="GtkAdjustment" id="adminServerBanGuestsAdjustment">
+    <property name="upper">65535</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">10</property>
+  </object>
+  <object class="GtkAdjustment" id="adminServerTimeoutAdjustment">
+    <property name="upper">65535</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">10</property>
+  </object>
+  <object class="GtkAdjustment" id="adminServerSpamFilterChannelIntervalAdjustment">
+    <property name="value">1000</property>
+    <property name="lower">500</property>
+    <property name="upper">60000</property>
+    <property name="step_increment">50</property>
+    <property name="page_increment">500</property>
+  </object>
+  <object class="GtkAdjustment" id="adminServerSpamFilterChatIntervalAdjustment">
+    <property name="value">1000</property>
+    <property name="lower">500</property>
+    <property name="upper">60000</property>
+    <property name="step_increment">50</property>
+    <property name="page_increment">500</property>
+  </object>
+  <object class="GtkAdjustment" id="adminServerSpamFilterCommentIntervalAdjustment">
+    <property name="value">1000</property>
+    <property name="lower">500</property>
+    <property name="upper">60000</property>
+    <property name="step_increment">50</property>
+    <property name="page_increment">500</property>
+  </object>
+  <object class="GtkAdjustment" id="adminServerSpamFilterTTSIntervalAdjustment">
+    <property name="value">1000</property>
+    <property name="lower">500</property>
+    <property name="upper">60000</property>
+    <property name="step_increment">50</property>
+    <property name="page_increment">500</property>
+  </object>
+  <object class="GtkAdjustment" id="adminServerSpamFilterWaveIntervalAdjustment">
+    <property name="value">1000</property>
+    <property name="lower">500</property>
+    <property name="upper">60000</property>
+    <property name="step_increment">50</property>
+    <property name="page_increment">500</property>
+  </object>
+  <object class="GtkAdjustment" id="adminServerSpamFilterChannelTimesAdjustment">
+    <property name="value">2</property>
+    <property name="lower">1</property>
+    <property name="upper">4</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">1</property>
+  </object>
+  <object class="GtkAdjustment" id="adminServerSpamFilterChatTimesAdjustment">
+    <property name="value">2</property>
+    <property name="lower">1</property>
+    <property name="upper">4</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">1</property>
+  </object>
+  <object class="GtkAdjustment" id="adminServerSpamFilterCommentTimesAdjustment">
+    <property name="value">2</property>
+    <property name="lower">1</property>
+    <property name="upper">4</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">1</property>
+  </object>
+  <object class="GtkAdjustment" id="adminServerSpamFilterTTSTimesAdjustment">
+    <property name="value">2</property>
+    <property name="lower">1</property>
+    <property name="upper">4</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">1</property>
+  </object>
+  <object class="GtkAdjustment" id="adminServerSpamFilterWaveTimesAdjustment">
+    <property name="value">2</property>
+    <property name="lower">1</property>
+    <property name="upper">4</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">1</property>
   </object>
 </interface>
