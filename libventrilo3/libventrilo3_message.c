@@ -970,11 +970,15 @@ _v3_get_0x4a(_v3_net_message *msg) {/*{{{*/
                 msg->contents = msub;
 
                 msub->acct_list_count = msub->header.count;
-                msub->acct_list = calloc(msub->header.count, sizeof(msub->acct_list[0]));
+                if (msub->header.count > 0) {
+                    msub->acct_list = calloc(msub->header.count, sizeof(msub->acct_list[0]));
 
-                for (i = 0, offset = msg->data + sizeof(msub->header);i < msub->header.count; i++) {
-                    v3_account *account = msub->acct_list[i] = malloc(sizeof(v3_account));
-                    offset += _v3_get_msg_account(offset, account);
+                    for (i = 0, offset = msg->data + sizeof(msub->header);i < msub->header.count; i++) {
+                        v3_account *account = msub->acct_list[i] = malloc(sizeof(v3_account));
+                        offset += _v3_get_msg_account(offset, account);
+                    }
+                } else {
+                    msub->acct_list = NULL;
                 }
             }
             break;
@@ -1063,14 +1067,16 @@ _v3_destroy_0x4a(_v3_net_message *msg) {/*{{{*/
     switch (m->subtype) {
         case V3_USERLIST_OPEN:
             {
-            _v3_msg_0x4a_account *msub = (_v3_msg_0x4a_account *)m;
+                _v3_msg_0x4a_account *msub = (_v3_msg_0x4a_account *)m;
 
-            for (i = 0; i < msub->acct_list_count; i++) {
-                v3_account *acct = msub->acct_list[i];
-                _v3_debug(V3_DEBUG_PACKET_PARSE, "freeing resources for account %d: %s", acct->perms.account_id, acct->username);
-                v3_free_account(acct);
-            }
-            free(msub->acct_list);
+                for (i = 0; i < msub->acct_list_count; i++) {
+                    v3_account *acct = msub->acct_list[i];
+                    _v3_debug(V3_DEBUG_PACKET_PARSE, "freeing resources for account %d: %s", acct->perms.account_id, acct->username);
+                    v3_free_account(acct);
+                }
+                if (msub->acct_list) {
+                    free(msub->acct_list);
+                }
             }
             break;
         default:

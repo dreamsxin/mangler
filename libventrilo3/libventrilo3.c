@@ -4210,16 +4210,16 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                     case V3_USERLIST_MODIFY:
                     case V3_USERLIST_ADD:
                         {
-                        int i;
-                        _v3_msg_0x4a_account *msub = msg->contents;
-                        _v3_debug(V3_DEBUG_INFO, "received %d user accounts", msub->acct_list_count);
-                        for (i = 0; i < msub->acct_list_count; i++) {
-                            _v3_update_account(msub->acct_list[i]);
-                            v3_event *ev = _v3_create_event((msub->header.subtype == V3_USERLIST_MODIFY) ? V3_EVENT_USERLIST_MODIFY : V3_EVENT_USERLIST_ADD);
-                            ev->account.id = msub->acct_list[i]->perms.account_id;
-                            _v3_debug(V3_DEBUG_INFO, "queuing event type %d for account id %d", ev->type, ev->account.id);
-                            v3_queue_event(ev);
-                        }
+                            int i;
+                            _v3_msg_0x4a_account *msub = msg->contents;
+                            _v3_debug(V3_DEBUG_INFO, "received %d user accounts", msub->acct_list_count);
+                            for (i = 0; i < msub->acct_list_count; i++) {
+                                _v3_update_account(msub->acct_list[i]);
+                                v3_event *ev = _v3_create_event((msub->header.subtype == V3_USERLIST_MODIFY) ? V3_EVENT_USERLIST_MODIFY : V3_EVENT_USERLIST_ADD);
+                                ev->account.id = msub->acct_list[i]->perms.account_id;
+                                _v3_debug(V3_DEBUG_INFO, "queuing event type %d for account id %d", ev->type, ev->account.id);
+                                v3_queue_event(ev);
+                            }
                         }
                         break;
                     case V3_USERLIST_REMOVE:
