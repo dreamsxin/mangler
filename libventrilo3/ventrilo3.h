@@ -297,10 +297,9 @@ enum _v3_events {
     V3_EVENT_SRV_PROP_CLOSE,
 
     // not implemented
-    V3_EVENT_USER_PAGED,
+    V3_EVENT_USER_PAGE,
     V3_EVENT_CHAN_REMOVED,
     V3_EVENT_CHAN_MODIFIED,
-    V3_EVENT_RECV_AUDIO,
     V3_EVENT_SERVER_PROPERTY_UPDATED,
     V3_EVENT_RANKLIST_OPEN,
     V3_EVENT_RANKLIST_CLOSE,
@@ -694,6 +693,7 @@ void        v3_send_privchat_away(uint16_t userid);
 void        v3_send_privchat_back(uint16_t userid);
 void        v3_send_tts_message(char *message);
 void        v3_send_play_wave_message(char *message);
+void        v3_send_user_page(uint16_t user_id);
 void        v3_logout(void);
 void        v3_change_channel(uint16_t channel_id, char *password);
 void        v3_admin_login(char *password);

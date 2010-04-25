@@ -1721,7 +1721,7 @@ _v3_get_0x60(_v3_net_message *msg) {/*{{{*/
     _v3_func_enter("_v3_get_0x60");
     m = malloc(sizeof(_v3_msg_0x60));
     memcpy(m, msg->data, 8);
-    _v3_debug(V3_DEBUG_PACKET_PARSE, "server has %d channels, allocating %d bytes", m->channel_count, m->channel_count * sizeof(_v3_msg_channel));
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "packet contains %d channels, allocating %d bytes", m->channel_count, m->channel_count * sizeof(_v3_msg_channel));
     m->channel_list = calloc(m->channel_count, sizeof(_v3_msg_channel));
     for (ctr = 0, offset = msg->data + 8;ctr < m->channel_count; ctr++) {
         offset += _v3_get_msg_channel(offset, &m->channel_list[ctr]);
@@ -1751,6 +1751,48 @@ _v3_destroy_0x60(_v3_net_message *msg) {/*{{{*/
     free(m->channel_list);
     _v3_func_leave("_v3_destroy_0x60");
     return true;
+}/*}}}*/
+/*}}}*/
+// Message 0x62 (98) | USER PAGE /*{{{*/
+int
+_v3_get_0x62(_v3_net_message *msg) {/*{{{*/
+    _v3_msg_0x62 *m;
+
+    _v3_func_enter("_v3_get_0x62");
+    if (msg->len != sizeof(_v3_msg_0x62)) {
+        _v3_debug(V3_DEBUG_PACKET_PARSE, "expected %d bytes, but message is %d bytes", sizeof(_v3_msg_0x62), msg->len);
+        _v3_func_leave("_v3_get_0x62");
+        return false;
+    }
+    m = msg->contents = msg->data;
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "User Page:");
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "user_id_to..........: %d", m->user_id_to);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "user_id_from........: %d", m->user_id_from);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "error_id............: %d", m->error_id);
+    _v3_func_leave("_v3_get_0x62");
+    return true;
+}/*}}}*/
+_v3_net_message *
+_v3_put_0x62(uint16_t user_id) {/*{{{*/
+    _v3_net_message *m;
+    _v3_msg_0x62 *mc;
+
+    _v3_func_enter("_v3_put_0x62");
+    m = malloc(sizeof(_v3_net_message));
+    memset(m, 0, sizeof(_v3_net_message));
+    m->type = 0x62;
+    m->len = sizeof(_v3_msg_0x62);
+
+    mc = malloc(m->len);
+    memset(mc, 0, m->len);
+
+    mc->type = 0x62;
+    mc->user_id_to = user_id;
+    mc->user_id_from = v3_luser.id;
+    m->contents = mc;
+    m->data = (char *)mc;
+    _v3_func_leave("_v3_put_0x62");
+    return m;
 }/*}}}*/
 /*}}}*/
 // Message 0x63 (99) | ADMIN /*{{{*/

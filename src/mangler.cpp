@@ -1472,6 +1472,16 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                     */
                 }
                 break;/*}}}*/
+            case V3_EVENT_USER_PAGE:/*{{{*/
+                {
+                    /*
+                    if ((u = v3_get_user(ev->user.id))) {
+                        fprintf(stderr, "Page from: %s\n", u->name);
+                        v3_free_user(u);
+                    }
+                    */
+                }
+                break;/*}}}*/
             case V3_EVENT_ADMIN_AUTH:/*{{{*/
                 {
                     const v3_permissions *perms = v3_get_permissions();

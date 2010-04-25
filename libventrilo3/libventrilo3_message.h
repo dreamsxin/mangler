@@ -155,8 +155,7 @@ typedef struct _v3_net_message_0x46 {/*{{{*/
     uint32_t type;              // 0
     uint16_t user_id;           // 4
     uint16_t setting;           // 6
-    uint16_t value;             // 8
-    uint16_t unknown_1;         // 10
+    uint32_t value;             // 8
 } __attribute__ ((__packed__)) _v3_msg_0x46;
 int _v3_get_0x46(_v3_net_message *msg);
 _v3_net_message *_v3_put_0x46(uint16_t setting, uint16_t value);/*}}}*/
@@ -373,15 +372,17 @@ typedef struct _v3_net_message_0x61 {/*{{{*/
 } __attribute__ ((__packed__)) _v3_msg_0x61;/*}}}*/
 typedef struct _v3_net_message_0x62 {/*{{{*/
     uint32_t type;              // 0
-    uint16_t from;              // 4
-    uint16_t to;                // 6
+    uint16_t user_id_to;        // 4
+    uint16_t user_id_from;      // 6
     uint32_t error_id;          // 8
 } __attribute__ ((__packed__)) _v3_msg_0x62;/*}}}*/
+int _v3_get_0x62(_v3_net_message *msg);
+_v3_net_message *_v3_put_0x62(uint16_t user_id);
 typedef struct _v3_net_message_0x63 {/*{{{*/
     uint32_t type;              // 0
     uint16_t subtype;           // 4
     uint16_t user_id;           // 6
-    uint8_t  unused[4];         // 8
+    uint32_t unused;            // 8
     union {                     // 12
         uint8_t password_hash[0x20];
         char    reason[0x80];
