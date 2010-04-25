@@ -25,6 +25,7 @@
  */
 
 #include "mangler.h"
+#include "manglerbackend.h"
 #include "mangleraudio.h"
 #include "mangler-sounds.h"
 #include <sys/time.h>
@@ -42,25 +43,9 @@ ManglerAudio::ManglerAudio(int type, uint32_t rate, uint8_t channels, uint32_t p
     this->pcm_framesize  = pcm_framesize;
     this->buffer         = buffer;
     this->check_loggedin = check_loggedin;
-#ifdef HAVE_PULSE
-    pulse_stream = NULL;
-    pulse_samplespec.format   = PA_SAMPLE_S16NE;
-    pulse_samplespec.rate     = rate;
-    pulse_samplespec.channels = channels;
-    buffer_attr.maxlength = -1;
-    buffer_attr.tlength   = -1;
-    buffer_attr.prebuf    = -1;
-    buffer_attr.minreq    = -1;
-    buffer_attr.fragsize  = pcm_framesize;
-#endif
-#ifdef HAVE_ALSA
-    alsa_stream = NULL;
-#endif
-#ifdef HAVE_OSS
-    oss_fd = -1;
-#endif
     outputStreamOpen = false;
     inputStreamOpen = false;
+    backend = NULL;
     if (type >= AUDIO_OUTPUT) {
         if (!open()) {
             return;
@@ -82,7 +67,25 @@ ManglerAudio::ManglerAudio(int type, uint32_t rate, uint8_t channels, uint32_t p
     }
 }/*}}}*/
 ManglerAudio::~ManglerAudio() {/*{{{*/
+    if(backend) {
+        delete backend;
+    }
 }/*}}}*/
+
+
+bool
+ManglerAudio::switchBackend(Glib::ustring audioSubsystem) {
+    ManglerBackend *newbackend = ManglerBackend::getBackend(audioSubsystem, rate, channels, pcm_framesize);
+    if(!newbackend) {
+        return false;
+    }
+    if(backend)
+    {
+      delete backend;
+    }
+    backend = newbackend;
+    return true;
+}
 
 bool
 ManglerAudio::open(void) {/*{{{*/
@@ -106,117 +109,24 @@ ManglerAudio::open(void) {/*{{{*/
     } else if (device == "Custom") {
         device = Mangler::config[direction + "DeviceCustomName"].toUString();
     }
-#ifdef HAVE_PULSE
-    if (Mangler::config["AudioSubsystem"].toLower() == "pulse") {
-        pulse_samplespec.rate     = rate;
-        pulse_samplespec.channels = channels;
-        if (!(pulse_stream = pa_simple_new(
-                        NULL,
-                        "Mangler",
-                        (type >= AUDIO_OUTPUT) ? PA_STREAM_PLAYBACK : PA_STREAM_RECORD,
-                        (device == "") ? NULL : device.c_str(),
-                        (type >= AUDIO_OUTPUT) ? "Playback" : "Recording",
-                        &pulse_samplespec,
-                        NULL,
-                        (type >= AUDIO_OUTPUT) ? NULL : &buffer_attr,
-                        &pulse_error))) {
-            fprintf(stderr, "pulse: pa_simple_new() failed: %s\n", pa_strerror(pulse_error));
-            pulse_stream = NULL;
+
+    if(!backend) {
+      if(!switchBackend(Mangler::config["AudioSubsystem"].toUString())) {
             return false;
         }
     }
-#endif
-#ifdef HAVE_ALSA
-    if (Mangler::config["AudioSubsystem"].toLower() == "alsa") {
-        if ((alsa_error = snd_pcm_open(
-                        &alsa_stream,
-                        (device == "") ? "default" : device.c_str(),
-                        (type >= AUDIO_OUTPUT) ? SND_PCM_STREAM_PLAYBACK : SND_PCM_STREAM_CAPTURE,
-                        0)) < 0) {
-            fprintf(stderr, "alsa: snd_pcm_open() failed: %s\n", snd_strerror(alsa_error));
-            alsa_stream = NULL;
-            return false;
-        }
-        if ((alsa_error = snd_pcm_set_params(
-                        alsa_stream,                      // pcm handle
-                        SND_PCM_FORMAT_S16_LE,            // format
-                        SND_PCM_ACCESS_RW_INTERLEAVED,    // access
-                        channels,                         // channels
-                        rate,                             // rate
-                        true,                             // soft_resample
-                        150000)) < 0) {                   // latency in usec (0.15 sec)
-            fprintf(stderr, "alsa: snd_pcm_set_params() failed: %s\n", snd_strerror(alsa_error));
-            close();
-            return false;
-        }
-        if ((alsa_error = snd_pcm_prepare(alsa_stream)) < 0) {
-            fprintf(stderr, "alsa: snd_pcm_prepare() failed: %s\n", snd_strerror(alsa_error));
-            close();
-            return false;
-        }
-        if (type == AUDIO_INPUT && (alsa_error = snd_pcm_start(alsa_stream)) < 0) {
-            fprintf(stderr, "alsa: snd_pcm_start() failed: %s\n", snd_strerror(alsa_error));
-            close();
-            return false;
-        }
+    if(!backend->open(type, device, rate, channels)) {
+        return false;
     }
-#endif
-#ifdef HAVE_OSS
-    if (Mangler::config["AudioSubsystem"].toLower() == "oss") {
-        if ((oss_fd = ::open((device == "") ? "/dev/dsp" : device.c_str(), (type >= AUDIO_OUTPUT) ? O_WRONLY : O_RDONLY)) < 0) {
-            fprintf(stderr, "oss: open() %s failed: %s\n", (device == "") ? "/dev/dsp" : device.c_str(), strerror(errno));
-            return false;
-        }
-        int opt;
-        opt = AFMT_S16_NE;
-        if ((::ioctl(oss_fd, SNDCTL_DSP_SETFMT, &opt) < 0) || opt != AFMT_S16_NE) {
-            fprintf(stderr, "oss: ioctl() SNDCTL_DSP_SETFMT failed: %s\n", strerror(errno));
-            close();
-            return false;
-        }
-        opt = channels;
-        if ((::ioctl(oss_fd, SNDCTL_DSP_CHANNELS, &opt) < 0) || opt != (int)channels) {
-            fprintf(stderr, "oss: ioctl() SNDCTL_DSP_CHANNELS failed: %s\n", strerror(errno));
-            close();
-            return false;
-        }
-        opt = rate;
-        if ((::ioctl(oss_fd, SNDCTL_DSP_SPEED, &opt) < 0) || opt != (int)rate) {
-            fprintf(stderr, "oss: ioctl() SNDCTL_DSP_SPEED failed: %s\n", strerror(errno));
-            close();
-            return false;
-        }
-    }
-#endif
+
     return true;
 }/*}}}*/
 
 void
 ManglerAudio::close(bool drain) {/*{{{*/
-#ifdef HAVE_PULSE
-    if (pulse_stream) {
-        if (drain && pa_simple_drain(pulse_stream, &pulse_error) < 0) {
-            fprintf(stderr, "pulse: pa_simple_drain() failed: %s\n", pa_strerror(pulse_error));
-        }
-        pa_simple_free(pulse_stream);
-        pulse_stream = NULL;
+    if(backend) {
+        backend->close(drain);
     }
-#endif
-#ifdef HAVE_ALSA
-    if (alsa_stream) {
-        if (drain) {
-            snd_pcm_drain(alsa_stream);
-        }
-        snd_pcm_close(alsa_stream);
-        alsa_stream = NULL;
-    }
-#endif
-#ifdef HAVE_OSS
-    if (oss_fd >= 0) {
-        ::close(oss_fd);
-        oss_fd = -1;
-    }
-#endif
 }/*}}}*/
 
 void
@@ -249,16 +159,6 @@ ManglerAudio::output(void) {/*{{{*/
         if (check_loggedin && !v3_is_loggedin()) {
             // we were disconnected while playing the stream.
             // unref the queue and flush the audio buffers.
-#ifdef HAVE_PULSE
-            if (pulse_stream) {
-                pa_simple_flush(pulse_stream, &pulse_error);
-            }
-#endif
-#ifdef HAVE_ALSA
-            if (alsa_stream) {
-                snd_pcm_drop(alsa_stream);
-            }
-#endif
             close();
             break;
         }
@@ -296,53 +196,19 @@ ManglerAudio::output(void) {/*{{{*/
             queuedpcm = NULL;
             continue;
         }
-#ifdef HAVE_PULSE
-        if (Mangler::config["AudioSubsystem"].toLower() == "pulse") {
-            if (!pulse_stream && !open()) {
+        if(Mangler::config["AudioSubsystem"].toLower() != backend->getAudioSubsystem()) {
+          if(!switchBackend(Mangler::config["AudioSubsystem"].toLower())) {
                 break;
             }
-            if (pa_simple_write(pulse_stream, queuedpcm->sample, queuedpcm->length, &pulse_error) < 0) {
-                fprintf(stderr, "pulse: pa_simple_write() failed: %s\n", pa_strerror(pulse_error));
-                close();
+            if(!open()){
                 break;
             }
         }
-#endif
-#ifdef HAVE_ALSA
-        if (Mangler::config["AudioSubsystem"].toLower() == "alsa") {
-            if (!alsa_stream && !open()) {
-                break;
-            }
-            uint32_t buflen;
-            uint32_t pcmlen = queuedpcm->length;
-            uint8_t *pcmptr = queuedpcm->sample;
-            while ((buflen = pcmlen >= ALSA_BUF ? ALSA_BUF : pcmlen)) {
-                if ((alsa_frames = snd_pcm_writei(alsa_stream, pcmptr, buflen / (sizeof(int16_t) * channels))) < 0) {
-                    if (alsa_frames == -EPIPE) {
-                        snd_pcm_prepare(alsa_stream);
-                    } else if ((alsa_error = snd_pcm_recover(alsa_stream, alsa_frames, 0)) < 0) {
-                        fprintf(stderr, "alsa: snd_pcm_writei() failed: %s\n", snd_strerror(alsa_error));
-                        close();
-                        break;
-                    }
-                }
-                pcmlen -= buflen;
-                pcmptr += buflen;
-            }
+        if(!backend->write(queuedpcm->sample, queuedpcm->length, channels)) {
+            close();
+            break;
         }
-#endif
-#ifdef HAVE_OSS
-        if (Mangler::config["AudioSubsystem"].toLower() == "oss") {
-            if (oss_fd < 0 && !open()) {
-                break;
-            }
-            if (::write(oss_fd, queuedpcm->sample, queuedpcm->length) < 0) {
-                fprintf(stderr, "oss: write() failed: %s\n", strerror(errno));
-                close();
-                break;
-            }
-        }
-#endif
+          
         delete queuedpcm;
         queuedpcm = NULL;
     }
@@ -399,52 +265,22 @@ ManglerAudio::input(void) {/*{{{*/
             //fprintf(stderr, "reallocating %d bytes of memory\n", pcm_framesize*(ctr+1));
             buf = (uint8_t *)realloc(buf, pcm_framesize*(ctr+1));
             //fprintf(stderr, "reading %d bytes of memory to %lu\n", pcm_framesize, buf+(pcm_framesize*ctr));
-#ifdef HAVE_PULSE
-            if (Mangler::config["AudioSubsystem"].toLower() == "pulse") {
-                if (!pulse_stream && !open()) {
+            if(Mangler::config["AudioSubsystem"].toLower() != backend->getAudioSubsystem()) {
+                if(!switchBackend(Mangler::config["AudioSubsystem"].toLower())) {
                     stop_input = true;
                     break;
                 }
-                if (pa_simple_read(pulse_stream, buf+(pcm_framesize*ctr), pcm_framesize, &pulse_error) < 0) {
-                    fprintf(stderr, "pulse: pa_simple_read() failed: %s\n", pa_strerror(pulse_error));
-                    close();
-                    stop_input = true;
-                    break;
-                }
-            }
-#endif
-#ifdef HAVE_ALSA
-            if (Mangler::config["AudioSubsystem"].toLower() == "alsa") {
-                if (!alsa_stream && !open()) {
-                    stop_input = true;
-                    break;
-                }
-                if ((alsa_frames = snd_pcm_readi(alsa_stream, buf+(pcm_framesize*ctr), pcm_framesize / (sizeof(int16_t) * channels))) < 0) {
-                    if (alsa_frames == -EPIPE) {
-                        snd_pcm_prepare(alsa_stream);
-                    } else if ((alsa_error = snd_pcm_recover(alsa_stream, alsa_frames, 0)) < 0) {
-                        fprintf(stderr, "alsa: snd_pcm_readi() failed: %s\n", snd_strerror(alsa_error));
-                        close();
-                        stop_input = true;
-                        break;
-                    }
-                }
-            }
-#endif
-#ifdef HAVE_OSS
-            if (Mangler::config["AudioSubsystem"].toLower() == "oss") {
-                if (oss_fd < 0 && !open()) {
-                    stop_input = true;
-                    break;
-                }
-                if (::read(oss_fd, buf+(pcm_framesize*ctr), pcm_framesize) < 0) {
-                    fprintf(stderr, "oss: read() failed: %s\n", strerror(errno));
-                    close();
+                if(!open()) {
                     stop_input = true;
                     break;
                 }
             }
-#endif
+            if(!backend->read(buf+(pcm_framesize*ctr))) {
+                close();
+                stop_input = true;
+                break;
+            }
+
             gettimeofday(&now, NULL);
             timeval_subtract(&diff, &now, &start);
             seconds = (float)diff.tv_sec + ((float)diff.tv_usec / 1000000.0);
@@ -542,216 +378,7 @@ ManglerAudio::getDeviceList(Glib::ustring audioSubsystem) {/*{{{*/
     outputDevices.clear();
     inputDevices.clear();
 
-#ifdef HAVE_PULSE
-    if (audioSubsystem == "pulse") {
-        int ctr;
-
-        // This is where we'll store the input device list
-        pa_devicelist_t pa_input_devicelist[16];
-
-        // This is where we'll store the output device list
-        pa_devicelist_t pa_output_devicelist[16];
-
-        if (pa_get_devicelist(pa_input_devicelist, pa_output_devicelist) < 0) {
-            fprintf(stderr, "pulse: failed to get device list; is pulseaudio running?\n");
-            return;
-        }
-
-        for (ctr = 0; ctr < 16; ctr++) {
-            if (! pa_output_devicelist[ctr].initialized) {
-                break;
-            }
-            outputDevices.push_back(
-                    new ManglerAudioDevice(
-                        pa_output_devicelist[ctr].index,
-                        pa_output_devicelist[ctr].name,
-                        pa_output_devicelist[ctr].description)
-                    );
-        }
-
-        for (ctr = 0; ctr < 16; ctr++) {
-            if (! pa_input_devicelist[ctr].initialized) {
-                break;
-            }
-            inputDevices.push_back(
-                    new ManglerAudioDevice(
-                        pa_input_devicelist[ctr].index,
-                        pa_input_devicelist[ctr].name,
-                        pa_input_devicelist[ctr].description)
-                    );
-        }
-        return;
-    }
-#endif
-#ifdef HAVE_ALSA
-    if (audioSubsystem == "alsa") {
-        snd_pcm_stream_t stream[2] = { SND_PCM_STREAM_PLAYBACK, SND_PCM_STREAM_CAPTURE };
-        int ctr;
-
-        for (ctr = 0; ctr < 2; ctr++) { // the rest is just copypasta, with bad code from alsa
-            snd_ctl_t *handle;
-            int card, err, dev, idx_p = 0, idx_c = 0;
-            snd_ctl_card_info_t *info;
-            snd_pcm_info_t *pcminfo;
-
-            card = -1;
-            snd_ctl_card_info_alloca(&info);
-            snd_pcm_info_alloca(&pcminfo);
-            if (snd_card_next(&card) < 0 || card < 0) {
-                fputs("alsa: no sound cards found!\n", stderr);
-                return;
-            }
-            while (card >= 0) {
-                char hw[256] = "";
-                snprintf(hw, 255, "hw:%i", card);
-                if ((err = snd_ctl_open(&handle, hw, 0)) < 0) {
-                    fprintf(stderr, "alsa: control open (%i): %s\n", card, snd_strerror(err));
-                    if (snd_card_next(&card) < 0) {
-                        fprintf(stderr, "alsa: snd_ctl_open: snd_card_next\n");
-                        break;
-                    }
-                    continue;
-                }
-                if ((err = snd_ctl_card_info(handle, info)) < 0) {
-                    fprintf(stderr, "alsa: control hardware info (%i): %s\n", card, snd_strerror(err));
-                    snd_ctl_close(handle);
-                    if (snd_card_next(&card) < 0) {
-                        fprintf(stderr, "alsa: snd_ctl_card_info: snd_card_next\n");
-                        break;
-                    }
-                    continue;
-                }
-                dev = -1;
-                for (;;) {
-                    if (snd_ctl_pcm_next_device(handle, &dev) < 0) {
-                        fprintf(stderr, "alsa: snd_ctl_pcm_next_device\n");
-                    }
-                    if (dev < 0) {
-                        break;
-                    }
-                    snd_pcm_info_set_device(pcminfo, dev);
-                    snd_pcm_info_set_subdevice(pcminfo, 0);
-                    snd_pcm_info_set_stream(pcminfo, stream[ctr]);
-                    if ((err = snd_ctl_pcm_info(handle, pcminfo)) < 0) {
-                        if (err != -ENOENT) {
-                            fprintf(stderr, "alsa: control digital audio info (%i): %s\n", card, snd_strerror(err));
-                        }
-                        continue;
-                    }
-                    char name[256] = "", desc[512] = "";
-                    snprintf(name, 255, "hw:%i,%i", card, dev);
-                    snprintf(desc, 511, "%s: %s (%s)",
-                        snd_ctl_card_info_get_name(info),
-                        snd_pcm_info_get_name(pcminfo),
-                        name
-                        );
-                    switch (stream[ctr]) {
-                      case SND_PCM_STREAM_PLAYBACK:
-                        outputDevices.push_back(
-                            new ManglerAudioDevice(
-                                idx_p++,
-                                name,
-                                desc)
-                            );
-                        break;
-                      case SND_PCM_STREAM_CAPTURE:
-                        inputDevices.push_back(
-                            new ManglerAudioDevice(
-                                idx_c++,
-                                name,
-                                desc)
-                            );
-                        break;
-                    }
-                }
-                snd_ctl_close(handle);
-                if (snd_card_next(&card) < 0) {
-                    fprintf(stderr, "alsa: snd_card_next\n");
-                    break;
-                }
-            }
-        }
-    }
-#endif
-#ifdef HAVE_OSS
-    if (audioSubsystem == "oss") {
-        int idx_p = 0, idx_c = 0;
-# if SOUND_VERSION >= 0x040000
-        bool ossv3 = false;
-        int fd, dev, version = 0;
-        oss_sysinfo sysinfo;
-        oss_audioinfo ainfo;
-
-        if ((fd = ::open("/dev/mixer", O_RDONLY)) < 0) {
-            fprintf(stderr, "oss: open() /dev/mixer failed: %s\n", strerror(errno));
-            ossv3 = true;
-        }
-        if (!ossv3 && (::ioctl(fd, OSS_GETVERSION, &version) < 0 || version < 0x040000)) {
-            fprintf(stderr, "oss: ioctl() failed: version too old for device enumeration\n");
-            ::close(fd);
-            ossv3 = true;
-        }
-        if (!ossv3 && ::ioctl(fd, SNDCTL_SYSINFO, &sysinfo) < 0) {
-            fprintf(stderr, "oss: ioctl() failed: %s\n", strerror(errno));
-            ::close(fd);
-            ossv3 = true;
-        }
-        if (!ossv3) {
-            if (!sysinfo.numaudios) {
-                fprintf(stderr, "oss: no sound cards found!\n");
-                ::close(fd);
-                return;
-            }
-            for (dev = 0; dev < sysinfo.numaudios; dev++) {
-                ainfo.dev = dev;
-                if (::ioctl(fd, SNDCTL_AUDIOINFO, &ainfo) < 0 || !ainfo.enabled) {
-                    continue;
-                }
-                if (ainfo.caps & PCM_CAP_OUTPUT) {
-                    outputDevices.push_back(
-                        new ManglerAudioDevice(
-                            idx_p++,
-                            ainfo.devnode,
-                            ainfo.name)
-                        );
-                }
-                if (ainfo.caps & PCM_CAP_INPUT) {
-                    inputDevices.push_back(
-                        new ManglerAudioDevice(
-                            idx_c++,
-                            ainfo.devnode,
-                            ainfo.name)
-                        );
-                }
-            }
-            ::close(fd);
-            return;
-        }
-        fprintf(stderr, "oss: falling back to ossv3 device listing\n");
-# endif
-        Glib::PatternSpec dsp("dsp*");
-        Glib::Dir::Dir dir("/dev");
-        Glib::ustring path;
-
-        for (Glib::DirIterator iter = dir.begin(); iter != dir.end(); iter++) {
-            if (dsp.match(*iter)) {
-                path = "/dev/" + *iter;
-                outputDevices.push_back(
-                        new ManglerAudioDevice(
-                            idx_p++,
-                            path,
-                            path)
-                        );
-                inputDevices.push_back(
-                        new ManglerAudioDevice(
-                            idx_c++,
-                            path,
-                            path)
-                        );
-            }
-        }
-    }
-#endif
+    ManglerBackend::getDeviceList(audioSubsystem, inputDevices, outputDevices);
 }/*}}}*/
 
 void
@@ -780,185 +407,6 @@ ManglerAudio::playNotification(Glib::ustring name) {/*{{{*/
     notify->queue(sounds[name]->length, sounds[name]->sample);
     notify->finish();
 }/*}}}*/
-
-#ifdef HAVE_PULSE
-// Pulse Audio Device List Retrieval (in all of it's C glory)/*{{{*/
-int pa_get_devicelist(pa_devicelist_t *input, pa_devicelist_t *output) {
-    // Define our pulse audio loop and connection variables
-    pa_mainloop *pa_ml;
-    pa_mainloop_api *pa_mlapi;
-    pa_operation *pa_op;
-    pa_context *pa_ctx;
-
-    // We'll need these state variables to keep track of our requests
-    int state = 0;
-    int pa_ready = 0;
-
-    // Initialize our device lists
-    memset(input, 0, sizeof(pa_devicelist_t) * 16);
-    memset(output, 0, sizeof(pa_devicelist_t) * 16);
-
-    // Create a mainloop API and connection to the default server
-    pa_ml = pa_mainloop_new();
-    pa_mlapi = pa_mainloop_get_api(pa_ml);
-    pa_ctx = pa_context_new(pa_mlapi, "test");
-
-    // This function connects to the pulse server
-    pa_context_connect(pa_ctx, NULL, (pa_context_flags_t)0, NULL);
-
-    // This function defines a callback so the server will tell us it's state.
-    // Our callback will wait for the state to be ready.  The callback will
-    // modify the variable to 1 so we know when we have a connection and it's
-    // ready.
-    // If there's an error, the callback will set pa_ready to 2
-    pa_context_set_state_callback(pa_ctx, pa_state_cb, &pa_ready);
-
-    // Now we'll enter into an infinite loop until we get the data we receive
-    // or if there's an error
-    for (;;) {
-        // We can't do anything until PA is ready, so just iterate the mainloop
-        // and continue
-        if (pa_ready == 0) {
-            pa_mainloop_iterate(pa_ml, 1, NULL);
-            continue;
-        }
-        // We couldn't get a connection to the server, so exit out
-        if (pa_ready == 2) {
-            pa_context_disconnect(pa_ctx);
-            pa_context_unref(pa_ctx);
-            pa_mainloop_free(pa_ml);
-            return -1;
-        }
-        // At this point, we're connected to the server and ready to make
-        // requests
-        switch (state) {
-            // State 0: we haven't done anything yet
-            case 0:
-                // This sends an operation to the server.  pa_sinklist_info is
-                // our callback function and a pointer to our devicelist will
-                // be passed to the callback The operation ID is stored in the
-                // pa_op variable
-                pa_op = pa_context_get_sink_info_list(pa_ctx,
-                        pa_sinklist_cb,
-                        output
-                        );
-
-                // Update state for next iteration through the loop
-                state++;
-                break;
-            case 1:
-                // Now we wait for our operation to complete.  When it's
-                // complete our pa_output_devicelist is filled out, and we move
-                // along to the next state
-                if (pa_operation_get_state(pa_op) == PA_OPERATION_DONE) {
-                    pa_operation_unref(pa_op);
-
-                    // Now we perform another operation to get the source
-                    // (input device) list just like before.  This time we pass
-                    // a pointer to our input structure
-                    pa_op = pa_context_get_source_info_list(pa_ctx,
-                            pa_sourcelist_cb,
-                            input
-                            );
-                    // Update the state so we know what to do next
-                    state++;
-                }
-                break;
-            case 2:
-                if (pa_operation_get_state(pa_op) == PA_OPERATION_DONE) {
-                    // Now we're done, clean up and disconnect and return
-                    pa_operation_unref(pa_op);
-                    pa_context_disconnect(pa_ctx);
-                    pa_context_unref(pa_ctx);
-                    pa_mainloop_free(pa_ml);
-                    return 0;
-                }
-                break;
-            default:
-                // We should never see this state
-                fprintf(stderr, "in state %d\n", state);
-                return -1;
-        }
-        // Iterate the main loop and go again.  The second argument is whether
-        // or not the iteration should block until something is ready to be
-        // done.  Set it to zero for non-blocking.
-        pa_mainloop_iterate(pa_ml, 1, NULL);
-    }
-}
-
-// This callback gets called when our context changes state.  We really only
-// care about when it's ready or if it has failed
-void pa_state_cb(pa_context *c, void *userdata) {
-    pa_context_state_t state;
-    int *pa_ready = (int *)userdata;
-
-    state = pa_context_get_state(c);
-    switch  (state) {
-        // There are just here for reference
-        case PA_CONTEXT_UNCONNECTED:
-        case PA_CONTEXT_CONNECTING:
-        case PA_CONTEXT_AUTHORIZING:
-        case PA_CONTEXT_SETTING_NAME:
-        default:
-            break;
-        case PA_CONTEXT_FAILED:
-        case PA_CONTEXT_TERMINATED:
-            *pa_ready = 2;
-            break;
-        case PA_CONTEXT_READY:
-            *pa_ready = 1;
-            break;
-    }
-}
-
-// pa_mainloop will call this function when it's ready to tell us about a sink.
-// Since we're not threading, there's no need for mutexes on the devicelist
-// structure
-void pa_sinklist_cb(pa_context *c, const pa_sink_info *l, int eol, void *userdata) {
-    pa_devicelist_t *pa_devicelist = (pa_devicelist_t *)userdata;
-    int ctr = 0;
-
-    // If eol is set to a positive number, you're at the end of the list
-    if (eol > 0) {
-        return;
-    }
-
-    // We know we've allocated 16 slots to hold devices.  Loop through our
-    // structure and find the first one that's "uninitialized."  Copy the
-    // contents into it and we're done.  If we receive more than 16 devices,
-    // they're going to get dropped.  You could make this dynamically allocate
-    // space for the device list, but this is a simple example.
-    for (ctr = 0; ctr < 16; ctr++) {
-        if (! pa_devicelist[ctr].initialized) {
-            strncpy(pa_devicelist[ctr].name, l->name, 511);
-            strncpy(pa_devicelist[ctr].description, l->description, 255);
-            pa_devicelist[ctr].index = l->index;
-            pa_devicelist[ctr].initialized = 1;
-            break;
-        }
-    }
-}
-
-// See above.  This callback is pretty much identical to the previous
-void pa_sourcelist_cb(pa_context *c, const pa_source_info *l, int eol, void *userdata) {
-    pa_devicelist_t *pa_devicelist = (pa_devicelist_t *)userdata;
-    int ctr = 0;
-
-    if (eol > 0) {
-        return;
-    }
-
-    for (ctr = 0; ctr < 16; ctr++) {
-        if (! pa_devicelist[ctr].initialized) {
-            strncpy(pa_devicelist[ctr].name, l->name, 511);
-            strncpy(pa_devicelist[ctr].description, l->description, 255);
-            pa_devicelist[ctr].index = l->index;
-            pa_devicelist[ctr].initialized = 1;
-            break;
-        }
-    }
-}/*}}}*/
-#endif
 
 int
 timeval_subtract(struct timeval *result, struct timeval *x, struct timeval *y) {/*{{{*/

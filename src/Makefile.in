@@ -53,7 +53,9 @@ am__installdirs = "$(DESTDIR)$(bindir)" "$(DESTDIR)$(desktopdir)" \
 	"$(DESTDIR)$(icondir)"
 PROGRAMS = $(bin_PROGRAMS)
 am_mangler_OBJECTS = mangler.$(OBJEXT) channeltree.$(OBJEXT) \
-	mangleraudio.$(OBJEXT) manglernetwork.$(OBJEXT) \
+	mangleraudio.$(OBJEXT) manglerbackend.$(OBJEXT) \
+	manglerpulse.$(OBJEXT) mangleralsa.$(OBJEXT) \
+	mangleross.$(OBJEXT) manglernetwork.$(OBJEXT) \
 	manglerserverlist.$(OBJEXT) manglersettings.$(OBJEXT) \
 	manglerconfig.$(OBJEXT) manglerchat.$(OBJEXT) \
 	manglerprivchat.$(OBJEXT) manglercharset.$(OBJEXT) \
@@ -264,7 +266,29 @@ icondir = $(datadir)/pixmaps
 desktopdir = $(datadir)/applications
 icon_DATA = ../icons/mangler_logo.svg 
 desktop_DATA = ../mangler.desktop
-mangler_SOURCES = manglerui.h mangler.cpp channeltree.cpp mangleraudio.cpp manglernetwork.cpp manglerserverlist.cpp manglersettings.cpp manglerconfig.cpp manglerchat.cpp manglerprivchat.cpp manglercharset.cpp manglerintegration.cpp mangleradmin.cpp manglerrecorder.cpp manglerosd.cpp manglerg15.cpp inilib.cpp
+mangler_SOURCES = \
+	manglerui.h \
+	mangler.cpp mangler.h \
+	channeltree.cpp channeltree.h \
+	mangleraudio.cpp mangleraudio.h \
+	manglerbackend.cpp manglerbackend.h \
+	manglerpulse.cpp manglerpulse.h \
+	mangleralsa.cpp mangleralsa.h \
+	mangleross.cpp mangleross.h \
+	manglernetwork.cpp manglernetwork.h \
+	manglerserverlist.cpp manglerserverlist.h \
+	manglersettings.cpp manglersettings.h \
+	manglerconfig.cpp manglerconfig.h \
+	manglerchat.cpp manglerchat.h \
+	manglerprivchat.cpp manglerprivchat.h \
+	manglercharset.cpp manglercharset.h \
+	manglerintegration.cpp manglerintegration.h \
+	mangleradmin.cpp mangleradmin.h \
+	manglerrecorder.cpp manglerrecorder.h \
+	manglerosd.cpp manglerosd.h \
+	manglerg15.cpp manglerg15.h \
+	inilib.cpp inilib.h
+
 mangler_LDADD = @top_srcdir@/libventrilo3/libventrilo3.la $(gtkmm_LIBS) $(gthread_LIBS) $(pulse_LIBS) $(alsa_LIBS) $(dbus_LIBS)
 INCLUDES = -I@top_srcdir@/libventrilo3/ -I@top_srcdir@/icons/ -I@top_srcdir@/sounds/ $(gtkmm_CFLAGS) $(gthread_CFLAGS) $(pulse_CFLAGS) $(alsa_CFLAGS) $(dbus_CFLAGS) $(oss_CFLAGS)
 all: all-am
@@ -358,7 +382,9 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/inilib.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mangler.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mangleradmin.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mangleralsa.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mangleraudio.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/manglerbackend.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/manglercharset.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/manglerchat.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/manglerconfig.Po@am__quote@
@@ -366,7 +392,9 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/manglerintegration.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/manglernetwork.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/manglerosd.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mangleross.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/manglerprivchat.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/manglerpulse.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/manglerrecorder.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/manglerserverlist.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/manglersettings.Po@am__quote@
@@ -649,7 +677,7 @@ manglerui:
 dev:
 	cd ../libventrilo3 && make dev
 	g++ -g -Wall -o mangler -I../ -I../libventrilo3/ -I../icons/ -I ../sounds/ -pthread \
-		channeltree.cpp  mangleraudio.cpp  manglerconfig.cpp  mangler.cpp \
+		channeltree.cpp  mangleraudio.cpp maglerbackend.cpp manglerpulse.cpp mangleralsa.cpp mangleross.cpp manglerconfig.cpp  mangler.cpp \
 		manglernetwork.cpp  manglerserverlist.cpp  manglersettings.cpp \
 		manglerchat.cpp manglercharset.cpp manglerintegration.cpp manglerprivchat.cpp \
 		mangleradmin.cpp manglerrecorder.cpp manglerosd.cpp manglerg15.cpp \

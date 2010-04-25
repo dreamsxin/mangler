@@ -29,21 +29,14 @@
 
 #include "config.h"
 
-#ifdef HAVE_PULSE
-# include <pulse/pulseaudio.h>
-# include <pulse/simple.h>
-# include <pulse/error.h>
-# include <pulse/gccmacro.h>
-#endif
-#ifdef HAVE_ALSA
-# include <alsa/asoundlib.h>
-# define ALSA_BUF 640
-#endif
 #ifdef HAVE_OSS
 # include <fcntl.h>
 # include <sys/ioctl.h>
 # include <sys/soundcard.h>
 #endif
+
+#include "manglerbackend.h"
+
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
@@ -87,6 +80,7 @@ class ManglerAudio
         ManglerAudio(int type, uint32_t rate = 0, uint8_t channels = 1, uint32_t pcm_framesize = 0, uint8_t buffer = 4, bool check_loggedin = true);
         ~ManglerAudio();
 
+        ManglerBackend *backend;
         int             type;
         uint32_t        rate;
         uint32_t        pcm_framesize;
@@ -94,20 +88,6 @@ class ManglerAudio
         uint8_t         buffer;
         bool            check_loggedin;
         GAsyncQueue*    pcm_queue;
-#ifdef HAVE_PULSE
-        pa_sample_spec  pulse_samplespec;
-        pa_buffer_attr  buffer_attr;
-        pa_simple       *pulse_stream;
-        int             pulse_error;
-#endif
-#ifdef HAVE_ALSA
-        snd_pcm_t       *alsa_stream;
-        snd_pcm_sframes_t alsa_frames;
-        int             alsa_error;
-#endif
-#ifdef HAVE_OSS
-        int             oss_fd;
-#endif
         bool            outputStreamOpen;
         bool            inputStreamOpen;
         bool            stop_input;
@@ -125,22 +105,9 @@ class ManglerAudio
         void            input(void);
         void            getDeviceList(Glib::ustring audioSubsystem);
         void            playNotification(Glib::ustring name);
+        bool            switchBackend(Glib::ustring audioSubsystem);
 };
 
-// this is easier in C
-#ifdef HAVE_PULSE
-typedef struct pa_devicelist {
-    uint8_t initialized;
-    char name[512];
-    uint32_t index;
-    char description[256];
-} pa_devicelist_t;
-
-void pa_state_cb(pa_context *c, void *userdata);
-void pa_sinklist_cb(pa_context *c, const pa_sink_info *l, int eol, void *userdata);
-void pa_sourcelist_cb(pa_context *c, const pa_source_info *l, int eol, void *userdata);
-int pa_get_devicelist(pa_devicelist_t *input, pa_devicelist_t *output);
-#endif
 
 int timeval_subtract(struct timeval *result, struct timeval *x, struct timeval *y);
 
