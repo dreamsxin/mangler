@@ -4074,6 +4074,7 @@ These are useful for developers.</property>
                                             <accessibility>
                                               <relation type="labelled-by" target="ServerKickGuestsLabel"/>
                                               <relation type="labelled-by" target="ServerKickGuestsMinutesLabel"/>
+                                              <relation type="labelled-by" target="ServerKickGuestsLabel"/>
                                             </accessibility>
                                           </object>
                                           <packing>
@@ -4114,6 +4115,7 @@ These are useful for developers.</property>
                                             <accessibility>
                                               <relation type="labelled-by" target="ServerBanGuestsLabel"/>
                                               <relation type="labelled-by" target="ServerBanGuestsMinutesLabel"/>
+                                              <relation type="labelled-by" target="ServerBanGuestsLabel"/>
                                             </accessibility>
                                           </object>
                                           <packing>
@@ -4220,6 +4222,7 @@ These are useful for developers.</property>
                                             <accessibility>
                                               <relation type="labelled-by" target="ServerTimeoutLabel"/>
                                               <relation type="labelled-by" target="ServerTimeoutMinutesLabel"/>
+                                              <relation type="labelled-by" target="ServerTimeoutLabel"/>
                                             </accessibility>
                                           </object>
                                           <packing>
@@ -4542,6 +4545,7 @@ These are useful for developers.</property>
                                             <accessibility>
                                               <relation type="labelled-by" target="ServerSpamFilterChannelLabel"/>
                                               <relation type="labelled-by" target="ServerSpamFilterActionLabel"/>
+                                              <relation type="labelled-by" target="ServerSpamFilterChannelLabel"/>
                                             </accessibility>
                                           </object>
                                           <packing>
@@ -4557,6 +4561,7 @@ These are useful for developers.</property>
                                             <accessibility>
                                               <relation type="labelled-by" target="ServerSpamFilterChatLabel"/>
                                               <relation type="labelled-by" target="ServerSpamFilterActionLabel"/>
+                                              <relation type="labelled-by" target="ServerSpamFilterChatLabel"/>
                                             </accessibility>
                                           </object>
                                           <packing>
@@ -4572,6 +4577,7 @@ These are useful for developers.</property>
                                             <accessibility>
                                               <relation type="labelled-by" target="ServerSpamFilterCommentLabel"/>
                                               <relation type="labelled-by" target="ServerSpamFilterActionLabel"/>
+                                              <relation type="labelled-by" target="ServerSpamFilterCommentLabel"/>
                                             </accessibility>
                                           </object>
                                           <packing>
@@ -4587,6 +4593,7 @@ These are useful for developers.</property>
                                             <accessibility>
                                               <relation type="labelled-by" target="ServerSpamFilterTTSLabel"/>
                                               <relation type="labelled-by" target="ServerSpamFilterActionLabel"/>
+                                              <relation type="labelled-by" target="ServerSpamFilterTTSLabel"/>
                                             </accessibility>
                                           </object>
                                           <packing>
@@ -4602,6 +4609,7 @@ These are useful for developers.</property>
                                             <accessibility>
                                               <relation type="labelled-by" target="ServerSpamFilterWaveLabel"/>
                                               <relation type="labelled-by" target="ServerSpamFilterActionLabel"/>
+                                              <relation type="labelled-by" target="ServerSpamFilterWaveLabel"/>
                                             </accessibility>
                                           </object>
                                           <packing>
@@ -4621,6 +4629,7 @@ These are useful for developers.</property>
                                             <accessibility>
                                               <relation type="labelled-by" target="ServerSpamFilterChannelLabel"/>
                                               <relation type="labelled-by" target="ServerSpamFilterIntervalLabel"/>
+                                              <relation type="labelled-by" target="ServerSpamFilterChannelLabel"/>
                                             </accessibility>
                                           </object>
                                           <packing>
@@ -4640,6 +4649,7 @@ These are useful for developers.</property>
                                             <accessibility>
                                               <relation type="labelled-by" target="ServerSpamFilterChatLabel"/>
                                               <relation type="labelled-by" target="ServerSpamFilterIntervalLabel"/>
+                                              <relation type="labelled-by" target="ServerSpamFilterChatLabel"/>
                                             </accessibility>
                                           </object>
                                           <packing>
@@ -4659,6 +4669,7 @@ These are useful for developers.</property>
                                             <accessibility>
                                               <relation type="labelled-by" target="ServerSpamFilterCommentLabel"/>
                                               <relation type="labelled-by" target="ServerSpamFilterIntervalLabel"/>
+                                              <relation type="labelled-by" target="ServerSpamFilterCommentLabel"/>
                                             </accessibility>
                                           </object>
                                           <packing>
@@ -4678,6 +4689,7 @@ These are useful for developers.</property>
                                             <accessibility>
                                               <relation type="labelled-by" target="ServerSpamFilterTTSLabel"/>
                                               <relation type="labelled-by" target="ServerSpamFilterIntervalLabel"/>
+                                              <relation type="labelled-by" target="ServerSpamFilterTTSLabel"/>
                                             </accessibility>
                                           </object>
                                           <packing>
@@ -4697,6 +4709,7 @@ These are useful for developers.</property>
                                             <accessibility>
                                               <relation type="labelled-by" target="ServerSpamFilterWaveLabel"/>
                                               <relation type="labelled-by" target="ServerSpamFilterIntervalLabel"/>
+                                              <relation type="labelled-by" target="ServerSpamFilterWaveLabel"/>
                                             </accessibility>
                                           </object>
                                           <packing>
@@ -4716,6 +4729,7 @@ These are useful for developers.</property>
                                             <accessibility>
                                               <relation type="labelled-by" target="ServerSpamFilterChannelLabel"/>
                                               <relation type="labelled-by" target="ServerSpamFilterTimesLabel"/>
+                                              <relation type="labelled-by" target="ServerSpamFilterChannelLabel"/>
                                             </accessibility>
                                           </object>
                                           <packing>
@@ -4735,6 +4749,7 @@ These are useful for developers.</property>
                                             <accessibility>
                                               <relation type="labelled-by" target="ServerSpamFilterChatLabel"/>
                                               <relation type="labelled-by" target="ServerSpamFilterTimesLabel"/>
+                                              <relation type="labelled-by" target="ServerSpamFilterChatLabel"/>
                                             </accessibility>
                                           </object>
                                           <packing>
@@ -4754,6 +4769,7 @@ These are useful for developers.</property>
                                             <accessibility>
                                               <relation type="labelled-by" target="ServerSpamFilterCommentLabel"/>
                                               <relation type="labelled-by" target="ServerSpamFilterTimesLabel"/>
+                                              <relation type="labelled-by" target="ServerSpamFilterCommentLabel"/>
                                             </accessibility>
                                           </object>
                                           <packing>
@@ -4773,6 +4789,7 @@ These are useful for developers.</property>
                                             <accessibility>
                                               <relation type="labelled-by" target="ServerSpamFilterTTSLabel"/>
                                               <relation type="labelled-by" target="ServerSpamFilterTimesLabel"/>
+                                              <relation type="labelled-by" target="ServerSpamFilterTTSLabel"/>
                                             </accessibility>
                                           </object>
                                           <packing>
@@ -4792,6 +4809,7 @@ These are useful for developers.</property>
                                             <accessibility>
                                               <relation type="labelled-by" target="ServerSpamFilterWaveLabel"/>
                                               <relation type="labelled-by" target="ServerSpamFilterTimesLabel"/>
+                                              <relation type="labelled-by" target="ServerSpamFilterWaveLabel"/>
                                             </accessibility>
                                           </object>
                                           <packing>

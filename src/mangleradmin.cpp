@@ -48,6 +48,7 @@ ManglerAdmin::ManglerAdmin(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
     this->builder = builder;
     Gtk::TreeModel::Row row;
     Gtk::TreeView::Column *pColumn; 
+    Gtk::CellRendererText *renderer;
 
     builder->get_widget("adminWindow", adminWindow);
     adminWindow->signal_show().connect(sigc::mem_fun(this, &ManglerAdmin::adminWindow_show_cb));
@@ -56,6 +57,7 @@ ManglerAdmin::ManglerAdmin(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
     button->signal_clicked().connect(sigc::mem_fun(this, &ManglerAdmin::CloseButton_clicked_cb));
 
     builder->get_widget("ServerTab", ServerTab);
+    ServerTab->hide();
     builder->get_widget("ChannelsTab", ChannelsTab);
     builder->get_widget("UsersTab", UsersTab);
     builder->get_widget("RanksTab", RanksTab);
@@ -66,6 +68,99 @@ ManglerAdmin::ManglerAdmin(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
     StatusbarCount = 0;
 
     Glib::signal_timeout().connect_seconds(sigc::mem_fun(this, &ManglerAdmin::statusbarPop), 1);
+    
+    /* set up the server settings editor stuff */
+    builder->get_widget("ServerChatFilter", combobox);
+    SrvChatFilterModel = Gtk::TreeStore::create(adminRecord);
+    combobox->set_model(SrvChatFilterModel);
+    combobox->pack_start(adminRecord.name);
+    row = *(SrvChatFilterModel->append());
+    row[adminRecord.id] = 0; row[adminRecord.name] = "Global to Server";
+    row = *(SrvChatFilterModel->append());
+    row[adminRecord.id] = 1; row[adminRecord.name] = "Per Channel";
+    
+    builder->get_widget("ServerChannelOrdering", combobox);
+    SrvChanOrderModel = Gtk::TreeStore::create(adminRecord);
+    combobox->set_model(SrvChanOrderModel);
+    combobox->pack_start(adminRecord.name);
+    row = *(SrvChanOrderModel->append());
+    row[adminRecord.id] = 0; row[adminRecord.name] = "Sort Alphabetically";
+    row = *(SrvChanOrderModel->append());
+    row[adminRecord.id] = 1; row[adminRecord.name] = "Manual";
+    
+    builder->get_widget("ServerAction", combobox);
+    SrvInactActionModel = Gtk::TreeStore::create(adminRecord);
+    combobox->set_model(SrvInactActionModel);
+    combobox->pack_start(adminRecord.name);
+    row = *(SrvInactActionModel->append());
+    row[adminRecord.id] = 0; row[adminRecord.name] = "Kick User";
+    row = *(SrvInactActionModel->append());
+    row[adminRecord.id] = 1; row[adminRecord.name] = "Move to Channel";
+    
+    builder->get_widget("ServerChannel", combobox);
+    SrvInactChannelModel = Gtk::TreeStore::create(adminRecord);
+    combobox->set_model(SrvInactChannelModel);
+    combobox->pack_start(adminRecord.name);
+    renderer = (Gtk::CellRendererText*)(*(combobox->get_cells().begin()));
+    renderer->property_ellipsize() = Pango::ELLIPSIZE_MIDDLE;
+    
+    builder->get_widget("ServerSpamFilterChannelAction", combobox);
+    SrvSpamFilterChannelModel = Gtk::TreeStore::create(adminRecord);
+    combobox->set_model(SrvSpamFilterChannelModel);
+    combobox->pack_start(adminRecord.name);
+    row = *(SrvSpamFilterChannelModel->append());
+    row[adminRecord.id] = 0; row[adminRecord.name] = "Do Nothing";
+    row = *(SrvSpamFilterChannelModel->append());
+    row[adminRecord.id] = 1; row[adminRecord.name] = "Kick User";
+    row = *(SrvSpamFilterChannelModel->append());
+    row[adminRecord.id] = 2; row[adminRecord.name] = "Ban User";
+
+    builder->get_widget("ServerSpamFilterChatAction", combobox);
+    SrvSpamFilterChatModel = Gtk::TreeStore::create(adminRecord);
+    combobox->set_model(SrvSpamFilterChatModel);
+    combobox->pack_start(adminRecord.name);
+    row = *(SrvSpamFilterChatModel->append());
+    row[adminRecord.id] = 0; row[adminRecord.name] = "Do Nothing";
+    row = *(SrvSpamFilterChatModel->append());
+    row[adminRecord.id] = 1; row[adminRecord.name] = "Kick User";
+    row = *(SrvSpamFilterChatModel->append());
+    row[adminRecord.id] = 2; row[adminRecord.name] = "Ban User";
+
+    builder->get_widget("ServerSpamFilterCommentAction", combobox);
+    SrvSpamFilterCommentModel = Gtk::TreeStore::create(adminRecord);
+    combobox->set_model(SrvSpamFilterCommentModel);
+    combobox->pack_start(adminRecord.name);
+    row = *(SrvSpamFilterCommentModel->append());
+    row[adminRecord.id] = 0; row[adminRecord.name] = "Do Nothing";
+    row = *(SrvSpamFilterCommentModel->append());
+    row[adminRecord.id] = 1; row[adminRecord.name] = "Kick User";
+    row = *(SrvSpamFilterCommentModel->append());
+    row[adminRecord.id] = 2; row[adminRecord.name] = "Ban User";
+
+    builder->get_widget("ServerSpamFilterTTSAction", combobox);
+    SrvSpamFilterTTSModel = Gtk::TreeStore::create(adminRecord);
+    combobox->set_model(SrvSpamFilterTTSModel);
+    combobox->pack_start(adminRecord.name);
+    row = *(SrvSpamFilterTTSModel->append());
+    row[adminRecord.id] = 0; row[adminRecord.name] = "Do Nothing";
+    row = *(SrvSpamFilterTTSModel->append());
+    row[adminRecord.id] = 1; row[adminRecord.name] = "Kick User";
+    row = *(SrvSpamFilterTTSModel->append());
+    row[adminRecord.id] = 2; row[adminRecord.name] = "Ban User";
+
+    builder->get_widget("ServerSpamFilterWaveAction", combobox);
+    SrvSpamFilterWaveModel = Gtk::TreeStore::create(adminRecord);
+    combobox->set_model(SrvSpamFilterWaveModel);
+    combobox->pack_start(adminRecord.name);
+    row = *(SrvSpamFilterWaveModel->append());
+    row[adminRecord.id] = 0; row[adminRecord.name] = "Do Nothing";
+    row = *(SrvSpamFilterWaveModel->append());
+    row[adminRecord.id] = 1; row[adminRecord.name] = "Kick User";
+    row = *(SrvSpamFilterWaveModel->append());
+    row[adminRecord.id] = 2; row[adminRecord.name] = "Ban User";
+
+    builder->get_widget("ServerUpdate", button);
+    button->signal_clicked().connect(sigc::mem_fun(this, &ManglerAdmin::ServerUpdate_clicked_cb));
 
     /* set up the channel editor stuff */
     builder->get_widget("ChannelEditorTree", ChannelEditorTree);
@@ -215,7 +310,7 @@ ManglerAdmin::ManglerAdmin(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
     UserDefaultChannelModel = Gtk::TreeStore::create(UserDefaultChannelColumns);
     combobox->set_model(UserDefaultChannelModel);
     combobox->pack_start(adminRecord.name);
-    Gtk::CellRendererText *renderer = (Gtk::CellRendererText*)(*(combobox->get_cells().begin()));
+    renderer = (Gtk::CellRendererText*)(*(combobox->get_cells().begin()));
     renderer->property_ellipsize() = Pango::ELLIPSIZE_MIDDLE;
 
     builder->get_widget("UserAdd", UserAdd);
@@ -301,7 +396,7 @@ void
 ManglerAdmin::adminWindow_show_cb(void) {/*{{{*/
     const v3_permissions *perms = v3_get_permissions();
     if (perms->srv_admin) {
-        //ServerTab->show();
+        v3_serverprop_open();
         v3_userlist_open();
         UsersTab->show();
         Gtk::TreeModel::Row row;
@@ -309,14 +404,14 @@ ManglerAdmin::adminWindow_show_cb(void) {/*{{{*/
         row[adminRecord.id] = 0; row[adminRecord.name] = "None";
         UserAdd->set_sensitive( perms->add_user );
     } else {
-        //ServerTab->hide();
+        ServerTab->hide();
         UsersTab->hide();
     }
     if (perms->edit_rank) {
         v3_ranklist_open();
         RanksTab->show();
     } else RanksTab->hide();
-    ServerTab->hide(); // not implemented *yet*
+    //ServerTab->hide(); // not implemented *yet*
 
     ChannelEditorTree->expand_all();
     UserChanAdminTree->expand_all();
@@ -437,6 +532,52 @@ ManglerAdmin::setWidgetSensitive(const char *widgetName, bool widgetSens) {/*{{{
     w->set_sensitive(widgetSens);
 }/*}}}*/
 
+/* ----------  Server Settings Related Methods  ---------- */
+void
+ManglerAdmin::ServerUpdate_clicked_cb(void) {/*{{{*/
+}/*}}}*/
+void
+ManglerAdmin::serverSettingsUpdated(v3_server_prop &props) {/*{{{*/
+    //copyToEntry("ServerComment", "wtf");
+    copyToCombobox("ServerChatFilter", props.chat_filter, 0);
+    copyToCombobox("ServerChannelOrdering", props.channel_order, 0);
+    copyToCheckbutton("ServerAlwaysDisplayMOTD", props.motd_display);
+    // guest accounts
+    copyToSpinbutton("ServerMaxGuests", props.max_guest);
+    copyToSpinbutton("ServerKickGuests", props.autokick_len);
+    copyToSpinbutton("ServerBanGuests", props.autoban_len);
+    // inactivity
+    copyToSpinbutton("ServerTimeout", props.inactivity_timeout);
+    copyToCombobox("ServerAction", props.inactivity_action, 0);
+    // TODO: inactivity channel
+    // spam filters
+    copyToCombobox("ServerSpamFilterChannelAction", props.channel_spam_filter.action, 0);
+    copyToSpinbutton("ServerSpamFilterChannelInterval", props.channel_spam_filter.interval);
+    copyToSpinbutton("ServerSpamFilterChannelTimes", props.channel_spam_filter.times);
+    copyToCombobox("ServerSpamFilterChatAction", props.chat_spam_filter.action, 0);
+    copyToSpinbutton("ServerSpamFilterChatInterval", props.chat_spam_filter.interval);
+    copyToSpinbutton("ServerSpamFilterChatTimes", props.chat_spam_filter.times);
+    copyToCombobox("ServerSpamFilterCommentAction", props.comment_spam_filter.action, 0);
+    copyToSpinbutton("ServerSpamFilterCommentInterval", props.comment_spam_filter.interval);
+    copyToSpinbutton("ServerSpamFilterCommentTimes", props.comment_spam_filter.times);
+    copyToCombobox("ServerSpamFilterTTSAction", props.tts_spam_filter.action, 0);
+    copyToSpinbutton("ServerSpamFilterTTSInterval", props.tts_spam_filter.interval);
+    copyToSpinbutton("ServerSpamFilterTTSTimes", props.tts_spam_filter.times);
+    copyToCombobox("ServerSpamFilterWaveAction", props.wave_spam_filter.action, 0);
+    copyToSpinbutton("ServerSpamFilterWaveInterval", props.wave_spam_filter.interval);
+    copyToSpinbutton("ServerSpamFilterWaveTimes", props.wave_spam_filter.times);
+
+    copyToCheckbutton("ServerBindFilterTTS", props.tts_bind_filter);
+    copyToCheckbutton("ServerBindFilterWave", props.wave_bind_filter);
+    copyToCheckbutton("ServerRemoteStatusServerComment", props.rem_srv_comment);
+    copyToCheckbutton("ServerRemoteStatusChannelNames", props.rem_chan_names);
+    copyToCheckbutton("ServerRemoteStatusChannelComments", props.rem_chan_comments);
+    copyToCheckbutton("ServerRemoteStatusUserNames", props.rem_user_names);
+    copyToCheckbutton("ServerRemoteStatusUserComments", props.rem_user_comments);
+    copyToCheckbutton("ServerRemoteStatusUseless", props.rem_show_login_names);
+    ServerTab->show();
+}/*}}}*/
+
 /* ----------  Channel Editor Related Methods  ---------- */
 void
 ManglerAdmin::ChannelTree_cursor_changed_cb() {/*{{{*/
@@ -527,19 +668,36 @@ void
 ManglerAdmin::channelUpdated(v3_channel *channel) {/*{{{*/
     /* channel editor tree */
     Gtk::TreeModel::Row chanrow;
+    Gtk::TreeModel::Children::iterator iter;
+
     chanrow = getChannel(channel->id, ChannelEditorTreeModel->children());
     if (chanrow) {
         chanrow[adminRecord.id] = channel->id;
         chanrow[adminRecord.name] = c_to_ustring(channel->name);
         if (currentChannelID == channel->id) populateChannelEditor(channel);
     }
-    /* user default channel combo box */
-    Gtk::TreeModel::Children children = UserDefaultChannelModel->children();
+    /* server inactive "move to" channel combo box */
+    Gtk::TreeModel::Children siChildren = SrvInactChannelModel->children();
     bool found( false );
-    Gtk::TreeModel::Children::iterator iter;
-    if (children.size()) {
-        iter = children.begin();
-        while (iter != children.end()) {
+    if (siChildren.size()) {
+        iter = siChildren.begin();
+        while (iter != siChildren.end()) {
+            if ((*iter)[adminRecord.id] == channel->id) {
+                found = true;
+                break;
+            }
+            iter++;
+        }
+    }
+    if (! found) iter = SrvInactChannelModel->append();
+    (*iter)[adminRecord.id] = channel->id;
+    (*iter)[adminRecord.name] = getChannelPathString(channel->id, ChannelEditorTreeModel->children());
+    /* user default channel combo box */
+    Gtk::TreeModel::Children udChildren = UserDefaultChannelModel->children();
+    found = false;
+    if (udChildren.size()) {
+        iter = udChildren.begin();
+        while (iter != udChildren.end()) {
             if ((*iter)[adminRecord.id] == channel->id) {
                 found = true;
                 break;
@@ -577,14 +735,27 @@ void
 ManglerAdmin::channelRemoved(uint32_t chanid) {/*{{{*/
     /* channel editor tree */
     Gtk::TreeModel::Row chanrow;
+    Gtk::TreeModel::Children::iterator iter;
+
     chanrow = getChannel(chanid, ChannelEditorTreeModel->children());
     if (chanrow) ChannelEditorTreeModel->erase(chanrow);
+    /* server inactive "move to" channel combo box */
+    Gtk::TreeModel::Children siChildren = SrvInactChannelModel->children();
+    if (siChildren.size()) {
+        iter = siChildren.begin();
+        while (iter != siChildren.end()) {
+            if ((*iter)[adminRecord.id] == chanid) {
+                SrvInactChannelModel->erase(*iter);
+                break;
+            }
+            iter++;
+        }
+    }
     /* user default channel combo box */
-    Gtk::TreeModel::Children children = UserDefaultChannelModel->children();
-    Gtk::TreeModel::Children::iterator iter;
-    if (children.size()) {
-        iter = children.begin();
-        while (iter != children.end()) {
+    Gtk::TreeModel::Children udChildren = UserDefaultChannelModel->children();
+    if (udChildren.size()) {
+        iter = udChildren.begin();
+        while (iter != udChildren.end()) {
             if ((*iter)[adminRecord.id] == chanid) {
                 UserDefaultChannelModel->erase(*iter);
                 break;
@@ -620,6 +791,10 @@ ManglerAdmin::channelAdded(v3_channel *channel) {/*{{{*/
     channelRow = *channelIter;
     channelRow[adminRecord.id] = channel->id;
     channelRow[adminRecord.name] = c_to_ustring(channel->name);
+    /* server inactive "move to" channel combo box */
+    channelIter = SrvInactChannelModel->append();
+    (*channelIter)[adminRecord.id] = channel->id;
+    (*channelIter)[adminRecord.name] = getChannelPathString(channel->id, ChannelEditorTreeModel->children());
     /* user default channel combo box */
     channelIter = UserDefaultChannelModel->append();
     (*channelIter)[adminRecord.id] = channel->id;

@@ -49,6 +49,7 @@ class ManglerAdmin {
         bool isOpen;
         void show(void);
 
+        void serverSettingsUpdated(v3_server_prop &props);
         void channelUpdated(v3_channel *channel);
         void channelRemoved(uint32_t chanid);
         void channelRemoved(v3_channel *channel);
@@ -72,14 +73,27 @@ class ManglerAdmin {
         guint                               StatusbarCount;
         time_t                              StatusbarTime;
         iniFile                             *usertemplates;
-       
-        /* channel editor stuff */
+        
         class adminModelColumns : public Gtk::TreeModel::ColumnRecord {
             public:
                 adminModelColumns() { add(id); add(name); }
                 Gtk::TreeModelColumn<uint32_t>              id;
                 Gtk::TreeModelColumn<Glib::ustring>         name;
         } adminRecord;
+        
+        /* server settings editor stuff */
+        //adminModelColumns                   SpamFilterColumns;
+        Glib::RefPtr<Gtk::TreeStore>        SrvChatFilterModel;
+        Glib::RefPtr<Gtk::TreeStore>        SrvChanOrderModel;
+        Glib::RefPtr<Gtk::TreeStore>        SrvInactActionModel;
+        Glib::RefPtr<Gtk::TreeStore>        SrvInactChannelModel;
+        Glib::RefPtr<Gtk::TreeStore>        SrvSpamFilterChannelModel;
+        Glib::RefPtr<Gtk::TreeStore>        SrvSpamFilterChatModel;
+        Glib::RefPtr<Gtk::TreeStore>        SrvSpamFilterCommentModel;
+        Glib::RefPtr<Gtk::TreeStore>        SrvSpamFilterTTSModel;
+        Glib::RefPtr<Gtk::TreeStore>        SrvSpamFilterWaveModel;
+
+        /* channel editor stuff */
         adminModelColumns                   ChannelEditorColumns;
         Glib::RefPtr<Gtk::TreeStore>        ChannelEditorTreeModel;
         adminModelColumns                   ChannelCodecColumns;
@@ -187,6 +201,9 @@ class ManglerAdmin {
         void setWidgetSensitive(const char *widgetName, bool widgetSens = true);
         bool statusbarPop(void);
         void statusbarPush(Glib::ustring msg);
+
+        /* server settings functions and callbacks */
+        void ServerUpdate_clicked_cb(void);
 
         /* channel editor functions and callbacks */
         Glib::ustring getChannelPathString(uint32_t id, Gtk::TreeModel::Children children);

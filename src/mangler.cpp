@@ -1220,6 +1220,9 @@ bool Mangler::getNetworkEvent() {/*{{{*/
             case V3_EVENT_ERROR_MSG:/*{{{*/
                 errorDialog(c_to_ustring(ev->error.message));
                 break;/*}}}*/
+            case V3_EVENT_RECV_SRV_PROP:/*{{{*/
+                admin->serverSettingsUpdated(ev->data->srvprop);
+                break;/*}}}*/
             case V3_EVENT_USER_TALK_START:/*{{{*/
                 v3_user *me, *user;
                 me = v3_get_user(v3_get_user_id());
