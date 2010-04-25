@@ -5,7 +5,7 @@ lib_LTLIBRARIES = libventrilo3.la
 
 libventrilo3_la_SOURCES = libventrilo3.c  libventrilo3_message.c  ventrilo3_handshake.c
 
-libventrilo3_la_LIBADD = $(speex_LIBS) $(celt_LIBS) $(LIBS)
+libventrilo3_la_LIBADD = $(speex_LIBS) $(celt_LIBS) $(LIBS) -lm
 
 libventrilo3_la_LDFLAGS = -version 0:0:0
 
