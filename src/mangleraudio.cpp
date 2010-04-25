@@ -430,4 +430,3 @@ timeval_subtract(struct timeval *result, struct timeval *x, struct timeval *y) {
     /* Return 1 if result is negative. */
     return x->tv_sec < y->tv_sec;
 }/*}}}*/
-
