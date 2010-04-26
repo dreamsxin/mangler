@@ -86,7 +86,6 @@ public class ManglerDBAdapter {
      * Create a new server. If the server is successfully created return the new rowId for that server, otherwise return
      * a -1 to indicate failure.
      * 
-     * @param username
      * @param servername
      * @param hostname
      * @param portnumber
@@ -94,7 +93,7 @@ public class ManglerDBAdapter {
      * @param phonetic
      * @return rowId or -1 if failed
      */
-    public long createServer(long userid, String servername, String hostname, int portnumber, String username, String phonetic) {
+    public long createServer(String servername, String hostname, int portnumber, String username, String phonetic) {
         ContentValues initialValues = new ContentValues();
         initialValues.put(KEY_SERVERNAME, servername);
         initialValues.put(KEY_HOSTNAME, hostname);

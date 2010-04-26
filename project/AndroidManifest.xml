@@ -11,7 +11,8 @@
             </intent-filter>
         </activity>
 		<activity android:name="ServerList" android:label="@string/server_list"></activity>
-	</application>
+	<activity android:name="ServerEdit" android:label="@string/server_edit"></activity>
+</application>
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
 	<uses-sdk android:minSdkVersion="3" android:targetSdkVersion="4"/>

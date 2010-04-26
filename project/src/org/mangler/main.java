@@ -2,21 +2,12 @@ package org.mangler;
 
 import android.app.Activity;
 import android.content.Intent;
-import android.media.AudioFormat;
-import android.media.AudioManager;
-import android.media.AudioTrack;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
-import android.widget.ImageButton;
+import android.widget.Button;
 
-import java.lang.Thread;
-import java.lang.Runnable;
-
-public class main extends Activity {
-    
-	private ManglerDBAdapter dbHelper;
+public class main extends Activity{
 	
 	/** Called when the activity is first created. */
     @Override
@@ -26,16 +17,14 @@ public class main extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
         
-        // Temporary initialization, uncomment for first run
+        Button slist = (Button)findViewById(R.id.ServerListButton);
         
-        /*
-        dbHelper = new ManglerDBAdapter(this);
-        dbHelper.open();
-        dbHelper.createServer(1, "mangler_test", "vent.mangler.org", 9047, "droid_test", "droid");
-        */
-        
-        Intent intent = new Intent(this, ServerList.class);
-        startActivity(intent);
+        slist.setOnClickListener(new OnClickListener() {
+			public void onClick(View v) {
+				Intent intent = new Intent(main.this, ServerList.class);
+				startActivity(intent);
+			}
+        });
 
         // Connection code currently at bottom of ServerList class
         
@@ -78,5 +67,5 @@ public class main extends Activity {
 	    	*/
 	        
 	    //}
-    }   
+    }
 }

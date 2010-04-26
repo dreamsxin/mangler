@@ -1,6 +1,7 @@
 package org.mangler;
 
 import android.app.ListActivity;
+import android.content.Intent;
 import android.database.Cursor;
 import android.os.Bundle;
 import android.util.Log;
@@ -15,9 +16,15 @@ import android.widget.AdapterView.AdapterContextMenuInfo;
 
 public class ServerList extends ListActivity {
 	
-	private static final int EDIT_ID = Menu.FIRST;
-	private static final int CLONE_ID = Menu.FIRST + 1;
-    private static final int DELETE_ID = Menu.FIRST + 2;
+	private static final int ACTIVITY_CREATE = 0;
+	private static final int ACTIVITY_EDIT = 1;
+	//private static final int ACTIVITY_CONNECT = 2;
+	
+	private static final int ADD_ID = Menu.FIRST;
+	private static final int EDIT_ID = Menu.FIRST + 1;
+	private static final int CLONE_ID = Menu.FIRST + 2;
+    private static final int DELETE_ID = Menu.FIRST + 3;
+    
     
 	private ManglerDBAdapter dbHelper;
 	
@@ -51,6 +58,22 @@ public class ServerList extends ListActivity {
         setListAdapter(servers);
     }
     
+    public boolean onCreateOptionsMenu(Menu menu) {
+        menu.add(0, ADD_ID, 0, "Add Server")
+        	.setIcon(R.drawable.menu_add);
+        return true;
+    }
+
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+        case ADD_ID:
+        	Intent i = new Intent(this, ServerEdit.class);
+       	 	startActivityForResult(i, ACTIVITY_CREATE);
+            return true;
+        }
+        return false;
+    }
+    
     @Override
 	public void onCreateContextMenu(ContextMenu menu, View v, ContextMenuInfo menuInfo) {
 		super.onCreateContextMenu(menu, v, menuInfo);
@@ -62,13 +85,23 @@ public class ServerList extends ListActivity {
     @Override
 	public boolean onContextItemSelected(MenuItem item) {
 		AdapterContextMenuInfo info = (AdapterContextMenuInfo) item.getMenuInfo();
+		Cursor servers = dbHelper.fetchServer(info.id);
+        startManagingCursor(servers);
 		switch(item.getItemId()) {
 		case EDIT_ID:
-	        dbHelper.deleteServer(info.id);
+	        Intent i = new Intent(this, ServerEdit.class);
+	        i.putExtra(ManglerDBAdapter.KEY_ROWID, info.id);
+	        startActivityForResult(i, ACTIVITY_EDIT);
 	        fillData();
 	        return true;
 		case CLONE_ID:
-	        dbHelper.deleteServer(info.id);
+	        startManagingCursor(servers);
+	        String servername = servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_SERVERNAME));
+	        String hostname = servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_HOSTNAME));
+	        int port = servers.getInt(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_PORTNUMBER));
+	        String username = servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_USERNAME));
+	        String phonetic = servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_PHONETIC));
+			dbHelper.createServer(servername, hostname, port, username, phonetic);
 	        fillData();
 	        return true;
 		case DELETE_ID:
@@ -78,6 +111,12 @@ public class ServerList extends ListActivity {
 		}
 		return super.onContextItemSelected(item);
 	}
+    
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent intent) {
+        super.onActivityResult(requestCode, resultCode, intent);
+        fillData();
+    }
     
     private String StringFromBytes(byte[] bytes) {
     	return new String(bytes, 0, (new String(bytes).indexOf(0)));
