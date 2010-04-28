@@ -25,7 +25,6 @@
  */
 
 #include "mangler.h"
-#include "manglerbackend.h"
 #include "mangleraudio.h"
 #include "mangler-sounds.h"
 #include <sys/time.h>
@@ -34,9 +33,6 @@
 #include "manglersettings.h"
 
 ManglerAudio::ManglerAudio(int type, uint32_t rate, uint8_t channels, uint32_t pcm_framesize, uint8_t buffer, bool check_loggedin) {/*{{{*/
-    if (type < AUDIO_INPUT || !rate) {
-        return;
-    }
     this->type           = type;
     this->rate           = rate;
     this->channels       = channels;
@@ -46,6 +42,9 @@ ManglerAudio::ManglerAudio(int type, uint32_t rate, uint8_t channels, uint32_t p
     outputStreamOpen = false;
     inputStreamOpen = false;
     backend = NULL;
+    if (type < AUDIO_INPUT || !rate) {
+        return;
+    }
     if (type >= AUDIO_OUTPUT) {
         if (!open()) {
             return;
@@ -67,30 +66,30 @@ ManglerAudio::ManglerAudio(int type, uint32_t rate, uint8_t channels, uint32_t p
     }
 }/*}}}*/
 ManglerAudio::~ManglerAudio() {/*{{{*/
-    if(backend) {
+    if (backend) {
         delete backend;
     }
 }/*}}}*/
 
-
 bool
-ManglerAudio::switchBackend(Glib::ustring audioSubsystem) {
-    ManglerBackend *newbackend = ManglerBackend::getBackend(audioSubsystem, rate, channels, pcm_framesize);
-    if(!newbackend) {
+ManglerAudio::switchBackend(Glib::ustring audioSubsystem) {/*{{{*/
+    ManglerBackend *backend;
+
+    if (!(backend = ManglerBackend::getBackend(audioSubsystem, rate, channels, pcm_framesize))) {
         return false;
     }
-    if(backend)
-    {
-      delete backend;
+    if (this->backend) {
+        delete this->backend;
     }
-    backend = newbackend;
+    this->backend = backend;
+
     return true;
-}
+}/*}}}*/
 
 bool
 ManglerAudio::open(void) {/*{{{*/
-    close();
     Glib::ustring direction;
+
     switch (type) {
       case AUDIO_INPUT:
         direction = "Input";
@@ -109,13 +108,11 @@ ManglerAudio::open(void) {/*{{{*/
     } else if (device == "Custom") {
         device = Mangler::config[direction + "DeviceCustomName"].toUString();
     }
-
-    if(!backend) {
-      if(!switchBackend(Mangler::config["AudioSubsystem"].toUString())) {
-            return false;
-        }
+    close();
+    if (!backend && !switchBackend(Mangler::config["AudioSubsystem"].toUString())) {
+        return false;
     }
-    if(!backend->open(type, device, rate, channels)) {
+    if (!backend->open(type, device, rate, channels)) {
         return false;
     }
 
@@ -124,7 +121,7 @@ ManglerAudio::open(void) {/*{{{*/
 
 void
 ManglerAudio::close(bool drain) {/*{{{*/
-    if(backend) {
+    if (backend) {
         backend->close(drain);
     }
 }/*}}}*/
@@ -138,8 +135,9 @@ ManglerAudio::queue(uint32_t length, uint8_t *sample) {/*{{{*/
 }/*}}}*/
 
 void
-ManglerAudio::finish(void) {/*{{{*/
+ManglerAudio::finish(bool drop) {/*{{{*/
     if (outputStreamOpen) {
+        stop_output = drop;
         g_async_queue_push(pcm_queue, new ManglerPCM(0, NULL));
     }
     if (inputStreamOpen) {
@@ -156,9 +154,7 @@ ManglerAudio::output(void) {/*{{{*/
     }
     g_async_queue_ref(pcm_queue);
     for (;;) {
-        if (check_loggedin && !v3_is_loggedin()) {
-            // we were disconnected while playing the stream.
-            // unref the queue and flush the audio buffers.
+        if (stop_output || (check_loggedin && !v3_is_loggedin())) {
             close();
             break;
         }
@@ -196,29 +192,25 @@ ManglerAudio::output(void) {/*{{{*/
             queuedpcm = NULL;
             continue;
         }
-        if(Mangler::config["AudioSubsystem"].toLower() != backend->getAudioSubsystem()) {
-          if(!switchBackend(Mangler::config["AudioSubsystem"].toLower())) {
-                break;
-            }
-            if(!open()){
+        if (Mangler::config["AudioSubsystem"].toLower() != backend->getAudioSubsystem()) {
+            if (!switchBackend(Mangler::config["AudioSubsystem"].toLower()) || !open()) {
                 break;
             }
         }
-        if(!backend->write(queuedpcm->sample, queuedpcm->length, channels)) {
+        if (!backend->write(queuedpcm->sample, queuedpcm->length, channels)) {
             close();
             break;
         }
-          
         delete queuedpcm;
         queuedpcm = NULL;
     }
     outputStreamOpen = false;
+    close();
     while (queuedpcm || (queuedpcm = (ManglerPCM *)g_async_queue_try_pop(pcm_queue))) {
         delete queuedpcm;
         queuedpcm = NULL;
     }
     g_async_queue_unref(pcm_queue);
-    close();
     delete this;
     return;
 }/*}}}*/
@@ -265,22 +257,17 @@ ManglerAudio::input(void) {/*{{{*/
             //fprintf(stderr, "reallocating %d bytes of memory\n", pcm_framesize*(ctr+1));
             buf = (uint8_t *)realloc(buf, pcm_framesize*(ctr+1));
             //fprintf(stderr, "reading %d bytes of memory to %lu\n", pcm_framesize, buf+(pcm_framesize*ctr));
-            if(Mangler::config["AudioSubsystem"].toLower() != backend->getAudioSubsystem()) {
-                if(!switchBackend(Mangler::config["AudioSubsystem"].toLower())) {
-                    stop_input = true;
-                    break;
-                }
-                if(!open()) {
+            if (Mangler::config["AudioSubsystem"].toLower() != backend->getAudioSubsystem()) {
+                if (!switchBackend(Mangler::config["AudioSubsystem"].toLower()) || !open()) {
                     stop_input = true;
                     break;
                 }
             }
-            if(!backend->read(buf+(pcm_framesize*ctr))) {
+            if (!backend->read(buf+(pcm_framesize*ctr))) {
                 close();
                 stop_input = true;
                 break;
             }
-
             gettimeofday(&now, NULL);
             timeval_subtract(&diff, &now, &start);
             seconds = (float)diff.tv_sec + ((float)diff.tv_usec / 1000000.0);
@@ -406,6 +393,52 @@ ManglerAudio::playNotification(Glib::ustring name) {/*{{{*/
     ManglerAudio *notify = new ManglerAudio(AUDIO_NOTIFY, 44100, 1, 0, 0, false);
     notify->queue(sounds[name]->length, sounds[name]->sample);
     notify->finish();
+}/*}}}*/
+
+void
+ManglerAudio::playText(Glib::ustring text) {/*{{{*/
+    if (!text.length()) {
+        return;
+    }
+    this->text = text;
+#ifdef HAVE_ESPEAK
+    Glib::Thread::create(sigc::mem_fun(*this, &ManglerAudio::playTextThread), false);
+#endif
+}/*}}}*/
+
+#ifdef HAVE_ESPEAK
+int
+espeak_synth_cb(short *wav, int numsamples, espeak_EVENT *events) {/*{{{*/
+    if (!numsamples) {
+        return 1;
+    }
+    ManglerAudio *tts = (ManglerAudio *)events->user_data;
+
+    tts->queue(numsamples * sizeof(short), (uint8_t *)wav);
+
+    return 0;
+}/*}}}*/
+#endif
+
+void
+ManglerAudio::playTextThread(void) {/*{{{*/
+    Glib::ustring text = this->text;
+#ifdef HAVE_ESPEAK
+    int rate;
+    if ((rate = espeak_Initialize(AUDIO_OUTPUT_RETRIEVAL, 0, NULL, espeakEVENT_LIST_TERMINATED)) < 0) {
+        fprintf(stderr, "espeak: initialize error\n");
+        return;
+    }
+    espeak_SetSynthCallback(espeak_synth_cb);
+    ManglerAudio *tts = new ManglerAudio(AUDIO_NOTIFY, rate, 1, 0, 0, false);
+    if (espeak_Synth(text.c_str(), text.length() + 1, 0, POS_CHARACTER, 0, espeakCHARS_AUTO, NULL, tts) != EE_OK) {
+        tts->finish();
+        fprintf(stderr, "espeak: synth error\n");
+        return;
+    }
+    espeak_Synchronize();
+    tts->finish();
+#endif
 }/*}}}*/
 
 int

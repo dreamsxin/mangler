@@ -34,6 +34,9 @@
 # include <sys/ioctl.h>
 # include <sys/soundcard.h>
 #endif
+#ifdef HAVE_ESPEAK
+# include <espeak/speak_lib.h>
+#endif
 
 #include "manglerbackend.h"
 
@@ -41,10 +44,10 @@
 #include <string.h>
 #include <errno.h>
 
-#define AUDIO_CONTROL   -2
-#define AUDIO_INPUT     -1
-#define AUDIO_OUTPUT    0
-#define AUDIO_NOTIFY    1
+#define AUDIO_CONTROL 0
+#define AUDIO_INPUT   1
+#define AUDIO_OUTPUT  2
+#define AUDIO_NOTIFY  3
 
 class ManglerPCM
 {
@@ -80,7 +83,7 @@ class ManglerAudio
         ManglerAudio(int type, uint32_t rate = 0, uint8_t channels = 1, uint32_t pcm_framesize = 0, uint8_t buffer = 4, bool check_loggedin = true);
         ~ManglerAudio();
 
-        ManglerBackend *backend;
+        ManglerBackend  *backend;
         int             type;
         uint32_t        rate;
         uint32_t        pcm_framesize;
@@ -90,6 +93,7 @@ class ManglerAudio
         GAsyncQueue*    pcm_queue;
         bool            outputStreamOpen;
         bool            inputStreamOpen;
+        bool            stop_output;
         bool            stop_input;
 
         std::map<Glib::ustring, ManglerPCM *> sounds;
@@ -97,17 +101,20 @@ class ManglerAudio
         std::vector<ManglerAudioDevice*> outputDevices;
         std::vector<ManglerAudioDevice*> inputDevices;
 
+        Glib::ustring   text;
+
+        bool            switchBackend(Glib::ustring audioSubsystem);
         bool            open(void);
         void            close(bool drain = false);
         void            queue(uint32_t length, uint8_t *sample);
-        void            finish(void);
+        void            finish(bool drop = false);
         void            output(void);
         void            input(void);
         void            getDeviceList(Glib::ustring audioSubsystem);
         void            playNotification(Glib::ustring name);
-        bool            switchBackend(Glib::ustring audioSubsystem);
+        void            playText(Glib::ustring text);
+        void            playTextThread(void);
 };
-
 
 int timeval_subtract(struct timeval *result, struct timeval *x, struct timeval *y);
 

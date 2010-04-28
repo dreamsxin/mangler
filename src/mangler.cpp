@@ -1460,6 +1460,7 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                     /*
                     if ((u = v3_get_user(ev->user.id))) {
                         fprintf(stderr, "TTS: %s: %s\n", u->name, ev->data->chatmessage);
+                        audioControl->playText(c_to_ustring(u->name) + ": " + c_to_ustring(ev->data->chatmessage));
                         v3_free_user(u);
                     }
                     */
@@ -1480,6 +1481,7 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                     /*
                     if ((u = v3_get_user(ev->user.id))) {
                         fprintf(stderr, "Page from: %s\n", u->name);
+                        audioControl->playText("Page from: " + c_to_ustring(u->name));
                         v3_free_user(u);
                     }
                     */

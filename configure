@@ -906,6 +906,7 @@ enable_speex
 enable_celt
 enable_xosd
 enable_g15
+enable_espeak
 with_pulseaudio
 with_alsa
 with_oss
@@ -1574,6 +1575,7 @@ Optional Features:
   --disable-celt          disable CELT codec support
   --disable-xosd          disable XOSD overlay support
   --disable-g15           disable Logitech G15 keyboard support
+  --disable-espeak        disable eSpeak text to speech support
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -5506,13 +5508,13 @@ if test "${lt_cv_nm_interface+set}" = set; then :
 else
   lt_cv_nm_interface="BSD nm"
   echo "int some_variable = 0;" > conftest.$ac_ext
-  (eval echo "\"\$as_me:5509: $ac_compile\"" >&5)
+  (eval echo "\"\$as_me:5511: $ac_compile\"" >&5)
   (eval "$ac_compile" 2>conftest.err)
   cat conftest.err >&5
-  (eval echo "\"\$as_me:5512: $NM \\\"conftest.$ac_objext\\\"\"" >&5)
+  (eval echo "\"\$as_me:5514: $NM \\\"conftest.$ac_objext\\\"\"" >&5)
   (eval "$NM \"conftest.$ac_objext\"" 2>conftest.err > conftest.out)
   cat conftest.err >&5
-  (eval echo "\"\$as_me:5515: output\"" >&5)
+  (eval echo "\"\$as_me:5517: output\"" >&5)
   cat conftest.out >&5
   if $GREP 'External.*some_variable' conftest.out > /dev/null; then
     lt_cv_nm_interface="MS dumpbin"
@@ -6707,7 +6709,7 @@ ia64-*-hpux*)
   ;;
 *-*-irix6*)
   # Find out which ABI we are using.
-  echo '#line 6710 "configure"' > conftest.$ac_ext
+  echo '#line 6712 "configure"' > conftest.$ac_ext
   if { { eval echo "\"\$as_me\":${as_lineno-$LINENO}: \"$ac_compile\""; } >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -8627,11 +8629,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:8630: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:8632: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:8634: \$? = $ac_status" >&5
+   echo "$as_me:8636: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -8966,11 +8968,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:8969: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:8971: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:8973: \$? = $ac_status" >&5
+   echo "$as_me:8975: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -9071,11 +9073,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:9074: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:9076: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:9078: \$? = $ac_status" >&5
+   echo "$as_me:9080: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -9126,11 +9128,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:9129: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:9131: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:9133: \$? = $ac_status" >&5
+   echo "$as_me:9135: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -11506,7 +11508,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<_LT_EOF
-#line 11509 "configure"
+#line 11511 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -11602,7 +11604,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<_LT_EOF
-#line 11605 "configure"
+#line 11607 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -13558,11 +13560,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:13561: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:13563: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:13565: \$? = $ac_status" >&5
+   echo "$as_me:13567: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -13657,11 +13659,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:13660: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:13662: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:13664: \$? = $ac_status" >&5
+   echo "$as_me:13666: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -13709,11 +13711,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:13712: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:13714: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:13716: \$? = $ac_status" >&5
+   echo "$as_me:13718: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -15231,8 +15233,9 @@ main ()
 {
   int major, minor, micro;
   char *tmp_version;
+  int ignored;
 
-  fclose (fopen ("conf.glibtest", "w"));
+  ignored = system ("touch conf.glibtest");
 
   /* HP/UX 9 (%@#!) writes to sscanf strings */
   tmp_version = g_strdup("$min_glib_version");
@@ -15509,6 +15512,11 @@ fi
 # Check whether --enable-g15 was given.
 if test "${enable_g15+set}" = set; then :
   enableval=$enable_g15; disable_g15=yes
+fi
+
+# Check whether --enable-espeak was given.
+if test "${enable_espeak+set}" = set; then :
+  enableval=$enable_espeak; disable_espeak=yes
 fi
 
 
@@ -15944,6 +15952,61 @@ fi
 
 else
 	echo "Disabled optional Logitech G15 support."
+fi
+
+if test "$enable_espeak" != "no" ; then
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for espeak_Initialize in -lespeak" >&5
+$as_echo_n "checking for espeak_Initialize in -lespeak... " >&6; }
+if test "${ac_cv_lib_espeak_espeak_Initialize+set}" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lespeak  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char espeak_Initialize ();
+int
+main ()
+{
+return espeak_Initialize ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_espeak_espeak_Initialize=yes
+else
+  ac_cv_lib_espeak_espeak_Initialize=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_espeak_espeak_Initialize" >&5
+$as_echo "$ac_cv_lib_espeak_espeak_Initialize" >&6; }
+if test "x$ac_cv_lib_espeak_espeak_Initialize" = x""yes; then :
+
+
+$as_echo "#define HAVE_ESPEAK 1" >>confdefs.h
+
+		LIBS="-lespeak $LIBS"
+		echo "Enabled optional eSpeak support."
+
+else
+
+		echo "Optional eSpeak support is not enabled."
+
+fi
+
+else
+	echo "Disabled optional eSpeak support."
 fi
 
 
@@ -16421,7 +16484,7 @@ if test "x$with_oss" != xno; then :
 				echo "Found OSSv4 include file in /usr/lib/oss/include/sys/soundcard.h";
 				oss_CFLAGS="-I/usr/lib/oss/include"
 
-				# We can't perform any real checks on OSSv4 because their include file is in a retarded location
+				# We can't perform any real checks on OSSv4 because their include file is in a retarded location.
 
 $as_echo "#define HAVE_OSS 1" >>confdefs.h
 

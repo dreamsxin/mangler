@@ -37,11 +37,12 @@ AC_CHECK_HEADER([mpd/client.h],
 	[AC_CHECK_LIB([mpdclient], [mpd_run_status])]
 )
 
-AC_ARG_ENABLE(gsm,   [  --disable-gsm           disable GSM codec support], [disable_gsm=yes])
-AC_ARG_ENABLE(speex, [  --disable-speex         disable Speex codec support], [disable_speex=yes])
-AC_ARG_ENABLE(celt,  [  --disable-celt          disable CELT codec support], [disable_celt=yes])
-AC_ARG_ENABLE(xosd,  [  --disable-xosd          disable XOSD overlay support], [disable_xosd=yes])
-AC_ARG_ENABLE(g15,   [  --disable-g15           disable Logitech G15 keyboard support], [disable_g15=yes])
+AC_ARG_ENABLE(gsm,    [  --disable-gsm           disable GSM codec support], [disable_gsm=yes])
+AC_ARG_ENABLE(speex,  [  --disable-speex         disable Speex codec support], [disable_speex=yes])
+AC_ARG_ENABLE(celt,   [  --disable-celt          disable CELT codec support], [disable_celt=yes])
+AC_ARG_ENABLE(xosd,   [  --disable-xosd          disable XOSD overlay support], [disable_xosd=yes])
+AC_ARG_ENABLE(g15,    [  --disable-g15           disable Logitech G15 keyboard support], [disable_g15=yes])
+AC_ARG_ENABLE(espeak, [  --disable-espeak        disable eSpeak text to speech support], [disable_espeak=yes])
 
 if test "$enable_gsm" != "no" ; then
 	AC_CHECK_LIB([gsm], [gsm_create], [], [
@@ -112,6 +113,18 @@ else
 	echo "Disabled optional Logitech G15 support."
 fi
 
+if test "$enable_espeak" != "no" ; then
+	AC_CHECK_LIB([espeak], [espeak_Initialize], [
+		AC_DEFINE(HAVE_ESPEAK, 1, [have espeak])
+		LIBS="-lespeak $LIBS"
+		echo "Enabled optional eSpeak support."
+	], [
+		echo "Optional eSpeak support is not enabled."
+	])
+else
+	echo "Disabled optional eSpeak support."
+fi
+
 PKG_CHECK_MODULES(gtk, gtk+-2.0 >= 2.16.0)
 
 PKG_CHECK_MODULES(dbus, dbus-glib-1 >= 0.80, [AC_DEFINE(HAVE_DBUS, 1, [have dbus])], [:])
@@ -173,9 +186,9 @@ AS_IF(
 				echo "Found OSSv4 include file in /usr/lib/oss/include/sys/soundcard.h";
 				oss_CFLAGS="-I/usr/lib/oss/include"
 				AC_SUBST(oss_CFLAGS)
-				# We can't perform any real checks on OSSv4 because their include file is in a retarded location
+				# We can't perform any real checks on OSSv4 because their include file is in a retarded location.
 				AC_DEFINE(HAVE_OSS, 1, [have oss])
-			],[
+			], [
 				AC_CHECK_HEADER([sys/soundcard.h], [
 					AC_DEFINE(HAVE_OSS, 1, [have oss])
 				], [
