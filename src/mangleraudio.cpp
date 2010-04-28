@@ -50,6 +50,7 @@ ManglerAudio::ManglerAudio(int type, uint32_t rate, uint8_t channels, uint32_t p
             return;
         }
         outputStreamOpen = true;
+        stop_output = false;
         pcm_queue = g_async_queue_new();
         Glib::Thread::create(sigc::mem_fun(*this, &ManglerAudio::output), false);
     } else {
