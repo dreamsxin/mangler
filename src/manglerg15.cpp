@@ -43,7 +43,7 @@ ManglerG15::addevent(Glib::ustring text) {
     vector<Glib::ustring>::iterator it;
     int ctr;
 
-    if (events.size() > 6) {
+    if (events.size() > 5) {
         events.erase(events.begin());
     }
     events.push_back(text);
