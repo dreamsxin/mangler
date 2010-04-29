@@ -153,10 +153,6 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
     builder->get_widget("qcCancelButton", button);
     button->signal_clicked().connect(sigc::mem_fun(this, &Mangler::qcCancelButton_clicked_cb));
 
-    // MOTD Window Buttons
-    builder->get_widget("motdOkButton", button);
-    button->signal_clicked().connect(sigc::mem_fun(this, &Mangler::motdOkButton_clicked_cb));
-
     // Input VU Meter
     builder->get_widget("inputVUMeterProgressBar", inputvumeter);
 
@@ -210,6 +206,9 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
     builder->get_widget("commentMenuItem", menuitem);
     menuitem->signal_activate().connect(sigc::mem_fun(this, &Mangler::commentButton_clicked_cb));
 
+    builder->get_widget("motdMenuItem", menuitem);
+    menuitem->signal_activate().connect(sigc::mem_fun(this, &Mangler::motdMenuItem_activate_cb));
+
     builder->get_widget("chatMenuItem", menuitem);
     menuitem->signal_activate().connect(sigc::mem_fun(this, &Mangler::chatButton_clicked_cb));
 
@@ -227,6 +226,19 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
     // connect the signal for our error dialog button
     builder->get_widget("errorOKButton", button);
     button->signal_clicked().connect(sigc::mem_fun(this, &Mangler::errorOKButton_clicked_cb));
+
+    // Set up our message of the day window
+    builder->get_widget("motdWindow", motdWindow);
+    builder->get_widget("motdNotebook", motdNotebook);
+    motdNotebook->set_current_page(1);
+    motdNotebook->set_show_tabs(false);
+    builder->get_widget("motdUsers", motdUsers);
+    builder->get_widget("motdGuests", motdGuests);
+    builder->get_widget("motdIgnore", motdIgnore);
+    motdIgnore->signal_toggled().connect(sigc::mem_fun(this, &Mangler::motdIgnore_toggled_cb));
+    motdIgnore->set_active(config["MOTDignore"].toBool());
+    builder->get_widget("motdOkButton", button);
+    button->signal_clicked().connect(sigc::mem_fun(this, &Mangler::motdOkButton_clicked_cb));
 
     // Set up our generic password dialog box
     builder->get_widget("passwordDialog", passwordDialog);
@@ -430,6 +442,8 @@ void Mangler::onDisconnectHandler(void) {/*{{{*/
         menuitem->set_sensitive(false);
         builder->get_widget("chatButton", button);
         button->set_sensitive(false);
+        builder->get_widget("motdMenuItem", menuitem);
+        menuitem->set_sensitive(false);
         builder->get_widget("chatMenuItem", menuitem);
         menuitem->set_sensitive(false);
         builder->get_widget("commentButton", button);
@@ -471,6 +485,10 @@ void Mangler::onDisconnectHandler(void) {/*{{{*/
         menuitem->hide();
         builder->get_widget("adminWindowMenuItem", menuitem);
         menuitem->hide();
+        motdNotebook->set_current_page(1);
+        motdNotebook->set_show_tabs(false);
+        motdUsers->get_buffer()->set_text("");
+        motdGuests->get_buffer()->set_text("");
         chat->clear();
         recorder->can_record(false);
         if (! connectedServerName.empty()) {
@@ -716,6 +734,9 @@ void Mangler::hideGuestFlagMenuItem_toggled_cb(void) {/*{{{*/
     channelTree->refreshAllUsers();
     config.config.save();
 }/*}}}*/
+void Mangler::motdMenuItem_activate_cb(void) {/*{{{*/
+    motdWindow->present();
+}/*}}}*/
 void Mangler::recorderMenuItem_activate_cb(void) {/*{{{*/
     recorder->recWindow->set_icon(icons["tray_icon"]);
     recorder->show();
@@ -867,9 +888,11 @@ void Mangler::qcCancelButton_clicked_cb(void) {/*{{{*/
 }/*}}}*/
 
 // MOTD Window Callbacks
+void Mangler::motdIgnore_toggled_cb(void) {/*{{{*/
+    config["MOTDignore"] = motdIgnore->get_active();
+}/*}}}*/
 void Mangler::motdOkButton_clicked_cb(void) {/*{{{*/
-    builder->get_widget("motdWindow", window);
-    window->hide();
+    motdWindow->hide();
 }/*}}}*/
 
 /*
@@ -1068,6 +1091,8 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                     menuitem->set_sensitive(true);
                     builder->get_widget("chatButton", button);
                     button->set_sensitive(true);
+                    builder->get_widget("motdMenuItem", menuitem);
+                    menuitem->set_sensitive(true);
                     builder->get_widget("chatMenuItem", menuitem);
                     menuitem->set_sensitive(true);
                     builder->get_widget("commentButton", button);
@@ -1297,27 +1322,34 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                 break;/*}}}*/
             case V3_EVENT_DISPLAY_MOTD:/*{{{*/
                 {
+                    Glib::ustring motdKey;
                     uint32_t motdhash = 0;
 
-                    if (! connectedServerName.empty()) {
+                    if (!ev->flags) {
+                        motdKey = "MOTDhashUser";
+                        motdNotebook->set_show_tabs(true);
+                        motdNotebook->set_current_page(0);
+                        motdUsers->get_buffer()->set_text(c_to_ustring(ev->data->motd));
+                    } else {
+                        motdKey = "MOTDhash";
+                        motdGuests->get_buffer()->set_text(c_to_ustring(ev->data->motd));
+                    }
+                    if (motdIgnore->get_active() || !strlen(ev->data->motd)) {
+                        break;
+                    }
+                    if (connectedServerName.length()) {
                         // we're not launching a space shuttle here, no need for
                         // anything super complex
                         for (uint32_t ctr = 0; ctr < strlen(ev->data->motd); ctr++) {
                             motdhash += ev->data->motd[ctr] + ctr;
                         }
                     }
-                    if (connectedServerName.empty() || motdAlways || motdhash != config.servers[connectedServerName]["MOTDhash"].toULong()) {
-                        Glib::RefPtr< Gtk::TextBuffer > tb = Gtk::TextBuffer::create();
-                        builder->get_widget("motdWindow", window);
-                        window->set_title("Mangler - MOTD");
-                        builder->get_widget("motdTextView", textview);
-                        tb->set_text(c_to_ustring(ev->data->motd));
-                        textview->set_buffer(tb);
-                        window->show();
-                        if (! connectedServerName.empty()) {
-                            config.servers[connectedServerName]["MOTDhash"] = motdhash;
+                    if (connectedServerName.empty() || config.servers[connectedServerName][motdKey].toULong() != motdhash) {
+                        if (connectedServerName.length()) {
+                            config.servers[connectedServerName][motdKey] = motdhash;
                             config.servers.save();
                         }
+                        motdWindow->show();
                     }
                 }
                 break;/*}}}*/
@@ -1457,13 +1489,11 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                 break;/*}}}*/
             case V3_EVENT_TEXT_TO_SPEECH_MESSAGE:/*{{{*/
                 {
-                    /*
                     if ((u = v3_get_user(ev->user.id))) {
-                        fprintf(stderr, "TTS: %s: %s\n", u->name, ev->data->chatmessage);
-                        audioControl->playText(c_to_ustring(u->name) + ": " + c_to_ustring(ev->data->chatmessage));
+                        //fprintf(stderr, "TTS: %s: %s\n", u->name, ev->data->chatmessage);
+                        audioControl->playText(c_to_ustring((strlen(u->phonetic)) ? u->phonetic : u->name) + ": " + c_to_ustring(ev->data->chatmessage));
                         v3_free_user(u);
                     }
-                    */
                 }
                 break;/*}}}*/
             case V3_EVENT_PLAY_WAVE_FILE_MESSAGE:/*{{{*/
@@ -1478,13 +1508,11 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                 break;/*}}}*/
             case V3_EVENT_USER_PAGE:/*{{{*/
                 {
-                    /*
                     if ((u = v3_get_user(ev->user.id))) {
-                        fprintf(stderr, "Page from: %s\n", u->name);
-                        audioControl->playText("Page from: " + c_to_ustring(u->name));
+                        //fprintf(stderr, "Page from: %s\n", u->name);
+                        audioControl->playText("Page from: " + c_to_ustring((strlen(u->phonetic)) ? u->phonetic : u->name));
                         v3_free_user(u);
                     }
-                    */
                 }
                 break;/*}}}*/
             case V3_EVENT_ADMIN_AUTH:/*{{{*/

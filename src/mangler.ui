@@ -4,8 +4,8 @@
   <!-- interface-naming-policy project-wide -->
   <object class="GtkWindow" id="manglerWindow">
     <property name="title" translatable="yes">Mangler</property>
-    <property name="default_width">500</property>
-    <property name="default_height">400</property>
+    <property name="default_width">400</property>
+    <property name="default_height">525</property>
     <accel-groups>
       <group name="accelGroupClose"/>
     </accel-groups>
@@ -148,6 +148,14 @@
                     <child>
                       <object class="GtkSeparatorMenuItem" id="viewMenuSeparator">
                         <property name="visible">True</property>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkMenuItem" id="motdMenuItem">
+                        <property name="visible">True</property>
+                        <property name="sensitive">False</property>
+                        <property name="label" translatable="yes">_MOTD</property>
+                        <property name="use_underline">True</property>
                       </object>
                     </child>
                     <child>
@@ -306,6 +314,7 @@
                         <property name="receives_default">True</property>
                         <property name="tooltip_text" translatable="yes">Gain administrator status and show admin window...</property>
                         <property name="use_underline">True</property>
+                        <property name="focus_on_click">False</property>
                       </object>
                       <packing>
                         <property name="expand">False</property>
@@ -690,7 +699,7 @@
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
-                <property name="tooltip_text" translatable="yes">Add a new server to the list</property>
+                <property name="tooltip_text" translatable="yes">Add a new server to the list.</property>
                 <property name="use_underline">True</property>
                 <property name="focus_on_click">False</property>
               </object>
@@ -708,7 +717,7 @@
                 <property name="sensitive">False</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
-                <property name="tooltip_text" translatable="yes">Remove the currently selected server</property>
+                <property name="tooltip_text" translatable="yes">Remove the currently selected server.</property>
                 <property name="use_underline">True</property>
                 <property name="focus_on_click">False</property>
               </object>
@@ -2269,7 +2278,7 @@ who figured out the encryption.
                         <property name="visible">True</property>
                         <property name="xalign">0</property>
                         <property name="label" translatable="yes">&lt;b&gt;Notifications&lt;/b&gt;
-Notifications are the sound effects that are played when you login, logout, a user joins your channel, etc.</property>
+Notifications are the sound effects which are played when you login, logout, a user joins your channel, etc.</property>
                         <property name="use_markup">True</property>
                         <property name="wrap">True</property>
                         <property name="wrap_mode">word-char</property>
@@ -2333,7 +2342,20 @@ Notifications are the sound effects that are played when you login, logout, a us
                           </packing>
                         </child>
                         <child>
-                          <placeholder/>
+                          <object class="GtkCheckButton" id="notificationTTSCheckButton">
+                            <property name="label" translatable="yes">Text to Speech with Pages</property>
+                            <property name="visible">True</property>
+                            <property name="sensitive">False</property>
+                            <property name="can_focus">True</property>
+                            <property name="receives_default">False</property>
+                            <property name="draw_indicator">True</property>
+                          </object>
+                          <packing>
+                            <property name="left_attach">1</property>
+                            <property name="right_attach">2</property>
+                            <property name="top_attach">1</property>
+                            <property name="bottom_attach">2</property>
+                          </packing>
                         </child>
                       </object>
                       <packing>
@@ -2966,47 +2988,107 @@ These are useful for developers.</property>
     </action-widgets>
   </object>
   <object class="GtkWindow" id="motdWindow">
-    <property name="width_request">300</property>
-    <property name="height_request">300</property>
+    <property name="width_request">375</property>
+    <property name="height_request">350</property>
+    <property name="border_width">10</property>
+    <property name="title" translatable="yes">Mangler - Message of the Day</property>
     <property name="window_position">center-on-parent</property>
     <property name="type_hint">dialog</property>
     <property name="skip_taskbar_hint">True</property>
     <property name="skip_pager_hint">True</property>
     <property name="transient_for">manglerWindow</property>
     <child>
-      <object class="GtkAlignment" id="motdalignment3">
+      <object class="GtkVBox" id="motdvbox1">
         <property name="visible">True</property>
-        <property name="top_padding">10</property>
-        <property name="bottom_padding">10</property>
-        <property name="left_padding">10</property>
-        <property name="right_padding">10</property>
+        <property name="orientation">vertical</property>
+        <property name="spacing">10</property>
         <child>
-          <object class="GtkVBox" id="motdvbox1">
+          <object class="GtkNotebook" id="motdNotebook">
             <property name="visible">True</property>
-            <property name="orientation">vertical</property>
+            <property name="show_border">False</property>
             <child>
-              <object class="GtkAlignment" id="motdalignment1">
+              <object class="GtkScrolledWindow" id="motdScrolledWindow">
                 <property name="visible">True</property>
-                <property name="bottom_padding">10</property>
+                <property name="can_focus">False</property>
+                <property name="hscrollbar_policy">automatic</property>
+                <property name="vscrollbar_policy">automatic</property>
+                <property name="shadow_type">in</property>
                 <child>
-                  <object class="GtkScrolledWindow" id="motdScrolledwindow">
+                  <object class="GtkTextView" id="motdUsers">
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
-                    <property name="hscrollbar_policy">automatic</property>
-                    <property name="vscrollbar_policy">automatic</property>
-                    <property name="shadow_type">in</property>
-                    <child>
-                      <object class="GtkTextView" id="motdTextView">
-                        <property name="visible">True</property>
-                        <property name="can_focus">True</property>
-                        <property name="editable">False</property>
-                        <property name="wrap_mode">word</property>
-                        <property name="left_margin">2</property>
-                        <property name="right_margin">2</property>
-                        <property name="cursor_visible">False</property>
-                      </object>
-                    </child>
+                    <property name="editable">False</property>
+                    <property name="left_margin">2</property>
+                    <property name="right_margin">2</property>
+                    <property name="cursor_visible">False</property>
                   </object>
+                </child>
+              </object>
+            </child>
+            <child type="tab">
+              <object class="GtkLabel" id="motdUsersLabel">
+                <property name="visible">True</property>
+                <property name="label" translatable="yes">Users</property>
+              </object>
+              <packing>
+                <property name="tab_fill">False</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkScrolledWindow" id="motdScrolledWindow2">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="hscrollbar_policy">automatic</property>
+                <property name="vscrollbar_policy">automatic</property>
+                <property name="shadow_type">in</property>
+                <child>
+                  <object class="GtkTextView" id="motdGuests">
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="editable">False</property>
+                    <property name="left_margin">2</property>
+                    <property name="right_margin">2</property>
+                    <property name="cursor_visible">False</property>
+                  </object>
+                </child>
+              </object>
+              <packing>
+                <property name="position">1</property>
+              </packing>
+            </child>
+            <child type="tab">
+              <object class="GtkLabel" id="motdGuestsLabel">
+                <property name="visible">True</property>
+                <property name="label" translatable="yes">Guests</property>
+              </object>
+              <packing>
+                <property name="position">1</property>
+                <property name="tab_fill">False</property>
+              </packing>
+            </child>
+          </object>
+          <packing>
+            <property name="position">0</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkHBox" id="motdhbox1">
+            <property name="visible">True</property>
+            <child>
+              <object class="GtkHBox" id="motdhbox2">
+                <property name="visible">True</property>
+                <child>
+                  <object class="GtkCheckButton" id="motdIgnore">
+                    <property name="label" translatable="yes">Ignore MOTD</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <property name="receives_default">False</property>
+                    <property name="draw_indicator">True</property>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="position">0</property>
+                  </packing>
                 </child>
               </object>
               <packing>
@@ -3014,37 +3096,15 @@ These are useful for developers.</property>
               </packing>
             </child>
             <child>
-              <object class="GtkHBox" id="motdhbox1">
+              <object class="GtkButton" id="motdOkButton">
+                <property name="label">gtk-ok</property>
+                <property name="width_request">75</property>
                 <property name="visible">True</property>
-                <child>
-                  <object class="GtkAlignment" id="motdalignment2">
-                    <property name="visible">True</property>
-                    <child>
-                      <placeholder/>
-                    </child>
-                  </object>
-                  <packing>
-                    <property name="position">0</property>
-                  </packing>
-                </child>
-                <child>
-                  <object class="GtkButton" id="motdOkButton">
-                    <property name="label">gtk-ok</property>
-                    <property name="width_request">75</property>
-                    <property name="visible">True</property>
-                    <property name="can_focus">True</property>
-                    <property name="has_focus">True</property>
-                    <property name="is_focus">True</property>
-                    <property name="can_default">True</property>
-                    <property name="has_default">True</property>
-                    <property name="receives_default">True</property>
-                    <property name="use_stock">True</property>
-                  </object>
-                  <packing>
-                    <property name="expand">False</property>
-                    <property name="position">1</property>
-                  </packing>
-                </child>
+                <property name="can_focus">True</property>
+                <property name="can_default">True</property>
+                <property name="has_default">True</property>
+                <property name="receives_default">True</property>
+                <property name="use_stock">True</property>
               </object>
               <packing>
                 <property name="expand">False</property>
@@ -3052,6 +3112,10 @@ These are useful for developers.</property>
               </packing>
             </child>
           </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="position">1</property>
+          </packing>
         </child>
       </object>
     </child>
@@ -4537,9 +4601,6 @@ These are useful for developers.</property>
                                           </packing>
                                         </child>
                                         <child>
-                                          <placeholder/>
-                                        </child>
-                                        <child>
                                           <object class="GtkComboBox" id="ServerSpamFilterChannelAction">
                                             <property name="visible">True</property>
                                             <accessibility>
@@ -4818,6 +4879,9 @@ These are useful for developers.</property>
                                             <property name="top_attach">5</property>
                                             <property name="bottom_attach">6</property>
                                           </packing>
+                                        </child>
+                                        <child>
+                                          <placeholder/>
                                         </child>
                                       </object>
                                       <packing>

@@ -4484,7 +4484,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
             } else {
                 _v3_msg_0x50 *m = msg->contents;
                 v3_user *u;
-                uint8_t guest = 0;
+                uint8_t guest = false;
                 char **motd;
                 int size = 0;
 
@@ -4513,15 +4513,13 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                     memset(*motd + size, 0, m->message_size + 1);
                     memcpy(*motd + size, m->message, m->message_size);
                 }
-                if ((u = v3_get_user(v3_get_user_id()))) {
+                if ((u = _v3_get_user(v3_get_user_id()))) {
                     guest = u->guest;
-                } else {
-                    // this should never happen... but just in case....
-                    guest = false;
                 }
                 if ((m->message_id+1) == m->message_num) {
                     // At this point we have our motd, may want to notify the user here :)
                     v3_event *ev = _v3_create_event(V3_EVENT_DISPLAY_MOTD);
+                    ev->flags = m->guest_motd_flag;
                     strncpy(ev->data->motd, *motd, 2047);
                     v3_queue_event(ev);
                 }

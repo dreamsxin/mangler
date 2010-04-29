@@ -297,6 +297,7 @@ const char *ManglerConfig::DefaultConfiguration = "[mangler]\n"
 "NotificationLoginLogout=1\n"
 "NotificationChannelEnterLeave=1\n"
 "NotificationTransmitStartStop=1\n"
+"NotificationTextToSpeech=1\n"
 "MouseDeviceName=\n"
 #ifdef HAVE_PULSE
 "AudioSubsystem=pulse\n"
@@ -314,10 +315,10 @@ const char *ManglerConfig::DefaultConfiguration = "[mangler]\n"
 "LastConnectedServerId=0\n"
 "lv3_debuglevel=0\n"
 "MasterVolumeLevel=79\n"
-"WindowWidth=500\n"
-"WindowHeight=400\n"
+"WindowWidth=400\n"
+"WindowHeight=525\n"
 "ButtonsHidden=0\n"
 "ServerInfoHidden=0\n"
 "GuestFlagHidden=0\n"
-"ChatTimestamps=0\n";
+"ChatTimestamps=1\n";
 

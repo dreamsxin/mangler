@@ -396,25 +396,18 @@ ManglerAudio::playNotification(Glib::ustring name) {/*{{{*/
     notify->finish();
 }/*}}}*/
 
-void
-ManglerAudio::playText(Glib::ustring text) {/*{{{*/
-    if (!text.length()) {
-        return;
-    }
-    this->text = text;
-#ifdef HAVE_ESPEAK
-    Glib::Thread::create(sigc::mem_fun(*this, &ManglerAudio::playTextThread), false);
-#endif
-}/*}}}*/
-
 #ifdef HAVE_ESPEAK
 int
 espeak_synth_cb(short *wav, int numsamples, espeak_EVENT *events) {/*{{{*/
-    if (!numsamples) {
-        return 1;
-    }
     ManglerAudio *tts = (ManglerAudio *)events->user_data;
 
+    if (!numsamples) {
+        if (tts) {
+            tts->finish();
+            events->user_data = NULL;
+        }
+        return 1;
+    }
     tts->queue(numsamples * sizeof(short), (uint8_t *)wav);
 
     return 0;
@@ -422,8 +415,10 @@ espeak_synth_cb(short *wav, int numsamples, espeak_EVENT *events) {/*{{{*/
 #endif
 
 void
-ManglerAudio::playTextThread(void) {/*{{{*/
-    Glib::ustring text = this->text;
+ManglerAudio::playText(Glib::ustring text) {/*{{{*/
+    if (!text.length() || !Mangler::config["NotificationTextToSpeech"].toBool()) {
+        return;
+    }
 #ifdef HAVE_ESPEAK
     int rate;
     if ((rate = espeak_Initialize(AUDIO_OUTPUT_RETRIEVAL, 0, NULL, espeakEVENT_LIST_TERMINATED)) < 0) {
@@ -437,8 +432,6 @@ ManglerAudio::playTextThread(void) {/*{{{*/
         fprintf(stderr, "espeak: synth error\n");
         return;
     }
-    espeak_Synchronize();
-    tts->finish();
 #endif
 }/*}}}*/
 

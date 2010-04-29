@@ -101,8 +101,6 @@ class ManglerAudio
         std::vector<ManglerAudioDevice*> outputDevices;
         std::vector<ManglerAudioDevice*> inputDevices;
 
-        Glib::ustring   text;
-
         bool            switchBackend(Glib::ustring audioSubsystem);
         bool            open(void);
         void            close(bool drain = false);
@@ -113,7 +111,6 @@ class ManglerAudio
         void            getDeviceList(Glib::ustring audioSubsystem);
         void            playNotification(Glib::ustring name);
         void            playText(Glib::ustring text);
-        void            playTextThread(void);
 };
 
 int timeval_subtract(struct timeval *result, struct timeval *x, struct timeval *y);

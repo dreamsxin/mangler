@@ -36,7 +36,6 @@
 #endif
 
 ManglerSettings::ManglerSettings(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
-
     this->builder = builder;
 
     // Connect our signals for this window
@@ -322,7 +321,7 @@ void ManglerSettings::applySettings(void) {/*{{{*/
     Mangler::config["MasterVolumeLevel"] = volumeAdjustment->get_value();
     v3_set_volume_master(Mangler::config["MasterVolumeLevel"].toInt());
 
-    // Notification sounds
+    // Notification Sounds
     builder->get_widget("notificationLoginLogoutCheckButton", checkbutton);
     Mangler::config["NotificationLoginLogout"] = checkbutton->get_active();
 
@@ -332,7 +331,10 @@ void ManglerSettings::applySettings(void) {/*{{{*/
     builder->get_widget("notificationTalkStartEndCheckButton", checkbutton);
     Mangler::config["NotificationTransmitStartStop"] = checkbutton->get_active();
 
-    // Debug level
+    builder->get_widget("notificationTTSCheckButton", checkbutton);
+    Mangler::config["NotificationTextToSpeech"] = checkbutton->get_active();
+
+    // Debug Level
     uint32_t debuglevel = 0;
     builder->get_widget("debugStatus", checkbutton);
     debuglevel |= checkbutton->get_active() ? V3_DEBUG_STATUS : 0;
@@ -465,7 +467,7 @@ void ManglerSettings::initSettings(void) {/*{{{*/
     outputDeviceCustomName->set_text(Mangler::config["OutputDeviceCustomName"].toUString());
     notificationDeviceCustomName->set_text(Mangler::config["NotificationDeviceCustomName"].toUString());
 
-    // Notification sounds
+    // Notification Sounds
     builder->get_widget("notificationLoginLogoutCheckButton", checkbutton);
     checkbutton->set_active(Mangler::config["NotificationLoginLogout"].toBool());
 
@@ -475,7 +477,13 @@ void ManglerSettings::initSettings(void) {/*{{{*/
     builder->get_widget("notificationTalkStartEndCheckButton", checkbutton);
     checkbutton->set_active(Mangler::config["NotificationTransmitStartStop"].toBool());
 
-    // Debug level
+    builder->get_widget("notificationTTSCheckButton", checkbutton);
+    checkbutton->set_active(Mangler::config["NotificationTextToSpeech"].toBool());
+#ifdef HAVE_ESPEAK
+    checkbutton->set_sensitive(true);
+#endif
+
+    // Debug Level
     builder->get_widget("debugStatus", checkbutton);
     uint32_t config_lv3_debuglevel = Mangler::config["lv3_debuglevel"].toULong();
     checkbutton->set_active(config_lv3_debuglevel & V3_DEBUG_STATUS ? 1 : 0);

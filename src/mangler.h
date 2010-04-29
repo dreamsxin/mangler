@@ -133,6 +133,13 @@ class Mangler
         time_t                              lastAttempt;
         uint32_t                            lastServer;
 
+        // These are used by the message of the day window
+        Gtk::Window                         *motdWindow;
+        Gtk::Notebook                       *motdNotebook;
+        Gtk::TextView                       *motdUsers;
+        Gtk::TextView                       *motdGuests;
+        Gtk::CheckButton                    *motdIgnore;
+
         // These are used by the password entry dialog
         Gtk::Dialog                         *passwordDialog;
         Gtk::Entry                          *passwordEntry;
@@ -206,6 +213,7 @@ class Mangler
         void buttonMenuItem_toggled_cb(void);
         void hideServerInfoMenuItem_toggled_cb(void);
         void hideGuestFlagMenuItem_toggled_cb(void);
+        void motdMenuItem_activate_cb(void);
         void recorderMenuItem_activate_cb(void);
         void quitMenuItem_activate_cb(void);
         void adminWindowMenuItem_activated_cb(void);
@@ -226,6 +234,8 @@ class Mangler
         void qcConnectButton_clicked_cb(void);
         void qcCancelButton_clicked_cb(void);
 
+        // message of the day window signal handlers
+        void motdIgnore_toggled_cb(void);
         void motdOkButton_clicked_cb(void);
 
         // password dialog signal handlers
