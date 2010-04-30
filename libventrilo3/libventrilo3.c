@@ -4367,7 +4367,8 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                                 prop.inactivity_action = atoi(m->value);;
                                 break;
                             case V3_SRV_PROP_INACTIVE_CHAN:
-                                strncpy(prop.inactivity_channel, m->value, 1023);
+                                // strncpy(prop.inactivity_channel, m->value, 1023);
+                                prop.inactivity_channel = v3_get_channel_id(m->value, "/");
                                 break;
                             case V3_SRV_PROP_REM_SRV_COMMENT:
                                 prop.rem_srv_comment = atoi(m->value);
@@ -4430,7 +4431,8 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                             _v3_debug(V3_DEBUG_INFO, "tts spam filter...............: %d, %d, %d", prop.tts_spam_filter.action, prop.tts_spam_filter.interval, prop.tts_spam_filter.times);
                             _v3_debug(V3_DEBUG_INFO, "inactive timeout..............: %d", prop.inactivity_timeout);
                             _v3_debug(V3_DEBUG_INFO, "inactive action...............: %d", prop.inactivity_action);
-                            _v3_debug(V3_DEBUG_INFO, "inactive chan.................: %d", prop.inactivity_channel[1024]); // TODO: this sucks, we should probably resolve the channel path in lv3
+                            //_v3_debug(V3_DEBUG_INFO, "inactive chan.................: %d", prop.inactivity_channel[1024]); // TODO: this sucks, we should probably resolve the channel path in lv3
+                            _v3_debug(V3_DEBUG_INFO, "inactive chan.................: %u", prop.inactivity_channel); // TODO: this sucks, we should probably resolve the channel path in lv3
                             _v3_debug(V3_DEBUG_INFO, "rem srv comments..............: %d", prop.rem_srv_comment);
                             _v3_debug(V3_DEBUG_INFO, "rem chan names................: %d", prop.rem_chan_names);
                             _v3_debug(V3_DEBUG_INFO, "rem chan comments.............: %d", prop.rem_chan_comments);
@@ -6080,6 +6082,54 @@ v3_channel_count(void) {/*{{{*/
     for (c = v3_channel_list; c != NULL; c = c->next, ctr++);
     return ctr;
 
+}/*}}}*/
+
+uint16_t
+v3_get_channel_id(const char *path, const char *sep) {/*{{{*/
+    const char *chan_name[32];
+    int chan_namelen[32];
+    int chan_namecnt = 0, seplen;
+    v3_channel *c;
+    int cnt;
+    const char *p = path;
+    uint16_t parent_id;
+
+    seplen = strlen(sep);
+
+    _v3_func_enter("v3_get_channel_id");
+    _v3_lock_channellist();
+    
+    /* parse path into some arrays (make no copies) */
+    if (strncmp(p, sep, seplen) == 0) p += seplen;
+    chan_name[0] = p;
+
+    while (*p != '\0') {
+         if (strncmp(p, sep, seplen) == 0) {
+             chan_namelen[chan_namecnt] = p - chan_name[chan_namecnt];
+             chan_namecnt++;
+             p += seplen;
+             chan_name[chan_namecnt] = p;
+         } else {
+             p++;
+         }
+    }
+    chan_namelen[chan_namecnt] = p - chan_name[chan_namecnt];
+    chan_namecnt++;
+
+    parent_id = 0;
+    for (cnt = 0; cnt < chan_namecnt; cnt++) {
+        for (c = v3_channel_list; c != NULL; c = c->next) {
+            if (c->parent == parent_id && strlen(c->name) == chan_namelen[cnt] && strncmp(c->name, chan_name[cnt], chan_namelen[cnt]) == 0) {
+                parent_id = c->id;
+                break;
+            }
+        }
+    }
+    
+    _v3_unlock_channellist();
+    _v3_func_leave("v3_get_channel_id");
+
+    return parent_id;
 }/*}}}*/
 
 int

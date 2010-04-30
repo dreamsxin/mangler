@@ -343,7 +343,8 @@ typedef struct {
     v3_sp_filter tts_spam_filter;
     uint32_t inactivity_timeout;
     uint8_t inactivity_action;
-    char  inactivity_channel[1024]; // TODO: this sucks, we should probably resolve the channel path in lv3
+    //char  inactivity_channel[1024]; // TODO: this sucks, we should probably resolve the channel path in lv3
+    uint16_t inactivity_channel;
     uint8_t rem_srv_comment;
     uint8_t rem_chan_names;
     uint8_t rem_chan_comments;
@@ -750,6 +751,7 @@ v3_user     *v3_get_user(uint16_t id);
 int         v3_channel_count(void);
 void        v3_free_channel(v3_channel *channel);
 v3_channel  *v3_get_channel(uint16_t id);
+uint16_t    v3_get_channel_id(const char *path, const char *sep);
 
 // Rank list functions
 void        v3_ranklist_open(void);
