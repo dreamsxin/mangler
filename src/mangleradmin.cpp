@@ -538,7 +538,11 @@ ManglerAdmin::ServerUpdate_clicked_cb(void) {/*{{{*/
 }/*}}}*/
 void
 ManglerAdmin::serverSettingsUpdated(v3_server_prop &props) {/*{{{*/
-    //copyToEntry("ServerComment", "wtf");
+    v3_user *lobby;
+    if ((lobby = v3_get_user(0))) {
+        copyToEntry("ServerComment", c_to_ustring(lobby->comment));
+        v3_free_user(lobby);
+    }
     copyToCombobox("ServerChatFilter", props.chat_filter, 0);
     copyToCombobox("ServerChannelOrdering", props.channel_order, 0);
     copyToCheckbutton("ServerAlwaysDisplayMOTD", props.motd_display);

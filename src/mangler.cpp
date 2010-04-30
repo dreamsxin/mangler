@@ -1540,8 +1540,8 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                             menuitem->hide();
                         }
                     }
-                    v3_user *lobby = v3_get_user(0);
-                    if (lobby) {
+                    v3_user *lobby;
+                    if ((lobby = v3_get_user(0))) {
                         channelTree->updateLobby(c_to_ustring(lobby->name), c_to_ustring(lobby->comment), lobby->phonetic);
                         v3_free_user(lobby);
                     }
