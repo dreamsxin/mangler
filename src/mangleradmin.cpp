@@ -549,7 +549,7 @@ ManglerAdmin::serverSettingsUpdated(v3_server_prop &props) {/*{{{*/
     // inactivity
     copyToSpinbutton("ServerTimeout", props.inactivity_timeout);
     copyToCombobox("ServerAction", props.inactivity_action, 0);
-    // TODO: inactivity channel
+    copyToCombobox("ServerChannel", props.inactivity_channel, 0);
     // spam filters
     copyToCombobox("ServerSpamFilterChannelAction", props.channel_spam_filter.action, 0);
     copyToSpinbutton("ServerSpamFilterChannelInterval", props.channel_spam_filter.interval);
