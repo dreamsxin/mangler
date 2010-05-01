@@ -139,6 +139,7 @@ class Mangler
         Gtk::TextView                       *motdUsers;
         Gtk::TextView                       *motdGuests;
         Gtk::CheckButton                    *motdIgnore;
+        Gtk::Button                         *motdOkButton;
 
         // These are used by the password entry dialog
         Gtk::Dialog                         *passwordDialog;

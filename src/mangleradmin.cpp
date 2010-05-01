@@ -384,13 +384,16 @@ ManglerAdmin::ManglerAdmin(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
     /* set up the channel lists */
     readUserTemplates();
     clearChannels();
-
-    isOpen = false;
 }/*}}}*/
 ManglerAdmin::~ManglerAdmin() {/*{{{*/
     if (usertemplates) {
         delete usertemplates;
     }
+}/*}}}*/
+
+void
+ManglerAdmin::show(void) {/*{{{*/
+    adminWindow->present();
 }/*}}}*/
 void
 ManglerAdmin::adminWindow_show_cb(void) {/*{{{*/
@@ -421,7 +424,6 @@ ManglerAdmin::adminWindow_show_cb(void) {/*{{{*/
         Gtk::TreeModel::Path lobbypath = ChannelEditorTreeModel->get_path(iter);
         ChannelEditorTree->set_cursor(lobbypath);
     }
-    isOpen = true;
 }/*}}}*/
 void
 ManglerAdmin::adminWindow_hide_cb(void) {/*{{{*/
@@ -437,15 +439,6 @@ ManglerAdmin::adminWindow_hide_cb(void) {/*{{{*/
     }
     if (perms->edit_rank) {
         v3_ranklist_close();
-    }
-    isOpen = false;
-}/*}}}*/
-void
-ManglerAdmin::show(void) {/*{{{*/
-    if (!isOpen) {
-        adminWindow->show();
-    } else {
-        adminWindow->present();
     }
 }/*}}}*/
 void

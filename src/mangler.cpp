@@ -237,8 +237,8 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
     builder->get_widget("motdIgnore", motdIgnore);
     motdIgnore->signal_toggled().connect(sigc::mem_fun(this, &Mangler::motdIgnore_toggled_cb));
     motdIgnore->set_active(config["MOTDignore"].toBool());
-    builder->get_widget("motdOkButton", button);
-    button->signal_clicked().connect(sigc::mem_fun(this, &Mangler::motdOkButton_clicked_cb));
+    builder->get_widget("motdOkButton", motdOkButton);
+    motdOkButton->signal_clicked().connect(sigc::mem_fun(this, &Mangler::motdOkButton_clicked_cb));
 
     // Set up our generic password dialog box
     builder->get_widget("passwordDialog", passwordDialog);
@@ -735,6 +735,7 @@ void Mangler::hideGuestFlagMenuItem_toggled_cb(void) {/*{{{*/
     config.config.save();
 }/*}}}*/
 void Mangler::motdMenuItem_activate_cb(void) {/*{{{*/
+    motdOkButton->grab_focus();
     motdWindow->present();
 }/*}}}*/
 void Mangler::recorderMenuItem_activate_cb(void) {/*{{{*/
@@ -974,13 +975,15 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                         (bool)u->guest,
                         (bool)u->real_user_id,
                         rank);
-                // If we have a per user volume set for this user name, set it now
-                if (! connectedServerName.empty() && config.hasUserVolume(connectedServerName, u->name)) {
-                    v3_set_volume_user(u->id, config.UserVolume(connectedServerName, u->name).toInt());
-                }
-                // If the user was muted... mute them again
-                if (! connectedServerName.empty() && config.UserMuted(connectedServerName, u->name).toBool()) {
-                    channelTree->muteUserToggle(u->id);
+                if (connectedServerName.length() && u->id != v3_get_user_id()) {
+                    // If we have a per user volume set for this user name, set it now.
+                    if (config.hasUserVolume(connectedServerName, u->name)) {
+                        v3_set_volume_user(u->id, config.UserVolume(connectedServerName, u->name).toInt());
+                    }
+                    // If the user was muted, mute them again.
+                    if (config.UserMuted(connectedServerName, u->name).toBool()) {
+                        channelTree->muteUserToggle(u->id);
+                    }
                 }
                 v3_free_user(u);
                 break;/*}}}*/
@@ -1349,6 +1352,7 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                             config.servers[connectedServerName][motdKey] = motdhash;
                             config.servers.save();
                         }
+                        motdOkButton->grab_focus();
                         motdWindow->show();
                     }
                 }

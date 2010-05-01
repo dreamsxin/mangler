@@ -46,8 +46,6 @@ class ManglerRecorder {
         Gtk::FileChooserDialog *filedialog;
         Gtk::TextView          *textview;
 
-        bool isOpen;
-        bool isOpenInfo;
         bool isPlaying;
         bool isRecording;
         void show(void);
@@ -103,8 +101,6 @@ class ManglerRecorder {
                 ManglerAudio *outputAudio;
         };
 
-        void recWindow_show_cb(void);
-        void recWindow_hide_cb(void);
         void hide_activate_cb(void);
         void open_activate_cb(void);
         void close_activate_cb(void);
@@ -121,8 +117,6 @@ class ManglerRecorder {
         void reset(void);
         void play(void);
 
-        void recInfoDialog_show_cb(void);
-        void recInfoDialog_hide_cb(void);
         void recInfoDialog_cancel_clicked_cb(void);
         void recInfoDialog_save_clicked_cb(void);
 

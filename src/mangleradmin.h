@@ -46,9 +46,7 @@ class ManglerAdmin {
         Gtk::Alignment      *RanksTab;
         Gtk::Button         *UserAdd;
 
-        bool isOpen;
         void show(void);
-
         void serverSettingsUpdated(v3_server_prop &props);
         void channelUpdated(v3_channel *channel);
         void channelRemoved(uint32_t chanid);

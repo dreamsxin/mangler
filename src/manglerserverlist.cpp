@@ -26,7 +26,6 @@
 
 #include "mangler.h"
 #include "manglerserverlist.h"
-
 #include "manglersettings.h"
 #include "manglercharset.h"
 
@@ -61,8 +60,8 @@ ManglerServerList::ManglerServerList(Glib::RefPtr<Gtk::Builder> builder) {
     serverListSelection = serverListView->get_selection();
     serverListSelection->signal_changed().connect(sigc::mem_fun(this, &ManglerServerList::serverListSelection_changed_cb));
 
-    builder->get_widget("serverListAddButton", button);
-    button->signal_clicked().connect(sigc::mem_fun(this, &ManglerServerList::serverListAddButton_clicked_cb));
+    builder->get_widget("serverListNewButton", button);
+    button->signal_clicked().connect(sigc::mem_fun(this, &ManglerServerList::serverListNewButton_clicked_cb));
 
     builder->get_widget("serverListDeleteButton", serverListServerDeleteButton);
     serverListServerDeleteButton->signal_clicked().connect(sigc::mem_fun(this, &ManglerServerList::serverListDeleteButton_clicked_cb));
@@ -73,17 +72,21 @@ ManglerServerList::ManglerServerList(Glib::RefPtr<Gtk::Builder> builder) {
     builder->get_widget("serverListCloseButton", button);
     button->signal_clicked().connect(sigc::mem_fun(this, &ManglerServerList::serverListCloseButton_clicked_cb));
 
-    builder->get_widget("serverListServerSaveButton", serverListServerSaveButton);
-    serverListServerSaveButton->signal_clicked().connect(sigc::mem_fun(this, &ManglerServerList::serverListServerSaveButton_clicked_cb));
+    builder->get_widget("serverListServerUpdateButton", serverListServerUpdateButton);
+    serverListServerUpdateButton->signal_clicked().connect(sigc::mem_fun(this, &ManglerServerList::serverListServerUpdateButton_clicked_cb));
 
-    builder->get_widget("serverListServerNameEntry",    serverListServerNameEntry);
-    builder->get_widget("serverListHostnameEntry",      serverListHostnameEntry);
-    builder->get_widget("serverListPortEntry",          serverListPortEntry);
-    builder->get_widget("serverListDefaultChannelEntry",serverListDefaultChannelEntry);
-    builder->get_widget("serverListUsernameEntry",      serverListUsernameEntry);
-    builder->get_widget("serverListPasswordEntry",      serverListPasswordEntry);
-    builder->get_widget("serverListPhoneticEntry",      serverListPhoneticEntry);
-    builder->get_widget("serverListCommentEntry",       serverListCommentEntry);
+    builder->get_widget("serverListServerTable",            serverListServerTable);
+    builder->get_widget("serverListUserTable",              serverListUserTable);
+    builder->get_widget("serverListOptionsTable",           serverListOptionsTable);
+
+    builder->get_widget("serverListServerNameEntry",        serverListServerNameEntry);
+    builder->get_widget("serverListHostnameEntry",          serverListHostnameEntry);
+    builder->get_widget("serverListPortEntry",              serverListPortEntry);
+    builder->get_widget("serverListDefaultChannelEntry",    serverListDefaultChannelEntry);
+    builder->get_widget("serverListUsernameEntry",          serverListUsernameEntry);
+    builder->get_widget("serverListPasswordEntry",          serverListPasswordEntry);
+    builder->get_widget("serverListPhoneticEntry",          serverListPhoneticEntry);
+    builder->get_widget("serverListCommentEntry",           serverListCommentEntry);
 
     // CheckButton fields
     builder->get_widget("serverListPageCheckButton",        serverListPageCheckButton);
@@ -126,38 +129,30 @@ void ManglerServerList::serverListSelection_changed_cb(void) {
 
 void ManglerServerList::serverListDeleteButton_clicked_cb(void) {
     Gtk::TreeModel::iterator iter = serverListSelection->get_selected();
-    if (iter) {
-        Gtk::TreeModel::Row row = *iter;
-        Glib::ustring name = row[serverListColumns.name];
-        Mangler::config.servers.erase(name);
-        Mangler::config.servers.save();
-        serverListTreeModel->erase(row);
-        editorName = "";
-        clearEntries();
-        serverListServerNameEntry->set_sensitive(false);
-        serverListHostnameEntry->set_sensitive(false);
-        serverListPortEntry->set_sensitive(false);
-        serverListDefaultChannelEntry->set_sensitive(false);
-        serverListUsernameEntry->set_sensitive(false);
-        serverListPasswordEntry->set_sensitive(false);
-        serverListPhoneticEntry->set_sensitive(false);
-        serverListCommentEntry->set_sensitive(false);
-        serverListPageCheckButton->set_sensitive(false);
-        serverListUtUCheckButton->set_sensitive(false);
-        serverListPrivateChatCheckButton->set_sensitive(false);
-        serverListRecordCheckButton->set_sensitive(false);
-        serverListPersistentConnectionCheckButton->set_sensitive(false);
-        serverListPersistentCommentsCheckButton->set_sensitive(false);
-        serverListCharsetComboBox->set_sensitive(false);
-        serverListServerSaveButton->set_sensitive(false);
-        serverListServerCloneButton->set_sensitive(false);
-        serverListServerDeleteButton->set_sensitive(false);
+    if (!iter) {
+        return;
     }
+    Gtk::TreeModel::Row row = *iter;
+    Glib::ustring name = row[serverListColumns.name];
+    Mangler::config.servers.erase(name);
+    Mangler::config.servers.save();
+    serverListTreeModel->erase(row);
+    editorName = "";
+    clearEntries();
+    //serverListDefaultChannelEntry->set_sensitive(false);
+    serverListServerTable->set_sensitive(false);
+    serverListUserTable->set_sensitive(false);
+    serverListOptionsTable->set_sensitive(false);
+    serverListServerUpdateButton->set_sensitive(false);
+    serverListServerCloneButton->set_sensitive(false);
+    serverListServerDeleteButton->set_sensitive(false);
 }
 
 void ManglerServerList::serverListCloneButton_clicked_cb(void) {
     Gtk::TreeModel::iterator curIter = serverListSelection->get_selected();
-    if (! curIter) return; // should never happen
+    if (!curIter) {
+        return; // should never happen
+    }
     Glib::ustring server_name = (*curIter)[serverListColumns.name];
     editorName = "";
     editRow(server_name);
@@ -174,7 +169,7 @@ void ManglerServerList::clearEntries(void) {
     serverListCommentEntry->set_text("");
 }
 
-void ManglerServerList::serverListAddButton_clicked_cb(void) {
+void ManglerServerList::serverListNewButton_clicked_cb(void) {
     editorName = "";
     editRow("");
 }
@@ -183,34 +178,27 @@ void ManglerServerList::serverListCloseButton_clicked_cb(void) {
     serverListWindow->hide();
 }
 
-void ManglerServerList::serverListServerSaveButton_clicked_cb(void) {
+void ManglerServerList::serverListServerUpdateButton_clicked_cb(void) {
     saveRow();
 }
 
 void ManglerServerList::editRow(const std::string &name) {
-    if (editorName.empty()) serverListSelection->unselect_all();
+    if (editorName.empty()) {
+        serverListSelection->unselect_all();
+    }
+    //serverListDefaultChannelEntry->set_sensitive(true); // saving name from right click user menu only
+    serverListServerTable->set_sensitive(true);
+    serverListUserTable->set_sensitive(true);
+    serverListOptionsTable->set_sensitive(true);
+    serverListServerUpdateButton->set_sensitive(true);
     serverListServerCloneButton->set_sensitive(! editorName.empty());
     serverListServerDeleteButton->set_sensitive(! editorName.empty());
     serverListServerNameEntry->grab_focus();
-    serverListServerNameEntry->set_sensitive(true);
-    serverListHostnameEntry->set_sensitive(true);
-    serverListPortEntry->set_sensitive(true);
-    serverListDefaultChannelEntry->set_sensitive(false); //Saving name from right click menu only
-    serverListUsernameEntry->set_sensitive(true);
-    serverListPasswordEntry->set_sensitive(true);
-    serverListPhoneticEntry->set_sensitive(true);
-    serverListCommentEntry->set_sensitive(true);
-    serverListPageCheckButton->set_sensitive(true);
-    serverListUtUCheckButton->set_sensitive(true);
-    serverListPrivateChatCheckButton->set_sensitive(true);
-    serverListRecordCheckButton->set_sensitive(true);
-    serverListPersistentConnectionCheckButton->set_sensitive(true);
-    serverListPersistentCommentsCheckButton->set_sensitive(true);
-    serverListCharsetComboBox->set_sensitive(true);
-    serverListServerSaveButton->set_sensitive(true);
-    
+
     iniSection server;
-    if (! name.empty()) server = Mangler::config.servers[name];
+    if (name.length()) {
+        server = Mangler::config.servers[name];
+    }
     serverListServerNameEntry->set_text(name);
     serverListHostnameEntry->set_text(server["Hostname"].toUString());
     serverListPortEntry->set_text(server["Port"].toUString());
@@ -223,32 +211,51 @@ void ManglerServerList::editRow(const std::string &name) {
     serverListPasswordEntry->set_text(server["Password"].toUString());
     serverListPhoneticEntry->set_text(server["Phonetic"].toUString());
     serverListCommentEntry->set_text(server["Comment"].toUString());
-    serverListPageCheckButton->set_active(server["AcceptPages"].length() ? server["AcceptPages"].toBool() : true);
-    serverListUtUCheckButton->set_active(server["AcceptU2U"].length() ? server["AcceptU2U"].toBool() : true);
-    serverListPrivateChatCheckButton->set_active(server["AcceptPrivateChat"].length() ? server["AcceptPrivateChat"].toBool() : true);
-    serverListRecordCheckButton->set_active(server["AllowRecording"].length() ? server["AllowRecording"].toBool() : true);
-    serverListPersistentConnectionCheckButton->set_active(server["PersistentConnection"].length() ? server["PersistentConnection"].toBool() : true);
-    serverListPersistentCommentsCheckButton->set_active(server["PersistentComments"].length() ? server["PersistentComments"].toBool() : true);
+    serverListPageCheckButton->set_active(
+            server["AcceptPages"].length() ?
+            server["AcceptPages"].toBool() : true);
+    serverListUtUCheckButton->set_active(
+            server["AcceptU2U"].length() ?
+            server["AcceptU2U"].toBool() : true);
+    serverListPrivateChatCheckButton->set_active(
+            server["AcceptPrivateChat"].length() ?
+            server["AcceptPrivateChat"].toBool() : true);
+    serverListRecordCheckButton->set_active(
+            server["AllowRecording"].length() ?
+            server["AllowRecording"].toBool() : true);
+    serverListPersistentConnectionCheckButton->set_active(
+            server["PersistentConnection"].length() ?
+            server["PersistentConnection"].toBool() : true);
+    serverListPersistentCommentsCheckButton->set_active(
+            server["PersistentComments"].length() ?
+            server["PersistentComments"].toBool() : true);
     std::string server_charset = server["Charset"].toString();
-    if (server_charset.empty()) server_charset = charsetslist[0];
+    if (server_charset.empty()) {
+        server_charset = charsetslist[0];
+    }
     serverListCharsetComboBox->get_entry()->set_text(server_charset);
 }
 
 void ManglerServerList::saveRow() {
     Glib::ustring charset;
     Gtk::TreeModel::iterator curIter;
-    if (editorName.empty()) curIter = serverListTreeModel->append();
-    else curIter = serverListSelection->get_selected();
-    if (! curIter) return; // should never happen
+    if (editorName.empty()) {
+        curIter = serverListTreeModel->append();
+    } else {
+        curIter = serverListSelection->get_selected();
+    }
+    if (!curIter) {
+        return; // should never happen
+    }
     Gtk::TreeModel::Row row = *curIter;
 
     if (serverListServerNameEntry->get_text().empty()) {
         mangler->errorDialog("Cannot save server without a name.");
         return;
     }
-    
+
     Glib::ustring server_name = trim(serverListServerNameEntry->get_text());
-    
+
     // check for duplicate
     Gtk::TreeModel::Children::iterator ckIter = serverListTreeModel->children().begin();
     while (ckIter != serverListTreeModel->children().end()) {
@@ -264,27 +271,29 @@ void ManglerServerList::saveRow() {
         server_defaultchan = Mangler::config.servers[Glib::locale_from_utf8(editorName)]["DefaultChannelID"].toULong();
         Mangler::config.servers.erase(editorName);
     }
-    
+
     // save to config
     iniSection &server( Mangler::config.servers[server_name] );
-    server["Hostname"] = trim(serverListHostnameEntry->get_text());
-    server["Port"] = trim(serverListPortEntry->get_text());
-    if (server_defaultchan) server["DefaultChannelID"] = server_defaultchan;
-    server["Username"] = trim(serverListUsernameEntry->get_text());
-    server["Password"] = trim(serverListPasswordEntry->get_text());
-    server["Phonetic"] = trim(serverListPhoneticEntry->get_text());
-    server["Comment"] = trim(serverListCommentEntry->get_text());
-    server["AcceptPages"] = serverListPageCheckButton->get_active();
-    server["AcceptU2U"] = serverListUtUCheckButton->get_active();
-    server["AcceptPrivateChat"] = serverListPrivateChatCheckButton->get_active();
-    server["AllowRecording"] = serverListRecordCheckButton->get_active();
-    server["PersistentConnection"] = serverListPersistentConnectionCheckButton->get_active();
-    server["PersistentComments"] = serverListPersistentCommentsCheckButton->get_active();
-    server["Charset"] = serverListCharsetComboBox->get_active_text();
-    
-    row[serverListColumns.name] = server_name;
+    server["Hostname"]              = trim(serverListHostnameEntry->get_text());
+    server["Port"]                  = trim(serverListPortEntry->get_text());
+    if (server_defaultchan) {
+        server["DefaultChannelID"]  = server_defaultchan;
+    }
+    server["Username"]              = trim(serverListUsernameEntry->get_text());
+    server["Password"]              = trim(serverListPasswordEntry->get_text());
+    server["Phonetic"]              = trim(serverListPhoneticEntry->get_text());
+    server["Comment"]               = trim(serverListCommentEntry->get_text());
+    server["AcceptPages"]           = serverListPageCheckButton->get_active();
+    server["AcceptU2U"]             = serverListUtUCheckButton->get_active();
+    server["AcceptPrivateChat"]     = serverListPrivateChatCheckButton->get_active();
+    server["AllowRecording"]        = serverListRecordCheckButton->get_active();
+    server["PersistentConnection"]  = serverListPersistentConnectionCheckButton->get_active();
+    server["PersistentComments"]    = serverListPersistentCommentsCheckButton->get_active();
+    server["Charset"]               = serverListCharsetComboBox->get_active_text();
+
+    row[serverListColumns.name]     = server_name;
     row[serverListColumns.hostname] = server["Hostname"].toUString();
-    row[serverListColumns.port] = server["Port"].toUString();
+    row[serverListColumns.port]     = server["Port"].toUString();
     row[serverListColumns.username] = server["Username"].toUString();
     if (editorName.empty()) {
         serverListSelection = serverListView->get_selection();
@@ -302,3 +311,4 @@ Glib::ustring ManglerServerList::trim(Glib::ustring const& orig) {
         ? Glib::ustring()
         : orig.substr(first, orig.find_last_not_of(blankChars)-first+1);
 }
+

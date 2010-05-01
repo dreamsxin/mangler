@@ -285,8 +285,8 @@ void ManglerSettings::applySettings(void) {/*{{{*/
         }
         Mangler::config["OnScreenDisplayFontSize"] = osdFontSize->get_value();
         Gdk::Color color = osdColor->get_color();
-        char colorstr[8];
-        sprintf(colorstr, "#%02x%02x%02x", color.get_red() / 256, color.get_green() / 256, color.get_blue() / 256);
+        char colorstr[16];
+        snprintf(colorstr, 15, "#%02x%02x%02x", color.get_red() / 256, color.get_green() / 256, color.get_blue() / 256);
         Mangler::config["OnScreenDisplayColor"] = colorstr;
         mangler->osd->destroyOsd();
     }

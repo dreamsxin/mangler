@@ -212,7 +212,6 @@
                 <property name="orientation">vertical</property>
                 <child>
                   <object class="GtkVBox" id="vbox4">
-                    <property name="width_request">100</property>
                     <property name="visible">True</property>
                     <property name="orientation">vertical</property>
                     <property name="spacing">10</property>
@@ -222,7 +221,7 @@
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
-                        <property name="tooltip_text" translatable="yes">Connect to a server without adding it to your server list...</property>
+                        <property name="tooltip_text" translatable="yes">Connect to a server without adding it to your server list</property>
                         <property name="use_underline">True</property>
                         <property name="focus_on_click">False</property>
                       </object>
@@ -236,7 +235,7 @@
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
-                        <property name="tooltip_text" translatable="yes">Edit the server list...</property>
+                        <property name="tooltip_text" translatable="yes">Configure your server list</property>
                         <property name="use_underline">True</property>
                         <property name="focus_on_click">False</property>
                       </object>
@@ -251,7 +250,7 @@
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
-                        <property name="tooltip_text" translatable="yes">Modify settings...</property>
+                        <property name="tooltip_text" translatable="yes">Configure Mangler settings</property>
                         <property name="use_underline">True</property>
                         <property name="focus_on_click">False</property>
                       </object>
@@ -267,7 +266,7 @@
                         <property name="sensitive">False</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
-                        <property name="tooltip_text" translatable="yes">Change your user comment or URL...</property>
+                        <property name="tooltip_text" translatable="yes">Change your comment or URL</property>
                         <property name="use_underline">True</property>
                         <property name="focus_on_click">False</property>
                       </object>
@@ -283,7 +282,7 @@
                         <property name="sensitive">False</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
-                        <property name="tooltip_text" translatable="yes">Show the public chat window...</property>
+                        <property name="tooltip_text" translatable="yes">Send and receive messages</property>
                         <property name="use_underline">True</property>
                         <property name="focus_on_click">False</property>
                       </object>
@@ -312,7 +311,7 @@
                         <property name="sensitive">False</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
-                        <property name="tooltip_text" translatable="yes">Gain administrator status and show admin window...</property>
+                        <property name="tooltip_text" translatable="yes">Manage and configure your server</property>
                         <property name="use_underline">True</property>
                         <property name="focus_on_click">False</property>
                       </object>
@@ -694,12 +693,12 @@
             <property name="orientation">vertical</property>
             <property name="spacing">5</property>
             <child>
-              <object class="GtkButton" id="serverListAddButton">
+              <object class="GtkButton" id="serverListNewButton">
                 <property name="label" translatable="yes">_New Server</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
-                <property name="tooltip_text" translatable="yes">Add a new server to the list.</property>
+                <property name="tooltip_text" translatable="yes">Add a new server to the list</property>
                 <property name="use_underline">True</property>
                 <property name="focus_on_click">False</property>
               </object>
@@ -717,7 +716,7 @@
                 <property name="sensitive">False</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
-                <property name="tooltip_text" translatable="yes">Remove the currently selected server.</property>
+                <property name="tooltip_text" translatable="yes">Remove the currently selected server</property>
                 <property name="use_underline">True</property>
                 <property name="focus_on_click">False</property>
               </object>
@@ -730,11 +729,12 @@
             </child>
             <child>
               <object class="GtkButton" id="serverListCloneButton">
-                <property name="label" translatable="yes">Clone Server</property>
+                <property name="label" translatable="yes">Clone _Server</property>
                 <property name="visible">True</property>
                 <property name="sensitive">False</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
+                <property name="use_underline">True</property>
               </object>
               <packing>
                 <property name="expand">False</property>
@@ -744,7 +744,7 @@
             </child>
             <child>
               <object class="GtkButton" id="serverListSetDefaultButton">
-                <property name="label" translatable="yes">_Set as Default</property>
+                <property name="label" translatable="yes">Se_t as Default</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
                 <property name="use_underline">True</property>
@@ -824,8 +824,9 @@
                   <object class="GtkHBox" id="hbox5">
                     <property name="visible">True</property>
                     <child>
-                      <object class="GtkTable" id="table10">
+                      <object class="GtkTable" id="serverListServerTable">
                         <property name="visible">True</property>
+                        <property name="sensitive">False</property>
                         <property name="n_rows">4</property>
                         <property name="n_columns">2</property>
                         <property name="column_spacing">4</property>
@@ -843,7 +844,6 @@
                         <child>
                           <object class="GtkEntry" id="serverListServerNameEntry">
                             <property name="visible">True</property>
-                            <property name="sensitive">False</property>
                             <property name="can_focus">True</property>
                             <property name="invisible_char">&#x25CF;</property>
                             <property name="activates_default">True</property>
@@ -872,7 +872,6 @@
                         <child>
                           <object class="GtkEntry" id="serverListHostnameEntry">
                             <property name="visible">True</property>
-                            <property name="sensitive">False</property>
                             <property name="can_focus">True</property>
                             <property name="invisible_char">&#x25CF;</property>
                             <property name="activates_default">True</property>
@@ -903,7 +902,6 @@
                         <child>
                           <object class="GtkEntry" id="serverListPortEntry">
                             <property name="visible">True</property>
-                            <property name="sensitive">False</property>
                             <property name="can_focus">True</property>
                             <property name="max_length">5</property>
                             <property name="invisible_char">&#x25CF;</property>
@@ -939,7 +937,7 @@
                             <property name="sensitive">False</property>
                             <property name="can_focus">True</property>
                             <property name="tooltip_text" translatable="yes">Please use the context menu while connected 
-to the server to set the default channel.</property>
+to the server to set the default channel</property>
                             <property name="max_length">30</property>
                             <property name="invisible_char">&#x25CF;</property>
                             <property name="activates_default">True</property>
@@ -962,8 +960,9 @@ to the server to set the default channel.</property>
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkTable" id="table1">
+                      <object class="GtkTable" id="serverListUserTable">
                         <property name="visible">True</property>
+                        <property name="sensitive">False</property>
                         <property name="n_rows">4</property>
                         <property name="n_columns">2</property>
                         <property name="column_spacing">4</property>
@@ -993,7 +992,6 @@ to the server to set the default channel.</property>
                         <child>
                           <object class="GtkEntry" id="serverListUsernameEntry">
                             <property name="visible">True</property>
-                            <property name="sensitive">False</property>
                             <property name="can_focus">True</property>
                             <property name="max_length">31</property>
                             <property name="invisible_char">&#x25CF;</property>
@@ -1011,7 +1009,6 @@ to the server to set the default channel.</property>
                         <child>
                           <object class="GtkEntry" id="serverListPasswordEntry">
                             <property name="visible">True</property>
-                            <property name="sensitive">False</property>
                             <property name="can_focus">True</property>
                             <property name="max_length">31</property>
                             <property name="visibility">False</property>
@@ -1045,7 +1042,6 @@ to the server to set the default channel.</property>
                         <child>
                           <object class="GtkEntry" id="serverListPhoneticEntry">
                             <property name="visible">True</property>
-                            <property name="sensitive">False</property>
                             <property name="can_focus">True</property>
                             <property name="max_length">31</property>
                             <property name="invisible_char">&#x25CF;</property>
@@ -1077,10 +1073,10 @@ to the server to set the default channel.</property>
                         <child>
                           <object class="GtkEntry" id="serverListCommentEntry">
                             <property name="visible">True</property>
-                            <property name="sensitive">False</property>
                             <property name="can_focus">True</property>
                             <property name="max_length">127</property>
                             <property name="invisible_char">&#x25CF;</property>
+                            <property name="activates_default">True</property>
                             <accessibility>
                               <relation type="labelled-by" target="serverListCommentLabel"/>
                             </accessibility>
@@ -1113,8 +1109,9 @@ to the server to set the default channel.</property>
                   <object class="GtkAlignment" id="alignment4">
                     <property name="visible">True</property>
                     <child>
-                      <object class="GtkTable" id="table9">
+                      <object class="GtkTable" id="serverListOptionsTable">
                         <property name="visible">True</property>
+                        <property name="sensitive">False</property>
                         <property name="border_width">5</property>
                         <property name="n_rows">4</property>
                         <property name="n_columns">2</property>
@@ -1123,7 +1120,6 @@ to the server to set the default channel.</property>
                           <object class="GtkCheckButton" id="serverListPageCheckButton">
                             <property name="label" translatable="yes">Accept Page Requests</property>
                             <property name="visible">True</property>
-                            <property name="sensitive">False</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">False</property>
                             <property name="draw_indicator">True</property>
@@ -1133,7 +1129,6 @@ to the server to set the default channel.</property>
                           <object class="GtkCheckButton" id="serverListPrivateChatCheckButton">
                             <property name="label" translatable="yes">Accept Private Chat Requests</property>
                             <property name="visible">True</property>
-                            <property name="sensitive">False</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">False</property>
                             <property name="draw_indicator">True</property>
@@ -1147,7 +1142,6 @@ to the server to set the default channel.</property>
                           <object class="GtkCheckButton" id="serverListUtUCheckButton">
                             <property name="label" translatable="yes">Accept User to User Transmissions</property>
                             <property name="visible">True</property>
-                            <property name="sensitive">False</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">False</property>
                             <property name="draw_indicator">True</property>
@@ -1161,7 +1155,6 @@ to the server to set the default channel.</property>
                           <object class="GtkCheckButton" id="serverListRecordCheckButton">
                             <property name="label" translatable="yes">Allow Recording</property>
                             <property name="visible">True</property>
-                            <property name="sensitive">False</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">False</property>
                             <property name="draw_indicator">True</property>
@@ -1175,7 +1168,6 @@ to the server to set the default channel.</property>
                           <object class="GtkCheckButton" id="serverListPersistentConnectionCheckButton">
                             <property name="label" translatable="yes">Automatically reconnect</property>
                             <property name="visible">True</property>
-                            <property name="sensitive">False</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">False</property>
                             <property name="draw_indicator">True</property>
@@ -1188,7 +1180,6 @@ to the server to set the default channel.</property>
                         <child>
                           <object class="GtkCheckButton" id="serverListPersistentChannelCheckButton">
                             <property name="label" translatable="yes">Restore previous channel on reconnect</property>
-                            <property name="sensitive">False</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">False</property>
                             <property name="draw_indicator">True</property>
@@ -1204,7 +1195,6 @@ to the server to set the default channel.</property>
                           <object class="GtkCheckButton" id="serverListPersistentCommentsCheckButton">
                             <property name="label" translatable="yes">Restore previous comment on reconnect</property>
                             <property name="visible">True</property>
-                            <property name="sensitive">False</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">False</property>
                             <property name="draw_indicator">True</property>
@@ -1234,7 +1224,6 @@ to the server to set the default channel.</property>
                             <child>
                               <object class="GtkComboBoxEntry" id="serverListCharsetComboBox">
                                 <property name="visible">True</property>
-                                <property name="sensitive">False</property>
                                 <accessibility>
                                   <relation type="labelled-by" target="serverListCharsetLabel"/>
                                 </accessibility>
@@ -1306,7 +1295,7 @@ to the server to set the default channel.</property>
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkButton" id="serverListServerSaveButton">
+                  <object class="GtkButton" id="serverListServerUpdateButton">
                     <property name="label" translatable="yes">Update</property>
                     <property name="width_request">100</property>
                     <property name="visible">True</property>
@@ -2429,8 +2418,8 @@ Notifications are the sound effects which are played when you login, logout, a u
                       <object class="GtkEntry" id="inputDeviceCustomName">
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
-                        <property name="tooltip_text" translatable="yes">User defined PCM device from .asoundrc or asound.conf file.</property>
-                        <property name="invisible_char">&#x2022;</property>
+                        <property name="tooltip_text" translatable="yes">User defined PCM device from .asoundrc or asound.conf</property>
+                        <property name="invisible_char">&#x25CF;</property>
                         <accessibility>
                           <relation type="labelled-by" target="CustomInputLabel"/>
                         </accessibility>
@@ -2446,8 +2435,8 @@ Notifications are the sound effects which are played when you login, logout, a u
                       <object class="GtkEntry" id="outputDeviceCustomName">
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
-                        <property name="tooltip_text" translatable="yes">User defined PCM device from .asoundrc or asound.conf file.</property>
-                        <property name="invisible_char">&#x2022;</property>
+                        <property name="tooltip_text" translatable="yes">User defined PCM device from .asoundrc or asound.conf</property>
+                        <property name="invisible_char">&#x25CF;</property>
                         <accessibility>
                           <relation type="labelled-by" target="CustomOutputLabel"/>
                         </accessibility>
@@ -2463,8 +2452,8 @@ Notifications are the sound effects which are played when you login, logout, a u
                       <object class="GtkEntry" id="notificationDeviceCustomName">
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
-                        <property name="tooltip_text" translatable="yes">User defined PCM device from .asoundrc or asound.conf file.</property>
-                        <property name="invisible_char">&#x2022;</property>
+                        <property name="tooltip_text" translatable="yes">User defined PCM device from .asoundrc or asound.conf</property>
+                        <property name="invisible_char">&#x25CF;</property>
                         <accessibility>
                           <relation type="labelled-by" target="CustomNotificationLabel"/>
                         </accessibility>
@@ -3838,7 +3827,7 @@ These are useful for developers.</property>
     <child>
       <object class="GtkMenuItem" id="copyComment">
         <property name="visible">True</property>
-        <property name="tooltip_text" translatable="yes">Copy User's Comment to Clipboard</property>
+        <property name="tooltip_text" translatable="yes">Copy user's comment to clipboard</property>
         <property name="label" translatable="yes">Copy Comment</property>
         <property name="use_underline">True</property>
       </object>
@@ -3846,7 +3835,7 @@ These are useful for developers.</property>
     <child>
       <object class="GtkMenuItem" id="copyURL">
         <property name="visible">True</property>
-        <property name="tooltip_text" translatable="yes">Copy User's URL to Clipboard</property>
+        <property name="tooltip_text" translatable="yes">Copy user's URL to clipboard</property>
         <property name="label" translatable="yes">Copy URL</property>
         <property name="use_underline">True</property>
       </object>
@@ -5186,7 +5175,21 @@ These are useful for developers.</property>
                           <object class="GtkVBox" id="ChannelEditor">
                             <property name="visible">True</property>
                             <property name="orientation">vertical</property>
-                            <property name="spacing">4</property>
+                            <child>
+                              <object class="GtkLabel" id="ChannelEditorLabel">
+                                <property name="visible">True</property>
+                                <property name="xalign">0.05000000074505806</property>
+                                <property name="label" translatable="yes">Editing: NONE</property>
+                                <attributes>
+                                  <attribute name="weight" value="bold"/>
+                                </attributes>
+                              </object>
+                              <packing>
+                                <property name="expand">False</property>
+                                <property name="padding">2</property>
+                                <property name="position">0</property>
+                              </packing>
+                            </child>
                             <child>
                               <object class="GtkScrolledWindow" id="ChannelEditorScroll">
                                 <property name="visible">True</property>
@@ -5200,25 +5203,11 @@ These are useful for developers.</property>
                                     <child>
                                       <object class="GtkVBox" id="vbox11">
                                         <property name="visible">True</property>
+                                        <property name="border_width">5</property>
                                         <property name="orientation">vertical</property>
-                                        <child>
-                                          <object class="GtkLabel" id="ChannelEditorLabel">
-                                            <property name="visible">True</property>
-                                            <property name="xalign">0.05000000074505806</property>
-                                            <property name="label" translatable="yes">Editing: NONE</property>
-                                            <attributes>
-                                              <attribute name="weight" value="bold"/>
-                                            </attributes>
-                                          </object>
-                                          <packing>
-                                            <property name="padding">2</property>
-                                            <property name="position">0</property>
-                                          </packing>
-                                        </child>
                                         <child>
                                           <object class="GtkTable" id="ChannelTable">
                                             <property name="visible">True</property>
-                                            <property name="border_width">5</property>
                                             <property name="n_rows">14</property>
                                             <property name="n_columns">2</property>
                                             <property name="column_spacing">4</property>
@@ -5274,7 +5263,7 @@ These are useful for developers.</property>
                                                 <property name="visible">True</property>
                                                 <property name="can_focus">True</property>
                                                 <property name="visibility">False</property>
-                                                <property name="invisible_char">&#x2022;</property>
+                                                <property name="invisible_char">&#x25CF;</property>
                                                 <accessibility>
                                                   <relation type="labelled-by" target="ChannelPasswordLabel"/>
                                                 </accessibility>
@@ -5290,7 +5279,7 @@ These are useful for developers.</property>
                                               <object class="GtkEntry" id="ChannelComment">
                                                 <property name="visible">True</property>
                                                 <property name="can_focus">True</property>
-                                                <property name="invisible_char">&#x2022;</property>
+                                                <property name="invisible_char">&#x25CF;</property>
                                                 <accessibility>
                                                   <relation type="labelled-by" target="ChannelCommentLabel"/>
                                                 </accessibility>
@@ -5306,7 +5295,7 @@ These are useful for developers.</property>
                                               <object class="GtkEntry" id="ChannelPhonetic">
                                                 <property name="visible">True</property>
                                                 <property name="can_focus">True</property>
-                                                <property name="invisible_char">&#x2022;</property>
+                                                <property name="invisible_char">&#x25CF;</property>
                                                 <accessibility>
                                                   <relation type="labelled-by" target="ChannelPhoneticLabel"/>
                                                 </accessibility>
@@ -5322,7 +5311,7 @@ These are useful for developers.</property>
                                               <object class="GtkEntry" id="ChannelName">
                                                 <property name="visible">True</property>
                                                 <property name="can_focus">True</property>
-                                                <property name="invisible_char">&#x2022;</property>
+                                                <property name="invisible_char">&#x25CF;</property>
                                                 <accessibility>
                                                   <relation type="labelled-by" target="ChannelNameLabel"/>
                                                 </accessibility>
@@ -5610,11 +5599,8 @@ These are useful for developers.</property>
                                             </child>
                                           </object>
                                           <packing>
-                                            <property name="position">1</property>
+                                            <property name="position">0</property>
                                           </packing>
-                                        </child>
-                                        <child>
-                                          <placeholder/>
                                         </child>
                                         <child>
                                           <object class="GtkCheckButton" id="AllowRecording">
@@ -5625,7 +5611,7 @@ These are useful for developers.</property>
                                             <property name="draw_indicator">True</property>
                                           </object>
                                           <packing>
-                                            <property name="position">3</property>
+                                            <property name="position">1</property>
                                           </packing>
                                         </child>
                                         <child>
@@ -5637,7 +5623,7 @@ These are useful for developers.</property>
                                             <property name="draw_indicator">True</property>
                                           </object>
                                           <packing>
-                                            <property name="position">4</property>
+                                            <property name="position">2</property>
                                           </packing>
                                         </child>
                                         <child>
@@ -5649,7 +5635,7 @@ These are useful for developers.</property>
                                             <property name="draw_indicator">True</property>
                                           </object>
                                           <packing>
-                                            <property name="position">5</property>
+                                            <property name="position">3</property>
                                           </packing>
                                         </child>
                                         <child>
@@ -5661,7 +5647,7 @@ These are useful for developers.</property>
                                             <property name="draw_indicator">True</property>
                                           </object>
                                           <packing>
-                                            <property name="position">6</property>
+                                            <property name="position">4</property>
                                           </packing>
                                         </child>
                                         <child>
@@ -5673,7 +5659,7 @@ These are useful for developers.</property>
                                             <property name="draw_indicator">True</property>
                                           </object>
                                           <packing>
-                                            <property name="position">7</property>
+                                            <property name="position">5</property>
                                           </packing>
                                         </child>
                                         <child>
@@ -5685,7 +5671,7 @@ These are useful for developers.</property>
                                             <property name="draw_indicator">True</property>
                                           </object>
                                           <packing>
-                                            <property name="position">8</property>
+                                            <property name="position">6</property>
                                           </packing>
                                         </child>
                                         <child>
@@ -5697,7 +5683,7 @@ These are useful for developers.</property>
                                             <property name="draw_indicator">True</property>
                                           </object>
                                           <packing>
-                                            <property name="position">9</property>
+                                            <property name="position">7</property>
                                           </packing>
                                         </child>
                                         <child>
@@ -5709,7 +5695,7 @@ These are useful for developers.</property>
                                             <property name="draw_indicator">True</property>
                                           </object>
                                           <packing>
-                                            <property name="position">10</property>
+                                            <property name="position">8</property>
                                           </packing>
                                         </child>
                                         <child>
@@ -5721,7 +5707,7 @@ These are useful for developers.</property>
                                             <property name="draw_indicator">True</property>
                                           </object>
                                           <packing>
-                                            <property name="position">11</property>
+                                            <property name="position">9</property>
                                           </packing>
                                         </child>
                                         <child>
@@ -5733,7 +5719,7 @@ These are useful for developers.</property>
                                             <property name="draw_indicator">True</property>
                                           </object>
                                           <packing>
-                                            <property name="position">12</property>
+                                            <property name="position">10</property>
                                           </packing>
                                         </child>
                                         <child>
@@ -5745,11 +5731,8 @@ These are useful for developers.</property>
                                             <property name="draw_indicator">True</property>
                                           </object>
                                           <packing>
-                                            <property name="position">13</property>
+                                            <property name="position">11</property>
                                           </packing>
-                                        </child>
-                                        <child>
-                                          <placeholder/>
                                         </child>
                                         <child>
                                           <object class="GtkCheckButton" id="MuteGuests">
@@ -5760,7 +5743,7 @@ These are useful for developers.</property>
                                             <property name="draw_indicator">True</property>
                                           </object>
                                           <packing>
-                                            <property name="position">15</property>
+                                            <property name="position">12</property>
                                           </packing>
                                         </child>
                                         <child>
@@ -5772,11 +5755,8 @@ These are useful for developers.</property>
                                             <property name="draw_indicator">True</property>
                                           </object>
                                           <packing>
-                                            <property name="position">16</property>
+                                            <property name="position">13</property>
                                           </packing>
-                                        </child>
-                                        <child>
-                                          <placeholder/>
                                         </child>
                                       </object>
                                     </child>
@@ -5784,7 +5764,8 @@ These are useful for developers.</property>
                                 </child>
                               </object>
                               <packing>
-                                <property name="position">0</property>
+                                <property name="padding">4</property>
+                                <property name="position">1</property>
                               </packing>
                             </child>
                             <child>
@@ -5796,7 +5777,7 @@ These are useful for developers.</property>
                               </object>
                               <packing>
                                 <property name="expand">False</property>
-                                <property name="position">1</property>
+                                <property name="position">2</property>
                               </packing>
                             </child>
                           </object>
@@ -6041,7 +6022,7 @@ These are useful for developers.</property>
                                               <object class="GtkEntry" id="UserLogin">
                                                 <property name="visible">True</property>
                                                 <property name="can_focus">True</property>
-                                                <property name="invisible_char">&#x2022;</property>
+                                                <property name="invisible_char">&#x25CF;</property>
                                                 <accessibility>
                                                   <relation type="labelled-by" target="UserLoginLabel"/>
                                                 </accessibility>
@@ -6056,7 +6037,8 @@ These are useful for developers.</property>
                                                 <property name="visible">True</property>
                                                 <property name="can_focus">True</property>
                                                 <property name="visibility">False</property>
-                                                <property name="invisible_char">&#x2022;</property>
+                                                <property name="invisible_char">&#x25CF;</property>
+                                                <property name="invisible_char_set">True</property>
                                                 <accessibility>
                                                   <relation type="labelled-by" target="UserPasswordLabel"/>
                                                 </accessibility>
@@ -6209,7 +6191,7 @@ These are useful for developers.</property>
                                                   <object class="GtkEntry" id="UserLockedReason">
                                                     <property name="visible">True</property>
                                                     <property name="can_focus">True</property>
-                                                    <property name="invisible_char">&#x2022;</property>
+                                                    <property name="invisible_char">&#x25CF;</property>
                                                     <accessibility>
                                                       <relation type="labelled-by" target="UserLockedReasonLabel"/>
                                                     </accessibility>
@@ -6908,7 +6890,7 @@ These are useful for developers.</property>
                                             </child>
                                             <child>
                                               <object class="GtkCheckButton" id="UserIssueRcon">
-                                                <property name="label" translatable="yes">Issue RCON Commands</property>
+                                                <property name="label" translatable="yes">Issue Rcon Commands</property>
                                                 <property name="visible">True</property>
                                                 <property name="can_focus">True</property>
                                                 <property name="receives_default">False</property>
@@ -7043,9 +7025,6 @@ These are useful for developers.</property>
                                             <property name="padding">4</property>
                                             <property name="position">20</property>
                                           </packing>
-                                        </child>
-                                        <child>
-                                          <placeholder/>
                                         </child>
                                       </object>
                                     </child>
@@ -7211,7 +7190,7 @@ These are useful for developers.</property>
                                       <object class="GtkEntry" id="RankName">
                                         <property name="visible">True</property>
                                         <property name="can_focus">True</property>
-                                        <property name="invisible_char">&#x2022;</property>
+                                        <property name="invisible_char">&#x25CF;</property>
                                         <accessibility>
                                           <relation type="labelled-by" target="RankNameLabel"/>
                                         </accessibility>
@@ -7225,7 +7204,7 @@ These are useful for developers.</property>
                                       <object class="GtkEntry" id="RankDescription">
                                         <property name="visible">True</property>
                                         <property name="can_focus">True</property>
-                                        <property name="invisible_char">&#x2022;</property>
+                                        <property name="invisible_char">&#x25CF;</property>
                                         <accessibility>
                                           <relation type="labelled-by" target="RankDescriptionLabel"/>
                                         </accessibility>
@@ -7241,7 +7220,7 @@ These are useful for developers.</property>
                                       <object class="GtkSpinButton" id="RankLevel">
                                         <property name="visible">True</property>
                                         <property name="can_focus">True</property>
-                                        <property name="invisible_char">&#x2022;</property>
+                                        <property name="invisible_char">&#x25CF;</property>
                                         <property name="adjustment">adminRankLevelAdjustment</property>
                                         <property name="climb_rate">1</property>
                                         <property name="snap_to_ticks">True</property>

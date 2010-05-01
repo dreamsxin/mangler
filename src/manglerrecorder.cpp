@@ -37,9 +37,6 @@ ManglerRecorder::ManglerRecorder(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
     this->builder = builder;
 
     builder->get_widget("recWindow", recWindow);
-    recWindow->signal_show().connect(sigc::mem_fun(this, &ManglerRecorder::recWindow_show_cb));
-    recWindow->signal_hide().connect(sigc::mem_fun(this, &ManglerRecorder::recWindow_hide_cb));
-
     builder->get_widget("recHide", menuitem);
     menuitem->signal_activate().connect(sigc::mem_fun(this, &ManglerRecorder::hide_activate_cb));
 
@@ -53,7 +50,7 @@ ManglerRecorder::ManglerRecorder(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
     menuitem->signal_activate().connect(sigc::mem_fun(this, &ManglerRecorder::delete_activate_cb));
     builder->get_widget("recFlags", flagcheckitem);
     flagcheckitem->signal_toggled().connect(sigc::mem_fun(this, &ManglerRecorder::flags_toggled_cb));
-    flagcheckitem->set_active(Mangler::config["recordingFlagDishonor"].toBool());
+    flagcheckitem->set_active(Mangler::config["RecordingFlagDishonor"].toBool());
 
     builder->get_widget("recPlayPause", button);
     button->signal_clicked().connect(sigc::mem_fun(this, &ManglerRecorder::playpause_clicked_cb));
@@ -93,9 +90,6 @@ ManglerRecorder::ManglerRecorder(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
     recListTree->signal_row_activated().connect(sigc::mem_fun(this, &ManglerRecorder::recListTree_row_activated_cb));
 
     builder->get_widget("recInfoDialog", recInfoDialog);
-    recInfoDialog->signal_show().connect(sigc::mem_fun(this, &ManglerRecorder::recInfoDialog_show_cb));
-    recInfoDialog->signal_hide().connect(sigc::mem_fun(this, &ManglerRecorder::recInfoDialog_hide_cb));
-
     builder->get_widget("recInfoCancel", button);
     button->signal_clicked().connect(sigc::mem_fun(this, &ManglerRecorder::recInfoDialog_cancel_clicked_cb));
     builder->get_widget("recInfoSave", button);
@@ -110,8 +104,6 @@ ManglerRecorder::ManglerRecorder(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
     }
     filedialog->set_current_folder(recdir);
 
-    isOpen      = false;
-    isOpenInfo  = false;
     isPlaying   = false;
     isRecording = false;
 
@@ -121,13 +113,10 @@ ManglerRecorder::ManglerRecorder(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
 ManglerRecorder::~ManglerRecorder() {/*{{{*/
     reset();
 }/*}}}*/
+
 void
-ManglerRecorder::recWindow_show_cb(void) {/*{{{*/
-    isOpen = true;
-}/*}}}*/
-void
-ManglerRecorder::recWindow_hide_cb(void) {/*{{{*/
-    isOpen = false;
+ManglerRecorder::show(void) {/*{{{*/
+    recWindow->present();
 }/*}}}*/
 void
 ManglerRecorder::hide_activate_cb(void) {/*{{{*/
@@ -152,12 +141,19 @@ ManglerRecorder::saveas_activate_cb(void) {/*{{{*/
 }/*}}}*/
 void
 ManglerRecorder::delete_activate_cb(void) {/*{{{*/
-    reset();
-    unlink(filename.c_str());
+    if (!vrfh || filename.empty()) {
+        return;
+    }
+    Gtk::MessageDialog confirm("<b>Are you sure you want to delete \"" + fileentry->get_text() + "\"?</b>",
+            true, Gtk::MESSAGE_WARNING, Gtk::BUTTONS_YES_NO, true);
+    if (confirm.run() == Gtk::RESPONSE_YES) {
+        reset();
+        unlink(filename.c_str());
+    }
 }/*}}}*/
 void
 ManglerRecorder::flags_toggled_cb(void) {/*{{{*/
-    Mangler::config["recordingFlagDishonor"] = flagcheckitem->get_active();
+    Mangler::config["RecordingFlagDishonor"] = flagcheckitem->get_active();
 }/*}}}*/
 void
 ManglerRecorder::playpause_clicked_cb(void) {/*{{{*/
@@ -199,12 +195,8 @@ ManglerRecorder::info_clicked_cb(void) {/*{{{*/
     textview->get_buffer()->set_text(c_to_ustring(vrfd.url));
     builder->get_widget("recInfoCopyright", textview);
     textview->get_buffer()->set_text(c_to_ustring(vrfd.copyright));
-    if (!isOpenInfo) {
-        recInfoDialog->set_icon(mangler->icons["tray_icon"]);
-        recInfoDialog->show();
-    } else {
-        recInfoDialog->present();
-    }
+    recInfoDialog->set_icon(mangler->icons["tray_icon"]);
+    recInfoDialog->present();
 }/*}}}*/
 void
 ManglerRecorder::recListTree_cursor_changed_cb(void) {/*{{{*/
@@ -226,7 +218,7 @@ void
 ManglerRecorder::set(bool isRecording) {/*{{{*/
     reset();
     if (isRecording) {
-        bool dishonor = Mangler::config["recordingFlagDishonor"].toBool();
+        bool dishonor = Mangler::config["RecordingFlagDishonor"].toBool();
         if (v3_vrf_record_start(filename.c_str(), dishonor) != V3_OK) {
             mangler->errorDialog(c_to_ustring(_v3_error(NULL)));
             recordbutton->set_active(false);
@@ -274,7 +266,7 @@ ManglerRecorder::set(bool isRecording) {/*{{{*/
             totalduration += vrfd.duration;
         }
         builder->get_widget("recDuration", label);
-        label->set_text(float_to_ustring(totalduration / (float)(1000 * 60), 1) + " min");
+        label->set_text(float_to_ustring(totalduration / 60000.0, 1) + " min");
         builder->get_widget("recInfo", widget);
         widget->set_sensitive(true);
     }
@@ -291,6 +283,8 @@ ManglerRecorder::set(bool isRecording) {/*{{{*/
     recScrolledWindow->get_vadjustment()->set_value(0);
     if (recListModel->children().size()) {
         recListTree->set_cursor(recListModel->get_path(recListModel->children().begin()));
+        builder->get_widget("recPlayPause", widget);
+        widget->grab_focus();
     }
 }/*}}}*/
 void
@@ -342,14 +336,6 @@ ManglerRecorder::reset(void) {/*{{{*/
     builder->get_widget("recInfoCopyright", textview);
     textview->get_buffer()->set_text("");
     recInfoDialog->hide();
-}/*}}}*/
-void
-ManglerRecorder::show(void) {/*{{{*/
-    if (!isOpen) {
-        recWindow->show();
-    } else {
-        recWindow->present();
-    }
 }/*}}}*/
 void
 ManglerRecorder::can_record(bool isConnected) {/*{{{*/
@@ -527,14 +513,6 @@ ManglerRecorder::play(void) {/*{{{*/
     }
 }/*}}}*/
 
-void
-ManglerRecorder::recInfoDialog_show_cb(void) {/*{{{*/
-    isOpenInfo = true;
-}/*}}}*/
-void
-ManglerRecorder::recInfoDialog_hide_cb(void) {/*{{{*/
-    isOpenInfo = false;
-}/*}}}*/
 void
 ManglerRecorder::recInfoDialog_cancel_clicked_cb(void) {/*{{{*/
     recInfoDialog->hide();

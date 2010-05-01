@@ -1517,25 +1517,27 @@ _v3_update_user(v3_user *user) {/*{{{*/
                 v3_user tmpuser;
                 memcpy(&tmpuser, u, sizeof(v3_user));
                 // Users cannot change their name
-                // free(u->name);
+                //free(u->name);
                 free(u->phonetic);
                 free(u->comment);
                 free(u->integration_text);
                 free(u->url);
                 memcpy(u, user, sizeof(v3_user));
                 // Users cannot change their name
-                // u->name          = strdup(user->name);
+                //u->name             = strdup(user->name);
                 u->name             = tmpuser.name;
                 u->comment          = strdup(user->comment);
                 u->phonetic         = strdup(user->phonetic);
                 u->integration_text = strdup(user->integration_text);
                 u->url              = strdup(user->url);
                 u->guest            = user->bitfield & 0x400 ? 1 : 0;
+                u->is_transmitting  = tmpuser.is_transmitting;
                 u->accept_pages     = tmpuser.accept_pages;
                 u->accept_u2u       = tmpuser.accept_u2u;
                 u->accept_chat      = tmpuser.accept_chat;
                 u->allow_recording  = tmpuser.allow_recording;
                 u->global_mute      = tmpuser.global_mute;
+                u->channel_mute     = tmpuser.channel_mute;
                 u->next             = tmpuser.next;
                 _v3_debug(V3_DEBUG_INFO, "updated user %s",  u->name);
                 _v3_unlock_userlist();
@@ -3861,30 +3863,25 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                 _v3_msg_0x36 *m = msg->contents;
                 v3_rank *rl;
                 int ctr;
-
-                _v3_lock_ranklist();
-
                 if (m->error_id) {
                     if (m->error_id != 5) {
                         char *error;
-
-                        if (m->error_id > (sizeof(_v3_ranks_errors) / sizeof(_v3_ranks_errors[0])))
+                        if (m->error_id > (sizeof(_v3_ranks_errors) / sizeof(_v3_ranks_errors[0]))) {
                             error = "Unknown";
-                        else
+                        } else {
                             error = _v3_ranks_errors[m->error_id - 1];
-
+                        }
                         v3_event *ev = _v3_create_event(V3_EVENT_ERROR_MSG);
                         strncpy(ev->error.message, "Rank editor error:\n", sizeof(ev->error.message));
                         strncat(ev->error.message, error, sizeof(ev->error.message));
                         v3_queue_event(ev);
                     }
-
                     _v3_destroy_0x36(msg);
                     _v3_destroy_packet(msg);
                     _v3_func_leave("_v3_process_message");
                     return V3_OK;
                 }
-
+                _v3_lock_ranklist();
                 rl = calloc(m->rank_count, sizeof(v3_user));
                 switch (m->subtype) {
                     case V3_REMOVE_RANK:
@@ -3893,7 +3890,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                             // do we need to queue an event?
                             v3_event *ev = _v3_create_event(V3_EVENT_RANK_REMOVE);
                             ev->data->rank.id = m->rank_list[ctr].id;
-                            _v3_debug(V3_DEBUG_INFO, "queuing event type %d for user %d", ev->type, ev->user.id);
+                            _v3_debug(V3_DEBUG_INFO, "queuing event type %d for rank %d", ev->type, ev->data->rank.id);
                             _v3_remove_rank(m->rank_list[ctr].id);
                             v3_queue_event(ev);
                         }
@@ -3901,7 +3898,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                     case V3_MODIFY_RANK:
                     case V3_ADD_RANK:
                     case V3_RANK_LIST:
-                        _v3_debug(V3_DEBUG_INFO, "adding %d ranks on rank list",  m->rank_count);
+                        _v3_debug(V3_DEBUG_INFO, "adding %d ranks to rank list",  m->rank_count);
                         for (ctr = 0; ctr < m->rank_count; ctr++) {
                             _v3_update_rank(&m->rank_list[ctr]);
                             v3_event *ev = _v3_create_event(m->subtype == V3_ADD_RANK ? V3_EVENT_RANK_ADD : V3_EVENT_RANK_MODIFY);
@@ -3909,25 +3906,10 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                             ev->data->rank.level = m->rank_list[ctr].level;
                             strncpy(ev->text.name, m->rank_list[ctr].name, 31);
                             strncpy(ev->text.comment, m->rank_list[ctr].description, 127);
-                            _v3_debug(V3_DEBUG_INFO, "queuing event type %d for user %d", ev->type, ev->user.id);
+                            _v3_debug(V3_DEBUG_INFO, "queuing event type %d for rank %d", ev->type, ev->data->rank.id);
                             v3_queue_event(ev);
                         }
                         break;
-#if 0
-                    case V3_RANK_LIST:
-                        // <strke>user 1 is always ourself in this subtype</strike>
-                        // TODO: this is a bad assumption... the userlist can span multiple 0x5d packets
-                        _v3_debug(V3_DEBUG_INFO, "adding %d ranks to rank list",  m->rank_count);
-                        for (ctr = 0; ctr < m->rank_count; ctr++) {
-                            _v3_update_rank(&m->rank_list[ctr]);
-                            //v3_event *ev = _v3_create_event(V3_EVENT_RANK_LOGIN);
-                            //ev->rank.id = m->rank_list[ctr].id;
-                            //ev->channel.id = m->rank_list[ctr].channel;
-                            //_v3_debug(V3_DEBUG_INFO, "queuing event type %d for rank %d", ev->type, ev->rank.id);
-                            //v3_queue_event(ev);
-                        }
-                        break;
-#endif
                 }
                 free(rl);
                 _v3_unlock_ranklist();
@@ -4045,13 +4027,13 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
             _v3_func_leave("_v3_process_message");
             return V3_OK;/*}}}*/
         case 0x42:/*{{{*/
-            if(!_v3_get_0x42(msg)) {
+            if (!_v3_get_0x42(msg)) {
                 _v3_destroy_packet(msg);
                 _v3_func_leave("_v3_process_message");
                 return V3_MALFORMED;
             } else {
                 _v3_msg_0x42 *m = msg->contents;
-                switch(m->subtype) {
+                switch (m->subtype) {
                     case V3_JOIN_CHAT:
                         {
                             v3_event *ev = _v3_create_event(V3_EVENT_CHAT_JOIN);
@@ -4210,23 +4192,20 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                 if (m->error_id) {
                     if (m->error_id != 10) {
                         char *error;
-
-                        if (m->error_id > (sizeof(_v3_permissions_errors) / sizeof(_v3_permissions_errors[0])))
+                        if (m->error_id > (sizeof(_v3_permissions_errors) / sizeof(_v3_permissions_errors[0]))) {
                             error = "Unknown";
-                        else
+                        } else {
                             error = _v3_permissions_errors[m->error_id - 1];
-
+                        }
                         v3_event *ev = _v3_create_event(V3_EVENT_ERROR_MSG);
                         strncpy(ev->error.message, "User editor error:\n", sizeof(ev->error.message));
                         strncat(ev->error.message, error, sizeof(ev->error.message));
                         v3_queue_event(ev);
                     }
-
                     _v3_destroy_packet(msg);
                     _v3_func_leave("_v3_process_message");
                     return V3_OK;
                 }
-
                 switch (m->subtype) {
                     case V3_USERLIST_OPEN:
                     case V3_USERLIST_MODIFY:
@@ -4700,12 +4679,11 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
 
                 if (m->error_id) {
                     char *error;
-
-                    if (m->error_id > (sizeof(_v3_phantom_errors) / sizeof(_v3_phantom_errors[0])))
+                    if (m->error_id > (sizeof(_v3_phantom_errors) / sizeof(_v3_phantom_errors[0]))) {
                         error = "Unknown";
-                    else
+                    } else {
                         error = _v3_phantom_errors[m->error_id - 1];
-
+                    }
                     v3_event *ev = _v3_create_event(V3_EVENT_ERROR_MSG);
                     strncpy(ev->error.message, "Phantom error:\n", sizeof(ev->error.message));
                     strncat(ev->error.message, error, sizeof(ev->error.message));
@@ -4713,7 +4691,6 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                 } else {
                     v3_user new_phantom_user = {0};
                     v3_event *ev;
-
                     switch (m->subtype) {
                         case V3_PHANTOM_ADD:
                             new_phantom_user.id = m->phantom_user_id;
@@ -4735,7 +4712,6 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                             _v3_debug(V3_DEBUG_INFO, "queuing event type %d for user %d", ev->type, ev->user.id);
                             v3_queue_event(ev);
                             break;
-
                         case V3_PHANTOM_REMOVE:
                             _v3_lock_userlist();
                             _v3_remove_user(m->phantom_user_id);
@@ -4745,17 +4721,14 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                             ev->user.id = m->phantom_user_id;
                             ev->channel.id = m->channel_id;
                             _v3_debug(V3_DEBUG_INFO, "queuing event type %d for user %d", ev->type, ev->user.id);
-
                             v3_queue_event(ev);
                             break;
-
                         default:
-                            _v3_error("bad phantom subtype");
+                            _v3_error("unknown phantom subtype %d", m->subtype);
                             _v3_destroy_packet(msg);
                             _v3_func_leave("_v3_process_message");
                             return V3_MALFORMED;
                     }
-
                 }
             }
             _v3_destroy_packet(msg);
@@ -4795,13 +4768,13 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
             _v3_func_leave("_v3_process_message");
             return V3_OK;/*}}}*/
         case 0x5a:/*{{{*/
-            if(!_v3_get_0x5a(msg)) {
+            if (!_v3_get_0x5a(msg)) {
                 _v3_destroy_packet(msg);
                 _v3_func_leave("_v3_process_message");
                 return V3_MALFORMED;
             } else {
                 _v3_msg_0x5a *m = msg->contents;
-                switch(m->subtype) {
+                switch (m->subtype) {
                     case V3_START_PRIV_CHAT:
                         {
                             // for some reason, the server responds to us to tell us that we started chat?
@@ -4922,7 +4895,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                         break;
                     case V3_MODIFY_USER:
                     case V3_ADD_USER:
-                        _v3_debug(V3_DEBUG_INFO, "adding %d users on user list",  m->user_count);
+                        _v3_debug(V3_DEBUG_INFO, "adding %d users to user list",  m->user_count);
                         for (ctr = 0; ctr < m->user_count; ctr++) {
                             _v3_update_user(&m->user_list[ctr]);
                             v3_event *ev = _v3_create_event(m->subtype == V3_ADD_USER ? V3_EVENT_USER_LOGIN : V3_EVENT_USER_MODIFY);
