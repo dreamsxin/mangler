@@ -238,28 +238,19 @@ void ManglerServerList::editRow(const std::string &name) {
 
 void ManglerServerList::saveRow() {
     Glib::ustring charset;
-    Gtk::TreeModel::iterator curIter;
-    if (editorName.empty()) {
-        curIter = serverListTreeModel->append();
-    } else {
-        curIter = serverListSelection->get_selected();
-    }
-    if (!curIter) {
+    Gtk::TreeModel::iterator curIter = serverListSelection->get_selected();
+    if (editorName.length() && !curIter) {
         return; // should never happen
     }
-    Gtk::TreeModel::Row row = *curIter;
-
-    if (serverListServerNameEntry->get_text().empty()) {
+    Glib::ustring server_name = trim(serverListServerNameEntry->get_text());
+    if (server_name.empty()) {
         mangler->errorDialog("Cannot save server without a name.");
         return;
     }
-
-    Glib::ustring server_name = trim(serverListServerNameEntry->get_text());
-
     // check for duplicate
     Gtk::TreeModel::Children::iterator ckIter = serverListTreeModel->children().begin();
     while (ckIter != serverListTreeModel->children().end()) {
-        if (ckIter != curIter && (*ckIter)[serverListColumns.name] == server_name) {
+        if ((editorName.empty() || ckIter != curIter) && (*ckIter)[serverListColumns.name] == server_name) {
             mangler->errorDialog("Server names must be unique.");
             return;
         }
@@ -291,13 +282,14 @@ void ManglerServerList::saveRow() {
     server["PersistentComments"]    = serverListPersistentCommentsCheckButton->get_active();
     server["Charset"]               = serverListCharsetComboBox->get_active_text();
 
+    Gtk::TreeModel::Row row = (editorName.empty()) ? *(serverListTreeModel->append()) : *curIter;
     row[serverListColumns.name]     = server_name;
     row[serverListColumns.hostname] = server["Hostname"].toUString();
     row[serverListColumns.port]     = server["Port"].toUString();
     row[serverListColumns.username] = server["Username"].toUString();
     if (editorName.empty()) {
         serverListSelection = serverListView->get_selection();
-        serverListSelection->select(curIter);
+        serverListSelection->select(row);
     }
     editorName = server_name;
     Mangler::config.servers.save();

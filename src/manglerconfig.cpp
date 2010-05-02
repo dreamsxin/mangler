@@ -90,14 +90,16 @@ ManglerConfig::ManglerConfig() /*{{{*/
         string oldfile = getenv("HOME");
         if (oldfile[oldfile.length()-1] != '/') oldfile += "/.manglerrc";
         else oldfile += ".manglerrc";
-        if (stat(oldfile.c_str(), &statbuf) == 0) ConvertOldConfig();
+        if (stat(oldfile.c_str(), &statbuf) == 0) {
+            ConvertOldConfig();
+        } else {
+            istringstream sin( DefaultConfiguration );
+            config.load(sin);
+        }
+        save();
         // should have something now!!
         config.reload();
         servers.reload();
-    }
-    if (! config.contains("mangler")) {
-        std::istringstream sin( DefaultConfiguration );
-        config.load(sin);
     }
 }/*}}}*/
 
@@ -114,6 +116,8 @@ void ManglerConfig::ConvertOldConfig() {/*{{{*/
     string buf;
     config.clear();
     servers.clear();
+    istringstream sin( DefaultConfiguration );
+    config.load(sin);
     map<int, string> serv_names;
     string oldconf = getenv("HOME");
     if (! oldconf.length() || oldconf[oldconf.length() - 1] != '/') oldconf += "/";
@@ -210,7 +214,6 @@ void ManglerConfig::ConvertOldConfig() {/*{{{*/
     string lcs_name = serv_names[lcs_id];
     config["mangler"]["LastConnectedServerName"] = lcs_name;
     config["mangler"].erase("LastConnectedServerID");
-    save();
 }/*}}}*/
 
 void ManglerConfig::save() {/*{{{*/
@@ -310,8 +313,6 @@ const char *ManglerConfig::DefaultConfiguration = "[mangler]\n"
 "qc_lastserver.port=\n"
 "qc_lastserver.username=\n"
 "qc_lastserver.password=\n"
-"qc_lastserver.phonetic=1\n"
-"qc_lastserver.comment=1\n"
 "LastConnectedServerId=0\n"
 "lv3_debuglevel=0\n"
 "MasterVolumeLevel=79\n"

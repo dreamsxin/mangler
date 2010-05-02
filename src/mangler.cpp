@@ -236,7 +236,6 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
     builder->get_widget("motdGuests", motdGuests);
     builder->get_widget("motdIgnore", motdIgnore);
     motdIgnore->signal_toggled().connect(sigc::mem_fun(this, &Mangler::motdIgnore_toggled_cb));
-    motdIgnore->set_active(config["MOTDignore"].toBool());
     builder->get_widget("motdOkButton", motdOkButton);
     motdOkButton->signal_clicked().connect(sigc::mem_fun(this, &Mangler::motdOkButton_clicked_cb));
 
@@ -347,10 +346,10 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
     builder->get_widget("statusIconMenu", statusIconMenu);
     builder->get_widget("muteMicCheckMenuItem", checkmenuitem);
     checkmenuitem->signal_toggled().connect(sigc::mem_fun(this, &Mangler::muteMicCheckMenuItem_toggled_cb));
-    checkmenuitem->set_active(config["muteMic"].toBool());
+    checkmenuitem->set_active(config["MuteMic"].toBool());
     builder->get_widget("muteSoundCheckMenuItem", checkmenuitem);
     checkmenuitem->signal_toggled().connect(sigc::mem_fun(this, &Mangler::muteSoundCheckMenuItem_toggled_cb));
-    checkmenuitem->set_active(config["muteSound"].toBool());
+    checkmenuitem->set_active(config["MuteSound"].toBool());
     iconified = false;
 
     // Music (Now playing)
@@ -582,7 +581,7 @@ void Mangler::connectButton_clicked_cb(void) {/*{{{*/
             if (!server.size() || hostname.empty() || port.empty() || username.empty()) {
                 builder->get_widget("statusbar", statusbar);
                 statusbar->pop();
-                statusbar->push("Not connected...");
+                statusbar->push("Not connected.");
                 if (hostname.empty()) {
                     errorDialog("You have not specified a hostname for this server.");
                     return;
@@ -597,7 +596,7 @@ void Mangler::connectButton_clicked_cb(void) {/*{{{*/
                 }
                 return;
             }
-            config["lastConnectedServerName"] = connectedServerName;
+            config["LastConnectedServerName"] = connectedServerName;
             config.config.save();
             wantDisconnect = false;
             connectbutton->set_sensitive(false);
@@ -735,6 +734,8 @@ void Mangler::hideGuestFlagMenuItem_toggled_cb(void) {/*{{{*/
     config.config.save();
 }/*}}}*/
 void Mangler::motdMenuItem_activate_cb(void) {/*{{{*/
+    motdIgnore->set_sensitive(!connectedServerName.empty());
+    motdIgnore->set_active(connectedServerName.length() && config.servers[connectedServerName]["MOTDignore"].toBool());
     motdOkButton->grab_focus();
     motdWindow->present();
 }/*}}}*/
@@ -837,14 +838,14 @@ void Mangler::stopTransmit(void) {/*{{{*/
 void Mangler::muteSoundCheckButton_toggled_cb(void) {/*{{{*/
     builder->get_widget("muteSoundCheckButton", checkbutton);
     muteSound = checkbutton->get_active();
-    config["muteSound"] = muteSound;
+    config["MuteSound"] = muteSound;
 }/*}}}*/
 
 // Quick Mic Mute
 void Mangler::muteMicCheckButton_toggled_cb(void) {/*{{{*/
     builder->get_widget("muteMicCheckButton", checkbutton);
     muteMic = checkbutton->get_active();
-    config["muteMic"] = muteMic;
+    config["MuteMic"] = muteMic;
     if (muteMic && isTransmitting) {
         stopTransmit();
     } else if (!muteMic && (isTransmittingMouse || isTransmittingKey || isTransmittingButton)) {
@@ -890,7 +891,9 @@ void Mangler::qcCancelButton_clicked_cb(void) {/*{{{*/
 
 // MOTD Window Callbacks
 void Mangler::motdIgnore_toggled_cb(void) {/*{{{*/
-    config["MOTDignore"] = motdIgnore->get_active();
+    if (connectedServerName.length()) {
+        config.servers[connectedServerName]["MOTDignore"] = motdIgnore->get_active();
+    }
 }/*}}}*/
 void Mangler::motdOkButton_clicked_cb(void) {/*{{{*/
     motdWindow->hide();
@@ -1337,6 +1340,8 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                         motdKey = "MOTDhash";
                         motdGuests->get_buffer()->set_text(c_to_ustring(ev->data->motd));
                     }
+                    motdIgnore->set_sensitive(!connectedServerName.empty());
+                    motdIgnore->set_active(connectedServerName.length() && config.servers[connectedServerName]["MOTDignore"].toBool());
                     if (motdIgnore->get_active() || !strlen(ev->data->motd)) {
                         break;
                     }
@@ -1347,7 +1352,7 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                             motdhash += ev->data->motd[ctr] + ctr;
                         }
                     }
-                    if (connectedServerName.empty() || config.servers[connectedServerName][motdKey].toULong() != motdhash) {
+                    if (motdAlways || connectedServerName.empty() || config.servers[connectedServerName][motdKey].toULong() != motdhash) {
                         if (connectedServerName.length()) {
                             config.servers[connectedServerName][motdKey] = motdhash;
                             config.servers.save();

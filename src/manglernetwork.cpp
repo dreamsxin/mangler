@@ -53,7 +53,7 @@ ManglerNetwork::connect(Glib::ustring hostname, Glib::ustring port, Glib::ustrin
         msgdialog->set_message(c_to_ustring(_v3_error(NULL)));
         builder->get_widget("progressbar", progressbar);
         progressbar->set_fraction(0);
-        progressbar->set_text("");
+        progressbar->hide();
         builder->get_widget("statusbar", statusbar);
         statusbar->pop();
         statusbar->push("Not connected.");
