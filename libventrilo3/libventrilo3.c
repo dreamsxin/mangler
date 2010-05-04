@@ -907,7 +907,9 @@ _v3_recv(int block) {/*{{{*/
                             _v3_net_message *msg;
                             v3_user *user;
 
-                            user = v3_get_user(v3_luser.id);
+                            if (!(user = v3_get_user(v3_luser.id))) {
+                                break;
+                            }
                             free(user->name);
                             free(user->phonetic);
                             free(user->comment);
@@ -1118,6 +1120,24 @@ _v3_recv(int block) {/*{{{*/
                             } else {
                                 _v3_debug(V3_DEBUG_SOCKET, "failed to send admin channel ban request");
                             }
+                            _v3_destroy_packet(msg);
+                        }
+                        break;/*}}}*/
+                    case V3_EVENT_ADMIN_GLOBAL_MUTE:/*{{{*/
+                        {
+                            _v3_net_message *msg;
+                            v3_user *user;
+
+                            if (!(user = v3_get_user(ev.user.id))) {
+                                break;
+                            }
+                            msg = _v3_put_0x46(ev.user.id, V3_USER_GLOBAL_MUTE, !user->global_mute);
+                            if (_v3_send(msg)) {
+                                _v3_debug(V3_DEBUG_SOCKET, "sent admin global mute request to server");
+                            } else {
+                                _v3_debug(V3_DEBUG_SOCKET, "failed to send admin global mute request");
+                            }
+                            v3_free_user(user);
                             _v3_destroy_packet(msg);
                         }
                         break;/*}}}*/
@@ -4109,7 +4129,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                             {
                                 _v3_debug(V3_DEBUG_INFO, "setting user %d as globally muted = %d", m->user_id, m->value);
                                 u->global_mute = m->value;
-                                v3_event *ev = _v3_create_event(V3_EVENT_USER_GLOBAL_MUTE_CHANGED);
+                                v3_event *ev = _v3_create_event(V3_EVENT_USER_GLOBAL_MUTE);
                                 ev->user.id = u->id;
                                 _v3_debug(V3_DEBUG_INFO, "queuing event type %d for user %d", ev->type, ev->user.id);
                                 v3_queue_event(ev);
@@ -4119,7 +4139,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                             {
                                 _v3_debug(V3_DEBUG_INFO, "setting user %d as channel muted = %d", m->user_id, m->value);
                                 u->channel_mute = m->value;
-                                v3_event *ev = _v3_create_event(V3_EVENT_USER_CHANNEL_MUTE_CHANGED);
+                                v3_event *ev = _v3_create_event(V3_EVENT_USER_CHANNEL_MUTE);
                                 ev->user.id = u->id;
                                 _v3_debug(V3_DEBUG_INFO, "queuing event type %d for user %d", ev->type, ev->user.id);
                                 v3_queue_event(ev);
@@ -4170,7 +4190,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                         {
                             v3_event *ev = _v3_create_event(V3_EVENT_CHAN_BADPASS);
                             ev->channel.id = m->channel->id;
-                            strncpy(ev->error.message, "Error switching to channel.  The password you entered is wrong or you do not have permission", 511);
+                            strncpy(ev->error.message, "Error switching to channel.  The password you entered is wrong or you do not have permission.", 511);
                             v3_queue_event(ev);
                         }
                         break;
@@ -5257,19 +5277,19 @@ v3_login(char *server, char *username, char *password, char *phonetic) {/*{{{*/
          * Tell server some specific client settings.
          */
         _v3_status(95, "Sending user settings.");
-        response = _v3_put_0x46(V3_USER_ACCEPT_PAGES, v3_luser.accept_pages);
+        response = _v3_put_0x46(v3_luser.id, V3_USER_ACCEPT_PAGES, v3_luser.accept_pages);
         _v3_send(response);
         _v3_destroy_packet(response);
 
-        response = _v3_put_0x46(V3_USER_ACCEPT_U2U, v3_luser.accept_u2u);
+        response = _v3_put_0x46(v3_luser.id, V3_USER_ACCEPT_U2U, v3_luser.accept_u2u);
         _v3_send(response);
         _v3_destroy_packet(response);
 
-        response = _v3_put_0x46(V3_USER_ACCEPT_CHAT, v3_luser.accept_chat);
+        response = _v3_put_0x46(v3_luser.id, V3_USER_ACCEPT_CHAT, v3_luser.accept_chat);
         _v3_send(response);
         _v3_destroy_packet(response);
 
-        response = _v3_put_0x46(V3_USER_ALLOW_RECORD, v3_luser.allow_recording);
+        response = _v3_put_0x46(v3_luser.id, V3_USER_ALLOW_RECORD, v3_luser.allow_recording);
         _v3_send(response);
         _v3_destroy_packet(response);
 
@@ -5853,6 +5873,30 @@ v3_admin_boot(enum _v3_boot_types type, uint16_t user_id, char *reason) {/*{{{*/
     fflush(v3_server.evoutstream);
     _v3_unlock_sendq();
     _v3_func_leave("v3_admin_boot");
+    return;
+}/*}}}*/
+
+void
+v3_admin_global_mute(uint16_t user_id) {/*{{{*/
+    v3_event ev;
+
+    _v3_func_enter("v3_admin_global_mute");
+    if (!v3_is_loggedin()) {
+        _v3_func_leave("v3_admin_global_mute");
+        return;
+    }
+    memset(&ev, 0, sizeof(v3_event));
+    ev.type = V3_EVENT_ADMIN_GLOBAL_MUTE;
+    ev.user.id = user_id;
+
+    _v3_lock_sendq();
+    _v3_debug(V3_DEBUG_EVENT, "sending %lu bytes to event pipe", sizeof(v3_event));
+    if (fwrite(&ev, sizeof(struct _v3_event), 1, v3_server.evoutstream) != 1) {
+        _v3_error("could not write to event pipe");
+    }
+    fflush(v3_server.evoutstream);
+    _v3_unlock_sendq();
+    _v3_func_leave("v3_admin_global_mute");
     return;
 }/*}}}*/
 
@@ -6770,14 +6814,15 @@ _v3_get_last_event(int *len) {/*{{{*/
 
 void
 v3_free_event(v3_event *ev) {/*{{{*/
-    if (ev && ev->data) {
+    if (!ev) {
+        return;
+    }
+    if (ev->data) {
         free(ev->data);
         ev->data = NULL;
     }
-    if (ev) {
-        free(ev);
-        ev = NULL;
-    }
+    free(ev);
+    ev = NULL;
 }/*}}}*/
 
 void

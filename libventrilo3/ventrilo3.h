@@ -275,8 +275,8 @@ enum _v3_events {
     V3_EVENT_USERLIST_MODIFY,
     V3_EVENT_USERLIST_REMOVE,
     V3_EVENT_USERLIST_CHANGE_OWNER,
-    V3_EVENT_USER_GLOBAL_MUTE_CHANGED,
-    V3_EVENT_USER_CHANNEL_MUTE_CHANGED,
+    V3_EVENT_USER_GLOBAL_MUTE,
+    V3_EVENT_USER_CHANNEL_MUTE,
     V3_EVENT_PERMS_UPDATED,
     V3_EVENT_USER_RANK_CHANGE,
     V3_EVENT_RECV_SRV_PROP,
@@ -290,6 +290,7 @@ enum _v3_events {
     V3_EVENT_ADMIN_KICK,
     V3_EVENT_ADMIN_BAN,
     V3_EVENT_ADMIN_CHANNEL_BAN,
+    V3_EVENT_ADMIN_GLOBAL_MUTE,
     V3_EVENT_FORCE_CHAN_MOVE,
     V3_EVENT_USERLIST_OPEN,
     V3_EVENT_USERLIST_CLOSE,
@@ -700,6 +701,7 @@ void        v3_change_channel(uint16_t channel_id, char *password);
 void        v3_admin_login(char *password);
 void        v3_admin_logout(void);
 void        v3_admin_boot(enum _v3_boot_types type, uint16_t user_id, char *reason);
+void        v3_admin_global_mute(uint16_t user_id);
 void        v3_phantom_add(uint16_t channel_id);
 void        v3_phantom_remove(uint16_t channel_id);
 void        v3_force_channel_move(uint16_t user_id, uint16_t channel_id);

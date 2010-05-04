@@ -921,7 +921,6 @@
                         </child>
                         <child>
                           <object class="GtkLabel" id="serverListDefaultChannelLabel">
-                            <property name="visible">True</property>
                             <property name="xalign">1</property>
                             <property name="label" translatable="yes">Default Channel:</property>
                           </object>
@@ -933,7 +932,6 @@
                         </child>
                         <child>
                           <object class="GtkEntry" id="serverListDefaultChannelEntry">
-                            <property name="visible">True</property>
                             <property name="sensitive">False</property>
                             <property name="can_focus">True</property>
                             <property name="tooltip_text" translatable="yes">Please use the context menu while connected 
@@ -3820,7 +3818,7 @@ These are useful for developers.</property>
     <child>
       <object class="GtkMenuItem" id="removePhantom">
         <property name="visible">True</property>
-        <property name="label" translatable="yes">Remove Phantom</property>
+        <property name="label" translatable="yes">Remove Ph_antom</property>
         <property name="use_underline">True</property>
       </object>
     </child>
@@ -3828,7 +3826,7 @@ These are useful for developers.</property>
       <object class="GtkMenuItem" id="copyComment">
         <property name="visible">True</property>
         <property name="tooltip_text" translatable="yes">Copy user's comment to clipboard</property>
-        <property name="label" translatable="yes">Copy Comment</property>
+        <property name="label" translatable="yes">Copy Co_mment</property>
         <property name="use_underline">True</property>
       </object>
     </child>
@@ -3836,52 +3834,61 @@ These are useful for developers.</property>
       <object class="GtkMenuItem" id="copyURL">
         <property name="visible">True</property>
         <property name="tooltip_text" translatable="yes">Copy user's URL to clipboard</property>
-        <property name="label" translatable="yes">Copy URL</property>
+        <property name="label" translatable="yes">Copy _URL</property>
+        <property name="use_underline">True</property>
+      </object>
+    </child>
+    <child>
+      <object class="GtkMenuItem" id="pageUser">
+        <property name="visible">True</property>
+        <property name="label" translatable="yes">_Page</property>
         <property name="use_underline">True</property>
       </object>
     </child>
     <child>
       <object class="GtkMenuItem" id="privateChat">
         <property name="visible">True</property>
-        <property name="label" translatable="yes">Private Chat</property>
+        <property name="label" translatable="yes">Private _Chat</property>
         <property name="use_underline">True</property>
       </object>
     </child>
     <child>
       <object class="GtkMenuItem" id="userSettings">
         <property name="visible">True</property>
-        <property name="label" translatable="yes">User Settings</property>
+        <property name="label" translatable="yes">User _Settings</property>
         <property name="use_underline">True</property>
       </object>
     </child>
     <child>
-      <object class="GtkMenuItem" id="muteUser">
+      <object class="GtkCheckMenuItem" id="muteUser">
         <property name="visible">True</property>
-        <property name="label" translatable="yes">Mute</property>
+        <property name="label" translatable="yes">Mut_e</property>
         <property name="use_underline">True</property>
       </object>
     </child>
     <child>
-      <object class="GtkSeparatorMenuItem" id="userRightClickMenuSeparator"/>
+      <object class="GtkSeparatorMenuItem" id="userRightClickMenuSeparator">
+        <property name="visible">True</property>
+      </object>
+    </child>
+    <child>
+      <object class="GtkCheckMenuItem" id="muteUserGlobal">
+        <property name="visible">True</property>
+        <property name="label" translatable="yes">_Global Mute</property>
+        <property name="use_underline">True</property>
+      </object>
     </child>
     <child>
       <object class="GtkMenuItem" id="kickUser">
         <property name="visible">True</property>
-        <property name="label" translatable="yes">Kick</property>
+        <property name="label" translatable="yes">_Kick</property>
         <property name="use_underline">True</property>
       </object>
     </child>
     <child>
       <object class="GtkMenuItem" id="banUser">
         <property name="visible">True</property>
-        <property name="label" translatable="yes">Ban</property>
-        <property name="use_underline">True</property>
-      </object>
-    </child>
-    <child>
-      <object class="GtkMenuItem" id="muteUserGlobal">
-        <property name="visible">True</property>
-        <property name="label" translatable="yes">Global Mute</property>
+        <property name="label" translatable="yes">_Ban</property>
         <property name="use_underline">True</property>
       </object>
     </child>
@@ -3891,14 +3898,26 @@ These are useful for developers.</property>
     <child>
       <object class="GtkMenuItem" id="addPhantom">
         <property name="visible">True</property>
-        <property name="label" translatable="yes">Add Phantom</property>
+        <property name="label" translatable="yes">_Add Phantom</property>
         <property name="use_underline">True</property>
+      </object>
+    </child>
+    <child>
+      <object class="GtkMenuItem" id="copyChannelComment">
+        <property name="visible">True</property>
+        <property name="label" translatable="yes">Copy Co_mment</property>
+        <property name="use_underline">True</property>
+      </object>
+    </child>
+    <child>
+      <object class="GtkSeparatorMenuItem" id="channelRightClickMenuSeparator">
+        <property name="visible">True</property>
       </object>
     </child>
     <child>
       <object class="GtkCheckMenuItem" id="setDefaultChannel">
         <property name="visible">True</property>
-        <property name="label" translatable="yes">Default Channel</property>
+        <property name="label" translatable="yes">_Default Channel</property>
         <property name="use_underline">True</property>
       </object>
     </child>

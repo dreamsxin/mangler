@@ -774,7 +774,7 @@ _v3_get_0x46(_v3_net_message *msg) {/*{{{*/
     return true;
 }/*}}}*/
 _v3_net_message *
-_v3_put_0x46(uint16_t setting, uint16_t value) {/*{{{*/
+_v3_put_0x46(uint16_t user_id, uint16_t setting, uint16_t value) {/*{{{*/
     _v3_net_message *m;
     _v3_msg_0x46 *mc;
 
@@ -790,7 +790,7 @@ _v3_put_0x46(uint16_t setting, uint16_t value) {/*{{{*/
     memset(mc, 0, sizeof(_v3_msg_0x46));
 
     mc->type = 0x46;
-    mc->user_id = v3_luser.id;
+    mc->user_id = user_id;
     mc->setting = setting;
     mc->value   = value;
     m->contents = mc;

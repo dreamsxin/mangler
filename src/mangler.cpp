@@ -484,6 +484,7 @@ void Mangler::onDisconnectHandler(void) {/*{{{*/
         menuitem->hide();
         builder->get_widget("adminWindowMenuItem", menuitem);
         menuitem->hide();
+        motdWindow->hide();
         motdNotebook->set_current_page(1);
         motdNotebook->set_show_tabs(false);
         motdUsers->get_buffer()->set_text("");
@@ -491,7 +492,7 @@ void Mangler::onDisconnectHandler(void) {/*{{{*/
         chat->clear();
         recorder->can_record(false);
         if (! connectedServerName.empty()) {
-            iniSection &server( config.servers[connectedServerName] );
+            iniSection &server(config.servers[connectedServerName]);
             connectedServerName = "";
             if (!wantDisconnect && server["PersistentConnection"].toBool()) {
                 connectbutton->set_label("gtk-cancel");
@@ -572,7 +573,7 @@ void Mangler::connectButton_clicked_cb(void) {/*{{{*/
         if (iter) {
             Gtk::TreeModel::Row row = *iter;
             connectedServerName = Glib::ustring( row[serverList->serverListColumns.name] );
-            iniSection &server( config.servers[connectedServerName] );
+            iniSection &server(config.servers[connectedServerName]);
             Glib::ustring hostname = server["hostname"].toCString();
             Glib::ustring port     = server["port"].toCString();
             Glib::ustring username = server["username"].toCString();
@@ -1114,21 +1115,30 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                     }
                     channelTree->expand_all();
                     audioControl->playNotification("login");
-                    if (! connectedServerName.empty()) {
-                        if (config.servers[connectedServerName]["PersistentComments"].toBool()) {
-                            comment = config.servers[connectedServerName]["Comment"].toUString();
-                            url = config.servers[connectedServerName]["URL"].toUString();
+                    if (connectedServerName.length()) {
+                        iniSection &server(config.servers[connectedServerName]);
+                        if (server["PersistentComments"].toBool()) {
+                            comment = server["Comment"].toUString();
+                            url = server["URL"].toUString();
                             v3_set_text(
                                     (char *)ustring_to_c(comment).c_str(),
                                     (char *)ustring_to_c(url).c_str(),
                                     (char *)ustring_to_c(integration_text).c_str(),
                                     true);
                         }
-                        // default channel
-                        uint32_t defaultChannelId = config.servers[connectedServerName]["DefaultChannelID"].toULong();
-                        if (defaultChannelId) {
-                            // for now, only handling right click menu set
-                            channelTree->channelView_switchChannel2Default(defaultChannelId);
+                        uint32_t channel_id = server["DefaultChannel"].toULong();
+                        if (channel_id && (c = v3_get_channel(channel_id))) {
+                            Glib::ustring password = channelTree->getChannelSavedPassword(channel_id);
+                            uint16_t pw_channel = 0;
+                            if ((pw_channel = v3_channel_requires_password(channel_id)) &&
+                                (password = channelTree->getChannelSavedPassword(pw_channel)).empty() &&
+                                (password = getPasswordEntry("Channel Password")).length()) {
+                                channelTree->setChannelSavedPassword(pw_channel, password);
+                            }
+                            if (!pw_channel || (pw_channel && password.length())) {
+                                v3_change_channel(channel_id, (char *)((pw_channel) ? password.c_str() : ""));
+                            }
+                            v3_free_channel(c);
                         }
                     }
                     if (chat->isOpen) {
@@ -1211,6 +1221,16 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                             (bool)u->real_user_id,
                             rank);
                     channelTree->setLastTransmit(ev->user.id, last_transmit);
+                    if (connectedServerName.length() && u->id != v3_get_user_id()) {
+                        // If we have a per user volume set for this user name, set it now.
+                        if (config.hasUserVolume(connectedServerName, u->name)) {
+                            v3_set_volume_user(u->id, config.UserVolume(connectedServerName, u->name).toInt());
+                        }
+                        // If the user was muted, mute them again.
+                        if (config.UserMuted(connectedServerName, u->name).toBool()) {
+                            channelTree->muteUserToggle(u->id);
+                        }
+                    }
                     // if there was an audio stream open for this user, close it
                     if (outputAudio[ev->user.id]) {
                         outputAudio[ev->user.id]->finish();
@@ -1559,8 +1579,8 @@ bool Mangler::getNetworkEvent() {/*{{{*/
             case V3_EVENT_CHAN_ADMIN_UPDATED:/*{{{*/
                 channelTree->refreshAllChannels();
                 break;/*}}}*/
-            case V3_EVENT_USER_GLOBAL_MUTE_CHANGED:
-            case V3_EVENT_USER_CHANNEL_MUTE_CHANGED:/*{{{*/
+            case V3_EVENT_USER_GLOBAL_MUTE:
+            case V3_EVENT_USER_CHANNEL_MUTE:/*{{{*/
                 channelTree->refreshUser(ev->user.id);
                 break;/*}}}*/
             case V3_EVENT_SERVER_PROPERTY_UPDATED:/*{{{*/

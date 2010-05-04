@@ -158,7 +158,7 @@ typedef struct _v3_net_message_0x46 {/*{{{*/
     uint32_t value;             // 8
 } __attribute__ ((__packed__)) _v3_msg_0x46;
 int _v3_get_0x46(_v3_net_message *msg);
-_v3_net_message *_v3_put_0x46(uint16_t setting, uint16_t value);/*}}}*/
+_v3_net_message *_v3_put_0x46(uint16_t user_id, uint16_t setting, uint16_t value);/*}}}*/
 typedef struct _v3_net_message_0x48 {/*{{{*/
     uint32_t type;              // 0
     uint32_t subtype;           // 4

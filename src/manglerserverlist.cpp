@@ -162,7 +162,7 @@ void ManglerServerList::clearEntries(void) {
     serverListServerNameEntry->set_text("");
     serverListHostnameEntry->set_text("");
     serverListPortEntry->set_text("");
-    serverListDefaultChannelEntry->set_text("");
+    //serverListDefaultChannelEntry->set_text("");
     serverListUsernameEntry->set_text("");
     serverListPasswordEntry->set_text("");
     serverListPhoneticEntry->set_text("");
@@ -206,7 +206,7 @@ void ManglerServerList::editRow(const std::string &name) {
     // get the whole path instead of just the name
     // maybe use something from the admin window code?
     //uint32_t server_defaultchan = server["DefaultChannel"].toULong();
-    serverListDefaultChannelEntry->set_text("");
+    //serverListDefaultChannelEntry->set_text("");
     serverListUsernameEntry->set_text(server["Username"].toUString());
     serverListPasswordEntry->set_text(server["Password"].toUString());
     serverListPhoneticEntry->set_text(server["Phonetic"].toUString());
@@ -259,7 +259,7 @@ void ManglerServerList::saveRow() {
     uint32_t server_defaultchan = 0;
     // if name changed, remove old section first
     if (! editorName.empty() && server_name != editorName) {
-        server_defaultchan = Mangler::config.servers[Glib::locale_from_utf8(editorName)]["DefaultChannelID"].toULong();
+        server_defaultchan = Mangler::config.servers[Glib::locale_from_utf8(editorName)]["DefaultChannel"].toULong();
         Mangler::config.servers.erase(editorName);
     }
 
@@ -268,7 +268,7 @@ void ManglerServerList::saveRow() {
     server["Hostname"]              = trim(serverListHostnameEntry->get_text());
     server["Port"]                  = trim(serverListPortEntry->get_text());
     if (server_defaultchan) {
-        server["DefaultChannelID"]  = server_defaultchan;
+        server["DefaultChannel"]    = server_defaultchan;
     }
     server["Username"]              = trim(serverListUsernameEntry->get_text());
     server["Password"]              = trim(serverListPasswordEntry->get_text());
