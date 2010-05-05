@@ -213,7 +213,6 @@ void *jukebox_player(void *connptr) {
                     } else {
                         v3_change_channel(atoi(conninfo->channelid), "");
                     }
-                    sleep(1);
                     v3_join_chat();
                     connected = true;
                     break;

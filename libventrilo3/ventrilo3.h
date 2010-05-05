@@ -624,8 +624,6 @@ typedef struct __v3_server {
     char *guest_motd;                 // Guest message of the day
     int auth_server_index;            // The array index of the authentication server
     int evpipe[2];                    // This is a pipe that libventrilo3 listens on for outbound events
-    FILE *evinstream;                 // The inbound stream for the event queue pipe
-    FILE *evoutstream;                // The outbound stream for the event queue pipe
     uint16_t codec;                   // The server's default codec
     uint16_t codec_format;            // The server's default codec format
     ventrilo_key_ctx server_key;      // The key used for decrypting messages from the server
@@ -634,9 +632,9 @@ typedef struct __v3_server {
     _v3_net_message *queue;           // This queue (linked list) stores messages that need to be processed by the client
     struct timeval last_timestamp;    // The time() of the last timestamp, a timestamp is sent every 10 seconds
     uint32_t recv_packet_count;       // Total amount of packets received from server.
-    uint32_t recv_byte_count;         // Total amount of bytes received from server.
+    uint64_t recv_byte_count;         // Total amount of bytes received from server.
     uint32_t sent_packet_count;       // Total amount of packets received from server.
-    uint32_t sent_byte_count;         // Total amount of bytes received from server.
+    uint64_t sent_byte_count;         // Total amount of bytes received from server.
     uint8_t motd_always;              // Always display MOTD
     uint8_t per_channel_chat;         // Global or Per Channel chat filter
     uint8_t channel_manual_sort;      // Display the channels alphabetical or manual
@@ -700,7 +698,7 @@ void        v3_logout(void);
 void        v3_change_channel(uint16_t channel_id, char *password);
 void        v3_admin_login(char *password);
 void        v3_admin_logout(void);
-void        v3_admin_boot(enum _v3_boot_types type, uint16_t user_id, char *reason);
+void        v3_admin_boot(int type, uint16_t user_id, char *reason);
 void        v3_admin_global_mute(uint16_t user_id);
 void        v3_phantom_add(uint16_t channel_id);
 void        v3_phantom_remove(uint16_t channel_id);
@@ -722,8 +720,8 @@ uint32_t    v3_get_soundq_length(void);
 v3_event    *v3_get_event(int block);
 int         v3_get_max_clients(void);
 int         v3_is_licensed(void);
-uint32_t    v3_get_bytes_recv(void);
-uint32_t    v3_get_bytes_sent(void);
+uint64_t    v3_get_bytes_recv(void);
+uint64_t    v3_get_bytes_sent(void);
 uint32_t    v3_get_packets_recv(void);
 uint32_t    v3_get_packets_sent(void);
 void        v3_clear_events(void);

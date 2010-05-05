@@ -30,19 +30,14 @@
 #include "config.h"
 #endif
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdarg.h>
-#include <string.h>
-#include <time.h>
-#include <sys/time.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <netdb.h>
-#include <errno.h>
+#include "ventrilo3.h"
+#include "libventrilo3.h"
+#include "libventrilo3_message.h"
+
 #include <unistd.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 #include <math.h>
 
 #if HAVE_SPEEX_DSP
@@ -60,17 +55,12 @@
 # include <gsm/gsm.h>
 #endif
 
-
 // TODO: check how portable this is... (known good: ubuntu, arch)
 #define __USE_UNIX98
 #include <pthread.h>
 #undef __USE_UNIX98
 
 extern int h_errno;
-
-#include "ventrilo3.h"
-#include "libventrilo3.h"
-#include "libventrilo3_message.h"
 
 #define true  1
 #define false 0
@@ -140,7 +130,6 @@ _v3_func_enter(char *func) {/*{{{*/
     snprintf(buf, 255, "---> %s()", func);
     _v3_debug(V3_DEBUG_STACK, buf);
     stack_level++;
-    return;
 }/*}}}*/
 
 void
@@ -159,7 +148,6 @@ _v3_func_leave(char *func) {/*{{{*/
     stack_level--;
     snprintf(buf, 255, "<--- %s()", func);
     _v3_debug(V3_DEBUG_STACK, buf);
-    return;
 }/*}}}*/
 
 char *
@@ -232,7 +220,6 @@ _v3_net_message_dump_raw(char *data, int len) {/*{{{*/
                     );
         }
     }
-    return;
 }/*}}}*/
 
 void
@@ -285,7 +272,6 @@ _v3_hexdump(char *data, int len) {/*{{{*/
                         );
         }
     }
-    return;
 }/*}}}*/
 
 void
@@ -356,7 +342,6 @@ _v3_net_message_dump(_v3_net_message *msg) {/*{{{*/
                         );
         }
     }
-    return;
 }/*}}}*/
 
 void
@@ -431,9 +416,10 @@ _v3_print_permissions(v3_permissions *perms) {/*{{{*/
     _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown_perm_15.....: %d",   perms->unknown_perm_15);
 }/*}}}*/
 
-int
+void
 _v3_destroy_packet(_v3_net_message *msg) {/*{{{*/
     _v3_func_enter("_v3_destroy_packet");
+
     if (msg->contents == msg->data) {
         _v3_debug(V3_DEBUG_MEMORY, "contents and data are same memory.  freeing contents");
         free(msg->contents);
@@ -457,7 +443,6 @@ _v3_destroy_packet(_v3_net_message *msg) {/*{{{*/
     }
 
     _v3_func_leave("_v3_destroy_packet");
-    return true;
 }/*}}}*/
 
 int
@@ -506,19 +491,17 @@ _v3_server_auth(struct in_addr *srvip, uint16_t srvport) {/*{{{*/
     buf[11] = 200;
     buf[12] = 2;
 
-    sd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
-    if (sd < 0) {
-        _v3_error("could not authenticate server: failed to create socket");
+    if ((sd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) < 0) {
+        _v3_error("could not authenticate server: failed to create socket: %s", strerror(errno));
         _v3_func_leave("_v3_server_auth");
         return false;
     }
-
     sa.sin_family = AF_INET;
     sa.sin_addr.s_addr = srvip->s_addr;
     sa.sin_port = htons(srvport);
     _v3_debug(V3_DEBUG_INFO, "checking version of %s:%d", inet_ntoa(*srvip), srvport);
-    if (sendto(sd, buf, 200, 0, (struct sockaddr *)&sa,  sizeof(struct sockaddr_in)) == -1) {
-        _v3_error("could not authenticate server: failed to send auth packet");
+    if (sendto(sd, buf, 200, 0, (struct sockaddr *)&sa, sizeof(struct sockaddr_in)) < 0) {
+        _v3_error("could not authenticate server: failed to send auth packet: %s", strerror(errno));
         shutdown(sd, SHUT_WR);
         close(sd);
         _v3_func_leave("_v3_server_auth");
@@ -528,14 +511,13 @@ _v3_server_auth(struct in_addr *srvip, uint16_t srvport) {/*{{{*/
     tout.tv_usec = 0;
     FD_ZERO(&fd_read);
     FD_SET(sd, &fd_read);
-    if(select(sd + 1, &fd_read, NULL, NULL, &tout) <= 0) {
+    if (select(sd + 1, &fd_read, NULL, NULL, &tout) <= 0) {
         _v3_error("could not authenticate server: timed out waiting for auth server");
         _v3_func_leave("_v3_server_auth");
         return false;
     }
-    len = recvfrom(sd, buf, sizeof(buf), 0, NULL, NULL);
-    if (len < 0) {
-        _v3_error("could not authenticate server: udp receive failed");
+    if ((len = recvfrom(sd, buf, sizeof(buf), 0, NULL, NULL)) < 0) {
+        _v3_error("could not authenticate server: udp receive failed: %s", strerror(errno));
         _v3_func_leave("_v3_server_auth");
         return false;
     }
@@ -556,6 +538,7 @@ _v3_server_auth(struct in_addr *srvip, uint16_t srvport) {/*{{{*/
     memcpy(v3_server.handshake, handshake, 16);
     v3_server.auth_server_index = hs_srv_num;
     _v3_debug(V3_DEBUG_INFO, "authserver index: %d -> %d", hs_srv_num, v3_server.auth_server_index);
+
     _v3_func_leave("_v3_server_auth");
     return true;
 }/*}}}*/
@@ -568,23 +551,23 @@ _v3_login_connect(struct in_addr *srvip, uint16_t srvport) {/*{{{*/
     _v3_func_enter("_v3_login_connect");
     _v3_sockd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     setsockopt(_v3_sockd, SOL_SOCKET, SO_LINGER, (char *)&ling, sizeof(ling));
-
     sa.sin_family = AF_INET;
     sa.sin_addr.s_addr = srvip->s_addr;
     sa.sin_port = htons(srvport);
-    if (connect(_v3_sockd, (struct sockaddr *)&sa, sizeof(sa)) == -1) {
+    if (connect(_v3_sockd, (struct sockaddr *)&sa, sizeof(sa)) < 0) {
         _v3_error("failed to connect: %s", strerror(errno));
         _v3_func_leave("_v3_login_connect");
         return false;
     }
+
     _v3_func_leave("_v3_login_connect");
     return true;
 }/*}}}*/
 
 int
 _v3_send(_v3_net_message *message) {/*{{{*/
-
     _v3_func_enter("_v3_send");
+
     _v3_debug(V3_DEBUG_PACKET, "======= building TCP packet =====================================");
     _v3_net_message_dump(message);
 
@@ -616,6 +599,7 @@ _v3_send_enc_msg(char *data, int len) {/*{{{*/
         _v3_func_leave("_v3_send_enc_msg");
         return false;
     }
+
     _v3_func_leave("_v3_send_enc_msg");
     return true;
 }/*}}}*/
@@ -642,11 +626,9 @@ _v3_recv(int block) {/*{{{*/
         if (waiting == V3_BOTH_WAITING || waiting == V3_EVENT_WAITING) {
             // receiving an event from the event pipe
             v3_event ev;
-            memset(&ev, 0, sizeof(v3_event));
             _v3_debug(V3_DEBUG_EVENT, "event waiting to be processed and sent outbound");
-            if (fread(&ev, sizeof(ev), 1, v3_server.evinstream) != 1) {
-                _v3_error("failed to receive from outbound pipe");
-            } else {
+            _v3_lock_sendq();
+            while (read(v3_server.evpipe[0], &ev, sizeof(v3_event)) == sizeof(v3_event)) {
                 switch (ev.type) {
                     case V3_EVENT_DISCONNECT:/*{{{*/
                         {
@@ -1237,6 +1219,7 @@ _v3_recv(int block) {/*{{{*/
                     free(ev.data);
                 }
             }
+            _v3_unlock_sendq();
             if (waiting != V3_BOTH_WAITING) {
                 continue;
             }
@@ -1269,8 +1252,7 @@ _v3_recv(int block) {/*{{{*/
                 v3_server.recv_byte_count += msg->len;
                 _v3_debug(V3_DEBUG_SOCKET, "received %d bytes", msg->len);
             }
-
-            if(v3_server.recv_packet_count == 1) {
+            if (v3_server.recv_packet_count == 1) {
                 ventrilo_first_dec((uint8_t *)msgdata, msg->len);
             } else {
                 ventrilo_dec(&v3_server.server_key, (uint8_t *)msgdata, msg->len);
@@ -1286,7 +1268,8 @@ _v3_recv(int block) {/*{{{*/
             return msg;
         }
     }
-    _v3_func_leave("nothing waiting and non-blocking requested");
+    _v3_debug(V3_DEBUG_EVENT, "nothing waiting and non-blocking requested");
+
     _v3_func_leave("_v3_recv");
     return NULL;
 }/*}}}*/
@@ -1343,6 +1326,7 @@ _v3_recv_enc_msg(char *data) {/*{{{*/
     }
     memcpy(data, buff, len);
     _v3_net_message_dump_raw(data, len);
+
     _v3_func_leave("_v3_recv_enc_msg");
     return len;
 }/*}}}*/
@@ -1370,12 +1354,11 @@ v3_message_waiting(int block) {/*{{{*/
     if (block) {
         gettimeofday(&now, NULL);
         _v3_next_timestamp(&tv, &v3_server.last_timestamp);
+        _v3_debug(V3_DEBUG_INFO, "outbound timestamp pending in %d.%d seconds", tv.tv_sec, tv.tv_usec);
     } else {
-        tv.tv_sec=0;
-        tv.tv_usec=0;
+        tv.tv_sec  = 0;
+        tv.tv_usec = 0;
     }
-    _v3_debug(V3_DEBUG_INFO, "outbound timestamp pending in %d.%d seconds", tv.tv_sec, tv.tv_usec);
-
     while ((ret = select(_v3_sockd > v3_server.evpipe[0] ? _v3_sockd+1 : v3_server.evpipe[0]+1, &rset, NULL, NULL, &tv)) >= 0) {
         _v3_next_timestamp(&tv, &v3_server.last_timestamp);
         _v3_debug(V3_DEBUG_INFO, "outbound timestamp pending in %d.%d seconds", tv.tv_sec, tv.tv_usec);
@@ -1388,7 +1371,6 @@ v3_message_waiting(int block) {/*{{{*/
             FD_ZERO(&rset);
             FD_SET(v3_server.evpipe[0], &rset);
             FD_SET(_v3_sockd, &rset);
-
             m = _v3_put_0x4b();
             _v3_send(m);
             _v3_destroy_packet(m);
@@ -1414,7 +1396,9 @@ v3_message_waiting(int block) {/*{{{*/
             return false;
         }
     }
-    _v3_error("select failed");
+    _v3_error("select failed: %s", strerror(errno));
+
+    _v3_func_leave("v3_message_waiting");
     return false;
 }/*}}}*/
 
@@ -1424,14 +1408,14 @@ _v3_hash_password(uint8_t *password, uint8_t *hash) {/*{{{*/
     uint8_t  tmp[4] = { 0 };
 
     len = cnt = strlen((char *)password);
-    for(i = 0; i < 32; i++, cnt++) {
+    for (i = 0; i < 32; i++, cnt++) {
         hash[i] = i < len ? password[i] : ((tmp[(cnt + 1) & 3] + hash[i-len]) - 0x3f) & 0x7f;
         for(j = 0, crc = 0; j < i + 1; j++) {
             crc = _v3_hash_table[hash[j] ^ (crc & 0xff)] ^ (crc >> 8);
         }
         *(uint32_t*)tmp = htonl(crc);
         cnt += hash[i];
-        if(crc) {
+        if (crc) {
             while(!tmp[cnt & 3]) cnt++;
         }
         hash[i] += tmp[cnt & 3];
@@ -1441,10 +1425,12 @@ _v3_hash_password(uint8_t *password, uint8_t *hash) {/*{{{*/
 int
 _v3_close_connection(void) {/*{{{*/
     _v3_func_enter("_v3_close_connection");
+
     _v3_user_loggedin = 0;
     shutdown(_v3_sockd, SHUT_WR);
     close(_v3_sockd);
     _v3_sockd = -1;
+
     _v3_func_leave("_v3_close_connection");
     return _v3_sockd == -1 ? true : false;
 }/*}}}*/
@@ -1452,12 +1438,14 @@ _v3_close_connection(void) {/*{{{*/
 int
 _v3_is_connected(void) {/*{{{*/
     _v3_func_enter("_v3_is_connected");
+
     if (_v3_sockd != -1) {
         _v3_debug(V3_DEBUG_SOCKET, "client is connected with socket descriptor: %d", _v3_sockd);
     } else {
         _v3_debug(V3_DEBUG_SOCKET, "client is not connected", _v3_sockd);
     }
     _v3_func_leave("_v3_is_connected");
+
     return _v3_sockd == -1 ? false : true;
 }/*}}}*/
 
@@ -1508,6 +1496,7 @@ _v3_update_channel(v3_channel *channel) {/*{{{*/
         _v3_debug(V3_DEBUG_INFO, "added channel %s (codec %d/%d)",  c->name, c->channel_codec, c->channel_format);
     }
     _v3_unlock_channellist();
+
     _v3_func_leave("_v3_update_channel");
     return true;
 }/*}}}*/
@@ -1579,6 +1568,7 @@ _v3_update_user(v3_user *user) {/*{{{*/
         u->next             = NULL;
     }
     _v3_unlock_userlist();
+
     _v3_func_leave("_v3_update_user");
     return true;
 }/*}}}*/
@@ -1623,6 +1613,7 @@ _v3_update_rank(v3_rank *rank) {/*{{{*/
         r->next             = NULL;
     }
     _v3_unlock_ranklist();
+
     _v3_func_leave("_v3_update_rank");
     return true;
 }/*}}}*/
@@ -1630,7 +1621,7 @@ _v3_update_rank(v3_rank *rank) {/*{{{*/
 void
 _v3_print_channel_list(void) {/*{{{*/
     v3_channel *c;
-    int ctr=0;
+    int ctr = 0;
 
     for (c = v3_channel_list; c != NULL; c = c->next) {
         _v3_debug(V3_DEBUG_INFO, "=====[ channel %d ]====================================================================", ctr++);
@@ -1658,6 +1649,7 @@ _v3_destroy_channellist(void) {/*{{{*/
     }
     v3_channel_list = NULL;
     _v3_unlock_channellist();
+
     _v3_func_leave("_v3_destroy_channellist");
 }/*}}}*/
 
@@ -1679,8 +1671,9 @@ _v3_remove_user(uint16_t id) {/*{{{*/
         }
         last = u;
     }
-    _v3_func_leave("_v3_remove_user");
     _v3_unlock_userlist();
+
+    _v3_func_leave("_v3_remove_user");
     return false;
 }/*}}}*/
 
@@ -1702,8 +1695,9 @@ _v3_remove_channel(uint16_t id) {/*{{{*/
         }
         last = c;
     }
-    _v3_func_leave("_v3_remove_channel");
     _v3_unlock_channellist();
+
+    _v3_func_leave("_v3_remove_channel");
     return false;
 }/*}}}*/
 
@@ -1725,15 +1719,16 @@ _v3_remove_rank(uint16_t id) {/*{{{*/
         }
         last = r;
     }
-    _v3_func_leave("_v3_remove_rank");
     _v3_unlock_ranklist();
+
+    _v3_func_leave("_v3_remove_rank");
     return false;
 }/*}}}*/
 
 void
 _v3_print_user_list(void) {/*{{{*/
     v3_user *u;
-    int ctr=0;
+    int ctr = 0;
 
     for (u = v3_user_list; u != NULL; u = u->next) {
         _v3_debug(V3_DEBUG_INFO, "=====[ user %d ]====================================================================", ctr++);
@@ -1763,6 +1758,7 @@ _v3_destroy_userlist(void) {/*{{{*/
         u = next;
     }
     v3_user_list = NULL;
+
     _v3_func_leave("_v3_destroy_userlist");
 }/*}}}*/
 
@@ -1892,7 +1888,7 @@ _v3_lock_sendq(void) {/*{{{*/
     if (sendq_mutex == NULL) {
         pthread_mutexattr_t mta;
         pthread_mutexattr_init(&mta);
-        pthread_mutexattr_settype(&mta, PTHREAD_MUTEX_ERRORCHECK);
+        pthread_mutexattr_settype(&mta, PTHREAD_MUTEX_RECURSIVE);
 
         _v3_debug(V3_DEBUG_MUTEX, "initializing sendq mutex");
         sendq_mutex = malloc(sizeof(pthread_mutex_t));
@@ -1908,7 +1904,7 @@ _v3_unlock_sendq(void) {/*{{{*/
     if (sendq_mutex == NULL) {
         pthread_mutexattr_t mta;
         pthread_mutexattr_init(&mta);
-        pthread_mutexattr_settype(&mta, PTHREAD_MUTEX_ERRORCHECK);
+        pthread_mutexattr_settype(&mta, PTHREAD_MUTEX_RECURSIVE);
 
         _v3_debug(V3_DEBUG_MUTEX, "initializing sendq mutex");
         sendq_mutex = malloc(sizeof(pthread_mutex_t));
@@ -2046,14 +2042,14 @@ _v3_parse_filter(v3_sp_filter *f, char *value) {/*{{{*/
     // we added 1)
     if (i == (void *)1) {
         _v3_func_leave("_v3_parse_filter");
-        return 0;
+        return false;
     }
     tmp = i - 1;
     *tmp = 0;
     t = strchr(i, ',') + 1;
     if (t == (void *)1) {
         _v3_func_leave("_v3_parse_filter");
-        return 0;
+        return false;
     }
     tmp = t - 1;
     *tmp = 0;
@@ -2061,8 +2057,9 @@ _v3_parse_filter(v3_sp_filter *f, char *value) {/*{{{*/
     f->interval = atoi(i);
     f->times = atoi(t);
     _v3_debug(V3_DEBUG_INFO, "parsed filter: %d, %d, %d\n", f->action, f->interval, f->times);
+
     _v3_func_leave("_v3_parse_filter");
-    return 1;
+    return true;
 }/*}}}*/
 
 uint8_t *
@@ -3768,10 +3765,11 @@ _v3_vrf_recover(_v3_vrf *vrfh) {/*{{{*/
 int
 _v3_process_message(_v3_net_message *msg) {/*{{{*/
     _v3_func_enter("_v3_process_message");
+
     _v3_debug(V3_DEBUG_INTERNAL, "beginning packet processing on msg type '0x%02X' (%d)", msg->type, (uint16_t)msg->type);
     switch (msg->type) {
         case 0x06:/*{{{*/
-            if(!_v3_get_0x06(msg)) {
+            if (!_v3_get_0x06(msg)) {
                 _v3_destroy_packet(msg);
                 _v3_func_leave("_v3_process_message");
                 return V3_MALFORMED;
@@ -3782,17 +3780,17 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                 int disconnected = false;
 
                 _v3_lock_server();
-                if(m->subtype & 0x01) {
+                if (m->subtype & 0x01) {
                     error = true;
                     disconnected = true;
                     strncat(buf, "You have been disconnected from the server.\n", 511);
                     _v3_logout();
                 }
-                if(m->subtype & 0x02) {
+                if (m->subtype & 0x02) {
                     v3_event *ev = _v3_create_event(V3_EVENT_ADMIN_AUTH);
                     v3_queue_event(ev);
                 }
-                if(m->subtype & 0x04) {
+                if (m->subtype & 0x04) {
                     if (ventrilo_read_keys(&v3_server.client_key, &v3_server.server_key, m->encryption_key, msg->len - 12) < 0) {
                         _v3_error("could not parse keys from the server");
                         free(m->encryption_key);
@@ -3801,24 +3799,24 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                     }
                     free(m->encryption_key);
                 }
-                if(m->subtype & 0x10) {
+                if (m->subtype & 0x10) {
                     _v3_debug(V3_DEBUG_INTERNAL, "FIXME: Unknown subtype, please report a packetdump.");
                 }
-                if(m->subtype & 0x20) {
+                if (m->subtype & 0x20) {
                     _v3_debug(V3_DEBUG_INTERNAL, "FIXME: Unknown subtype, please report a packetdump.");
                 }
-                if(m->subtype & 0x40) {
+                if (m->subtype & 0x40) {
                     error = true;
                     strncat(buf, "The supplied password is incorrect.\n", 511);
                 }
-                if(m->subtype & 0x100) {
+                if (m->subtype & 0x100) {
                     _v3_debug(V3_DEBUG_INTERNAL, "FIXME: Unknown subtype, please report a packetdump.");
                 }
-                if(m->subtype & 0x200) {
+                if (m->subtype & 0x200) {
                     error = true;
                     strncat(buf, _v3_server_disabled_errors[m->error_id-1], 511);
                 }
-                if(m->subtype & 0x400) {
+                if (m->subtype & 0x400) {
                     _v3_debug(V3_DEBUG_INTERNAL, "FIXME: Unknown subtype, please report a packetdump.");
                 }
 
@@ -4366,7 +4364,6 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                                 prop.inactivity_action = atoi(m->value);;
                                 break;
                             case V3_SRV_PROP_INACTIVE_CHAN:
-                                // strncpy(prop.inactivity_channel, m->value, 1023);
                                 prop.inactivity_channel = v3_get_channel_id(m->value, "/");
                                 break;
                             case V3_SRV_PROP_REM_SRV_COMMENT:
@@ -4490,7 +4487,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                 int size = 0;
 
                 _v3_lock_server();
-                if(m->message_id + 1 > m->message_num) {
+                if (m->message_id + 1 > m->message_num) {
                     _v3_debug(V3_DEBUG_PACKET_PARSE, "received %d packet but max packets is %d", m->message_id, m->message_num);
                     _v3_func_leave("_v3_get_0x50");
                     _v3_unlock_server();
@@ -4501,7 +4498,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                 } else {
                     motd = &v3_server.motd;
                 }
-                if(m->message_id == 0) {
+                if (m->message_id == 0) {
                     if (*motd != NULL) {
                         free(*motd);
                     }
@@ -4715,7 +4712,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                         case V3_PHANTOM_ADD:
                             new_phantom_user.id = m->phantom_user_id;
                             new_phantom_user.channel = m->channel_id;
-                            new_phantom_user.name = v3_get_user(m->real_user_id)->name;
+                            new_phantom_user.name = _v3_get_user(m->real_user_id)->name;
                             new_phantom_user.comment = "";
                             new_phantom_user.phonetic = "";
                             new_phantom_user.integration_text = "";
@@ -5112,8 +5109,9 @@ v3_login(char *server, char *username, char *password, char *phonetic) {/*{{{*/
     srvport = sep+1;
     _v3_debug(V3_DEBUG_INTERNAL, "parsed server name: %s", srvname);
     _v3_debug(V3_DEBUG_INTERNAL, "parsed server port: %s", srvport);
+
     /*
-       If the supplied server name  is not an IP address, perform a DNS lookup
+     * If the supplied server name is not an IP address, perform a DNS lookup.
      */
     if (! inet_aton(srvname, &srvip)) {
         struct hostent *hp;
@@ -5135,8 +5133,8 @@ v3_login(char *server, char *username, char *password, char *phonetic) {/*{{{*/
         }
         free(tmphstbuf);
 #else
-        // if gethostbyname_r does not exist, assume that the gethostbyname is re-entrant
-        hp = gethostbyname (srvname);
+        // if gethostbyname_r does not exist, assume that gethostbyname is re-entrant
+        hp = gethostbyname(srvname);
 #endif
         if (res || hp == NULL || hp->h_length < 1) {
             _v3_error("Hostname lookup failed.");
@@ -5146,35 +5144,53 @@ v3_login(char *server, char *username, char *password, char *phonetic) {/*{{{*/
         memcpy(&srvip.s_addr, hp->h_addr_list[0], sizeof(srvip.s_addr));
         _v3_debug(V3_DEBUG_INTERNAL, "found host: %s", inet_ntoa(srvip));
     }
+
     /*
-     * Intialize the server and user structures;
+     * Create the outbound event queue.
+     */
+    if (pipe(v3_server.evpipe)) {
+        _v3_error("could not create outbound event queue: %s", strerror(errno));
+        _v3_func_leave("v3_login");
+        return false;
+    }
+    int ctr, flags;
+    for (ctr = 0; ctr < 2; ctr++) {
+        if ((flags = fcntl(v3_server.evpipe[ctr], F_GETFL, 0)) >= 0) {
+            flags |= O_NONBLOCK;
+            fcntl(v3_server.evpipe[ctr], F_SETFL, flags);
+        } else {
+            _v3_error("could not set non-blocking mode for outbound event queue: %s", strerror(errno));
+            close(v3_server.evpipe[0]);
+            close(v3_server.evpipe[1]);
+            free(srvname);
+            _v3_func_leave("v3_login");
+            return false;
+        }
+    }
+
+    /*
+     * Initialize the server and user structures.
      */
     v3_server.ip = srvip.s_addr;
     v3_server.port = atoi(srvport);
     v3_luser.name = strdup(username);
     v3_luser.password = strdup(password);
     v3_luser.phonetic = strdup(phonetic);
-    _v3_init_decoders();
-    if (pipe(v3_server.evpipe)) {
-        _v3_error("could not create outbound event queue");
-        _v3_func_leave("v3_login");
-        return false;
-    }
-    v3_server.evinstream = fdopen(v3_server.evpipe[0], "r");
-    v3_server.evoutstream = fdopen(v3_server.evpipe[1], "w");
     free(srvname);
+    _v3_init_decoders();
+
     /*
-       Call home and verify the server's license
+     * Call home and verify the server's license.
      */
     _v3_status(10, "Checking server license.");
-    if (! _v3_server_auth(&srvip, (uint16_t) v3_server.port)) {
+    if (! _v3_server_auth(&srvip, (uint16_t)v3_server.port)) {
         _v3_status(0, "Not connected.");
         _v3_func_leave("v3_login");
         return false;
     }
 
     /*
-       Create a TCP connection to the server
+     * Create a TCP connection to the server.
      */
     if (!_v3_login_connect(&srvip, (uint16_t) v3_server.port)) {
         _v3_status(0, "Not connected.");
@@ -5185,7 +5201,7 @@ v3_login(char *server, char *username, char *password, char *phonetic) {/*{{{*/
     gettimeofday(&v3_server.last_timestamp, NULL);
 
     /*
-       Initiate the encryption handshake by handing the server our randomly generated key.
+     * Initiate the encryption handshake by handing the server our randomly generated key.
      */
     msg = _v3_put_0x00();
     ventrilo_first_enc((uint8_t *)msg->data, msg->len);
@@ -5193,7 +5209,7 @@ v3_login(char *server, char *username, char *password, char *phonetic) {/*{{{*/
     _v3_destroy_packet(msg);
 
     /*
-       Grab server information.
+     * Grab server information.
      */
     msg = _v3_recv(V3_BLOCK);
     if (!msg) {
@@ -5204,26 +5220,26 @@ v3_login(char *server, char *username, char *password, char *phonetic) {/*{{{*/
     _v3_process_message(msg);
 
     /*
-       User was banned, get to the choppah!
+     * User was banned, get to the choppah!
      */
-    if(type == 0x59) {
+    if (type == 0x59) {
         _v3_func_leave("v3_login");
         return false;
     }
 
     /*
-       Send authentication info.
+     * Send authentication info.
      */
     msg = _v3_put_0x48();
     _v3_send(msg);
     _v3_destroy_packet(msg);
 
     /*
-       Process several messages until we're logged in.
+     * Process several messages until we're logged in.
      */
     do {
         msg = _v3_recv(V3_BLOCK);
-        if(!msg) {
+        if (!msg) {
             _v3_func_leave("v3_login");
             return false;
         }
@@ -5258,9 +5274,8 @@ v3_login(char *server, char *username, char *password, char *phonetic) {/*{{{*/
             case V3_FAILURE:
                 _v3_func_leave("v3_login");
                 return false;
-                break;
         }
-    } while(type != 0x34);
+    } while (type != 0x34);
 
     if (v3_is_loggedin()) {
         _v3_net_message *response;
@@ -5309,6 +5324,26 @@ v3_login(char *server, char *username, char *password, char *phonetic) {/*{{{*/
     }
 }/*}}}*/
 
+int
+_v3_evpipe_write(int fd, v3_event *ev) {/*{{{*/
+    _v3_func_enter("_v3_evpipe_write");
+
+    if (fd < 0 || !ev) {
+        _v3_func_leave("_v3_evpipe_write");
+        return V3_FAILURE;
+    }
+    _v3_lock_sendq();
+    _v3_debug(V3_DEBUG_EVENT, "sending %lu bytes to event pipe", sizeof(v3_event));
+    if (write(fd, ev, sizeof(v3_event)) != sizeof(v3_event)) {
+        _v3_error("could not write to event pipe: %s", strerror(errno));
+    }
+    fsync(fd);
+    _v3_unlock_sendq();
+
+    _v3_func_leave("_v3_evpipe_write");
+    return V3_OK;
+}/*}}}*/
+
 void
 v3_join_chat(void) {/*{{{*/
     v3_event ev;
@@ -5320,17 +5355,9 @@ v3_join_chat(void) {/*{{{*/
     }
     memset(&ev, 0, sizeof(v3_event));
     ev.type = V3_EVENT_CHAT_JOIN;
-    _v3_lock_sendq();
-    _v3_debug(V3_DEBUG_EVENT, "sending %lu bytes to event pipe", sizeof(v3_event));
-    if (fwrite(&ev, sizeof(struct _v3_event), 1, v3_server.evoutstream) != 1) {
-        _v3_error("could not write to event pipe");
-        _v3_func_leave("v3_join_chat");
-        return;
-    }
-    fflush(v3_server.evoutstream);
-    _v3_unlock_sendq();
+
+    _v3_evpipe_write(v3_server.evpipe[1], &ev);
     _v3_func_leave("v3_join_chat");
-    return;
 }/*}}}*/
 
 void
@@ -5344,17 +5371,9 @@ v3_leave_chat(void) {/*{{{*/
     }
     memset(&ev, 0, sizeof(v3_event));
     ev.type = V3_EVENT_CHAT_LEAVE;
-    _v3_lock_sendq();
-    _v3_debug(V3_DEBUG_EVENT, "sending %lu bytes to event pipe", sizeof(v3_event));
-    if (fwrite(&ev, sizeof(struct _v3_event), 1, v3_server.evoutstream) != 1) {
-        _v3_error("could not write to event pipe");
-        _v3_func_leave("v3_leave_chat");
-        return;
-    }
-    fflush(v3_server.evoutstream);
-    _v3_unlock_sendq();
+
+    _v3_evpipe_write(v3_server.evpipe[1], &ev);
     _v3_func_leave("v3_leave_chat");
-    return;
 }/*}}}*/
 
 void
@@ -5370,18 +5389,10 @@ v3_send_chat_message(char *message) {/*{{{*/
     ev.data = malloc(sizeof(v3_event_data));
     memset(ev.data, 0, sizeof(v3_event_data));
     ev.type = V3_EVENT_CHAT_MESSAGE;
-    strncpy(ev.data->chatmessage, message, sizeof(ev.data->chatmessage)-1);
-    _v3_lock_sendq();
-    _v3_debug(V3_DEBUG_EVENT, "sending %lu bytes to event pipe", sizeof(v3_event));
-    if (fwrite(&ev, sizeof(struct _v3_event), 1, v3_server.evoutstream) != 1) {
-        _v3_error("could not write to event pipe");
-        _v3_func_leave("v3_send_chat_message");
-        return;
-    }
-    fflush(v3_server.evoutstream);
-    _v3_unlock_sendq();
+    strncpy(ev.data->chatmessage, message, sizeof(ev.data->chatmessage) - 1);
+
+    _v3_evpipe_write(v3_server.evpipe[1], &ev);
     _v3_func_leave("v3_send_chat_message");
-    return;
 }/*}}}*/
 
 void
@@ -5396,17 +5407,9 @@ v3_start_privchat(uint16_t userid) {/*{{{*/
     memset(&ev, 0, sizeof(v3_event));
     ev.type = V3_EVENT_PRIVATE_CHAT_START;
     ev.user.id = userid;
-    _v3_lock_sendq();
-    _v3_debug(V3_DEBUG_EVENT, "sending %lu bytes to event pipe", sizeof(v3_event));
-    if (fwrite(&ev, sizeof(struct _v3_event), 1, v3_server.evoutstream) != 1) {
-        _v3_error("could not write to event pipe");
-        _v3_func_leave("v3_start_privchat");
-        return;
-    }
-    fflush(v3_server.evoutstream);
-    _v3_unlock_sendq();
+
+    _v3_evpipe_write(v3_server.evpipe[1], &ev);
     _v3_func_leave("v3_start_privchat");
-    return;
 }/*}}}*/
 
 void
@@ -5421,17 +5424,9 @@ v3_end_privchat(uint16_t userid) {/*{{{*/
     memset(&ev, 0, sizeof(v3_event));
     ev.type = V3_EVENT_PRIVATE_CHAT_END;
     ev.user.id = userid;
-    _v3_lock_sendq();
-    _v3_debug(V3_DEBUG_EVENT, "sending %lu bytes to event pipe", sizeof(v3_event));
-    if (fwrite(&ev, sizeof(struct _v3_event), 1, v3_server.evoutstream) != 1) {
-        _v3_error("could not write to event pipe");
-        _v3_func_leave("v3_end_privchat");
-        return;
-    }
-    fflush(v3_server.evoutstream);
-    _v3_unlock_sendq();
+
+    _v3_evpipe_write(v3_server.evpipe[1], &ev);
     _v3_func_leave("v3_end_privchat");
-    return;
 }/*}}}*/
 
 void
@@ -5448,18 +5443,10 @@ v3_send_privchat_message(uint16_t userid, char *message) {/*{{{*/
     memset(ev.data, 0, sizeof(v3_event_data));
     ev.type = V3_EVENT_PRIVATE_CHAT_MESSAGE;
     ev.user.id = userid;
-    strncpy(ev.data->chatmessage, message, sizeof(ev.data->chatmessage)-1);
-    _v3_lock_sendq();
-    _v3_debug(V3_DEBUG_EVENT, "sending %lu bytes to event pipe", sizeof(v3_event));
-    if (fwrite(&ev, sizeof(struct _v3_event), 1, v3_server.evoutstream) != 1) {
-        _v3_error("could not write to event pipe");
-        _v3_func_leave("v3_send_privchat_message");
-        return;
-    }
-    fflush(v3_server.evoutstream);
-    _v3_unlock_sendq();
+    strncpy(ev.data->chatmessage, message, sizeof(ev.data->chatmessage) - 1);
+
+    _v3_evpipe_write(v3_server.evpipe[1], &ev);
     _v3_func_leave("v3_send_privchat_message");
-    return;
 }/*}}}*/
 
 void
@@ -5474,17 +5461,9 @@ v3_send_privchat_away(uint16_t userid) {/*{{{*/
     memset(&ev, 0, sizeof(v3_event));
     ev.type = V3_EVENT_PRIVATE_CHAT_AWAY;
     ev.user.id = userid;
-    _v3_lock_sendq();
-    _v3_debug(V3_DEBUG_EVENT, "sending %lu bytes to event pipe", sizeof(v3_event));
-    if (fwrite(&ev, sizeof(struct _v3_event), 1, v3_server.evoutstream) != 1) {
-        _v3_error("could not write to event pipe");
-        _v3_func_leave("v3_send_privchat_away");
-        return;
-    }
-    fflush(v3_server.evoutstream);
-    _v3_unlock_sendq();
+
+    _v3_evpipe_write(v3_server.evpipe[1], &ev);
     _v3_func_leave("v3_send_privchat_away");
-    return;
 }/*}}}*/
 
 void
@@ -5499,17 +5478,9 @@ v3_send_privchat_back(uint16_t userid) {/*{{{*/
     memset(&ev, 0, sizeof(v3_event));
     ev.type = V3_EVENT_PRIVATE_CHAT_BACK;
     ev.user.id = userid;
-    _v3_lock_sendq();
-    _v3_debug(V3_DEBUG_EVENT, "sending %lu bytes to event pipe", sizeof(v3_event));
-    if (fwrite(&ev, sizeof(struct _v3_event), 1, v3_server.evoutstream) != 1) {
-        _v3_error("could not write to event pipe");
-        _v3_func_leave("v3_send_privchat_back");
-        return;
-    }
-    fflush(v3_server.evoutstream);
-    _v3_unlock_sendq();
+
+    _v3_evpipe_write(v3_server.evpipe[1], &ev);
     _v3_func_leave("v3_send_privchat_back");
-    return;
 }/*}}}*/
 
 void
@@ -5526,17 +5497,9 @@ v3_send_tts_message(char *message) {/*{{{*/
     memset(ev.data, 0, sizeof(v3_event_data));
     ev.type = V3_EVENT_TEXT_TO_SPEECH_MESSAGE;
     strncpy(ev.data->chatmessage, message, sizeof(ev.data->chatmessage) - 1);
-    _v3_lock_sendq();
-    _v3_debug(V3_DEBUG_EVENT, "sending %lu bytes to event pipe", sizeof(v3_event));
-    if (fwrite(&ev, sizeof(struct _v3_event), 1, v3_server.evoutstream) != 1) {
-        _v3_error("could not write to event pipe");
-        _v3_func_leave("v3_send_tts_message");
-        return;
-    }
-    fflush(v3_server.evoutstream);
-    _v3_unlock_sendq();
+
+    _v3_evpipe_write(v3_server.evpipe[1], &ev);
     _v3_func_leave("v3_send_tts_message");
-    return;
 }/*}}}*/
 
 void
@@ -5553,17 +5516,9 @@ v3_send_play_wave_message(char *message) {/*{{{*/
     memset(ev.data, 0, sizeof(v3_event_data));
     ev.type = V3_EVENT_PLAY_WAVE_FILE_MESSAGE;
     strncpy(ev.data->chatmessage, message, sizeof(ev.data->chatmessage) - 1);
-    _v3_lock_sendq();
-    _v3_debug(V3_DEBUG_EVENT, "sending %lu bytes to event pipe", sizeof(v3_event));
-    if (fwrite(&ev, sizeof(struct _v3_event), 1, v3_server.evoutstream) != 1) {
-        _v3_error("could not write to event pipe");
-        _v3_func_leave("v3_send_play_wave_message");
-        return;
-    }
-    fflush(v3_server.evoutstream);
-    _v3_unlock_sendq();
+
+    _v3_evpipe_write(v3_server.evpipe[1], &ev);
     _v3_func_leave("v3_send_play_wave_message");
-    return;
 }/*}}}*/
 
 void
@@ -5578,17 +5533,9 @@ v3_send_user_page(uint16_t user_id) {/*{{{*/
     memset(&ev, 0, sizeof(v3_event));
     ev.type = V3_EVENT_USER_PAGE;
     ev.user.id = user_id;
-    _v3_lock_sendq();
-    _v3_debug(V3_DEBUG_EVENT, "sending %lu bytes to event pipe", sizeof(v3_event));
-    if (fwrite(&ev, sizeof(struct _v3_event), 1, v3_server.evoutstream) != 1) {
-        _v3_error("could not write to event pipe");
-        _v3_func_leave("v3_send_user_page");
-        return;
-    }
-    fflush(v3_server.evoutstream);
-    _v3_unlock_sendq();
+
+    _v3_evpipe_write(v3_server.evpipe[1], &ev);
     _v3_func_leave("v3_send_user_page");
-    return;
 }/*}}}*/
 
 int
@@ -5618,16 +5565,15 @@ _v3_logout(void) {/*{{{*/
     _v3_destroy_accountlist();
     memset(v3_luser.channel_admin, 0, 65535);
     v3_luser.id = -1;
-    if (v3_server.evinstream) {
-        fclose(v3_server.evinstream);
+    if (v3_server.evpipe[0] >= 0) {
         close(v3_server.evpipe[0]);
     }
-    if (v3_server.evoutstream) {
-        fclose(v3_server.evoutstream);
+    if (v3_server.evpipe[1] >= 0) {
         close(v3_server.evpipe[1]);
     }
     v3_server.evpipe[0] = -1;
     v3_server.evpipe[1] = -1;
+
     _v3_func_leave("_v3_logout");
     return true;
 }/*}}}*/
@@ -5650,11 +5596,12 @@ v3_debuglevel(uint32_t level) {/*{{{*/
     if (level != -1) {
         _v3_debuglevel = level;
     }
+
     return oldlevel;
 }/*}}}*/
 
 int
-v3_queue_size() {/*{{{*/
+v3_queue_size(void) {/*{{{*/
     _v3_net_message *msg;
     int ctr;
 
@@ -5667,23 +5614,22 @@ v3_queue_size() {/*{{{*/
     for (ctr = 0; v3_server.queue->next == NULL; ctr++) {
         msg = v3_server.queue->next;
     }
+
     return ctr;
 }/*}}}*/
 
 void
 v3_phantom_remove(uint16_t channel_id) {/*{{{*/
-    v3_event ev = {0};
+    v3_event ev;
     v3_user *u;
 
    _v3_func_enter("v3_phantom_remove");
-
     if (!v3_is_loggedin()) {
         _v3_func_leave("v3_phantom_remove");
         return;
     }
-
+    memset(&ev, 0, sizeof(v3_event));
     _v3_debug(V3_DEBUG_EVENT, "attempting to remove phantom from channel %d", channel_id);
-
     _v3_lock_userlist();
     for (u = v3_user_list; u != NULL; u = u->next) {
         if (u->channel == channel_id && u->real_user_id == v3_luser.id) {
@@ -5691,50 +5637,33 @@ v3_phantom_remove(uint16_t channel_id) {/*{{{*/
         }
     }
     _v3_unlock_userlist();
-
-    if (u == NULL) {
+    if (!u) {
         _v3_error("can't find a luser phantom in channel %d", channel_id);
-    } else {
-        ev.type = V3_EVENT_PHANTOM_REMOVE;
-        ev.user.id = u->id;
-
-        _v3_lock_sendq();
-        _v3_debug(V3_DEBUG_EVENT, "sending %lu bytes to event pipe", sizeof(v3_event));
-        if (fwrite(&ev, sizeof(struct _v3_event), 1, v3_server.evoutstream) != 1) {
-            _v3_error("could not write to event pipe");
-        }
-
-        fflush(v3_server.evoutstream);
-        _v3_unlock_sendq();
+        _v3_func_leave("v3_phantom_remove");
+        return;
     }
+    ev.type = V3_EVENT_PHANTOM_REMOVE;
+    ev.user.id = u->id;
 
+    _v3_evpipe_write(v3_server.evpipe[1], &ev);
     _v3_func_leave("v3_phantom_remove");
 }/*}}}*/
 
 void
 v3_phantom_add(uint16_t channel_id) {/*{{{*/
-    v3_event ev = {0};
+    v3_event ev;
 
    _v3_func_enter("v3_phantom_add");
-
     if (!v3_is_loggedin()) {
         _v3_func_leave("v3_phantom_add");
         return;
     }
-
+    memset(&ev, 0, sizeof(v3_event));
     _v3_debug(V3_DEBUG_EVENT, "attempting to add phantom to channel %d", channel_id);
-
     ev.type = V3_EVENT_PHANTOM_ADD;
     ev.channel.id = channel_id;
 
-    _v3_lock_sendq();
-    _v3_debug(V3_DEBUG_EVENT, "sending %lu bytes to event pipe", sizeof(v3_event));
-    if (fwrite(&ev, sizeof(struct _v3_event), 1, v3_server.evoutstream) != 1) {
-        _v3_error("could not write to event pipe");
-    }
-
-    fflush(v3_server.evoutstream);
-    _v3_unlock_sendq();
+    _v3_evpipe_write(v3_server.evpipe[1], &ev);
     _v3_func_leave("v3_phantom_add");
 }/*}}}*/
 
@@ -5751,15 +5680,9 @@ v3_force_channel_move(uint16_t user_id, uint16_t channel_id) {/*{{{*/
     ev.type = V3_EVENT_FORCE_CHAN_MOVE;
     ev.channel.id = channel_id;
     ev.user.id = user_id;
-    _v3_lock_sendq();
-    _v3_debug(V3_DEBUG_EVENT, "sending %lu bytes to event pipe", sizeof(v3_event));
-    if (fwrite(&ev, sizeof(struct _v3_event), 1, v3_server.evoutstream) != 1) {
-        _v3_error("could not write to event pipe");
-    }
-    fflush(v3_server.evoutstream);
-    _v3_unlock_sendq();
+
+    _v3_evpipe_write(v3_server.evpipe[1], &ev);
     _v3_func_leave("v3_force_channel_move");
-    return;
 }/*}}}*/
 
 void
@@ -5773,22 +5696,14 @@ v3_change_channel(uint16_t channel_id, char *password) {/*{{{*/
     }
     memset(&ev, 0, sizeof(v3_event));
     ev.type = V3_EVENT_CHANGE_CHANNEL;
-    if (password == NULL) {
-        strncpy(ev.text.password, "", 31);
-    } else {
-        strncpy(ev.text.password, password, 31);
+    if (password) {
+        strncpy(ev.text.password, password, sizeof(ev.text.password) - 1);
     }
     ev.channel.id = channel_id;
-    ev.user.id = v3_get_user_id();
-    _v3_lock_sendq();
-    _v3_debug(V3_DEBUG_EVENT, "sending %lu bytes to event pipe", sizeof(v3_event));
-    if (fwrite(&ev, sizeof(struct _v3_event), 1, v3_server.evoutstream) != 1) {
-        _v3_error("could not write to event pipe");
-    }
-    fflush(v3_server.evoutstream);
-    _v3_unlock_sendq();
+    ev.user.id = v3_luser.id;
+
+    _v3_evpipe_write(v3_server.evpipe[1], &ev);
     _v3_func_leave("v3_change_channel");
-    return;
 }/*}}}*/
 
 void
@@ -5796,23 +5711,16 @@ v3_admin_login(char *password) {/*{{{*/
     v3_event ev;
 
     _v3_func_enter("v3_admin_login");
-    if (!v3_is_loggedin() || password == NULL || !password[0]) {
+    if (!v3_is_loggedin() || !password || !*password) {
         _v3_func_leave("v3_admin_login");
         return;
     }
     memset(&ev, 0, sizeof(v3_event));
     ev.type = V3_EVENT_ADMIN_LOGIN;
-    strncpy(ev.text.password, password, sizeof(ev.text.password));
+    strncpy(ev.text.password, password, sizeof(ev.text.password) - 1);
 
-    _v3_lock_sendq();
-    _v3_debug(V3_DEBUG_EVENT, "sending %lu bytes to event pipe", sizeof(v3_event));
-    if (fwrite(&ev, sizeof(struct _v3_event), 1, v3_server.evoutstream) != 1) {
-        _v3_error("could not write to event pipe");
-    }
-    fflush(v3_server.evoutstream);
-    _v3_unlock_sendq();
+    _v3_evpipe_write(v3_server.evpipe[1], &ev);
     _v3_func_leave("v3_admin_login");
-    return;
 }/*}}}*/
 
 void
@@ -5827,32 +5735,26 @@ v3_admin_logout(void) {/*{{{*/
     memset(&ev, 0, sizeof(v3_event));
     ev.type = V3_EVENT_ADMIN_LOGOUT;
 
-    _v3_lock_sendq();
-    _v3_debug(V3_DEBUG_EVENT, "sending %lu bytes to event pipe", sizeof(v3_event));
-    if (fwrite(&ev, sizeof(struct _v3_event), 1, v3_server.evoutstream) != 1) {
-        _v3_error("could not write to event pipe");
-    }
-    fflush(v3_server.evoutstream);
-    _v3_unlock_sendq();
+    _v3_evpipe_write(v3_server.evpipe[1], &ev);
     _v3_func_leave("v3_admin_logout");
-    return;
 }/*}}}*/
 
 void
-v3_admin_boot(enum _v3_boot_types type, uint16_t user_id, char *reason) {/*{{{*/
-    v3_event ev = {0};
+v3_admin_boot(int type, uint16_t user_id, char *reason) {/*{{{*/
+    v3_event ev;
 
     _v3_func_enter("v3_admin_boot");
     if (!v3_is_loggedin()) {
         _v3_func_leave("v3_admin_boot");
         return;
     }
-
+    memset(&ev, 0, sizeof(v3_event));
     ev.data = malloc(sizeof(v3_event_data));
     memset(ev.data, 0, sizeof(v3_event_data));
     ev.user.id = user_id;
-    strncpy(ev.data->reason, reason ? reason : "", sizeof(ev.data->reason));
-
+    if (reason) {
+        strncpy(ev.data->reason, reason, sizeof(ev.data->reason) - 1);
+    }
     switch (type) {
         case V3_BOOT_KICK:
             ev.type = V3_EVENT_ADMIN_KICK;
@@ -5865,15 +5767,8 @@ v3_admin_boot(enum _v3_boot_types type, uint16_t user_id, char *reason) {/*{{{*/
             break;
     }
 
-    _v3_lock_sendq();
-    _v3_debug(V3_DEBUG_EVENT, "sending %lu bytes to event pipe", sizeof(v3_event));
-    if (fwrite(&ev, sizeof(struct _v3_event), 1, v3_server.evoutstream) != 1) {
-        _v3_error("could not write to event pipe");
-    }
-    fflush(v3_server.evoutstream);
-    _v3_unlock_sendq();
+    _v3_evpipe_write(v3_server.evpipe[1], &ev);
     _v3_func_leave("v3_admin_boot");
-    return;
 }/*}}}*/
 
 void
@@ -5889,15 +5784,8 @@ v3_admin_global_mute(uint16_t user_id) {/*{{{*/
     ev.type = V3_EVENT_ADMIN_GLOBAL_MUTE;
     ev.user.id = user_id;
 
-    _v3_lock_sendq();
-    _v3_debug(V3_DEBUG_EVENT, "sending %lu bytes to event pipe", sizeof(v3_event));
-    if (fwrite(&ev, sizeof(struct _v3_event), 1, v3_server.evoutstream) != 1) {
-        _v3_error("could not write to event pipe");
-    }
-    fflush(v3_server.evoutstream);
-    _v3_unlock_sendq();
+    _v3_evpipe_write(v3_server.evpipe[1], &ev);
     _v3_func_leave("v3_admin_global_mute");
-    return;
 }/*}}}*/
 
 void
@@ -5912,15 +5800,8 @@ v3_userlist_open(void) {/*{{{*/
     memset(&ev, 0, sizeof(v3_event));
     ev.type = V3_EVENT_USERLIST_OPEN;
 
-    _v3_lock_sendq();
-    _v3_debug(V3_DEBUG_EVENT, "sending %lu bytes to event pipe", sizeof(v3_event));
-    if (fwrite(&ev, sizeof(struct _v3_event), 1, v3_server.evoutstream) != 1) {
-        _v3_error("could not write to event pipe");
-    }
-    fflush(v3_server.evoutstream);
-    _v3_unlock_sendq();
+    _v3_evpipe_write(v3_server.evpipe[1], &ev);
     _v3_func_leave("v3_userlist_open");
-    return;
 }/*}}}*/
 
 void
@@ -5932,21 +5813,13 @@ v3_userlist_close(void) {/*{{{*/
         _v3_func_leave("v3_userlist_close");
         return;
     }
-
-    _v3_destroy_accountlist();
-
     memset(&ev, 0, sizeof(v3_event));
     ev.type = V3_EVENT_USERLIST_CLOSE;
 
-    _v3_lock_sendq();
-    _v3_debug(V3_DEBUG_EVENT, "sending %lu bytes to event pipe", sizeof(v3_event));
-    if (fwrite(&ev, sizeof(struct _v3_event), 1, v3_server.evoutstream) != 1) {
-        _v3_error("could not write to event pipe");
-    }
-    fflush(v3_server.evoutstream);
-    _v3_unlock_sendq();
+    _v3_destroy_accountlist();
+
+    _v3_evpipe_write(v3_server.evpipe[1], &ev);
     _v3_func_leave("v3_userlist_close");
-    return;
 }/*}}}*/
 
 void
@@ -5962,15 +5835,8 @@ v3_userlist_remove(uint16_t account_id) {/*{{{*/
     ev.type = V3_EVENT_USERLIST_REMOVE;
     ev.account.id = account_id;
 
-    _v3_lock_sendq();
-    _v3_debug(V3_DEBUG_EVENT, "sending %lu bytes to event pipe", sizeof(v3_event));
-    if (fwrite(&ev, sizeof(struct _v3_event), 1, v3_server.evoutstream) != 1) {
-        _v3_error("could not write to event pipe");
-    }
-    fflush(v3_server.evoutstream);
-    _v3_unlock_sendq();
+    _v3_evpipe_write(v3_server.evpipe[1], &ev);
     _v3_func_leave("v3_userlist_remove");
-    return;
 }/*}}}*/
 
 void
@@ -5978,21 +5844,18 @@ v3_userlist_update(v3_account *account) {/*{{{*/
     v3_event ev;
 
     _v3_func_enter("v3_userlist_update");
-    if (!v3_is_loggedin()) {
+    if (!v3_is_loggedin() || !account) {
         _v3_func_leave("v3_userlist_update");
         return;
     }
-
     memset(&ev, 0, sizeof(v3_event));
     ev.data = malloc(sizeof(v3_event_data));
     memset(ev.data, 0, sizeof(v3_event_data));
-
     if (account->perms.account_id) {
         ev.type = V3_EVENT_USERLIST_MODIFY;
     } else {
         ev.type = V3_EVENT_USERLIST_ADD;
     }
-
     ev.data->account.perms = account->perms;
     strncpy(ev.data->account.username, account->username, sizeof(ev.data->account.username) - 1);
     strncpy(ev.data->account.owner, account->owner, sizeof(ev.data->account.owner) - 1);
@@ -6003,15 +5866,8 @@ v3_userlist_update(v3_account *account) {/*{{{*/
     ev.data->account.chan_auth_count = account->chan_auth_count;
     memcpy(ev.data->account.chan_auth, account->chan_auth, ev.data->account.chan_auth_count * 2);
 
-    _v3_lock_sendq();
-    _v3_debug(V3_DEBUG_EVENT, "sending %lu bytes to event pipe", sizeof(v3_event));
-    if (fwrite(&ev, sizeof(struct _v3_event), 1, v3_server.evoutstream) != 1) {
-        _v3_error("could not write to event pipe");
-    }
-    fflush(v3_server.evoutstream);
-    _v3_unlock_sendq();
+    _v3_evpipe_write(v3_server.evpipe[1], &ev);
     _v3_func_leave("v3_userlist_update");
-    return;
 }/*}}}*/
 
 void
@@ -6028,15 +5884,8 @@ v3_userlist_change_owner(uint16_t old_owner_id, uint16_t new_owner_id) {/*{{{*/
     ev.account.id = old_owner_id;
     ev.account.id2 = new_owner_id;
 
-    _v3_lock_sendq();
-    _v3_debug(V3_DEBUG_EVENT, "sending %lu bytes to event pipe", sizeof(v3_event));
-    if (fwrite(&ev, sizeof(struct _v3_event), 1, v3_server.evoutstream) != 1) {
-        _v3_error("could not write to event pipe");
-    }
-    fflush(v3_server.evoutstream);
-    _v3_unlock_sendq();
+    _v3_evpipe_write(v3_server.evpipe[1], &ev);
     _v3_func_leave("v3_userlist_change_owner");
-    return;
 }/*}}}*/
 
 void
@@ -6051,15 +5900,8 @@ v3_serverprop_open(void) {/*{{{*/
     memset(&ev, 0, sizeof(v3_event));
     ev.type = V3_EVENT_SRV_PROP_OPEN;
 
-    _v3_lock_sendq();
-    _v3_debug(V3_DEBUG_EVENT, "sending %lu bytes to event pipe", sizeof(v3_event));
-    if (fwrite(&ev, sizeof(struct _v3_event), 1, v3_server.evoutstream) != 1) {
-        _v3_error("could not write to event pipe");
-    }
-    fflush(v3_server.evoutstream);
-    _v3_unlock_sendq();
+    _v3_evpipe_write(v3_server.evpipe[1], &ev);
     _v3_func_leave("v3_serverprop_open");
-    return;
 }/*}}}*/
 
 void
@@ -6077,28 +5919,28 @@ v3_set_text(char *comment, char *url, char *integration_text, uint8_t silent) {/
     if (silent) {
         ev.flags |= 0x100;
     }
-    strncpy(ev.text.comment, comment, 127);
-    strncpy(ev.text.url, url, 127);
-    strncpy(ev.text.integration_text, integration_text, 127);
-    _v3_lock_sendq();
-    _v3_debug(V3_DEBUG_EVENT, "sending %lu bytes to event pipe", sizeof(v3_event));
-    if (fwrite(&ev, sizeof(struct _v3_event), 1, v3_server.evoutstream) != 1) {
-        _v3_error("could not write to event pipe");
+    if (comment) {
+        strncpy(ev.text.comment, comment, sizeof(ev.text.comment) - 1);
     }
-    fflush(v3_server.evoutstream);
-    _v3_unlock_sendq();
+    if (url) {
+        strncpy(ev.text.url, url, sizeof(ev.text.comment) - 1);
+    }
+    if (integration_text) {
+        strncpy(ev.text.integration_text, integration_text, sizeof(ev.text.integration_text) - 1);
+    }
+
+    _v3_evpipe_write(v3_server.evpipe[1], &ev);
     _v3_func_leave("v3_set_text");
-    return;
 }/*}}}*/
 
 int
 v3_channel_count(void) {/*{{{*/
     v3_channel *c;
-    int ctr=0;
+    int ctr = 0;
 
     for (c = v3_channel_list; c != NULL; c = c->next, ctr++);
-    return ctr;
 
+    return ctr;
 }/*}}}*/
 
 uint16_t
@@ -6115,9 +5957,11 @@ v3_get_channel_id(const char *path, const char *sep) {/*{{{*/
 
     _v3_func_enter("v3_get_channel_id");
     _v3_lock_channellist();
-    
-    /* parse path into some arrays (make no copies) */
-    if (strncmp(p, sep, seplen) == 0) p += seplen;
+
+    // parse path into some arrays (make no copies)
+    if (strncmp(p, sep, seplen) == 0) {
+        p += seplen;
+    }
     chan_name[0] = p;
 
     while (*p != '\0') {
@@ -6142,23 +5986,22 @@ v3_get_channel_id(const char *path, const char *sep) {/*{{{*/
             }
         }
     }
-    
     _v3_unlock_channellist();
-    _v3_func_leave("v3_get_channel_id");
 
+    _v3_func_leave("v3_get_channel_id");
     return parent_id;
 }/*}}}*/
 
 int
 v3_user_count(void) {/*{{{*/
     v3_user *c;
-    int ctr=0;
+    int ctr = 0;
 
     _v3_lock_userlist();
     for (c = v3_user_list; c != NULL; c = c->next, ctr++);
     _v3_unlock_userlist();
-    return ctr-1;
 
+    return ctr-1;
 }/*}}}*/
 
 /*
@@ -6175,6 +6018,7 @@ v3_get_user(uint16_t id) {/*{{{*/
         return ret_user;
     }
     _v3_unlock_userlist();
+
     return ret_user;
 }/*}}}*/
 
@@ -6195,6 +6039,7 @@ _v3_get_user(uint16_t id) {/*{{{*/
         }
     }
     _v3_unlock_userlist();
+
     return NULL;
 }/*}}}*/
 
@@ -6213,6 +6058,7 @@ v3_get_user_channel(uint16_t id) {/*{{{*/
         }
     }
     _v3_unlock_userlist();
+
     return -1;
 }/*}}}*/
 
@@ -6242,6 +6088,7 @@ v3_get_channel(uint16_t id) {/*{{{*/
         }
     }
     _v3_unlock_channellist();
+
     _v3_func_leave("v3_get_channel");
     return NULL;
 }/*}}}*/
@@ -6256,47 +6103,35 @@ v3_free_channel(v3_channel *channel) {/*{{{*/
 
 void
 v3_channel_update(v3_channel *channel, const char *password) {/*{{{*/
-    /* update or create channel */
     v3_event ev;
 
     _v3_func_enter("v3_channel_update");
-    if (!v3_is_loggedin()) {
+    if (!v3_is_loggedin() || !channel) {
         _v3_func_leave("v3_channel_update");
         return;
     }
-
     memset(&ev, 0, sizeof(v3_event));
     ev.data = malloc(sizeof(v3_event_data));
     memset(ev.data, 0, sizeof(v3_event_data));
-
     if (channel->id) {
         ev.type = V3_EVENT_CHAN_MODIFY;
     } else {
         ev.type = V3_EVENT_CHAN_ADD;
     }
-    
-    memcpy(&(ev.data->channel), channel, sizeof(v3_channel) - sizeof(void*) * 4);
+    memcpy(&ev.data->channel, channel, sizeof(v3_channel) - sizeof(void *) * 4);
     if (password) {
-        strncpy(ev.text.password, password, 31);
+        strncpy(ev.text.password, password, sizeof(ev.text.password) - 1);
     }
-    strncpy(ev.text.name, channel->name, 31);
-    strncpy(ev.text.phonetic, channel->phonetic, 31);
-    strncpy(ev.text.comment, channel->comment, 127);
+    strncpy(ev.text.name, channel->name, sizeof(ev.text.name) - 1);
+    strncpy(ev.text.phonetic, channel->phonetic, sizeof(ev.text.phonetic) - 1);
+    strncpy(ev.text.comment, channel->comment, sizeof(ev.text.comment) - 1);
 
-    _v3_lock_sendq();
-    _v3_debug(V3_DEBUG_EVENT, "sending %lu bytes to event pipe", sizeof(v3_event));
-    if (fwrite(&ev, sizeof(struct _v3_event), 1, v3_server.evoutstream) != 1) {
-        _v3_error("could not write to event pipe");
-    }
-    fflush(v3_server.evoutstream);
-    _v3_unlock_sendq();
+    _v3_evpipe_write(v3_server.evpipe[1], &ev);
     _v3_func_leave("v3_channel_update");
-    return;
 }/*}}}*/
 
 void
 v3_channel_remove(uint16_t channel_id) {/*{{{*/
-    /* remove channel */
     v3_event ev;
 
     _v3_func_enter("v3_channel_remove");
@@ -6304,22 +6139,13 @@ v3_channel_remove(uint16_t channel_id) {/*{{{*/
         _v3_func_leave("v3_channel_remove");
         return;
     }
-
     memset(&ev, 0, sizeof(v3_event));
-
     ev.type = V3_EVENT_CHAN_REMOVE;
     ev.channel.id = channel_id;
     ev.user.id = v3_get_user_id();
-    
-    _v3_lock_sendq();
-    _v3_debug(V3_DEBUG_EVENT, "sending %lu bytes to event pipe", sizeof(v3_event));
-    if (fwrite(&ev, sizeof(struct _v3_event), 1, v3_server.evoutstream) != 1) {
-        _v3_error("could not write to event pipe");
-    }
-    fflush(v3_server.evoutstream);
-    _v3_unlock_sendq();
+
+    _v3_evpipe_write(v3_server.evpipe[1], &ev);
     _v3_func_leave("v3_channel_remove");
-    return;
 }/*}}}*/
 
 v3_rank *
@@ -6336,6 +6162,7 @@ v3_get_rank(uint16_t id) {/*{{{*/
         }
     }
     _v3_unlock_ranklist();
+
     return NULL;
 }/*}}}*/
 
@@ -6351,15 +6178,8 @@ v3_ranklist_open(void) {/*{{{*/
     memset(&ev, 0, sizeof(v3_event));
     ev.type = V3_EVENT_RANKLIST_OPEN;
 
-    _v3_lock_sendq();
-    _v3_debug(V3_DEBUG_EVENT, "sending %lu bytes to event pipe", sizeof(v3_event));
-    if (fwrite(&ev, sizeof(struct _v3_event), 1, v3_server.evoutstream) != 1) {
-        _v3_error("could not write to event pipe");
-    }
-    fflush(v3_server.evoutstream);
-    _v3_unlock_sendq();
+    _v3_evpipe_write(v3_server.evpipe[1], &ev);
     _v3_func_leave("v3_ranklist_open");
-    return;
 }/*}}}*/
 
 void
@@ -6371,58 +6191,41 @@ v3_ranklist_close(void) {/*{{{*/
         _v3_func_leave("v3_ranklist_close");
         return;
     }
-
     memset(&ev, 0, sizeof(v3_event));
     ev.type = V3_EVENT_RANKLIST_CLOSE;
 
-    _v3_lock_sendq();
-    _v3_debug(V3_DEBUG_EVENT, "sending %lu bytes to event pipe", sizeof(v3_event));
-    if (fwrite(&ev, sizeof(struct _v3_event), 1, v3_server.evoutstream) != 1) {
-        _v3_error("could not write to event pipe");
-    }
-    fflush(v3_server.evoutstream);
-    _v3_unlock_sendq();
+    _v3_evpipe_write(v3_server.evpipe[1], &ev);
     _v3_func_leave("v3_ranklist_close");
-    return;
 }/*}}}*/
 
 void
 v3_rank_update(v3_rank *rank) {/*{{{*/
-    /* update or create rank */
     v3_event ev;
 
     _v3_func_enter("v3_rank_update");
-    if (!v3_is_loggedin()) {
+    if (!v3_is_loggedin() || !rank) {
         _v3_func_leave("v3_rank_update");
         return;
     }
-    
     memset(&ev, 0, sizeof(v3_event));
     ev.data = malloc(sizeof(v3_event_data));
     memset(ev.data, 0, sizeof(v3_event_data));
-    
-    if (rank->id) ev.type = V3_EVENT_RANK_MODIFY;
-    else ev.type = V3_EVENT_RANK_ADD;
+    if (rank->id) {
+        ev.type = V3_EVENT_RANK_MODIFY;
+    } else {
+        ev.type = V3_EVENT_RANK_ADD;
+    }
     ev.data->rank.id = rank->id;
     ev.data->rank.level = rank->level;
-    strncpy(ev.text.name, rank->name, 31);
-    strncpy(ev.text.comment, rank->description, 127);
+    strncpy(ev.text.name, rank->name, sizeof(ev.text.name) - 1);
+    strncpy(ev.text.comment, rank->description, sizeof(ev.text.comment) - 1);
 
-    _v3_lock_sendq();
-    _v3_debug(V3_DEBUG_EVENT, "sending %lu bytes to event pipe", sizeof(v3_event));
-    if (fwrite(&ev, sizeof(struct _v3_event), 1, v3_server.evoutstream) != 1) {
-        _v3_error("could not write to event pipe");
-    }
-    fflush(v3_server.evoutstream);
-    _v3_unlock_sendq();
+    _v3_evpipe_write(v3_server.evpipe[1], &ev);
     _v3_func_leave("v3_rank_update");
-    return;
-    
 }/*}}}*/
 
 void
 v3_rank_remove(uint16_t rankid) {/*{{{*/
-    /* remove rank */
     v3_event ev;
 
     _v3_func_enter("v3_rank_remove");
@@ -6430,31 +6233,23 @@ v3_rank_remove(uint16_t rankid) {/*{{{*/
         _v3_func_leave("v3_rank_remove");
         return;
     }
-    
     memset(&ev, 0, sizeof(v3_event));
     ev.data = malloc(sizeof(v3_event_data));
     memset(ev.data, 0, sizeof(v3_event_data));
     ev.type = V3_EVENT_RANK_REMOVE;
     v3_rank *rank = v3_get_rank(rankid);
-    if (! rank) {
+    if (!rank) {
         _v3_func_leave("v3_rank_remove");
         return;
     }
     ev.data->rank.id = rankid;
     ev.data->rank.level = rank->level;
-    strncpy(ev.text.name, rank->name, 31);
-    strncpy(ev.text.comment, rank->description, 127);
+    strncpy(ev.text.name, rank->name, sizeof(ev.text.name) - 1);
+    strncpy(ev.text.comment, rank->description, sizeof(ev.text.comment) - 1);
+    v3_free_rank(rank);
 
-    _v3_lock_sendq();
-    _v3_debug(V3_DEBUG_EVENT, "sending %lu bytes to event pipe", sizeof(v3_event));
-    if (fwrite(&ev, sizeof(struct _v3_event), 1, v3_server.evoutstream) != 1) {
-        _v3_error("could not write to event pipe");
-    }
-    fflush(v3_server.evoutstream);
-    _v3_unlock_sendq();
+    _v3_evpipe_write(v3_server.evpipe[1], &ev);
     _v3_func_leave("v3_rank_remove");
-    return;
-    
 }/*}}}*/
 
 void
@@ -6486,6 +6281,7 @@ _v3_destroy_ranklist(void) {/*{{{*/
         rank = next;
     }
     v3_rank_list = NULL;
+
     _v3_func_leave("_v3_destroy_ranklist");
 }/*}}}*/
 
@@ -6499,7 +6295,6 @@ _v3_update_account(v3_account *account) {/*{{{*/
         a = malloc(sizeof(v3_account));
         memset(a, 0, sizeof(v3_account));
         memcpy(a, account, sizeof(v3_account));
-
         a->username     = strdup(account->username);
         a->owner        = strdup(account->owner);
         a->notes        = strdup(account->notes);
@@ -6508,7 +6303,6 @@ _v3_update_account(v3_account *account) {/*{{{*/
         memcpy(a->chan_admin, account->chan_admin, account->chan_admin_count * 2);
         a->chan_auth    = malloc(account->chan_auth_count * 2);
         memcpy(a->chan_auth, account->chan_auth, account->chan_auth_count * 2);
-
         a->next         = NULL;
         v3_account_list = a;
         _v3_debug(V3_DEBUG_INFO, "added first account %s (id %d)",  a->username, a->perms.account_id);
@@ -6524,7 +6318,6 @@ _v3_update_account(v3_account *account) {/*{{{*/
                 free(a->chan_admin);
                 free(a->chan_auth);
                 tmp = a->next;
-
                 memcpy(a, account, sizeof(v3_account));
                 a->username     = strdup(account->username);
                 a->owner        = strdup(account->owner);
@@ -6534,7 +6327,6 @@ _v3_update_account(v3_account *account) {/*{{{*/
                 memcpy(a->chan_admin, account->chan_admin, account->chan_admin_count * 2);
                 a->chan_auth    = malloc(account->chan_auth_count * 2);
                 memcpy(a->chan_auth, account->chan_auth, account->chan_auth_count * 2);
-
                 a->next = tmp;
                 _v3_debug(V3_DEBUG_INFO, "updated account %s (id %d)",  a->username, a->perms.account_id);
                 _v3_unlock_accountlist();
@@ -6546,7 +6338,6 @@ _v3_update_account(v3_account *account) {/*{{{*/
         a = last->next = malloc(sizeof(v3_account));
         memset(a, 0, sizeof(v3_account));
         memcpy(a, account, sizeof(v3_account));
-
         a->username     = strdup(account->username);
         a->owner        = strdup(account->owner);
         a->notes        = strdup(account->notes);
@@ -6556,19 +6347,18 @@ _v3_update_account(v3_account *account) {/*{{{*/
         a->chan_auth    = malloc(account->chan_auth_count * 2);
         memcpy(a->chan_auth, account->chan_auth, account->chan_auth_count * 2);
         a->next         = NULL;
-
         _v3_debug(V3_DEBUG_INFO, "added account %s (id %d)",  a->username, a->perms.account_id);
     }
     _v3_unlock_accountlist();
+
     _v3_func_leave("_v3_update_account");
     return true;
 }/*}}}*/
 
-
 void
 _v3_print_account_list(void) {/*{{{*/
     v3_account *c;
-    int ctr=0;
+    int ctr = 0;
 
     _v3_lock_accountlist();
     for (c = v3_account_list; c != NULL; c = c->next) {
@@ -6612,6 +6402,7 @@ _v3_destroy_accountlist(void) {/*{{{*/
     }
     v3_account_list = NULL;
     _v3_unlock_accountlist();
+
     _v3_func_leave("_v3_destroy_accountlist");
 }/*}}}*/
 
@@ -6633,22 +6424,22 @@ _v3_remove_account(uint16_t id) {/*{{{*/
         }
         last = a;
     }
-    _v3_func_leave("_v3_remove_account");
     _v3_unlock_accountlist();
+
+    _v3_func_leave("_v3_remove_account");
     return false;
 }/*}}}*/
 
 int
 v3_account_count(void) {/*{{{*/
     v3_account *a;
-    int ctr=0;
+    int ctr = 0;
 
     _v3_lock_accountlist();
     for (a = v3_account_list; a != NULL; a = a->next, ctr++);
     _v3_unlock_accountlist();
 
     return ctr;
-
 }/*}}}*/
 
 v3_account *
@@ -6667,6 +6458,7 @@ v3_get_account(uint16_t id) {/*{{{*/
         }
     }
     _v3_unlock_accountlist();
+
     _v3_func_leave("v3_get_account");
     return NULL;
 }/*}}}*/
@@ -6733,7 +6525,7 @@ v3_queue_event(v3_event *ev) {/*{{{*/
     }
     pthread_mutex_lock(eventq_mutex);
     // if we're not allowed to see channels, gui should think any channel is the lobby
-    if(!v3_luser.perms.see_chan_list || !v3_channel_count()) {
+    if (!v3_luser.perms.see_chan_list || !v3_channel_count()) {
         ev->channel.id = 0;
     }
     ev->next = NULL;
@@ -6751,6 +6543,7 @@ v3_queue_event(v3_event *ev) {/*{{{*/
     last->next = ev;
     _v3_debug(V3_DEBUG_EVENT, "queued event type %d.  now have %d events in queue", ev->type, len);
     pthread_mutex_unlock(eventq_mutex);
+
     _v3_func_leave("v3_queue_event");
     return true;
 }/*}}}*/
@@ -6782,19 +6575,22 @@ v3_get_event(int block) {/*{{{*/
     ev = _v3_eventq;
     _v3_eventq = ev->next;
     pthread_mutex_unlock(eventq_mutex);
+
     return ev;
 }/*}}}*/
 
 v3_event *
 _v3_create_event(uint16_t event) {/*{{{*/
     v3_event *ev;
+
     ev = malloc(sizeof(v3_event));
     memset(ev, 0, sizeof(v3_event));
     ev->data = malloc(sizeof(v3_event_data));
     memset(ev->data, 0, sizeof(v3_event_data));
-    if(event) {
+    if (event) {
         ev->type = event;
     }
+
     return ev;
 }/*}}}*/
 
@@ -6802,6 +6598,7 @@ v3_event *
 _v3_get_last_event(int *len) {/*{{{*/
     v3_event *ev;
     int ctr;
+
     if (_v3_eventq == NULL) {
         return NULL;
     }
@@ -6809,6 +6606,7 @@ _v3_get_last_event(int *len) {/*{{{*/
     if (len != NULL) {
         *len = ctr;
     }
+
     return ev;
 }/*}}}*/
 
@@ -6828,6 +6626,7 @@ v3_free_event(v3_event *ev) {/*{{{*/
 void
 v3_clear_events(void) {/*{{{*/
     v3_event *ev;
+
     if (_v3_eventq == NULL) {
         return;
     }
@@ -6836,7 +6635,6 @@ v3_clear_events(void) {/*{{{*/
         v3_free_event(_v3_eventq);
         _v3_eventq = ev;
     }
-    return;
 }/*}}}*/
 
 int
@@ -6850,12 +6648,12 @@ v3_is_licensed(void) {/*{{{*/
     return v3_server.is_licensed;
 }/*}}}*/
 
-uint32_t
+uint64_t
 v3_get_bytes_recv(void) {/*{{{*/
     return v3_server.recv_byte_count;
 }/*}}}*/
 
-uint32_t
+uint64_t
 v3_get_bytes_sent(void) {/*{{{*/
     return v3_server.sent_byte_count;
 }/*}}}*/
@@ -6884,7 +6682,7 @@ v3_get_codec_rate(uint16_t codec, uint16_t format) {/*{{{*/
     return 0;
 }/*}}}*/
 
-const v3_codec*
+const v3_codec *
 v3_get_codec(uint16_t codec, uint16_t format) {/*{{{*/
     int ctr = 0;
 
@@ -6898,7 +6696,7 @@ v3_get_codec(uint16_t codec, uint16_t format) {/*{{{*/
     return &v3_codecs[ctr];
 }/*}}}*/
 
-const v3_codec*
+const v3_codec *
 v3_get_channel_codec(uint16_t channel_id) {/*{{{*/
     v3_channel *c;
     const v3_codec *codec_info;
@@ -6922,6 +6720,7 @@ v3_get_channel_codec(uint16_t channel_id) {/*{{{*/
     } else {
         _v3_debug(V3_DEBUG_INFO, "unknown codec for channel %d", channel_id);
     }
+
     _v3_func_leave("v3_get_channel_codec");
     return codec_info;
 }/*}}}*/
@@ -6946,6 +6745,7 @@ v3_channel_requires_password(uint16_t channel_id) {/*{{{*/
     }
     parent = c->parent;
     v3_free_channel(c);
+
     _v3_func_leave("v3_channel_requires_password");
     return v3_channel_requires_password(parent);
 }/*}}}*/
@@ -6966,17 +6766,9 @@ v3_logout(void) {/*{{{*/
     }
     memset(&ev, 0, sizeof(v3_event));
     ev.type = V3_EVENT_DISCONNECT;
-    _v3_lock_sendq();
-    _v3_debug(V3_DEBUG_EVENT, "sending %lu bytes to event pipe", sizeof(v3_event));
-    if (fwrite(&ev, sizeof(struct _v3_event), 1, v3_server.evoutstream) != 1) {
-        _v3_error("could not write to event pipe");
-        _v3_func_leave("v3_logout");
-        return;
-    }
-    fflush(v3_server.evoutstream);
-    _v3_unlock_sendq();
+
+    _v3_evpipe_write(v3_server.evpipe[1], &ev);
     _v3_func_leave("v3_logout");
-    return;
 }/*}}}*/
 
 void
@@ -6990,15 +6782,9 @@ v3_start_audio(uint16_t send_type) {/*{{{*/
     }
     memset(&ev, 0, sizeof(v3_event));
     ev.type = V3_EVENT_USER_TALK_START;
-    _v3_lock_sendq();
-    _v3_debug(V3_DEBUG_EVENT, "sending %lu bytes to event pipe for event type %d", sizeof(v3_event), ev.type);
-    if (fwrite(&ev, sizeof(struct _v3_event), 1, v3_server.evoutstream) != 1) {
-        _v3_error("could not write to event pipe");
-    }
-    fflush(v3_server.evoutstream);
-    _v3_unlock_sendq();
+
+    _v3_evpipe_write(v3_server.evpipe[1], &ev);
     _v3_func_leave("v3_start_audio");
-    return;
 }/*}}}*/
 
 uint32_t
@@ -7041,6 +6827,7 @@ v3_pcmlength_for_rate(uint32_t rate) {/*{{{*/
         _v3_func_leave("v3_pcmlength_for_rate");
         return bytestosend + bytestosend % 2;
     }
+
     _v3_func_leave("v3_pcmlength_for_rate");
     return 0;
 }/*}}}*/
@@ -7112,13 +6899,8 @@ v3_send_audio(uint16_t send_type, uint32_t rate, uint8_t *pcm, uint32_t length, 
     } else {
         memcpy(ev.data->sample, pcm, length);
     }
-    _v3_lock_sendq();
-    _v3_debug(V3_DEBUG_EVENT, "sending %lu bytes to event pipe for event type %d (pcm length %d)", sizeof(v3_event), ev.type, length);
-    if (fwrite(&ev, sizeof(struct _v3_event), 1, v3_server.evoutstream) != 1) {
-        _v3_error("could not write to event pipe");
-    }
-    fflush(v3_server.evoutstream);
-    _v3_unlock_sendq();
+
+    _v3_evpipe_write(v3_server.evpipe[1], &ev);
     _v3_func_leave("v3_send_audio");
     return rate;
 }/*}}}*/
@@ -7134,15 +6916,9 @@ v3_stop_audio(void) {/*{{{*/
     }
     memset(&ev, 0, sizeof(v3_event));
     ev.type = V3_EVENT_USER_TALK_END;
-    _v3_lock_sendq();
-    _v3_debug(V3_DEBUG_EVENT, "sending %lu bytes to event pipe for event type %d", sizeof(v3_event), ev.type);
-    if (fwrite(&ev, sizeof(struct _v3_event), 1, v3_server.evoutstream) != 1) {
-        _v3_error("could not write to event pipe");
-    }
-    fflush(v3_server.evoutstream);
-    _v3_unlock_sendq();
+
+    _v3_evpipe_write(v3_server.evpipe[1], &ev);
     _v3_func_leave("v3_start_audio");
-    return;
 }/*}}}*/
 
 void
@@ -7171,6 +6947,7 @@ v3_get_permissions(void) {/*{{{*/
 uint8_t
 v3_is_channel_admin(uint16_t channel_id) {/*{{{*/
     v3_channel *c;
+
     if (v3_luser.channel_admin[channel_id]) {
         return 1;
     }
@@ -7180,6 +6957,7 @@ v3_is_channel_admin(uint16_t channel_id) {/*{{{*/
     c = v3_get_channel(channel_id);
     channel_id = c->parent;
     v3_free_channel(c);
+
     return v3_is_channel_admin(channel_id);
 }/*}}}*/
 

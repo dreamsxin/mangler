@@ -1797,18 +1797,19 @@ bool Mangler::checkPushToTalkMouse(void) {/*{{{*/
     return(true);
 }/*}}}*/
 bool Mangler::updateXferAmounts(void) {/*{{{*/
-    uint32_t packets, bytes;
+    double bytes;
+    uint32_t packets;
     char buf[1024];
 
     builder->get_widget("sentLabel", label);
     bytes = v3_get_bytes_sent();
     packets = v3_get_packets_sent();
     if (bytes > 1024*1024) {
-        snprintf(buf, 1023, "%2.2f megabytes / %d packets", (float)bytes/1024/1024, packets);
+        snprintf(buf, 1023, "%2.2f megabytes / %u packets", bytes/1024/1024, packets);
     } else if (bytes > 1024) {
-        snprintf(buf, 1023, "%2.2f kilobytes / %d packets", (float)bytes/1024, packets);
+        snprintf(buf, 1023, "%2.2f kilobytes / %u packets", bytes/1024, packets);
     } else if (bytes) {
-        snprintf(buf, 1023, "%d bytes / %d packets", bytes, packets);
+        snprintf(buf, 1023, "%.0f bytes / %u packets", bytes, packets);
     } else {
         snprintf(buf, 1023, "N/A");
     }
@@ -1818,11 +1819,11 @@ bool Mangler::updateXferAmounts(void) {/*{{{*/
     bytes = v3_get_bytes_recv();
     packets = v3_get_packets_recv();
     if (bytes > 1024*1024) {
-        snprintf(buf, 1023, "%2.2f megabytes / %d packets", (float)bytes/1024/1024, packets);
+        snprintf(buf, 1023, "%2.2f megabytes / %u packets", bytes/1024/1024, packets);
     } else if (bytes > 1024) {
-        snprintf(buf, 1023, "%2.2f kilobytes / %d packets", (float)bytes/1024, packets);
+        snprintf(buf, 1023, "%2.2f kilobytes / %u packets", bytes/1024, packets);
     } else if (bytes) {
-        snprintf(buf, 1023, "%d bytes / %d packets", bytes, packets);
+        snprintf(buf, 1023, "%.0f bytes / %u packets", bytes, packets);
     } else {
         snprintf(buf, 1023, "N/A");
     }

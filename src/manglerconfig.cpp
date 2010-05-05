@@ -183,7 +183,7 @@ void ManglerConfig::ConvertOldConfig() {/*{{{*/
             } else if (serv_var == "motdhash") {
                 serv_var = "MOTDhash";
             } else if (serv_var == "defaultchannelid") {
-                serv_var = "DefaultChannelID";
+                serv_var = "DefaultChannel";
             } else if (serv_var == "defaultchannel") {
                 continue;
             } else if (serv_var.substr(0, 7) == "volume.") {

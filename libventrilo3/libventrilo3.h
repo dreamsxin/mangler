@@ -28,13 +28,11 @@
 #define _LIBVENTRILO3_H
 
 #include "config.h"
-#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include <stdarg.h>
 #include <string.h>
-#include <fcntl.h>
-#include <sys/stat.h>
 #include <time.h>
 #include <sys/time.h>
 #include <sys/socket.h>
@@ -43,7 +41,6 @@
 #include <netdb.h>
 #include <sys/select.h>
 #include <errno.h>
-#include <pthread.h>
 
 #define true  1
 #define false 0
@@ -344,8 +341,7 @@ uint32_t _v3_hash_table[] =
 /*
  * Global Variables
  */
-
-_v3_server  v3_server  = { 0, 0, 0, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, -1, { 0, 0 }, NULL, NULL, 0, 0, { "", 0, 0 }, { "", 0, 0 }, NULL, NULL, {0, 0},  0, 0, 0, 0, false, false, false};
+_v3_server  v3_server  = { 0, 0, 0, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, -1, { 0, 0 }, 0, 0, { "", 0, 0 }, { "", 0, 0 }, NULL, NULL, {0, 0},  0, 0, 0, 0, false, false, false};
 _v3_luser   v3_luser   = { -1, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, 0, {  } };
 
 v3_channel              *v3_channel_list = NULL;
@@ -627,6 +623,8 @@ char *                  _v3_status(uint8_t percent, const char *format, ...);
 int                     _v3_login_connect(struct in_addr *srvip, uint16_t srvport);
 int                     _v3_server_auth(struct in_addr *srvip, uint16_t srvport);
 
+int                     _v3_evpipe_write(int fd, v3_event *ev);
+
 int                     _v3_send(_v3_net_message *);
 _v3_net_message *       _v3_recv(int block);
 _v3_net_message *       _v3_create_message(_v3_net_message *msg, uint16_t type, uint16_t len, char *data);
@@ -636,7 +634,7 @@ int                     _v3_server_key_exchange(void);
 int                     _v3_send_enc_msg(char *data, int len);
 int                     _v3_recv_enc_msg(char *data);
 int                     _v3_process_message(_v3_net_message *msg);
-int                     _v3_destroy_packet(_v3_net_message *msg);
+void                    _v3_destroy_packet(_v3_net_message *msg);
 int                     _v3_update_channel(v3_channel *channel);
 void                    _v3_copy_channel(v3_channel *dest, v3_channel *src);
 int                     _v3_update_user(v3_user *user);
