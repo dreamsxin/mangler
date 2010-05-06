@@ -35,6 +35,11 @@
 # include "manglerosd.h"
 #endif
 
+#define PTT_KEY_GET   "<span weight='light'>&lt;press the set button to define a hotkey&gt;</span>"
+#define PTT_KEY_SET   "<span color='red'>&lt;Hold a key combination and click done...&gt;</span>"
+#define PTT_MOUSE_GET "<span weight='light'>&lt;press the set button to define a button&gt;</span>"
+#define PTT_MOUSE_SET "<span color='red'>&lt;Click a mouse button you wish to use...&gt;</span>"
+
 ManglerSettings::ManglerSettings(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
     this->builder = builder;
 
@@ -170,32 +175,23 @@ ManglerSettings::ManglerSettings(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
     mouseDeviceComboBox->set_model(mouseDeviceTreeModel);
     mouseDeviceComboBox->pack_start(mouseColumns.name);
 
-    // audio subsystem combo box
+    // Audio Subsystem
     audioSubsystemTreeModel->clear();
     Gtk::TreeModel::Row audioSubsystemRow;
 #ifdef HAVE_PULSE
     audioSubsystemRow = *(audioSubsystemTreeModel->append());
     audioSubsystemRow[audioSubsystemColumns.id] = "pulse";
     audioSubsystemRow[audioSubsystemColumns.name] = "PulseAudio";
-    if (Mangler::config["AudioSubsystem"].toLower() == "pulse") {
-        audioSubsystemComboBox->set_active(audioSubsystemRow);
-    }
 #endif
 #ifdef HAVE_ALSA
     audioSubsystemRow = *(audioSubsystemTreeModel->append());
     audioSubsystemRow[audioSubsystemColumns.id] = "alsa";
     audioSubsystemRow[audioSubsystemColumns.name] = "ALSA";
-    if (Mangler::config["AudioSubsystem"].toLower() == "alsa") {
-        audioSubsystemComboBox->set_active(audioSubsystemRow);
-    }
 #endif
 #ifdef HAVE_OSS
     audioSubsystemRow = *(audioSubsystemTreeModel->append());
     audioSubsystemRow[audioSubsystemColumns.id] = "oss";
     audioSubsystemRow[audioSubsystemColumns.name] = "OSS";
-    if (Mangler::config["AudioSubsystem"].toLower() == "oss") {
-        audioSubsystemComboBox->set_active(audioSubsystemRow);
-    }
 #endif
 
     volumeAdjustment = new Gtk::Adjustment(79, 0, 158, 1, 10, 10);
@@ -213,14 +209,18 @@ void ManglerSettings::applySettings(void) {/*{{{*/
     Gtk::TreeModel::iterator iter;
     GdkWindow *rootwin = gdk_get_default_root_window();
 
-    // Push to Talk
+    // Key Push to Talk
     builder->get_widget("settingsEnablePTTKeyCheckButton", checkbutton);
     Mangler::config["PushToTalkKeyEnabled"] = checkbutton->get_active();
     builder->get_widget("settingsPTTKeyValueLabel", label);
-    Mangler::config["PushToTalkKeyValue"] = label->get_text();
+    if (label->get_label() != PTT_KEY_GET && label->get_label() != PTT_KEY_SET) {
+        Mangler::config["PushToTalkKeyValue"] = label->get_text();
+    } else {
+        Mangler::config["PushToTalkKeyValue"] = "";
+    }
     //Mangler::config.parsePushToTalkValue(config.PushToTalkKeyValue);
 
-    // Mouse to Talk
+    // Mouse Push to Talk
     builder->get_widget("settingsMouseDeviceComboBox", combobox);
     iter = combobox->get_active();
     if (iter) {
@@ -230,11 +230,15 @@ void ManglerSettings::applySettings(void) {/*{{{*/
     builder->get_widget("settingsEnablePTTMouseCheckButton", checkbutton);
     Mangler::config["PushToTalkMouseEnabled"] = checkbutton->get_active();
     builder->get_widget("settingsPTTMouseValueLabel", label);
-    Glib::ustring PushToTalkMouseValue = label->get_text();
-    if (PushToTalkMouseValue.length() > 6) {
-        Mangler::config["PushToTalkMouseValue"] = PushToTalkMouseValue.substr(6);
+    if (label->get_label() != PTT_MOUSE_GET && label->get_label() != PTT_MOUSE_SET) {
+        Glib::ustring PushToTalkMouseValue = label->get_text();
+        if (PushToTalkMouseValue.length() > 6) {
+            Mangler::config["PushToTalkMouseValue"] = PushToTalkMouseValue.substr(6);
+        } else {
+            Mangler::config["PushToTalkMouseValue"] = PushToTalkMouseValue;
+        }
     } else {
-        Mangler::config["PushToTalkMouseValue"] = PushToTalkMouseValue; // huh?
+        Mangler::config["PushToTalkMouseValue"] = "";
     }
     XUngrabButton(GDK_WINDOW_XDISPLAY(rootwin), AnyButton, AnyModifier, GDK_ROOT_WINDOW());
     XAllowEvents (GDK_WINDOW_XDISPLAY(rootwin), AsyncBoth, CurrentTime);
@@ -381,18 +385,25 @@ void ManglerSettings::applySettings(void) {/*{{{*/
     Mangler::config.config.save();
 }/*}}}*/
 void ManglerSettings::initSettings(void) {/*{{{*/
-
-    // Push to Talk
+    // Key Push to Talk
     builder->get_widget("settingsEnablePTTKeyCheckButton", checkbutton);
     checkbutton->set_active(Mangler::config["PushToTalkKeyEnabled"].toBool());
     builder->get_widget("settingsPTTKeyValueLabel", label);
-    label->set_text(Mangler::config["PushToTalkKeyValue"].toUString());
+    if (Mangler::config["PushToTalkKeyValue"].length()) {
+        label->set_text(Mangler::config["PushToTalkKeyValue"].toUString());
+    } else {
+        label->set_markup(PTT_KEY_GET);
+    }
 
-    // Mouse to Talk
+    // Mouse Push to Talk
     builder->get_widget("settingsEnablePTTMouseCheckButton", checkbutton);
     checkbutton->set_active(Mangler::config["PushToTalkMouseEnabled"].toBool());
     builder->get_widget("settingsPTTMouseValueLabel", label);
-    label->set_text(Mangler::config["PushToTalkMouseValue"].toUString());
+    if (Mangler::config["PushToTalkMouseValue"].length()) {
+        label->set_text("Button" + Mangler::config["PushToTalkMouseValue"].toUString());
+    } else {
+        label->set_markup(PTT_MOUSE_GET);
+    }
 
     // Audio Player Integration
     builder->get_widget("settingsEnableAudioIntegrationCheckButton", checkbutton);
@@ -400,8 +411,7 @@ void ManglerSettings::initSettings(void) {/*{{{*/
     int audioPlayerSelection = 0;
     int audioPlayerCtr = 0;
     Gtk::TreeModel::Children apChildren = audioPlayerTreeModel->children();
-    for (
-            Gtk::TreeModel::Children::iterator apIter = apChildren.begin();
+    for (Gtk::TreeModel::Children::iterator apIter = apChildren.begin();
             apIter != apChildren.end();
             ++apIter, audioPlayerCtr++) {
         Gtk::TreeModel::Row row = *apIter;
@@ -460,9 +470,16 @@ void ManglerSettings::initSettings(void) {/*{{{*/
     }
 #endif
 
+    // Audio Subsystem
+    for (Gtk::TreeModel::iterator asIter = audioSubsystemTreeModel->children().begin();
+            asIter != audioSubsystemTreeModel->children().end();
+            asIter++) {
+        if ((*asIter)[audioSubsystemColumns.id] == Mangler::config["AudioSubsystem"].toLower()) {
+            audioSubsystemComboBox->set_active(asIter);
+        }
+    }
+
     // Audio Devices
-    // the proper devices are selected in the window->show() callback
-    // init the custom audio devices
     inputDeviceCustomName->set_text(Mangler::config["InputDeviceCustomName"].toUString());
     outputDeviceCustomName->set_text(Mangler::config["OutputDeviceCustomName"].toUString());
     notificationDeviceCustomName->set_text(Mangler::config["NotificationDeviceCustomName"].toUString());
@@ -482,6 +499,11 @@ void ManglerSettings::initSettings(void) {/*{{{*/
 #ifdef HAVE_ESPEAK
     checkbutton->set_sensitive(true);
 #endif
+
+    // Master Volume
+    if (Mangler::config["MasterVolumeLevel"].length()) {
+        volumeAdjustment->set_value(Mangler::config["MasterVolumeLevel"].toInt());
+    }
 
     // Debug Level
     builder->get_widget("debugStatus", checkbutton);
@@ -523,8 +545,6 @@ void ManglerSettings::initSettings(void) {/*{{{*/
 
     builder->get_widget("debugEncryptedPacket", checkbutton);
     checkbutton->set_active(config_lv3_debuglevel & V3_DEBUG_PACKET_ENCRYPTED ? 1 : 0);
-
-    volumeAdjustment->set_value(Mangler::config["MasterVolumeLevel"].toInt());
 }/*}}}*/
 
 // Settings Window Callbacks
@@ -666,9 +686,9 @@ void ManglerSettings::settingsPTTKeyButton_clicked_cb(void) {/*{{{*/
         button->set_sensitive(true);
         builder->get_widget("settingsPTTKeyValueLabel", label);
         // if the text is as follows, the user pressed done without any keys
-        // pressed down.  Reset it to the default text
-        if (label->get_text() == "Hold your key combination and click done") {
-            label->set_markup("<span weight='light'>&lt;press the set button to define a hotkey&gt;</span>");
+        // pressed down and reset it to the default text
+        if (label->get_label() == PTT_KEY_SET) {
+            label->set_markup(PTT_KEY_GET);
         }
     }
 }/*}}}*/
@@ -703,7 +723,7 @@ void ManglerSettings::settingsEnablePTTMouseCheckButton_toggled_cb(void) {/*{{{*
 void ManglerSettings::settingsPTTMouseButton_clicked_cb(void) {/*{{{*/
     isDetectingMouse = true;
     builder->get_widget("settingsPTTMouseValueLabel", label);
-    label->set_markup("<span color='red'>&lt;Click the mouse button you wish to use&gt;</span>");
+    label->set_markup(PTT_MOUSE_SET);
     builder->get_widget("settingsPTTMouseButton", button);
     button->set_sensitive(false);
     builder->get_widget("settingsCancelButton", button);
@@ -711,8 +731,6 @@ void ManglerSettings::settingsPTTMouseButton_clicked_cb(void) {/*{{{*/
     builder->get_widget("settingsApplyButton", button);
     button->set_sensitive(false);
     builder->get_widget("settingsOkButton", button);
-    button->set_sensitive(false);
-    builder->get_widget("settingsPTTKeyButton", button);
     button->set_sensitive(false);
     builder->get_widget("settingsMouseDeviceComboBox", combobox);
     combobox->set_sensitive(false);
@@ -782,7 +800,7 @@ ManglerSettings::settingsPTTKeyDetect(void) {/*{{{*/
     }
     builder->get_widget("settingsPTTKeyValueLabel", label);
     if (ptt_keylist.empty()) {
-        label->set_markup("<span color='red'>Hold your key combination and click done</span>");
+        label->set_markup(PTT_KEY_SET);
     } else {
         label->set_text(ptt_keylist);
     }
@@ -791,12 +809,12 @@ ManglerSettings::settingsPTTKeyDetect(void) {/*{{{*/
 
 bool
 ManglerSettings::settingsPTTMouseDetect(void) {/*{{{*/
-    GdkWindow   *rootwin = gdk_get_default_root_window();
-    char buttonname[32];
+    GdkWindow *rootwin = gdk_get_default_root_window();
+    Glib::ustring buttonname;
+    char mousebutton[8];
     static bool grabbed = false;
     int flag = 0;
     int x, y;
-    int mousebutton;
     XEvent ev;
 
 
@@ -816,9 +834,8 @@ ManglerSettings::settingsPTTMouseDetect(void) {/*{{{*/
         XNextEvent(GDK_WINDOW_XDISPLAY(rootwin), &ev);
         switch (ev.type) {
             case ButtonPress:
-                mousebutton = ev.xbutton.button;
-                snprintf(buttonname, 31, "Button%d", ev.xbutton.button);
-                Mangler::config["PushToTalkMouseValue"] = buttonname;
+                snprintf(mousebutton, 7, "%d", ev.xbutton.button);
+                buttonname = "Button" + Glib::ustring(mousebutton);
                 flag = 1;
                 XUngrabPointer(GDK_WINDOW_XDISPLAY(rootwin), CurrentTime);
                 grabbed = false;
@@ -831,30 +848,21 @@ ManglerSettings::settingsPTTMouseDetect(void) {/*{{{*/
             default:
                 break;
         }
-        XAllowEvents (GDK_WINDOW_XDISPLAY(rootwin), AsyncBoth, CurrentTime);
+        XAllowEvents(GDK_WINDOW_XDISPLAY(rootwin), AsyncBoth, CurrentTime);
     }
     isDetectingMouse = false;
     builder->get_widget("settingsPTTMouseValueLabel", label);
-    label->set_markup(Mangler::config["PushToTalkMouseValue"].toUString());
-
+    label->set_markup(buttonname);
     builder->get_widget("settingsCancelButton", button);
     button->set_sensitive(true);
-
     builder->get_widget("settingsApplyButton", button);
     button->set_sensitive(true);
-
     builder->get_widget("settingsOkButton", button);
     button->set_sensitive(true);
-
     builder->get_widget("settingsOkButton", button);
     button->set_sensitive(true);
-
     builder->get_widget("settingsPTTMouseButton", button);
     button->set_sensitive(true);
-
-    builder->get_widget("settingsPTTKeyButton", button);
-    button->set_sensitive(true);
-
     builder->get_widget("settingsMouseDeviceComboBox", combobox);
     combobox->set_sensitive(true);
 
