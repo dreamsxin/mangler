@@ -665,6 +665,8 @@ void                    _v3_lock_luser(void);
 void                    _v3_unlock_luser(void);
 void                    _v3_lock_sendq(void);
 void                    _v3_unlock_sendq(void);
+void                    _v3_lock_server(void);
+void                    _v3_unlock_server(void);
 int                     v3_queue_event(v3_event *ev);
 v3_event                *_v3_get_last_event(int *len);
 v3_event                *_v3_create_event(uint16_t event);

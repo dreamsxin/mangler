@@ -529,47 +529,52 @@ ManglerAdmin::setWidgetSensitive(const char *widgetName, bool widgetSens) {/*{{{
 /* ----------  Server Settings Related Methods  ---------- */
 void
 ManglerAdmin::ServerUpdate_clicked_cb(void) {/*{{{*/
+    v3_server_prop prop;
+
+    memset(&prop, 0, sizeof(v3_server_prop));
+    
+    //v3_serverprop_update(&prop); // 0% guaranteed it will work
 }/*}}}*/
 void
-ManglerAdmin::serverSettingsUpdated(v3_server_prop &props) {/*{{{*/
-    copyToEntry("ServerComment", c_to_ustring(props.server_comment));
-    copyToCombobox("ServerChatFilter", props.chat_filter, 0);
-    copyToCombobox("ServerChannelOrdering", props.channel_order, 0);
-    copyToCheckbutton("ServerAlwaysDisplayMOTD", props.motd_always);
+ManglerAdmin::serverSettingsUpdated(v3_server_prop &prop) {/*{{{*/
+    copyToEntry("ServerComment", c_to_ustring(prop.server_comment));
+    copyToCombobox("ServerChatFilter", prop.chat_filter, 0);
+    copyToCombobox("ServerChannelOrdering", prop.channel_order, 0);
+    copyToCheckbutton("ServerAlwaysDisplayMOTD", prop.motd_always);
     // guest accounts
-    copyToSpinbutton("ServerMaxGuests", props.max_guest);
-    copyToSpinbutton("ServerKickGuests", props.autokick_time);
-    copyToSpinbutton("ServerBanGuests", props.autoban_time);
+    copyToSpinbutton("ServerMaxGuests", prop.max_guest);
+    copyToSpinbutton("ServerKickGuests", prop.autokick_time);
+    copyToSpinbutton("ServerBanGuests", prop.autoban_time);
     // inactivity
-    copyToSpinbutton("ServerTimeout", props.inactivity_timeout);
-    copyToCombobox("ServerAction", props.inactivity_action, 0);
-    copyToCombobox("ServerChannel", props.inactivity_channel, 0);
+    copyToSpinbutton("ServerTimeout", prop.inactivity_timeout);
+    copyToCombobox("ServerAction", prop.inactivity_action, 0);
+    copyToCombobox("ServerChannel", v3_get_channel_id(prop.inactivity_channel), 0);
     // spam filters
-    copyToCombobox("ServerSpamFilterChannelAction", props.channel_spam_filter.action, 0);
-    copyToSpinbutton("ServerSpamFilterChannelInterval", props.channel_spam_filter.interval);
-    copyToSpinbutton("ServerSpamFilterChannelTimes", props.channel_spam_filter.times);
-    copyToCombobox("ServerSpamFilterChatAction", props.chat_spam_filter.action, 0);
-    copyToSpinbutton("ServerSpamFilterChatInterval", props.chat_spam_filter.interval);
-    copyToSpinbutton("ServerSpamFilterChatTimes", props.chat_spam_filter.times);
-    copyToCombobox("ServerSpamFilterCommentAction", props.comment_spam_filter.action, 0);
-    copyToSpinbutton("ServerSpamFilterCommentInterval", props.comment_spam_filter.interval);
-    copyToSpinbutton("ServerSpamFilterCommentTimes", props.comment_spam_filter.times);
-    copyToCombobox("ServerSpamFilterTTSAction", props.tts_spam_filter.action, 0);
-    copyToSpinbutton("ServerSpamFilterTTSInterval", props.tts_spam_filter.interval);
-    copyToSpinbutton("ServerSpamFilterTTSTimes", props.tts_spam_filter.times);
-    copyToCombobox("ServerSpamFilterWaveAction", props.wave_spam_filter.action, 0);
-    copyToSpinbutton("ServerSpamFilterWaveInterval", props.wave_spam_filter.interval);
-    copyToSpinbutton("ServerSpamFilterWaveTimes", props.wave_spam_filter.times);
+    copyToCombobox("ServerSpamFilterChannelAction", prop.channel_spam_filter.action, 0);
+    copyToSpinbutton("ServerSpamFilterChannelInterval", prop.channel_spam_filter.interval);
+    copyToSpinbutton("ServerSpamFilterChannelTimes", prop.channel_spam_filter.times);
+    copyToCombobox("ServerSpamFilterChatAction", prop.chat_spam_filter.action, 0);
+    copyToSpinbutton("ServerSpamFilterChatInterval", prop.chat_spam_filter.interval);
+    copyToSpinbutton("ServerSpamFilterChatTimes", prop.chat_spam_filter.times);
+    copyToCombobox("ServerSpamFilterCommentAction", prop.comment_spam_filter.action, 0);
+    copyToSpinbutton("ServerSpamFilterCommentInterval", prop.comment_spam_filter.interval);
+    copyToSpinbutton("ServerSpamFilterCommentTimes", prop.comment_spam_filter.times);
+    copyToCombobox("ServerSpamFilterTTSAction", prop.tts_spam_filter.action, 0);
+    copyToSpinbutton("ServerSpamFilterTTSInterval", prop.tts_spam_filter.interval);
+    copyToSpinbutton("ServerSpamFilterTTSTimes", prop.tts_spam_filter.times);
+    copyToCombobox("ServerSpamFilterWaveAction", prop.wave_spam_filter.action, 0);
+    copyToSpinbutton("ServerSpamFilterWaveInterval", prop.wave_spam_filter.interval);
+    copyToSpinbutton("ServerSpamFilterWaveTimes", prop.wave_spam_filter.times);
     // bind filters
-    copyToCheckbutton("ServerBindFilterTTS", props.tts_bind_filter);
-    copyToCheckbutton("ServerBindFilterWave", props.wave_bind_filter);
+    copyToCheckbutton("ServerBindFilterTTS", prop.tts_bind_filter);
+    copyToCheckbutton("ServerBindFilterWave", prop.wave_bind_filter);
     // remote status
-    copyToCheckbutton("ServerRemoteStatusServerComment", props.rem_srv_comment);
-    copyToCheckbutton("ServerRemoteStatusChannelNames", props.rem_chan_names);
-    copyToCheckbutton("ServerRemoteStatusChannelComments", props.rem_chan_comments);
-    copyToCheckbutton("ServerRemoteStatusUserNames", props.rem_user_names);
-    copyToCheckbutton("ServerRemoteStatusUserComments", props.rem_user_comments);
-    copyToCheckbutton("ServerRemoteStatusUseless", props.rem_show_login_names);
+    copyToCheckbutton("ServerRemoteStatusServerComment", prop.rem_srv_comment);
+    copyToCheckbutton("ServerRemoteStatusChannelNames", prop.rem_chan_names);
+    copyToCheckbutton("ServerRemoteStatusChannelComments", prop.rem_chan_comments);
+    copyToCheckbutton("ServerRemoteStatusUserNames", prop.rem_user_names);
+    copyToCheckbutton("ServerRemoteStatusUserComments", prop.rem_user_comments);
+    copyToCheckbutton("ServerRemoteStatusUseless", prop.rem_show_login_names);
     ServerTab->show();
 }/*}}}*/
 

@@ -225,7 +225,7 @@ typedef struct _v3_net_message_0x4c {/*{{{*/
     char *   value;             // 12
 } __attribute__ ((__packed__)) _v3_msg_0x4c;
 int _v3_get_0x4c(_v3_net_message *msg);
-_v3_net_message *_v3_put_0x4c(uint16_t subtype, uint16_t property, uint16_t ack, uint16_t transaction_id, char *value);/*}}}*/
+_v3_net_message *_v3_put_0x4c(uint16_t subtype, uint16_t property, uint16_t transaction_id, char *value);/*}}}*/
 typedef struct _v3_net_message_0x50 {/*{{{*/
     uint32_t type;              // 0
     uint32_t timestamp;         // 4

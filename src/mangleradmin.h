@@ -47,7 +47,7 @@ class ManglerAdmin {
         Gtk::Button         *UserAdd;
 
         void show(void);
-        void serverSettingsUpdated(v3_server_prop &props);
+        void serverSettingsUpdated(v3_server_prop &prop);
         void channelUpdated(v3_channel *channel);
         void channelRemoved(uint32_t chanid);
         void channelRemoved(v3_channel *channel);

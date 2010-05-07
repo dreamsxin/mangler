@@ -1130,7 +1130,7 @@ _v3_recv(int block) {/*{{{*/
                         break;/*}}}*/
                     case V3_EVENT_SRV_PROP_OPEN:/*{{{*/
                         {
-                            _v3_net_message *msg = _v3_put_0x4c(V3_SERVER_RECV_SETTING, V3_SRV_PROP_INIT, false, rand(), NULL);
+                            _v3_net_message *msg = _v3_put_0x4c(V3_SERVER_RECV_SETTING, V3_SRV_PROP_INIT, rand(), NULL);
                             if (_v3_send(msg)) {
                                 _v3_debug(V3_DEBUG_SOCKET, "sent server property open request to server");
                             } else {
@@ -1141,10 +1141,10 @@ _v3_recv(int block) {/*{{{*/
                         break;/*}}}*/
                     case V3_EVENT_SRV_PROP_UPDATE:/*{{{*/
                         {
+                            _v3_lock_server();
                             memcpy(&_v3_server_prop, &ev.data->srvprop, sizeof(v3_server_prop));
-                            char value[0x100] = "";
-                            snprintf(value, sizeof(value) - 1, "%u", _v3_server_prop.chat_filter);
-                            _v3_net_message *msg = _v3_put_0x4c(V3_SERVER_SEND_SETTING, V3_SRV_PROP_CHAT_FILTER, false, rand(), value);
+                            _v3_unlock_server();
+                            _v3_net_message *msg = _v3_put_0x4c(V3_SERVER_SEND_SETTING, V3_SRV_PROP_INIT, rand(), NULL);
                             if (_v3_send(msg)) {
                                 _v3_debug(V3_DEBUG_SOCKET, "sent server property update request to server");
                             } else {
@@ -3723,7 +3723,6 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                 char buf[512] = "";
                 int error = false;
                 int disconnected = false;
-
                 _v3_lock_server();
                 if (m->subtype & 0x01) {
                     error = true;
@@ -3767,7 +3766,6 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                 }
                 _v3_destroy_packet(msg);
                 _v3_unlock_server();
-
                 if (error) {
                     _v3_error("%s", buf);
                     if (v3_is_loggedin()) {
@@ -4170,13 +4168,13 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                     case V3_USERLIST_MODIFY:
                     case V3_USERLIST_ADD:
                         {
-                            int i;
+                            int ctr;
                             _v3_msg_0x4a_account *msub = msg->contents;
                             _v3_debug(V3_DEBUG_INFO, "received %d user accounts", msub->acct_list_count);
-                            for (i = 0; i < msub->acct_list_count; i++) {
-                                _v3_update_account(msub->acct_list[i]);
+                            for (ctr = 0; ctr < msub->acct_list_count; ctr++) {
+                                _v3_update_account(msub->acct_list[ctr]);
                                 v3_event *ev = _v3_create_event((msub->header.subtype == V3_USERLIST_MODIFY) ? V3_EVENT_USERLIST_MODIFY : V3_EVENT_USERLIST_ADD);
-                                ev->account.id = msub->acct_list[i]->perms.account_id;
+                                ev->account.id = msub->acct_list[ctr]->perms.account_id;
                                 _v3_debug(V3_DEBUG_INFO, "queuing event type %d for account id %d", ev->type, ev->account.id);
                                 v3_queue_event(ev);
                             }
@@ -4187,7 +4185,6 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                             _v3_msg_0x4a_perms *msub = msg->contents;
                             _v3_debug(V3_DEBUG_INFO, "received remove account for %d", msub->perms.account_id);
                             _v3_remove_account(msub->perms.account_id);
-
                             v3_event *ev = _v3_create_event(V3_EVENT_USERLIST_REMOVE);
                             ev->account.id = msub->perms.account_id;
                             _v3_debug(V3_DEBUG_INFO, "queuing event type %d for account id %d", ev->type, ev->account.id);
@@ -4199,7 +4196,6 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                             _v3_msg_0x4a_perms *msub = msg->contents;
                             _v3_debug(V3_DEBUG_INFO, "received local user permissions");
                             _v3_print_permissions(&msub->perms);
-
                             _v3_lock_luser();
                             v3_luser.perms = msub->perms;
                             _v3_unlock_luser();
@@ -4261,14 +4257,15 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
             } else {
                 _v3_msg_0x4c *m = msg->contents;
                 _v3_net_message *response;
+                _v3_lock_server();
                 v3_server_prop *prop = &_v3_server_prop;
                 char value[0x100] = "";
-                _v3_lock_server();
                 switch (m->subtype) {
                   case V3_SERVER_RECV_SETTING:
                   case V3_SERVER_SEND_SETTING:
                     if (m->subtype == V3_SERVER_RECV_SETTING) {
-                        switch (m->property) {
+                        _v3_debug(V3_DEBUG_INFO, "recv server property 0x%02X: %s", m->property, m->value);
+                        switch (m->property++) {
                           case V3_SRV_PROP_INIT:
                             memset(prop, 0, sizeof(v3_server_prop));
                           case V3_SRV_PROP_START:
@@ -4278,9 +4275,13 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                             break;
                           case V3_SRV_PROP_CHAN_ORDER:
                             prop->channel_order = atoi(m->value);
+                          case 0x04:
+                            m->property++;
                             break;
                           case V3_SRV_PROP_MOTD_ALWAYS:
                             prop->motd_always = atoi(m->value);
+                          case 0x06:
+                            m->property++;
                             break;
                           case V3_SRV_PROP_CHAT_SPAM_FILT:
                             _v3_parse_filter(&prop->chat_spam_filter, m->value);
@@ -4301,7 +4302,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                             prop->inactivity_action = atoi(m->value);
                             break;
                           case V3_SRV_PROP_INACTIVE_CHAN:
-                            prop->inactivity_channel = v3_get_channel_id(m->value);
+                            strncpy(prop->inactivity_channel, m->value, sizeof(prop->inactivity_channel) - 1);
                             break;
                           case V3_SRV_PROP_REM_SRV_COMMENT:
                             prop->rem_srv_comment = atoi(m->value);
@@ -4329,6 +4330,8 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                             break;
                           case V3_SRV_PROP_CHAN_SPAM_FILT:
                             _v3_parse_filter(&prop->channel_spam_filter, m->value);
+                          case 0x17:
+                            m->property++;
                             break;
                           case V3_SRV_PROP_REM_SHOW_LOGIN:
                             prop->rem_show_login_names = atoi(m->value);
@@ -4347,7 +4350,8 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                         }
                     }
                     if (m->subtype == V3_SERVER_SEND_SETTING) {
-                        switch (m->property) {
+                        _v3_debug(V3_DEBUG_INFO, "sent server property 0x%02X", m->property);
+                        switch (++m->property) {
                           case V3_SRV_PROP_INIT:
                           case V3_SRV_PROP_START:
                             break;
@@ -4357,9 +4361,13 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                           case V3_SRV_PROP_CHAN_ORDER:
                             snprintf(value, sizeof(value) - 1, "%u", prop->channel_order);
                             break;
+                          case 0x04:
+                            m->property++;
                           case V3_SRV_PROP_MOTD_ALWAYS:
                             snprintf(value, sizeof(value) - 1, "%u", prop->motd_always);
                             break;
+                          case 0x06:
+                            m->property++;
                           case V3_SRV_PROP_CHAT_SPAM_FILT:
                             snprintf(value, sizeof(value) - 1, "%u,%u,%u",
                                     prop->chat_spam_filter.action,
@@ -4391,7 +4399,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                             snprintf(value, sizeof(value) - 1, "%u", prop->inactivity_action);
                             break;
                           case V3_SRV_PROP_INACTIVE_CHAN:
-                            //TODO prop->inactivity_channel = v3_get_channel_id(m->value, "/");
+                            strncpy(value, prop->inactivity_channel, sizeof(value) - 1);
                             break;
                           case V3_SRV_PROP_REM_SRV_COMMENT:
                             snprintf(value, sizeof(value) - 1, "%u", prop->rem_srv_comment);
@@ -4423,6 +4431,8 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                                     prop->channel_spam_filter.interval,
                                     prop->channel_spam_filter.times);
                             break;
+                          case 0x17:
+                            m->property++;
                           case V3_SRV_PROP_REM_SHOW_LOGIN:
                             snprintf(value, sizeof(value) - 1, "%u", prop->rem_show_login_names);
                             break;
@@ -4436,20 +4446,19 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                             snprintf(value, sizeof(value) - 1, "%u", prop->autoban_time);
                             break;
                           case V3_SRV_PROP_FINISH:
+                            m->property++;
                             break;
                         }
                     }
-                    if (m->property != V3_SRV_PROP_FINISH) {
-                        _v3_debug(V3_DEBUG_INFO, "server property 0x%02X: %s", m->property, m->value);
-                        if (m->property == 0x03 || m->property == 0x05 || m->property == 0x16) {
-                            m->property++;
+                    if (m->property <= V3_SRV_PROP_FINISH) {
+                        if (m->subtype == V3_SERVER_SEND_SETTING) {
+                            _v3_debug(V3_DEBUG_INFO, "send server property 0x%02X: %s", m->property, m->value);
                         }
                         response = _v3_put_0x4c(
                                 m->subtype,
-                                m->property + 1,
-                                false,
+                                m->property,
                                 m->transaction_id,
-                                (m->subtype == V3_SERVER_SEND_SETTING) ? value : NULL);
+                                (m->subtype == V3_SERVER_SEND_SETTING && strlen(value)) ? value : NULL);
                         _v3_send(response);
                         _v3_destroy_packet(response);
                     } else {
@@ -4459,7 +4468,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                         }
                         if (m->subtype == V3_SERVER_SEND_SETTING) {
                             ev->type = V3_EVENT_SRV_PROP_SENT;
-                            response = _v3_put_0x4c(V3_SERVER_SEND_DONE, 0, false, m->transaction_id, NULL);
+                            response = _v3_put_0x4c(V3_SERVER_SEND_DONE, V3_SRV_PROP_INIT, m->transaction_id, NULL);
                             _v3_send(response);
                             _v3_destroy_packet(response);
                         }
@@ -4545,7 +4554,6 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                 uint8_t guest = false;
                 char **motd;
                 int size = 0;
-
                 _v3_lock_server();
                 if (m->message_id + 1 > m->message_num) {
                     _v3_debug(V3_DEBUG_PACKET_PARSE, "received %d packet but max packets is %d", m->message_id, m->message_num);
@@ -4753,7 +4761,6 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                 return V3_MALFORMED;
             } else {
                 _v3_msg_0x58 *m = msg->contents;
-
                 if (m->error_id) {
                     char *error;
                     if (m->error_id > (sizeof(_v3_phantom_errors) / sizeof(_v3_phantom_errors[0]))) {
@@ -4820,22 +4827,18 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                 char buf[1024];
                 _v3_msg_0x59 *m = msg->contents;
                 snprintf(buf, 1024, "%s%s", _v3_errors[m->error], m->message);
-
                 if (m->minutes_banned) {
                     char buf2[1024];
                     snprintf(buf2, 1024, " You can connect again in %d minutes", m->minutes_banned);
                     strncat(buf, buf2, 1023);
                 }
-
                 _v3_error("%s", buf);
-
                 if (v3_is_loggedin()) {
                     v3_event *ev = _v3_create_event(V3_EVENT_ERROR_MSG);
                     ev->error.disconnected = m->close_connection;
                     strncpy(ev->error.message, buf, 512);
                     v3_queue_event(ev);
                 }
-
                 if (m->close_connection) {
                     _v3_debug(V3_DEBUG_INTERNAL, "disconnecting from server");
                     _v3_logout();

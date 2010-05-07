@@ -346,8 +346,7 @@ typedef struct {
     v3_sp_filter tts_spam_filter;
     uint32_t inactivity_timeout;
     uint8_t inactivity_action;
-    //char  inactivity_channel[1024]; // TODO: this sucks, we should probably resolve the channel path in lv3
-    uint16_t inactivity_channel;
+    char    inactivity_channel[0x100];
     uint8_t rem_srv_comment;
     uint8_t rem_chan_names;
     uint8_t rem_chan_comments;

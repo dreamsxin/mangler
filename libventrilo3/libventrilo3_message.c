@@ -364,9 +364,9 @@ _v3_put_0x00(void) {/*{{{*/
         mc->salt1[ctr] = rand() % 93 + 33;
         mc->salt2[ctr] = rand() % 93 + 33;
     }
-
     m->contents = mc;
     m->data = (char *)mc;
+
     _v3_func_leave("_v3_put_0x00");
     return m;
 }/*}}}*/
@@ -379,13 +379,14 @@ _v3_get_0x06(_v3_net_message *msg) {/*{{{*/
     _v3_func_enter("_v3_get_0x06");
     m = malloc(sizeof(_v3_msg_0x06));
     memcpy(m, msg->data, 12);
-    if(m->subtype & 4) {
+    if (m->subtype & 4) {
         m->encryption_key = malloc(msg->len - 12);
         memcpy(m->encryption_key, msg->data + 12, msg->len - 12);
     } else {
         m->unknown_2 = msg->data[12];
     }
     msg->contents = m;
+
     _v3_func_leave("_v3_get_0x06");
     return true;
 }/*}}}*/
@@ -410,8 +411,9 @@ _v3_get_0x33(_v3_net_message *msg) {/*{{{*/
     for (ctr = 0; ctr < m->channel_id_count; ctr++) {
         _v3_debug(V3_DEBUG_PACKET_PARSE, " * channel %d", m->channel_ids[ctr]);
     }
-    _v3_func_leave("_v3_get_0x33");
     msg->contents = m;
+
+    _v3_func_leave("_v3_get_0x33");
     return true;
 }/*}}}*/
 int
@@ -422,6 +424,7 @@ _v3_destroy_0x33(_v3_net_message *msg) {/*{{{*/
     _v3_func_enter("_v3_destroy_0x33");
     _v3_debug(V3_DEBUG_PACKET_PARSE, "freeing resources channel admin list packet");
     free(m->channel_ids);
+
     _v3_func_leave("_v3_destroy_0x33");
     return true;
 }/*}}}*/
@@ -452,6 +455,7 @@ _v3_get_0x36(_v3_net_message *msg) {/*{{{*/
         }
     }
     msg->contents = m;
+
     _v3_func_leave("_v3_get_0x36");
     return true;
 }/*}}}*/
@@ -485,10 +489,12 @@ _v3_put_0x36(uint16_t subtype, v3_rank *rank) {/*{{{*/
     mc->type = 0x36;
     mc->subtype = subtype;
     mc->rank_count = 1;
-    if (rank) _v3_put_msg_rank(&mc->rank_list, rank);
-
+    if (rank) {
+        _v3_put_msg_rank(&mc->rank_list, rank);
+    }
     m->data = (char *)mc;
     m->contents = mc;
+
     _v3_func_leave("_v3_put_0x36");
     return m;
 }/*}}}*/
@@ -496,9 +502,9 @@ int
 _v3_destroy_0x36(_v3_net_message *msg) {/*{{{*/
     _v3_msg_0x36 *m;
     int ctr;
+
     m = msg->contents;
     _v3_func_enter("_v3_destroy_0x36");
-    
     if (m->rank_count) {
         for (ctr = 0; ctr < m->rank_count; ctr++) {
             _v3_debug(V3_DEBUG_PACKET_PARSE, "freeing resources for rank %d: %s", m->rank_list[ctr].id, m->rank_list[ctr].name);
@@ -507,6 +513,7 @@ _v3_destroy_0x36(_v3_net_message *msg) {/*{{{*/
         }
         free(m->rank_list);
     }
+
     _v3_func_leave("_v3_destroy_0x36");
     return true;
 }/*}}}*/
@@ -527,6 +534,7 @@ _v3_get_0x37(_v3_net_message *msg) {/*{{{*/
     _v3_debug(V3_DEBUG_PACKET_PARSE, "user_id.............: %d",   m->user_id);
     _v3_debug(V3_DEBUG_PACKET_PARSE, "ping................: %d",   m->ping);
     _v3_debug(V3_DEBUG_PACKET_PARSE, "sequence............: %d",   m->sequence);
+
     _v3_func_leave("_v3_get_0x37");
     return true;
 }/*}}}*/
@@ -552,6 +560,7 @@ _v3_put_0x37(int sequence) {/*{{{*/
     mc->ping  = v3_luser.ping;
     m->contents = mc;
     m->data = (char *)mc;
+
     _v3_func_leave("_v3_put_0x37");
     return m;
 }/*}}}*/
@@ -568,6 +577,7 @@ _v3_get_0x3a(_v3_net_message *msg) {/*{{{*/
     m = msg->contents = msg->data;
     m->msg = _v3_get_msg_string(&m->msglen, &m->msglen);
     _v3_debug(V3_DEBUG_PACKET_PARSE, "got text to speech message: %s", m->msg);
+
     _v3_func_leave("_v3_get_0x3a");
     return true;
 }/*}}}*/
@@ -585,15 +595,14 @@ _v3_put_0x3a(char *message) {/*{{{*/
     mc = malloc(m->len);
     memset(mc, 0, m->len);
     mc->type = 0x3a;
-
     if (message) {
-        mc = realloc(mc, m->len + strlen(message));
-        m->len -= sizeof(mc->msglen);
-        m->len += _v3_put_msg_string(&mc->msglen, message);
+        m->len += strlen(message);
+        mc = realloc(mc, m->len);
+        _v3_put_msg_string(&mc->msglen, message);
     }
-
     m->contents = mc;
     m->data = (char *)mc;
+
     _v3_func_leave("_v3_put_0x3a");
     return m;
 }/*}}}*/
@@ -614,6 +623,7 @@ _v3_get_0x3b(_v3_net_message *msg) {/*{{{*/
     _v3_debug(V3_DEBUG_PACKET_PARSE, "user id.............: %d",   m->user_id);
     _v3_debug(V3_DEBUG_PACKET_PARSE, "channel id..........: %d",   m->channel_id);
     _v3_debug(V3_DEBUG_PACKET_PARSE, "error id............: %d",   m->error_id);
+
     _v3_func_leave("_v3_get_0x3b");
     return true;
 }/*}}}*/
@@ -638,6 +648,7 @@ _v3_put_0x3b(uint16_t userid, uint16_t channelid) {/*{{{*/
     mc->channel_id = channelid;
     m->contents = mc;
     m->data = (char *)mc;
+
     _v3_func_leave("_v3_put_0x3b");
     return m;
 }/*}}}*/
@@ -657,6 +668,7 @@ _v3_get_0x3c(_v3_net_message *msg) {/*{{{*/
     _v3_debug(V3_DEBUG_PACKET_PARSE, "Codec Information:");
     _v3_debug(V3_DEBUG_PACKET_PARSE, "codec...............: %d",   m->codec);
     _v3_debug(V3_DEBUG_PACKET_PARSE, "format..............: %d",   m->codec_format);
+
     _v3_func_leave("_v3_get_0x3c");
     return true;
 }/*}}}*/
@@ -673,6 +685,7 @@ _v3_get_0x3f(_v3_net_message *msg) {/*{{{*/
     m = msg->contents = msg->data;
     m->msg = _v3_get_msg_string(&m->msglen, &m->msglen);
     _v3_debug(V3_DEBUG_PACKET_PARSE, "got play wave file message: %s", m->msg);
+
     _v3_func_leave("_v3_get_0x3f");
     return true;
 }/*}}}*/
@@ -690,15 +703,14 @@ _v3_put_0x3f(char *message) {/*{{{*/
     mc = malloc(m->len);
     memset(mc, 0, m->len);
     mc->type = 0x3f;
-
     if (message) {
-        mc = realloc(mc, m->len + strlen(message));
-        m->len -= sizeof(mc->msglen);
-        m->len += _v3_put_msg_string(&mc->msglen, message);
+        m->len += strlen(message);
+        mc = realloc(mc, m->len);
+        _v3_put_msg_string(&mc->msglen, message);
     }
-
     m->contents = mc;
     m->data = (char *)mc;
+
     _v3_func_leave("_v3_put_0x3f");
     return m;
 }/*}}}*/
@@ -720,6 +732,7 @@ _v3_get_0x42(_v3_net_message *msg) {/*{{{*/
             _v3_debug(V3_DEBUG_PACKET_PARSE, "got chat/rcon message: %s", m->msg);
             break;
     }
+
     _v3_func_leave("_v3_get_0x42");
     return true;
 }/*}}}*/
@@ -742,16 +755,15 @@ _v3_put_0x42(uint16_t subtype, uint16_t user_id, char *message) {/*{{{*/
     mc->type = 0x42;
     mc->subtype = subtype;
     mc->user_id = user_id;
-
     if (message) {
         len += strlen(message) + 2;
         mc = realloc(mc, len);
         _v3_put_msg_string((char *)mc + base, message);
     }
-
     m->contents = mc;
     m->data = (char *)mc;
     m->len = len;
+
     _v3_func_leave("_v3_put_0x42");
     return m;
 }/*}}}*/
@@ -772,6 +784,7 @@ _v3_get_0x46(_v3_net_message *msg) {/*{{{*/
     _v3_debug(V3_DEBUG_PACKET_PARSE, "user_id.............: %d",   m->user_id);
     _v3_debug(V3_DEBUG_PACKET_PARSE, "setting.............: %d",   m->setting);
     _v3_debug(V3_DEBUG_PACKET_PARSE, "value...............: %d",   m->value);
+
     _v3_func_leave("_v3_get_0x46");
     return true;
 }/*}}}*/
@@ -797,6 +810,7 @@ _v3_put_0x46(uint16_t user_id, uint16_t setting, uint16_t value) {/*{{{*/
     mc->value   = value;
     m->contents = mc;
     m->data = (char *)mc;
+
     _v3_func_leave("_v3_put_0x46");
     return m;
 }/*}}}*/
@@ -833,9 +847,9 @@ _v3_put_0x48(void) {/*{{{*/
     strncpy(mc->username, v3_luser.name, 32);
     strncpy(mc->phonetic, v3_luser.phonetic, 32);
     strncpy(mc->os, "WIN32", 64);
-
     m->contents = mc;
     m->data = (char *)mc;
+
     _v3_func_leave("_v3_put_0x48");
     return m;
 }/*}}}*/
@@ -845,6 +859,7 @@ _v3_net_message *
 _v3_put_0x49(uint16_t subtype, uint16_t user_id, char *channel_password, _v3_msg_channel *channel) {/*{{{*/
     _v3_net_message *msg;
     struct _v3_net_message_0x49 *msgdata;
+
     _v3_func_enter("_v3_put_0x49");
     msg = malloc(sizeof(_v3_net_message));
     memset(msg, 0, sizeof(_v3_net_message));
@@ -899,11 +914,10 @@ _v3_put_0x49(uint16_t subtype, uint16_t user_id, char *channel_password, _v3_msg
             msg->data = (char *)msgdata;
             _v3_func_leave("_v3_put_0x49");
             return(msg);
-        default:
-            _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown channel message subtype: %02X", subtype);
-            _v3_func_leave("_v3_put_0x49");
-            return NULL;
     }
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown channel message subtype: %02X", subtype);
+
+    _v3_func_leave("_v3_put_0x49");
     return NULL;
 }/*}}}*/
 int
@@ -934,6 +948,7 @@ _v3_get_0x49(_v3_net_message *msg) {/*{{{*/
             m->channel->comment
             );
     msg->contents = m;
+
     _v3_func_leave("_v3_get_0x49");
     return true;
 }/*}}}*/
@@ -945,9 +960,7 @@ _v3_get_0x4a(_v3_net_message *msg) {/*{{{*/
     void *offset;
 
     _v3_func_enter("_v3_get_0x4a");
-
     m = msg->contents = msg->data;
-
     _v3_debug(V3_DEBUG_PACKET_PARSE, "subtype.......: %d", m->subtype);
     _v3_debug(V3_DEBUG_PACKET_PARSE, "error_id......: %d", m->error_id);
     _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown 1.....: %d", m->unknown_1);
@@ -955,12 +968,10 @@ _v3_get_0x4a(_v3_net_message *msg) {/*{{{*/
     _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown 2.....: %d", m->unknown_2);
     _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown 3.....: %d", m->unknown_3);
     _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown 4.....: %d", m->unknown_4);
-
     if (m->error_id != 0) {
         _v3_func_leave("_v3_get_0x4a");
         return true;
     }
-
     switch (m->subtype) {
         case V3_USERLIST_OPEN:
         case V3_USERLIST_ADD:
@@ -1015,7 +1026,6 @@ _v3_put_0x4a(uint8_t subtype, v3_account *account, v3_account *account2) {/*{{{*
     m = malloc(sizeof(_v3_net_message));
     memset(m, 0, sizeof(_v3_net_message));
     m->type = 0x4a;
-
     switch (subtype) {
         case V3_USERLIST_OPEN:
         case V3_USERLIST_CLOSE:
@@ -1049,12 +1059,11 @@ _v3_put_0x4a(uint8_t subtype, v3_account *account, v3_account *account2) {/*{{{*
         default:
             break;
     }
-
     mc->type = 0x4a;
     mc->subtype = subtype;
-
     m->contents = mc;
     m->data = (char *)mc;
+
     _v3_func_leave("_v3_put_0x4a");
     return m;
 }/*}}}*/
@@ -1065,7 +1074,6 @@ _v3_destroy_0x4a(_v3_net_message *msg) {/*{{{*/
 
     _v3_func_enter("_v3_destroy_0x4a");
     m = msg->contents;
-
     switch (m->subtype) {
         case V3_USERLIST_OPEN:
             {
@@ -1110,6 +1118,7 @@ _v3_put_0x4b(void) {/*{{{*/
     mc->timestamp = time(NULL);
     m->contents = mc;
     m->data = (char *)mc;
+
     _v3_func_leave("_v3_put_0x4b");
     return m;
 }/*}}}*/
@@ -1130,11 +1139,12 @@ _v3_get_0x4c(_v3_net_message *msg) {/*{{{*/
     } else {
         m->value = NULL;
     }
+
     _v3_func_leave("_v3_get_0x4c");
     return true;
 }/*}}}*/
 _v3_net_message *
-_v3_put_0x4c(uint16_t subtype, uint16_t property, uint16_t ack, uint16_t transaction_id, char *value) {/*{{{*/
+_v3_put_0x4c(uint16_t subtype, uint16_t property, uint16_t transaction_id, char *value) {/*{{{*/
     _v3_net_message *m;
     _v3_msg_0x4c *mc;
 
@@ -1142,25 +1152,22 @@ _v3_put_0x4c(uint16_t subtype, uint16_t property, uint16_t ack, uint16_t transac
     m = malloc(sizeof(_v3_net_message));
     memset(m, 0, sizeof(_v3_net_message));
     m->type = 0x4c;
+    m->len = sizeof(_v3_msg_0x4c) - sizeof(mc->value);
 
-    uint16_t base = sizeof(_v3_msg_0x4c) - sizeof(char *) + sizeof(uint16_t);
-    uint16_t len = base;
-    mc = malloc(base);
-    memset(mc, 0, base);
+    mc = malloc(m->len);
+    memset(mc, 0, m->len);
     mc->type = 0x4c;
     mc->subtype = subtype;
     mc->property = property;
-    mc->ack = ack;
     mc->transaction_id = transaction_id;
     if (value) {
-        len += strlen(value) + 2;
-        mc = realloc(mc, len);
-        _v3_put_msg_string((char *)mc + base, value);
+        m->len += sizeof(uint16_t) + strlen(value);
+        mc = realloc(mc, m->len);
+        _v3_put_msg_string(&mc->value, value);
     }
-
     m->contents = mc;
     m->data = (char *)mc;
-    m->len = len;
+
     _v3_func_leave("_v3_put_0x4c");
     return m;
 }/*}}}*/
@@ -1169,7 +1176,9 @@ _v3_put_0x4c(uint16_t subtype, uint16_t property, uint16_t ack, uint16_t transac
 int
 _v3_get_0x50(_v3_net_message *msg) {/*{{{*/
     _v3_func_enter("_v3_get_0x50");
+
     msg->contents = msg->data;
+
     _v3_func_leave("_v3_get_0x50");
     return true;
 }/*}}}*/
@@ -1245,6 +1254,7 @@ _v3_get_0x52(_v3_net_message *msg) {/*{{{*/
     }
     _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown 0x52 subtype %02x", m->subtype);
     free(m);
+
     _v3_func_leave("_v3_get_0x52");
     return false;
 }/*}}}*/
@@ -1331,6 +1341,7 @@ _v3_put_0x52(uint8_t subtype, uint16_t codec, uint16_t codec_format, uint16_t se
             break;
     }
     free(msgdata);
+
     _v3_func_leave("_v3_put_0x52");
     return msg;
 }/*}}}*/
@@ -1351,6 +1362,7 @@ _v3_destroy_0x52(_v3_net_message *msg) {/*{{{*/
             }
             break;
     }
+
     _v3_func_leave("_v3_destroy_0x52");
     return true;
 }/*}}}*/
@@ -1359,12 +1371,14 @@ _v3_destroy_0x52(_v3_net_message *msg) {/*{{{*/
 int
 _v3_get_0x53(_v3_net_message *msg) {/*{{{*/
     _v3_func_enter("_v3_get_0x53");
+
     if (msg->len != sizeof(_v3_msg_0x53)) {
         _v3_debug(V3_DEBUG_PACKET_PARSE, "expected %d bytes, but message is %d bytes", sizeof(_v3_msg_0x53), msg->len);
         _v3_func_leave("_v3_get_0x53");
         return false;
     }
     msg->contents = msg->data;
+
     _v3_func_leave("_v3_get_0x53");
     return true;
 }/*}}}*/
@@ -1373,12 +1387,14 @@ _v3_get_0x53(_v3_net_message *msg) {/*{{{*/
 int
 _v3_get_0x57(_v3_net_message *msg) {/*{{{*/
     _v3_func_enter("_v3_get_0x57");
+
     if (msg->len != sizeof(_v3_msg_0x57)) {
         _v3_debug(V3_DEBUG_PACKET_PARSE, "expected %d bytes, but message is %d bytes", sizeof(_v3_msg_0x57), msg->len);
         _v3_func_leave("_v3_get_0x57");
         return false;
     }
     msg->contents = msg->data;
+
     _v3_func_leave("_v3_get_0x57");
     return true;
 }/*}}}*/
@@ -1394,8 +1410,7 @@ _v3_get_0x58(_v3_net_message *msg) {/*{{{*/
         _v3_func_leave("_v3_get_0x58");
         return false;
     }
-
-     m = msg->contents = msg->data;
+    m = msg->contents = msg->data;
     _v3_debug(V3_DEBUG_PACKET_PARSE, "Phantom:");
     _v3_debug(V3_DEBUG_PACKET_PARSE, "subtype.............: %d", m->subtype);
     _v3_debug(V3_DEBUG_PACKET_PARSE, "error_id............: %d", m->error_id);
@@ -1425,8 +1440,7 @@ _v3_put_0x58(uint16_t subtype, uint16_t channel, uint16_t phantom_user_id) {/*{{
     mc->type = 0x58;
     mc->subtype = subtype;
     mc->real_user_id = v3_luser.id;
-
-    switch(subtype) {
+    switch (subtype) {
         case V3_PHANTOM_ADD:
             mc->channel_id = channel;
             break;
@@ -1434,9 +1448,9 @@ _v3_put_0x58(uint16_t subtype, uint16_t channel, uint16_t phantom_user_id) {/*{{
             mc->phantom_user_id = phantom_user_id;
             break;
     }
-
     m->contents = mc;
     m->data = (char *)mc;
+
     _v3_func_leave("_v3_put_0x58");
     return m;
 }/*}}}*/
@@ -1455,6 +1469,7 @@ _v3_get_0x59(_v3_net_message *msg) {/*{{{*/
     memcpy(m,  msg->data, plen);
     m->message = (char *)_v3_get_msg_string(msg->data+plen, &len);
     msg->contents = m;
+
     _v3_func_leave("_v3_get_0x59");
     return true;
 }/*}}}*/
@@ -1469,12 +1484,13 @@ _v3_get_0x5a(_v3_net_message *msg) {/*{{{*/
         msg->data = realloc(msg->data, sizeof(_v3_msg_0x5a));
     }
     m = msg->contents = msg->data;
-    switch(m->subtype) {
+    switch (m->subtype) {
         case 2:
             m->msg = _v3_get_msg_string(&m->msglen, &m->msglen);
             _v3_debug(V3_DEBUG_PACKET_PARSE, "got private chat message: %s", m->msg);
             break;
     }
+
     _v3_func_leave("_v3_get_0x5a");
     return true;
 }/*}}}*/
@@ -1498,16 +1514,15 @@ _v3_put_0x5a(uint16_t subtype, uint16_t user1, uint16_t user2, char *message) {/
     mc->subtype = subtype;
     mc->user1 = user1;
     mc->user2 = user2;
-
     if (message) {
         len += strlen(message) + 2;
         mc = realloc(mc, len);
         _v3_put_msg_string((char *)mc + base, message);
     }
-
     m->contents = mc;
     m->data = (char *)mc;
     m->len = len;
+
     _v3_func_leave("_v3_put_0x5a");
     return m;
 }/*}}}*/
@@ -1528,6 +1543,7 @@ _v3_get_0x5c(_v3_net_message *msg) {/*{{{*/
     _v3_debug(V3_DEBUG_PACKET_PARSE, "subtype.............: %d",   m->subtype);
     _v3_debug(V3_DEBUG_PACKET_PARSE, "sum 1...............: %d",   m->sum_1);
     _v3_debug(V3_DEBUG_PACKET_PARSE, "sum 2...............: %d",   m->sum_2);
+
     _v3_func_leave("_v3_get_0x5c");
     return true;
 }/*}}}*/
@@ -1550,7 +1566,7 @@ _v3_put_0x5c(uint8_t subtype) {/*{{{*/
     mc->subtype = subtype;
 
     // We may want to store rand() values for later reference.
-    switch(subtype) {
+    switch (subtype) {
         case 0:
             mc->sum_2 = _v3_msg5c_gensum(0xBAADF00D, 16);
             break;
@@ -1597,29 +1613,32 @@ _v3_put_0x5c(uint8_t subtype) {/*{{{*/
             mc->sum_2 = !rand();
             break;
     }
-
     m->contents = mc;
     m->data = (char *)mc;
+
     _v3_func_leave("_v3_put_0x5c");
     return m;
 }/*}}}*/
 uint32_t
 _v3_msg5c_scramble(uint8_t* in) {/*{{{*/
     uint32_t i, out = 0;
-    for(i = 0; i < 8; i++) {
+
+    for (i = 0; i < 8; i++) {
         out = (out >> 8) ^ _v3_hash_table[(uint8_t)(in[i] ^ out)];
     }
+
     return out;
 }/*}}}*/
 uint32_t
 _v3_msg5c_gensum(uint32_t seed, uint32_t iterations) {/*{{{*/
     uint32_t i, j, out = 0;
-    uint32_t* ecx = (uint32_t*)malloc(sizeof(uint32_t) * iterations);
-    for(i = 0; i < iterations; i++) {
+    uint32_t *ecx = (uint32_t *)malloc(sizeof(uint32_t) * iterations);
+
+    for (i = 0; i < iterations; i++) {
         ecx[i] = seed;
     }
-    for(i = 0; i < iterations; i++) {
-        for(j = 0; j < 4; j++) {
+    for (i = 0; i < iterations; i++) {
+        for (j = 0; j < 4; j++) {
             uint8_t offset = ((ecx[i] >> (j * 8)) ^ out) & 0xff;
             out = (out >> 8) ^ _v3_hash_table[offset];
         }
@@ -1627,6 +1646,7 @@ _v3_msg5c_gensum(uint32_t seed, uint32_t iterations) {/*{{{*/
     uint8_t formatted[9] = { 0 };
     snprintf((char *)formatted, 9, "%08x", out);
     free(ecx);
+
     return _v3_msg5c_scramble(formatted);
 }/*}}}*/
 /*}}}*/
@@ -1659,6 +1679,7 @@ _v3_get_0x5d(_v3_net_message *msg) {/*{{{*/
     }
     m->lobby = &m->user_list[0];
     msg->contents = m;
+
     _v3_func_leave("_v3_get_0x5d");
     return true;
 }/*}}}*/
@@ -1690,6 +1711,7 @@ _v3_put_0x5d(uint16_t subtype, uint16_t count, v3_user *user) {/*{{{*/
     }
     msg->len = len;
     free(msgdata);
+
     _v3_func_leave("_v3_put_0x5d");
     return msg;
 }/*}}}*/
@@ -1709,6 +1731,7 @@ _v3_destroy_0x5d(_v3_net_message *msg) {/*{{{*/
         free(m->user_list[ctr].url);
     }
     free(m->user_list);
+
     _v3_func_leave("_v3_destroy_0x5d");
     return true;
 }/*}}}*/
@@ -1734,6 +1757,7 @@ _v3_get_0x60(_v3_net_message *msg) {/*{{{*/
                 m->channel_list[ctr].comment);
     }
     msg->contents = m;
+
     _v3_func_leave("_v3_get_0x60");
     return true;
 }/*}}}*/
@@ -1751,6 +1775,7 @@ _v3_destroy_0x60(_v3_net_message *msg) {/*{{{*/
         free(m->channel_list[ctr].comment);
     }
     free(m->channel_list);
+
     _v3_func_leave("_v3_destroy_0x60");
     return true;
 }/*}}}*/
@@ -1771,6 +1796,7 @@ _v3_get_0x62(_v3_net_message *msg) {/*{{{*/
     _v3_debug(V3_DEBUG_PACKET_PARSE, "user_id_to..........: %d", m->user_id_to);
     _v3_debug(V3_DEBUG_PACKET_PARSE, "user_id_from........: %d", m->user_id_from);
     _v3_debug(V3_DEBUG_PACKET_PARSE, "error_id............: %d", m->error_id);
+
     _v3_func_leave("_v3_get_0x62");
     return true;
 }/*}}}*/
@@ -1793,6 +1819,7 @@ _v3_put_0x62(uint16_t user_id) {/*{{{*/
     mc->user_id_from = v3_luser.id;
     m->contents = mc;
     m->data = (char *)mc;
+
     _v3_func_leave("_v3_put_0x62");
     return m;
 }/*}}}*/
@@ -1816,7 +1843,6 @@ _v3_put_0x63(uint16_t subtype, uint16_t user_id, char *string) {/*{{{*/
 
     mc->type = 0x63;
     mc->subtype = subtype;
-
     switch (subtype) {
         case V3_ADMIN_LOGIN:
             _v3_hash_password((uint8_t *)string, mc->t.password_hash);
@@ -1830,9 +1856,9 @@ _v3_put_0x63(uint16_t subtype, uint16_t user_id, char *string) {/*{{{*/
             strncpy(mc->t.reason, string, sizeof(mc->t.reason));
             break;
     }
-
     m->contents = mc;
     m->data = (char *)mc;
+
     _v3_func_leave("_v3_put_0x63");
     return m;
 }/*}}}*/
