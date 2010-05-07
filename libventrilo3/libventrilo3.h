@@ -209,10 +209,10 @@ char *_v3_bitmasks[] = {
 #define V3_NOTIMPL   2
 #define V3_FAILURE	 3
 
-#define V3_NOT_WAITING 0
+#define V3_NOT_WAITING   0
 #define V3_EVENT_WAITING 1
-#define V3_MSG_WAITING 2
-#define V3_BOTH_WAITING 3
+#define V3_MSG_WAITING   2
+#define V3_BOTH_WAITING  3
 
 /*
  * This structure defines the bit number of each permission setting, the
@@ -355,6 +355,8 @@ int                     _v3_rank_count;
 
 v3_account              *v3_account_list = NULL;
 int                     _v3_account_count;
+
+v3_server_prop          _v3_server_prop = { 0 };
 
 char                    _v3_error_text[256];
 char                    _v3_status_text[256];
@@ -619,6 +621,9 @@ int                     _v3_logout(void);
  */
 void                    _v3_debug(uint32_t level, const char *format, ...);
 char *                  _v3_status(uint8_t percent, const char *format, ...);
+void                    _v3_hexdump(int level, const char *data, int len);
+void                    _v3_net_message_dump_raw(const char *data, int len);
+void                    _v3_net_message_dump(_v3_net_message *msg);
 
 int                     _v3_login_connect(struct in_addr *srvip, uint16_t srvport);
 int                     _v3_server_auth(struct in_addr *srvip, uint16_t srvport);
@@ -628,7 +633,6 @@ int                     _v3_evpipe_write(int fd, v3_event *ev);
 int                     _v3_send(_v3_net_message *);
 _v3_net_message *       _v3_recv(int block);
 _v3_net_message *       _v3_create_message(_v3_net_message *msg, uint16_t type, uint16_t len, char *data);
-void                    _v3_net_message_dump(_v3_net_message *msg);
 
 int                     _v3_server_key_exchange(void);
 int                     _v3_send_enc_msg(char *data, int len);

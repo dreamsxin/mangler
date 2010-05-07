@@ -75,6 +75,7 @@ _v3_get_msg_string(void *offset, uint16_t *len) {/*{{{*/
     memcpy(s, offset+2, *len);
     s[*len] = '\0';
     *len+=2;
+
     _v3_func_leave("_v3_get_msg_string");
     return s;
 }/*}}}*/
@@ -95,6 +96,7 @@ _v3_get_msg_uint16_array(void *offset, uint16_t *len) {/*{{{*/
         s[ctr] = ntohs(s[ctr]);
     }
     *len = (*len*2)+2;
+
     _v3_func_leave("_v3_get_msg_string");
     return s;
 }/*}}}*/
@@ -103,12 +105,14 @@ int
 _v3_put_msg_uint16_array(void *buffer, uint16_t len, uint16_t *array) {/*{{{*/
     uint16_t count;
     void *p;
+
     _v3_func_enter("_v3_put_msg_uint16_array");
-    *((uint16_t*)buffer) = htons(len);
+    *((uint16_t *)buffer) = htons(len);
     for (count = 0; count < len; count++) {
         p = buffer + 2 + count * 2;
-        *((uint16_t*)p) = htons(array[count]);
+        *((uint16_t *)p) = htons(array[count]);
     }
+
     _v3_func_leave("_v3_put_msg_uint16_array");
     return len*2 + 2;
 }/*}}}*/
@@ -123,6 +127,7 @@ _v3_put_msg_string(void *buffer, char *string) {/*{{{*/
     if (len) {
         memcpy(buffer+2, string, len);
     }
+
     _v3_func_leave("_v3_put_msg_string");
     return len + 2;
 }/*}}}*/
@@ -143,8 +148,9 @@ _v3_get_msg_channel(void *offset, _v3_msg_channel *channel) {/*{{{*/
     offset+=len;
     channel->comment = (char *)_v3_get_msg_string(offset, &len);
     offset+=len;
+
     _v3_func_leave("_v3_get_msg_channel");
-    return(offset-start_offset);
+    return (offset - start_offset);
 }/*}}}*/
 
 int
@@ -167,8 +173,9 @@ _v3_get_msg_user(void *offset, _v3_msg_user *user) {/*{{{*/
     offset+=len;
     user->url = (char *)_v3_get_msg_string(offset, &len);
     offset+=len;
+
     _v3_func_leave("_v3_get_msg_user");
-    return(offset-start_offset);
+    return (offset - start_offset);
 }/*}}}*/
 
 int
@@ -185,8 +192,9 @@ _v3_get_msg_rank(void *offset, _v3_msg_rank *rank) {/*{{{*/
     offset+=len;
     rank->description = (char *)_v3_get_msg_string(offset, &len);
     offset+=len;
+
     _v3_func_leave("_v3_get_msg_rank");
-    return(offset-start_offset);
+    return (offset - start_offset);
 }/*}}}*/
 
 int
@@ -196,7 +204,6 @@ _v3_get_msg_account(void *offset, _v3_msg_account *account) {/*{{{*/
     int j;
 
     _v3_func_enter("_v3_get_msg_account");
-
     _v3_debug(V3_DEBUG_PACKET_PARSE, "start user acct parsing");
 
     memcpy(&(account->perms), offset, sizeof(account->perms));
@@ -230,7 +237,6 @@ _v3_get_msg_account(void *offset, _v3_msg_account *account) {/*{{{*/
     _v3_debug(V3_DEBUG_PACKET_PARSE, "end user acct parsing");
 
     _v3_func_leave("_v3_get_msg_account");
-
     return (offset - start_offset);
 }/*}}}*/
 
@@ -239,7 +245,6 @@ _v3_put_msg_account(void *buf, v3_account *account) {/*{{{*/
     void *start_buffer = buf;
 
     _v3_func_enter("_v3_put_msg_account");
-
     // put the account perms
     _v3_debug(V3_DEBUG_PACKET_PARSE, "putting account id: %d", account->perms.account_id);
     memcpy(buf, &account->perms, sizeof(account->perms));
@@ -256,7 +261,6 @@ _v3_put_msg_account(void *buf, v3_account *account) {/*{{{*/
     buf += _v3_put_msg_uint16_array(buf, account->chan_auth_count, account->chan_auth);
 
     _v3_func_leave("_v3_put_msg_account");
-
     return (buf - start_buffer);
 }/*}}}*/
 
@@ -278,7 +282,7 @@ _v3_put_msg_user(void *buffer, v3_user *user) {/*{{{*/
     buffer += _v3_put_msg_string(buffer, user->url);
 
     _v3_func_leave("_v3_put_msg_user");
-    return(buffer-start_buffer);
+    return (buffer - start_buffer);
 }/*}}}*/
 
 int
@@ -297,7 +301,7 @@ _v3_put_msg_channel(void *buffer, _v3_msg_channel *channel) {/*{{{*/
     buffer += _v3_put_msg_string(buffer, channel->comment);
 
     _v3_func_leave("_v3_put_msg_channel");
-    return(buffer-start_buffer);
+    return (buffer - start_buffer);
 }/*}}}*/
 
 int
@@ -306,15 +310,14 @@ _v3_put_msg_rank(void *buffer, _v3_msg_rank *rank) {/*{{{*/
 
     _v3_func_enter("_v3_put_msg_rank");
 
-    *((uint16_t*)(buffer)) = rank->id; buffer += 2;
-    *((uint16_t*)(buffer)) = rank->level; buffer += 2;
+    *((uint16_t *)buffer) = rank->id; buffer += 2;
+    *((uint16_t *)buffer) = rank->level; buffer += 2;
     buffer += _v3_put_msg_string(buffer, rank->name);
     buffer += _v3_put_msg_string(buffer, rank->description);
 
     _v3_func_leave("_v3_put_msg_rank");
-    return(buffer-start_buffer);
+    return (buffer - start_buffer);
 }/*}}}*/
-
 /*}}}*/
 
 /*
@@ -335,6 +338,39 @@ _v3_put_msg_rank(void *buffer, _v3_msg_rank *rank) {/*{{{*/
  * type.  The message structure itself is *NOT* freed
  */
 
+// Message 0x00 (0)  | HANDSHAKE /*{{{*/
+_v3_net_message *
+_v3_put_0x00(void) {/*{{{*/
+    _v3_net_message *m;
+    _v3_msg_0x00 *mc;
+
+    _v3_func_enter("_v3_put_0x00");
+    // Build our message
+    m = malloc(sizeof(_v3_net_message));
+    memset(m, 0, sizeof(_v3_net_message));
+    m->type = 0x00;
+    m->len = sizeof(_v3_msg_0x00);
+
+    // Build our message contents
+    mc = malloc(sizeof(_v3_msg_0x00));
+    memset(mc, 0, sizeof(_v3_msg_0x00));
+
+    mc->type = 0x00;
+    strncpy(mc->version, "3.0.0", 16);
+    memset(mc->salt1, 0, 32);
+    memset(mc->salt2, 0, 32);
+    int ctr;
+    for (ctr = 0; ctr < 31; ctr++) {
+        mc->salt1[ctr] = rand() % 93 + 33;
+        mc->salt2[ctr] = rand() % 93 + 33;
+    }
+
+    m->contents = mc;
+    m->data = (char *)mc;
+    _v3_func_leave("_v3_put_0x00");
+    return m;
+}/*}}}*/
+/*}}}*/
 // Message 0x06 (6)  | AUTHENTICATION/LOGIN ERROR /*{{{*/
 int
 _v3_get_0x06(_v3_net_message *msg) {/*{{{*/
@@ -353,7 +389,6 @@ _v3_get_0x06(_v3_net_message *msg) {/*{{{*/
     _v3_func_leave("_v3_get_0x06");
     return true;
 }/*}}}*/
-
 /*}}}*/
 // Message 0x33 (51) | CHANNEL ADMIN INFO (?)/*{{{*/
 int
@@ -420,24 +455,6 @@ _v3_get_0x36(_v3_net_message *msg) {/*{{{*/
     _v3_func_leave("_v3_get_0x36");
     return true;
 }/*}}}*/
-int
-_v3_destroy_0x36(_v3_net_message *msg) {/*{{{*/
-    _v3_msg_0x36 *m;
-    int ctr;
-    m = msg->contents;
-    _v3_func_enter("_v3_destroy_0x36");
-    
-    if (m->rank_count) {
-        for (ctr = 0; ctr < m->rank_count; ctr++) {
-            _v3_debug(V3_DEBUG_PACKET_PARSE, "freeing resources for rank %d: %s", m->rank_list[ctr].id, m->rank_list[ctr].name);
-            free(m->rank_list[ctr].name);
-            free(m->rank_list[ctr].description);
-        }
-        free(m->rank_list);
-    }
-    _v3_func_leave("_v3_destroy_0x36");
-    return true;
-}/*}}}*/
 _v3_net_message *
 _v3_put_0x36(uint16_t subtype, v3_rank *rank) {/*{{{*/
     _v3_net_message *m;
@@ -475,6 +492,24 @@ _v3_put_0x36(uint16_t subtype, v3_rank *rank) {/*{{{*/
     _v3_func_leave("_v3_put_0x36");
     return m;
 }/*}}}*/
+int
+_v3_destroy_0x36(_v3_net_message *msg) {/*{{{*/
+    _v3_msg_0x36 *m;
+    int ctr;
+    m = msg->contents;
+    _v3_func_enter("_v3_destroy_0x36");
+    
+    if (m->rank_count) {
+        for (ctr = 0; ctr < m->rank_count; ctr++) {
+            _v3_debug(V3_DEBUG_PACKET_PARSE, "freeing resources for rank %d: %s", m->rank_list[ctr].id, m->rank_list[ctr].name);
+            free(m->rank_list[ctr].name);
+            free(m->rank_list[ctr].description);
+        }
+        free(m->rank_list);
+    }
+    _v3_func_leave("_v3_destroy_0x36");
+    return true;
+}/*}}}*/
 /*}}}*/
 // Message 0x37 (55) | PING /*{{{*/
 int
@@ -495,39 +530,6 @@ _v3_get_0x37(_v3_net_message *msg) {/*{{{*/
     _v3_func_leave("_v3_get_0x37");
     return true;
 }/*}}}*/
-
-_v3_net_message *
-_v3_put_0x00() {
-    _v3_net_message *m;
-    _v3_msg_0x00 *mc;
-
-    _v3_func_enter("_v3_put_0x00");
-    // Build our message
-    m = malloc(sizeof(_v3_net_message));
-    memset(m, 0, sizeof(_v3_net_message));
-    m->type = 0x00;
-    m->len = sizeof(_v3_msg_0x00);
-
-    // Build our message contents
-    mc = malloc(sizeof(_v3_msg_0x00));
-    memset(mc, 0, sizeof(_v3_msg_0x00));
-
-    mc->type = 0x00;
-    strncpy(mc->version, "3.0.0", 16);
-    memset(mc->salt1, 0, 32);
-    memset(mc->salt2, 0, 32);
-    int ctr;
-    for(ctr = 0; ctr < 31; ctr++) {
-        mc->salt1[ctr] = rand() % 93 + 33;
-        mc->salt2[ctr] = rand() % 93 + 33;
-    }
-
-    m->contents = mc;
-    m->data = (char *)mc;
-    _v3_func_leave("_v3_put_0x00");
-    return m;
-}
-
 _v3_net_message *
 _v3_put_0x37(int sequence) {/*{{{*/
     _v3_net_message *m;
@@ -1141,7 +1143,7 @@ _v3_put_0x4c(uint16_t subtype, uint16_t property, uint16_t ack, uint16_t transac
     memset(m, 0, sizeof(_v3_net_message));
     m->type = 0x4c;
 
-    uint16_t base = sizeof(_v3_msg_0x4c) - sizeof(char *)  + sizeof(uint16_t);
+    uint16_t base = sizeof(_v3_msg_0x4c) - sizeof(char *) + sizeof(uint16_t);
     uint16_t len = base;
     mc = malloc(base);
     memset(mc, 0, base);

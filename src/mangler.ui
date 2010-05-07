@@ -1018,7 +1018,6 @@ to the server to set the default channel</property>
                             <property name="visibility">False</property>
                             <property name="invisible_char">&#x25CF;</property>
                             <property name="activates_default">True</property>
-                            <property name="invisible_char_set">True</property>
                             <accessibility>
                               <relation type="labelled-by" target="serverListPasswordLabel"/>
                             </accessibility>
@@ -5276,6 +5275,7 @@ These are useful for developers.</property>
                                               <object class="GtkEntry" id="ChannelPassword">
                                                 <property name="visible">True</property>
                                                 <property name="can_focus">True</property>
+                                                <property name="max_length">31</property>
                                                 <property name="visibility">False</property>
                                                 <property name="invisible_char">&#x25CF;</property>
                                                 <accessibility>
@@ -5293,6 +5293,7 @@ These are useful for developers.</property>
                                               <object class="GtkEntry" id="ChannelComment">
                                                 <property name="visible">True</property>
                                                 <property name="can_focus">True</property>
+                                                <property name="max_length">127</property>
                                                 <property name="invisible_char">&#x25CF;</property>
                                                 <accessibility>
                                                   <relation type="labelled-by" target="ChannelCommentLabel"/>
@@ -5309,6 +5310,7 @@ These are useful for developers.</property>
                                               <object class="GtkEntry" id="ChannelPhonetic">
                                                 <property name="visible">True</property>
                                                 <property name="can_focus">True</property>
+                                                <property name="max_length">31</property>
                                                 <property name="invisible_char">&#x25CF;</property>
                                                 <accessibility>
                                                   <relation type="labelled-by" target="ChannelPhoneticLabel"/>
@@ -5325,6 +5327,7 @@ These are useful for developers.</property>
                                               <object class="GtkEntry" id="ChannelName">
                                                 <property name="visible">True</property>
                                                 <property name="can_focus">True</property>
+                                                <property name="max_length">31</property>
                                                 <property name="invisible_char">&#x25CF;</property>
                                                 <accessibility>
                                                   <relation type="labelled-by" target="ChannelNameLabel"/>
@@ -6046,7 +6049,6 @@ These are useful for developers.</property>
                                                 <property name="can_focus">True</property>
                                                 <property name="visibility">False</property>
                                                 <property name="invisible_char">&#x25CF;</property>
-                                                <property name="invisible_char_set">True</property>
                                                 <accessibility>
                                                   <relation type="labelled-by" target="UserPasswordLabel"/>
                                                 </accessibility>
@@ -7992,6 +7994,7 @@ These are useful for developers.</property>
                                 <property name="visible">True</property>
                                 <property name="xalign">0</property>
                                 <property name="label" translatable="yes">N/A</property>
+                                <property name="ellipsize">end</property>
                               </object>
                               <packing>
                                 <property name="left_attach">3</property>

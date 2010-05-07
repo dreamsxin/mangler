@@ -111,16 +111,16 @@
 #define V3_SERVER_SEND_DONE         0x03
 #define V3_SERVER_TRANSACTION_DONE  0x04
 
-#define V3_SRV_PROP_RECV_INIT         0x00
-#define V3_SRV_PROP_RECV_START        0x01
+#define V3_SRV_PROP_INIT              0x00
+#define V3_SRV_PROP_START             0x01
 #define V3_SRV_PROP_CHAT_FILTER       0x02
-#define V3_SRV_PROP_CHAN_SORT         0x03
+#define V3_SRV_PROP_CHAN_ORDER        0x03
 #define V3_SRV_PROP_MOTD_ALWAYS       0x05
 #define V3_SRV_PROP_CHAT_SPAM_FILT    0x07
 #define V3_SRV_PROP_COMMENT_SPAM_FILT 0x08
 #define V3_SRV_PROP_WAVE_SPAM_FILT    0x09
 #define V3_SRV_PROP_TTS_SPAM_FILT     0x0A
-#define V3_SRV_PROP_INACTIVE_TIMEO    0x0B
+#define V3_SRV_PROP_INACTIVE_TIMEOUT  0x0B
 #define V3_SRV_PROP_INACTIVE_ACTION   0x0C
 #define V3_SRV_PROP_INACTIVE_CHAN     0x0D
 #define V3_SRV_PROP_REM_SRV_COMMENT   0x0E
@@ -128,7 +128,7 @@
 #define V3_SRV_PROP_REM_CHAN_COMMENTS 0x10
 #define V3_SRV_PROP_REM_USER_NAMES    0x11
 #define V3_SRV_PROP_REM_USER_COMMENTS 0x12
-#define V3_SRV_PROP_CHKPOINT          0x13
+#define V3_SRV_PROP_COMMENT           0x13
 #define V3_SRV_PROP_WAVE_BIND_FILT    0x14
 #define V3_SRV_PROP_TTS_BIND_FILT     0x15
 #define V3_SRV_PROP_CHAN_SPAM_FILT    0x16
@@ -136,7 +136,7 @@
 #define V3_SRV_PROP_MAX_GUEST_LOGIN   0x19
 #define V3_SRV_PROP_AUTOKICK_TIME     0x1A
 #define V3_SRV_PROP_AUTOBAN_TIME      0x1B
-#define V3_SRV_PROP_RECV_DONE         0x1C
+#define V3_SRV_PROP_FINISH            0x1C
 
 #define V3_DEBUG_NONE               0
 #define V3_DEBUG_STATUS             1
@@ -279,7 +279,8 @@ enum _v3_events {
     V3_EVENT_USER_CHANNEL_MUTE,
     V3_EVENT_PERMS_UPDATED,
     V3_EVENT_USER_RANK_CHANGE,
-    V3_EVENT_RECV_SRV_PROP,
+    V3_EVENT_SRV_PROP_RECV,
+    V3_EVENT_SRV_PROP_SENT,
 
     // outbound specific event types
     V3_EVENT_CHANGE_CHANNEL,
@@ -295,6 +296,7 @@ enum _v3_events {
     V3_EVENT_USERLIST_OPEN,
     V3_EVENT_USERLIST_CLOSE,
     V3_EVENT_SRV_PROP_OPEN,
+    V3_EVENT_SRV_PROP_UPDATE,
     V3_EVENT_SRV_PROP_CLOSE,
 
     // not implemented
@@ -337,7 +339,7 @@ typedef struct _v3_sp_filter {
 typedef struct {
     uint8_t chat_filter;
     uint8_t channel_order;
-    uint8_t motd_display;
+    uint8_t motd_always;
     v3_sp_filter chat_spam_filter;
     v3_sp_filter comment_spam_filter;
     v3_sp_filter wave_spam_filter;
@@ -351,13 +353,14 @@ typedef struct {
     uint8_t rem_chan_comments;
     uint8_t rem_user_names;
     uint8_t rem_user_comments;
+    char    server_comment[0x100];
     uint8_t wave_bind_filter;
     uint8_t tts_bind_filter;
     v3_sp_filter channel_spam_filter;
     uint8_t rem_show_login_names;
     uint8_t max_guest;
-    uint32_t autokick_len;
-    uint32_t autoban_len;
+    uint32_t autokick_time;
+    uint32_t autoban_time;
 } v3_server_prop;
 typedef union _v3_event_data v3_event_data;
 union _v3_event_data {
@@ -709,6 +712,7 @@ void        v3_userlist_remove(uint16_t account_id);
 void        v3_userlist_update(v3_account *account);
 void        v3_userlist_change_owner(uint16_t old_owner_id, uint16_t new_owner_id);
 void        v3_serverprop_open(void);
+void        v3_serverprop_update(const v3_server_prop *prop);
 
 int         v3_debuglevel(uint32_t level);
 int         v3_is_loggedin(void);
@@ -751,7 +755,8 @@ v3_user     *v3_get_user(uint16_t id);
 int         v3_channel_count(void);
 void        v3_free_channel(v3_channel *channel);
 v3_channel  *v3_get_channel(uint16_t id);
-uint16_t    v3_get_channel_id(const char *path, const char *sep);
+uint16_t    v3_get_channel_id(const char *path);
+char *      v3_get_channel_path(uint16_t channel_id);
 
 // Rank list functions
 void        v3_ranklist_open(void);

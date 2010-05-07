@@ -184,7 +184,7 @@ ManglerAdmin::ManglerAdmin(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
     ChannelAdd->signal_clicked().connect(sigc::mem_fun(this, &ManglerAdmin::AddChannel_clicked_cb));
 
     builder->get_widget("ChannelUpdate", button);
-    button->signal_clicked().connect(sigc::mem_fun(this, &ManglerAdmin::UpdateChannel_clicked_cb));
+    button->signal_clicked().connect(sigc::mem_fun(this, &ManglerAdmin::ChannelUpdate_clicked_cb));
 
     currentChannelID = 0xffff;
     currentChannelParent = 0xffff;
@@ -429,6 +429,7 @@ void
 ManglerAdmin::adminWindow_hide_cb(void) {/*{{{*/
     const v3_permissions *perms = v3_get_permissions();
     if (perms->srv_admin) {
+        ServerTab->hide();
         v3_userlist_close();
         UserEditorTreeModel->clear();
         UserOwnerModel->clear();
@@ -531,18 +532,14 @@ ManglerAdmin::ServerUpdate_clicked_cb(void) {/*{{{*/
 }/*}}}*/
 void
 ManglerAdmin::serverSettingsUpdated(v3_server_prop &props) {/*{{{*/
-    v3_user *lobby;
-    if ((lobby = v3_get_user(0))) {
-        copyToEntry("ServerComment", c_to_ustring(lobby->comment));
-        v3_free_user(lobby);
-    }
+    copyToEntry("ServerComment", c_to_ustring(props.server_comment));
     copyToCombobox("ServerChatFilter", props.chat_filter, 0);
     copyToCombobox("ServerChannelOrdering", props.channel_order, 0);
-    copyToCheckbutton("ServerAlwaysDisplayMOTD", props.motd_display);
+    copyToCheckbutton("ServerAlwaysDisplayMOTD", props.motd_always);
     // guest accounts
     copyToSpinbutton("ServerMaxGuests", props.max_guest);
-    copyToSpinbutton("ServerKickGuests", props.autokick_len);
-    copyToSpinbutton("ServerBanGuests", props.autoban_len);
+    copyToSpinbutton("ServerKickGuests", props.autokick_time);
+    copyToSpinbutton("ServerBanGuests", props.autoban_time);
     // inactivity
     copyToSpinbutton("ServerTimeout", props.inactivity_timeout);
     copyToCombobox("ServerAction", props.inactivity_action, 0);
@@ -563,9 +560,10 @@ ManglerAdmin::serverSettingsUpdated(v3_server_prop &props) {/*{{{*/
     copyToCombobox("ServerSpamFilterWaveAction", props.wave_spam_filter.action, 0);
     copyToSpinbutton("ServerSpamFilterWaveInterval", props.wave_spam_filter.interval);
     copyToSpinbutton("ServerSpamFilterWaveTimes", props.wave_spam_filter.times);
-
+    // bind filters
     copyToCheckbutton("ServerBindFilterTTS", props.tts_bind_filter);
     copyToCheckbutton("ServerBindFilterWave", props.wave_bind_filter);
+    // remote status
     copyToCheckbutton("ServerRemoteStatusServerComment", props.rem_srv_comment);
     copyToCheckbutton("ServerRemoteStatusChannelNames", props.rem_chan_names);
     copyToCheckbutton("ServerRemoteStatusChannelComments", props.rem_chan_comments);
@@ -961,7 +959,7 @@ ManglerAdmin::RemoveChannel_clicked_cb(void) {/*{{{*/
     }
 }/*}}}*/
 void
-ManglerAdmin::UpdateChannel_clicked_cb(void) {/*{{{*/
+ManglerAdmin::ChannelUpdate_clicked_cb(void) {/*{{{*/
     Gtk::TreeModel::iterator iter;
     v3_channel channel;
     Glib::ustring password;

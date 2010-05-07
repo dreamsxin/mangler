@@ -188,6 +188,7 @@ class ManglerAdmin {
         /* admin window main functions and callbacks */
         void adminWindow_show_cb(void);
         void adminWindow_hide_cb(void);
+        void CloseButton_clicked_cb(void);
         void copyToEntry(const char *widgetName, Glib::ustring src);
         void copyToSpinbutton(const char *widgetName, uint32_t src);
         void copyToCheckbutton(const char *widgetName, bool src);
@@ -211,8 +212,7 @@ class ManglerAdmin {
         void ChannelTree_cursor_changed_cb(void);
         void AddChannel_clicked_cb(void);
         void RemoveChannel_clicked_cb(void);
-        void UpdateChannel_clicked_cb(void);
-        void CloseButton_clicked_cb(void);
+        void ChannelUpdate_clicked_cb(void);
         void LoadCodecFormats(void);
         void ChannelProtMode_changed_cb(void);
         void ChannelVoiceMode_changed_cb(void);
@@ -240,7 +240,7 @@ class ManglerAdmin {
         void UserTemplateLoad_clicked_cb(void);
         void UserTemplateSave_clicked_cb(void);
 
-        /* rank editor callbacks */
+        /* rank editor functions and callbacks */
         Gtk::TreeModel::iterator getRank(uint16_t id, Gtk::TreeModel::Children children);
         void RankEditorTree_cursor_changed_cb(void);
         void RankAdd_clicked_cb(void);

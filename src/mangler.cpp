@@ -1271,9 +1271,6 @@ bool Mangler::getNetworkEvent() {/*{{{*/
             case V3_EVENT_ERROR_MSG:/*{{{*/
                 errorDialog(c_to_ustring(ev->error.message));
                 break;/*}}}*/
-            case V3_EVENT_RECV_SRV_PROP:/*{{{*/
-                admin->serverSettingsUpdated(ev->data->srvprop);
-                break;/*}}}*/
             case V3_EVENT_USER_TALK_START:/*{{{*/
                 v3_user *me, *user;
                 me = v3_get_user(v3_get_user_id());
@@ -1589,7 +1586,7 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                         chat->isPerChannel = ev->serverproperty.value;
                         chat->chatUserTreeModelFilter->refilter();
                         break;
-                    case V3_SRV_PROP_CHAN_SORT:
+                    case V3_SRV_PROP_CHAN_ORDER:
                         channelTree->sortAlphanumeric = ev->serverproperty.value;
                         channelTree->refreshAllChannels();
                         admin->channelSort(ev->serverproperty.value);
@@ -1686,6 +1683,10 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                         v3_free_user(u);
                     }
                 }
+                break;/*}}}*/
+            case V3_EVENT_SRV_PROP_RECV:
+            case V3_EVENT_SRV_PROP_SENT:/*{{{*/
+                admin->serverSettingsUpdated(ev->data->srvprop);
                 break;/*}}}*/
             default:
                 fprintf(stderr, "******************************************************** got unknown event type %d\n", ev->type);

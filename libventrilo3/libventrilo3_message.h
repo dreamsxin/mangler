@@ -68,7 +68,7 @@ typedef struct _v3_net_message_0x00 {/*{{{*/
     char     salt1[32];
     char     salt2[32];
 } __attribute__ ((__packed__)) _v3_msg_0x00;
-_v3_net_message *_v3_put_0x00();/*}}}*/
+_v3_net_message *_v3_put_0x00(void);/*}}}*/
 typedef struct _v3_net_message_0x06 {/*{{{*/
     uint32_t type;              // 0
     uint16_t unknown_1;         // 4
