@@ -1576,8 +1576,8 @@ bool Mangler::getNetworkEvent() {/*{{{*/
             case V3_EVENT_CHAN_ADMIN_UPDATED:/*{{{*/
                 channelTree->refreshAllChannels();
                 break;/*}}}*/
-            case V3_EVENT_USER_GLOBAL_MUTE:
-            case V3_EVENT_USER_CHANNEL_MUTE:/*{{{*/
+            case V3_EVENT_USER_GLOBAL_MUTE_CHANGED:
+            case V3_EVENT_USER_CHANNEL_MUTE_CHANGED:/*{{{*/
                 channelTree->refreshUser(ev->user.id);
                 break;/*}}}*/
             case V3_EVENT_SERVER_PROPERTY_UPDATED:/*{{{*/
