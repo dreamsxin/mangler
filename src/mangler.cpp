@@ -1684,9 +1684,11 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                     }
                 }
                 break;/*}}}*/
-            case V3_EVENT_SRV_PROP_RECV:
-            case V3_EVENT_SRV_PROP_SENT:/*{{{*/
+            case V3_EVENT_SRV_PROP_RECV:/*{{{*/
                 admin->serverSettingsUpdated(ev->data->srvprop);
+                break;/*}}}*/
+            case V3_EVENT_SRV_PROP_SENT:/*{{{*/
+                admin->serverSettingsSendDone();
                 break;/*}}}*/
             default:
                 fprintf(stderr, "******************************************************** got unknown event type %d\n", ev->type);

@@ -1141,10 +1141,12 @@ _v3_recv(int block) {/*{{{*/
                         break;/*}}}*/
                     case V3_EVENT_SRV_PROP_UPDATE:/*{{{*/
                         {
+                            char value[0x100] = "";
                             _v3_lock_server();
                             memcpy(&_v3_server_prop, &ev.data->srvprop, sizeof(v3_server_prop));
+                            snprintf(value, sizeof(value) - 1, "%u", _v3_server_prop.chat_filter);
                             _v3_unlock_server();
-                            _v3_net_message *msg = _v3_put_0x4c(V3_SERVER_SEND_SETTING, V3_SRV_PROP_INIT, rand(), NULL);
+                            _v3_net_message *msg = _v3_put_0x4c(V3_SERVER_SEND_SETTING, V3_SRV_PROP_CHAT_FILTER, rand(), value);
                             if (_v3_send(msg)) {
                                 _v3_debug(V3_DEBUG_SOCKET, "sent server property update request to server");
                             } else {

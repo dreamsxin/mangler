@@ -532,8 +532,7 @@ ManglerAdmin::ServerUpdate_clicked_cb(void) {/*{{{*/
     v3_server_prop prop;
 
     memset(&prop, 0, sizeof(v3_server_prop));
-    
-    strncpy(prop.server_comment, ustring_to_c(getFromEntry("ServerComment")).c_str(), 256);
+    strncpy(prop.server_comment, ustring_to_c(getFromEntry("ServerComment")).c_str(), sizeof(prop.server_comment) - 1);
     prop.chat_filter = getFromCombobox("ServerChatFilter");
     prop.channel_order = getFromCombobox("ServerChannelOrdering");
     prop.motd_always = getFromCheckbutton("ServerAlwaysDisplayMOTD");
@@ -544,9 +543,7 @@ ManglerAdmin::ServerUpdate_clicked_cb(void) {/*{{{*/
     // inactivity
     prop.inactivity_timeout = getFromSpinbutton("ServerTimeout");
     prop.inactivity_action = getFromCombobox("ServerAction");
-    char *prop_inactivity_channel = v3_get_channel_path(getFromCombobox("ServerChannel", 0));
-    strcpy(prop.inactivity_channel, prop_inactivity_channel);
-    ::free(prop_inactivity_channel);
+    prop.inactivity_channel = getFromCombobox("ServerChannel", 0);
     // spam filters
     prop.channel_spam_filter.action = getFromCombobox("ServerSpamFilterChannelAction");
     prop.channel_spam_filter.interval = getFromSpinbutton("ServerSpamFilterChannelInterval");
@@ -573,8 +570,12 @@ ManglerAdmin::ServerUpdate_clicked_cb(void) {/*{{{*/
     prop.rem_user_names = getFromCheckbutton("ServerRemoteStatusUserNames");
     prop.rem_user_comments = getFromCheckbutton("ServerRemoteStatusUserComments");
     prop.rem_show_login_names = getFromCheckbutton("ServerRemoteStatusUseless");
-    
+
+    builder->get_widget("ServerUpdate", button);
+    button->set_sensitive(false);
+
     v3_serverprop_update(&prop); // 0% guaranteed it will work
+    statusbarPush("Sending server properties...");
 }/*}}}*/
 void
 ManglerAdmin::serverSettingsUpdated(v3_server_prop &prop) {/*{{{*/
@@ -617,6 +618,12 @@ ManglerAdmin::serverSettingsUpdated(v3_server_prop &prop) {/*{{{*/
     copyToCheckbutton("ServerRemoteStatusUserComments", prop.rem_user_comments);
     copyToCheckbutton("ServerRemoteStatusUseless", prop.rem_show_login_names);
     ServerTab->show();
+}/*}}}*/
+void
+ManglerAdmin::serverSettingsSendDone(void) {/*{{{*/
+    builder->get_widget("ServerUpdate", button);
+    button->set_sensitive(true);
+    statusbarPush("Sending server properties... done.");
 }/*}}}*/
 
 /* ----------  Channel Editor Related Methods  ---------- */

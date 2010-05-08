@@ -48,6 +48,7 @@ class ManglerAdmin {
 
         void show(void);
         void serverSettingsUpdated(v3_server_prop &prop);
+        void serverSettingsSendDone(void);
         void channelUpdated(v3_channel *channel);
         void channelRemoved(uint32_t chanid);
         void channelRemoved(v3_channel *channel);
