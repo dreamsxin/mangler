@@ -533,7 +533,48 @@ ManglerAdmin::ServerUpdate_clicked_cb(void) {/*{{{*/
 
     memset(&prop, 0, sizeof(v3_server_prop));
     
-    //v3_serverprop_update(&prop); // 0% guaranteed it will work
+    strncpy(prop.server_comment, ustring_to_c(getFromEntry("ServerComment")).c_str(), 256);
+    prop.chat_filter = getFromCombobox("ServerChatFilter");
+    prop.channel_order = getFromCombobox("ServerChannelOrdering");
+    prop.motd_always = getFromCheckbutton("ServerAlwaysDisplayMOTD");
+    // guest accounts
+    prop.max_guest = getFromSpinbutton("ServerMaxGuests");
+    prop.autokick_time = getFromSpinbutton("ServerKickGuests");
+    prop.autoban_time = getFromSpinbutton("ServerBanGuests");
+    // inactivity
+    prop.inactivity_timeout = getFromSpinbutton("ServerTimeout");
+    prop.inactivity_action = getFromCombobox("ServerAction");
+    char *prop_inactivity_channel = v3_get_channel_path(getFromCombobox("ServerChannel", 0));
+    strcpy(prop.inactivity_channel, prop_inactivity_channel);
+    ::free(prop_inactivity_channel);
+    // spam filters
+    prop.channel_spam_filter.action = getFromCombobox("ServerSpamFilterChannelAction");
+    prop.channel_spam_filter.interval = getFromSpinbutton("ServerSpamFilterChannelInterval");
+    prop.channel_spam_filter.times = getFromSpinbutton("ServerSpamFilterChannelTimes");
+    prop.chat_spam_filter.action = getFromCombobox("ServerSpamFilterChatAction");
+    prop.chat_spam_filter.interval = getFromSpinbutton("ServerSpamFilterChatInterval");
+    prop.chat_spam_filter.times = getFromSpinbutton("ServerSpamFilterChatTimes");
+    prop.comment_spam_filter.action = getFromCombobox("ServerSpamFilterCommentAction");
+    prop.comment_spam_filter.interval = getFromSpinbutton("ServerSpamFilterCommentInterval");
+    prop.comment_spam_filter.times = getFromSpinbutton("ServerSpamFilterCommentTimes");
+    prop.tts_spam_filter.action = getFromCombobox("ServerSpamFilterTTSAction");
+    prop.tts_spam_filter.interval = getFromSpinbutton("ServerSpamFilterTTSInterval");
+    prop.tts_spam_filter.times = getFromSpinbutton("ServerSpamFilterTTSTimes");
+    prop.wave_spam_filter.action = getFromCombobox("ServerSpamFilterWaveAction");
+    prop.wave_spam_filter.interval = getFromSpinbutton("ServerSpamFilterWaveInterval");
+    prop.wave_spam_filter.times = getFromSpinbutton("ServerSpamFilterWaveTimes");
+    // bind filters
+    prop.tts_bind_filter = getFromCheckbutton("ServerBindFilterTTS");
+    prop.wave_bind_filter = getFromCheckbutton("ServerBindFilterWave");
+    // remote status
+    prop.rem_srv_comment = getFromCheckbutton("ServerRemoteStatusServerComment");
+    prop.rem_chan_names = getFromCheckbutton("ServerRemoteStatusChannelNames");
+    prop.rem_chan_comments = getFromCheckbutton("ServerRemoteStatusChannelComments");
+    prop.rem_user_names = getFromCheckbutton("ServerRemoteStatusUserNames");
+    prop.rem_user_comments = getFromCheckbutton("ServerRemoteStatusUserComments");
+    prop.rem_show_login_names = getFromCheckbutton("ServerRemoteStatusUseless");
+    
+    v3_serverprop_update(&prop); // 0% guaranteed it will work
 }/*}}}*/
 void
 ManglerAdmin::serverSettingsUpdated(v3_server_prop &prop) {/*{{{*/
