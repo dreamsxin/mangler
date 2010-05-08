@@ -1,9 +1,37 @@
+/*
+ * vim: softtabstop=4 shiftwidth=4 cindent foldmethod=marker expandtab
+ *
+ * $LastChangedDate$
+ * $Revision$
+ * $LastChangedBy$
+ * $URL$
+ *
+ * Copyright 2009-2010 Eric Kilfoil
+ * Copyright 2010 Roman Tetelman
+ *
+ * This file is part of Mangler.
+ *
+ * Mangler is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Mangler is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Mangler.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 #include "mangler.h"
+
 #ifdef HAVE_PULSE
 #include "mangleraudio.h"
 #include "manglerpulse.h"
 
-ManglerPulse::ManglerPulse(uint32_t rate, uint8_t channels, uint32_t pcm_framesize ) { /*{{{*/
+ManglerPulse::ManglerPulse(uint32_t rate, uint8_t channels, uint32_t pcm_framesize) {/*{{{*/
     pulse_stream = NULL;
     pulse_samplespec.format   = PA_SAMPLE_S16NE;
     pulse_samplespec.rate     = rate;
@@ -13,14 +41,14 @@ ManglerPulse::ManglerPulse(uint32_t rate, uint8_t channels, uint32_t pcm_framesi
     buffer_attr.prebuf    = -1;
     buffer_attr.minreq    = -1;
     buffer_attr.fragsize  = pcm_framesize;
-} /*}}}*/
+}/*}}}*/
 
-ManglerPulse::~ManglerPulse() { /*{{{*/
+ManglerPulse::~ManglerPulse() {/*{{{*/
     close();
-} /*}}}*/
+}/*}}}*/
 
 bool
-ManglerPulse::open(int type, Glib::ustring device, int rate, int channels) { /*{{{*/
+ManglerPulse::open(int type, Glib::ustring device, int rate, int channels) {/*{{{*/
     pulse_samplespec.rate     = rate;
     pulse_samplespec.channels = channels;
     if (!(pulse_stream = pa_simple_new(
@@ -38,10 +66,10 @@ ManglerPulse::open(int type, Glib::ustring device, int rate, int channels) { /*{
         return false;
     }
     return true;
-} /*}}}*/
+}/*}}}*/
 
 void
-ManglerPulse::close(bool drain) { /*{{{*/
+ManglerPulse::close(bool drain) {/*{{{*/
    if (pulse_stream) {
         if (drain && pa_simple_drain(pulse_stream, &pulse_error) < 0) {
             fprintf(stderr, "pulse: pa_simple_drain() failed: %s\n", pa_strerror(pulse_error));
@@ -49,11 +77,11 @@ ManglerPulse::close(bool drain) { /*{{{*/
         pa_simple_free(pulse_stream);
         pulse_stream = NULL;
     }
-} /*}}}*/
+}/*}}}*/
 
 bool
-ManglerPulse::write(uint8_t *sample, uint32_t length, int channels) { /*{{{*/
-    if(!pulse_stream) {
+ManglerPulse::write(uint8_t *sample, uint32_t length, int channels) {/*{{{*/
+    if (!pulse_stream) {
         return false;
     }
     if (pa_simple_write(pulse_stream, sample, length, &pulse_error) < 0) {
@@ -61,11 +89,11 @@ ManglerPulse::write(uint8_t *sample, uint32_t length, int channels) { /*{{{*/
         return false;
     }
     return true;
-} /*}}}*/
+}/*}}}*/
 
 bool
-ManglerPulse::read(uint8_t *buf) { /*{{{*/
-    if(!pulse_stream) {
+ManglerPulse::read(uint8_t *buf) {/*{{{*/
+    if (!pulse_stream) {
         return false;
     }
     if (pa_simple_read(pulse_stream, buf, buffer_attr.fragsize, &pulse_error) < 0) {
@@ -73,12 +101,12 @@ ManglerPulse::read(uint8_t *buf) { /*{{{*/
         return false;
     }
     return true;
-} /*}}}*/
+}/*}}}*/
 
 Glib::ustring
-ManglerPulse::getAudioSubsystem(void) { /*{{{*/
+ManglerPulse::getAudioSubsystem(void) {/*{{{*/
     return Glib::ustring("pulse");
-} /*}}}*/
+}/*}}}*/
 
 // this is easier in C
 typedef struct pa_devicelist {
@@ -92,7 +120,6 @@ static void pa_state_cb(pa_context *c, void *userdata);
 static void pa_sinklist_cb(pa_context *c, const pa_sink_info *l, int eol, void *userdata);
 static void pa_sourcelist_cb(pa_context *c, const pa_source_info *l, int eol, void *userdata);
 static int pa_get_devicelist(pa_devicelist_t *input, pa_devicelist_t *output);
-
 
 static int pa_get_devicelist(pa_devicelist_t *input, pa_devicelist_t *output) {
     // Define our pulse audio loop and connection variables
@@ -309,7 +336,7 @@ ManglerPulse::getDeviceList(std::vector<ManglerAudioDevice*>& inputDevices, std:
                 );
     }
     return;
-
 }
 
 #endif
+

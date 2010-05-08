@@ -4302,7 +4302,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                             prop->inactivity_action = atoi(m->value);
                             break;
                           case V3_SRV_PROP_INACTIVE_CHAN:
-                            strncpy(prop->inactivity_channel, m->value, sizeof(prop->inactivity_channel) - 1);
+                            prop->inactivity_channel = v3_get_channel_id(m->value);
                             break;
                           case V3_SRV_PROP_REM_SRV_COMMENT:
                             prop->rem_srv_comment = atoi(m->value);
@@ -4399,8 +4399,14 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                             snprintf(value, sizeof(value) - 1, "%u", prop->inactivity_action);
                             break;
                           case V3_SRV_PROP_INACTIVE_CHAN:
-                            strncpy(value, prop->inactivity_channel, sizeof(value) - 1);
+                          {
+                            char *path;
+                            if ((path = v3_get_channel_path(prop->inactivity_channel))) {
+                                strncpy(value, path, sizeof(value) - 1);
+                                free(path);
+                            }
                             break;
+                          }
                           case V3_SRV_PROP_REM_SRV_COMMENT:
                             snprintf(value, sizeof(value) - 1, "%u", prop->rem_srv_comment);
                             break;

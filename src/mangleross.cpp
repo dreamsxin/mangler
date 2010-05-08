@@ -1,22 +1,49 @@
+/*
+ * vim: softtabstop=4 shiftwidth=4 cindent foldmethod=marker expandtab
+ *
+ * $LastChangedDate$
+ * $Revision$
+ * $LastChangedBy$
+ * $URL$
+ *
+ * Copyright 2009-2010 Eric Kilfoil
+ * Copyright 2010 Roman Tetelman
+ *
+ * This file is part of Mangler.
+ *
+ * Mangler is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Mangler is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Mangler.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 #include "mangler.h"
+
 #ifdef HAVE_OSS
 #include "mangleraudio.h"
-
 #include "mangleross.h"
 
-ManglerOSS::ManglerOSS(uint32_t rate, uint8_t channels, uint32_t pcm_framesize) { /*{{{*/
+ManglerOSS::ManglerOSS(uint32_t rate, uint8_t channels, uint32_t pcm_framesize) {/*{{{*/
     oss_fd = -1;
     this->pcm_framesize = pcm_framesize;
-} /*}}}*/
+}/*}}}*/
 
-ManglerOSS::~ManglerOSS() { /*{{{*/
-    if(oss_fd >= 0) {
+ManglerOSS::~ManglerOSS() {/*{{{*/
+    if (oss_fd >= 0) {
         close();
     }
-} /*}}}*/
+}/*}}}*/
 
 bool
-ManglerOSS::open(int type, Glib::ustring device, int rate, int channels) { /*{{{*/
+ManglerOSS::open(int type, Glib::ustring device, int rate, int channels) {/*{{{*/
     if ((oss_fd = ::open((device == "") ? "/dev/dsp" : device.c_str(), (type >= AUDIO_OUTPUT) ? O_WRONLY : O_RDONLY)) < 0) {
         fprintf(stderr, "oss: open() %s failed: %s\n", (device == "") ? "/dev/dsp" : device.c_str(), strerror(errno));
         return false;
@@ -41,19 +68,19 @@ ManglerOSS::open(int type, Glib::ustring device, int rate, int channels) { /*{{{
         return false;
     }
     return true;
-} /*}}}*/
+}/*}}}*/
 
 void
-ManglerOSS::close(bool drain) { /*{{{*/
+ManglerOSS::close(bool drain) {/*{{{*/
     if (oss_fd >= 0) {
         ::close(oss_fd);
         oss_fd = -1;
     }
-} /*}}}*/
+}/*}}}*/
 
 bool
-ManglerOSS::write(uint8_t *sample, uint32_t length, int channels) { /*{{{*/
-    if(oss_fd < 0) {
+ManglerOSS::write(uint8_t *sample, uint32_t length, int channels) {/*{{{*/
+    if (oss_fd < 0) {
         return false;
     }
     if (::write(oss_fd, sample, length) < 0) {
@@ -61,11 +88,11 @@ ManglerOSS::write(uint8_t *sample, uint32_t length, int channels) { /*{{{*/
         return false;
     }
     return true;
-} /*}}}*/
+}/*}}}*/
 
 bool
-ManglerOSS::read(uint8_t *buf) { /*{{{*/
-    if(oss_fd < 0) {
+ManglerOSS::read(uint8_t *buf) {/*{{{*/
+    if (oss_fd < 0) {
         return false;
     }
     if (::read(oss_fd, buf, pcm_framesize) < 0) {
@@ -73,22 +100,22 @@ ManglerOSS::read(uint8_t *buf) { /*{{{*/
         return false;
     }
     return true;
-} /*}}}*/
+}/*}}}*/
 
 Glib::ustring
-ManglerOSS::getAudioSubsystem(void) { /*{{{*/
+ManglerOSS::getAudioSubsystem(void) {/*{{{*/
     return Glib::ustring("oss");
-} /*}}}*/
+}/*}}}*/
 
 void
-ManglerOSS::getDeviceList(std::vector<ManglerAudioDevice*>& inputDevices, std::vector<ManglerAudioDevice*>& outputDevices) { /*{{{*/
+ManglerOSS::getDeviceList(std::vector<ManglerAudioDevice*>& inputDevices, std::vector<ManglerAudioDevice*>& outputDevices) {/*{{{*/
     int idx_p = 0, idx_c = 0;
 #if SOUND_VERSION >= 0x040000
     bool ossv3 = false;
     int fd, dev, version = 0;
     oss_sysinfo sysinfo;
     oss_audioinfo ainfo;
-    
+
     if ((fd = ::open("/dev/mixer", O_RDONLY)) < 0) {
         fprintf(stderr, "oss: open() /dev/mixer failed: %s\n", strerror(errno));
         ossv3 = true;
@@ -139,7 +166,7 @@ ManglerOSS::getDeviceList(std::vector<ManglerAudioDevice*>& inputDevices, std::v
     Glib::PatternSpec dsp("dsp*");
     Glib::Dir dir("/dev");
     Glib::ustring path;
-    
+
     for (Glib::DirIterator iter = dir.begin(); iter != dir.end(); iter++) {
         if (dsp.match(*iter)) {
             path = "/dev/" + *iter;
@@ -157,5 +184,7 @@ ManglerOSS::getDeviceList(std::vector<ManglerAudioDevice*>& inputDevices, std::v
                );
         }
     }
-} /*}}}*/
+}/*}}}*/
+
 #endif
+

@@ -1,21 +1,48 @@
+/*
+ * vim: softtabstop=4 shiftwidth=4 cindent foldmethod=marker expandtab
+ *
+ * $LastChangedDate$
+ * $Revision$
+ * $LastChangedBy$
+ * $URL$
+ *
+ * Copyright 2009-2010 Eric Kilfoil
+ * Copyright 2010 Roman Tetelman
+ *
+ * This file is part of Mangler.
+ *
+ * Mangler is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Mangler is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Mangler.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 #include "mangler.h"
 
 #ifdef HAVE_ALSA
 #include "mangleraudio.h"
 #include "mangleralsa.h"
 
-ManglerAlsa::ManglerAlsa(uint32_t rate, uint8_t channels, uint32_t pcm_framesize) { /*{{{*/
+ManglerAlsa::ManglerAlsa(uint32_t rate, uint8_t channels, uint32_t pcm_framesize) {/*{{{*/
     alsa_stream = NULL;
     this->pcm_framesize = pcm_framesize;
     this->channels = channels;
-} /*}}}*/
+}/*}}}*/
 
-ManglerAlsa::~ManglerAlsa() { /*{{{*/
+ManglerAlsa::~ManglerAlsa() {/*{{{*/
     close();
-} /*}}}*/
+}/*}}}*/
 
 bool
-ManglerAlsa::open(int type, Glib::ustring device, int rate, int channels) { /*{{{*/
+ManglerAlsa::open(int type, Glib::ustring device, int rate, int channels) {/*{{{*/
     if ((alsa_error = snd_pcm_open(
                     &alsa_stream,
                     (device == "") ? "default" : device.c_str(),
@@ -48,10 +75,10 @@ ManglerAlsa::open(int type, Glib::ustring device, int rate, int channels) { /*{{
         return false;
     }
     return true;
-} /*}}}*/
+}/*}}}*/
 
 void
-ManglerAlsa::close(bool drain) { /*{{{*/
+ManglerAlsa::close(bool drain) {/*{{{*/
     if (alsa_stream) {
         if (drain) {
             snd_pcm_drain(alsa_stream);
@@ -59,10 +86,10 @@ ManglerAlsa::close(bool drain) { /*{{{*/
         snd_pcm_close(alsa_stream);
         alsa_stream = NULL;
     }
-} /*}}}*/
+}/*}}}*/
 
 bool
-ManglerAlsa::write(uint8_t *sample, uint32_t length, int channels) { /*{{{*/
+ManglerAlsa::write(uint8_t *sample, uint32_t length, int channels) {/*{{{*/
     uint32_t buflen;
     uint32_t pcmlen = length;
     uint8_t *pcmptr = sample;
@@ -79,10 +106,10 @@ ManglerAlsa::write(uint8_t *sample, uint32_t length, int channels) { /*{{{*/
         pcmptr += buflen;
     }
     return true;
-} /*}}}*/
+}/*}}}*/
 
 bool
-ManglerAlsa::read(uint8_t *buf) { /*{{{*/
+ManglerAlsa::read(uint8_t *buf) {/*{{{*/
     if ((alsa_frames = snd_pcm_readi(alsa_stream, buf, pcm_framesize / (sizeof(int16_t) * channels))) < 0) {
         if (alsa_frames == -EPIPE) {
             snd_pcm_prepare(alsa_stream);
@@ -92,15 +119,15 @@ ManglerAlsa::read(uint8_t *buf) { /*{{{*/
         }
     }
     return true;
-} /*}}}*/
+}/*}}}*/
 
 Glib::ustring 
-ManglerAlsa::getAudioSubsystem(void) { /*{{{*/
+ManglerAlsa::getAudioSubsystem(void) {/*{{{*/
     return Glib::ustring("alsa");
-} /*}}}*/
+}/*}}}*/
 
 void
-ManglerAlsa::getDeviceList(std::vector<ManglerAudioDevice*>& inputDevices, std::vector<ManglerAudioDevice*>& outputDevices) { /*{{{*/
+ManglerAlsa::getDeviceList(std::vector<ManglerAudioDevice*>& inputDevices, std::vector<ManglerAudioDevice*>& outputDevices) {/*{{{*/
     snd_pcm_stream_t stream[2] = { SND_PCM_STREAM_PLAYBACK, SND_PCM_STREAM_CAPTURE };
     int ctr;
     
@@ -187,5 +214,7 @@ ManglerAlsa::getDeviceList(std::vector<ManglerAudioDevice*>& inputDevices, std::
             }
         }
     }
-} /*}}}*/
+}/*}}}*/
+
 #endif
+

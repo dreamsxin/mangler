@@ -28,7 +28,6 @@
 #include "manglerchat.h"
 #include "manglersettings.h"
 #include "manglerconfig.h"
-
 #include "manglercharset.h"
 
 ManglerChat::ManglerChat(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
