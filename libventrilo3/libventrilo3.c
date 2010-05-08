@@ -1130,11 +1130,22 @@ _v3_recv(int block) {/*{{{*/
                         break;/*}}}*/
                     case V3_EVENT_SRV_PROP_OPEN:/*{{{*/
                         {
-                            _v3_net_message *msg = _v3_put_0x4c(V3_SERVER_RECV_SETTING, V3_SRV_PROP_INIT, rand(), NULL);
+                            _v3_net_message *msg = _v3_put_0x4c(V3_SERVER_RECV_SETTING, V3_SRV_PROP_INIT, (_v3_server_prop_tid = rand()), NULL);
                             if (_v3_send(msg)) {
                                 _v3_debug(V3_DEBUG_SOCKET, "sent server property open request to server");
                             } else {
                                 _v3_debug(V3_DEBUG_SOCKET, "failed to send server property open request");
+                            }
+                            _v3_destroy_packet(msg);
+                        }
+                        break;/*}}}*/
+                    case V3_EVENT_SRV_PROP_CLOSE:/*{{{*/
+                        {
+                            _v3_net_message *msg = _v3_put_0x4c(V3_SERVER_TRANSACTION_DONE, V3_SRV_PROP_INIT, (_v3_server_prop_tid = 0), NULL);
+                            if (_v3_send(msg)) {
+                                _v3_debug(V3_DEBUG_SOCKET, "sent server property close request to server");
+                            } else {
+                                _v3_debug(V3_DEBUG_SOCKET, "failed to send server property close request");
                             }
                             _v3_destroy_packet(msg);
                         }
@@ -1146,7 +1157,7 @@ _v3_recv(int block) {/*{{{*/
                             memcpy(&_v3_server_prop, &ev.data->srvprop, sizeof(v3_server_prop));
                             snprintf(value, sizeof(value) - 1, "%u", _v3_server_prop.chat_filter);
                             _v3_unlock_server();
-                            _v3_net_message *msg = _v3_put_0x4c(V3_SERVER_SEND_SETTING, V3_SRV_PROP_CHAT_FILTER, rand(), value);
+                            _v3_net_message *msg = _v3_put_0x4c(V3_SERVER_SEND_SETTING, V3_SRV_PROP_CHAT_FILTER, (_v3_server_prop_tid = rand()), value);
                             if (_v3_send(msg)) {
                                 _v3_debug(V3_DEBUG_SOCKET, "sent server property update request to server");
                             } else {
@@ -4265,6 +4276,9 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                 switch (m->subtype) {
                   case V3_SERVER_RECV_SETTING:
                   case V3_SERVER_SEND_SETTING:
+                    if (m->transaction_id != _v3_server_prop_tid) {
+                        break;
+                    }
                     if (m->subtype == V3_SERVER_RECV_SETTING) {
                         _v3_debug(V3_DEBUG_INFO, "recv server property 0x%02X: %s", m->property, m->value);
                         switch (m->property++) {
@@ -5976,6 +5990,22 @@ v3_serverprop_open(void) {/*{{{*/
 
     _v3_evpipe_write(v3_server.evpipe[1], &ev);
     _v3_func_leave("v3_serverprop_open");
+}/*}}}*/
+
+void
+v3_serverprop_close(void) {/*{{{*/
+    v3_event ev;
+
+    _v3_func_enter("v3_serverprop_close");
+    if (!v3_is_loggedin()) {
+        _v3_func_leave("v3_serverprop_close");
+        return;
+    }
+    memset(&ev, 0, sizeof(v3_event));
+    ev.type = V3_EVENT_SRV_PROP_CLOSE;
+
+    _v3_evpipe_write(v3_server.evpipe[1], &ev);
+    _v3_func_leave("v3_serverprop_close");
 }/*}}}*/
 
 void

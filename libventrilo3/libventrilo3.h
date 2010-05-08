@@ -357,6 +357,7 @@ v3_account              *v3_account_list = NULL;
 int                     _v3_account_count;
 
 v3_server_prop          _v3_server_prop = { 0 };
+uint16_t                _v3_server_prop_tid = 0;
 
 char                    _v3_error_text[256];
 char                    _v3_status_text[256];

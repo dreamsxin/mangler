@@ -46,6 +46,7 @@ class ManglerAdmin {
         Gtk::Alignment      *RanksTab;
         Gtk::Button         *UserAdd;
 
+        bool isOpen;
         void show(void);
         void serverSettingsUpdated(v3_server_prop &prop);
         void serverSettingsSendDone(void);
@@ -65,6 +66,7 @@ class ManglerAdmin {
         void rankRemoved(uint16_t rankid);
         void rankRemoved(v3_rank *rank);
         void clearRanks(void);
+        void clear(void);
 
     protected:
         Glib::RefPtr<Gtk::Builder>          builder;

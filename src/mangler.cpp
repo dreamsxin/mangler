@@ -456,8 +456,7 @@ void Mangler::onDisconnectHandler(void) {/*{{{*/
 #endif
         outputAudio.clear();
         channelTree->clear();
-        admin->clearChannels();
-        admin->clearRanks();
+        admin->clear();
         builder->get_widget("xmitButton", togglebutton);
         togglebutton->set_active(false);
         builder->get_widget("progressbar", progressbar);

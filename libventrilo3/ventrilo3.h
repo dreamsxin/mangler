@@ -296,8 +296,8 @@ enum _v3_events {
     V3_EVENT_USERLIST_OPEN,
     V3_EVENT_USERLIST_CLOSE,
     V3_EVENT_SRV_PROP_OPEN,
-    V3_EVENT_SRV_PROP_UPDATE,
     V3_EVENT_SRV_PROP_CLOSE,
+    V3_EVENT_SRV_PROP_UPDATE,
 
     // not implemented
     V3_EVENT_USER_PAGE,
@@ -711,6 +711,7 @@ void        v3_userlist_remove(uint16_t account_id);
 void        v3_userlist_update(v3_account *account);
 void        v3_userlist_change_owner(uint16_t old_owner_id, uint16_t new_owner_id);
 void        v3_serverprop_open(void);
+void        v3_serverprop_close(void);
 void        v3_serverprop_update(const v3_server_prop *prop);
 
 int         v3_debuglevel(uint32_t level);

@@ -384,6 +384,8 @@ ManglerAdmin::ManglerAdmin(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
     /* set up the channel lists */
     readUserTemplates();
     clearChannels();
+
+    isOpen = false;
 }/*}}}*/
 ManglerAdmin::~ManglerAdmin() {/*{{{*/
     if (usertemplates) {
@@ -399,7 +401,10 @@ void
 ManglerAdmin::adminWindow_show_cb(void) {/*{{{*/
     const v3_permissions *perms = v3_get_permissions();
     if (perms->srv_admin) {
-        v3_serverprop_open();
+        builder->get_widget("ServerVBox", widget);
+        if (widget->get_sensitive()) {
+            v3_serverprop_open();
+        }
         v3_userlist_open();
         UsersTab->show();
         Gtk::TreeModel::Row row;
@@ -413,9 +418,9 @@ ManglerAdmin::adminWindow_show_cb(void) {/*{{{*/
     if (perms->edit_rank) {
         v3_ranklist_open();
         RanksTab->show();
-    } else RanksTab->hide();
-    //ServerTab->hide(); // not implemented *yet*
-
+    } else {
+        RanksTab->hide();
+    }
     ChannelEditorTree->expand_all();
     UserChanAdminTree->expand_all();
     UserChanAuthTree->expand_all();
@@ -424,11 +429,16 @@ ManglerAdmin::adminWindow_show_cb(void) {/*{{{*/
         Gtk::TreeModel::Path lobbypath = ChannelEditorTreeModel->get_path(iter);
         ChannelEditorTree->set_cursor(lobbypath);
     }
+    isOpen = true;
 }/*}}}*/
 void
 ManglerAdmin::adminWindow_hide_cb(void) {/*{{{*/
     const v3_permissions *perms = v3_get_permissions();
     if (perms->srv_admin) {
+        builder->get_widget("ServerVBox", widget);
+        if (widget->get_sensitive()) {
+            v3_serverprop_close();
+        }
         ServerTab->hide();
         v3_userlist_close();
         UserEditorTreeModel->clear();
@@ -441,6 +451,7 @@ ManglerAdmin::adminWindow_hide_cb(void) {/*{{{*/
     if (perms->edit_rank) {
         v3_ranklist_close();
     }
+    isOpen = false;
 }/*}}}*/
 void
 ManglerAdmin::statusbarPush(Glib::ustring msg) {/*{{{*/
@@ -532,7 +543,7 @@ ManglerAdmin::ServerUpdate_clicked_cb(void) {/*{{{*/
     v3_server_prop prop;
 
     memset(&prop, 0, sizeof(v3_server_prop));
-    strncpy(prop.server_comment, ustring_to_c(getFromEntry("ServerComment")).c_str(), sizeof(prop.server_comment) - 1);
+    strncpy(prop.server_comment, ustring_to_c(getFromEntry("ServerComment")).c_str(), sizeof(prop.server_comment));
     prop.chat_filter = getFromCombobox("ServerChatFilter");
     prop.channel_order = getFromCombobox("ServerChannelOrdering");
     prop.motd_always = getFromCheckbutton("ServerAlwaysDisplayMOTD");
@@ -571,10 +582,8 @@ ManglerAdmin::ServerUpdate_clicked_cb(void) {/*{{{*/
     prop.rem_user_comments = getFromCheckbutton("ServerRemoteStatusUserComments");
     prop.rem_show_login_names = getFromCheckbutton("ServerRemoteStatusUseless");
 
-    builder->get_widget("ServerUpdate", button);
-    button->set_sensitive(false);
-
-    v3_serverprop_update(&prop); // 0% guaranteed it will work
+    setWidgetSensitive("ServerVBox", false);
+    v3_serverprop_update(&prop);
     statusbarPush("Sending server properties...");
 }/*}}}*/
 void
@@ -617,13 +626,19 @@ ManglerAdmin::serverSettingsUpdated(v3_server_prop &prop) {/*{{{*/
     copyToCheckbutton("ServerRemoteStatusUserNames", prop.rem_user_names);
     copyToCheckbutton("ServerRemoteStatusUserComments", prop.rem_user_comments);
     copyToCheckbutton("ServerRemoteStatusUseless", prop.rem_show_login_names);
+
+    setWidgetSensitive("ServerVBox", true);
     ServerTab->show();
 }/*}}}*/
 void
 ManglerAdmin::serverSettingsSendDone(void) {/*{{{*/
-    builder->get_widget("ServerUpdate", button);
-    button->set_sensitive(true);
     statusbarPush("Sending server properties... done.");
+    v3_serverprop_close();
+    if (isOpen) {
+        v3_serverprop_open();
+    } else {
+        setWidgetSensitive("ServerVBox", true);
+    }
 }/*}}}*/
 
 /* ----------  Channel Editor Related Methods  ---------- */
@@ -1106,6 +1121,10 @@ ManglerAdmin::clearChannels(void) {/*{{{*/
     ChannelEditor->set_sensitive(false);
     ChannelRemove->set_sensitive(false);
     ChannelAdd->set_sensitive(false);
+    SrvInactChannelModel->clear();
+    lobby = *(SrvInactChannelModel->append());
+    lobby[adminRecord.id] = 0;
+    lobby[adminRecord.name] = "(Lobby)";
     UserDefaultChannelModel->clear();
     lobby = *(UserDefaultChannelModel->append());
     lobby[adminRecord.id] = 0;
@@ -1883,5 +1902,12 @@ ManglerAdmin::clearRanks(void) {/*{{{*/
     setWidgetSensitive("RankUpdate", true);
 
     currentRankID = 0xff;
+}/*}}}*/
+
+void
+ManglerAdmin::clear(void) {/*{{{*/
+    setWidgetSensitive("ServerVBox", true);
+    clearChannels();
+    clearRanks();
 }/*}}}*/
 

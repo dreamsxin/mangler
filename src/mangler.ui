@@ -4052,7 +4052,7 @@ These are useful for developers.</property>
                     <property name="left_padding">5</property>
                     <property name="right_padding">5</property>
                     <child>
-                      <object class="GtkVBox" id="vbox13">
+                      <object class="GtkVBox" id="ServerVBox">
                         <property name="visible">True</property>
                         <property name="orientation">vertical</property>
                         <property name="spacing">4</property>
