@@ -1,5 +1,5 @@
 Name:		mangler
-Version:	0.0.20091031
+Version:	1.2.0beta1
 Release:	1%{?dist}
 Summary:	Mangler is a Ventrilo compatible client for Linux
 
@@ -9,8 +9,9 @@ URL:		http://www.mangler.org/
 Source0:	%{name}-%{version}.tar.bz2
 BuildRoot:	%(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXX)
 
-BuildRequires:	gtkmm24-devel speex-devel gsm-devel pulseaudio-libs-devel 
-Requires:	gtkmm24 speex gsm pulseaudio-libs
+BuildRequires:  gtkmm24-devel speex-devel gsm-devel pulseaudio-libs-devel alsa-lib-devel espeak-devel libgdbus-devel xosd-devel
+Requires:       gtkmm24 speex gsm pulseaudio-libs espeak libgdbus xosd
+
 
 %description
 Mangler is a VOIP client that is capable of connecting to Ventrilo 3.x servers
@@ -44,6 +45,7 @@ rm -rf $RPM_BUILD_ROOT
 /usr/lib64/libventrilo3.so.0.0.0
 /usr/share/applications/mangler.desktop
 /usr/share/pixmaps/mangler_logo.svg
+/usr/include/ventrilo3.h
 %doc
 
 
