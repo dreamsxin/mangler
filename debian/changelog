@@ -1,4 +1,4 @@
-mangler (1.2.0beta1) unstable; urgency=low
+mangler (1.2.0beta1-1) unstable; urgency=low
 
   * libventrilo3 should compile on a mac
   * added admin API functions and UI for:
