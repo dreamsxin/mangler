@@ -32,7 +32,7 @@
 using namespace std;
 
 ManglerOsd::ManglerOsd() {/*{{{*/
-    userList = list<string>::list();
+    userList = list<string>();
     osd_max_lines = 10;
     osd = NULL;
 }/*}}}*/
