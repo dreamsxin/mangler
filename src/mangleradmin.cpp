@@ -413,15 +413,9 @@ ManglerAdmin::ManglerAdmin(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
     builder->get_widget("BanUpdate", button);
     button->signal_clicked().connect(sigc::mem_fun(this, &ManglerAdmin::BanUpdate_clicked_cb));
 
-    /* set up the channel lists */
+    /* set up the editor lists */
     readUserTemplates();
-    clearChannels();
-    
-    /* set up the rank list */
-    clearRanks();
-
-    /* set up the ban list */
-    clearBans();
+    clear();
 
     isOpen = false;
 }/*}}}*/
@@ -447,8 +441,7 @@ ManglerAdmin::adminWindow_show_cb(void) {/*{{{*/
         row = *(UserOwnerModel->append());
         row[adminRecord.id] = 0; row[adminRecord.name] = "None";
         UserAdd->set_sensitive( perms->add_user );
-        builder->get_widget("ServerVBox", widget);
-        if (widget->get_sensitive()) {
+        if (SrvIsNotUpdating) {
             v3_serverprop_open();
         }
     } else {
@@ -476,8 +469,7 @@ void
 ManglerAdmin::adminWindow_hide_cb(void) {/*{{{*/
     const v3_permissions *perms = v3_get_permissions();
     if (perms->srv_admin) {
-        builder->get_widget("ServerVBox", widget);
-        if (widget->get_sensitive()) {
+        if (SrvIsNotUpdating) {
             v3_serverprop_close();
         }
         ServerTab->hide();
@@ -624,6 +616,7 @@ ManglerAdmin::ServerUpdate_clicked_cb(void) {/*{{{*/
     prop.rem_show_login_names = getFromCheckbutton("ServerRemoteStatusUseless");
 
     setWidgetSensitive("ServerVBox", false);
+    SrvIsNotUpdating = false;
     v3_serverprop_update(&prop);
     statusbarPush("Sending server properties...");
 }/*}}}*/
@@ -669,6 +662,7 @@ ManglerAdmin::serverSettingsUpdated(v3_server_prop &prop) {/*{{{*/
     copyToCheckbutton("ServerRemoteStatusUseless", prop.rem_show_login_names);
 
     setWidgetSensitive("ServerVBox", true);
+    SrvIsNotUpdating = true;
     ServerTab->show();
 }/*}}}*/
 void
@@ -679,6 +673,7 @@ ManglerAdmin::serverSettingsSendDone(void) {/*{{{*/
         v3_serverprop_open();
     } else {
         setWidgetSensitive("ServerVBox", true);
+        SrvIsNotUpdating = true;
     }
 }/*}}}*/
 
@@ -2048,6 +2043,7 @@ ManglerAdmin::clearBans(void) {/*{{{*/
 void
 ManglerAdmin::clear(void) {/*{{{*/
     setWidgetSensitive("ServerVBox", true);
+    SrvIsNotUpdating = true;
     clearChannels();
     clearRanks();
     clearBans();
