@@ -4823,8 +4823,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                         error = _v3_phantom_errors[m->error_id - 1];
                     }
                     v3_event *ev = _v3_create_event(V3_EVENT_ERROR_MSG);
-                    strncpy(ev->error.message, "Phantom error:\n", sizeof(ev->error.message));
-                    strncat(ev->error.message, error, sizeof(ev->error.message));
+                    snprintf(ev->error.message, sizeof(ev->error.message)-1, "Phantom error:\n%s", error);
                     v3_queue_event(ev);
                 } else {
                     v3_user new_phantom_user = {0};
