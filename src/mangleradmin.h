@@ -86,7 +86,7 @@ class ManglerAdmin {
         } adminRecord;
 
         /* server settings editor stuff */
-        //adminModelColumns                   SpamFilterColumns;
+        bool                                SrvIsNotUpdating;
         Glib::RefPtr<Gtk::TreeStore>        SrvChatFilterModel;
         Glib::RefPtr<Gtk::TreeStore>        SrvChanOrderModel;
         Glib::RefPtr<Gtk::TreeStore>        SrvInactActionModel;
