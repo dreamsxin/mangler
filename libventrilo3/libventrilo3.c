@@ -3877,8 +3877,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                             error = _v3_ranks_errors[m->error_id - 1];
                         }
                         v3_event *ev = _v3_create_event(V3_EVENT_ERROR_MSG);
-                        strncpy(ev->error.message, "Rank editor error:\n", sizeof(ev->error.message));
-                        strncat(ev->error.message, error, sizeof(ev->error.message));
+                        snprintf(ev->error.message, sizeof(ev->error.message)-1, "Rank editor error:\n%s", error);
                         v3_queue_event(ev);
                     }
                     _v3_destroy_0x36(msg);
@@ -4201,8 +4200,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                             error = _v3_permissions_errors[m->error_id - 1];
                         }
                         v3_event *ev = _v3_create_event(V3_EVENT_ERROR_MSG);
-                        strncpy(ev->error.message, "User editor error:\n", sizeof(ev->error.message));
-                        strncat(ev->error.message, error, sizeof(ev->error.message));
+                        snprintf(ev->error.message, sizeof(ev->error.message)-1, "User editor error:\n%s", error);
                         v3_queue_event(ev);
                     }
                     _v3_destroy_packet(msg);
