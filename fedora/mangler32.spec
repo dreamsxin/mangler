@@ -44,6 +44,7 @@ rm -rf $RPM_BUILD_ROOT
 /usr/lib/libventrilo3.so.0.0.0
 /usr/share/applications/mangler.desktop
 /usr/share/pixmaps/mangler_logo.svg
+/usr/include/ventrilo3.h
 %doc
 
 
