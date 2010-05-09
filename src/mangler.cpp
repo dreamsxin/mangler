@@ -1736,7 +1736,8 @@ bool Mangler::checkPushToTalkMouse(void) {/*{{{*/
     XDevice *dev = NULL;
     XDeviceInfo *xdev;
     XDeviceState *xds;
-    XButtonState *xbs;
+    XButtonState *xbs = NULL;
+    XInputClass *xic = NULL;
     int ctr;
     int ndevices_return;
     int state = 1;
@@ -1768,7 +1769,14 @@ bool Mangler::checkPushToTalkMouse(void) {/*{{{*/
         return true;
     }
     xds = (XDeviceState *)XQueryDeviceState(GDK_WINDOW_XDISPLAY(rootwin), dev);
-    xbs = (XButtonState*) xds->data;
+    for (ctr = 0, xic = xds->data; ctr < xds->num_classes; ctr++, xic += xic->length/2) {
+        if (xic->c_class == ButtonClass) {
+            xbs = (XButtonState*) xic;
+        }
+    }
+    if (!xbs) {
+        return true;
+    }
     state = state << bit;
     /* debug mouse state buttons
     for (int ctr = 1; ctr < 10; ctr++) {
