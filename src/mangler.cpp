@@ -918,23 +918,24 @@ bool Mangler::getNetworkEvent() {/*{{{*/
         switch (ev->type) {
             case V3_EVENT_PING:/*{{{*/
                 if (v3_is_loggedin()) {
-                    char buf[32];
+                    char buf[64];
                     builder->get_widget("pingLabel", label);
                     builder->get_widget("statusbar", statusbar);
                     if (ev->ping != 65535) {
                         snprintf(buf, 16, "%d", ev->ping);
-                        label->set_text(buf);
-                        snprintf(buf, 31, "Ping: %dms", ev->ping);
+                        label->set_text(c_to_ustring(buf));
+                        snprintf(buf, 63, "Ping: %dms - Users: %d/%d", ev->ping, v3_user_count(), v3_get_max_clients());
                         statusbar->pop();
-                        statusbar->push(buf);
+                        statusbar->push(c_to_ustring(buf));
                     } else {
                         label->set_text("checking...");
+                        snprintf(buf, 63, "Ping: checking... - Users: %d/%d", v3_user_count(), v3_get_max_clients());
                         statusbar->pop();
-                        statusbar->push("Ping: checking...");
+                        statusbar->push(c_to_ustring(buf));
                     }
                     builder->get_widget("userCountLabel", label);
                     snprintf(buf, 16, "%d/%d", v3_user_count(), v3_get_max_clients());
-                    label->set_text(buf);
+                    label->set_text(c_to_ustring(buf));
                 }
                 break;/*}}}*/
             case V3_EVENT_STATUS:/*{{{*/
