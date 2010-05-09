@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.63])
-AC_INIT([mangler], [1.1.20100227], [eric@ypass.net])
+AC_INIT([mangler], [1.2.0], [eric@ypass.net])
 AM_INIT_AUTOMAKE
 AM_MAINTAINER_MODE([disable])
 
@@ -29,7 +29,7 @@ CC="$PTHREAD_CC"
 AM_PATH_GLIB_2_0([], [], [], [gthread])
 AC_CHECK_HEADERS([arpa/inet.h fcntl.h netdb.h netinet/in.h stdint.h stdlib.h string.h sys/socket.h sys/time.h unistd.h])
 
-AC_CHECK_LIB([m], [tan], [], [
+AC_CHECK_LIB([m], [tan], [:], [
 	echo "error: cannot find a working math library"
 	exit -1
 	])
@@ -37,13 +37,17 @@ AC_CHECK_HEADER([mpd/client.h],
 	[AC_CHECK_LIB([mpdclient], [mpd_run_status])]
 )
 
-AC_ARG_ENABLE(gsm,   [  --disable-gsm           disable GSM codec support], [disable_gsm=yes])
-AC_ARG_ENABLE(speex, [  --disable-speex         disable Speex codec support], [disable_speex=yes])
+AC_ARG_ENABLE(gsm,    [  --disable-gsm           disable GSM codec support], [disable_gsm=yes])
+AC_ARG_ENABLE(speex,  [  --disable-speex         disable Speex codec support], [disable_speex=yes])
+AC_ARG_ENABLE(celt,   [  --disable-celt          disable CELT codec support], [disable_celt=yes])
+AC_ARG_ENABLE(xosd,   [  --disable-xosd          disable XOSD overlay support], [disable_xosd=yes])
+AC_ARG_ENABLE(g15,    [  --disable-g15           disable Logitech G15 keyboard support], [disable_g15=yes])
+AC_ARG_ENABLE(espeak, [  --disable-espeak        disable eSpeak text to speech support], [disable_espeak=yes])
 
 if test "$enable_gsm" != "no" ; then
 	AC_CHECK_LIB([gsm], [gsm_create], [], [
 		echo "error: cannot find libgsm: Is it installed? Also make sure you have the"
-		echo "       libgsm development packages installed"
+		echo "       libgsm development packages installed."
 		exit -1
 		])
 	AC_CHECK_HEADER([gsm.h], [AC_DEFINE(HAVE_GSM_H, 1, [location of gsm.h])], [
@@ -69,6 +73,58 @@ else
 	AC_DEFINE(HAVE_SPEEX, 0, [have speex])
 fi
 
+if test "$enable_celt" != "no" ; then
+	PKG_CHECK_MODULES(celt, celt = 0.7.1, [
+		AC_DEFINE(HAVE_CELT, 1, [have celt])
+		AC_SUBST(celt_CFLAGS)
+		AC_SUBST(celt_LIBS)
+		echo "Enabled optional CELT support."
+	], [
+		AC_DEFINE(HAVE_CELT, 0, [have celt])
+		echo "Optional CELT support is not enabled."
+	])
+else
+	echo "Disabled optional CELT support."
+fi
+
+if test "$enable_xosd" != "no" ; then
+	AC_CHECK_LIB([xosd], [xosd_create], [
+		AC_DEFINE(HAVE_XOSD, 1, [have xosd])
+		LIBS="-lxosd $LIBS"
+		echo "Enabled optional XOSD support."
+	], [
+		echo "Optional XOSD support is not enabled."
+	])
+else
+	echo "Disabled optional XOSD support."
+fi
+
+if test "$enable_g15" != "no" ; then
+	AC_CHECK_LIB([g15daemon_client], [new_g15_screen], [
+		AC_CHECK_LIB([g15render], [g15r_clearScreen], [
+			AC_DEFINE(HAVE_G15, 1, [have g15 kb support])
+			LIBS="-lg15daemon_client -lg15render $LIBS"
+			echo "Enabled optional Logitech G15 support."
+		])
+	], [
+		echo "Optional Logitech G15 support is not enabled."
+	])
+else
+	echo "Disabled optional Logitech G15 support."
+fi
+
+if test "$enable_espeak" != "no" ; then
+	AC_CHECK_LIB([espeak], [espeak_Initialize], [
+		AC_DEFINE(HAVE_ESPEAK, 1, [have espeak])
+		LIBS="-lespeak $LIBS"
+		echo "Enabled optional eSpeak support."
+	], [
+		echo "Optional eSpeak support is not enabled."
+	])
+else
+	echo "Disabled optional eSpeak support."
+fi
+
 PKG_CHECK_MODULES(gtk, gtk+-2.0 >= 2.16.0)
 
 PKG_CHECK_MODULES(dbus, dbus-glib-1 >= 0.80, [AC_DEFINE(HAVE_DBUS, 1, [have dbus])], [:])
@@ -81,43 +137,67 @@ AC_SUBST(gtkmm_LIBS)
 
 AC_ARG_WITH([pulseaudio],
 	[AS_HELP_STRING([--without-pulseaudio], [disable support for PulseAudio])],
-	[],
+	[:],
 	[with_pulseaudio=yes])
 
 AC_ARG_WITH([alsa],
 	[AS_HELP_STRING([--without-alsa], [disable support for ALSA])],
-	[],
+	[:],
 	[with_alsa=yes])
+
+AC_ARG_WITH([oss],
+	[AS_HELP_STRING([--without-oss], [disable support for OSS])],
+	[:],
+	[with_oss=yes])
 
 AS_IF(
 	[test "x$with_pulseaudio" != xno],
 	[
-		PKG_CHECK_MODULES(pulse, libpulse-simple >= 0.9.14, [AC_DEFINE(HAVE_PULSE, 1, [have pulse audio])], [
-			echo "**************************************************************************"
-			echo "*** ERROR: pulse audio development libraries or headers were not found ***"
-			echo "*** on your system.  You can disable PulseAudio support with           ***"
-			echo "*** ./configure --without-pulseaudio                                   ***"
-			echo "**************************************************************************"
-			exit 1
+		PKG_CHECK_MODULES(pulse, libpulse-simple >= 0.9.14, [
+			AC_DEFINE(HAVE_PULSE, 1, [have pulse])
+			AC_SUBST(pulse_CFLAGS)
+			AC_SUBST(pulse_LIBS)
+		], [
+			echo "warning: PulseAudio development libraries or headers were not found."
+			echo "         PulseAudio support is disabled."
 		])
-		AC_SUBST(pulse_CFLAGS)
-		AC_SUBST(pulse_LIBS)
-	],[]
+	],[:]
 )
 AS_IF(
 	[test "x$with_alsa" != xno],
 	[
-		PKG_CHECK_MODULES(alsa, alsa >= 1.0.0, [AC_DEFINE(HAVE_ALSA, 1, [have alsa])], [
-			echo "**************************************************************************"
-			echo "*** ERROR: ALSA audio development libraries or headers were not found  ***"
-			echo "*** on your system.  You can disable ALSA support with                 ***"
-			echo "*** ./configure --without-alsa                                         ***"
-			echo "**************************************************************************"
-			exit 1
+		PKG_CHECK_MODULES(alsa, alsa >= 1.0.0, [
+			AC_DEFINE(HAVE_ALSA, 1, [have alsa])
+			AC_SUBST(alsa_CFLAGS)
+			AC_SUBST(alsa_LIBS)
+		], [
+			echo "warning: ALSA development libraries or headers were not found."
+			echo "         ALSA support is disabled."
 		])
-		AC_SUBST(alsa_CFLAGS)
-		AC_SUBST(alsa_LIBS)
-	],[]
+		
+	],[:]
+)
+AS_IF(
+	[test "x$with_oss" != xno],
+	[
+		AS_IF(
+			[test -r /usr/lib/oss/include/sys/soundcard.h],
+			[
+				echo "Found OSSv4 include file in /usr/lib/oss/include/sys/soundcard.h";
+				oss_CFLAGS="-I/usr/lib/oss/include"
+				AC_SUBST(oss_CFLAGS)
+				# We can't perform any real checks on OSSv4 because their include file is in a retarded location.
+				AC_DEFINE(HAVE_OSS, 1, [have oss])
+			], [
+				AC_CHECK_HEADER([sys/soundcard.h], [
+					AC_DEFINE(HAVE_OSS, 1, [have oss])
+				], [
+					echo "warning: OSS required headers were not found."
+					echo "         OSS support is disabled."
+				])
+			])
+		
+	],[:]
 )
 
 PKG_CHECK_MODULES(gthread, gthread-2.0 >= 2.20.1)
@@ -145,12 +225,12 @@ AC_CONFIG_FILES([src/Makefile
                  Makefile
                  libventrilo3/Makefile])
 
-if test "x$with_pulseaudio" = xno -a "x$with_alsa" = "xno" ; then
+if test "x$with_pulseaudio" = "xno" -a "x$with_alsa" = "xno" -a "x$with_oss" = "xno" ; then
 	echo "**************************************************************************"
-	echo "*** WARNING: You have disabled support for both PulseAudio and ALSA.   ***"
+	echo "*** WARNING: You have disabled support for PulseAudio, ALSA and OSS.   ***"
 	echo "***          You can compile and use Mangler without an audio          ***"
-	echo "***          subsystem, but you will not have any sound, which more    ***"
-	echo "***          more or less makes the program useless.                   ***"
+	echo "***          subsystem but you will not have any sound, which more     ***"
+	echo "***          or less makes the program useless.                        ***"
 	echo "**************************************************************************"
 fi
 

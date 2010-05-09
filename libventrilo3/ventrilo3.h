@@ -50,6 +50,7 @@
 #define V3_OK                       0
 #define V3_MALFORMED                1
 #define V3_NOTIMPL                  2
+#define V3_FAILURE                  3
 
 #define V3_ADD_CHANNEL              0x01
 #define V3_REMOVE_CHANNEL           0x02
@@ -80,6 +81,7 @@
 #define V3_ADD_USER                 0x01
 #define V3_MODIFY_USER              0x02
 #define V3_USER_LIST                0x04
+#define V3_RANKCHANGE_USER          0x06
 
 #define V3_AUDIO_START              0x00
 #define V3_AUDIO_DATA               0x01
@@ -103,9 +105,42 @@
 #define V3_USERLIST_LUSER           0x05
 #define V3_USERLIST_CHANGE_OWNER    0x06
 
-#define V3_SERVER_CHAT_FILTER       0x02
-#define V3_SERVER_ALPHABETIC        0x03
-#define V3_SERVER_MOTD_ALWAYS       0x05
+#define V3_SERVER_RECV_SETTING      0x00
+#define V3_SERVER_SEND_SETTING      0x01
+#define V3_SERVER_CLIENT_SET        0x02
+#define V3_SERVER_SEND_DONE         0x03
+#define V3_SERVER_TRANSACTION_DONE  0x04
+
+#define V3_SRV_PROP_INIT              0x00
+#define V3_SRV_PROP_START             0x01
+#define V3_SRV_PROP_CHAT_FILTER       0x02
+#define V3_SRV_PROP_CHAN_ORDER        0x03
+#define V3_SRV_PROP_MOTD_ALWAYS       0x05
+#define V3_SRV_PROP_CHAT_SPAM_FILT    0x07
+#define V3_SRV_PROP_COMMENT_SPAM_FILT 0x08
+#define V3_SRV_PROP_WAVE_SPAM_FILT    0x09
+#define V3_SRV_PROP_TTS_SPAM_FILT     0x0A
+#define V3_SRV_PROP_INACTIVE_TIMEOUT  0x0B
+#define V3_SRV_PROP_INACTIVE_ACTION   0x0C
+#define V3_SRV_PROP_INACTIVE_CHAN     0x0D
+#define V3_SRV_PROP_REM_SRV_COMMENT   0x0E
+#define V3_SRV_PROP_REM_CHAN_NAMES    0x0F
+#define V3_SRV_PROP_REM_CHAN_COMMENTS 0x10
+#define V3_SRV_PROP_REM_USER_NAMES    0x11
+#define V3_SRV_PROP_REM_USER_COMMENTS 0x12
+#define V3_SRV_PROP_COMMENT           0x13
+#define V3_SRV_PROP_WAVE_BIND_FILT    0x14
+#define V3_SRV_PROP_TTS_BIND_FILT     0x15
+#define V3_SRV_PROP_CHAN_SPAM_FILT    0x16
+#define V3_SRV_PROP_REM_SHOW_LOGIN    0x18
+#define V3_SRV_PROP_MAX_GUEST_LOGIN   0x19
+#define V3_SRV_PROP_AUTOKICK_TIME     0x1A
+#define V3_SRV_PROP_AUTOBAN_TIME      0x1B
+#define V3_SRV_PROP_FINISH            0x1C
+
+#define V3_ADMIN_BAN_LIST           0x00
+#define V3_ADMIN_BAN_REMOVE         0x01
+#define V3_ADMIN_BAN_ADD            0x02
 
 #define V3_DEBUG_NONE               0
 #define V3_DEBUG_STATUS             1
@@ -131,11 +166,6 @@ typedef struct __v3_net_message {/*{{{*/
     int (* destroy)(struct __v3_net_message *msg);
     struct __v3_net_message *next;
 } _v3_net_message;/*}}}*/
-
-#ifndef ANDROID
-#pragma pack(push)
-#pragma pack(1)
-#endif
 
 struct _v3_permissions {/*{{{*/
     uint16_t account_id;
@@ -206,18 +236,13 @@ struct _v3_permissions {/*{{{*/
     uint8_t see_chan_comment;
     uint8_t see_user_comment;
     uint8_t unknown_perm_15;
-};/*}}}*/
-
-#ifndef ANDROID
-#pragma pack(pop)
-#endif
+} __attribute__ ((__packed__));/*}}}*/
 typedef struct _v3_permissions v3_permissions;
 
 /*
-   Define event types to be used by the caller's event handler
+ * Define event types to be used by the caller's event handler.
  */
-enum _v3_events
-{
+enum _v3_events {
     // inbound or outbound event types
     V3_EVENT_STATUS = 1,
     V3_EVENT_PING,
@@ -234,6 +259,7 @@ enum _v3_events
     V3_EVENT_USER_TALK_START,
     V3_EVENT_USER_TALK_END,
     V3_EVENT_PLAY_AUDIO,
+    V3_EVENT_RECORD_UPDATE,
     V3_EVENT_DISPLAY_MOTD,
     V3_EVENT_DISCONNECT,
     V3_EVENT_USER_MODIFY,
@@ -247,11 +273,19 @@ enum _v3_events
     V3_EVENT_PRIVATE_CHAT_END,
     V3_EVENT_PRIVATE_CHAT_AWAY,
     V3_EVENT_PRIVATE_CHAT_BACK,
+    V3_EVENT_TEXT_TO_SPEECH_MESSAGE,
+    V3_EVENT_PLAY_WAVE_FILE_MESSAGE,
     V3_EVENT_USERLIST_ADD,
     V3_EVENT_USERLIST_MODIFY,
     V3_EVENT_USERLIST_REMOVE,
     V3_EVENT_USERLIST_CHANGE_OWNER,
     V3_EVENT_USER_GLOBAL_MUTE_CHANGED,
+    V3_EVENT_USER_CHANNEL_MUTE_CHANGED,
+    V3_EVENT_PERMS_UPDATED,
+    V3_EVENT_USER_RANK_CHANGE,
+    V3_EVENT_SRV_PROP_RECV,
+    V3_EVENT_SRV_PROP_SENT,
+    V3_EVENT_ADMIN_BAN_LIST,
 
     // outbound specific event types
     V3_EVENT_CHANGE_CHANNEL,
@@ -262,15 +296,20 @@ enum _v3_events
     V3_EVENT_ADMIN_KICK,
     V3_EVENT_ADMIN_BAN,
     V3_EVENT_ADMIN_CHANNEL_BAN,
+    V3_EVENT_ADMIN_GLOBAL_MUTE,
     V3_EVENT_FORCE_CHAN_MOVE,
     V3_EVENT_USERLIST_OPEN,
     V3_EVENT_USERLIST_CLOSE,
+    V3_EVENT_SRV_PROP_OPEN,
+    V3_EVENT_SRV_PROP_CLOSE,
+    V3_EVENT_SRV_PROP_UPDATE,
+    V3_EVENT_ADMIN_BAN_ADD,
+    V3_EVENT_ADMIN_BAN_REMOVE,
 
     // not implemented
-    V3_EVENT_USER_PAGED,
+    V3_EVENT_USER_PAGE,
     V3_EVENT_CHAN_REMOVED,
     V3_EVENT_CHAN_MODIFIED,
-    V3_EVENT_RECV_AUDIO,
     V3_EVENT_SERVER_PROPERTY_UPDATED,
     V3_EVENT_RANKLIST_OPEN,
     V3_EVENT_RANKLIST_CLOSE,
@@ -279,13 +318,16 @@ enum _v3_events
     V3_EVENT_RANK_REMOVE,
 };
 
-
-// different boot types for api function v3_admin_boot
+/*
+ * Different boot types for the v3_admin_boot API.
+ */
 enum _v3_boot_types {
     V3_BOOT_KICK,
     V3_BOOT_BAN,
     V3_BOOT_CHANNEL_BAN,
 };
+
+extern char *_v3_bitmasks[];
 
 #define V3_AUDIO_SENDTYPE_UNK0   0x00  // possibly broadcast?
 #define V3_AUDIO_SENDTYPE_UNK1   0x01  // possibly broadcast to lobby?
@@ -298,6 +340,96 @@ enum _v3_boot_types {
 // v3_event.flags values for V3_EVENT_USER_LOGIN
 #define V3_LOGIN_FLAGS_EXISTING (1 << 0)    // user was added from userlist sent at login (existing user)
 
+typedef struct _v3_sp_filter {
+    uint8_t action;
+    uint16_t interval;
+    uint8_t times;
+} v3_sp_filter;
+typedef struct {
+    uint8_t chat_filter;
+    uint8_t channel_order;
+    uint8_t motd_always;
+    v3_sp_filter chat_spam_filter;
+    v3_sp_filter comment_spam_filter;
+    v3_sp_filter wave_spam_filter;
+    v3_sp_filter tts_spam_filter;
+    uint32_t inactivity_timeout;
+    uint8_t inactivity_action;
+    uint16_t inactivity_channel;
+    uint8_t rem_srv_comment;
+    uint8_t rem_chan_names;
+    uint8_t rem_chan_comments;
+    uint8_t rem_user_names;
+    uint8_t rem_user_comments;
+    char    server_comment[0x100];
+    uint8_t wave_bind_filter;
+    uint8_t tts_bind_filter;
+    v3_sp_filter channel_spam_filter;
+    uint8_t rem_show_login_names;
+    uint8_t max_guest;
+    uint32_t autokick_time;
+    uint32_t autoban_time;
+} v3_server_prop;
+typedef union _v3_event_data v3_event_data;
+union _v3_event_data {
+    struct {
+        v3_permissions perms;
+        char username[32];
+        char owner[32];
+        char notes[256];
+        char lock_reason[128];
+        int chan_admin_count;
+        uint16_t chan_admin[32];
+        int chan_auth_count;
+        uint16_t chan_auth[32];
+    } account;
+    struct {
+        uint16_t id;
+        uint16_t parent;
+        uint8_t  unknown_1;
+        uint8_t  password_protected;
+        uint16_t unknown_2;
+        uint16_t allow_recording;
+        uint16_t allow_cross_channel_transmit;
+        uint16_t allow_paging;
+        uint16_t allow_wave_file_binds;
+        uint16_t allow_tts_binds;
+        uint16_t allow_u2u_transmit;
+        uint16_t disable_guest_transmit;
+        uint16_t disable_sound_events;
+        uint16_t voice_mode;
+        uint16_t transmit_time_limit;
+        uint16_t allow_phantoms;
+        uint16_t max_clients;
+        uint16_t allow_guests;
+        uint16_t inactive_exempt;
+        uint16_t protect_mode;
+        uint16_t transmit_rank_level;
+        uint16_t channel_codec;
+        uint16_t channel_format;
+        uint16_t allow_voice_target;
+        uint16_t allow_command_target;
+    } channel;
+    v3_server_prop srvprop;
+    struct {
+        uint16_t id;
+        uint16_t count;
+        uint16_t bitmask_id;
+        uint32_t ip_address;
+        char     user[32];
+        char     by[32];
+        char     reason[128];
+    } ban;
+    struct {
+        uint16_t id;
+        uint16_t level;
+    } rank;
+    int16_t sample16[16384];
+    uint8_t sample[32768];
+    char    motd[2048];
+    char    chatmessage[256];
+    char    reason[128];
+};
 typedef struct _v3_event v3_event;
 struct _v3_event {
     uint16_t type;
@@ -340,61 +472,18 @@ struct _v3_event {
         uint8_t  channels;
     } pcm;
     struct {
+        uint32_t index;
+        uint32_t time;
+        uint8_t  stopped;
+        uint8_t  flushed;
+    } record;
+    struct {
         uint16_t property;
         uint8_t  value;
     } serverproperty;
-    union {
-        struct {
-            v3_permissions perms;
-            char username[32];
-            char owner[32];
-            char notes[256];
-            char lock_reason[128];
-            int chan_admin_count;
-            uint16_t chan_admin[32];
-            int chan_auth_count;
-            uint16_t chan_auth[32];
-        } account;
-        struct {
-            uint16_t id;
-            uint16_t parent;
-            uint8_t  unknown_1;
-            uint8_t  password_protected;
-            uint16_t unknown_2;
-            uint16_t allow_recording;
-            uint16_t allow_cross_channel_transmit;
-            uint16_t allow_paging;
-            uint16_t allow_wave_file_binds;
-            uint16_t allow_tts_binds;
-            uint16_t allow_u2u_transmit;
-            uint16_t disable_guest_transmit;
-            uint16_t disable_sound_events;
-            uint16_t voice_mode;
-            uint16_t transmit_time_limit;
-            uint16_t allow_phantoms;
-            uint16_t max_clients;
-            uint16_t allow_guests;
-            uint16_t inactive_exempt;
-            uint16_t protect_mode;
-            uint16_t transmit_rank_level;
-            uint16_t channel_codec;
-            uint16_t channel_format;
-            uint16_t allow_voice_target;
-            uint16_t allow_command_target;
-        } channel;
-        struct {
-            uint16_t id;
-            uint16_t level;
-        } rank;
-        int16_t sample16[16384];
-        uint8_t sample[32768];
-        char    motd[2048];
-        char    chatmessage[256];
-        char    reason[128];
-    } data;
     v3_event *next;
+    v3_event_data *data;
 };
-
 
 /*
  *  These structures are used in multiple message types.  (i.e. _v3_msg_channel
@@ -406,10 +495,12 @@ struct _v3_event {
 #define V3_USER_ALLOW_RECORD        0x02
 #define V3_USER_ACCEPT_CHAT         0x03
 #define V3_USER_GLOBAL_MUTE         0x04
+#define V3_USER_CHANNEL_MUTE        0x05
 
 #define V3_MAX_USER_SIZE            512
 #define V3_MAX_CHANNEL_SIZE         512
 #define V3_MAX_STRING_SIZE          512
+
 typedef struct __v3_msg_user {/*{{{*/
     uint16_t id;
     uint16_t channel;
@@ -431,6 +522,7 @@ typedef struct __v3_msg_user {/*{{{*/
     uint8_t  accept_chat;
     uint8_t  allow_recording;
     uint8_t  global_mute;
+    uint8_t  channel_mute;
     uint8_t  guest;
     void     *next;
     uint16_t real_user_id; // used for phantom users
@@ -503,14 +595,14 @@ typedef struct __v3_msg_account {/*{{{*/
      */
     void     *next;
 } _v3_msg_account;/*}}}*/
-typedef _v3_msg_account  v3_account;
 typedef _v3_msg_user     v3_user;
 typedef _v3_msg_channel  v3_channel;
 typedef _v3_msg_rank     v3_rank;
+typedef _v3_msg_account  v3_account;
 
 /*
-   This structure defines the bit number of each permission setting, the
-   internal name, and a name suitable for display to a user.
+ * This structure defines the bit number of each permission setting, the
+ * internal name, and a name suitable for display to a user.
  */
 struct _v3_perm_info {
     uint8_t bitnum;
@@ -552,8 +644,6 @@ typedef struct __v3_server {
     char *guest_motd;                 // Guest message of the day
     int auth_server_index;            // The array index of the authentication server
     int evpipe[2];                    // This is a pipe that libventrilo3 listens on for outbound events
-    FILE *evinstream;                 // The inbound stream for the event queue pipe
-    FILE *evoutstream;                // The outbound stream for the event queue pipe
     uint16_t codec;                   // The server's default codec
     uint16_t codec_format;            // The server's default codec format
     ventrilo_key_ctx server_key;      // The key used for decrypting messages from the server
@@ -562,12 +652,12 @@ typedef struct __v3_server {
     _v3_net_message *queue;           // This queue (linked list) stores messages that need to be processed by the client
     struct timeval last_timestamp;    // The time() of the last timestamp, a timestamp is sent every 10 seconds
     uint32_t recv_packet_count;       // Total amount of packets received from server.
-    uint32_t recv_byte_count;         // Total amount of bytes received from server.
+    uint64_t recv_byte_count;         // Total amount of bytes received from server.
     uint32_t sent_packet_count;       // Total amount of packets received from server.
-    uint32_t sent_byte_count;         // Total amount of bytes received from server.
+    uint64_t sent_byte_count;         // Total amount of bytes received from server.
     uint8_t motd_always;              // Always display MOTD
-    uint8_t global_chat_filter;       // Global or Per Channel chat filter
-    uint8_t channels_alphabetical;    // Display the channels alphabetical or manual
+    uint8_t per_channel_chat;         // Global or Per Channel chat filter
+    uint8_t channel_manual_sort;      // Display the channels alphabetical or manual
 } _v3_server;
 
 /*
@@ -615,17 +705,21 @@ void    _v3_print_permissions(v3_permissions *perms);
 int         v3_login(char *server, char *username, char *password, char *phonetic);
 void        v3_join_chat(void);
 void        v3_leave_chat(void);
-void        v3_send_chat_message(char* message);
+void        v3_send_chat_message(char *message);
 void        v3_start_privchat(uint16_t userid);
 void        v3_end_privchat(uint16_t userid);
-void        v3_send_privchat_message(uint16_t userid, char* message);
+void        v3_send_privchat_message(uint16_t userid, char *message);
 void        v3_send_privchat_away(uint16_t userid);
 void        v3_send_privchat_back(uint16_t userid);
+void        v3_send_tts_message(char *message);
+void        v3_send_play_wave_message(char *message);
+void        v3_send_user_page(uint16_t user_id);
 void        v3_logout(void);
 void        v3_change_channel(uint16_t channel_id, char *password);
 void        v3_admin_login(char *password);
 void        v3_admin_logout(void);
-void        v3_admin_boot(enum _v3_boot_types type, uint16_t user_id, char *reason);
+void        v3_admin_boot(int type, uint16_t user_id, char *reason);
+void        v3_admin_global_mute(uint16_t user_id);
 void        v3_phantom_add(uint16_t channel_id);
 void        v3_phantom_remove(uint16_t channel_id);
 void        v3_force_channel_move(uint16_t user_id, uint16_t channel_id);
@@ -634,6 +728,13 @@ void        v3_userlist_close(void);
 void        v3_userlist_remove(uint16_t account_id);
 void        v3_userlist_update(v3_account *account);
 void        v3_userlist_change_owner(uint16_t old_owner_id, uint16_t new_owner_id);
+void        v3_serverprop_open(void);
+void        v3_serverprop_close(void);
+void        v3_serverprop_update(const v3_server_prop *prop);
+void        v3_admin_ban_list(void);
+void        v3_admin_ban_add(uint16_t bitmask_id, uint32_t ip_address, const char *user, const char *reason);
+void        v3_admin_ban_remove(uint16_t bitmask_id, uint32_t ip_address);
+
 int         v3_debuglevel(uint32_t level);
 int         v3_is_loggedin(void);
 uint16_t    v3_get_user_id(void);
@@ -644,11 +745,12 @@ uint32_t    v3_get_soundq_length(void);
 v3_event    *v3_get_event(int block);
 int         v3_get_max_clients(void);
 int         v3_is_licensed(void);
-uint32_t    v3_get_bytes_recv(void);
-uint32_t    v3_get_bytes_sent(void);
+uint64_t    v3_get_bytes_recv(void);
+uint64_t    v3_get_bytes_sent(void);
 uint32_t    v3_get_packets_recv(void);
 uint32_t    v3_get_packets_sent(void);
 void        v3_clear_events(void);
+void        v3_free_event(v3_event *ev);
 uint32_t    v3_get_codec_rate(uint16_t codec, uint16_t format);
 const v3_codec *v3_get_codec(uint16_t codec, uint16_t format);
 const v3_codec *v3_get_channel_codec(uint16_t channel_id);
@@ -674,6 +776,8 @@ v3_user     *v3_get_user(uint16_t id);
 int         v3_channel_count(void);
 void        v3_free_channel(v3_channel *channel);
 v3_channel  *v3_get_channel(uint16_t id);
+uint16_t    v3_get_channel_id(const char *path);
+char *      v3_get_channel_path(uint16_t channel_id);
 
 // Rank list functions
 void        v3_ranklist_open(void);
@@ -688,13 +792,56 @@ v3_account *v3_get_account(uint16_t id);
 int         v3_account_count(void);
 void        v3_free_account(v3_account *account);
 
-// audio effects
+// Audio DSP functions
 void v3_set_volume_master(int level);
 void v3_set_volume_user(uint16_t id, int level);
 void v3_set_volume_luser(int level);
 uint8_t v3_get_volume_user(uint16_t id);
 uint8_t v3_get_volume_luser(void);
 
+// Recording API functions
+#define V3_VRF_DATA_NULL    0x00
+#define V3_VRF_DATA_AUDIO   0x01
+#define V3_VRF_DATA_TEXT    0x02
+ 
+typedef struct v3_vrf_data {
+    uint32_t size;
+    int8_t   codec;
+    int8_t   codecformat;
+
+    char     platform[64];
+    char     version[64];
+    char     comment[8192];
+    char     url[1024];
+    char     copyright[1024];
+
+    uint32_t id;
+    uint32_t time;
+    uint32_t duration;
+    char     username[32];
+
+    int      type;
+    void     *data;
+    char     *text;
+    uint32_t length;
+    uint32_t rate;
+    uint8_t  channels;
+
+    void     *_audio;
+    void     *_decoder;
+} v3_vrf_data;
+
+void     *v3_vrf_init(const char *filename);
+void     v3_vrf_destroy(void *vrfh);
+void     v3_vrf_data_init(v3_vrf_data *vrfd);
+void     v3_vrf_data_destroy(v3_vrf_data *vrfd);
+uint32_t v3_vrf_get_count(void *vrfh);
+int      v3_vrf_get_info(void *vrfh, v3_vrf_data *vrfd);
+int      v3_vrf_get_segment(void *vrfh, uint32_t id, v3_vrf_data *vrfd);
+int      v3_vrf_get_audio(void *vrfh, uint32_t id, v3_vrf_data *vrfd);
+int      v3_vrf_put_info(void *vrfh, const v3_vrf_data *vrfd);
+int      v3_vrf_record_start(const char *filename, uint8_t dishonor);
+void     v3_vrf_record_stop(void);
 
 #endif // _VENTRILO3_H
 

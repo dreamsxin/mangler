@@ -7,6 +7,7 @@
  * $URL$
  *
  * Copyright 2009-2010 Eric Kilfoil
+ * Copyright 2010 Roman Tetelman
  *
  * This file is part of Mangler.
  *
@@ -24,29 +25,24 @@
  * along with Mangler.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _MANGLERCONFIG_H
-#define _MANGLERCONFIG_H
+#ifndef _MANGLER_BACKEND_H
+#define _MANGLER_BACKEND_H
 
-#include "inilib.h"
+// circular dependencies in C(++) are fun!
+class ManglerAudioDevice;
 
-class ManglerConfig {
-    public:
-        iniFile         config, servers;
-        //Glib::Mutex     mutex;
-        ManglerConfig();
-        ~ManglerConfig();
-        std::string confdir() const;
-        void save();
-        std::vector<int> PushToTalkXKeyCodes() const;
-        iniValue &operator[](const string &configVar);
-        bool hasUserVolume(const string &server, const string &user) const;
-        iniValue &UserVolume(const string &server, const string &user);
-        bool hasUserMuted(const string &server, const string &user) const;
-        iniValue &UserMuted(const string &server, const string &user);
-        iniValue &ChannelPassword(const string &server, uint16_t channel);
-    private:
-        static const char *DefaultConfiguration;
-        void ConvertOldConfig();
+class ManglerBackend {
+public:
+    virtual bool            open(int type, Glib::ustring device, int rate, int channels) = 0;
+    virtual void            close(bool drain = false) = 0;
+    virtual bool            write(uint8_t* sample, uint32_t length, int channels) = 0;
+    virtual bool            read(uint8_t* buf) = 0;
+    virtual Glib::ustring   getAudioSubsystem(void) = 0;
+    static ManglerBackend*  getBackend(Glib::ustring audioSubsystem, uint32_t rate, uint8_t channels, uint32_t pcm_framesize);
+    virtual ~ManglerBackend();
+
+    static void             getDeviceList(Glib::ustring audioSubsystem, std::vector<ManglerAudioDevice*>& input, std::vector<ManglerAudioDevice*>& output);
 };
 
 #endif
+

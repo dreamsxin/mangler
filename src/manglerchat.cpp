@@ -28,7 +28,6 @@
 #include "manglerchat.h"
 #include "manglersettings.h"
 #include "manglerconfig.h"
-
 #include "manglercharset.h"
 
 ManglerChat::ManglerChat(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
@@ -38,14 +37,17 @@ ManglerChat::ManglerChat(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
     chatWindow->signal_show().connect(sigc::mem_fun(this, &ManglerChat::chatWindow_show_cb));
     chatWindow->signal_hide().connect(sigc::mem_fun(this, &ManglerChat::chatWindow_hide_cb));
 
-    builder->get_widget("sendChat", button);
-    button->signal_clicked().connect(sigc::mem_fun(this, &ManglerChat::chatWindowSendChat_clicked_cb));
+    builder->get_widget("chatMessage", chatMessage);
+    chatMessage->signal_activate().connect(sigc::mem_fun(this, &ManglerChat::chatMessage_activate_cb));
+
+    builder->get_widget("chatClear", button);
+    button->signal_clicked().connect(sigc::mem_fun(this, &ManglerChat::chatClear_clicked_cb));
 
     builder->get_widget("chatClose", button);
     button->signal_clicked().connect(sigc::mem_fun(this, &ManglerChat::chatClose_clicked_cb));
 
-    builder->get_widget("chatMessage", chatMessage);
-    chatMessage->set_activates_default(true);
+    builder->get_widget("chatHide", button);
+    button->signal_clicked().connect(sigc::mem_fun(this, &ManglerChat::chatHide_clicked_cb));
 
     builder->get_widget("chatUserListTreeView", chatUserListView);
     chatUserTreeModel = Gtk::ListStore::create(chatUserColumns);
@@ -60,39 +62,50 @@ ManglerChat::ManglerChat(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
 
     builder->get_widget("chatBox", chatBox);
     isOpen = false;
+    isJoined = false;
 }/*}}}*/
 
-void ManglerChat::chatTimestampCheckButton_toggled_cb() {/*{{{*/
+void ManglerChat::chatTimestampCheckButton_toggled_cb(void) {/*{{{*/
     builder->get_widget("chatTimestampCheckButton", checkbutton);
-    mangler->settings->config.chatTimestamps = checkbutton->get_active();
-    mangler->settings->config.save();
+    Mangler::config["ChatTimestamps"] = checkbutton->get_active();
+    Mangler::config.config.save();
 }/*}}}*/
 
-void ManglerChat::chatWindow_show_cb() {/*{{{*/
+void ManglerChat::chatWindow_show_cb(void) {/*{{{*/
     isOpen = true;
-
-    if(v3_is_loggedin()) {
+    if (v3_is_loggedin() && !isJoined) {
         v3_join_chat();
+        isJoined = true;
     }
+    chatMessage->grab_focus();
     builder->get_widget("chatTimestampCheckButton", checkbutton);
-    checkbutton->set_active(mangler->settings->config.chatTimestamps);
+    checkbutton->set_active(Mangler::config["ChatTimestamps"].toBool());
 }/*}}}*/
 
-void ManglerChat::chatWindow_hide_cb() {/*{{{*/
+void ManglerChat::chatWindow_hide_cb(void) {/*{{{*/
     isOpen = false;
-    if(v3_is_loggedin()) {
-        v3_leave_chat();
-    }
 }/*}}}*/
 
-void ManglerChat::chatWindowSendChat_clicked_cb() {/*{{{*/
-    if(chatMessage->get_text_length()) {
+void ManglerChat::chatMessage_activate_cb(void) {/*{{{*/
+    if (chatMessage->get_text_length()) {
         v3_send_chat_message((char *)ustring_to_c(chatMessage->get_text()).c_str());
         chatMessage->set_text("");
     }
 }/*}}}*/
 
-void ManglerChat::chatClose_clicked_cb() {/*{{{*/
+void ManglerChat::chatClear_clicked_cb(void) {/*{{{*/
+    chatBox->get_buffer()->set_text("");
+}/*}}}*/
+
+void ManglerChat::chatClose_clicked_cb(void) {/*{{{*/
+    if (v3_is_loggedin()) {
+        v3_leave_chat();
+    }
+    isJoined = false;
+    chatWindow->hide();
+}/*}}}*/
+
+void ManglerChat::chatHide_clicked_cb(void) {/*{{{*/
     chatWindow->hide();
 }/*}}}*/
 
@@ -103,7 +116,7 @@ void ManglerChat::addMessage(Glib::ustring message) {/*{{{*/
     struct timeval tv;
 
     Glib::RefPtr<Gtk::TextBuffer> buffer = chatBox->get_buffer();
-    if(mangler->settings->config.chatTimestamps == true) {
+    if (Mangler::config["ChatTimestamps"].toBool()) {
         gettimeofday(&tv, NULL);
         t = tv.tv_sec;
         tmp = localtime(&t);
@@ -111,7 +124,7 @@ void ManglerChat::addMessage(Glib::ustring message) {/*{{{*/
             message = "[" + (Glib::ustring)timestamp + "] " + message;
         }
     }
-    buffer->set_text(buffer->get_text() + message + "\n");
+    buffer->insert(buffer->end(), message + "\n");
 
     Gtk::TextIter end = buffer->end();
     Glib::RefPtr<Gtk::TextMark> end_mark = buffer->create_mark(end);
@@ -119,15 +132,16 @@ void ManglerChat::addMessage(Glib::ustring message) {/*{{{*/
 }/*}}}*/
 
 Glib::ustring ManglerChat::nameFromId(uint16_t user_id) {/*{{{*/
-    v3_user *u;
-    Glib::ustring name = "";
+    Gtk::TreeModel::Children::iterator iter = chatUserTreeModel->children().begin();
 
-    if ((u = v3_get_user(user_id))) {
-        name = c_to_ustring(u->name);
-        v3_free_user(u);
+    while (iter != chatUserTreeModel->children().end()) {
+        if (iter && (*iter)[chatUserColumns.id] == user_id) {
+            return (*iter)[chatUserColumns.name];
+        }
+        iter++;
     }
 
-    return name;
+    return "";
 }/*}}}*/
 
 void ManglerChat::addChatMessage(uint16_t user_id, Glib::ustring message) {/*{{{*/
@@ -135,15 +149,20 @@ void ManglerChat::addChatMessage(uint16_t user_id, Glib::ustring message) {/*{{{
 }/*}}}*/
 
 void ManglerChat::addRconMessage(Glib::ustring message) {/*{{{*/
-    addMessage("[RCON]: " + message);
+    addMessage("* [RCON]: " + message);
 }/*}}}*/
 
 void ManglerChat::addUser(uint16_t user_id) {/*{{{*/
     if (isUserInChat(user_id)) {
         return;
     }
-    Glib::ustring name = nameFromId(user_id);
-    if (name == "") {
+    v3_user *u;
+    Glib::ustring name;
+
+    if ((u = v3_get_user(user_id))) {
+        name = c_to_ustring(u->name);
+        v3_free_user(u);
+    } else {
         return;
     }
     chatUserIter = chatUserTreeModel->append();
@@ -152,7 +171,7 @@ void ManglerChat::addUser(uint16_t user_id) {/*{{{*/
     chatUserRow[chatUserColumns.name] = name;
     chatUserRow[chatUserColumns.channel] = v3_get_user_channel(user_id);
     chatUserTreeModelFilter->refilter();
-    if (isGlobal || (v3_get_user_channel(user_id) == v3_get_user_channel(mangler->myID)) ) {
+    if (!isPerChannel || (v3_get_user_channel(user_id) == v3_get_user_channel(v3_get_user_id())) ) {
         addMessage("* " + name + " has joined the chat.");
     }
 }/*}}}*/
@@ -165,7 +184,7 @@ void ManglerChat::removeUser(uint16_t user_id) {/*{{{*/
         row = *iter;
         uint32_t rowId = row[chatUserColumns.id];
         if (rowId == user_id) {
-            if (isGlobal || (v3_get_user_channel(user_id) == v3_get_user_channel(mangler->myID)) ) {
+            if (!isPerChannel || (v3_get_user_channel(user_id) == v3_get_user_channel(v3_get_user_id())) ) {
                 addMessage("* " + row[chatUserColumns.name] + " has left the chat.");
             }
             chatUserTreeModel->erase(row);
@@ -179,7 +198,7 @@ void ManglerChat::removeUser(uint16_t user_id) {/*{{{*/
 
 bool ManglerChat::filterVisible(const Gtk::TreeIter& iter) {/*{{{*/
     uint16_t theirChannel = (*iter)[chatUserColumns.channel];
-    if (((*iter)[chatUserColumns.id] == mangler->myID) || isGlobal || (theirChannel == v3_get_user_channel(mangler->myID))) {
+    if (((*iter)[chatUserColumns.id] == v3_get_user_id()) || !isPerChannel || (theirChannel == v3_get_user_channel(v3_get_user_id()))) {
         return true;
     }
     return false;
@@ -188,7 +207,7 @@ bool ManglerChat::filterVisible(const Gtk::TreeIter& iter) {/*{{{*/
 void ManglerChat::clear(void) {/*{{{*/
     chatUserTreeModel->clear();
     addMessage("*** disconnected from server");
-    //chatBox->get_buffer()->set_text("");
+    isJoined = false;
 }/*}}}*/
 
 bool ManglerChat::isUserInChat(uint16_t user_id) {/*{{{*/
@@ -206,7 +225,7 @@ bool ManglerChat::isUserInChat(uint16_t user_id) {/*{{{*/
     return false;
 }/*}}}*/
 
-void ManglerChat::updateUser (uint16_t user_id) {/*{{{*/
+void ManglerChat::updateUser(uint16_t user_id) {/*{{{*/
     Gtk::TreeModel::Children::iterator iter = chatUserTreeModel->children().begin();
     while (iter != chatUserTreeModel->children().end()) {
         if ((*iter)[chatUserColumns.id] == user_id) {

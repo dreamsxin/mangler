@@ -29,6 +29,7 @@
 #include <sys/types.h>
 #include <stdint.h>
 #include <iostream>
+#include "manglerconfig.h"
 
 class ManglerChannelTree;
 class ManglerNetwork;
@@ -39,6 +40,13 @@ class ManglerChat;
 class ManglerPrivChat;
 class ManglerIntegration;
 class ManglerAdmin;
+class ManglerRecorder;
+#ifdef HAVE_XOSD
+class ManglerOsd;
+#endif
+#ifdef HAVE_G15
+class ManglerG15;
+#endif
 
 extern "C" {
 #include <ventrilo3.h>
@@ -46,6 +54,14 @@ extern "C" {
 
 #ifndef _MANGLER_H
 #define _MANGLER_H
+
+struct _cli_options {
+    bool uifromfile;
+    Glib::ustring uifilename;
+    Glib::ustring qc_server;
+    Glib::ustring qc_username;
+    Glib::ustring qc_password;
+};
 
 class Mangler
 {
@@ -75,14 +91,15 @@ class Mangler
         Gtk::CheckButton                    *checkbutton;
         Gtk::ProgressBar                    *inputvumeter;
 
-
         std::map<Glib::ustring, Glib::RefPtr<Gdk::Pixbuf> >  icons;
         Glib::RefPtr<Gtk::StatusIcon>       statusIcon;
+        Gtk::Menu                           *statusIconMenu;
         ManglerServerList                   *serverList;
         ManglerChat                         *chat;
         ManglerChannelTree                  *channelTree;
         ManglerNetwork                      *network;
-        int32_t                             connectedServerId;
+        //int32_t                             connectedServerId;
+        std::string                         connectedServerName;
         std::map<uint32_t, ManglerAudio* >  outputAudio;
         std::map<uint16_t, ManglerPrivChat *> privateChatWindows;
         ManglerAudio                        *inputAudio;
@@ -90,6 +107,14 @@ class Mangler
         ManglerSettings                     *settings;
         ManglerIntegration                  *integration;
         ManglerAdmin                        *admin;
+        ManglerRecorder                     *recorder;
+        static ManglerConfig                config;
+#ifdef HAVE_XOSD
+        ManglerOsd                          *osd;
+#endif
+#ifdef HAVE_G15
+        ManglerG15                          *g15;
+#endif
 
         bool                                isTransmitting;
         bool                                isTransmittingButton;
@@ -101,11 +126,20 @@ class Mangler
         bool                                muteSound;
         bool                                muteMic;
         bool                                motdAlways;
+        bool                                wantAdminWindow;
 
         // Autoreconnect feature stuff - Need ID's to kill threads if needed
         bool                                wantDisconnect;
         time_t                              lastAttempt;
         uint32_t                            lastServer;
+
+        // These are used by the message of the day window
+        Gtk::Window                         *motdWindow;
+        Gtk::Notebook                       *motdNotebook;
+        Gtk::TextView                       *motdUsers;
+        Gtk::TextView                       *motdGuests;
+        Gtk::CheckButton                    *motdIgnore;
+        Gtk::Button                         *motdOkButton;
 
         // These are used by the password entry dialog
         Gtk::Dialog                         *passwordDialog;
@@ -125,14 +159,12 @@ class Mangler
         Gtk::Entry                          *textStringChangeCommentEntry;
         Gtk::Entry                          *textStringChangeURLEntry;
         Gtk::Entry                          *textStringChangeIntegrationEntry;
+        Gtk::CheckButton                    *textStringSilenceCommentCheckButton;
         Glib::ustring                       comment;
         Glib::ustring                       url;
         Glib::ustring                       integration_text;
 
         Glib::Thread                        *networkThread;
-
-        //Less intensive than looking it up every time
-        uint16_t                            myID;
 
         Glib::ustring getPasswordEntry(Glib::ustring title = "Password", Glib::ustring prompt = "Password");
         bool getReasonEntry(Glib::ustring title = "Reason", Glib::ustring prompt = "Reason");
@@ -141,9 +173,30 @@ class Mangler
         void errorDialog(Glib::ustring message);
 
     protected:
+        struct _cli_options *options;
+
+        // main window callbacks
+        void mangler_show_cb(void);
+        bool mangler_quit_cb(void);
+
+        // connection handlers
+        void onConnectHandler(
+                Glib::ustring hostname,
+                Glib::ustring port,
+                Glib::ustring username,
+                Glib::ustring password,
+                Glib::ustring phonetic = "",
+                Glib::ustring charset = "",
+                bool acceptPages = true,
+                bool acceptU2U = true,
+                bool acceptPrivateChat = true,
+                bool allowRecording = true);
+        void onDisconnectHandler(void);
+        bool reconnectStatusHandler(void);
+
         // button signal handlers
         void quickConnectButton_clicked_cb(void);
-        void serverConfigButton_clicked_cb(void);
+        void serverListButton_clicked_cb(void);
         void connectButton_clicked_cb(void);
         void commentButton_clicked_cb(void);
         void chatButton_clicked_cb(void);
@@ -153,13 +206,16 @@ class Mangler
         void aboutButton_clicked_cb(void);
         void xmitButton_toggled_cb(void);
         void statusIcon_activate_cb(void);
+        void statusIcon_scroll_event_cb(GdkEventScroll* event);
+        void statusIcon_buttonpress_event_cb(GdkEventButton* event);
         void errorOKButton_clicked_cb(void);
-
 
         // menu bar signal handlers
         void buttonMenuItem_toggled_cb(void);
         void hideServerInfoMenuItem_toggled_cb(void);
         void hideGuestFlagMenuItem_toggled_cb(void);
+        void motdMenuItem_activate_cb(void);
+        void recorderMenuItem_activate_cb(void);
         void quitMenuItem_activate_cb(void);
         void adminWindowMenuItem_activated_cb(void);
 
@@ -169,18 +225,18 @@ class Mangler
         bool checkPushToTalkMouse(void);
         bool updateXferAmounts(void);
 
-        // autoreconnect implementation
-        bool reconnectStatusHandler(void);
-        void onDisconnectHandler(void);
-
         // quick mute options
         void muteSoundCheckButton_toggled_cb(void);
         void muteMicCheckButton_toggled_cb(void);
+        void muteSoundCheckMenuItem_toggled_cb(void);
+        void muteMicCheckMenuItem_toggled_cb(void);
 
         // quick connect signal handlers
         void qcConnectButton_clicked_cb(void);
         void qcCancelButton_clicked_cb(void);
 
+        // message of the day window signal handlers
+        void motdIgnore_toggled_cb(void);
         void motdOkButton_clicked_cb(void);
 
         // password dialog signal handlers
@@ -194,22 +250,14 @@ class Mangler
         // text string change dialog signal handlers
         void textStringChangeDialogOkButton_clicked_cb(void);
         void textStringChangeDialogCancelButton_clicked_cb(void);
-
-        // program quit callback
-        bool mangler_quit_cb(void);
-};
-
-struct _cli_options {
-    bool uifromfile;
-    Glib::ustring uifilename;
 };
 
 class ManglerError
 {
     public:
         uint32_t        code;
-        Glib::ustring     message;
-        Glib::ustring     module;
+        Glib::ustring   message;
+        Glib::ustring   module;
         ManglerError(uint32_t code, Glib::ustring message, Glib::ustring module = "");
 };
 

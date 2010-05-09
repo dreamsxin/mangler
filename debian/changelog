@@ -1,5 +1,63 @@
-mangler (0.0.20091012-1) unstable; urgency=low
+mangler (1.2.0beta1) unstable; urgency=low
 
-  * Initial release (Closes: #0)
+  * libventrilo3 should compile on a mac
+  * added admin API functions and UI for:
+     - admin login
+     - admin logout
+     - kick
+     - ban
+     - channelban
+     - force channel move
+     - user editor
+     - channel editor
+     - server property editor
+     - rank list editor
+     - ban list editor
+  * added master volume control
+  * added accessibility support for orca users
+  * buttons can be hidden to reduce screen space
+  * user's "server settings" are sent to the server (allow pages, chat,
+    recording, etc)
+  * chat RCON support
+  * save per-user volume settings in the config file
+  * save channel passwords in the config file
+  * right click conext menu on channel list for kick, ban, phantoms, private
+    chat, user settings, etc.
+  * implement channel and user flags for local mute, global mute, and many
+    others
+  * implement rank list support
+  * ALSA support
+  * OSS support
+  * allow custom device names/devices for ALSA and OSS
+  * track the amount of data xmit'd/recv'd
+  * libxosd support for on-screen display (overlay)
+  * mute sound/mic checkboxes on main ui screen
+  * input VU meter on main ui screen
+  * ability to set default channel at login
+  * all buttons have corresponding menu items
+  * ping and current # of users are shown in status bar
+  * add rhythmbox (and maybe mpd and amarok) support to show current playing track
+  * main window should always come to foreground when deiconifying from the system tray
+  * added celt support (only for mangler... does not work with normal ventrilo client)
+  * implemented voice activated transmit
+  * implemented "vrf" recording and playback capability
+  * impelmented a much better configuration file format (existing config is
+    automatically converted)
+  * status icon has a context menu when right clicking
+  * ticket #154 is still open
+  * basic text-to-speech implementation
+  * implemented user paging
 
- -- eric <ekilfoil@gmail.com>  Mon, 12 Oct 2009 06:43:59 -0700
+ -- eric kilfoil <ekilfoil@gmail.com>  Sun, 09 May 2010 00:27:04 -0700
+
+mangler (1.0.1) stable; urgency=low
+
+  * Updating license documentation and distribution for compliance
+
+ -- eric kilfoil <ekilfoil@gmail.com>  Tue, 22 Dec 2009 21:42:48 -0800
+
+mangler (1.0.0) stable; urgency=low
+
+  * Initial release
+
+ -- eric kilfoil <ekilfoil@gmail.com>  Tue, 01 Dec 2009 06:43:59 -0700

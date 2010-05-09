@@ -54,13 +54,16 @@ class ManglerChat {
         Gtk::CheckButton   *checkbutton;
         Gtk::TextView *chatBox;
         bool          isOpen;
-        bool isGlobal;
+        bool          isJoined;
+        bool          isPerChannel;
 
-        void chatTimestampCheckButton_toggled_cb();
+        void chatTimestampCheckButton_toggled_cb(void);
         void chatWindow_show_cb(void);
         void chatWindow_hide_cb(void);
-        void chatWindowSendChat_clicked_cb(void);
+        void chatMessage_activate_cb(void);
+        void chatClear_clicked_cb(void);
         void chatClose_clicked_cb(void);
+        void chatHide_clicked_cb(void);
 
         void addChatMessage(uint16_t user_id, Glib::ustring message);
         void addRconMessage(Glib::ustring message);
@@ -73,7 +76,7 @@ class ManglerChat {
         Glib::ustring nameFromId(uint16_t user_id);
         bool filterVisible(const Gtk::TreeIter& iter);
 
-
 };
 
 #endif
+

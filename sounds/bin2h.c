@@ -1,12 +1,12 @@
 /*
  * vim: softtabstop=4 shiftwidth=4 cindent foldmethod=marker expandtab
  *
- * $LastChangedDate: 2009-12-13 04:02:51 -0800 (Sun, 13 Dec 2009) $
- * $Revision: 424 $
- * $LastChangedBy: humb4b4 $
+ * $LastChangedDate$
+ * $Revision$
+ * $LastChangedBy$
  * $URL$
  *
- * Copyright 2009 Eric Kilfoil
+ * Copyright 2009-2010 Eric Kilfoil
  *
  * This file is part of Mangler.
  *

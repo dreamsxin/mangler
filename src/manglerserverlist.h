@@ -27,8 +27,6 @@
 #ifndef _MANGLERSERVERLIST_H
 #define _MANGLERSERVERLIST_H
 
-#include "manglerconfig.h"
-
 class ManglerServerList {
     public:
         ManglerServerList(Glib::RefPtr<Gtk::Builder> builder);
@@ -48,10 +46,14 @@ class ManglerServerList {
         Gtk::TreeView                *serverListView;
         Glib::RefPtr<Gtk::TreeSelection> serverListSelection;
 
-
+        // Table fields
+        Gtk::Table *serverListServerTable;
+        Gtk::Table *serverListUserTable;
+        Gtk::Table *serverListOptionsTable;
 
         // Entry fields
-        int32_t   editorId;
+        std::string editorName;
+        int32_t     editorId;
         Gtk::Entry *serverListServerNameEntry;
         Gtk::Entry *serverListHostnameEntry;
         Gtk::Entry *serverListPortEntry;
@@ -81,19 +83,21 @@ class ManglerServerList {
         Glib::RefPtr<Gtk::ListStore> charsetTreeModel;
 
         // Editor Buttons
-        Gtk::Button *serverListServerSaveButton;
+        Gtk::Button *serverListServerUpdateButton;
+        Gtk::Button *serverListServerDeleteButton;
+        Gtk::Button *serverListServerCloneButton;
 
         void serverListWindow_show_cb(void);
         void serverListSelection_changed_cb(void);
-        void serverListAddButton_clicked_cb(void);
+        void serverListNewButton_clicked_cb(void);
         void serverListDeleteButton_clicked_cb(void);
         void serverListCloneButton_clicked_cb(void);
         void serverListSetDefaultButton_clicked_cb(void);
         void serverListCloseButton_clicked_cb(void);
-        void serverListServerSaveButton_clicked_cb(void);
+        void serverListServerUpdateButton_clicked_cb(void);
         void serverListServerClearButton_clicked_cb(void);
 
-        void editRow(uint32_t id);
+        void editRow(const std::string &name);
         void saveRow();
         void clearEntries(void);
 
@@ -104,3 +108,4 @@ class ManglerServerList {
 };
 
 #endif
+

@@ -31,9 +31,16 @@
 
 #include "manglerintegration.h"
 #include "mangleraudio.h"
+#ifdef HAVE_XOSD
+# include "manglerosd.h"
+#endif
+
+#define PTT_KEY_GET   "<span weight='light'>&lt;press the set button to define a hotkey&gt;</span>"
+#define PTT_KEY_SET   "<span color='red'>&lt;Hold a key combination and click done...&gt;</span>"
+#define PTT_MOUSE_GET "<span weight='light'>&lt;press the set button to define a button&gt;</span>"
+#define PTT_MOUSE_SET "<span color='red'>&lt;Click a mouse button you wish to use...&gt;</span>"
 
 ManglerSettings::ManglerSettings(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
-
     this->builder = builder;
 
     // Connect our signals for this window
@@ -99,6 +106,39 @@ ManglerSettings::ManglerSettings(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
     builder->get_widget("settingsEnableVoiceActivationCheckButton", checkbutton);
     checkbutton->signal_toggled().connect(sigc::mem_fun(this, &ManglerSettings::settingsEnableVoiceActivationCheckButton_toggled_cb));
 
+#ifdef HAVE_XOSD
+    builder->get_widget("settingsOSD", vbox);
+    vbox->set_sensitive(true);
+    builder->get_widget("settingsEnableOnScreenDisplayCheckButton", checkbutton);
+    checkbutton->signal_toggled().connect(sigc::mem_fun(this, &ManglerSettings::settingsEnableOnScreenDisplayCheckButton_toggled_cb));
+    builder->get_widget("settingsOSDverticalPos", osdPosition);
+    osdPositionModel = Gtk::ListStore::create(osdPositionColumns);
+    osdPosition->set_model(osdPositionModel);
+    osdPosition->pack_start(osdPositionColumns.name);
+    Gtk::TreeModel::Row posrow;
+    posrow = *osdPositionModel->append();
+    posrow[osdPositionColumns.id] = XOSD_top;    posrow[osdPositionColumns.name] = "Top";
+    posrow = *osdPositionModel->append();
+    posrow[osdPositionColumns.id] = XOSD_middle; posrow[osdPositionColumns.name] = "Middle";
+    posrow = *osdPositionModel->append();
+    posrow[osdPositionColumns.id] = XOSD_bottom; posrow[osdPositionColumns.name] = "Bottom";
+
+    builder->get_widget("settingsOSDhorizontalPos", osdAlignment);
+    osdAlignmentModel = Gtk::ListStore::create(osdAlignmentColumns);
+    osdAlignment->set_model(osdAlignmentModel);
+    osdAlignment->pack_start(osdAlignmentColumns.name);
+    Gtk::TreeModel::Row alnrow;
+    alnrow = *osdAlignmentModel->append();
+    alnrow[osdAlignmentColumns.id] = XOSD_center; alnrow[osdAlignmentColumns.name] = "Center";
+    alnrow = *osdAlignmentModel->append();
+    alnrow[osdAlignmentColumns.id] = XOSD_left;   alnrow[osdAlignmentColumns.name] = "Left";
+    alnrow = *osdAlignmentModel->append();
+    alnrow[osdAlignmentColumns.id] = XOSD_right;  alnrow[osdAlignmentColumns.name] = "Right";
+
+    builder->get_widget("settingsOSDfontsize", osdFontSize);
+    builder->get_widget("settingsOSDcolor", osdColor);
+#endif
+
     builder->get_widget("audioSubsystemComboBox", audioSubsystemComboBox);
     audioSubsystemTreeModel = Gtk::ListStore::create(audioSubsystemColumns);
     audioSubsystemComboBox->set_model(audioSubsystemTreeModel);
@@ -135,26 +175,24 @@ ManglerSettings::ManglerSettings(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
     mouseDeviceComboBox->set_model(mouseDeviceTreeModel);
     mouseDeviceComboBox->pack_start(mouseColumns.name);
 
-    // audio subsystem combo box
+    // Audio Subsystem
     audioSubsystemTreeModel->clear();
     Gtk::TreeModel::Row audioSubsystemRow;
 #ifdef HAVE_PULSE
     audioSubsystemRow = *(audioSubsystemTreeModel->append());
     audioSubsystemRow[audioSubsystemColumns.id] = "pulse";
     audioSubsystemRow[audioSubsystemColumns.name] = "PulseAudio";
-    if (config.audioSubsystem == "pulse") {
-        audioSubsystemComboBox->set_active(audioSubsystemRow);
-    }
 #endif
 #ifdef HAVE_ALSA
     audioSubsystemRow = *(audioSubsystemTreeModel->append());
     audioSubsystemRow[audioSubsystemColumns.id] = "alsa";
     audioSubsystemRow[audioSubsystemColumns.name] = "ALSA";
-    if (config.audioSubsystem == "alsa") {
-        audioSubsystemComboBox->set_active(audioSubsystemRow);
-    }
 #endif
-
+#ifdef HAVE_OSS
+    audioSubsystemRow = *(audioSubsystemTreeModel->append());
+    audioSubsystemRow[audioSubsystemColumns.id] = "oss";
+    audioSubsystemRow[audioSubsystemColumns.name] = "OSS";
+#endif
 
     volumeAdjustment = new Gtk::Adjustment(79, 0, 158, 1, 10, 10);
     volumehscale = new Gtk::HScale(*volumeAdjustment);
@@ -169,29 +207,38 @@ ManglerSettings::ManglerSettings(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
 }/*}}}*/
 void ManglerSettings::applySettings(void) {/*{{{*/
     Gtk::TreeModel::iterator iter;
-    GdkWindow   *rootwin = gdk_get_default_root_window();
+    GdkWindow *rootwin = gdk_get_default_root_window();
 
-
-    // Push to Talk
+    // Key Push to Talk
     builder->get_widget("settingsEnablePTTKeyCheckButton", checkbutton);
-    config.PushToTalkKeyEnabled = checkbutton->get_active() ? true : false;
+    Mangler::config["PushToTalkKeyEnabled"] = checkbutton->get_active();
     builder->get_widget("settingsPTTKeyValueLabel", label);
-    config.PushToTalkKeyValue = label->get_text();
-    config.parsePushToTalkValue(config.PushToTalkKeyValue);
+    if (label->get_label() != PTT_KEY_GET && label->get_label() != PTT_KEY_SET) {
+        Mangler::config["PushToTalkKeyValue"] = label->get_text();
+    } else {
+        Mangler::config["PushToTalkKeyValue"] = "";
+    }
+    //Mangler::config.parsePushToTalkValue(config.PushToTalkKeyValue);
 
-    // Mouse to Talk
+    // Mouse Push to Talk
     builder->get_widget("settingsMouseDeviceComboBox", combobox);
     iter = combobox->get_active();
     if (iter) {
         Gtk::TreeModel::Row row = *iter;
-        config.mouseDeviceName = row[mouseColumns.name];
+        Mangler::config["MouseDeviceName"] = Glib::ustring( row[mouseColumns.name] );
     }
     builder->get_widget("settingsEnablePTTMouseCheckButton", checkbutton);
-    config.PushToTalkMouseEnabled = checkbutton->get_active() ? true : false;
+    Mangler::config["PushToTalkMouseEnabled"] = checkbutton->get_active();
     builder->get_widget("settingsPTTMouseValueLabel", label);
-    config.PushToTalkMouseValue = label->get_text();
-    if (config.PushToTalkMouseValue.length() > 6) {
-        config.PushToTalkMouseValueInt = atoi(config.PushToTalkMouseValue.substr(6).c_str());
+    if (label->get_label() != PTT_MOUSE_GET && label->get_label() != PTT_MOUSE_SET) {
+        Glib::ustring PushToTalkMouseValue = label->get_text();
+        if (PushToTalkMouseValue.length() > 6) {
+            Mangler::config["PushToTalkMouseValue"] = PushToTalkMouseValue.substr(6);
+        } else {
+            Mangler::config["PushToTalkMouseValue"] = PushToTalkMouseValue;
+        }
+    } else {
+        Mangler::config["PushToTalkMouseValue"] = "";
     }
     XUngrabButton(GDK_WINDOW_XDISPLAY(rootwin), AnyButton, AnyModifier, GDK_ROOT_WINDOW());
     XAllowEvents (GDK_WINDOW_XDISPLAY(rootwin), AsyncBoth, CurrentTime);
@@ -203,13 +250,13 @@ void ManglerSettings::applySettings(void) {/*{{{*/
 
     // Audio Player Integration
     builder->get_widget("settingsEnableAudioIntegrationCheckButton", checkbutton);
-    config.AudioIntegrationEnabled = checkbutton->get_active();
+    Mangler::config["AudioIntegrationEnabled"] = checkbutton->get_active();
     iter = audioPlayerComboBox->get_active();
     if (iter) {
         Gtk::TreeModel::Row row = *iter;
         uint8_t id = row[audioPlayerColumns.id];
-        config.AudioIntegrationPlayer = id;
-        if (config.AudioIntegrationEnabled) {
+        Mangler::config["AudioIntegrationPlayer"] = id;
+        if (Mangler::config["AudioIntegrationEnabled"].toBool()) {
             mangler->integration->setClient((MusicClient)id);
         } else {
             mangler->integration->setClient(MusicClient_None);
@@ -219,52 +266,79 @@ void ManglerSettings::applySettings(void) {/*{{{*/
 
     // Voice Activation
     builder->get_widget("settingsEnableVoiceActivationCheckButton", checkbutton);
-    config.VoiceActivationEnabled = checkbutton->get_active() ? true : false;
+    Mangler::config["VoiceActivationEnabled"] = checkbutton->get_active();
     builder->get_widget("settingsVoiceActivationSilenceDurationSpinButton", spinbutton);
-    config.VoiceActivationSilenceDuration = spinbutton->get_value() * 1000.0;
+    Mangler::config["VoiceActivationSilenceDuration"] = spinbutton->get_value() * 1000.0;
     builder->get_widget("settingsVoiceActivationSensitivitySpinButton", spinbutton);
-    config.VoiceActivationSensitivity = spinbutton->get_value_as_int();
+    Mangler::config["VoiceActivationSensitivity"] = spinbutton->get_value_as_int();
+
+#ifdef HAVE_XOSD
+    // On-Screen Display
+    builder->get_widget("settingsEnableOnScreenDisplayCheckButton", checkbutton);
+    Mangler::config["OnScreenDisplayEnabled"] = checkbutton->get_active();
+    if (checkbutton->get_active()) {
+        Gtk::TreeModel::iterator pos_iter = osdPosition->get_active();
+        if (pos_iter) {
+            int vert_pos_int = (*pos_iter)[osdPositionColumns.id];
+            Mangler::config["OnScreenDisplayVerticalPosition"] = vert_pos_int;
+        }
+        Gtk::TreeModel::iterator aln_iter = osdAlignment->get_active();
+        if (aln_iter) {
+            int horz_aln_int = (*aln_iter)[osdAlignmentColumns.id];
+            Mangler::config["OnScreenDisplayHorizontalAlignment"] = horz_aln_int;
+        }
+        Mangler::config["OnScreenDisplayFontSize"] = osdFontSize->get_value();
+        Gdk::Color color = osdColor->get_color();
+        char colorstr[16];
+        snprintf(colorstr, 15, "#%02x%02x%02x", color.get_red() / 256, color.get_green() / 256, color.get_blue() / 256);
+        Mangler::config["OnScreenDisplayColor"] = colorstr;
+        mangler->osd->destroyOsd();
+    }
+#endif
 
     // Audio Devices
     iter = inputDeviceComboBox->get_active();
     if (iter) {
         Gtk::TreeModel::Row row = *iter;
-        config.inputDeviceName = row[inputColumns.name];
+        Mangler::config["InputDeviceName"] = Glib::ustring( row[inputColumns.name] );
     }
-    config.inputDeviceCustomName = inputDeviceCustomName->get_text();
+    Mangler::config["InputDeviceCustomName"] = inputDeviceCustomName->get_text();
     iter = outputDeviceComboBox->get_active();
     if (iter) {
         Gtk::TreeModel::Row row = *iter;
-        config.outputDeviceName = row[outputColumns.name];
+        Mangler::config["OutputDeviceName"] = Glib::ustring( row[outputColumns.name] );
     }
-    config.outputDeviceCustomName = outputDeviceCustomName->get_text();
+    Mangler::config["OutputDeviceCustomName"] = outputDeviceCustomName->get_text();
     iter = notificationDeviceComboBox->get_active();
     if (iter) {
         Gtk::TreeModel::Row row = *iter;
-        config.notificationDeviceName = row[notificationColumns.name];
+        Mangler::config["NotificationDeviceName"] = Glib::ustring( row[notificationColumns.name] );
     }
-    config.notificationDeviceCustomName = notificationDeviceCustomName->get_text();
+    Mangler::config["NotificationDeviceCustomName"] = notificationDeviceCustomName->get_text();
     iter = audioSubsystemComboBox->get_active();
     if (iter) {
         Gtk::TreeModel::Row row = *iter;
-        config.audioSubsystem = row[audioSubsystemColumns.id];
+        Mangler::config["AudioSubsystem"] = Glib::ustring( row[audioSubsystemColumns.id] );
     }
 
     // Master Volume
-    config.masterVolumeLevel = volumeAdjustment->get_value();
-    v3_set_volume_master(config.masterVolumeLevel);
+    Mangler::config["MasterVolumeLevel"] = volumeAdjustment->get_value();
+    v3_set_volume_master(Mangler::config["MasterVolumeLevel"].toInt());
 
-    // Notification sounds
+    // Notification Sounds
     builder->get_widget("notificationLoginLogoutCheckButton", checkbutton);
-    config.notificationLoginLogout = checkbutton->get_active() ? true : false;
+    Mangler::config["NotificationLoginLogout"] = checkbutton->get_active();
 
     builder->get_widget("notificationChannelEnterLeaveCheckButton", checkbutton);
-    config.notificationChannelEnterLeave = checkbutton->get_active() ? true : false;
+    Mangler::config["NotificationChannelEnterLeave"] = checkbutton->get_active();
 
     builder->get_widget("notificationTalkStartEndCheckButton", checkbutton);
-    config.notificationTransmitStartStop = checkbutton->get_active() ? true : false;
+    Mangler::config["NotificationTransmitStartStop"] = checkbutton->get_active();
 
-    // Debug level
+    builder->get_widget("notificationTTSCheckButton", checkbutton);
+    Mangler::config["NotificationTextToSpeech"] = checkbutton->get_active();
+
+    // Debug Level
     uint32_t debuglevel = 0;
     builder->get_widget("debugStatus", checkbutton);
     debuglevel |= checkbutton->get_active() ? V3_DEBUG_STATUS : 0;
@@ -305,39 +379,44 @@ void ManglerSettings::applySettings(void) {/*{{{*/
     builder->get_widget("debugEncryptedPacket", checkbutton);
     debuglevel |= checkbutton->get_active() ? V3_DEBUG_PACKET_ENCRYPTED : 0;
 
-    config.lv3_debuglevel = debuglevel;
+    Mangler::config["lv3_debuglevel"] = debuglevel;
 
     v3_debuglevel(debuglevel);
-    config.save();
+    Mangler::config.config.save();
 }/*}}}*/
 void ManglerSettings::initSettings(void) {/*{{{*/
-    config.load();
-
-    // Push to Talk
+    // Key Push to Talk
     builder->get_widget("settingsEnablePTTKeyCheckButton", checkbutton);
-    checkbutton->set_active(config.PushToTalkKeyEnabled ? true : false);
+    checkbutton->set_active(Mangler::config["PushToTalkKeyEnabled"].toBool());
     builder->get_widget("settingsPTTKeyValueLabel", label);
-    label->set_text(config.PushToTalkKeyValue);
+    if (Mangler::config["PushToTalkKeyValue"].length()) {
+        label->set_text(Mangler::config["PushToTalkKeyValue"].toUString());
+    } else {
+        label->set_markup(PTT_KEY_GET);
+    }
 
-    // Mouse to Talk
+    // Mouse Push to Talk
     builder->get_widget("settingsEnablePTTMouseCheckButton", checkbutton);
-    checkbutton->set_active(config.PushToTalkMouseEnabled ? true : false);
+    checkbutton->set_active(Mangler::config["PushToTalkMouseEnabled"].toBool());
     builder->get_widget("settingsPTTMouseValueLabel", label);
-    label->set_text(config.PushToTalkMouseValue);
+    if (Mangler::config["PushToTalkMouseValue"].length()) {
+        label->set_text("Button" + Mangler::config["PushToTalkMouseValue"].toUString());
+    } else {
+        label->set_markup(PTT_MOUSE_GET);
+    }
 
     // Audio Player Integration
     builder->get_widget("settingsEnableAudioIntegrationCheckButton", checkbutton);
-    checkbutton->set_active(config.AudioIntegrationEnabled ? true : false);
+    checkbutton->set_active(Mangler::config["AudioIntegrationEnabled"].toBool());
     int audioPlayerSelection = 0;
     int audioPlayerCtr = 0;
     Gtk::TreeModel::Children apChildren = audioPlayerTreeModel->children();
-    for (
-            Gtk::TreeModel::Children::iterator apIter = apChildren.begin();
+    for (Gtk::TreeModel::Children::iterator apIter = apChildren.begin();
             apIter != apChildren.end();
             ++apIter, audioPlayerCtr++) {
         Gtk::TreeModel::Row row = *apIter;
         uint8_t id = row[audioPlayerColumns.id];
-        if (config.AudioIntegrationPlayer == id) {
+        if (Mangler::config["AudioIntegrationPlayer"].toUInt() == id) {
             audioPlayerSelection = audioPlayerCtr;
         }
     }
@@ -349,70 +428,123 @@ void ManglerSettings::initSettings(void) {/*{{{*/
 
     // Voice Activation
     builder->get_widget("settingsEnableVoiceActivationCheckButton", checkbutton);
-    checkbutton->set_active(config.VoiceActivationEnabled ? true : false);
+    checkbutton->set_active(Mangler::config["VoiceActivationEnabled"].toBool());
     builder->get_widget("settingsVoiceActivationSilenceDurationSpinButton", spinbutton);
-    spinbutton->set_value(config.VoiceActivationSilenceDuration / 1000.0);
+    spinbutton->set_value(Mangler::config["VoiceActivationSilenceDuration"].toDouble() / 1000.0);
     builder->get_widget("settingsVoiceActivationSensitivitySpinButton", spinbutton);
-    spinbutton->set_value(config.VoiceActivationSensitivity);
+    spinbutton->set_value(Mangler::config["VoiceActivationSensitivity"].toUInt());
+
+#ifdef HAVE_XOSD
+    // On-Screen Display
+    builder->get_widget("settingsEnableOnScreenDisplayCheckButton", checkbutton);
+    checkbutton->set_active(Mangler::config["OnScreenDisplayEnabled"].toBool());
+    Gtk::TreeModel::iterator hz_iter = osdAlignmentModel->children().begin();
+    while (hz_iter != osdAlignmentModel->children().end()) {
+        int hzint = (*hz_iter)[osdAlignmentColumns.id];
+        if (Mangler::config["OnScreenDisplayHorizontalAlignment"].toInt() == hzint ||
+            (!Mangler::config["OnScreenDisplayHorizontalAlignment"].length() && hzint == XOSD_center)) {
+            osdAlignment->set_active(hz_iter);
+            break;
+        }
+        hz_iter++;
+    }
+    Gtk::TreeModel::iterator vt_iter = osdPositionModel->children().begin();
+    while (vt_iter != osdPositionModel->children().end()) {
+        int vtint = (*vt_iter)[osdPositionColumns.id];
+        if (Mangler::config["OnScreenDisplayVerticalPosition"].toInt() == vtint ||
+            (!Mangler::config["OnScreenDisplayVerticalPosition"].length() && vtint == XOSD_top)) {
+            osdPosition->set_active(vt_iter);
+            break;
+        }
+        vt_iter++;
+    }
+    if (Mangler::config["OnScreenDisplayFontSize"].length()) {
+        osdFontSize->set_value(Mangler::config["OnScreenDisplayFontSize"].toDouble());
+    } else {
+        osdFontSize->set_value(8.0);
+    }
+    if (Mangler::config["OnScreenDisplayColor"].length()) {
+        Gdk::Color color;
+        color.set(Mangler::config["OnScreenDisplayColor"].toUString());
+        osdColor->set_color(color);
+    }
+#endif
+
+    // Audio Subsystem
+    for (Gtk::TreeModel::iterator asIter = audioSubsystemTreeModel->children().begin();
+            asIter != audioSubsystemTreeModel->children().end();
+            asIter++) {
+        if ((*asIter)[audioSubsystemColumns.id] == Mangler::config["AudioSubsystem"].toLower()) {
+            audioSubsystemComboBox->set_active(asIter);
+        }
+    }
 
     // Audio Devices
-    // the proper devices are selected in the window->show() callback
-    // init the custom audio devices
-    inputDeviceCustomName->set_text(config.inputDeviceCustomName);
-    outputDeviceCustomName->set_text(config.outputDeviceCustomName);
-    notificationDeviceCustomName->set_text(config.notificationDeviceCustomName);
+    inputDeviceCustomName->set_text(Mangler::config["InputDeviceCustomName"].toUString());
+    outputDeviceCustomName->set_text(Mangler::config["OutputDeviceCustomName"].toUString());
+    notificationDeviceCustomName->set_text(Mangler::config["NotificationDeviceCustomName"].toUString());
 
-    // Notification sounds
+    // Notification Sounds
     builder->get_widget("notificationLoginLogoutCheckButton", checkbutton);
-    checkbutton->set_active(config.notificationLoginLogout ? true : false);
+    checkbutton->set_active(Mangler::config["NotificationLoginLogout"].toBool());
 
     builder->get_widget("notificationChannelEnterLeaveCheckButton", checkbutton);
-    checkbutton->set_active(config.notificationChannelEnterLeave ? true : false);
+    checkbutton->set_active(Mangler::config["NotificationChannelEnterLeave"].toBool());
 
     builder->get_widget("notificationTalkStartEndCheckButton", checkbutton);
-    checkbutton->set_active(config.notificationTransmitStartStop ? true : false);
+    checkbutton->set_active(Mangler::config["NotificationTransmitStartStop"].toBool());
 
-    // Debug level
+    builder->get_widget("notificationTTSCheckButton", checkbutton);
+    checkbutton->set_active(Mangler::config["NotificationTextToSpeech"].toBool());
+#ifdef HAVE_ESPEAK
+    checkbutton->set_sensitive(true);
+#endif
+
+    // Master Volume
+    if (Mangler::config["MasterVolumeLevel"].length()) {
+        volumeAdjustment->set_value(Mangler::config["MasterVolumeLevel"].toInt());
+    }
+
+    // Debug Level
     builder->get_widget("debugStatus", checkbutton);
-    checkbutton->set_active(config.lv3_debuglevel & V3_DEBUG_STATUS ? 1 : 0);
+    uint32_t config_lv3_debuglevel = Mangler::config["lv3_debuglevel"].toULong();
+    checkbutton->set_active(config_lv3_debuglevel & V3_DEBUG_STATUS ? 1 : 0);
 
     builder->get_widget("debugError", checkbutton);
-    checkbutton->set_active(config.lv3_debuglevel & V3_DEBUG_ERROR ? 1 : 0);
+    checkbutton->set_active(config_lv3_debuglevel & V3_DEBUG_ERROR ? 1 : 0);
 
     builder->get_widget("debugStack", checkbutton);
-    checkbutton->set_active(config.lv3_debuglevel & V3_DEBUG_STACK ? 1 : 0);
+    checkbutton->set_active(config_lv3_debuglevel & V3_DEBUG_STACK ? 1 : 0);
 
     builder->get_widget("debugInternalNet", checkbutton);
-    checkbutton->set_active(config.lv3_debuglevel & V3_DEBUG_INTERNAL ? 1 : 0);
+    checkbutton->set_active(config_lv3_debuglevel & V3_DEBUG_INTERNAL ? 1 : 0);
 
     builder->get_widget("debugPacketDump", checkbutton);
-    checkbutton->set_active(config.lv3_debuglevel & V3_DEBUG_PACKET ? 1 : 0);
+    checkbutton->set_active(config_lv3_debuglevel & V3_DEBUG_PACKET ? 1 : 0);
 
     builder->get_widget("debugPacketParse", checkbutton);
-    checkbutton->set_active(config.lv3_debuglevel & V3_DEBUG_PACKET_PARSE ? 1 : 0);
+    checkbutton->set_active(config_lv3_debuglevel & V3_DEBUG_PACKET_PARSE ? 1 : 0);
 
     builder->get_widget("debugEventQueue", checkbutton);
-    checkbutton->set_active(config.lv3_debuglevel & V3_DEBUG_EVENT ? 1 : 0);
+    checkbutton->set_active(config_lv3_debuglevel & V3_DEBUG_EVENT ? 1 : 0);
 
     builder->get_widget("debugSocket", checkbutton);
-    checkbutton->set_active(config.lv3_debuglevel & V3_DEBUG_SOCKET ? 1 : 0);
+    checkbutton->set_active(config_lv3_debuglevel & V3_DEBUG_SOCKET ? 1 : 0);
 
     builder->get_widget("debugNotice", checkbutton);
-    checkbutton->set_active(config.lv3_debuglevel & (uint32_t)V3_DEBUG_NOTICE ? 1 : 0);
+    checkbutton->set_active(config_lv3_debuglevel & (uint32_t)V3_DEBUG_NOTICE ? 1 : 0);
 
     builder->get_widget("debugInfo", checkbutton);
-    checkbutton->set_active(config.lv3_debuglevel & V3_DEBUG_INFO ? 1 : 0);
+    checkbutton->set_active(config_lv3_debuglevel & V3_DEBUG_INFO ? 1 : 0);
 
     builder->get_widget("debugMutex", checkbutton);
-    checkbutton->set_active(config.lv3_debuglevel & V3_DEBUG_MUTEX ? 1 : 0);
+    checkbutton->set_active(config_lv3_debuglevel & V3_DEBUG_MUTEX ? 1 : 0);
 
     builder->get_widget("debugMemory", checkbutton);
-    checkbutton->set_active(config.lv3_debuglevel & V3_DEBUG_MEMORY ? 1 : 0);
+    checkbutton->set_active(config_lv3_debuglevel & V3_DEBUG_MEMORY ? 1 : 0);
 
     builder->get_widget("debugEncryptedPacket", checkbutton);
-    checkbutton->set_active(config.lv3_debuglevel & V3_DEBUG_PACKET_ENCRYPTED ? 1 : 0);
-
-    volumeAdjustment->set_value(config.masterVolumeLevel);
+    checkbutton->set_active(config_lv3_debuglevel & V3_DEBUG_PACKET_ENCRYPTED ? 1 : 0);
 }/*}}}*/
 
 // Settings Window Callbacks
@@ -443,7 +575,7 @@ void ManglerSettings::settingsWindow_show_cb(void) {/*{{{*/
         Gtk::TreeModel::Row row = *(mouseDeviceTreeModel->append());
         row[mouseColumns.id] = (*i).first;
         row[mouseColumns.name] = (*i).second;
-        if (config.mouseDeviceName == (*i).second) {
+        if (Mangler::config["MouseDeviceName"] == (*i).second) {
             mouseSelection = mouseCtr;
         }
     }
@@ -518,6 +650,11 @@ void ManglerSettings::settingsEnableVoiceActivationCheckButton_toggled_cb(void) 
         table->set_sensitive(false);
     }
 }/*}}}*/
+void ManglerSettings::settingsEnableOnScreenDisplayCheckButton_toggled_cb(void) {/*{{{*/
+    builder->get_widget("settingsEnableOnScreenDisplayCheckButton", checkbutton);
+    builder->get_widget("settingsOSDTable", table);
+    table->set_sensitive(checkbutton->get_active());
+}/*}}}*/
 /*
  * When this button is pressed, we need to disable all of the other items on
  * the page until the user clicks the button again.  This starts a timer to
@@ -549,9 +686,9 @@ void ManglerSettings::settingsPTTKeyButton_clicked_cb(void) {/*{{{*/
         button->set_sensitive(true);
         builder->get_widget("settingsPTTKeyValueLabel", label);
         // if the text is as follows, the user pressed done without any keys
-        // pressed down.  Reset it to the default text
-        if (label->get_text() == "Hold your key combination and click done") {
-            label->set_markup("<span weight='light'>&lt;press the set button to define a hotkey&gt;</span>");
+        // pressed down and reset it to the default text
+        if (label->get_label() == PTT_KEY_SET) {
+            label->set_markup(PTT_KEY_GET);
         }
     }
 }/*}}}*/
@@ -586,7 +723,7 @@ void ManglerSettings::settingsEnablePTTMouseCheckButton_toggled_cb(void) {/*{{{*
 void ManglerSettings::settingsPTTMouseButton_clicked_cb(void) {/*{{{*/
     isDetectingMouse = true;
     builder->get_widget("settingsPTTMouseValueLabel", label);
-    label->set_markup("<span color='red'>&lt;Click the mouse button you wish to use&gt;</span>");
+    label->set_markup(PTT_MOUSE_SET);
     builder->get_widget("settingsPTTMouseButton", button);
     button->set_sensitive(false);
     builder->get_widget("settingsCancelButton", button);
@@ -594,8 +731,6 @@ void ManglerSettings::settingsPTTMouseButton_clicked_cb(void) {/*{{{*/
     builder->get_widget("settingsApplyButton", button);
     button->set_sensitive(false);
     builder->get_widget("settingsOkButton", button);
-    button->set_sensitive(false);
-    builder->get_widget("settingsPTTKeyButton", button);
     button->set_sensitive(false);
     builder->get_widget("settingsMouseDeviceComboBox", combobox);
     combobox->set_sensitive(false);
@@ -665,7 +800,7 @@ ManglerSettings::settingsPTTKeyDetect(void) {/*{{{*/
     }
     builder->get_widget("settingsPTTKeyValueLabel", label);
     if (ptt_keylist.empty()) {
-        label->set_markup("<span color='red'>Hold your key combination and click done</span>");
+        label->set_markup(PTT_KEY_SET);
     } else {
         label->set_text(ptt_keylist);
     }
@@ -674,12 +809,12 @@ ManglerSettings::settingsPTTKeyDetect(void) {/*{{{*/
 
 bool
 ManglerSettings::settingsPTTMouseDetect(void) {/*{{{*/
-    GdkWindow   *rootwin = gdk_get_default_root_window();
-    char buttonname[32];
+    GdkWindow *rootwin = gdk_get_default_root_window();
+    Glib::ustring buttonname;
+    char mousebutton[8];
     static bool grabbed = false;
     int flag = 0;
     int x, y;
-    int mousebutton;
     XEvent ev;
 
 
@@ -699,9 +834,8 @@ ManglerSettings::settingsPTTMouseDetect(void) {/*{{{*/
         XNextEvent(GDK_WINDOW_XDISPLAY(rootwin), &ev);
         switch (ev.type) {
             case ButtonPress:
-                mousebutton = ev.xbutton.button;
-                snprintf(buttonname, 31, "Button%d", ev.xbutton.button);
-                config.PushToTalkMouseValue = buttonname;
+                snprintf(mousebutton, 7, "%d", ev.xbutton.button);
+                buttonname = "Button" + Glib::ustring(mousebutton);
                 flag = 1;
                 XUngrabPointer(GDK_WINDOW_XDISPLAY(rootwin), CurrentTime);
                 grabbed = false;
@@ -714,30 +848,21 @@ ManglerSettings::settingsPTTMouseDetect(void) {/*{{{*/
             default:
                 break;
         }
-        XAllowEvents (GDK_WINDOW_XDISPLAY(rootwin), AsyncBoth, CurrentTime);
+        XAllowEvents(GDK_WINDOW_XDISPLAY(rootwin), AsyncBoth, CurrentTime);
     }
     isDetectingMouse = false;
     builder->get_widget("settingsPTTMouseValueLabel", label);
-    label->set_markup(config.PushToTalkMouseValue);
-
+    label->set_markup(buttonname);
     builder->get_widget("settingsCancelButton", button);
     button->set_sensitive(true);
-
     builder->get_widget("settingsApplyButton", button);
     button->set_sensitive(true);
-
     builder->get_widget("settingsOkButton", button);
     button->set_sensitive(true);
-
     builder->get_widget("settingsOkButton", button);
     button->set_sensitive(true);
-
     builder->get_widget("settingsPTTMouseButton", button);
     button->set_sensitive(true);
-
-    builder->get_widget("settingsPTTKeyButton", button);
-    button->set_sensitive(true);
-
     builder->get_widget("settingsMouseDeviceComboBox", combobox);
     combobox->set_sensitive(true);
 
@@ -765,17 +890,17 @@ ManglerSettings::updateDeviceComboBoxes(void) {/*{{{*/
         row[inputColumns.id] = (*i)->id;
         row[inputColumns.name] = (*i)->name;
         row[inputColumns.description] = (*i)->description;
-        if (config.inputDeviceName == (*i)->name) {
+        if (Mangler::config["InputDeviceName"] == (*i)->name) {
             inputSelection = inputCtr;
         }
     }
     iter = audioSubsystemComboBox->get_active();
-    if (iter && (*iter)[audioSubsystemColumns.id] == "alsa") {
+    if (iter && (*iter)[audioSubsystemColumns.id] != "pulse") {
         row = *(inputDeviceTreeModel->append());
         row[inputColumns.id] = -2;
         row[inputColumns.name] = "Custom";
         row[inputColumns.description] = "Custom";
-        if (config.inputDeviceName == "Custom") {
+        if (Mangler::config["InputDeviceName"] == "Custom") {
             inputSelection = inputCtr;
         }
     }
@@ -798,17 +923,17 @@ ManglerSettings::updateDeviceComboBoxes(void) {/*{{{*/
         row[outputColumns.id] = (*i)->id;
         row[outputColumns.name] = (*i)->name;
         row[outputColumns.description] = (*i)->description;
-        if (config.outputDeviceName == (*i)->name) {
+        if (Mangler::config["OutputDeviceName"] == (*i)->name) {
             outputSelection = outputCtr;
         }
     }
     iter = audioSubsystemComboBox->get_active();
-    if (iter && (*iter)[audioSubsystemColumns.id] == "alsa") {
+    if (iter && (*iter)[audioSubsystemColumns.id] != "pulse") {
         row = *(outputDeviceTreeModel->append());
         row[outputColumns.id] = -2;
         row[outputColumns.name] = "Custom";
         row[outputColumns.description] = "Custom";
-        if (config.outputDeviceName == "Custom") {
+        if (Mangler::config["OutputDeviceName"] == "Custom") {
             outputSelection = outputCtr;
         }
     }
@@ -831,17 +956,17 @@ ManglerSettings::updateDeviceComboBoxes(void) {/*{{{*/
         row[notificationColumns.id] = (*i)->id;
         row[notificationColumns.name] = (*i)->name;
         row[notificationColumns.description] = (*i)->description;
-        if (config.notificationDeviceName == (*i)->name) {
+        if (Mangler::config["NotificationDeviceName"] == (*i)->name) {
             notificationSelection = notificationCtr;
         }
     }
     iter = audioSubsystemComboBox->get_active();
-    if (iter && (*iter)[audioSubsystemColumns.id] == "alsa") {
+    if (iter && (*iter)[audioSubsystemColumns.id] != "pulse") {
         row = *(notificationDeviceTreeModel->append());
         row[notificationColumns.id] = -2;
         row[notificationColumns.name] = "Custom";
         row[notificationColumns.description] = "Custom";
-        if (config.notificationDeviceName == "Custom") {
+        if (Mangler::config["NotificationDeviceName"] == "Custom") {
             notificationSelection = notificationCtr;
         }
     }
@@ -890,3 +1015,4 @@ ManglerSettings::notificationDeviceComboBox_changed_cb(void) {/*{{{*/
     notificationDeviceCustomName->hide();
     label->hide();
 }/*}}}*/
+

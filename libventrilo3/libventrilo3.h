@@ -28,9 +28,9 @@
 #define _LIBVENTRILO3_H
 
 #include "config.h"
-#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include <stdarg.h>
 #include <string.h>
 #include <time.h>
@@ -41,43 +41,42 @@
 #include <netdb.h>
 #include <sys/select.h>
 #include <errno.h>
-#include <pthread.h>
 
 #define true  1
 #define false 0
 
 char *_v3_errors[] = {
     "Success",
-    "Operation can not be performed on your self",
-    "Specified object no longer exists",
-    "Invalid password",
-    "You do not have server admin rights",
-    "You do not have channel admin rights",
-    "Bad name specified",
-    "Insufficient resources to complete operation",
-    "Specified name is already taken",
-    "You are banned from the specified channel",
-    "The channel is full",
-    "You do not have admin permission",
-    "You do not have root channel admin permission",
-    "State change does not apply in this instance",
-    "Max channel width exceeded",
-    "Max channel depth exceeded",
-    "Ban failed. Might already be banned by subnet",
-    "Unable to update the USR file",
-    "The server requires that you enable the 'Show login name in remote status request' of your server definition for this server",
+    "Operation can not be performed on your self.",
+    "Specified object no longer exists.",
+    "Invalid password.",
+    "You do not have server admin rights.",
+    "You do not have channel admin rights.",
+    "Bad name specified.",
+    "Insufficient resources to complete operation.",
+    "Specified name is already taken.",
+    "You are banned from the specified channel.",
+    "The channel is full.",
+    "You do not have admin permission.",
+    "You do not have root channel admin permission.",
+    "State change does not apply in this instance.",
+    "Max channel width exceeded.",
+    "Max channel depth exceeded.",
+    "Ban failed. Might already be banned by subnet.",
+    "Unable to update the USR file.",
+    "The server requires that you enable the 'Show login name in remote status request' of your server definition for this server.",
     "Maximum number of allowed guest logins has been reached. Try again later.",
-    "Connection time limit (GUEST or INI) has been exceeded",
-    "You are not allowed to switch channels manually",
-    "You do not have sufficient rights to ban another user",
-    "You do not have sufficient rights to kick another user",
-    "You do not have sufficient rights to move another user to a different channel",
-    "You already have Server Admin rights",
-    "You do not have sufficient rights to issue RCon commands",
-    "You are not allowed to edit the regular MOTD",
-    "You are not allowed to edit the guest MOTD",
-    "You do not have sufficient rights to receive complaints",
-    "You do not have sufficient rights to send complaints",
+    "Connection time limit (GUEST or INI) has been exceeded.",
+    "You are not allowed to switch channels manually.",
+    "You do not have sufficient rights to ban another user.",
+    "You do not have sufficient rights to kick another user.",
+    "You do not have sufficient rights to move another user to a different channel.",
+    "You already have Server Admin rights.",
+    "You do not have sufficient rights to issue RCon commands.",
+    "You are not allowed to edit the regular MOTD.",
+    "You are not allowed to edit the guest MOTD.",
+    "You do not have sufficient rights to receive complaints.",
+    "You do not have sufficient rights to send complaints.",
     "Another client is currently using the User Editor. See name: ",
     "You have not been given access rights to enter a User Authorization mode channel.",
     "Another client is currently editing the Rank list. See name: ",
@@ -95,7 +94,7 @@ char *_v3_errors[] = {
     "You have been kicked because you provided a bad Server Admin password. You will be automatically banned if you fail several more times, so be sure that you are entering the correct password before you try again. Be advised that your attempts to use the Server Admin password are being logged. If you are not authorized to be a Server Admin you may be subject to legal action.",
     "You have been banned from the server. Reason: ",
     "You have been banned from the server for spamming.",
-    "You are temporarily banned. ",
+    "You are temporarily banned.",
     "You are on the banned list.",
     "Guest accounts are not allowed to join the specified channel."
 };
@@ -108,12 +107,12 @@ char *_v3_page_errors[] = {
 };
 
 char *_v3_move_errors[] = {
-    "Admin rights",
-    "Invalid source object",
-    "Invalid target object",
-    "Not support in given mode",
-    "Target channel is full",
-    "Target channel does not allow phantoms, or source does not have proper access rights"
+    "Admin rights.",
+    "Invalid source object.",
+    "Invalid target object.",
+    "Not support in given mode.",
+    "Target channel is full.",
+    "Target channel does not allow phantoms, or source does not have proper access rights."
 };
 
 char *_v3_server_disabled_errors[] = {
@@ -129,17 +128,17 @@ char *_v3_server_disabled_errors[] = {
 };
 
 char *_v3_phantom_errors[] = {
-    "Channel does not allow phantoms",
-    "Phantoms are restricted to USR file",
-    "Duplicate",
-    "Unknown channel",
-    "Not found",
-    "Not authenticated for specified channel",
-    "No slots available",
-    "Channel is full",
-    "Insufficient resources",
-    "Banned from channel",
-    "Insufficient access rights",
+    "Channel does not allow phantoms.",
+    "Phantoms are restricted to USR file.",
+    "Duplicate.",
+    "Unknown channel.",
+    "Not found.",
+    "Not authenticated for specified channel.",
+    "No slots available.",
+    "Channel is full.",
+    "Insufficient resources.",
+    "Banned from channel.",
+    "Insufficient access rights.",
 };
 
 char *_v3_permissions_errors[] = {
@@ -157,6 +156,16 @@ char *_v3_permissions_errors[] = {
     "Specified new owner does not have 'Add Users' rights.",
     "The user account database is full. You must delete an existing account before you can add a new one.",
     "The Guest account can not be locked without having at least one other account defined and is not locked it self. Otherwise, you would be locking everyone out of the server.",
+};
+
+char *_v3_ranks_errors[] = {
+    "Invalid ID specified.",
+    "Duplicate Abbreviation.",
+    "Duplicate Description.",
+    "Insufficient access rights.",
+    NULL,
+    "Maximum number of allowed Ranks has been reached.",
+    "Missing abbreviation or description.",
 };
 
 char *_v3_bitmasks[] = {
@@ -192,7 +201,8 @@ char *_v3_bitmasks[] = {
     "255.255.255.248",
     "255.255.255.252",
     "255.255.255.254",
-    "255.255.255.255"
+    "255.255.255.255",
+    NULL
 };
 
 #define V3_OK        0
@@ -200,14 +210,14 @@ char *_v3_bitmasks[] = {
 #define V3_NOTIMPL   2
 #define V3_FAILURE	 3
 
-#define V3_NOT_WAITING 0
+#define V3_NOT_WAITING   0
 #define V3_EVENT_WAITING 1
-#define V3_MSG_WAITING 2
-#define V3_BOTH_WAITING 3
+#define V3_MSG_WAITING   2
+#define V3_BOTH_WAITING  3
 
 /*
-   This structure defines the bit number of each permission setting, the
-   internal name, and a name suitable for display to a user.
+ * This structure defines the bit number of each permission setting, the
+ * internal name, and a name suitable for display to a user.
  */
 struct _v3_perm_info v3_perm_info[]  = {
     { 1,      "V3_PERM_LOCK_ACCT",               "Lock Account"                             },
@@ -332,8 +342,7 @@ uint32_t _v3_hash_table[] =
 /*
  * Global Variables
  */
-
-_v3_server  v3_server  = { 0, 0, 0, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, -1, { 0, 0 }, NULL, NULL, 0, 0, { "", 0, 0 }, { "", 0, 0 }, NULL, NULL, {0, 0},  0, 0, 0, 0, false, false, false};
+_v3_server  v3_server  = { 0, 0, 0, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, -1, { 0, 0 }, 0, 0, { "", 0, 0 }, { "", 0, 0 }, NULL, NULL, {0, 0},  0, 0, 0, 0, false, false, false};
 _v3_luser   v3_luser   = { -1, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, 0, {  } };
 
 v3_channel              *v3_channel_list = NULL;
@@ -347,6 +356,9 @@ int                     _v3_rank_count;
 
 v3_account              *v3_account_list = NULL;
 int                     _v3_account_count;
+
+v3_server_prop          _v3_server_prop = { 0 };
+uint16_t                _v3_server_prop_tid = 0;
 
 char                    _v3_error_text[256];
 char                    _v3_status_text[256];
@@ -418,10 +430,12 @@ v3_codec v3_codecs[] = {
 
 typedef struct __v3_decoders {
 #if HAVE_GSM
-    gsm gsm;
+    void *gsm;
 #endif
+    uint32_t speexrate;
     void *speex;
 #if HAVE_CELT
+    uint8_t celtchans;
     void *celtmode;
     void *celt;
 #endif
@@ -432,6 +446,161 @@ _v3_decoders v3_decoders[65535];
 uint8_t _v3_user_volumes[65535];
 uint8_t _v3_master_volume = 79;
 
+// TODO: it's too messy to have this here. move into new lv3 repo.
+/*{{{*/
+#define V3_VRF_HEADID       "VENTRECD"
+#define V3_VRF_TEMPID       "TEMPRECD"
+
+#define V3_VRF_VERSION      0x01
+
+#define V3_VRF_HEADLEN      0x28
+#define V3_VRF_INFOLEN      0x2910
+#define V3_VRF_TEXTLEN      0x100
+
+#define V3_VRF_TYPE_AUDIO   0x01
+#define V3_VRF_TYPE_TEXT    0x02
+#define V3_VRF_TYPE_EXT     0x03
+
+#define V3_VRF_MAX_FRAGLEN  1 << 11 // 1105
+
+enum _v3_vrf_events {
+    V3_VRF_EVENT_DATA_FLUSH = 1,
+    V3_VRF_EVENT_AUDIO_DATA,
+    V3_VRF_EVENT_AUDIO_STOP,
+    V3_VRF_EVENT_TEXT_DATA
+};
+
+typedef struct _v3_vrf_header   _v3_vrf_header;
+typedef struct _v3_vrf_segment  _v3_vrf_segment;
+typedef struct _v3_vrf_audio    _v3_vrf_audio;
+typedef struct _v3_vrf_fragment _v3_vrf_fragment;
+typedef struct _v3_vrf_rec      _v3_vrf_rec;
+typedef struct _v3_vrf          _v3_vrf;
+
+struct _v3_vrf_header {         // 10552
+    char     headid[8];         // 0    - header id (VENTRECD)
+    uint32_t size;              // 8    - file size
+    uint32_t headlen;           // 12   - header length (0x28 / 40)
+    uint32_t unknown1;          // 16   - unused
+    uint32_t segtable;          // 20   - segment table offset
+    uint32_t segcount;          // 24   - segment count
+    uint32_t vrfversion;        // 28   - vrf version
+    uint32_t unknown2;          // 32   - unused
+    uint32_t unknown3;          // 36   - unused
+    uint32_t infolen;           // 40   - info length (0x2910 / 10512)
+    uint32_t codec;             // 44   - codec
+    uint32_t codecformat;       // 48   - codec format
+    uint32_t unknown4;          // 52   - unused
+    char     platform[64];      // 56   - platform
+    char     version[64];       // 120  - client version
+    char     username[128];     // 184  - user name
+    char     comment[8192];     // 312  - info comment
+    char     url[1024];         // 8504 - info url
+    char     copyright[1024];   // 9528 - info copyright
+} __attribute__ ((__packed__));
+
+struct _v3_vrf_segment {        // 64
+    uint32_t headlen;           // 0  - header length (0x40 / 64)
+    uint32_t type;              // 4  - audio type (0x01: v2.x audio | 0x02: text bind | 0x03: v3.x extended audio)
+    uint32_t valid;             // 8  - valid
+    uint32_t offset;            // 12 - audio offset
+    uint32_t time;              // 16 - audio time
+    uint32_t duration;          // 20 - audio duration
+    uint32_t unknown1;          // 24 - unused
+    uint32_t unknown2;          // 28 - unused
+    char     username[32];      // 32 - user name
+} __attribute__ ((__packed__));
+
+struct _v3_vrf_audio {          // 32
+    uint32_t headlen;           // 0  - header length (0x20 / 32)
+    uint32_t type;              // 4  - audio type (0x01: v2.x audio | 0x02: text bind | 0x03: v3.x extended audio)
+    uint32_t unknown1;          // 8  - unused
+    uint32_t index;             // 12 - segment index
+    uint32_t fragcount;         // 16 - fragment count
+    uint32_t unknown2;          // 20 - unused
+    uint32_t unknown3;          // 24 - unused
+    uint32_t offset;            // 28 - unused
+} __attribute__ ((__packed__));
+
+struct _v3_vrf_fragment {       // 24
+    uint32_t headlen;           // 0  - header length (0x01: 0x10 / 16 | 0x02: variable length | 0x03: 0x18 / 24)
+    uint32_t fraglen;           // 4  - fragment length
+    struct {
+        uint32_t pcmlen;        // 8  - pcm buffer length
+        uint32_t unknown1;      // 12 - unused
+        struct {
+            uint16_t codec;       // 16 - codec
+            uint16_t codecformat; // 18 - codec format
+            uint32_t unknown2;    // 20 - unused
+        } __attribute__ ((__packed__)) ext;
+    } __attribute__ ((__packed__)) audio;
+} __attribute__ ((__packed__));
+
+struct _v3_vrf_rec {
+    uint32_t        user_id;
+
+    _v3_vrf_audio   audio;
+    _v3_vrf_segment segment;
+
+    void            *data;
+    uint32_t        datalen;
+
+    uint8_t         stopped;
+
+    _v3_vrf_rec     *next;
+};
+
+struct _v3_vrf {
+    int             file;
+    char            *filename;
+    uint32_t        filelen;
+
+    pthread_mutex_t mutex;
+
+    _v3_vrf_header  header;
+    _v3_vrf_segment *table;
+    uint32_t        tablesize;
+
+    struct timeval  start;
+    _v3_vrf_rec     queue;
+
+    uint8_t         honored;
+    uint8_t         stopped;
+};
+
+void     _v3_vrf_lock(_v3_vrf *vrfh);
+void     _v3_vrf_unlock(_v3_vrf *vrfh);
+void     _v3_vrf_print_header(const _v3_vrf_header *header);
+void     _v3_vrf_print_info(const _v3_vrf_header *header);
+void     _v3_vrf_print_segment(uint32_t id, const _v3_vrf_segment *segment);
+void     _v3_vrf_print_audio(const _v3_vrf_audio *audio);
+void     _v3_vrf_print_fragment(uint32_t type, const _v3_vrf_fragment *fragment);
+int      _v3_vrf_get_header(_v3_vrf *vrfh);
+int      _v3_vrf_get_table(_v3_vrf *vrfh);
+int      _v3_vrf_check_table(_v3_vrf *vrfh);
+int      _v3_vrf_get_segment(_v3_vrf *vrfh, uint32_t id, _v3_vrf_segment **segment);
+int      _v3_vrf_get_audio(_v3_vrf *vrfh, uint32_t offset, _v3_vrf_audio *audio);
+int      _v3_vrf_get_fragment(_v3_vrf *vrfh, uint32_t type, uint32_t *offset, _v3_vrf_fragment *fragment, uint32_t *fraglen, void **fragdata);
+int      _v3_vrf_put_header(_v3_vrf *vrfh);
+uint32_t _v3_vrf_put_segment(uint32_t id, const _v3_vrf_segment *segment, void *offset);
+uint32_t _v3_vrf_put_audio(const _v3_vrf_audio *audio, void *offset);
+uint32_t _v3_vrf_put_fragment(uint32_t type, const _v3_vrf_fragment *fragment, void *offset);
+void     _v3_vrf_put_record(uint32_t user_id, uint32_t index, uint32_t type, const char *username, _v3_vrf_rec *rec);
+void     _v3_vrf_record_event(
+                int type,
+                uint16_t user_id,
+                uint16_t codec,
+                uint16_t codecformat,
+                uint32_t pcmlen,
+                uint32_t datalen,
+                const void *data);
+void     _v3_vrf_record_finish(_v3_vrf *vrfh, uint32_t segtable);
+int      _v3_vrf_recover(_v3_vrf *vrfh);
+/*}}}*/
+
+_v3_vrf                 *v3_vrfh = NULL;
+
+pthread_mutex_t         *vrfh_mutex = NULL;
 
 /*
  * Functions in ventrilo3_algo.c
@@ -450,24 +619,28 @@ void                    ventrilo3_algo_scramble(ventrilo_key_ctx *ctx, uint8_t *
 int                     _v3_logout(void);
 
 /*
- *  Internal functions
+ * Internal functions
  */
 void                    _v3_debug(uint32_t level, const char *format, ...);
 char *                  _v3_status(uint8_t percent, const char *format, ...);
+void                    _v3_hexdump(int level, const char *data, int len);
+void                    _v3_net_message_dump_raw(const char *data, int len);
+void                    _v3_net_message_dump(_v3_net_message *msg);
 
 int                     _v3_login_connect(struct in_addr *srvip, uint16_t srvport);
 int                     _v3_server_auth(struct in_addr *srvip, uint16_t srvport);
 
+int                     _v3_evpipe_write(int fd, v3_event *ev);
+
 int                     _v3_send(_v3_net_message *);
 _v3_net_message *       _v3_recv(int block);
 _v3_net_message *       _v3_create_message(_v3_net_message *msg, uint16_t type, uint16_t len, char *data);
-void                    _v3_net_message_dump(_v3_net_message *msg);
 
 int                     _v3_server_key_exchange(void);
 int                     _v3_send_enc_msg(char *data, int len);
 int                     _v3_recv_enc_msg(char *data);
 int                     _v3_process_message(_v3_net_message *msg);
-int                     _v3_destroy_packet(_v3_net_message *msg);
+void                    _v3_destroy_packet(_v3_net_message *msg);
 int                     _v3_update_channel(v3_channel *channel);
 void                    _v3_copy_channel(v3_channel *dest, v3_channel *src);
 int                     _v3_update_user(v3_user *user);
@@ -494,8 +667,38 @@ void                    _v3_lock_luser(void);
 void                    _v3_unlock_luser(void);
 void                    _v3_lock_sendq(void);
 void                    _v3_unlock_sendq(void);
+void                    _v3_lock_server(void);
+void                    _v3_unlock_server(void);
 int                     v3_queue_event(v3_event *ev);
 v3_event                *_v3_get_last_event(int *len);
 v3_event                *_v3_create_event(uint16_t event);
+uint8_t                 _v3_parse_filter(v3_sp_filter *f, char *value);
 
-#endif // _VENTRILO3_H
+void _v3_init_decoders(void);
+void _v3_destroy_decoder(_v3_decoders *decoder);
+void _v3_destroy_decoders(void);
+uint8_t *_v3_audio_encode(
+                /* pcm input */
+                uint8_t *sample,
+                uint32_t pcmlen,
+                /* encoded output */
+                const v3_codec *codec,
+                uint16_t *datalen,
+                /* optional args */
+                uint8_t channels,
+                uint16_t *framecount,
+                uint8_t *celtfragsize);
+int _v3_audio_decode(
+                /* encoded input */
+                const v3_codec *codec,
+                _v3_decoders *decoder,
+                uint8_t *data,
+                uint16_t datalen,
+                /* pcm output */
+                uint8_t *sample,
+                uint32_t *pcmlen,
+                /* optional args */
+                uint8_t channels);
+
+#endif // _LIBVENTRILO3_H
+

@@ -22,6 +22,37 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with Mangler.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ *
+ ******************************************************************
+ *         All hope abandon ye who open this source code.         *
+ ******************************************************************
+ *                                                                *
+ *                           _,.-------.,_                        *
+ *                       ,;~'             '~;,                    *
+ *                     ,;                     ;,                  *
+ *                    ;                         ;                 *
+ *                   ,'                         ',                *
+ *                  ,;                           ;,               *
+ *                  ; ;      .           .      ; ;               *
+ *                  | ;   ______       ______   ; |               *
+ *                  |  `/~"     ~" . "~     "~\'  |               *
+ *                  |  ~  ,-~~~^~, | ,~^~~~-,  ~  |               *
+ *                   |   |        }:{        |   |                *
+ *                   |   l       / | \       !   |                *
+ *                   .~  (__,.--" .^. "--.,__)  ~.                *
+ *                   |     ---;' / | \ `;---     |                *
+ *                    \__.       \/^\/       .__/                 *
+ *                     V| \                 / |V                  *
+ *                      | |T~\___!___!___/~T| |                   *
+ *                      | |`IIII_I_I_I_IIII'| |                   *
+ *                      |  \,III I I I III,/  |                   *
+ *                       \   `~~~~~~~~~~'    /                    *
+ *                         \   .       .   /                      *
+ *                           \.    ^    ./                        *
+ *                             ^~~~^~~~^                          *
+ *                                                                *
+ ******************************************************************
  */
 
 #define _GNU_SOURCE
@@ -37,6 +68,7 @@
 #include <sys/stat.h>
 #include <getopt.h>
 #include <pthread.h>
+#include <libgen.h>
 
 #include <mpg123.h>
 #include <speex/speex_resampler.h>
@@ -76,7 +108,7 @@ int debug = 0;
 int should_exit = false;
 musicfile **musiclist;
 int musicfile_count = 0;
-int celt_stereo = false;
+int disable_stereo = false;
 void *resampler = NULL;
 int reset_resampler = true;
 
@@ -95,6 +127,7 @@ char *id3strdup(mpg123_string *inlines);
 int get_random_number(int min, int max);
 void send_now_playing(int filenum);
 int select_channel(void);
+void shuffle_musiclist(void);
 
 
 void ctrl_c(int signum) {
@@ -105,7 +138,7 @@ void ctrl_c(int signum) {
 }
 
 void usage(char *argv[]) {
-    fprintf(stderr, "usage: %s -h hostname:port -u username [-p password] [-c channelid] [-v volume_multipler] [-s stereo; celt only] /path/to/music\n", argv[0]);
+    fprintf(stderr, "usage: %s -h hostname:port -u username [-p password] [-c channelid] [-v volume_multipler] [-s disable stereo for celt] [-n don't shuffle] /path/to/music\n", argv[0]);
     exit(1);
 }
 
@@ -152,6 +185,10 @@ void *jukebox_player(void *connptr) {
     uint32_t bytestosend, bytestoread;
     uint8_t channels;
     int ctr;
+    struct timeval last_audio, now;
+    char playonly[64];
+    int politeness = 0; // only slightly polite :)
+    gettimeofday(&last_audio, NULL);
 
     conninfo = connptr;
     for (;;) {
@@ -162,7 +199,7 @@ void *jukebox_player(void *connptr) {
             switch (ev->type) {
                 case V3_EVENT_DISCONNECT:
                     should_exit = true;
-                    free(ev);
+                    v3_free_event(ev);
                     pthread_exit(NULL);
                     break;
                 case V3_EVENT_LOGIN_COMPLETE:
@@ -191,38 +228,82 @@ void *jukebox_player(void *connptr) {
                                 playing = false;
                             }
                         } else {
-                            v3_send_chat_message("This channel sucks.  I'm not playing here.");
+                            v3_send_chat_message("This channel sucks. I'm not playing here.");
                             stopped = true;
                         }
                     }
+                    break;
+                case V3_EVENT_PLAY_AUDIO:
+                    //last_audio = now;
+                    gettimeofday(&last_audio, NULL);
                     break;
                 case V3_EVENT_CHAT_MESSAGE:
                     if (ev->user.id == v3_get_user_id()) {
                         // ignore commands from ourself
                         break;
                     }
-                    if (strcmp(ev->data.chatmessage, "!play worst band in the world") == 0) {
+                    if (strcmp(ev->data->chatmessage, "!play worst band in the world") == 0) {
                         v3_send_chat_message("We don't have any Creed songs...");
-                    } else if (strcasecmp(ev->data.chatmessage, "!play creed") == 0) {
+                    } else if (strcasecmp(ev->data->chatmessage, "!play creed") == 0) {
                         v3_send_chat_message("No.");
-                    } else if (strcasecmp(ev->data.chatmessage, "!help") == 0) {
+                    } else if (strcasecmp(ev->data->chatmessage, "!help") == 0) {
                         v3_send_chat_message("!start -- start playing music");
                         v3_send_chat_message("!stop -- stop playing music");
                         v3_send_chat_message("!next -- play a new random track");
+                        v3_send_chat_message("!move -- move to your channel");
                         v3_send_chat_message("!play [song/artist/file name] -- search for a song by filename and play the first random match");
-                        v3_send_chat_message("!volume [0-1] -- Set the volume to the specified level: ex: !volume 0.5");
+                        v3_send_chat_message("!playonly [song/artist/file name] -- don't play anything that doesn't match the given string");
+                        v3_send_chat_message("!volume [0.0-1.0] -- Set the volume to the specified level: ex: !volume 0.5");
+                        v3_send_chat_message("!polite [off|0-60] -- Pauses playing when audio is received for the specified duration");
                         break;
-                    } else if (! stopped && strncmp(ev->data.chatmessage, "!volume ", 8) == 0) {
-                        char *volume = ev->data.chatmessage + 8;
+                    } else if (strncmp(ev->data->chatmessage, "!shuffle", 8) == 0) {
+                        if (mh) {
+                            v3_stop_audio();
+                            close_mp3(mh);
+                            mh = NULL;
+                        }
+                        playing = false;
+                        v3_send_chat_message("Playlist has been re-shuffled");
+                    } else if (strncmp(ev->data->chatmessage, "!polite", 7) == 0) {
+                        if (ev->data->chatmessage[8]) {
+                            char *level = ev->data->chatmessage + 8;
+                            int newpol = -1;
+                            if (strncmp(level, " off", 4)) {
+                                newpol = atoi(level);
+                                if (newpol > -1 && newpol < 61) politeness = newpol;
+                            } else {
+                                v3_send_chat_message("invalid politeness level");
+                                break;
+                            }
+                        } else politeness = -1;
+                        if (politeness > -1) {
+                            char chat_msg[50];
+                            sprintf(chat_msg, "politeness is now %d seconds", politeness);
+                            v3_send_chat_message(chat_msg);
+                        } else v3_send_chat_message("politeness is now off");
+                        break;
+                    } else if (! stopped && strncmp(ev->data->chatmessage, "!volume ", 8) == 0) {
+                        char *volume = ev->data->chatmessage + 8;
                         if (atof(volume) == 0 || atof(volume) > 1) {
+                            v3_send_chat_message("invalid volume level.");
                             break;
                         }
                         conninfo->volume = atof(volume);
-                    } else if (! stopped && strncmp(ev->data.chatmessage, "!play ", 6) == 0) {
+                        char chat_msg[50];
+                        int vlev = (int)( conninfo->volume * 100.0 );
+                        sprintf(chat_msg, "volume is now %d%%", vlev);
+                        v3_send_chat_message(chat_msg);
+                    } else if (strncmp(ev->data->chatmessage, "!play ", 6) == 0 || strncmp(ev->data->chatmessage, "!playonly ", 10) == 0) {
                         char *searchspec;
                         int ctr;
                         int found = false;
-                        searchspec = ev->data.chatmessage + 6;
+                        if (strncmp(ev->data->chatmessage, "!playonly ", 10) == 0) {
+                            strncpy(playonly, ev->data->chatmessage + 10, 64);
+                            searchspec = playonly;
+                        } else {
+                            searchspec = ev->data->chatmessage + 6;
+                            playonly[0] = 0;
+                        }
                         for (ctr = 0; ctr < musicfile_count; ctr++) {
                             // make sure we have at least 1 thing that matches
                             // so  we don't end up in an endless loop
@@ -233,15 +314,21 @@ void *jukebox_player(void *connptr) {
                         }
                         if (! found) {
                             v3_send_chat_message("no songs matched your request");
+                            playonly[0] = 0;
                         } else {
                             int attempts = 0;
-                            v3_stop_audio();
-                            close_mp3(mh);
-                            mh = NULL;
+                            if (playing || mh) {
+                                playing = false;
+                                v3_stop_audio();
+                                close_mp3(mh);
+                                mh = NULL;
+                            }
                             // we have SOMETHING in the filelist that matches, but no guarantee that it's a song... try 10
                             // different matches before giving up
                             for (attempts = 0; attempts < 20; attempts++) {
-                                filenum = get_random_number(0, musicfile_count-1);
+                                //filenum = get_random_number(0, musicfile_count-1);
+                                filenum++;
+                                if (filenum >= musicfile_count) filenum = 0;
                                 if (debug) {
                                     fprintf(stderr, "checking for %s: %s\n", searchspec, musiclist[filenum]->path);
                                 }
@@ -270,44 +357,55 @@ void *jukebox_player(void *connptr) {
                             } else {
                                 send_now_playing(filenum);
                                 playing = true;
+                                stopped = false;
                                 v3_start_audio(V3_AUDIO_SENDTYPE_U2CCUR);
                             }
                         }
-                    } else if (! stopped && (strcmp(ev->data.chatmessage, "!next") == 0 || strcmp(ev->data.chatmessage, "!next track") == 0)) {
-                        v3_stop_audio();
-                        close_mp3(mh);
-                        mh = NULL;
+                    } else if (! stopped && strcmp(ev->data->chatmessage, "!next") == 0) {
+                        if (mh) {
+                            v3_stop_audio();
+                            close_mp3(mh);
+                            mh = NULL;
+                        }
                         playing = false;
-                    } else if (strcmp(ev->data.chatmessage, "!move") == 0) {
+                    } else if (strcmp(ev->data->chatmessage, "!move") == 0) {
                         user = v3_get_user(ev->user.id);
-                        v3_send_chat_message("Moving"); v3_change_channel(user->channel, "");
+                        v3_change_channel(user->channel, "");
                         v3_free_user(user);
-                    } else if (strcmp(ev->data.chatmessage, "!start") == 0) {
+                    } else if (stopped && strcmp(ev->data->chatmessage, "!start") == 0) {
                         if (codec->rate >= 11025) {
                             stopped = false;
-                            v3_send_chat_message("Starting jukebox");
+                            v3_send_chat_message("Starting jukebox...");
                         } else {
-                            v3_send_chat_message("This channel sucks.  I'm not playing here.");
+                            v3_send_chat_message("This channel sucks. I'm not playing here.");
                         }
-                    } else if (strcmp(ev->data.chatmessage, "!stop") == 0) {
-                        v3_send_chat_message("Stopping jukebox");
-                        v3_stop_audio();
+                    } else if (! stopped && strcmp(ev->data->chatmessage, "!stop") == 0) {
+                        v3_send_chat_message("Stopping jukebox...");
+                        if (mh) {
+                            v3_stop_audio();
+                            close_mp3(mh);
+                            mh = NULL;
+                        }
                         v3_set_text("", "", "", true);
-                        close_mp3(mh);
-                        mh = NULL;
                         playing = false;
                         stopped = true;
                     } else {
-                        fprintf(stderr, "chat message: '%s'\n", ev->data.chatmessage);
+                        fprintf(stderr, "chat message: '%s'\n", ev->data->chatmessage);
                     }
                     break;
             }
-            free(ev);
+            v3_free_event(ev);
         }
-        if (connected && ! stopped) {
+        gettimeofday(&now, NULL);
+        if (connected && ! stopped && (politeness < 0 || timediff(&last_audio, &now) >= politeness * 1000000 + 500000 )) {
             if (! playing) {
                 while (! mh) {
-                    filenum = get_random_number(0, musicfile_count-1);
+                    //filenum = get_random_number(0, musicfile_count-1);
+                    filenum++;
+                    if (filenum >= musicfile_count) filenum = 0;
+                    if (strlen(playonly) && !strcasestr(musiclist[filenum]->path, playonly)) {
+                        continue;
+                    }
                     if (!(mh = open_mp3(musiclist[filenum], codec))) {
                         if (debug) {
                             fprintf(stderr, "could not open: %s\n", musiclist[filenum]->path);
@@ -328,6 +426,7 @@ void *jukebox_player(void *connptr) {
             }
             // figure out how much data we need to send
             bytestosend = codec->pcmframesize;
+            channels = 1;
             switch (codec->codec) {
                 case 0:
                     switch (codec->format) {
@@ -344,30 +443,38 @@ void *jukebox_player(void *connptr) {
                     break;
                 case 1:
                     bytestosend *= 15;
+                    channels = (disable_stereo) ? 1 : 2;
                     break;
                 case 2:
                     bytestosend *= 7;
+                    channels = (disable_stereo) ? 1 : 2;
                     break;
                 case 3:
                     bytestosend *= 6;
                     break;
             }
-            channels = (celt_stereo) ? 2 : 1;
             bytestosend *= channels;
             // figure out how much data we need to read in order to get the
             // proper amount of data to send after resampling
             bytestoread = bytestosend * ((float)musiclist[filenum]->rate / (float)codec->rate);
+            if (musiclist[filenum]->rate == 48000) { // this is a temporary hack to compensate for the speex resampler at 48->44.1khz
+                if (channels == 2 && bytestoread % sizeof(int16_t)) {
+                    bytestoread += 7;
+                } else {
+                    bytestoread += bytestoread % sizeof(int16_t);
+                }
+            }
             if (debug) {
                 fprintf(stderr, "want to read %d bytes\n", bytestoread);
             }
-            if (get_mp3_frame(mh, 2-celt_stereo, sendbuf, bytestoread)) { // TODO: fix channel count!!!
+            if (get_mp3_frame(mh, (channels == 2) ? 1 : 2, sendbuf, bytestoread)) { // TODO: fix channel count!!!
                 if (musiclist[filenum]->rate != codec->rate) {
                     pcm_resample(sendbuf, bytestoread, bytestosend, channels, musiclist[filenum]->rate, codec->rate);
                 }
                 for (ctr = 0; ctr < bytestosend / sizeof(int16_t); ctr++) {
                     sendbuf[ctr] *= conninfo->volume;
                 }
-                v3_send_audio(V3_AUDIO_SENDTYPE_U2CCUR, codec->rate, (uint8_t *)sendbuf, bytestosend, celt_stereo);
+                v3_send_audio(V3_AUDIO_SENDTYPE_U2CCUR, codec->rate, (uint8_t *)sendbuf, bytestosend, (channels == 2));
                 gettimeofday(&tm_end, NULL);
                 audio_dur = (bytestosend / (double)(codec->rate * sizeof(int16_t) * channels)) * 1000000.0;
                 code_dur = timediff(&tm_start, &tm_end);
@@ -376,10 +483,12 @@ void *jukebox_player(void *connptr) {
                 }
                 gettimeofday(&tm_start, NULL);
             } else {
-                v3_stop_audio();
                 fprintf(stderr, "no more frames or some error\n");
-                close_mp3(mh);
-                mh = NULL;
+                if (mh) {
+                    v3_stop_audio();
+                    close_mp3(mh);
+                    mh = NULL;
+                }
                 playing = false;
             }
         }
@@ -416,12 +525,85 @@ void send_now_playing(int filenum) {
     v3_send_chat_message(msgbuf);
 }
 
+void read_playlist_file(char *path) {
+    char *basepath, *pathcp, *temp;
+    char buf[4096];
+    struct stat s;
+    FILE *f;
+    int i;
+
+    pathcp = strdup(path);
+    basepath = dirname(pathcp);
+
+    if (! (f = fopen(path, "r"))) {
+        fprintf(stderr, "could not open playlist file: %s\n", path);
+        exit(1);
+    }
+    
+    while (fgets(buf, 4096, f)) {
+        if (buf[0] == '#') continue;
+        i = strlen(buf) - 1;
+        while (i > 0 && (buf[i] == '\n' || buf[i] == '\t' || buf[i] == '\r' || buf[i] == ' ')) --i;
+        if (i < 1) continue;
+        buf[i+1] = '\0';
+        i = 0;
+        while (i < 4096 && (buf[i] == ' ' || buf[i] == '\t' || buf[i] == '\r')) ++i;
+        if (i) {
+            temp = strdup(buf+i);
+            strcpy(buf, temp);
+            free(temp);
+        }
+        if (buf[0] != '/') {
+            // contains relative path
+            temp = strdup(buf);
+            strcpy(buf, basepath);
+            i = strlen(buf);
+            buf[i] = '/';
+            i++;
+            strncpy(buf + i, temp, 4096 - i);
+            free(temp);
+        }
+        
+        if (stat(buf, &s)) {
+            if (debug) fprintf(stderr, "could not stat '%s', skipping.\n", buf);
+            continue;
+        }
+        
+        if (! S_ISREG(s.st_mode)) {
+            if (debug) fprintf(stderr, "'%s' is not a regular file, skipping.\n", buf);
+            continue;
+        }
+
+        musiclist = realloc(musiclist, (musicfile_count+1) * sizeof(musicfile *));
+        musiclist[musicfile_count] = malloc(sizeof(musicfile));
+        memset(musiclist[musicfile_count], 0, sizeof(musicfile));
+        musiclist[musicfile_count]->path = strdup(buf);
+        musicfile_count++;
+        if (debug) {
+            fprintf(stderr, "added file #%d: %s\n", musicfile_count, buf);
+        }
+    }
+
+    fclose(f);
+    free(pathcp);
+}
+
 void scan_media_path(char *path) {
     DIR *dir;
     struct dirent *ent;
     char namebuf[2048];
     char *cptr;
     struct stat s;
+    
+    if (stat(path, &s)) {
+        fprintf(stderr, "could not stat: %s\n", path);
+        exit(1);
+    }
+
+    if (S_ISREG(s.st_mode)) {
+        read_playlist_file(path);
+        return;
+    }
 
     if (! (dir = opendir(path))) {
         fprintf(stderr, "could not open diretory: %s\n", path);
@@ -636,7 +818,7 @@ int get_mp3_frame(mpg123_handle *mh, int channels, int16_t *buf, int bytestoread
             return 0;
         }
         readptr = (int16_t *)readbuffer;
-        if (celt_stereo) {
+        if (channels == 1) { // no channels to mix; this is for celt stereo mode
             memcpy((uint8_t *)buf, &readbuffer, bytestoread);
         } else {
             int ctr;
@@ -671,8 +853,8 @@ uint32_t pcm_resample(int16_t *sendbuf, uint32_t bytestoread, uint32_t bytestose
         return 0;
     }
 
-    insamples = bytestoread / sizeof(int16_t);
-    outsamples = bytestosend / sizeof(int16_t);
+    insamples = bytestoread / (sizeof(int16_t) * channels);
+    outsamples = bytestosend / (sizeof(int16_t) * channels);
     err = speex_resampler_process_interleaved_int(resampler, (void *)sendbuf, &insamples, (void *)&temp, &outsamples);
 
     if (err) {
@@ -700,17 +882,90 @@ int get_random_number(int min, int max) {
     return min + (int)( ((float)max) * rand() / ( RAND_MAX + 1.0 ) );
 }
 
+void shuffle_musiclist(void) {
+    musicfile *temp;
+    int i, j;
+    for (i = 0; i < musicfile_count; ++i) {
+        j = get_random_number(0, musicfile_count-1);
+        if (i != j) {
+            temp = musiclist[i];
+            musiclist[i] = musiclist[j];
+            musiclist[j] = temp;
+        }
+    }
+}
+
+typedef struct _channel_node {
+    char name[40];
+    uint16_t id;
+    struct _channel_node *children[200];
+    int childcount;
+} channel_node;
+
+channel_node *find_channel(channel_node *node, uint16_t id) {
+    int i = 0;
+    channel_node *p = NULL;
+    if (node->id == id) return node;
+    while (i < node->childcount) {
+        p = find_channel(node->children[i], id);
+        if (p) return p;
+        ++i;
+    }
+    return NULL;
+}
+
+void add_channel(channel_node *lobby_node, v3_channel *chan) {
+    channel_node *p = lobby_node;
+    if (chan->parent) {
+        p = find_channel(lobby_node, chan->parent);
+        if (!p) p = lobby_node;
+    }
+    if (p) {
+        p->children[p->childcount] = malloc(sizeof(channel_node));
+        memset(p->children[p->childcount], 0, sizeof(channel_node));
+        if (p->children[p->childcount]) {
+            strncpy(p->children[p->childcount]->name, chan->name, 40);
+            p->children[p->childcount]->id = chan->id;
+            ++p->childcount;
+        }
+    } else {
+        //if (debug)
+        fprintf(stderr, "error adding channel %u to tree.\n", chan->id);
+    }
+}
+
+void print_channels(channel_node *node, int indentlevel) {
+    int i;
+    for (i = 0; i < indentlevel; ++i) fprintf(stdout, "    ");
+    fprintf(stdout, "%d: %s\n", node->id, node->name);
+    for (i = 0; i < node->childcount; ++i) print_channels(node->children[i], indentlevel+1);
+}
+
+void free_channels(channel_node *node) {
+    int i;
+    for (i = 0; i < node->childcount; ++i) free_channels(node->children[i]);
+    free(node);
+}
+
 int select_channel(void) {
     int ctr;
     v3_channel *c;
     char buf[16];
+    channel_node *chantree = malloc(sizeof(channel_node));
+    memset(chantree, 0, sizeof(channel_node));
+    strcpy(chantree->name, "(Lobby)");
+    chantree->id = 0;
+    chantree->childcount = 0;
 
     for (ctr = 0; ctr < 32768; ctr++) {
         if ((c = v3_get_channel(ctr))) {
-            fprintf(stdout, "%d: %s\n", c->id, c->name);
+            //fprintf(stdout, "%d: %s\n", c->id, c->name);
+            add_channel(chantree, c);
             v3_free_channel(c);
         }
     }
+    print_channels(chantree, 0);
+    free_channels(chantree);
     fprintf(stdout, "Enter a channel id: ");
     fgets(buf, 15, stdin);
     return atoi(buf);
@@ -723,10 +978,13 @@ int main(int argc, char *argv[]) {
     pthread_t network;
     pthread_t player;
     struct _conninfo conninfo;
+    int shuffle = true;
 
+    memset(&conninfo, 0, sizeof(conninfo));
     conninfo.channelid = 0;
     conninfo.volume = 1;
-    while ((opt = getopt(argc, argv, "dh:p:u:c:sv:")) != -1) {
+    srand(time(NULL));
+    while ((opt = getopt(argc, argv, "dh:p:u:c:nsv:")) != -1) {
         switch (opt) {
             case 'd':
                 debug++;
@@ -748,8 +1006,11 @@ int main(int argc, char *argv[]) {
             case 'p':
                 conninfo.password = strdup(optarg);
                 break;
+            case 'n':
+                shuffle = false;
+                break;
             case 's':
-                celt_stereo = true;
+                disable_stereo = true;
                 break;
         }
     }
@@ -775,8 +1036,16 @@ int main(int argc, char *argv[]) {
     if (!musicfile_count) {
         return 1;
     }
-    if (celt_stereo) {
-        fprintf(stderr, "using 2 channels for the CELT codec\n");
+    if (shuffle) {
+        shuffle = get_random_number(2, 5);
+        while (shuffle--) {
+            shuffle_musiclist();
+        }
+    } else {
+        fprintf(stderr, "not shuffling musiclist\n");
+    }
+    if (!disable_stereo) {
+        fprintf(stderr, "will use 2 channels for the CELT codec\n");
     }
     rc = pthread_create(&network, NULL, jukebox_connection, (void *)&conninfo);
     rc = pthread_create(&player, NULL, jukebox_player, (void *)&conninfo);

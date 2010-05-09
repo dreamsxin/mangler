@@ -1,23 +1,53 @@
-/* Copyright 2010 Bob Shaffer II
+/*
+ * vim: softtabstop=4 shiftwidth=4 cindent foldmethod=marker expandtab
  *
- * This file is free software: you can redistribute it and/or modify
+ * $LastChangedDate$
+ * $Revision$
+ * $LastChangedBy$
+ * $URL$
+ *
+ * Copyright 2010 Bob Shaffer II
+ *
+ * This file is part of Mangler.
+ *
+ * Mangler is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * This file is distributed in the hope that it will be useful,
+ * Mangler is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this software.  If not, see <http://www.gnu.org/licenses/>.
+ * along with Mangler.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include "inilib.h"
 
 #include <sstream>
 #include <fstream>
+#include <cctype>
+#include <cstdlib>
+
+using namespace std;
+
+bool iniCaselessCmp::operator()(const string &left, const string &right) const {
+    string::const_iterator p = left.begin();
+    string::const_iterator q = right.begin();
+
+    while (p != left.end() && q != right.end() && tolower(*p) == tolower(*q)) {
+        ++p; ++q;
+    }
+    if (p == left.end()) {
+        return q != right.end();
+    }
+    if (q == right.end()) {
+        return false;
+    }
+    return tolower(*p) < tolower(*q);
+}
 
 iniVariant::iniVariant() : mValue("") {}
 
@@ -65,6 +95,14 @@ iniVariant::iniVariant(bool b) {
     mValue = b ? "True" : "False";
 }
 
+#if ADD_GLIB_SUPPORT
+iniVariant::iniVariant(const Glib::ustring &s) : mValue( Glib::locale_from_utf8(s) ) {}
+
+Glib::ustring iniVariant::toUString() const {
+    return Glib::locale_to_utf8(mValue);
+}
+#endif
+
 int iniVariant::toInt() const {
     return atoi(mValue.c_str());
 }
@@ -94,7 +132,13 @@ bool iniVariant::toBool() const {
     return (temp == "yes" || temp == "true" || temp == "1");
 }
 
+string::size_type iniVariant::length() const {
+    return mValue.length();
+}
+
 iniVariant::operator string &() { return mValue; }
+
+iniVariant::operator const string &() { return mValue; }
 
 string iniVariant::toString() const { return mValue; }
 
@@ -118,29 +162,45 @@ string iniVariant::toLower() const {
     return ret;
 }
 
-const char *iniVariant::toCString() const { return mValue.c_str(); }
+const char *iniVariant::toCString() const {
+    return mValue.c_str();
+}
+
+iniVariant iniVariant::mNULLvariant;
 
 iniValue::iniValue(const iniVariant &v) {
     append(v);
 }
 
-bool iniVariant::operator==(const iniVariant &v) const
-    { return (mValue == v.mValue); }
+bool iniVariant::operator==(const iniVariant &v) const { return (mValue == v.mValue); }
 
 iniValue::operator iniVariant &() {
     // make the vector size be 1, and return a reference to
     // that element
-    if (size() == 0) insert(end(), iniVariant());
-    if (size() > 1) erase(begin(), end() - 2);
+    if (size() == 0) {
+        insert(end(), iniVariant());
+    }
+    if (size() > 1) {
+        erase(begin(), end() - 2);
+    }
+    return at(0);
+}
+
+iniValue::operator const iniVariant &() {
+    if (size() == 0) {
+        return iniVariant::null();
+    }
     return at(0);
 }
 
 iniVariant iniValue::value() const {
-     if (size() == 0) return iniVariant();
-     return at(0);
+    if (size() == 0) {
+        return iniVariant();
+    }
+    return at(0);
 }
 
-size_t iniValue::count() const { return size(); }
+iniValue::size_type iniValue::count() const { return size(); }
 
 void iniValue::append(const iniVariant &v) { push_back(v); }
 
@@ -154,12 +214,53 @@ bool iniValue::operator==(const iniVariant &v) const {
     return (size() == 1 && at(0) == v);
 }
 
+string iniValue::toString() const
+    { return value().toString(); }
+
+string iniValue::toUpper() const
+    { return value().toUpper(); }
+
+string iniValue::toLower() const
+    { return value().toLower(); }
+
+const char *iniValue::toCString() const
+    { return value().toCString(); }
+
+Glib::ustring iniValue::toUString() const
+    { return value().toUString(); }
+
+int iniValue::toInt() const
+    { return value().toInt(); }
+
+unsigned iniValue::toUInt() const
+    { return value().toUInt(); }
+
+long iniValue::toLong() const
+    { return value().toLong(); }
+
+unsigned long iniValue::toULong() const
+    { return value().toULong(); }
+
+long long iniValue::toLLong() const
+    { return value().toLLong(); }
+
+double iniValue::toDouble() const
+    { return value().toDouble(); }
+
+bool iniValue::toBool() const
+    { return value().toBool(); }
+
+string::size_type iniValue::length() const
+    { return value().length(); }
+
 bool iniSection::contains(const string &s) const {
     return (find(s) != end());
 }
 
-int iniSection::count(const string &s) const {
-    if (contains(s)) return at(s).size();
+iniValue::size_type iniSection::count(const string &s) const {
+    if (contains(s)) {
+        return at(s).size();
+    }
     else return 0;
 }
 
@@ -167,30 +268,38 @@ ostream &iniSection::save(ostream &out) const {
     map<string, iniValue>::const_iterator iter;
     for (iter = begin(); iter != end(); iter++) {
         int vcnt = iter->second.size();
-        for (int i = 0; i < vcnt; ++i)
+        for (int i = 0; i < vcnt; ++i) {
             saveLine(out, iter->first, iter->second.at(i).toString());
+        }
     }
+    return out;
 }
 
 ostream &iniSection::saveLine(ostream &out, const string &keyName, const string &value) {
-    if (value.empty()) {
-        out << quoteString(keyName) << endl;
-    } else {
-        out << quoteString(keyName) << " = " << quoteString(value) << endl;
-    }
+    // this is lame, and i've never seen it used outside of mysql's config
+    //if (value.empty()) {
+    //    out << quoteString(keyName) << endl;
+    //} else {
+    out << quoteString(keyName) << " = " << quoteString(value) << endl;
+    //}
+    return out;
 }
 
 string iniSection::quoteString(const string &s) {
     string ret;
     int len = s.length();
-    bool has_space( false );
+    bool needs_quotes( false );
     for (int i = 0; i < len; ++i) {
         char c( s[i] );
-        if (c == ' ' || c == '\t') has_space = true;
-        if (c == '\"') ret.append("\\");
+        if (c == ' ' || c == '\t' || c == '=' || c == '#' || c == ';') {
+            needs_quotes = true;
+        }
+        if (c == '\"') {
+            ret.append("\\");
+        }
         ret += c;
     }
-    if (has_space) {
+    if (needs_quotes) {
         ret.insert(0, "\"");
         ret.append("\"");
     }
@@ -198,46 +307,72 @@ string iniSection::quoteString(const string &s) {
 }
 
 void iniSection::trimString(string &s) {
-    if (s.empty()) return;
-    while (s.length() && (s[0] == ' ' || s[0] == '\t')) s.erase(0, 1);
-    if (s.empty()) return;
-    int right = s.length() - 1;
-    while (right > -1 && (s[right] == ' ' || s[right] == '\t')) right--;
-    if (right < s.length() - 1) s.erase(right, s.npos);
+    if (s.empty()) {
+        return;
+    }
+    while (s.length() && (s[0] == ' ' || s[0] == '\t')) {
+        s.erase(0, 1);
+    }
+    if (s.empty()) {
+        return;
+    }
+    long right = (long)(s.length()) - 1l;
+    while (right > -1l && (s[right] == ' ' || s[right] == '\t')) {
+        right--;
+    }
+    if (right < (long)(s.length()) - 1l) {
+        s.erase(right, s.npos);
+    }
 }
 
 vector<string> iniSection::tokenizeString(const string &s) {
     vector<string> ret;
     string temp;
     int len( s.length() );
-    if (! len) return ret;
+    if (! len) {
+        return ret;
+    }
     int i = 0;
     while (i < len) {
         if (s[i] == '\"') {
+            ++i;
             while (i < len) {
                 if (s[i] == '\\') {
                     ++i; if (i < len - 1) temp += s[i];
-                } else if (s[i] == '\"') break;
-                else temp += s[i];
+                } else if (s[i] == '\"') {
+                    break;
+                } else {
+                    temp += s[i];
+                }
                 ++i;
             }
             trimString(temp);
-            if (temp.length()) ret.push_back(temp);
+            if (temp.length()) {
+                ret.push_back(temp);
+            }
             temp.clear();
         } else if (s[i] == '\t' || s[i] == ' ') {
             trimString(temp);
-            if (temp.length()) ret.push_back(temp);
+            if (temp.length()) {
+                ret.push_back(temp);
+            }
             temp.clear();
         } else if (s[i] == '=') {
             trimString(temp);
-            if (temp.length()) ret.push_back(temp);
+            if (temp.length()) {
+                ret.push_back(temp);
+            }
             temp.clear();
             ret.push_back("=");
-        } else temp += s[i];
+        } else {
+            temp += s[i];
+        }
         ++i;
     }
     trimString(temp);
-    if (temp.length()) ret.push_back(temp);
+    if (temp.length()) {
+        ret.push_back(temp);
+    }
     return ret;
 }
 
@@ -245,7 +380,9 @@ vector<string> iniSection::parseLine(const string &s) {
     vector<string> ret, tokens = tokenizeString(s);
     // allow sloppy ini files
     int i = 1, len = tokens.size();
-    if (! len || tokens[0] == "=") return ret;
+    if (! len || tokens[0] == "=") {
+        return ret;
+    }
     ret.push_back(tokens[0]);
     while (i < len && tokens[i] != "=") {
         ret[0].append(" ");
@@ -256,7 +393,9 @@ vector<string> iniSection::parseLine(const string &s) {
     if (i < len) {
         ret.push_back(tokens[i]);
         ++i;
-    } else ret.push_back("");
+    } else {
+        ret.push_back("");
+    }
     while (i < len) {
         ret[1].append(" ");
         ret[1].append(tokens[i]);
@@ -265,13 +404,15 @@ vector<string> iniSection::parseLine(const string &s) {
     return ret;
 }
 
-iniFile::iniFile(const string &filename) : mFilename( filename ) {
-    ifstream fin( mFilename.c_str() );
-    if (fin) {
-        load(fin);
-        fin.close();
-    }
+iniFile::iniFile() {
+    pthread_mutex_init(&mymutex, NULL);
 }
+
+iniFile::iniFile(const string &filename) : mFilename( filename ) {
+    pthread_mutex_init(&mymutex, NULL);
+    reload();
+}
+
 
 void iniFile::setFilename(const string &filename)
     { mFilename = filename; }
@@ -286,17 +427,22 @@ istream &iniFile::load(istream &in) {
     string temp;
     for (;;) {
         getline(in, temp);
-        if (in.eof()) break;
+        if (in.eof()) {
+            break;
+        }
         cleanLine(temp);
-        if (temp.empty()) continue;
+        if (temp.empty()) {
+            continue;
+        }
         if (temp[0] == '[') {
             // new section
             removeBrackets(temp);
             curSect = temp;
         } else {
             vector<string> kvPair( iniSection::parseLine(temp) );
-            if (kvPair.size() == 2 && ! curSect.empty()) 
+            if (kvPair.size() == 2 && ! curSect.empty())  {
                 (*this)[curSect][kvPair[0]].append(kvPair[1]);
+            }
             // else print parse error message
         }
     }
@@ -314,15 +460,30 @@ ostream &iniFile::save(ostream &out) const {
 }
 
 void iniFile::save() const {
+    pthread_mutex_lock((pthread_mutex_t *)&mymutex);
     if (! mFilename.empty()) {
         ofstream fout( mFilename.c_str() );
-        if (fout) save(fout);
+        if (fout) {
+            save(fout);
+        }
         fout.close();
     }
+    pthread_mutex_unlock((pthread_mutex_t *)&mymutex);
+}
+
+void iniFile::reload() {
+    pthread_mutex_lock(&mymutex);
+    ifstream fin( mFilename.c_str() );
+    if (fin) {
+        load(fin);
+        fin.close();
+    }
+    pthread_mutex_unlock(&mymutex);
 }
 
 iniFile::~iniFile() {
     save();
+    pthread_mutex_destroy(&mymutex);
 }
 
 bool iniFile::contains(const string &s) const {
@@ -333,8 +494,9 @@ void iniFile::cleanLine(string &s) {
     int len = s.length();
     bool in_quotes( false );
     for (int i = 0; i < len; ++i) {
-        if (s[i] == '\"') in_quotes = ! in_quotes;
-        else if (s[i] == '#' || s[i] == ';') {
+        if (s[i] == '\"') {
+            in_quotes = ! in_quotes;
+        } else if (! in_quotes && (s[i] == '#' || s[i] == ';')) {
             s.erase(i, s.npos);
             break;
         }

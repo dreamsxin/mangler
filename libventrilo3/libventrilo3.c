@@ -30,19 +30,14 @@
 #include "config.h"
 #endif
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdarg.h>
-#include <string.h>
-#include <time.h>
-#include <sys/time.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <netdb.h>
-#include <errno.h>
+#include "ventrilo3.h"
+#include "libventrilo3.h"
+#include "libventrilo3_message.h"
+
 #include <unistd.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 #include <math.h>
 
 #if HAVE_SPEEX_DSP
@@ -60,17 +55,12 @@
 # include <gsm/gsm.h>
 #endif
 
-
 // TODO: check how portable this is... (known good: ubuntu, arch)
 #define __USE_UNIX98
 #include <pthread.h>
 #undef __USE_UNIX98
 
 extern int h_errno;
-
-#include "ventrilo3.h"
-#include "libventrilo3.h"
-#include "libventrilo3_message.h"
 
 #define true  1
 #define false 0
@@ -121,7 +111,7 @@ _v3_debug(uint32_t level, const char *format, ...) {/*{{{*/
     }
     
 #ifndef ANDROID
-    fprintf(stderr, "libventrilo3: %s.%06d: %s\n", timestamp, (uint32_t)tv.tv_usec, buf); //print with timestamp
+    fprintf(stderr, "libventrilo3: %s.%06d: %s\n", timestamp, (uint32_t)tv.tv_usec, buf); // print with timestamp
 #else
     __android_log_print(ANDROID_LOG_VERBOSE, "libventrilo3", " %s.%06d: %s", timestamp, (uint32_t)tv.tv_usec, buf);
 #endif
@@ -140,7 +130,6 @@ _v3_func_enter(char *func) {/*{{{*/
     snprintf(buf, 255, "---> %s()", func);
     _v3_debug(V3_DEBUG_STACK, buf);
     stack_level++;
-    return;
 }/*}}}*/
 
 void
@@ -159,7 +148,6 @@ _v3_func_leave(char *func) {/*{{{*/
     stack_level--;
     snprintf(buf, 255, "<--- %s()", func);
     _v3_debug(V3_DEBUG_STACK, buf);
-    return;
 }/*}}}*/
 
 char *
@@ -194,15 +182,16 @@ _v3_status(uint8_t percent, const char *format, ...) {/*{{{*/
 }/*}}}*/
 
 void
-_v3_net_message_dump_raw(char *data, int len) {/*{{{*/
+_v3_hexdump(int level, const char *data, int len) {/*{{{*/
     int ctr, ctr2;
-    char buf[256], buf2[4];
+    char buf[256] = "", buf2[8] = "";
 
     // specifically bail out of this one since there's a lot of wasted
     // processing if we're not debugging it
-    if (! (V3_DEBUG_PACKET_ENCRYPTED & v3_debuglevel(-1))) {
+    if (! (level & v3_debuglevel(-1))) {
         return;
     }
+    _v3_debug(level, "PACKET: data length : %d", len);
     for (ctr = 0; ctr < len; ctr+=16) {
         if (ctr+16 > len) {
             buf[0] = 0;
@@ -210,46 +199,20 @@ _v3_net_message_dump_raw(char *data, int len) {/*{{{*/
                 snprintf(buf2, 4, "%02X ", (uint8_t)data[ctr2]);
                 strncat(buf, buf2, 255);
             }
-            _v3_debug(V3_DEBUG_PACKET_ENCRYPTED, "PACKET:     %s", buf);
-        } else {
-            _v3_debug(V3_DEBUG_PACKET_ENCRYPTED, "PACKET:     %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X",
-                    (uint8_t)data[ctr],
-                    (uint8_t)data[ctr+1],
-                    (uint8_t)data[ctr+2],
-                    (uint8_t)data[ctr+3],
-                    (uint8_t)data[ctr+4],
-                    (uint8_t)data[ctr+5],
-                    (uint8_t)data[ctr+6],
-                    (uint8_t)data[ctr+7],
-                    (uint8_t)data[ctr+8],
-                    (uint8_t)data[ctr+9],
-                    (uint8_t)data[ctr+10],
-                    (uint8_t)data[ctr+11],
-                    (uint8_t)data[ctr+12],
-                    (uint8_t)data[ctr+13],
-                    (uint8_t)data[ctr+14],
-                    (uint8_t)data[ctr+15]
-                    );
-        }
-    }
-    return;
-}/*}}}*/
-
-void
-_v3_hexdump(char *data, int len) {/*{{{*/
-    int ctr, ctr2;
-    char buf[256], buf2[4];
-
-    for (ctr = 0; ctr < len; ctr+=16) {
-        if (ctr+16 > len) {
-            buf[0] = 0;
-            for (ctr2 = ctr; ctr2 < len; ctr2++) {
-                snprintf(buf2, 4, "%02X ", (uint8_t)data[ctr2]);
+            for (; ctr2 % 16; ctr2++) {
+                snprintf(buf2, 4, "   ");
                 strncat(buf, buf2, 255);
             }
-            _v3_debug(V3_DEBUG_INFO, "%s", buf);
+            buf[strlen(buf)-1] = '\0';
+            snprintf(buf2, 8, "      ");
+            strncat(buf, buf2, 255);
+            for (ctr2 = ctr; ctr2 < len; ctr2++) {
+                snprintf(buf2, 8, "%c", (uint8_t)data[ctr2]    > 32 && (uint8_t)data[ctr2]    < 127 ? (uint8_t)data[ctr2]     : '.');
+                strncat(buf, buf2, 255);
+            }
+            _v3_debug(level, "PACKET:     %s", buf);
         } else {
-            _v3_debug(V3_DEBUG_PACKET, "PACKET:     %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X      %c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c",
+            _v3_debug(level, "PACKET:     %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X      %c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c",
                     (uint8_t)data[ctr],
                     (uint8_t)data[ctr+1],
                     (uint8_t)data[ctr+2],
@@ -282,81 +245,30 @@ _v3_hexdump(char *data, int len) {/*{{{*/
                     (uint8_t)data[ctr+13] > 32 && (uint8_t)data[ctr+13] < 127 ? (uint8_t)data[ctr+13]  : '.',
                     (uint8_t)data[ctr+14] > 32 && (uint8_t)data[ctr+14] < 127 ? (uint8_t)data[ctr+14]  : '.',
                     (uint8_t)data[ctr+15] > 32 && (uint8_t)data[ctr+15] < 127 ? (uint8_t)data[ctr+15]  : '.'
-                        );
+                    );
         }
     }
-    return;
+}/*}}}*/
+
+void
+_v3_net_message_dump_raw(const char *data, int len) {/*{{{*/
+    // specifically bail out of this one since there's a lot of wasted
+    // processing if we're not debugging it
+    if (! (V3_DEBUG_PACKET_ENCRYPTED & v3_debuglevel(-1))) {
+        return;
+    }
+    _v3_hexdump(V3_DEBUG_PACKET_ENCRYPTED, data, len);
 }/*}}}*/
 
 void
 _v3_net_message_dump(_v3_net_message *msg) {/*{{{*/
-    int ctr, ctr2;
-    char buf[256] = "", buf2[8] = "";
-
     // specifically bail out of this one since there's a lot of wasted
     // processing if we're not debugging it
     if (! (V3_DEBUG_PACKET & v3_debuglevel(-1))) {
         return;
     }
     _v3_debug(V3_DEBUG_PACKET, "PACKET: message type: 0x%02X (%d)", (uint8_t)msg->type, (uint16_t)msg->type);
-    _v3_debug(V3_DEBUG_PACKET, "PACKET: data length : %d", msg->len);
-    for (ctr = 0; ctr < msg->len; ctr+=16) {
-        if (ctr+16 > msg->len) {
-            buf[0] = 0;
-            for (ctr2 = ctr; ctr2 < msg->len; ctr2++) {
-                snprintf(buf2, 4, "%02X ", (uint8_t)msg->data[ctr2]);
-                strncat(buf, buf2, 255);
-            }
-            for ( ; ctr2 % 16 ; ctr2++) {
-                snprintf(buf2, 4, "   ");
-                strncat(buf, buf2, 255);
-            }
-            buf[strlen(buf)-1] = '\0';
-            snprintf(buf2, 8, "      ");
-            strncat(buf, buf2, 255);
-            for (ctr2 = ctr; ctr2 < msg->len; ctr2++) {
-                snprintf(buf2, 8, "%c", (uint8_t)msg->data[ctr2]    > 32 && (uint8_t)msg->data[ctr2]    < 127 ? (uint8_t)msg->data[ctr2]     : '.');
-                strncat(buf, buf2, 255);
-            }
-            _v3_debug(V3_DEBUG_PACKET, "PACKET:     %s", buf);
-        } else {
-            _v3_debug(V3_DEBUG_PACKET, "PACKET:     %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X      %c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c",
-                    (uint8_t)msg->data[ctr],
-                    (uint8_t)msg->data[ctr+1],
-                    (uint8_t)msg->data[ctr+2],
-                    (uint8_t)msg->data[ctr+3],
-                    (uint8_t)msg->data[ctr+4],
-                    (uint8_t)msg->data[ctr+5],
-                    (uint8_t)msg->data[ctr+6],
-                    (uint8_t)msg->data[ctr+7],
-                    (uint8_t)msg->data[ctr+8],
-                    (uint8_t)msg->data[ctr+9],
-                    (uint8_t)msg->data[ctr+10],
-                    (uint8_t)msg->data[ctr+11],
-                    (uint8_t)msg->data[ctr+12],
-                    (uint8_t)msg->data[ctr+13],
-                    (uint8_t)msg->data[ctr+14],
-                    (uint8_t)msg->data[ctr+15],
-                    (uint8_t)msg->data[ctr]    > 32 && (uint8_t)msg->data[ctr]    < 127 ? (uint8_t)msg->data[ctr]     : '.',
-                    (uint8_t)msg->data[ctr+1]  > 32 && (uint8_t)msg->data[ctr+1]  < 127 ? (uint8_t)msg->data[ctr+1]   : '.',
-                    (uint8_t)msg->data[ctr+2]  > 32 && (uint8_t)msg->data[ctr+2]  < 127 ? (uint8_t)msg->data[ctr+2]   : '.',
-                    (uint8_t)msg->data[ctr+3]  > 32 && (uint8_t)msg->data[ctr+3]  < 127 ? (uint8_t)msg->data[ctr+3]   : '.',
-                    (uint8_t)msg->data[ctr+4]  > 32 && (uint8_t)msg->data[ctr+4]  < 127 ? (uint8_t)msg->data[ctr+4]   : '.',
-                    (uint8_t)msg->data[ctr+5]  > 32 && (uint8_t)msg->data[ctr+5]  < 127 ? (uint8_t)msg->data[ctr+5]   : '.',
-                    (uint8_t)msg->data[ctr+6]  > 32 && (uint8_t)msg->data[ctr+6]  < 127 ? (uint8_t)msg->data[ctr+6]   : '.',
-                    (uint8_t)msg->data[ctr+7]  > 32 && (uint8_t)msg->data[ctr+7]  < 127 ? (uint8_t)msg->data[ctr+7]   : '.',
-                    (uint8_t)msg->data[ctr+8]  > 32 && (uint8_t)msg->data[ctr+8]  < 127 ? (uint8_t)msg->data[ctr+8]   : '.',
-                    (uint8_t)msg->data[ctr+9]  > 32 && (uint8_t)msg->data[ctr+9]  < 127 ? (uint8_t)msg->data[ctr+9]   : '.',
-                    (uint8_t)msg->data[ctr+10] > 32 && (uint8_t)msg->data[ctr+10] < 127 ? (uint8_t)msg->data[ctr+10]  : '.',
-                    (uint8_t)msg->data[ctr+11] > 32 && (uint8_t)msg->data[ctr+11] < 127 ? (uint8_t)msg->data[ctr+11]  : '.',
-                    (uint8_t)msg->data[ctr+12] > 32 && (uint8_t)msg->data[ctr+12] < 127 ? (uint8_t)msg->data[ctr+12]  : '.',
-                    (uint8_t)msg->data[ctr+13] > 32 && (uint8_t)msg->data[ctr+13] < 127 ? (uint8_t)msg->data[ctr+13]  : '.',
-                    (uint8_t)msg->data[ctr+14] > 32 && (uint8_t)msg->data[ctr+14] < 127 ? (uint8_t)msg->data[ctr+14]  : '.',
-                    (uint8_t)msg->data[ctr+15] > 32 && (uint8_t)msg->data[ctr+15] < 127 ? (uint8_t)msg->data[ctr+15]  : '.'
-                        );
-        }
-    }
-    return;
+    _v3_hexdump(V3_DEBUG_PACKET, msg->data, msg->len);
 }/*}}}*/
 
 void
@@ -418,7 +330,7 @@ _v3_print_permissions(v3_permissions *perms) {/*{{{*/
     _v3_debug(V3_DEBUG_PACKET_PARSE, "start_priv_chat.....: %d",   perms->start_priv_chat);
     _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown_perm_11.....: %d",   perms->unknown_perm_11);
     _v3_debug(V3_DEBUG_PACKET_PARSE, "eq_out..............: %d",   perms->eq_out);
-    _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown_perm_1r.....: %d",   perms->unknown_perm_12);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown_perm_12.....: %d",   perms->unknown_perm_12);
     _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown_perm_13.....: %d",   perms->unknown_perm_13);
     _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown_perm_14.....: %d",   perms->unknown_perm_14);
     _v3_debug(V3_DEBUG_PACKET_PARSE, "see_guest...........: %d",   perms->see_guest);
@@ -431,9 +343,10 @@ _v3_print_permissions(v3_permissions *perms) {/*{{{*/
     _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown_perm_15.....: %d",   perms->unknown_perm_15);
 }/*}}}*/
 
-int
+void
 _v3_destroy_packet(_v3_net_message *msg) {/*{{{*/
     _v3_func_enter("_v3_destroy_packet");
+
     if (msg->contents == msg->data) {
         _v3_debug(V3_DEBUG_MEMORY, "contents and data are same memory.  freeing contents");
         free(msg->contents);
@@ -457,7 +370,6 @@ _v3_destroy_packet(_v3_net_message *msg) {/*{{{*/
     }
 
     _v3_func_leave("_v3_destroy_packet");
-    return true;
 }/*}}}*/
 
 int
@@ -506,19 +418,19 @@ _v3_server_auth(struct in_addr *srvip, uint16_t srvport) {/*{{{*/
     buf[11] = 200;
     buf[12] = 2;
 
-    sd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
-    if (sd < 0) {
-        _v3_error("could not authenticate server: failed to create socket");
+    if ((sd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) < 0) {
+        _v3_error("could not authenticate server: failed to create socket: %s", strerror(errno));
         _v3_func_leave("_v3_server_auth");
         return false;
     }
-
     sa.sin_family = AF_INET;
     sa.sin_addr.s_addr = srvip->s_addr;
     sa.sin_port = htons(srvport);
     _v3_debug(V3_DEBUG_INFO, "checking version of %s:%d", inet_ntoa(*srvip), srvport);
-    if (sendto(sd, buf, 200, 0, (struct sockaddr *)&sa,  sizeof(struct sockaddr_in)) == -1) {
-        _v3_error("could not authenticate server: failed to send auth packet");
+    _v3_debug(V3_DEBUG_PACKET, "======= building UDP packet =====================================");
+    _v3_hexdump(V3_DEBUG_PACKET, buf, 200);
+    if (sendto(sd, buf, 200, 0, (struct sockaddr *)&sa, sizeof(struct sockaddr_in)) < 0) {
+        _v3_error("could not authenticate server: failed to send handshake packet: %s", strerror(errno));
         shutdown(sd, SHUT_WR);
         close(sd);
         _v3_func_leave("_v3_server_auth");
@@ -528,63 +440,81 @@ _v3_server_auth(struct in_addr *srvip, uint16_t srvport) {/*{{{*/
     tout.tv_usec = 0;
     FD_ZERO(&fd_read);
     FD_SET(sd, &fd_read);
-    if(select(sd + 1, &fd_read, NULL, NULL, &tout) <= 0) {
-        _v3_error("could not authenticate server: timed out waiting for auth server");
+    if (select(sd + 1, &fd_read, NULL, NULL, &tout) <= 0) {
+        _v3_error("could not authenticate server: timed out waiting for ventrilo server");
+        shutdown(sd, SHUT_WR);
+        close(sd);
         _v3_func_leave("_v3_server_auth");
         return false;
     }
-    len = recvfrom(sd, buf, sizeof(buf), 0, NULL, NULL);
-    if (len < 0) {
-        _v3_error("could not authenticate server: udp receive failed");
+    if ((len = recvfrom(sd, buf, sizeof(buf), 0, NULL, NULL)) < 0) {
+        _v3_error("could not authenticate server: udp receive failed: %s", strerror(errno));
+        shutdown(sd, SHUT_WR);
+        close(sd);
         _v3_func_leave("_v3_server_auth");
         return false;
     }
-    if (buf[168] < '3') {
+    _v3_debug(V3_DEBUG_PACKET, "======= received UDP packet =====================================");
+    _v3_hexdump(V3_DEBUG_PACKET, buf, len);
+    if (buf[168] != '3') {
         _v3_error("could not authenticate server: server is not ventrilo version 3");
-    } else {
-        _v3_debug(V3_DEBUG_INFO, "Server Name   : %s", buf+72);
-        v3_server.name = strdup(buf+72);
-        _v3_debug(V3_DEBUG_INFO, "Server OS     : %s", buf+136);
-        v3_server.os = strdup(buf+136);
-        _v3_debug(V3_DEBUG_INFO, "Server Version: %s", buf+168);
-        v3_server.version = strdup(buf+168);
+        shutdown(sd, SHUT_WR);
+        close(sd);
+        _v3_func_leave("_v3_server_auth");
+        return false;
     }
-    ventrilo3_handshake(srvip->s_addr, srvport, handshake, (uint32_t *)&hs_srv_num, handshake_key);
+    shutdown(sd, SHUT_WR);
+    close(sd);
+    _v3_debug(V3_DEBUG_INFO, "Server Name   : %s", buf+72);
+    v3_server.name = strdup(buf+72);
+    _v3_debug(V3_DEBUG_INFO, "Server OS     : %s", buf+136);
+    v3_server.os = strdup(buf+136);
+    _v3_debug(V3_DEBUG_INFO, "Server Version: %s", buf+168);
+    v3_server.version = strdup(buf+168);
     v3_server.handshake_key = malloc(256);
-    memcpy(v3_server.handshake_key, handshake_key, 64);
     v3_server.handshake = malloc(16);
-    memcpy(v3_server.handshake, handshake, 16);
-    v3_server.auth_server_index = hs_srv_num;
-    _v3_debug(V3_DEBUG_INFO, "authserver index: %d -> %d", hs_srv_num, v3_server.auth_server_index);
+    if (!strncmp(buf+56, "DDDDDDDDDDDDDDDD", 16)) {
+        memset(v3_server.handshake_key, 0x44, 64);
+        memset(v3_server.handshake, 0x44, 16);
+        v3_server.auth_server_index = 1;
+        _v3_debug(V3_DEBUG_INFO, "cracked server; no remote handshake keys needed");
+    } else {
+        ventrilo3_handshake(srvip->s_addr, srvport, handshake, (uint32_t *)&hs_srv_num, handshake_key);
+        memcpy(v3_server.handshake_key, handshake_key, 64);
+        memcpy(v3_server.handshake, handshake, 16);
+        v3_server.auth_server_index = hs_srv_num;
+        _v3_debug(V3_DEBUG_INFO, "authserver index: %d -> %d", hs_srv_num, v3_server.auth_server_index);
+    }
+
     _v3_func_leave("_v3_server_auth");
     return true;
 }/*}}}*/
 
 int
 _v3_login_connect(struct in_addr *srvip, uint16_t srvport) {/*{{{*/
-    struct linger ling = {1, 1};
+    struct linger ling = { 1, 1 };
     struct sockaddr_in sa;
 
     _v3_func_enter("_v3_login_connect");
     _v3_sockd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     setsockopt(_v3_sockd, SOL_SOCKET, SO_LINGER, (char *)&ling, sizeof(ling));
-
     sa.sin_family = AF_INET;
     sa.sin_addr.s_addr = srvip->s_addr;
     sa.sin_port = htons(srvport);
-    if (connect(_v3_sockd, (struct sockaddr *)&sa, sizeof(sa)) == -1) {
+    if (connect(_v3_sockd, (struct sockaddr *)&sa, sizeof(sa)) < 0) {
         _v3_error("failed to connect: %s", strerror(errno));
         _v3_func_leave("_v3_login_connect");
         return false;
     }
+
     _v3_func_leave("_v3_login_connect");
     return true;
 }/*}}}*/
 
 int
 _v3_send(_v3_net_message *message) {/*{{{*/
-
     _v3_func_enter("_v3_send");
+
     _v3_debug(V3_DEBUG_PACKET, "======= building TCP packet =====================================");
     _v3_net_message_dump(message);
 
@@ -616,6 +546,7 @@ _v3_send_enc_msg(char *data, int len) {/*{{{*/
         _v3_func_leave("_v3_send_enc_msg");
         return false;
     }
+
     _v3_func_leave("_v3_send_enc_msg");
     return true;
 }/*}}}*/
@@ -642,11 +573,9 @@ _v3_recv(int block) {/*{{{*/
         if (waiting == V3_BOTH_WAITING || waiting == V3_EVENT_WAITING) {
             // receiving an event from the event pipe
             v3_event ev;
-            memset(&ev, 0, sizeof(v3_event));
-            _v3_debug(V3_DEBUG_EVENT, "event waiting to processed and sent outbound");
-            if (fread(&ev, sizeof(ev), 1, v3_server.evinstream) != 1) {
-                _v3_error("failed to receive from outbound pipe");
-            } else {
+            _v3_debug(V3_DEBUG_EVENT, "event waiting to be processed and sent outbound");
+            _v3_lock_sendq();
+            while (read(v3_server.evpipe[0], &ev, sizeof(v3_event)) == sizeof(v3_event)) {
                 switch (ev.type) {
                     case V3_EVENT_DISCONNECT:/*{{{*/
                         {
@@ -655,26 +584,26 @@ _v3_recv(int block) {/*{{{*/
                         break;/*}}}*/
                     case V3_EVENT_CHANGE_CHANNEL:/*{{{*/
                         {
-                            _v3_net_message *msg;
                             v3_channel channel;
                             memset(&channel, 0, sizeof(_v3_msg_channel));
                             channel.id = ev.channel.id;
                             _v3_debug(V3_DEBUG_INFO, "changing to channel id %d", channel.id);
-                            msg = _v3_put_0x49(V3_CHANGE_CHANNEL, v3_get_user_id(), ev.text.password, &channel);
-                            if (!_v3_send(msg)) {
+                            _v3_net_message *msg = _v3_put_0x49(V3_CHANGE_CHANNEL, v3_get_user_id(), ev.text.password, &channel);
+                            if (_v3_send(msg)) {
+                                _v3_debug(V3_DEBUG_SOCKET, "sent channel change message to server");
+                            } else {
                                 _v3_debug(V3_DEBUG_SOCKET, "failed to send channel change message");
                             }
                             _v3_destroy_packet(msg);
                         }
                         break;/*}}}*/
-                    case V3_EVENT_CHAN_MODIFY:/*{{{*/
-                    case V3_EVENT_CHAN_ADD:
+                    case V3_EVENT_CHAN_MODIFY:
+                    case V3_EVENT_CHAN_ADD:/*{{{*/
                         {
-                            _v3_net_message *msg;
                             v3_channel channel;
                             memset(&channel, 0, sizeof(_v3_msg_channel));
-                            /* channel.id = ev.channel.id; */
-                            memcpy(&channel, &ev.data.channel, 48);
+                            //channel.id = ev.channel.id;
+                            memcpy(&channel, &ev.data->channel, 48);
                             channel.name = ev.text.name;
                             channel.phonetic = ev.text.phonetic;
                             channel.comment = ev.text.comment;
@@ -683,8 +612,10 @@ _v3_recv(int block) {/*{{{*/
                             } else {
                                 _v3_debug(V3_DEBUG_INFO, "add channel '%s'", channel.name);
                             }
-                            msg = _v3_put_0x49(channel.id ? V3_MODIFY_CHANNEL : V3_ADD_CHANNEL, v3_get_user_id(), ev.text.password, &channel);
-                            if (!_v3_send(msg)) {
+                            _v3_net_message *msg = _v3_put_0x49(channel.id ? V3_MODIFY_CHANNEL : V3_ADD_CHANNEL, v3_get_user_id(), ev.text.password, &channel);
+                            if (_v3_send(msg)) {
+                                _v3_debug(V3_DEBUG_SOCKET, "sent channel modify/add message to server");
+                            } else {
                                 _v3_debug(V3_DEBUG_SOCKET, "failed to send channel modify/add message");
                             }
                             _v3_destroy_packet(msg);
@@ -692,13 +623,14 @@ _v3_recv(int block) {/*{{{*/
                         break;/*}}}*/
                     case V3_EVENT_CHAN_REMOVE:/*{{{*/
                         {
-                            _v3_net_message *msg;
                             v3_channel channel;
                             memset(&channel, 0, sizeof(_v3_msg_channel));
                             channel.id = ev.channel.id;
                             _v3_debug(V3_DEBUG_INFO, "removing channel id %d", channel.id);
-                            msg = _v3_put_0x49(V3_REMOVE_CHANNEL, v3_get_user_id(), NULL, &channel);
-                            if (!_v3_send(msg)) {
+                            _v3_net_message *msg = _v3_put_0x49(V3_REMOVE_CHANNEL, v3_get_user_id(), NULL, &channel);
+                            if (_v3_send(msg)) {
+                                _v3_debug(V3_DEBUG_SOCKET, "sent channel remove message to server");
+                            } else {
                                 _v3_debug(V3_DEBUG_SOCKET, "failed to send channel remove message");
                             }
                             _v3_destroy_packet(msg);
@@ -706,8 +638,7 @@ _v3_recv(int block) {/*{{{*/
                         break;/*}}}*/
                     case V3_EVENT_RANKLIST_OPEN:/*{{{*/
                         {
-                            _v3_net_message *msg;
-                            msg = _v3_put_0x36(V3_OPEN_RANK, NULL);
+                            _v3_net_message *msg = _v3_put_0x36(V3_OPEN_RANK, NULL);
                             if (_v3_send(msg)) {
                                 _v3_debug(V3_DEBUG_SOCKET, "sent rank list open request to server");
                             } else {
@@ -718,8 +649,7 @@ _v3_recv(int block) {/*{{{*/
                         break;/*}}}*/
                     case V3_EVENT_RANKLIST_CLOSE:/*{{{*/
                         {
-                            _v3_net_message *msg;
-                            msg = _v3_put_0x36(V3_CLOSE_RANK, NULL);
+                            _v3_net_message *msg = _v3_put_0x36(V3_CLOSE_RANK, NULL);
                             if (_v3_send(msg)) {
                                 _v3_debug(V3_DEBUG_SOCKET, "sent rank list close request to server");
                             } else {
@@ -730,12 +660,11 @@ _v3_recv(int block) {/*{{{*/
                         break;/*}}}*/
                     case V3_EVENT_RANK_REMOVE:/*{{{*/
                         {
-                            _v3_net_message *msg;
                             v3_rank rank;
                             memset(&rank, 0, sizeof(v3_rank));
-                            rank.id = ev.data.rank.id;
-                            rank.level = ev.data.rank.level;
-                            msg = _v3_put_0x36(V3_REMOVE_RANK, &rank);
+                            rank.id = ev.data->rank.id;
+                            rank.level = ev.data->rank.level;
+                            _v3_net_message *msg = _v3_put_0x36(V3_REMOVE_RANK, &rank);
                             if (_v3_send(msg)) {
                                 _v3_debug(V3_DEBUG_SOCKET, "sent rank remove request to server");
                             } else {
@@ -757,14 +686,13 @@ _v3_recv(int block) {/*{{{*/
                                 subtype = V3_ADD_RANK;
                                 subtype_str = "add";
                             }
-                            _v3_net_message *msg;
                             v3_rank rank;
                             memset(&rank, 0, sizeof(v3_rank));
-                            rank.id = ev.data.rank.id;
-                            rank.level = ev.data.rank.level;
+                            rank.id = ev.data->rank.id;
+                            rank.level = ev.data->rank.level;
                             rank.name = ev.text.name;
                             rank.description = ev.text.comment;
-                            msg = _v3_put_0x36(subtype, &rank);
+                            _v3_net_message *msg = _v3_put_0x36(subtype, &rank);
                             if (_v3_send(msg)) {
                                 _v3_debug(V3_DEBUG_SOCKET, "sent rank %s request to server", subtype_str);
                             } else {
@@ -775,13 +703,12 @@ _v3_recv(int block) {/*{{{*/
                         break;/*}}}*/
                     case V3_EVENT_USER_TALK_START:/*{{{*/
                         {
-                            _v3_net_message *msg;
-                            const v3_codec  *codec;
-
-                            codec = v3_get_channel_codec(v3_get_user_channel(v3_get_user_id()));
                             _v3_debug(V3_DEBUG_INFO, "got outbound user talk start event");
-                            msg = _v3_put_0x52(V3_AUDIO_START, codec->codec, codec->format, ev.pcm.send_type, 0, 0, NULL);
-                            if (!_v3_send(msg)) {
+                            const v3_codec *codec = v3_get_channel_codec(v3_get_user_channel(v3_get_user_id()));
+                            _v3_net_message *msg = _v3_put_0x52(V3_AUDIO_START, codec->codec, codec->format, ev.pcm.send_type, 0, 0, NULL);
+                            if (_v3_send(msg)) {
+                                _v3_debug(V3_DEBUG_SOCKET, "sent user talk start message to server");
+                            } else {
                                 _v3_debug(V3_DEBUG_SOCKET, "failed to send user talk start message");
                             }
                             _v3_destroy_packet(msg);
@@ -789,299 +716,132 @@ _v3_recv(int block) {/*{{{*/
                         break;/*}}}*/
                     case V3_EVENT_PLAY_AUDIO:/*{{{*/
                         {
-                            _v3_net_message *msg;
-                            const v3_codec  *codec;
-                            int             ctr;
-                            int             send = false;
-
-                            codec = v3_get_channel_codec(v3_get_user_channel(v3_get_user_id()));
                             _v3_debug(V3_DEBUG_INFO, "got outbound play audio event");
-                            // TODO: this is too messy to do here, make it a function
-                            switch (codec->codec) {
-#if HAVE_GSM
-                                case 0x00: // GSM
-                                    {
-                                        static void *gsmenc  = NULL;
-                                        uint16_t frame_count = ev.pcm.length / 640;
-                                        uint16_t gsmdatabuf  = frame_count * 65;
-                                        uint8_t *gsmdata     = NULL;
-
-                                        _v3_debug(V3_DEBUG_INFO, "encoding %d bytes of PCM to GSM @ %lu", ev.pcm.length, codec->rate);
-                                        if (ev.pcm.channels != 1) {
-                                            _v3_debug(V3_DEBUG_INFO, "mono only supported for gsm");
-                                            send = false;
-                                            break;
+                            const v3_codec *codec = v3_get_channel_codec(v3_get_user_channel(v3_get_user_id()));
+                            uint8_t *data         = NULL;
+                            uint16_t datalen      = 0;
+                            uint16_t framecount   = 0;
+                            uint8_t celtfragsize  = 0;
+                            if ((data = _v3_audio_encode(
+                                            /* pcm input */
+                                            (void *)&ev.data->sample,
+                                            ev.pcm.length,
+                                            /* encoded output */
+                                            codec,
+                                            &datalen,
+                                            /* optional args */
+                                            ev.pcm.channels,
+                                            &framecount,
+                                            &celtfragsize))) {
+                                _v3_net_message *msg;
+                                switch (codec->codec) {
+                                  case 0x01: // CELT
+                                  case 0x02:
+                                  {
+                                    uint8_t *celtdataptr = data;
+                                    uint16_t pktlen      = (codec->codec == 0x01) ? 198 : 108; // max data length for packet
+                                    uint8_t pktframes    = pktlen / celtfragsize; // max celt frames per packet
+                                    pktlen               = pktframes * celtfragsize; // new length for frames to fill a packet
+                                    while (framecount && pktframes) {
+                                        if (framecount < pktframes) {
+                                            pktframes = framecount;
+                                            pktlen = pktframes * celtfragsize;
                                         }
-                                        if (!gsmenc) {
-                                            if (!(gsmenc = gsm_create())) {
-                                                _v3_debug(V3_DEBUG_INFO, "failed to create gsm encoder");
-                                                send = false;
-                                                break;
-                                            }
-                                            int one = 1;
-                                            gsm_option(gsmenc, GSM_OPT_WAV49, &one);
-                                        }
-                                        _v3_debug(V3_DEBUG_MEMORY, "allocating %lu bytes for %d gsm frames", gsmdatabuf, frame_count);
-                                        gsmdata = malloc(gsmdatabuf);
-                                        memset(gsmdata, 0, gsmdatabuf);
-                                        for (ctr = 0; ctr < frame_count; ctr++) {
-                                            _v3_debug(V3_DEBUG_INFO, "encoding gsm frame %d", ctr+1);
-                                            gsm_encode(gsmenc, ((void *)&ev.data.sample)+(ctr*640), gsmdata+(ctr*65));
-                                            gsm_encode(gsmenc, ((void *)&ev.data.sample)+(ctr*640)+320, gsmdata+(ctr*65)+32);
-                                        }
-                                        //gsm_destroy(gsmenc);
-                                        //gsmenc = NULL;
                                         msg = _v3_put_0x52(
-                                                        V3_AUDIO_DATA,
-                                                        codec->codec,
-                                                        codec->format,
-                                                        ev.pcm.send_type,
-                                                        ev.pcm.length,
-                                                        gsmdatabuf,
-                                                        gsmdata);
-                                        free(gsmdata);
+                                                V3_AUDIO_DATA,
+                                                codec->codec,
+                                                codec->format,
+                                                ev.pcm.send_type,
+                                                2000 + ev.pcm.channels, // max: <= 3000
+                                                pktlen, // max: 0x01: < 200; 0x02: < 110
+                                                celtdataptr);
+                                        if (_v3_send(msg)) {
+                                            _v3_debug(V3_DEBUG_SOCKET, "sent audio message to server");
+                                        } else {
+                                            _v3_debug(V3_DEBUG_SOCKET, "failed to send audio message");
+                                        }
+                                        _v3_destroy_packet(msg);
+                                        _v3_vrf_record_event(
+                                                V3_VRF_EVENT_AUDIO_DATA,
+                                                v3_get_user_id(),
+                                                codec->codec,
+                                                codec->format,
+                                                2000 + ev.pcm.channels,
+                                                pktlen,
+                                                celtdataptr);
+                                        celtdataptr += pktlen;
+                                        framecount -= pktframes;
                                     }
-                                    send = true;
                                     break;
-#endif
-#if HAVE_CELT
-                                case 0x01: // CELT
-                                case 0x02:
-                                    {
-                                        static void *celtmode    = NULL;
-                                        static void *celtenc     = NULL;
-                                        static uint8_t last_chan = 0;
-                                        const int prediction     = 2;
-                                        const int complexity     = 10;
-                                        uint8_t channels         = (ev.pcm.channels == 2) ? 2 : 1;
-                                        uint16_t pcm_frame_size  = codec->pcmframesize * channels;
-                                        uint16_t frame_count     = ev.pcm.length / pcm_frame_size;
-                                        uint8_t celt_frag_size   = (codec->codec == 0x01) ? 60 : 54;
-                                        uint8_t celt_frame_size;
-                                        uint16_t celtdatabuf     = frame_count * celt_frag_size;
-                                        uint8_t *celtdata        = NULL;
-                                        uint8_t *celtdataptr     = NULL;
-                                        uint16_t celtdatalen     = 0;
-                                        uint16_t pktlen          = (codec->codec == 0x01) ? 198 : 108; // max data length for packet
-                                        uint8_t pktframes        = pktlen / celt_frag_size; // max celt frames per packet
-                                        pktlen                   = pktframes * celt_frag_size; // new data length for frames to fill a packet
-
-                                        _v3_debug(V3_DEBUG_INFO, "encoding %d bytes of PCM to CELT @ %lu", ev.pcm.length, codec->rate);
-                                        if (!celtmode || !celtenc || channels != last_chan) {
-                                            if (celtenc) {
-                                                celt_encoder_destroy(celtenc);
-                                                celtenc = NULL;
-                                            }
-                                            if (celtmode) {
-                                                celt_mode_destroy(celtmode);
-                                                celtmode = NULL;
-                                            }
-                                            if (!(celtmode = celt_mode_create(44100, codec->pcmframesize / sizeof(int16_t), NULL)) ||
-                                                !(celtenc = celt_encoder_create(celtmode, channels, NULL))) {
-                                                _v3_debug(V3_DEBUG_INFO, "failed to create celt encoder");
-                                                celtmode = NULL;
-                                                celtenc = NULL;
-                                                send = false;
-                                                break;
-                                            }
-                                            if (celt_encoder_ctl(celtenc, CELT_SET_PREDICTION(prediction)) != CELT_OK) {
-                                                _v3_debug(V3_DEBUG_INFO, "celt_encoder_ctl: prediction request failed");
-                                                celt_encoder_destroy(celtenc);
-                                                celt_mode_destroy(celtmode);
-                                                celtmode = NULL;
-                                                celtenc = NULL;
-                                                send = false;
-                                                break;
-                                            }
-                                            if (celt_encoder_ctl(celtenc, CELT_SET_COMPLEXITY(complexity)) != CELT_OK) {
-                                                _v3_debug(V3_DEBUG_INFO, "celt_encoder_ctl: complexity 0 through 10 is only supported");
-                                                celt_encoder_destroy(celtenc);
-                                                celt_mode_destroy(celtmode);
-                                                celtmode = NULL;
-                                                celtenc = NULL;
-                                                send = false;
-                                                break;
-                                            }
-                                            last_chan = channels;
-                                        }
-                                        _v3_debug(V3_DEBUG_MEMORY, "allocating %lu bytes for %d celt frames", celtdatabuf, frame_count);
-                                        celtdata = malloc(celtdatabuf);
-                                        memset(celtdata, 0, celtdatabuf);
-                                        celtdataptr = celtdata;
-                                        for (ctr = 0; ctr <= frame_count; ctr++) {
-                                            if (ctr && (!(ctr % pktframes) || ctr == frame_count)) {
-                                                if (ctr == frame_count && frame_count % pktframes) {
-                                                    pktframes = frame_count % pktframes;
-                                                    pktlen = pktframes * celt_frag_size;
-                                                }
-                                                msg = _v3_put_0x52(
-                                                                V3_AUDIO_DATA,
-                                                                codec->codec,
-                                                                codec->format,
-                                                                ev.pcm.send_type,
-                                                                2000 + channels, // max: <= 3000
-                                                                pktlen, // max: 0x01: < 200; 0x02: < 110
-                                                                celtdata + celtdatalen);
-                                                celtdatalen += pktlen;
-                                                if (!_v3_send(msg)) {
-                                                    _v3_debug(V3_DEBUG_SOCKET, "failed to send audio message");
-                                                }
-                                                _v3_destroy_packet(msg);
-                                            }
-                                            if (ctr < frame_count) {
-                                                _v3_debug(V3_DEBUG_INFO, "encoding celt frame %d", ctr+1);
-                                                celt_frame_size = celt_frag_size - 1;
-                                                *celtdataptr++ = celt_frame_size;
-                                                if (celt_encode(
-                                                                celtenc,
-                                                                ((void *)&ev.data.sample)+(ctr*pcm_frame_size),
-                                                                NULL,
-                                                                (void *)celtdataptr,
-                                                                celt_frame_size) < 0) {
-                                                    _v3_debug(V3_DEBUG_INFO, "failed to encode celt frame %d", ctr+1);
-                                                }
-                                                celtdataptr += celt_frame_size;
-                                            }
-                                        }
-                                        //celt_encoder_destroy(celtenc);
-                                        //celt_mode_destroy(celtmode);
-                                        //celtmode = NULL;
-                                        //celtenc = NULL;
-                                        free(celtdata);
+                                  }
+                                  default:
+                                    msg = _v3_put_0x52(
+                                            V3_AUDIO_DATA,
+                                            codec->codec,
+                                            codec->format,
+                                            ev.pcm.send_type,
+                                            ev.pcm.length,
+                                            datalen,
+                                            data);
+                                    if (_v3_send(msg)) {
+                                        _v3_debug(V3_DEBUG_SOCKET, "sent audio message to server");
+                                    } else {
+                                        _v3_debug(V3_DEBUG_SOCKET, "failed to send audio message");
                                     }
-                                    send = false;
+                                    _v3_destroy_packet(msg);
+                                    _v3_vrf_record_event(
+                                            V3_VRF_EVENT_AUDIO_DATA,
+                                            v3_get_user_id(),
+                                            codec->codec,
+                                            codec->format,
+                                            ev.pcm.length,
+                                            datalen,
+                                            data);
                                     break;
-#endif
-#if HAVE_SPEEX
-                                case 0x03: // SPEEX
-                                    {
-                                        static void *spxenc      = NULL;
-                                        static uint32_t rate     = 0;
-                                        static uint8_t format    = -1;
-                                        int quality              = -1;
-                                        uint16_t frame_count     = ev.pcm.length / codec->pcmframesize;
-                                        uint16_t pcm_frame_size  = codec->pcmframesize / sizeof(int16_t);
-                                        uint16_t spx_frame_size;
-                                        const uint16_t spxmaxbuf = 200;
-                                        uint16_t spxdatabuf      = (frame_count + 1) * spxmaxbuf;
-                                        uint8_t *spxdata         = NULL;
-                                        uint16_t spxdatalen      = 0;
-                                        uint16_t *spxhead        = NULL;
-                                        SpeexBits bits;
-
-                                        _v3_debug(V3_DEBUG_INFO, "encoding %d bytes of PCM to SPEEX @ %lu", ev.pcm.length, codec->rate);
-                                        if (ev.pcm.channels != 1) {
-                                            _v3_debug(V3_DEBUG_INFO, "mono only supported for speex");
-                                            send = false;
-                                            break;
-                                        }
-                                        if (!spxenc || codec->rate != rate || codec->format != format) {
-                                            if (spxenc) {
-                                                speex_encoder_destroy(spxenc);
-                                                spxenc = NULL;
-                                            }
-                                            switch (codec->rate) {
-                                              case 8000:
-                                                _v3_debug(V3_DEBUG_INFO, "using narrow band mode");
-                                                spxenc = speex_encoder_init(&speex_nb_mode);
-                                                break;
-                                              case 16000:
-                                                _v3_debug(V3_DEBUG_INFO, "using wide band mode");
-                                                spxenc = speex_encoder_init(&speex_wb_mode);
-                                                break;
-                                              case 32000:
-                                                _v3_debug(V3_DEBUG_INFO, "using ultra-wide band mode");
-                                                spxenc = speex_encoder_init(&speex_uwb_mode);
-                                                break;
-                                            }
-                                            if (!spxenc) {
-                                                _v3_debug(V3_DEBUG_INFO, "failed to create speex encoder");
-                                                send = false;
-                                                break;
-                                            }
-                                            rate = codec->rate;
-                                            format = codec->format;
-                                            quality = codec->quality;
-                                            speex_encoder_ctl(spxenc, SPEEX_SET_QUALITY, &quality);
-                                        }
-                                        _v3_debug(V3_DEBUG_MEMORY, "allocating %lu bytes of data buffer for %d speex frames", spxdatabuf, frame_count);
-                                        spxdata = malloc(spxdatabuf);
-                                        memset(spxdata, 0, spxdatabuf);
-                                        spxhead = (void *)spxdata;
-                                        *spxhead++ = htons(frame_count);
-                                        *spxhead++ = htons(pcm_frame_size);
-                                        spxdatalen = (void *)spxhead - (void *)spxdata;
-                                        speex_bits_init(&bits);
-                                        for (ctr = 0; ctr < frame_count; ctr++) {
-                                            speex_bits_reset(&bits);
-                                            _v3_debug(V3_DEBUG_INFO, "encoding speex frame %d", ctr+1);
-                                            speex_encode_int(spxenc, ((void *)&ev.data.sample)+(ctr*codec->pcmframesize), &bits);
-                                            spx_frame_size = speex_bits_write(&bits, (void *)spxdata+(spxdatalen+sizeof(uint16_t)), spxmaxbuf);
-                                            *((uint16_t *)(spxdata + spxdatalen)) = htons(spx_frame_size);
-                                            spxdatalen += sizeof(uint16_t) + spx_frame_size;
-                                        }
-                                        speex_bits_destroy(&bits);
-                                        //speex_encoder_destroy(spxenc);
-                                        //spxenc = NULL;
-                                        _v3_debug(V3_DEBUG_MEMORY, "used %lu out of %lu bytes for %d speex frames", spxdatalen, spxdatabuf, frame_count);
-                                        msg = _v3_put_0x52(
-                                                        V3_AUDIO_DATA,
-                                                        codec->codec,
-                                                        codec->format,
-                                                        ev.pcm.send_type,
-                                                        ev.pcm.length,
-                                                        spxdatalen,
-                                                        spxdata);
-                                        free(spxdata);
-                                    }
-                                    send = true;
-                                    break;
-#endif
-                                default:
-                                    _v3_debug(V3_DEBUG_INFO, "unsupported codec %d/%d", codec->codec, codec->format);
-                                    send = false;
-                                    break;
-                            }
-                            if (send) {
-                                if (!_v3_send(msg)) {
-                                    _v3_debug(V3_DEBUG_SOCKET, "failed to send audio message");
                                 }
-                                _v3_destroy_packet(msg);
+                                free(data);
+                                data = NULL;
                             }
                         }
                         break;/*}}}*/
                     case V3_EVENT_USER_TALK_END:/*{{{*/
                         {
-                            _v3_net_message *msg;
-
                             _v3_debug(V3_DEBUG_INFO, "got outbound user talk end event");
-                            msg = _v3_put_0x52(V3_AUDIO_STOP, -1, -1, 0, 0, 0, NULL);
-                            if (!_v3_send(msg)) {
-                                 _v3_debug(V3_DEBUG_SOCKET, "failed to send user talk end message");
+                            _v3_net_message *msg = _v3_put_0x52(V3_AUDIO_STOP, -1, -1, 0, 0, 0, NULL);
+                            if (_v3_send(msg)) {
+                                _v3_debug(V3_DEBUG_SOCKET, "sent user talk end message to server");
+                            } else {
+                                _v3_debug(V3_DEBUG_SOCKET, "failed to send user talk end message");
                             }
                             _v3_destroy_packet(msg);
+                            _v3_vrf_record_event(V3_VRF_EVENT_AUDIO_STOP, v3_get_user_id(), -1, -1, 0, 0, NULL);
                         }
                         break;/*}}}*/
                     case V3_EVENT_USER_MODIFY:/*{{{*/
                         {
-                            _v3_net_message *msg;
                             v3_user *user;
-
-                            user = v3_get_user(v3_luser.id);
+                            if (!(user = v3_get_user(v3_luser.id))) {
+                                break;
+                            }
                             free(user->name);
                             free(user->phonetic);
                             free(user->comment);
                             free(user->url);
                             free(user->integration_text);
+                            if (ev.flags & 0x100) {
+                                user->bitfield |= 0x100;
+                            } else {
+                                user->bitfield &= ~0x100;
+                            }
                             user->name = strdup("");
                             user->phonetic = strdup("");
                             user->comment = strdup(ev.text.comment);
                             user->url = strdup(ev.text.url);
                             user->integration_text = strdup(ev.text.integration_text);
                             _v3_debug(V3_DEBUG_INFO, "setting cm: %s, url: %s, integration: %s", ev.text.comment, ev.text.url, ev.text.integration_text);
-                            msg = _v3_put_0x5d(V3_MODIFY_USER, 1, user);
+                            _v3_net_message *msg = _v3_put_0x5d(V3_MODIFY_USER, 1, user);
                             if (_v3_send(msg)) {
-                                _v3_debug(V3_DEBUG_SOCKET, "sent text strings changes to server");
+                                _v3_debug(V3_DEBUG_SOCKET, "sent text string change message to server");
                             } else {
                                 _v3_debug(V3_DEBUG_SOCKET, "failed to send text string change message");
                             }
@@ -1093,7 +853,7 @@ _v3_recv(int block) {/*{{{*/
                         {
                             _v3_net_message *msg = _v3_put_0x42(V3_JOIN_CHAT, v3_luser.id, NULL);
                             if (_v3_send(msg)) {
-                                _v3_debug(V3_DEBUG_SOCKET, "sent join chat request to server");
+                                _v3_debug(V3_DEBUG_SOCKET, "sent join chat request message to server");
                             } else {
                                 _v3_debug(V3_DEBUG_SOCKET, "failed to send join chat request message");
                             }
@@ -1104,7 +864,7 @@ _v3_recv(int block) {/*{{{*/
                         {
                             _v3_net_message *msg = _v3_put_0x42(V3_LEAVE_CHAT, v3_luser.id, NULL);
                             if (_v3_send(msg)) {
-                                _v3_debug(V3_DEBUG_SOCKET, "sent leave chat request to server");
+                                _v3_debug(V3_DEBUG_SOCKET, "sent leave chat request message to server");
                             } else {
                                 _v3_debug(V3_DEBUG_SOCKET, "failed to send leave chat request message");
                             }
@@ -1113,11 +873,11 @@ _v3_recv(int block) {/*{{{*/
                         break;/*}}}*/
                     case V3_EVENT_CHAT_MESSAGE:/*{{{*/
                         {
-                            _v3_net_message *msg = _v3_put_0x42(V3_TALK_CHAT, v3_luser.id, ev.data.chatmessage);
+                            _v3_net_message *msg = _v3_put_0x42(V3_TALK_CHAT, v3_luser.id, ev.data->chatmessage);
                             if (_v3_send(msg)) {
                                 _v3_debug(V3_DEBUG_SOCKET, "sent chat message to server");
                             } else {
-                                _v3_debug(V3_DEBUG_SOCKET, "failed to chat message message");
+                                _v3_debug(V3_DEBUG_SOCKET, "failed to send chat message");
                             }
                             _v3_destroy_packet(msg);
                         }
@@ -1139,18 +899,51 @@ _v3_recv(int block) {/*{{{*/
                             if (_v3_send(msg)) {
                                 _v3_debug(V3_DEBUG_SOCKET, "sent priv chat end request to server for user %d", ev.user.id);
                             } else {
-                                _v3_debug(V3_DEBUG_SOCKET, "failed to send priv end start request message");
+                                _v3_debug(V3_DEBUG_SOCKET, "failed to send priv chat end request message");
                             }
                             _v3_destroy_packet(msg);
                         }
                         break;/*}}}*/
                     case V3_EVENT_PRIVATE_CHAT_MESSAGE:/*{{{*/
                         {
-                            _v3_net_message *msg = _v3_put_0x5a(V3_TALK_PRIV_CHAT, ev.user.id, v3_luser.id, ev.data.chatmessage);
+                            _v3_net_message *msg = _v3_put_0x5a(V3_TALK_PRIV_CHAT, ev.user.id, v3_luser.id, ev.data->chatmessage);
                             if (_v3_send(msg)) {
                                 _v3_debug(V3_DEBUG_SOCKET, "sent private chat message to server for user %d", ev.user.id);
                             } else {
-                                _v3_debug(V3_DEBUG_SOCKET, "failed to private chat message message");
+                                _v3_debug(V3_DEBUG_SOCKET, "failed to send private chat message");
+                            }
+                            _v3_destroy_packet(msg);
+                        }
+                        break;/*}}}*/
+                    case V3_EVENT_TEXT_TO_SPEECH_MESSAGE:/*{{{*/
+                        {
+                            _v3_net_message *msg = _v3_put_0x3a(ev.data->chatmessage);
+                            if (_v3_send(msg)) {
+                                _v3_debug(V3_DEBUG_SOCKET, "sent text to speech message to server");
+                            } else {
+                                _v3_debug(V3_DEBUG_SOCKET, "failed to send text to speech message");
+                            }
+                            _v3_destroy_packet(msg);
+                        }
+                        break;/*}}}*/
+                    case V3_EVENT_PLAY_WAVE_FILE_MESSAGE:/*{{{*/
+                        {
+                            _v3_net_message *msg = _v3_put_0x3f(ev.data->chatmessage);
+                            if (_v3_send(msg)) {
+                                _v3_debug(V3_DEBUG_SOCKET, "sent play wave file message to server");
+                            } else {
+                                _v3_debug(V3_DEBUG_SOCKET, "failed to send play wave file message");
+                            }
+                            _v3_destroy_packet(msg);
+                        }
+                        break;/*}}}*/
+                    case V3_EVENT_USER_PAGE:/*{{{*/
+                        {
+                            _v3_net_message *msg = _v3_put_0x62(ev.user.id);
+                            if (_v3_send(msg)) {
+                                _v3_debug(V3_DEBUG_SOCKET, "sent user page to server");
+                            } else {
+                                _v3_debug(V3_DEBUG_SOCKET, "failed to send user page");
                             }
                             _v3_destroy_packet(msg);
                         }
@@ -1212,7 +1005,7 @@ _v3_recv(int block) {/*{{{*/
                         break;/*}}}*/
                     case V3_EVENT_ADMIN_KICK:/*{{{*/
                         {
-                            _v3_net_message *msg = _v3_put_0x63(V3_ADMIN_KICK, ev.user.id, ev.data.reason);
+                            _v3_net_message *msg = _v3_put_0x63(V3_ADMIN_KICK, ev.user.id, ev.data->reason);
                             if (_v3_send(msg)) {
                                 _v3_debug(V3_DEBUG_SOCKET, "sent admin kick request to server");
                             } else {
@@ -1223,7 +1016,7 @@ _v3_recv(int block) {/*{{{*/
                         break;/*}}}*/
                     case V3_EVENT_ADMIN_BAN:/*{{{*/
                         {
-                            _v3_net_message *msg = _v3_put_0x63(V3_ADMIN_BAN, ev.user.id, ev.data.reason);
+                            _v3_net_message *msg = _v3_put_0x63(V3_ADMIN_BAN, ev.user.id, ev.data->reason);
                             if (_v3_send(msg)) {
                                 _v3_debug(V3_DEBUG_SOCKET, "sent admin ban request to server");
                             } else {
@@ -1234,12 +1027,28 @@ _v3_recv(int block) {/*{{{*/
                         break;/*}}}*/
                     case V3_EVENT_ADMIN_CHANNEL_BAN:/*{{{*/
                         {
-                            _v3_net_message *msg = _v3_put_0x63(V3_ADMIN_CHANNEL_BAN, ev.user.id, ev.data.reason);
+                            _v3_net_message *msg = _v3_put_0x63(V3_ADMIN_CHANNEL_BAN, ev.user.id, ev.data->reason);
                             if (_v3_send(msg)) {
                                 _v3_debug(V3_DEBUG_SOCKET, "sent admin channel ban request to server");
                             } else {
                                 _v3_debug(V3_DEBUG_SOCKET, "failed to send admin channel ban request");
                             }
+                            _v3_destroy_packet(msg);
+                        }
+                        break;/*}}}*/
+                    case V3_EVENT_ADMIN_GLOBAL_MUTE:/*{{{*/
+                        {
+                            v3_user *user;
+                            if (!(user = v3_get_user(ev.user.id))) {
+                                break;
+                            }
+                            _v3_net_message *msg = _v3_put_0x46(ev.user.id, V3_USER_GLOBAL_MUTE, !user->global_mute);
+                            if (_v3_send(msg)) {
+                                _v3_debug(V3_DEBUG_SOCKET, "sent admin global mute request to server");
+                            } else {
+                                _v3_debug(V3_DEBUG_SOCKET, "failed to send admin global mute request");
+                            }
+                            v3_free_user(user);
                             _v3_destroy_packet(msg);
                         }
                         break;/*}}}*/
@@ -1283,19 +1092,18 @@ _v3_recv(int block) {/*{{{*/
                         {
                             v3_account a;
                             memset(&a, 0, sizeof(v3_account));
-                            a.perms = ev.data.account.perms;
-                            a.username = strdup(ev.data.account.username);
-                            a.owner = strdup(ev.data.account.owner);
-                            a.notes = strdup(ev.data.account.notes);
-                            a.lock_reason = strdup(ev.data.account.lock_reason);
-                            a.chan_admin_count = ev.data.account.chan_admin_count;
+                            a.perms = ev.data->account.perms;
+                            a.username = strdup(ev.data->account.username);
+                            a.owner = strdup(ev.data->account.owner);
+                            a.notes = strdup(ev.data->account.notes);
+                            a.lock_reason = strdup(ev.data->account.lock_reason);
+                            a.chan_admin_count = ev.data->account.chan_admin_count;
                             a.chan_admin = malloc(a.chan_admin_count * 2);
-                            memcpy(a.chan_admin, ev.data.account.chan_admin, ev.data.account.chan_admin_count * 2);
-                            a.chan_auth_count = ev.data.account.chan_auth_count;
+                            memcpy(a.chan_admin, ev.data->account.chan_admin, ev.data->account.chan_admin_count * 2);
+                            a.chan_auth_count = ev.data->account.chan_auth_count;
                             a.chan_auth = malloc(a.chan_auth_count * 2);
-                            memcpy(a.chan_auth, ev.data.account.chan_auth, ev.data.account.chan_auth_count * 2);
+                            memcpy(a.chan_auth, ev.data->account.chan_auth, ev.data->account.chan_auth_count * 2);
                             a.next = NULL;
-
                             _v3_net_message *msg = _v3_put_0x4a(ev.type == V3_EVENT_USERLIST_ADD ? V3_USERLIST_ADD : V3_USERLIST_MODIFY, &a, NULL);
                             if (_v3_send(msg)) {
                                 _v3_debug(V3_DEBUG_SOCKET, "sent userlist add/modify request to server");
@@ -1320,11 +1128,86 @@ _v3_recv(int block) {/*{{{*/
                             _v3_destroy_packet(msg);
                         }
                         break;/*}}}*/
+                    case V3_EVENT_SRV_PROP_OPEN:/*{{{*/
+                        {
+                            _v3_net_message *msg = _v3_put_0x4c(V3_SERVER_RECV_SETTING, V3_SRV_PROP_INIT, (_v3_server_prop_tid = rand()), NULL);
+                            if (_v3_send(msg)) {
+                                _v3_debug(V3_DEBUG_SOCKET, "sent server property open request to server");
+                            } else {
+                                _v3_debug(V3_DEBUG_SOCKET, "failed to send server property open request");
+                            }
+                            _v3_destroy_packet(msg);
+                        }
+                        break;/*}}}*/
+                    case V3_EVENT_SRV_PROP_CLOSE:/*{{{*/
+                        {
+                            _v3_net_message *msg = _v3_put_0x4c(V3_SERVER_TRANSACTION_DONE, V3_SRV_PROP_INIT, (_v3_server_prop_tid = 0), NULL);
+                            if (_v3_send(msg)) {
+                                _v3_debug(V3_DEBUG_SOCKET, "sent server property close request to server");
+                            } else {
+                                _v3_debug(V3_DEBUG_SOCKET, "failed to send server property close request");
+                            }
+                            _v3_destroy_packet(msg);
+                        }
+                        break;/*}}}*/
+                    case V3_EVENT_SRV_PROP_UPDATE:/*{{{*/
+                        {
+                            char value[0x100] = "";
+                            _v3_lock_server();
+                            memcpy(&_v3_server_prop, &ev.data->srvprop, sizeof(v3_server_prop));
+                            snprintf(value, sizeof(value) - 1, "%u", _v3_server_prop.chat_filter);
+                            _v3_unlock_server();
+                            _v3_net_message *msg = _v3_put_0x4c(V3_SERVER_SEND_SETTING, V3_SRV_PROP_CHAT_FILTER, (_v3_server_prop_tid = rand()), value);
+                            if (_v3_send(msg)) {
+                                _v3_debug(V3_DEBUG_SOCKET, "sent server property update request to server");
+                            } else {
+                                _v3_debug(V3_DEBUG_SOCKET, "failed to send server property update request");
+                            }
+                            _v3_destroy_packet(msg);
+                        }
+                        break;/*}}}*/
+                    case V3_EVENT_ADMIN_BAN_LIST:/*{{{*/
+                        {
+                            _v3_net_message *msg = _v3_put_0x61(V3_ADMIN_BAN_LIST, 0, 0, NULL, NULL);
+                            if (_v3_send(msg)) {
+                                _v3_debug(V3_DEBUG_SOCKET, "sent admin ban list request to server");
+                            } else {
+                                _v3_debug(V3_DEBUG_SOCKET, "failed to send admin ban list request");
+                            }
+                            _v3_destroy_packet(msg);
+                        }
+                        break;/*}}}*/
+                    case V3_EVENT_ADMIN_BAN_ADD:/*{{{*/
+                        {
+                            _v3_net_message *msg = _v3_put_0x61(V3_ADMIN_BAN_ADD, ev.data->ban.bitmask_id, ev.data->ban.ip_address, ev.data->ban.user, ev.data->ban.reason);
+                            if (_v3_send(msg)) {
+                                _v3_debug(V3_DEBUG_SOCKET, "sent admin ban add request to server");
+                            } else {
+                                _v3_debug(V3_DEBUG_SOCKET, "failed to send admin ban add request");
+                            }
+                            _v3_destroy_packet(msg);
+                        }
+                        break;/*}}}*/
+                    case V3_EVENT_ADMIN_BAN_REMOVE:/*{{{*/
+                        {
+                            _v3_net_message *msg = _v3_put_0x61(V3_ADMIN_BAN_REMOVE, ev.data->ban.bitmask_id, ev.data->ban.ip_address, NULL, NULL);
+                            if (_v3_send(msg)) {
+                                _v3_debug(V3_DEBUG_SOCKET, "sent admin ban remove request to server");
+                            } else {
+                                _v3_debug(V3_DEBUG_SOCKET, "failed to send admin ban remove request");
+                            }
+                            _v3_destroy_packet(msg);
+                        }
+                        break;/*}}}*/
                     default:
                         _v3_debug(V3_DEBUG_EVENT, "received unknown event type %d from queue", ev.type);
                         break;
                 }
+                if (ev.data) {
+                    free(ev.data);
+                }
             }
+            _v3_unlock_sendq();
             if (waiting != V3_BOTH_WAITING) {
                 continue;
             }
@@ -1357,8 +1240,7 @@ _v3_recv(int block) {/*{{{*/
                 v3_server.recv_byte_count += msg->len;
                 _v3_debug(V3_DEBUG_SOCKET, "received %d bytes", msg->len);
             }
-
-            if(v3_server.recv_packet_count == 1) {
+            if (v3_server.recv_packet_count == 1) {
                 ventrilo_first_dec((uint8_t *)msgdata, msg->len);
             } else {
                 ventrilo_dec(&v3_server.server_key, (uint8_t *)msgdata, msg->len);
@@ -1374,7 +1256,8 @@ _v3_recv(int block) {/*{{{*/
             return msg;
         }
     }
-    _v3_func_leave("nothing waiting and non-blocking requested");
+    _v3_debug(V3_DEBUG_EVENT, "nothing waiting and non-blocking requested");
+
     _v3_func_leave("_v3_recv");
     return NULL;
 }/*}}}*/
@@ -1431,6 +1314,7 @@ _v3_recv_enc_msg(char *data) {/*{{{*/
     }
     memcpy(data, buff, len);
     _v3_net_message_dump_raw(data, len);
+
     _v3_func_leave("_v3_recv_enc_msg");
     return len;
 }/*}}}*/
@@ -1458,12 +1342,11 @@ v3_message_waiting(int block) {/*{{{*/
     if (block) {
         gettimeofday(&now, NULL);
         _v3_next_timestamp(&tv, &v3_server.last_timestamp);
+        _v3_debug(V3_DEBUG_INFO, "outbound timestamp pending in %d.%d seconds", tv.tv_sec, tv.tv_usec);
     } else {
-        tv.tv_sec=0;
-        tv.tv_usec=0;
+        tv.tv_sec  = 0;
+        tv.tv_usec = 0;
     }
-    _v3_debug(V3_DEBUG_INFO, "outbound timestamp pending in %d.%d seconds", tv.tv_sec, tv.tv_usec);
-
     while ((ret = select(_v3_sockd > v3_server.evpipe[0] ? _v3_sockd+1 : v3_server.evpipe[0]+1, &rset, NULL, NULL, &tv)) >= 0) {
         _v3_next_timestamp(&tv, &v3_server.last_timestamp);
         _v3_debug(V3_DEBUG_INFO, "outbound timestamp pending in %d.%d seconds", tv.tv_sec, tv.tv_usec);
@@ -1476,7 +1359,6 @@ v3_message_waiting(int block) {/*{{{*/
             FD_ZERO(&rset);
             FD_SET(v3_server.evpipe[0], &rset);
             FD_SET(_v3_sockd, &rset);
-
             m = _v3_put_0x4b();
             _v3_send(m);
             _v3_destroy_packet(m);
@@ -1502,7 +1384,9 @@ v3_message_waiting(int block) {/*{{{*/
             return false;
         }
     }
-    _v3_error("select failed");
+    _v3_error("select failed: %s", strerror(errno));
+
+    _v3_func_leave("v3_message_waiting");
     return false;
 }/*}}}*/
 
@@ -1512,14 +1396,14 @@ _v3_hash_password(uint8_t *password, uint8_t *hash) {/*{{{*/
     uint8_t  tmp[4] = { 0 };
 
     len = cnt = strlen((char *)password);
-    for(i = 0; i < 32; i++, cnt++) {
+    for (i = 0; i < 32; i++, cnt++) {
         hash[i] = i < len ? password[i] : ((tmp[(cnt + 1) & 3] + hash[i-len]) - 0x3f) & 0x7f;
-        for(j = 0, crc = 0; j < i + 1; j++) {
+        for (j = 0, crc = 0; j < i + 1; j++) {
             crc = _v3_hash_table[hash[j] ^ (crc & 0xff)] ^ (crc >> 8);
         }
-        *(uint32_t*)tmp = htonl(crc);
+        *(uint32_t *)tmp = htonl(crc);
         cnt += hash[i];
-        if(crc) {
+        if (crc) {
             while(!tmp[cnt & 3]) cnt++;
         }
         hash[i] += tmp[cnt & 3];
@@ -1529,10 +1413,12 @@ _v3_hash_password(uint8_t *password, uint8_t *hash) {/*{{{*/
 int
 _v3_close_connection(void) {/*{{{*/
     _v3_func_enter("_v3_close_connection");
+
     _v3_user_loggedin = 0;
     shutdown(_v3_sockd, SHUT_WR);
     close(_v3_sockd);
     _v3_sockd = -1;
+
     _v3_func_leave("_v3_close_connection");
     return _v3_sockd == -1 ? true : false;
 }/*}}}*/
@@ -1540,12 +1426,14 @@ _v3_close_connection(void) {/*{{{*/
 int
 _v3_is_connected(void) {/*{{{*/
     _v3_func_enter("_v3_is_connected");
+
     if (_v3_sockd != -1) {
         _v3_debug(V3_DEBUG_SOCKET, "client is connected with socket descriptor: %d", _v3_sockd);
     } else {
         _v3_debug(V3_DEBUG_SOCKET, "client is not connected", _v3_sockd);
     }
     _v3_func_leave("_v3_is_connected");
+
     return _v3_sockd == -1 ? false : true;
 }/*}}}*/
 
@@ -1596,6 +1484,7 @@ _v3_update_channel(v3_channel *channel) {/*{{{*/
         _v3_debug(V3_DEBUG_INFO, "added channel %s (codec %d/%d)",  c->name, c->channel_codec, c->channel_format);
     }
     _v3_unlock_channellist();
+
     _v3_func_leave("_v3_update_channel");
     return true;
 }/*}}}*/
@@ -1625,25 +1514,27 @@ _v3_update_user(v3_user *user) {/*{{{*/
                 v3_user tmpuser;
                 memcpy(&tmpuser, u, sizeof(v3_user));
                 // Users cannot change their name
-                // free(u->name);
+                //free(u->name);
                 free(u->phonetic);
                 free(u->comment);
                 free(u->integration_text);
                 free(u->url);
                 memcpy(u, user, sizeof(v3_user));
                 // Users cannot change their name
-                // u->name          = strdup(user->name);
+                //u->name             = strdup(user->name);
                 u->name             = tmpuser.name;
                 u->comment          = strdup(user->comment);
                 u->phonetic         = strdup(user->phonetic);
                 u->integration_text = strdup(user->integration_text);
                 u->url              = strdup(user->url);
                 u->guest            = user->bitfield & 0x400 ? 1 : 0;
+                u->is_transmitting  = tmpuser.is_transmitting;
                 u->accept_pages     = tmpuser.accept_pages;
                 u->accept_u2u       = tmpuser.accept_u2u;
                 u->accept_chat      = tmpuser.accept_chat;
                 u->allow_recording  = tmpuser.allow_recording;
                 u->global_mute      = tmpuser.global_mute;
+                u->channel_mute     = tmpuser.channel_mute;
                 u->next             = tmpuser.next;
                 _v3_debug(V3_DEBUG_INFO, "updated user %s",  u->name);
                 _v3_unlock_userlist();
@@ -1665,6 +1556,7 @@ _v3_update_user(v3_user *user) {/*{{{*/
         u->next             = NULL;
     }
     _v3_unlock_userlist();
+
     _v3_func_leave("_v3_update_user");
     return true;
 }/*}}}*/
@@ -1709,6 +1601,7 @@ _v3_update_rank(v3_rank *rank) {/*{{{*/
         r->next             = NULL;
     }
     _v3_unlock_ranklist();
+
     _v3_func_leave("_v3_update_rank");
     return true;
 }/*}}}*/
@@ -1716,7 +1609,7 @@ _v3_update_rank(v3_rank *rank) {/*{{{*/
 void
 _v3_print_channel_list(void) {/*{{{*/
     v3_channel *c;
-    int ctr=0;
+    int ctr = 0;
 
     for (c = v3_channel_list; c != NULL; c = c->next) {
         _v3_debug(V3_DEBUG_INFO, "=====[ channel %d ]====================================================================", ctr++);
@@ -1744,6 +1637,7 @@ _v3_destroy_channellist(void) {/*{{{*/
     }
     v3_channel_list = NULL;
     _v3_unlock_channellist();
+
     _v3_func_leave("_v3_destroy_channellist");
 }/*}}}*/
 
@@ -1751,8 +1645,8 @@ int
 _v3_remove_user(uint16_t id) {/*{{{*/
     v3_user *u, *last;
 
-    _v3_lock_userlist();
     _v3_func_enter("_v3_remove_user");
+    _v3_lock_userlist();
     last = v3_user_list;
     for (u = v3_user_list; u != NULL; u = u->next) {
         if (u->id == id) {
@@ -1765,8 +1659,9 @@ _v3_remove_user(uint16_t id) {/*{{{*/
         }
         last = u;
     }
-    _v3_func_leave("_v3_remove_user");
     _v3_unlock_userlist();
+
+    _v3_func_leave("_v3_remove_user");
     return false;
 }/*}}}*/
 
@@ -1774,10 +1669,13 @@ int
 _v3_remove_channel(uint16_t id) {/*{{{*/
     v3_channel *c, *last;
 
-    _v3_lock_channellist();
     _v3_func_enter("_v3_remove_channel");
+    _v3_lock_channellist();
     last = v3_channel_list;
     for (c = v3_channel_list; c != NULL; c = c->next) {
+        if (!c) {
+            break;
+        }
         if (c->id == id) {
             last->next = c->next;
             _v3_debug(V3_DEBUG_INFO, "removed channel %s",  c->name);
@@ -1788,8 +1686,9 @@ _v3_remove_channel(uint16_t id) {/*{{{*/
         }
         last = c;
     }
-    _v3_func_leave("_v3_remove_channel");
     _v3_unlock_channellist();
+
+    _v3_func_leave("_v3_remove_channel");
     return false;
 }/*}}}*/
 
@@ -1797,8 +1696,8 @@ int
 _v3_remove_rank(uint16_t id) {/*{{{*/
     v3_rank *r, *last;
 
-    _v3_lock_ranklist();
     _v3_func_enter("_v3_remove_rank");
+    _v3_lock_ranklist();
     last = v3_rank_list;
     for (r = v3_rank_list; r != NULL; r = r->next) {
         if (r->id == id) {
@@ -1811,15 +1710,16 @@ _v3_remove_rank(uint16_t id) {/*{{{*/
         }
         last = r;
     }
-    _v3_func_leave("_v3_remove_rank");
     _v3_unlock_ranklist();
+
+    _v3_func_leave("_v3_remove_rank");
     return false;
 }/*}}}*/
 
 void
 _v3_print_user_list(void) {/*{{{*/
     v3_user *u;
-    int ctr=0;
+    int ctr = 0;
 
     for (u = v3_user_list; u != NULL; u = u->next) {
         _v3_debug(V3_DEBUG_INFO, "=====[ user %d ]====================================================================", ctr++);
@@ -1849,6 +1749,7 @@ _v3_destroy_userlist(void) {/*{{{*/
         u = next;
     }
     v3_user_list = NULL;
+
     _v3_func_leave("_v3_destroy_userlist");
 }/*}}}*/
 
@@ -1978,7 +1879,7 @@ _v3_lock_sendq(void) {/*{{{*/
     if (sendq_mutex == NULL) {
         pthread_mutexattr_t mta;
         pthread_mutexattr_init(&mta);
-        pthread_mutexattr_settype(&mta, PTHREAD_MUTEX_ERRORCHECK);
+        pthread_mutexattr_settype(&mta, PTHREAD_MUTEX_RECURSIVE);
 
         _v3_debug(V3_DEBUG_MUTEX, "initializing sendq mutex");
         sendq_mutex = malloc(sizeof(pthread_mutex_t));
@@ -1994,7 +1895,7 @@ _v3_unlock_sendq(void) {/*{{{*/
     if (sendq_mutex == NULL) {
         pthread_mutexattr_t mta;
         pthread_mutexattr_init(&mta);
-        pthread_mutexattr_settype(&mta, PTHREAD_MUTEX_ERRORCHECK);
+        pthread_mutexattr_settype(&mta, PTHREAD_MUTEX_RECURSIVE);
 
         _v3_debug(V3_DEBUG_MUTEX, "initializing sendq mutex");
         sendq_mutex = malloc(sizeof(pthread_mutex_t));
@@ -2071,40 +1972,1771 @@ _v3_unlock_server(void) {/*{{{*/
 void
 _v3_init_decoders(void) {/*{{{*/
     _v3_func_enter("_v3_init_decoders");
+
     memset(v3_decoders, 0, sizeof(v3_decoders));
+
     _v3_func_leave("_v3_init_decoders");
 }/*}}}*/
 
 void
-_v3_destroy_decoders(void) {/*{{{*/
-    int ctr;
+_v3_destroy_decoder(_v3_decoders *decoder) {/*{{{*/
+    //_v3_func_enter("_v3_destroy_decoder");
 
-    _v3_func_enter("_v3_destroy_decoders");
-    for (ctr = 0; ctr < 65535; ctr++) {
 #if HAVE_GSM
-        if (v3_decoders[ctr].gsm) {
-            gsm_destroy(v3_decoders[ctr].gsm);
-            v3_decoders[ctr].gsm = NULL;
-        }
-#endif
-#if HAVE_SPEEX
-        if (v3_decoders[ctr].speex) {
-            speex_decoder_destroy(v3_decoders[ctr].speex);
-            v3_decoders[ctr].speex = NULL;
-        }
+    if (decoder->gsm) {
+        gsm_destroy(decoder->gsm);
+        decoder->gsm = NULL;
+    }
 #endif
 #if HAVE_CELT
-        if (v3_decoders[ctr].celt) {
-            celt_decoder_destroy(v3_decoders[ctr].celt);
-            v3_decoders[ctr].celt = NULL;
-        }
-        if (v3_decoders[ctr].celtmode) {
-            celt_mode_destroy(v3_decoders[ctr].celtmode);
-            v3_decoders[ctr].celtmode = NULL;
-        }
-#endif
+    if (decoder->celt) {
+        celt_decoder_destroy(decoder->celt);
+        decoder->celt = NULL;
     }
+    if (decoder->celtmode) {
+        celt_mode_destroy(decoder->celtmode);
+        decoder->celtmode = NULL;
+    }
+    decoder->celtchans = 0;
+#endif
+#if HAVE_SPEEX
+    if (decoder->speex) {
+        speex_decoder_destroy(decoder->speex);
+        decoder->speex = NULL;
+    }
+    decoder->speexrate = 0;
+#endif
+
+    //_v3_func_leave("_v3_destroy_decoder");
+}/*}}}*/
+
+void
+_v3_destroy_decoders(void) {/*{{{*/
+    _v3_func_enter("_v3_destroy_decoders");
+
+    int ctr;
+    for (ctr = 0; ctr < 65535; ctr++) {
+        _v3_destroy_decoder(&v3_decoders[ctr]);
+    }
+
     _v3_func_leave("_v3_destroy_decoders");
+}/*}}}*/
+
+uint8_t
+_v3_parse_filter(v3_sp_filter *f, char *value) {/*{{{*/
+    char *a, *i, *t, *tmp;
+
+    _v3_func_enter("_v3_parse_filter");
+    a = value;
+    i = strchr(a, ',') + 1;
+    // make sure strchr didn't return null (in which case it would be 1 since
+    // we added 1)
+    if (i == (void *)1) {
+        _v3_func_leave("_v3_parse_filter");
+        return false;
+    }
+    tmp = i - 1;
+    *tmp = 0;
+    t = strchr(i, ',') + 1;
+    if (t == (void *)1) {
+        _v3_func_leave("_v3_parse_filter");
+        return false;
+    }
+    tmp = t - 1;
+    *tmp = 0;
+    f->action = atoi(a);
+    f->interval = atoi(i);
+    f->times = atoi(t);
+    _v3_debug(V3_DEBUG_INFO, "parsed filter: %d, %d, %d\n", f->action, f->interval, f->times);
+
+    _v3_func_leave("_v3_parse_filter");
+    return true;
+}/*}}}*/
+
+uint8_t *
+_v3_audio_encode(
+        /* pcm input */
+        uint8_t *sample,
+        uint32_t pcmlen,
+        /* encoded output */
+        const v3_codec *codec,
+        uint16_t *datalen,
+        /* optional args */
+        uint8_t channels,
+        uint16_t *framecount,
+        uint8_t *celtfragsize) {/*{{{*/
+    _v3_func_enter("_v3_audio_encode");
+
+    if (!sample || !pcmlen || !codec || !datalen) {
+        _v3_debug(V3_DEBUG_INFO, "argument missing for _v3_audio_encode");
+        _v3_func_leave("_v3_audio_encode");
+        return NULL;
+    }
+    int ctr;
+
+    channels = (channels == 2) ? 2 : 1;
+    switch (codec->codec) {
+#if HAVE_GSM
+      case 0x00: // GSM
+      {
+        static void *gsmenc  = NULL;
+        uint16_t frame_count = pcmlen / 640;
+        uint16_t gsmdatabuf  = frame_count * 65;
+        uint8_t *gsmdata     = NULL;
+
+        _v3_debug(V3_DEBUG_INFO, "encoding %d bytes of PCM to GSM @ %lu", pcmlen, codec->rate);
+        if (channels > 1) {
+            _v3_debug(V3_DEBUG_INFO, "mono only supported for gsm");
+            break;
+        }
+        if (!gsmenc) {
+            if (!(gsmenc = gsm_create())) {
+                _v3_debug(V3_DEBUG_INFO, "failed to create gsm encoder");
+                break;
+            }
+            int one = 1;
+            gsm_option(gsmenc, GSM_OPT_WAV49, &one);
+        }
+        _v3_debug(V3_DEBUG_MEMORY, "allocating %lu bytes for %d gsm frames", gsmdatabuf, frame_count);
+        gsmdata = malloc(gsmdatabuf);
+        memset(gsmdata, 0, gsmdatabuf);
+        for (ctr = 0; ctr < frame_count; ctr++) {
+            _v3_debug(V3_DEBUG_INFO, "encoding gsm frame %d", ctr+1);
+            gsm_encode(gsmenc, (void *)sample+(ctr*640), gsmdata+(ctr*65));
+            gsm_encode(gsmenc, (void *)sample+(ctr*640)+320, gsmdata+(ctr*65)+32);
+        }
+        //gsm_destroy(gsmenc);
+        //gsmenc = NULL;
+        if (framecount) {
+            *framecount = frame_count;
+        }
+        *datalen = gsmdatabuf;
+        _v3_func_leave("_v3_audio_encode");
+        return gsmdata;
+      }
+#endif
+#if HAVE_CELT
+      case 0x01: // CELT
+      case 0x02:
+      {
+        static void *celtmode    = NULL;
+        static void *celtenc     = NULL;
+        static uint8_t last_chan = 0;
+        const int prediction     = 2;
+        const int complexity     = 10;
+        uint16_t pcm_frame_size  = codec->pcmframesize * channels;
+        uint16_t frame_count     = pcmlen / pcm_frame_size;
+        uint8_t celt_frag_size   = (celtfragsize && *celtfragsize) ? *celtfragsize : ((codec->codec == 0x01) ? 60 : 54);
+        uint8_t celt_frame_size  = celt_frag_size - 1;
+        uint16_t celtdatabuf     = frame_count * celt_frag_size;
+        uint8_t *celtdata        = NULL;
+        uint8_t *celtdataptr     = NULL;
+
+        _v3_debug(V3_DEBUG_INFO, "encoding %d bytes of PCM to CELT @ %lu", pcmlen, codec->rate);
+        if (!celtmode || !celtenc || channels != last_chan) {
+            if (celtenc) {
+                celt_encoder_destroy(celtenc);
+                celtenc = NULL;
+            }
+            if (celtmode) {
+                celt_mode_destroy(celtmode);
+                celtmode = NULL;
+            }
+            if (!(celtmode = celt_mode_create(44100, codec->pcmframesize / sizeof(int16_t), NULL)) ||
+                !(celtenc = celt_encoder_create(celtmode, channels, NULL))) {
+                _v3_debug(V3_DEBUG_INFO, "failed to create celt encoder");
+                celtmode = NULL;
+                celtenc = NULL;
+                break;
+            }
+            if (celt_encoder_ctl(celtenc, CELT_SET_PREDICTION(prediction)) != CELT_OK) {
+                _v3_debug(V3_DEBUG_INFO, "celt_encoder_ctl: prediction request failed");
+                celt_encoder_destroy(celtenc);
+                celt_mode_destroy(celtmode);
+                celtmode = NULL;
+                celtenc = NULL;
+                break;
+            }
+            if (celt_encoder_ctl(celtenc, CELT_SET_COMPLEXITY(complexity)) != CELT_OK) {
+                _v3_debug(V3_DEBUG_INFO, "celt_encoder_ctl: complexity 0 through 10 is only supported");
+                celt_encoder_destroy(celtenc);
+                celt_mode_destroy(celtmode);
+                celtmode = NULL;
+                celtenc = NULL;
+                break;
+            }
+            last_chan = channels;
+        }
+        _v3_debug(V3_DEBUG_MEMORY, "allocating %lu bytes for %d celt frames", celtdatabuf, frame_count);
+        celtdata = malloc(celtdatabuf);
+        memset(celtdata, 0, celtdatabuf);
+        celtdataptr = celtdata;
+        for (ctr = 0; ctr < frame_count; ctr++) {
+            _v3_debug(V3_DEBUG_INFO, "encoding celt frame %d", ctr+1);
+            *celtdataptr++ = celt_frame_size;
+            if (celt_encode(celtenc, (void *)sample+(ctr*pcm_frame_size), NULL, (void *)celtdataptr, celt_frame_size) < 0) {
+                _v3_debug(V3_DEBUG_INFO, "failed to encode celt frame %d", ctr+1);
+            }
+            celtdataptr += celt_frame_size;
+        }
+        //celt_encoder_destroy(celtenc);
+        //celt_mode_destroy(celtmode);
+        //celtmode = NULL;
+        //celtenc = NULL;
+        if (framecount) {
+            *framecount = frame_count;
+        }
+        if (celtfragsize) {
+            *celtfragsize = celt_frag_size;
+        }
+        *datalen = celtdatabuf;
+        _v3_func_leave("_v3_audio_encode");
+        return celtdata;
+      }
+#endif
+#if HAVE_SPEEX
+      case 0x03: // SPEEX
+      {
+        static void *spxenc      = NULL;
+        static uint32_t rate     = 0;
+        static uint8_t format    = -1;
+        int quality              = -1;
+        uint16_t frame_count     = pcmlen / codec->pcmframesize;
+        uint16_t pcm_frame_size  = codec->pcmframesize / sizeof(int16_t);
+        uint16_t spx_frame_size;
+        const uint16_t spxmaxbuf = 200;
+        uint16_t spxdatabuf      = (frame_count + 1) * spxmaxbuf;
+        uint8_t *spxdata         = NULL;
+        uint16_t spxdatalen      = 0;
+        uint16_t *spxhead        = NULL;
+        SpeexBits bits;
+
+        _v3_debug(V3_DEBUG_INFO, "encoding %d bytes of PCM to SPEEX @ %lu", pcmlen, codec->rate);
+        if (channels > 1) {
+            _v3_debug(V3_DEBUG_INFO, "mono only supported for speex");
+            break;
+        }
+        if (!spxenc || codec->rate != rate || codec->format != format) {
+            if (spxenc) {
+                speex_encoder_destroy(spxenc);
+                spxenc = NULL;
+            }
+            switch (codec->rate) {
+              case 8000:
+                _v3_debug(V3_DEBUG_INFO, "using narrow band mode");
+                spxenc = speex_encoder_init(&speex_nb_mode);
+                break;
+              case 16000:
+                _v3_debug(V3_DEBUG_INFO, "using wide band mode");
+                spxenc = speex_encoder_init(&speex_wb_mode);
+                break;
+              case 32000:
+                _v3_debug(V3_DEBUG_INFO, "using ultra-wide band mode");
+                spxenc = speex_encoder_init(&speex_uwb_mode);
+                break;
+            }
+            if (!spxenc) {
+                _v3_debug(V3_DEBUG_INFO, "failed to create speex encoder");
+                break;
+            }
+            rate = codec->rate;
+            format = codec->format;
+            quality = codec->quality;
+            speex_encoder_ctl(spxenc, SPEEX_SET_QUALITY, &quality);
+        }
+        _v3_debug(V3_DEBUG_MEMORY, "allocating %lu bytes of data buffer for %d speex frames", spxdatabuf, frame_count);
+        spxdata = malloc(spxdatabuf);
+        memset(spxdata, 0, spxdatabuf);
+        spxhead = (void *)spxdata;
+        *spxhead++ = htons(frame_count);
+        *spxhead++ = htons(pcm_frame_size);
+        spxdatalen = (void *)spxhead - (void *)spxdata;
+        speex_bits_init(&bits);
+        for (ctr = 0; ctr < frame_count; ctr++) {
+            speex_bits_reset(&bits);
+            _v3_debug(V3_DEBUG_INFO, "encoding speex frame %d", ctr+1);
+            speex_encode_int(spxenc, (void *)sample+(ctr*codec->pcmframesize), &bits);
+            spx_frame_size = speex_bits_write(&bits, (void *)spxdata+(spxdatalen+sizeof(uint16_t)), spxmaxbuf);
+            *((uint16_t *)(spxdata + spxdatalen)) = htons(spx_frame_size);
+            spxdatalen += sizeof(uint16_t) + spx_frame_size;
+        }
+        speex_bits_destroy(&bits);
+        _v3_debug(V3_DEBUG_MEMORY, "used %lu out of %lu bytes for %d speex frames", spxdatalen, spxdatabuf, frame_count);
+        //speex_encoder_destroy(spxenc);
+        //spxenc = NULL;
+        if (framecount) {
+            *framecount = frame_count;
+        }
+        *datalen = spxdatalen;
+        _v3_func_leave("_v3_audio_encode");
+        return spxdata;
+      }
+#endif
+      default:
+        _v3_debug(V3_DEBUG_INFO, "unsupported codec %d/%d", codec->codec, codec->format);
+        break;
+    }
+
+    _v3_func_leave("_v3_audio_encode");
+    return NULL;
+}/*}}}*/
+
+int
+_v3_audio_decode(
+        /* encoded input */
+        const v3_codec *codec,
+        _v3_decoders *decoder,
+        uint8_t *data,
+        uint16_t datalen,
+        /* pcm output */
+        uint8_t *sample,
+        uint32_t *pcmlen,
+        /* optional args */
+        uint8_t channels) {/*{{{*/
+    _v3_func_enter("_v3_audio_decode");
+
+    if (!codec || !decoder || !data || !datalen || !sample || !pcmlen || (pcmlen && !*pcmlen)) {
+        _v3_debug(V3_DEBUG_INFO, "argument missing for _v3_audio_decode");
+        _v3_func_leave("_v3_audio_decode");
+        return V3_FAILURE;
+    }
+    uint32_t pcmmaxlen = *pcmlen;
+    int ctr;
+
+    *pcmlen = 0;
+    channels = (channels == 2) ? 2 : 1;
+    switch (codec->codec) {
+#if HAVE_GSM
+      case 0x00: // GSM
+      {
+        if (!decoder->gsm) {
+            if (!(decoder->gsm = gsm_create())) {
+                _v3_debug(V3_DEBUG_INFO, "failed to create gsm decoder");
+                break;
+            }
+            int one = 1;
+            gsm_option(decoder->gsm, GSM_OPT_WAV49, &one);
+        }
+        for (ctr = 0; ctr < datalen / 65; ctr++) {
+            if (gsm_decode(decoder->gsm, data+(ctr*65), (void *)sample+(ctr*640)) ||
+                gsm_decode(decoder->gsm, data+(ctr*65)+33, (void *)sample+(ctr*640)+320)) {
+                _v3_debug(V3_DEBUG_INFO, "failed to decode gsm frame %d", ctr+1);
+            }
+            *pcmlen += 640;
+        }
+        _v3_func_leave("_v3_audio_decode");
+        return V3_OK;
+      }
+#endif
+#if HAVE_CELT
+      case 0x01: // CELT
+      case 0x02:
+      {
+        uint16_t pcm_frame_size  = codec->pcmframesize * channels;
+        uint8_t celt_frame_size;
+        uint8_t *celtdataptr     = data;
+        uint16_t celtdatalen     = datalen;
+
+        if (!decoder->celtmode || !decoder->celt || channels != decoder->celtchans) {
+            if (decoder->celt) {
+                celt_decoder_destroy(decoder->celt);
+                decoder->celt = NULL;
+            }
+            if (decoder->celtmode) {
+                celt_mode_destroy(decoder->celtmode);
+                decoder->celtmode = NULL;
+            }
+            if (!(decoder->celtmode = celt_mode_create(44100, codec->pcmframesize / sizeof(int16_t), NULL)) ||
+                !(decoder->celt = celt_decoder_create(decoder->celtmode, channels, NULL))) {
+                _v3_debug(V3_DEBUG_INFO, "failed to create celt decoder");
+                decoder->celtmode = NULL;
+                decoder->celt = NULL;
+                break;
+            }
+            decoder->celtchans = channels;
+        }
+        while (celtdatalen) {
+            celt_frame_size = *celtdataptr;
+            celtdataptr++;
+            if (!celt_frame_size || celtdatalen - celt_frame_size - 1 < 0 || *pcmlen + pcm_frame_size > pcmmaxlen) {
+                _v3_debug(V3_DEBUG_INFO, "received a malformed celt packet");
+                _v3_func_leave("_v3_audio_decode");
+                return V3_MALFORMED;
+            }
+            celtdatalen--;
+            if (celt_decode(decoder->celt, (void *)celtdataptr, celt_frame_size, (void *)sample + *pcmlen)) {
+                _v3_debug(V3_DEBUG_INFO, "failed to decode celt frame");
+            }
+            celtdataptr += celt_frame_size;
+            celtdatalen -= celt_frame_size;
+            *pcmlen += pcm_frame_size;
+        }
+        _v3_func_leave("_v3_audio_decode");
+        return V3_OK;
+      }
+#endif
+#if HAVE_SPEEX
+      case 0x03: // SPEEX
+      {
+        uint16_t pcm_frame_size  = codec->pcmframesize;
+        uint16_t spx_frame_size;
+        uint8_t *spxdataptr      = data;
+        uint16_t spxdatalen      = datalen;
+        SpeexBits bits;
+
+        if (!decoder->speex || codec->rate != decoder->speexrate) {
+            if (decoder->speex) {
+                speex_decoder_destroy(decoder->speex);
+                decoder->speex = NULL;
+            }
+            switch (codec->rate) {
+              case 8000:
+                _v3_debug(V3_DEBUG_INFO, "using narrow band mode");
+                decoder->speex = speex_decoder_init(&speex_nb_mode);
+                break;
+              case 16000:
+                _v3_debug(V3_DEBUG_INFO, "using wide band mode");
+                decoder->speex = speex_decoder_init(&speex_wb_mode);
+                break;
+              case 32000:
+                _v3_debug(V3_DEBUG_INFO, "using ultra-wide band mode");
+                decoder->speex = speex_decoder_init(&speex_uwb_mode);
+                break;
+            }
+            if (!decoder->speex) {
+                _v3_debug(V3_DEBUG_INFO, "received unknown pcm rate for speex %d", codec->rate);
+                break;
+            }
+            decoder->speexrate = codec->rate;
+        }
+        spxdataptr += sizeof(uint16_t) * 2;
+        if (spxdatalen - sizeof(uint16_t) * 2 < 0) {
+            _v3_debug(V3_DEBUG_INFO, "received a malformed speex packet");
+            _v3_func_leave("_v3_audio_decode");
+            return V3_MALFORMED;
+        }
+        spxdatalen -= sizeof(uint16_t) * 2;
+        speex_bits_init(&bits);
+        while (spxdatalen) {
+            spx_frame_size = ntohs(*(uint16_t *)spxdataptr);
+            spxdataptr += sizeof(uint16_t);
+            if (!spx_frame_size || spxdatalen - spx_frame_size - sizeof(uint16_t) < 0 || *pcmlen + pcm_frame_size > pcmmaxlen) {
+                _v3_debug(V3_DEBUG_INFO, "received a malformed speex packet");
+                _v3_func_leave("_v3_audio_decode");
+                return V3_MALFORMED;
+            }
+            spxdatalen -= sizeof(uint16_t);
+            speex_bits_read_from(&bits, (void *)spxdataptr, spx_frame_size);
+            speex_decode_int(decoder->speex, &bits, (void *)sample + *pcmlen);
+            spxdataptr += spx_frame_size;
+            spxdatalen -= spx_frame_size;
+            *pcmlen += pcm_frame_size;
+        }
+        speex_bits_destroy(&bits);
+        _v3_func_leave("_v3_audio_decode");
+        return V3_OK;
+      }
+#endif
+      default:
+        _v3_debug(V3_DEBUG_INFO, "unsupported codec %d/%d", codec->codec, codec->format);
+        break;
+    }
+
+    _v3_func_leave("_v3_audio_decode");
+    return V3_FAILURE;
+}/*}}}*/
+
+/*
+ * Recording API
+ */
+void *
+v3_vrf_init(const char *filename) {/*{{{*/
+    _v3_func_enter("v3_vrf_init");
+
+    _v3_vrf *vrfh = malloc(sizeof(_v3_vrf));
+    memset(vrfh, 0, sizeof(_v3_vrf));
+    vrfh->file = -1;
+    _v3_debug(V3_DEBUG_MUTEX, "initializing vrf mutex");
+    pthread_mutexattr_t mta;
+    pthread_mutexattr_init(&mta);
+    pthread_mutexattr_settype(&mta, PTHREAD_MUTEX_RECURSIVE);
+    pthread_mutex_init(&vrfh->mutex, &mta);
+    if (filename) {
+        if ((vrfh->file = open(filename, O_RDONLY)) < 0) {
+            _v3_error("%s: open file for reading failed: %s", filename, strerror(errno));
+            v3_vrf_destroy(vrfh);
+            _v3_func_leave("v3_vrf_init");
+            return NULL;
+        }
+        vrfh->filename = strdup(filename);
+        _v3_debug(V3_DEBUG_INFO, "opened file %i for reading: %s", vrfh->file, vrfh->filename);
+        int64_t ret;
+        if ((ret = lseek(vrfh->file, 0, SEEK_END)) <= 0) {
+            _v3_error("%s: %s", vrfh->filename, (!ret) ? "file is empty" : strerror(errno));
+            v3_vrf_destroy(vrfh);
+            _v3_func_leave("v3_vrf_init");
+            return NULL;
+        }
+        vrfh->filelen = ret;
+        _v3_debug(V3_DEBUG_INFO, "file size: %u", vrfh->filelen);
+        if (_v3_vrf_get_header(vrfh) != V3_OK) {
+            v3_vrf_destroy(vrfh);
+            _v3_func_leave("v3_vrf_init");
+            return NULL;
+        }
+        if (_v3_vrf_recover(vrfh) != V3_OK) {
+            char *error_text = strdup(_v3_error(NULL));
+            _v3_error("failed to recover vrf segment table: %s", error_text);
+            free(error_text);
+            v3_vrf_destroy(vrfh);
+            _v3_func_leave("v3_vrf_init");
+            return NULL;
+        }
+    }
+
+    _v3_func_leave("v3_vrf_init");
+    return vrfh;
+}/*}}}*/
+
+void
+v3_vrf_destroy(void *vrfh) {/*{{{*/
+    _v3_func_enter("v3_vrf_destroy");
+
+    if (!vrfh) {
+        _v3_func_leave("v3_vrf_destroy");
+        return;
+    }
+    _v3_vrf *_vrfh = vrfh;
+    if (_vrfh->table) {
+        free(_vrfh->table);
+        _vrfh->table = NULL;
+    }
+    if (_vrfh->filename) {
+        free(_vrfh->filename);
+        _vrfh->filename = NULL;
+    }
+    if (_vrfh->file >= 0) {
+        close(_vrfh->file);
+        _vrfh->file = -1;
+    }
+    pthread_mutex_destroy(&_vrfh->mutex);
+    free(vrfh);
+
+    _v3_func_leave("v3_vrf_destroy");
+}/*}}}*/
+
+void
+v3_vrf_data_init(v3_vrf_data *vrfd) {/*{{{*/
+    _v3_func_enter("v3_vrf_data_init");
+
+    if (!vrfd) {
+        _v3_func_leave("v3_vrf_data_init");
+        return;
+    }
+    memset(vrfd, 0, sizeof(v3_vrf_data));
+
+    _v3_func_leave("v3_vrf_data_init");
+}/*}}}*/
+
+void
+v3_vrf_data_destroy(v3_vrf_data *vrfd) {/*{{{*/
+    _v3_func_enter("v3_vrf_data_destroy");
+
+    if (!vrfd) {
+        _v3_func_leave("v3_vrf_data_destroy");
+        return;
+    }
+    if (vrfd->text) {
+        free(vrfd->text);
+        vrfd->text = NULL;
+    }
+    if (vrfd->data) {
+        free(vrfd->data);
+        vrfd->data = NULL;
+    }
+    if (vrfd->_decoder) {
+        _v3_destroy_decoder(vrfd->_decoder);
+        free(vrfd->_decoder);
+        vrfd->_decoder = NULL;
+    }
+    if (vrfd->_audio) {
+        free(vrfd->_audio);
+        vrfd->_audio = NULL;
+    }
+    memset(vrfd, 0, sizeof(v3_vrf_data));
+
+    _v3_func_leave("v3_vrf_data_destroy");
+}/*}}}*/
+
+void
+_v3_vrf_lock(_v3_vrf *vrfh) {/*{{{*/
+    _v3_func_enter("_v3_vrf_lock");
+
+    _v3_debug(V3_DEBUG_MUTEX, "locking vrf");
+    pthread_mutex_lock(&vrfh->mutex);
+
+    _v3_func_leave("_v3_vrf_lock");
+}/*}}}*/
+
+void
+_v3_vrf_unlock(_v3_vrf *vrfh) {/*{{{*/
+    _v3_func_enter("_v3_vrf_unlock");
+
+    _v3_debug(V3_DEBUG_MUTEX, "unlocking vrf");
+    pthread_mutex_unlock(&vrfh->mutex);
+
+    _v3_func_leave("_v3_vrf_unlock");
+}/*}}}*/
+
+void
+_v3_vrf_print_header(const _v3_vrf_header *header) {/*{{{*/
+    _v3_func_enter("_v3_vrf_print_header");
+
+    _v3_debug(V3_DEBUG_INFO, "headid.....: %.*s", sizeof(header->headid), header->headid);
+    _v3_debug(V3_DEBUG_INFO, "size.......: %u", header->size);
+    _v3_debug(V3_DEBUG_INFO, "headlen....: %u", header->headlen);
+    _v3_debug(V3_DEBUG_INFO, "unknown1...: %u", header->unknown1);
+    _v3_debug(V3_DEBUG_INFO, "segtable...: 0x%08x", header->segtable);
+    _v3_debug(V3_DEBUG_INFO, "segcount...: %u", header->segcount);
+    _v3_debug(V3_DEBUG_INFO, "vrfversion.: 0x%02x", header->vrfversion);
+    _v3_debug(V3_DEBUG_INFO, "unknown2...: %u", header->unknown2);
+    _v3_debug(V3_DEBUG_INFO, "unknown3...: %u", header->unknown3);
+    _v3_debug(V3_DEBUG_INFO, "infolen....: %u", header->infolen);
+    _v3_debug(V3_DEBUG_INFO, "codec......: 0x%02x", header->codec);
+    _v3_debug(V3_DEBUG_INFO, "codecformat: 0x%02x", header->codecformat);
+    _v3_debug(V3_DEBUG_INFO, "unknown4...: %u", header->unknown4);
+    _v3_debug(V3_DEBUG_INFO, "platform...: %.*s", sizeof(header->platform),  header->platform);
+    _v3_debug(V3_DEBUG_INFO, "version....: %.*s", sizeof(header->version),   header->version);
+    _v3_debug(V3_DEBUG_INFO, "username...: %.*s", sizeof(header->username),  header->username);
+    _v3_debug(V3_DEBUG_INFO, "comment....: %.*s", sizeof(header->comment),   header->comment);
+    _v3_debug(V3_DEBUG_INFO, "url........: %.*s", sizeof(header->url),       header->url);
+    _v3_debug(V3_DEBUG_INFO, "copyright..: %.*s", sizeof(header->copyright), header->copyright);
+
+    _v3_func_leave("_v3_vrf_print_header");
+}/*}}}*/
+
+void
+_v3_vrf_print_info(const _v3_vrf_header *header) {/*{{{*/
+    _v3_func_enter("_v3_vrf_print_info");
+
+    _v3_debug(V3_DEBUG_INFO, "size.......: %u", header->size);
+    _v3_debug(V3_DEBUG_INFO, "codec......: 0x%02x", header->codec);
+    _v3_debug(V3_DEBUG_INFO, "codecformat: 0x%02x", header->codecformat);
+    _v3_debug(V3_DEBUG_INFO, "platform...: %.*s", sizeof(header->platform),  header->platform);
+    _v3_debug(V3_DEBUG_INFO, "version....: %.*s", sizeof(header->version),   header->version);
+    _v3_debug(V3_DEBUG_INFO, "username...: %.*s", sizeof(header->username),  header->username);
+    _v3_debug(V3_DEBUG_INFO, "comment....: %.*s", sizeof(header->comment),   header->comment);
+    _v3_debug(V3_DEBUG_INFO, "url........: %.*s", sizeof(header->url),       header->url);
+    _v3_debug(V3_DEBUG_INFO, "copyright..: %.*s", sizeof(header->copyright), header->copyright);
+
+    _v3_func_leave("_v3_vrf_print_info");
+}/*}}}*/
+
+void
+_v3_vrf_print_segment(uint32_t id, const _v3_vrf_segment *segment) {/*{{{*/
+    _v3_func_enter("_v3_vrf_print_segment");
+
+    _v3_debug(V3_DEBUG_INFO, "--- segment %u ---", id);
+    _v3_debug(V3_DEBUG_INFO, "headlen.: %u", segment->headlen);
+    _v3_debug(V3_DEBUG_INFO, "type....: 0x%02x", segment->type);
+    _v3_debug(V3_DEBUG_INFO, "valid...: %u", segment->valid);
+    _v3_debug(V3_DEBUG_INFO, "offset..: 0x%08x", segment->offset);
+    _v3_debug(V3_DEBUG_INFO, "time....: %u", segment->time);
+    _v3_debug(V3_DEBUG_INFO, "duration: %u", segment->duration);
+    _v3_debug(V3_DEBUG_INFO, "unknown1: %u", segment->unknown1);
+    _v3_debug(V3_DEBUG_INFO, "unknown2: %u", segment->unknown2);
+    _v3_debug(V3_DEBUG_INFO, "username: %.*s", sizeof(segment->username), segment->username);
+
+    _v3_func_leave("_v3_vrf_print_segment");
+}/*}}}*/
+
+void
+_v3_vrf_print_audio(const _v3_vrf_audio *audio) {/*{{{*/
+    _v3_func_enter("_v3_vrf_print_audio");
+
+    _v3_debug(V3_DEBUG_INFO, "headlen..: %u", audio->headlen);
+    _v3_debug(V3_DEBUG_INFO, "type.....: 0x%02x", audio->type);
+    _v3_debug(V3_DEBUG_INFO, "unknown1.: %u", audio->unknown1);
+    _v3_debug(V3_DEBUG_INFO, "index....: %u", audio->index);
+    _v3_debug(V3_DEBUG_INFO, "fragcount: %u", audio->fragcount);
+    _v3_debug(V3_DEBUG_INFO, "unknown2.: %u", audio->unknown2);
+    _v3_debug(V3_DEBUG_INFO, "unknown3.: %u", audio->unknown3);
+    _v3_debug(V3_DEBUG_INFO, "unknown4.: %u", audio->offset);
+
+    _v3_func_leave("_v3_vrf_print_audio");
+}/*}}}*/
+
+void
+_v3_vrf_print_fragment(uint32_t type, const _v3_vrf_fragment *fragment) {/*{{{*/
+    _v3_func_enter("_v3_vrf_print_fragment");
+
+    _v3_debug(V3_DEBUG_INFO, "headlen....: %u", fragment->headlen);
+    _v3_debug(V3_DEBUG_INFO, "fraglen....: %u", fragment->fraglen);
+    if (type != V3_VRF_TYPE_TEXT) {
+        _v3_debug(V3_DEBUG_INFO, "pcmlen.....: %u", fragment->audio.pcmlen);
+        _v3_debug(V3_DEBUG_INFO, "unknown1...: %u", fragment->audio.unknown1);
+    }
+    if (type == V3_VRF_TYPE_EXT) {
+        _v3_debug(V3_DEBUG_INFO, "codec......: 0x%02x", fragment->audio.ext.codec);
+        _v3_debug(V3_DEBUG_INFO, "codecformat: 0x%02x", fragment->audio.ext.codecformat);
+        _v3_debug(V3_DEBUG_INFO, "unknown2...: %u", fragment->audio.ext.unknown2);
+    }
+
+    _v3_func_leave("_v3_vrf_print_fragment");
+}/*}}}*/
+
+int
+_v3_vrf_get_header(_v3_vrf *vrfh) {/*{{{*/
+    _v3_func_enter("_v3_vrf_get_header");
+
+    if (!vrfh) {
+        _v3_func_leave("_v3_vrf_get_header");
+        return V3_FAILURE;
+    }
+    _v3_vrf_lock(vrfh);
+    int64_t ret;
+    if ((ret = lseek(vrfh->file, 0, SEEK_SET)) < 0 ||
+        (ret = read(vrfh->file, &vrfh->header, sizeof(_v3_vrf_header))) < sizeof(_v3_vrf_header)) {
+        _v3_error("%s: failed to get vrf header: %s", vrfh->filename, (ret >= 0) ? "EOF reached" : strerror(errno));
+        _v3_vrf_unlock(vrfh);
+        _v3_func_leave("_v3_vrf_get_header");
+        return V3_FAILURE;
+    }
+    _v3_vrf_header *header = &vrfh->header;
+    header->size        = ntohl(header->size);
+    header->headlen     = ntohl(header->headlen);
+    header->unknown1    = ntohl(header->unknown1);
+    header->segtable    = ntohl(header->segtable);
+    header->segcount    = ntohl(header->segcount);
+    header->vrfversion  = ntohl(header->vrfversion);
+    header->unknown2    = ntohl(header->unknown2);
+    header->unknown3    = ntohl(header->unknown3);
+    header->infolen     = ntohl(header->infolen);
+    header->codec       = ntohl(header->codec);
+    header->codecformat = ntohl(header->codecformat);
+    header->unknown4    = ntohl(header->unknown4);
+    _v3_vrf_print_header(header);
+    if (strncmp(header->headid, V3_VRF_HEADID, sizeof(header->headid)) &&
+        strncmp(header->headid, V3_VRF_TEMPID, sizeof(header->headid))) {
+        _v3_error("%s: file header not recognized as a vrf", vrfh->filename);
+        _v3_vrf_unlock(vrfh);
+        _v3_func_leave("_v3_vrf_get_header");
+        return V3_MALFORMED;
+    }
+    _v3_vrf_unlock(vrfh);
+
+    _v3_func_leave("_v3_vrf_get_header");
+    return V3_OK;
+}/*}}}*/
+
+uint32_t
+v3_vrf_get_count(void *vrfh) {/*{{{*/
+    _v3_func_enter("v3_vrf_get_count");
+
+    if (!vrfh) {
+        _v3_func_leave("v3_vrf_get_count");
+        return 0;
+    }
+    _v3_vrf *_vrfh = vrfh;
+    _v3_debug(V3_DEBUG_INFO, "segcount: %u", _vrfh->header.segcount);
+
+    _v3_func_leave("v3_vrf_get_count");
+    return _vrfh->header.segcount;
+}/*}}}*/
+
+int
+v3_vrf_get_info(void *vrfh, v3_vrf_data *vrfd) {/*{{{*/
+    _v3_func_enter("v3_vrf_get_info");
+
+    if (!vrfh) {
+        _v3_func_leave("v3_vrf_get_info");
+        return V3_FAILURE;
+    }
+    _v3_vrf *_vrfh = vrfh;
+    _v3_vrf_header *header = &_vrfh->header;
+    _v3_vrf_print_info(header);
+    if (vrfd) {
+        v3_vrf_data_init(vrfd);
+        vrfd->size = header->size;
+        vrfd->codec = header->codec;
+        vrfd->codecformat = header->codecformat;
+        strncpy(vrfd->platform,  header->platform,  sizeof(vrfd->platform) - 1);
+        strncpy(vrfd->version,   header->version,   sizeof(vrfd->version) - 1);
+        strncpy(vrfd->username,  header->username,  sizeof(vrfd->username) - 1);
+        strncpy(vrfd->comment,   header->comment,   sizeof(vrfd->comment) - 1);
+        strncpy(vrfd->url,       header->url,       sizeof(vrfd->url) - 1);
+        strncpy(vrfd->copyright, header->copyright, sizeof(vrfd->copyright) - 1);
+    }
+
+    _v3_func_leave("v3_vrf_get_info");
+    return V3_OK;
+}/*}}}*/
+
+int
+_v3_vrf_get_table(_v3_vrf *vrfh) {/*{{{*/
+    _v3_func_enter("_v3_vrf_get_table");
+
+    if (!vrfh) {
+        _v3_func_leave("_v3_vrf_get_table");
+        return V3_FAILURE;
+    }
+    _v3_vrf_lock(vrfh);
+    if (vrfh->table) {
+        vrfh->tablesize = 0;
+        free(vrfh->table);
+        vrfh->table = NULL;
+    }
+    vrfh->tablesize = sizeof(_v3_vrf_segment) * vrfh->header.segcount;
+    if (!vrfh->header.segtable || !vrfh->tablesize || vrfh->header.segtable + vrfh->tablesize > vrfh->filelen) {
+        _v3_error("%s: %s", vrfh->filename, (!vrfh->tablesize) ? "no segment count" : "invalid vrf segment table offset");
+        _v3_vrf_unlock(vrfh);
+        _v3_func_leave("_v3_vrf_get_table");
+        return V3_MALFORMED;
+    }
+    vrfh->table = malloc(vrfh->tablesize);
+    memset(vrfh->table, 0, vrfh->tablesize);
+    int64_t ret;
+    if ((ret = lseek(vrfh->file, vrfh->header.segtable, SEEK_SET)) < 0 ||
+        (ret = read(vrfh->file, vrfh->table, vrfh->tablesize)) < vrfh->tablesize) {
+        _v3_error("%s: failed to get vrf segment table: %s", vrfh->filename, (ret >= 0) ? "EOF reached" : strerror(errno));
+        vrfh->tablesize = 0;
+        free(vrfh->table);
+        vrfh->table = NULL;
+        _v3_vrf_unlock(vrfh);
+        _v3_func_leave("_v3_vrf_get_table");
+        return V3_FAILURE;
+    }
+    uint32_t ctr;
+    for (ctr = 0; ctr < vrfh->header.segcount; ctr++) {
+        _v3_vrf_segment *segment = &vrfh->table[ctr];
+        segment->headlen  = ntohl(segment->headlen);
+        segment->type     = ntohl(segment->type);
+        segment->valid    = ntohl(segment->valid);
+        segment->offset   = ntohl(segment->offset);
+        segment->time     = ntohl(segment->time);
+        segment->duration = ntohl(segment->duration);
+        segment->unknown1 = ntohl(segment->unknown1);
+        segment->unknown2 = ntohl(segment->unknown2);
+    }
+    _v3_vrf_unlock(vrfh);
+
+    _v3_func_leave("_v3_vrf_get_table");
+    return V3_OK;
+}/*}}}*/
+
+int
+_v3_vrf_check_table(_v3_vrf *vrfh) {/*{{{*/
+    _v3_func_enter("_v3_vrf_check_table");
+
+    if (!vrfh) {
+        _v3_func_leave("_v3_vrf_check_table");
+        return V3_FAILURE;
+    }
+    if (!vrfh->table && _v3_vrf_get_table(vrfh) != V3_OK) {
+        _v3_func_leave("_v3_vrf_check_table");
+        return V3_FAILURE;
+    }
+
+    _v3_func_leave("_v3_vrf_check_table");
+    return V3_OK;
+}/*}}}*/
+
+int
+_v3_vrf_get_segment(_v3_vrf *vrfh, uint32_t id, _v3_vrf_segment **segment) {/*{{{*/
+    _v3_func_enter("_v3_vrf_get_segment");
+
+    if (!vrfh || !segment) {
+        _v3_func_leave("_v3_vrf_get_segment");
+        return V3_FAILURE;
+    }
+    if (vrfh->file < 0 || !vrfh->filename) {
+        _v3_error("%p: no file opened", vrfh);
+        _v3_func_leave("_v3_vrf_get_segment");
+        return V3_FAILURE;
+    }
+    if (id > vrfh->header.segcount) {
+        _v3_error("%s: requested id greater than segment count", vrfh->filename);
+        _v3_func_leave("_v3_vrf_get_segment");
+        return V3_FAILURE;
+    }
+    if (_v3_vrf_check_table(vrfh) != V3_OK) {
+        _v3_func_leave("_v3_vrf_get_segment");
+        return V3_FAILURE;
+    }
+    _v3_vrf *_vrfh = vrfh;
+    *segment = &_vrfh->table[id];
+    _v3_vrf_print_segment(id, *segment);
+
+    _v3_func_leave("_v3_vrf_get_segment");
+    return V3_OK;
+}/*}}}*/
+
+int
+v3_vrf_get_segment(void *vrfh, uint32_t id, v3_vrf_data *vrfd) {/*{{{*/
+    _v3_func_enter("v3_vrf_get_segment");
+
+    if (!vrfh) {
+        _v3_func_leave("v3_vrf_get_segment");
+        return V3_FAILURE;
+    }
+    _v3_vrf_segment *segment;
+    if (_v3_vrf_get_segment(vrfh, id, &segment) != V3_OK) {
+        _v3_func_leave("v3_vrf_get_segment");
+        return V3_FAILURE;
+    }
+    if (vrfd) {
+        v3_vrf_data_init(vrfd);
+        vrfd->id = id;
+        vrfd->time = segment->time;
+        vrfd->duration = segment->duration;
+        strncpy(vrfd->username, segment->username, sizeof(vrfd->username) - 1);
+    }
+
+    _v3_func_leave("v3_vrf_get_segment");
+    return V3_OK;
+}/*}}}*/
+
+int
+_v3_vrf_get_audio(_v3_vrf *vrfh, uint32_t offset, _v3_vrf_audio *audio) {/*{{{*/
+    _v3_func_enter("_v3_vrf_get_audio");
+
+    if (!vrfh || !audio) {
+        _v3_func_leave("_v3_vrf_get_audio");
+        return V3_FAILURE;
+    }
+    _v3_vrf_lock(vrfh);
+    int64_t ret;
+    if ((ret = lseek(vrfh->file, offset, SEEK_SET)) < 0 ||
+        (ret = read(vrfh->file, audio, sizeof(_v3_vrf_audio))) < sizeof(_v3_vrf_audio)) {
+        _v3_error("%s: failed to get vrf audio segment: %s", vrfh->filename, (ret >= 0) ? "EOF reached" : strerror(errno));
+        _v3_vrf_unlock(vrfh);
+        _v3_func_leave("_v3_vrf_get_audio");
+        return V3_FAILURE;
+    }
+    audio->headlen   = ntohl(audio->headlen);
+    audio->type      = ntohl(audio->type);
+    audio->unknown1  = ntohl(audio->unknown1);
+    audio->index     = ntohl(audio->index);
+    audio->fragcount = ntohl(audio->fragcount);
+    audio->unknown2  = ntohl(audio->unknown2);
+    audio->unknown3  = ntohl(audio->unknown3);
+    audio->offset    = ntohl(audio->offset);
+    _v3_vrf_print_audio(audio);
+    _v3_vrf_unlock(vrfh);
+
+    _v3_func_leave("_v3_vrf_get_audio");
+    return V3_OK;
+}/*}}}*/
+
+int
+_v3_vrf_get_fragment(_v3_vrf *vrfh, uint32_t type, uint32_t *offset, _v3_vrf_fragment *fragment, uint32_t *fraglen, void **fragdata) {/*{{{*/
+    _v3_func_enter("_v3_vrf_get_fragment");
+
+    if (!vrfh || !offset || !fragment) {
+        _v3_func_leave("_v3_vrf_get_fragment");
+        return V3_FAILURE;
+    }
+    uint32_t fragread;
+    switch (type) {
+      case V3_VRF_TYPE_AUDIO:
+        fragread = sizeof(_v3_vrf_fragment) - sizeof(fragment->audio.ext);
+        break;
+      case V3_VRF_TYPE_TEXT:
+        fragread = sizeof(_v3_vrf_fragment) - sizeof(fragment->audio);
+        break;
+      case V3_VRF_TYPE_EXT:
+        fragread = sizeof(_v3_vrf_fragment);
+        break;
+      default:
+        _v3_error("%s: unknown vrf audio type: 0x%02x", vrfh->filename, type);
+        _v3_func_leave("_v3_vrf_get_fragment");
+        return V3_FAILURE;
+    }
+    _v3_vrf_lock(vrfh);
+    int64_t ret;
+    if ((ret = lseek(vrfh->file, *offset, SEEK_SET)) < 0 ||
+        (ret = read(vrfh->file, fragment, fragread)) < fragread) {
+        _v3_error("%s: failed to get vrf audio fragment: %s", vrfh->filename, (ret >= 0) ? "EOF reached" : strerror(errno));
+        _v3_vrf_unlock(vrfh);
+        _v3_func_leave("_v3_vrf_get_fragment");
+        return V3_FAILURE;
+    }
+    fragment->headlen = ntohl(fragment->headlen);
+    fragment->fraglen = ntohl(fragment->fraglen);
+    if (type != V3_VRF_TYPE_TEXT) {
+        fragment->audio.pcmlen   = ntohl(fragment->audio.pcmlen);
+        fragment->audio.unknown1 = ntohl(fragment->audio.unknown1);
+    }
+    if (type == V3_VRF_TYPE_EXT) {
+        fragment->audio.ext.codec       = ntohs(fragment->audio.ext.codec);
+        fragment->audio.ext.codecformat = ntohs(fragment->audio.ext.codecformat);
+        fragment->audio.ext.unknown2    = ntohl(fragment->audio.ext.unknown2);
+    }
+    _v3_vrf_print_fragment(type, fragment);
+    uint32_t _fraglen;
+    switch (type) {
+      case V3_VRF_TYPE_AUDIO:
+      case V3_VRF_TYPE_EXT:
+        _fraglen = fragment->fraglen;
+        break;
+      case V3_VRF_TYPE_TEXT:
+        _fraglen = fragment->headlen - fragread;
+        break;
+    }
+    if (fraglen && fragdata) {
+        if (!fragment->headlen || !_fraglen || _fraglen > V3_VRF_MAX_FRAGLEN) {
+            _v3_error("%s: invalid vrf audio fragment length", vrfh->filename);
+            _v3_vrf_unlock(vrfh);
+            _v3_func_leave("_v3_vrf_get_fragment");
+            return V3_MALFORMED;
+        }
+        *fragdata = malloc(_fraglen);
+        memset(*fragdata, 0, _fraglen);
+        if ((ret = read(vrfh->file, *fragdata, _fraglen)) < _fraglen) {
+            _v3_error("%s: failed to get vrf audio fragment data: %s", vrfh->filename, (ret >= 0) ? "EOF reached" : strerror(errno));
+            free(*fragdata);
+            *fragdata = NULL;
+            _v3_vrf_unlock(vrfh);
+            _v3_func_leave("_v3_vrf_get_fragment");
+            return V3_FAILURE;
+        }
+        *fraglen = _fraglen;
+    }
+    *offset += fragread + _fraglen;
+    _v3_vrf_unlock(vrfh);
+
+    _v3_func_leave("_v3_vrf_get_fragment");
+    return V3_OK;
+}/*}}}*/
+
+int
+v3_vrf_get_audio(void *vrfh, uint32_t id, v3_vrf_data *vrfd) {/*{{{*/
+    _v3_func_enter("v3_vrf_get_audio");
+
+    if (!vrfh || !vrfd) {
+        _v3_func_leave("v3_vrf_get_audio");
+        return V3_FAILURE;
+    }
+    _v3_vrf *_vrfh = vrfh;
+    vrfd->type = V3_VRF_DATA_NULL;
+    _v3_vrf_audio *audio = vrfd->_audio;
+    if (!audio) {
+        _v3_vrf_segment *segment;
+        if (_v3_vrf_get_segment(vrfh, id, &segment) != V3_OK) {
+            _v3_func_leave("v3_vrf_get_audio");
+            return V3_FAILURE;
+        }
+        if (!segment->offset || segment->offset >= _vrfh->header.segtable || segment->offset >= _vrfh->filelen) {
+            _v3_error("%s: invalid vrf segment offset", _vrfh->filename);
+            _v3_func_leave("v3_vrf_get_audio");
+            return V3_MALFORMED;
+        }
+        audio = malloc(sizeof(_v3_vrf_audio));
+        memset(audio, 0, sizeof(_v3_vrf_audio));
+        if (_v3_vrf_get_audio(vrfh, segment->offset, audio) != V3_OK) {
+            free(audio);
+            _v3_func_leave("v3_vrf_get_audio");
+            return V3_FAILURE;
+        }
+        audio->offset = segment->offset + audio->headlen;
+        vrfd->_audio = audio;
+    }
+    if (audio->fragcount --> 0) {
+        _v3_vrf_fragment fragment;
+        uint32_t fraglen;
+        void *fragdata;
+        if (_v3_vrf_get_fragment(vrfh, audio->type, &audio->offset, &fragment, &fraglen, &fragdata) != V3_OK) {
+            _v3_func_leave("v3_vrf_get_audio");
+            return V3_FAILURE;
+        }
+        switch (audio->type) {
+          case V3_VRF_TYPE_AUDIO:
+            fragment.audio.ext.codec       = _vrfh->header.codec;
+            fragment.audio.ext.codecformat = _vrfh->header.codecformat;
+          case V3_VRF_TYPE_EXT:
+            vrfd->type        = V3_VRF_DATA_AUDIO;
+            vrfd->codec       = fragment.audio.ext.codec;
+            vrfd->codecformat = fragment.audio.ext.codecformat;
+            vrfd->rate        = v3_get_codec_rate(vrfd->codec, vrfd->codecformat);
+            vrfd->channels    = (fragment.audio.pcmlen - 2000 == 2) ? 2 : 1;
+            if (!vrfd->_decoder) {
+                vrfd->_decoder = malloc(sizeof(_v3_decoders));
+                memset(vrfd->_decoder, 0, sizeof(_v3_decoders));
+            }
+            v3_event *ev;
+            vrfd->length = sizeof(ev->data->sample);
+            if (!vrfd->data) {
+                vrfd->data = malloc(vrfd->length);
+            }
+            memset(vrfd->data, 0, vrfd->length);
+            int ret;
+            if ((ret = _v3_audio_decode(
+                            /* encoded input */
+                            v3_get_codec(vrfd->codec, vrfd->codecformat),
+                            vrfd->_decoder,
+                            fragdata,
+                            fraglen,
+                            /* pcm output */
+                            vrfd->data,
+                            &vrfd->length,
+                            /* optional args */
+                            vrfd->channels)) != V3_OK) {
+                free(fragdata);
+                _v3_func_leave("v3_vrf_get_audio");
+                return ret;
+            }
+            free(fragdata);
+            break;
+          case V3_VRF_TYPE_TEXT:
+            if (vrfd->text) {
+                free(vrfd->text);
+                vrfd->text = NULL;
+            }
+            vrfd->type   = V3_VRF_DATA_TEXT;
+            vrfd->text   = fragdata;
+            vrfd->length = fraglen;
+            break;
+        }
+        _v3_func_leave("v3_vrf_get_audio");
+        return V3_OK;
+    }
+    audio->fragcount = 0;
+
+    _v3_func_leave("v3_vrf_get_audio");
+    return V3_OK;
+}/*}}}*/
+
+int
+_v3_vrf_put_header(_v3_vrf *vrfh) {/*{{{*/
+    _v3_func_enter("_v3_vrf_put_header");
+
+    if (!vrfh) {
+        _v3_func_leave("_v3_vrf_put_header");
+        return V3_FAILURE;
+    }
+    _v3_vrf_header _header;
+    memcpy(&_header, &vrfh->header, sizeof(_v3_vrf_header));
+    _v3_vrf_print_header(&_header);
+    _header.size        = htonl(_header.size);
+    _header.headlen     = htonl(_header.headlen);
+    _header.unknown1    = htonl(_header.unknown1);
+    _header.segtable    = htonl(_header.segtable);
+    _header.segcount    = htonl(_header.segcount);
+    _header.vrfversion  = htonl(_header.vrfversion);
+    _header.unknown2    = htonl(_header.unknown2);
+    _header.unknown3    = htonl(_header.unknown3);
+    _header.infolen     = htonl(_header.infolen);
+    _header.codec       = htonl(_header.codec);
+    _header.codecformat = htonl(_header.codecformat);
+    _header.unknown4    = htonl(_header.unknown4);
+    _v3_vrf_lock(vrfh);
+    int64_t ret;
+    if ((ret = lseek(vrfh->file, 0, SEEK_SET)) < 0 ||
+        (ret = write(vrfh->file, &_header, sizeof(_v3_vrf_header))) < sizeof(_v3_vrf_header)) {
+        _v3_error("%s: failed to put vrf header: %s", vrfh->filename, (ret >= 0) ? "FATAL partial write" : strerror(errno));
+        _v3_vrf_unlock(vrfh);
+        _v3_func_leave("_v3_vrf_put_header");
+        return V3_FAILURE;
+    }
+    fsync(vrfh->file);
+    _v3_vrf_unlock(vrfh);
+
+    _v3_func_leave("_v3_vrf_put_header");
+    return V3_OK;
+}/*}}}*/
+
+int
+v3_vrf_put_info(void *vrfh, const v3_vrf_data *vrfd) {/*{{{*/
+    _v3_func_enter("v3_vrf_put_info");
+
+    if (!vrfh || !vrfd) {
+        _v3_func_leave("v3_vrf_put_info");
+        return V3_FAILURE;
+    }
+    _v3_vrf *_vrfh = vrfh;
+    if (_vrfh->file < 0 || !_vrfh->filename) {
+        _v3_error("%p: no file opened", vrfh);
+        _v3_func_leave("v3_vrf_put_info");
+        return V3_FAILURE;
+    }
+    _v3_vrf_lock(vrfh);
+    int fd = _vrfh->file;
+    if ((_vrfh->file = open(_vrfh->filename, O_RDWR)) < 0) {
+        _v3_error("%s: open file for writing failed: %s", _vrfh->filename, strerror(errno));
+        _vrfh->file = fd;
+        _v3_vrf_unlock(vrfh);
+        _v3_func_leave("v3_vrf_put_info");
+        return V3_FAILURE;
+    }
+    _v3_vrf_header *header = &_vrfh->header;
+    strncpy(header->username,  vrfd->username,  sizeof(vrfd->username) - 1);
+    strncpy(header->comment,   vrfd->comment,   sizeof(vrfd->comment) - 1);
+    strncpy(header->url,       vrfd->url,       sizeof(vrfd->url) - 1);
+    strncpy(header->copyright, vrfd->copyright, sizeof(vrfd->copyright) - 1);
+    _v3_vrf_print_info(header);
+    if (_v3_vrf_put_header(vrfh) != V3_OK) {
+        close(_vrfh->file);
+        _vrfh->file = fd;
+        _v3_vrf_unlock(vrfh);
+        _v3_func_leave("v3_vrf_put_info");
+        return V3_FAILURE;
+    }
+    close(_vrfh->file);
+    _vrfh->file = fd;
+    _v3_vrf_unlock(vrfh);
+
+    _v3_func_leave("v3_vrf_put_info");
+    return V3_OK;
+}/*}}}*/
+
+uint32_t
+_v3_vrf_put_segment(uint32_t id, const _v3_vrf_segment *segment, void *offset) {/*{{{*/
+    _v3_func_enter("_v3_vrf_put_segment");
+
+    if (!segment || !offset) {
+        _v3_func_leave("_v3_vrf_put_segment");
+        return 0;
+    }
+    _v3_vrf_segment _segment;
+    memcpy(&_segment, segment, sizeof(_v3_vrf_segment));
+    _v3_vrf_print_segment(id, &_segment);
+    _segment.headlen  = htonl(_segment.headlen);
+    _segment.type     = htonl(_segment.type);
+    _segment.valid    = htonl(_segment.valid);
+    _segment.offset   = htonl(_segment.offset);
+    _segment.time     = htonl(_segment.time);
+    _segment.duration = htonl(_segment.duration);
+    _segment.unknown1 = htonl(_segment.unknown1);
+    _segment.unknown2 = htonl(_segment.unknown2);
+    memcpy(offset, &_segment, sizeof(_v3_vrf_segment));
+
+    _v3_func_leave("_v3_vrf_put_segment");
+    return sizeof(_v3_vrf_segment);
+}/*}}}*/
+
+uint32_t
+_v3_vrf_put_audio(const _v3_vrf_audio *audio, void *offset) {/*{{{*/
+    _v3_func_enter("_v3_vrf_put_audio");
+
+    if (!audio || !offset) {
+        _v3_func_leave("_v3_vrf_put_audio");
+        return 0;
+    }
+    _v3_vrf_audio _audio;
+    memcpy(&_audio, audio, sizeof(_v3_vrf_audio));
+    _v3_vrf_print_audio(&_audio);
+    _audio.headlen   = htonl(_audio.headlen);
+    _audio.type      = htonl(_audio.type);
+    _audio.unknown1  = htonl(_audio.unknown1);
+    _audio.index     = htonl(_audio.index);
+    _audio.fragcount = htonl(_audio.fragcount);
+    _audio.unknown2  = htonl(_audio.unknown2);
+    _audio.unknown3  = htonl(_audio.unknown3);
+    _audio.offset    = htonl(_audio.offset);
+    memcpy(offset, &_audio, sizeof(_v3_vrf_audio));
+
+    _v3_func_leave("_v3_vrf_put_audio");
+    return sizeof(_v3_vrf_audio);
+}/*}}}*/
+
+uint32_t
+_v3_vrf_put_fragment(uint32_t type, const _v3_vrf_fragment *fragment, void *offset) {/*{{{*/
+    _v3_func_enter("_v3_vrf_put_fragment");
+
+    if (!fragment || !offset) {
+        _v3_func_leave("_v3_vrf_put_fragment");
+        return 0;
+    }
+    uint32_t fragwrite;
+    _v3_vrf_fragment _fragment;
+    memcpy(&_fragment, fragment, sizeof(_v3_vrf_fragment));
+    _v3_vrf_print_fragment(type, &_fragment);
+    fragwrite = sizeof(_v3_vrf_fragment) - sizeof(_fragment.audio);
+    _fragment.headlen = htonl(_fragment.headlen);
+    _fragment.fraglen = htonl(_fragment.fraglen);
+    if (type != V3_VRF_TYPE_TEXT) {
+        fragwrite = sizeof(_v3_vrf_fragment) - sizeof(_fragment.audio.ext);
+        _fragment.audio.pcmlen   = htonl(_fragment.audio.pcmlen);
+        _fragment.audio.unknown1 = htonl(_fragment.audio.unknown1);
+    }
+    if (type == V3_VRF_TYPE_EXT) {
+        fragwrite = sizeof(_v3_vrf_fragment);
+        _fragment.audio.ext.codec       = htons(_fragment.audio.ext.codec);
+        _fragment.audio.ext.codecformat = htons(_fragment.audio.ext.codecformat);
+        _fragment.audio.ext.unknown2    = htonl(_fragment.audio.ext.unknown2);
+    }
+    memcpy(offset, &_fragment, fragwrite);
+
+    _v3_func_leave("_v3_vrf_put_fragment");
+    return fragwrite;
+}/*}}}*/
+
+void
+_v3_vrf_put_record(uint32_t user_id, uint32_t index, uint32_t type, const char *username, _v3_vrf_rec *rec) {/*{{{*/
+    _v3_func_enter("_v3_vrf_put_record");
+
+    if (!rec) {
+        _v3_func_leave("_v3_vrf_put_record");
+        return;
+    }
+    rec->user_id = user_id;
+    _v3_vrf_segment *segment = &rec->segment;
+    segment->type = type;
+    if (username) {
+        strncpy(segment->username, username, sizeof(segment->username) - 1);
+    }
+    _v3_vrf_audio *audio = &rec->audio;
+    audio->headlen = sizeof(_v3_vrf_audio) + sizeof(segment->username);
+    audio->type = type;
+    audio->index = index;
+    rec->data = malloc(audio->headlen);
+    memset(rec->data, 0, audio->headlen);
+    rec->datalen = _v3_vrf_put_audio(audio, rec->data);
+    if (username) {
+        strncpy(rec->data + rec->datalen, username, sizeof(segment->username) - 1);
+    }
+    rec->datalen = audio->headlen;
+
+    _v3_func_leave("_v3_vrf_put_record");
+}/*}}}*/
+
+void
+_v3_vrf_record_event(
+        int type,
+        uint16_t user_id,
+        uint16_t codec,
+        uint16_t codecformat,
+        uint32_t pcmlen,
+        uint32_t datalen,
+        const void *data) {/*{{{*/
+    _v3_func_enter("_v3_vrf_record_event");
+
+    if (!v3_vrfh) {
+        _v3_func_leave("_v3_vrf_record_event");
+        return;
+    }
+    struct timeval now;
+    gettimeofday(&now, NULL);
+    uint32_t time = now.tv_sec * 1000 + now.tv_usec / 1000 - v3_vrfh->start.tv_sec * 1000 + v3_vrfh->start.tv_usec / 1000;
+    pthread_mutex_lock(vrfh_mutex);
+    if (!v3_vrfh) {
+        pthread_mutex_unlock(vrfh_mutex);
+        _v3_func_leave("_v3_vrf_record_event");
+        return;
+    }
+    _v3_vrf_lock(v3_vrfh);
+    v3_user *u;
+    if (!(u = _v3_get_user(user_id))) {
+        type = V3_VRF_EVENT_DATA_FLUSH;
+    }
+    _v3_vrf_rec *queue = &v3_vrfh->queue;
+    _v3_vrf_rec *rec = NULL;
+    v3_event *ev = _v3_create_event(V3_EVENT_RECORD_UPDATE);
+    switch (type) {
+      case V3_VRF_EVENT_AUDIO_DATA:
+      case V3_VRF_EVENT_TEXT_DATA:
+        if (!data || (!u->allow_recording && v3_vrfh->honored)) {
+            break;
+        }
+        for (rec = queue; rec; rec = rec->next) {
+            if (rec->user_id == user_id && !rec->stopped) {
+                break;
+            }
+            if (!rec->user_id || !rec->next) {
+                if (rec->user_id && !rec->next) {
+                    rec->next = malloc(sizeof(_v3_vrf_rec));
+                    memset(rec->next, 0, sizeof(_v3_vrf_rec));
+                    rec = rec->next;
+                }
+                v3_vrfh->header.segcount++;
+                break;
+            }
+        }
+    }
+    switch (type) {
+      case V3_VRF_EVENT_AUDIO_DATA:
+      {
+        if (!rec) {
+            v3_free_event(ev);
+            ev = NULL;
+            break;
+        }
+        if (!rec->user_id) {
+            _v3_vrf_put_record(user_id, v3_vrfh->header.segcount - 1, V3_VRF_TYPE_EXT, u->name, rec);
+        }
+        _v3_vrf_fragment fragment;
+        memset(&fragment, 0, sizeof(_v3_vrf_fragment));
+        fragment.headlen = sizeof(_v3_vrf_fragment);
+        fragment.fraglen = datalen;
+        fragment.audio.pcmlen   = pcmlen;
+        fragment.audio.unknown1 = time;
+        fragment.audio.ext.codec       = codec;
+        fragment.audio.ext.codecformat = codecformat;
+        rec->data = realloc(rec->data, rec->datalen + fragment.headlen + datalen);
+        rec->datalen += _v3_vrf_put_fragment(V3_VRF_TYPE_EXT, &fragment, rec->data + rec->datalen);
+        memcpy(rec->data + rec->datalen, data, datalen);
+        rec->datalen += datalen;
+        if (!rec->segment.time) {
+            rec->segment.time = time;
+        }
+        rec->segment.duration = time;
+        rec->audio.fragcount++;
+        strncpy(ev->text.name, rec->segment.username, sizeof(ev->text.name) - 1);
+        ev->record.index = rec->audio.index;
+        ev->record.time = time;
+        break;
+      }
+      case V3_VRF_EVENT_TEXT_DATA:
+      {
+        if (!rec) {
+            v3_free_event(ev);
+            ev = NULL;
+            break;
+        }
+        if (!rec->user_id) {
+            _v3_vrf_put_record(user_id, v3_vrfh->header.segcount - 1, V3_VRF_TYPE_TEXT, u->name, rec);
+        }
+        _v3_vrf_fragment fragment;
+        memset(&fragment, 0, sizeof(_v3_vrf_fragment));
+        fragment.headlen = sizeof(_v3_vrf_fragment) + V3_VRF_TEXTLEN - sizeof(fragment.audio);
+        fragment.fraglen = time;
+        rec->data = realloc(rec->data, rec->datalen + fragment.headlen);
+        memset(rec->data + rec->datalen, 0, fragment.headlen);
+        rec->datalen += _v3_vrf_put_fragment(V3_VRF_TYPE_TEXT, &fragment, rec->data + rec->datalen);
+        strncpy(rec->data + rec->datalen, data, V3_VRF_TEXTLEN);
+        rec->datalen += V3_VRF_TEXTLEN;
+        rec->segment.time = time;
+        rec->segment.duration = time;
+        rec->audio.fragcount++;
+        rec->stopped = true;
+        strncpy(ev->status.message, data, sizeof(ev->status.message) - 1);
+        strncpy(ev->text.name, rec->segment.username, sizeof(ev->text.name) - 1);
+        ev->record.index = rec->audio.index;
+        ev->record.time = time;
+        ev->record.stopped = true;
+        break;
+      }
+      case V3_VRF_EVENT_AUDIO_STOP:
+        for (rec = queue; rec; rec = rec->next) {
+            if (rec->user_id == user_id && !rec->stopped) {
+                rec->stopped = true;
+                ev->record.index = rec->audio.index;
+                ev->record.stopped = true;
+                break;
+            }
+        }
+        if (!rec) {
+            v3_free_event(ev);
+            ev = NULL;
+        }
+        break;
+      case V3_VRF_EVENT_DATA_FLUSH:
+      default:
+        for (rec = queue; rec; rec = rec->next) {
+            if (rec->user_id) {
+                rec->stopped = true;
+            }
+        }
+        ev->record.flushed = true;
+        break;
+    }
+    for (rec = queue; rec; rec = rec->next) {
+        if (rec->data && (rec == queue || rec->stopped)) {
+            int64_t ret;
+            if ((ret = lseek(v3_vrfh->file, 0, SEEK_END)) >= 0) {
+                if (!rec->segment.valid) {
+                    rec->segment.valid = true;
+                    rec->segment.offset = ret;
+                }
+                if ((ret = write(v3_vrfh->file, rec->data, rec->datalen)) < rec->datalen) {
+                    _v3_error("%s: FATAL: failed to put vrf data: %s", v3_vrfh->filename, (ret >= 0) ? "FATAL partial write" : strerror(errno));
+                }
+            } else {
+                _v3_error("%s: FATAL: failed to seek to EOF: %s", v3_vrfh->filename, strerror(errno));
+            }
+            rec->datalen = 0;
+            free(rec->data);
+            rec->data = NULL;
+        }
+        if (!rec->stopped) {
+            break;
+        }
+    }
+    while (queue->stopped) {
+        _v3_vrf_segment *segment = &queue->segment;
+        segment->headlen   = sizeof(_v3_vrf_segment);
+        segment->duration -= segment->time;
+        _v3_vrf_audio *audio = &queue->audio;
+        v3_vrfh->table = realloc(v3_vrfh->table, v3_vrfh->tablesize + segment->headlen);
+        v3_vrfh->tablesize += _v3_vrf_put_segment(audio->index, segment, (void *)v3_vrfh->table + v3_vrfh->tablesize);
+        _v3_vrf_put_audio(audio, audio);
+        int64_t ret;
+        if ((ret = lseek(v3_vrfh->file, segment->offset, SEEK_SET)) < 0 ||
+            (ret = write(v3_vrfh->file, audio, sizeof(_v3_vrf_audio))) < sizeof(_v3_vrf_audio)) {
+            _v3_error("%s: FATAL: failed to put vrf audio segment: %s", v3_vrfh->filename, (ret >= 0) ? "FATAL partial write" : strerror(errno));
+        }
+        fsync(v3_vrfh->file);
+        _v3_vrf_rec *next;
+        if ((next = queue->next)) {
+            memcpy(queue, next, sizeof(_v3_vrf_rec));
+            free(next);
+        } else {
+            memset(queue, 0, sizeof(_v3_vrf_rec));
+        }
+    }
+    if (ev) {
+        v3_queue_event(ev);
+    }
+    _v3_vrf_unlock(v3_vrfh);
+    pthread_mutex_unlock(vrfh_mutex);
+
+    _v3_func_leave("_v3_vrf_record_event");
+}/*}}}*/
+
+void
+_v3_vrf_record_finish(_v3_vrf *vrfh, uint32_t segtable) {/*{{{*/
+    _v3_func_enter("_v3_vrf_record_finish");
+
+    if (!vrfh) {
+        _v3_func_leave("_v3_vrf_record_finish");
+        return;
+    }
+    if (vrfh->table) {
+        int64_t ret;
+        if ((ret = lseek(vrfh->file, segtable, SEEK_SET)) < 0 ||
+            (ret = write(vrfh->file, vrfh->table, vrfh->tablesize)) < vrfh->tablesize) {
+            _v3_error("%s: FATAL: failed to put vrf segment table: %s", vrfh->filename, (ret >= 0) ? "FATAL partial write" : strerror(errno));
+        }
+        fsync(vrfh->file);
+        vrfh->tablesize = 0;
+        free(vrfh->table);
+        vrfh->table = NULL;
+    }
+    vrfh->header.segtable = segtable;
+    strncpy(vrfh->header.headid, V3_VRF_HEADID, sizeof(vrfh->header.headid));
+    vrfh->filelen = lseek(vrfh->file, 0, SEEK_END);
+    vrfh->header.size = vrfh->filelen;
+    _v3_vrf_put_header(vrfh);
+
+    _v3_func_leave("_v3_vrf_record_finish");
+}/*}}}*/
+
+int
+v3_vrf_record_start(const char *filename, uint8_t dishonor) {/*{{{*/
+    _v3_func_enter("v3_vrf_record_start");
+
+    if (v3_vrfh) {
+        _v3_error("vrf is recording: %s", v3_vrfh->filename);
+        _v3_func_leave("v3_vrf_record_start");
+        return V3_FAILURE;
+    }
+    if (!filename || !strlen(filename)) {
+        _v3_error("no filename specified");
+        _v3_func_leave("v3_vrf_record_start");
+        return V3_FAILURE;
+    }
+    _v3_vrf *vrfh;
+    if (!(vrfh = v3_vrf_init(NULL))) {
+        _v3_func_leave("v3_vrf_record_start");
+        return V3_FAILURE;
+    }
+    if ((vrfh->file = open(filename, O_RDWR | O_CREAT | O_EXCL, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH)) < 0) {
+        _v3_error("%s: create file for writing failed: %s", filename, strerror(errno));
+        v3_vrf_destroy(vrfh);
+        _v3_func_leave("v3_vrf_record_start");
+        return V3_FAILURE;
+    }
+    vrfh->filename = strdup(filename);
+    _v3_debug(V3_DEBUG_INFO, "created file %i for writing: %s", vrfh->file, vrfh->filename);
+    gettimeofday(&vrfh->start, NULL);
+    _v3_vrf_header *header = &vrfh->header;
+    strncpy(header->headid, V3_VRF_TEMPID, sizeof(header->headid));
+    header->headlen     = V3_VRF_HEADLEN;
+    header->vrfversion  = V3_VRF_VERSION;
+    header->infolen     = V3_VRF_INFOLEN;
+    header->codec       = v3_server.codec;
+    header->codecformat = v3_server.codec_format;
+    strncpy(header->platform, "Linux", sizeof(header->platform) - 1);
+    strncpy(header->version, V3_CLIENT_VERSION, sizeof(header->version) - 1);
+    strncpy(header->username, v3_luser.name, sizeof(header->username) - 1);
+    if (_v3_vrf_put_header(vrfh) != V3_OK) {
+        v3_vrf_destroy(vrfh);
+        _v3_func_leave("v3_vrf_record_start");
+        return V3_FAILURE;
+    }
+    if (!vrfh_mutex) {
+        _v3_debug(V3_DEBUG_MUTEX, "initializing vrf mutex");
+        pthread_mutexattr_t mta;
+        pthread_mutexattr_init(&mta);
+        pthread_mutexattr_settype(&mta, PTHREAD_MUTEX_RECURSIVE);
+        vrfh_mutex = malloc(sizeof(pthread_mutex_t));
+        pthread_mutex_init(vrfh_mutex, &mta);
+    }
+    vrfh->honored = !dishonor;
+    v3_vrfh = vrfh;
+
+    _v3_func_leave("v3_vrf_record_start");
+    return V3_OK;
+}/*}}}*/
+
+void
+v3_vrf_record_stop(void) {/*{{{*/
+    _v3_func_enter("v3_vrf_record_stop");
+
+    if (!v3_vrfh || v3_vrfh->stopped) {
+        _v3_func_leave("v3_vrf_record_stop");
+        return;
+    }
+    v3_vrfh->stopped = true;
+    pthread_mutex_lock(vrfh_mutex);
+    _v3_vrf_record_event(V3_VRF_EVENT_DATA_FLUSH, v3_get_user_id(), -1, -1, 0, 0, NULL);
+    int64_t ret;
+    if ((ret = lseek(v3_vrfh->file, 0, SEEK_END)) >= 0) {
+        _v3_vrf_record_finish(v3_vrfh, ret);
+        fsync(v3_vrfh->file);
+    }
+    v3_vrf_destroy(v3_vrfh);
+    v3_vrfh = NULL;
+    pthread_mutex_unlock(vrfh_mutex);
+
+    _v3_func_leave("v3_vrf_record_stop");
+}/*}}}*/
+
+int
+_v3_vrf_recover(_v3_vrf *vrfh) {/*{{{*/
+    _v3_func_enter("_v3_vrf_recover");
+
+    if (!vrfh || !vrfh->filelen || vrfh->table) {
+        _v3_func_leave("_v3_vrf_recover");
+        return V3_FAILURE;
+    }
+    if (strncmp(vrfh->header.headid, V3_VRF_TEMPID, sizeof(vrfh->header.headid))) {
+        _v3_func_leave("_v3_vrf_recover");
+        return V3_OK;
+    }
+    int fd = vrfh->file;
+    if ((vrfh->file = open(vrfh->filename, O_RDWR)) < 0) {
+        _v3_error("%s: open file for writing failed: %s", vrfh->filename, strerror(errno));
+        vrfh->file = fd;
+        _v3_func_leave("_v3_vrf_recover");
+        return V3_FAILURE;
+    }
+    uint32_t offset = sizeof(_v3_vrf_header);
+    if (lseek(vrfh->file, offset, SEEK_SET) < 0) {
+        _v3_error("%s: failed to seek to offset %u: %s", vrfh->filename, offset, strerror(errno));
+        close(vrfh->file);
+        vrfh->file = fd;
+        _v3_func_leave("_v3_vrf_recover");
+        return V3_FAILURE;
+    }
+    vrfh->header.segcount = 0;
+    uint32_t headlen;
+    _v3_vrf_audio audio;
+    _v3_vrf_segment *segment;
+    _v3_vrf_fragment fragment;
+    while (offset + sizeof(headlen) < vrfh->filelen) {
+        if (lseek(vrfh->file, offset, SEEK_SET) < 0 ||
+            read(vrfh->file, &headlen, sizeof(headlen)) < sizeof(headlen)) {
+            break;
+        }
+        switch (ntohl(headlen)) {
+          case (sizeof(_v3_vrf_audio) + sizeof(segment->username)):
+            memset(&audio, 0, sizeof(_v3_vrf_audio));
+            if (_v3_vrf_get_audio(vrfh, offset, &audio) != V3_OK) {
+                close(vrfh->file);
+                vrfh->file = fd;
+                _v3_func_leave("_v3_vrf_recover");
+                return V3_FAILURE;
+            }
+            vrfh->table = realloc(vrfh->table, vrfh->tablesize + sizeof(_v3_vrf_segment));
+            vrfh->header.segcount++;
+            segment = &vrfh->table[vrfh->header.segcount - 1];
+            memset(segment, 0, sizeof(_v3_vrf_segment));
+            segment->headlen = sizeof(_v3_vrf_segment);
+            segment->type    = audio.type;
+            segment->offset  = offset;
+            if (read(vrfh->file, segment->username, sizeof(segment->username) - 1) < 0) {
+                _v3_error("%s: read failed: %s\n", vrfh->filename, strerror(errno));
+                close(vrfh->file);
+                vrfh->file = fd;
+                _v3_func_leave("_v3_vrf_recover");
+                return V3_FAILURE;
+            }
+            vrfh->tablesize += segment->headlen;
+            offset += audio.headlen;
+            break;
+          case (sizeof(_v3_vrf_fragment)):
+          case (V3_VRF_TEXTLEN + (sizeof(_v3_vrf_fragment) - sizeof(fragment.audio))):
+            if (!vrfh->header.segcount) {
+                _v3_error("%s: got fragment first", vrfh->filename);
+                close(vrfh->file);
+                vrfh->file = fd;
+                _v3_func_leave("_v3_vrf_recover");
+                return V3_FAILURE;
+            }
+            segment = &vrfh->table[vrfh->header.segcount - 1];
+            segment->valid = true;
+            segment->unknown1++;
+            memset(&fragment, 0, sizeof(_v3_vrf_fragment));
+            if (_v3_vrf_get_fragment(vrfh, segment->type, &offset, &fragment, NULL, NULL) != V3_OK) {
+                close(vrfh->file);
+                vrfh->file = fd;
+                _v3_func_leave("_v3_vrf_recover");
+                return V3_FAILURE;
+            }
+            switch (segment->type) {
+              case V3_VRF_TYPE_AUDIO:
+              case V3_VRF_TYPE_EXT:
+                if (!segment->time) {
+                    segment->time = fragment.audio.unknown1;
+                } else {
+                    segment->duration = fragment.audio.unknown1 - segment->time;
+                }
+                break;
+              case V3_VRF_TYPE_TEXT:
+                segment->time = fragment.fraglen;
+                break;
+            }
+            break;
+          default:
+            _v3_error("%s: unknown header length: %u", vrfh->filename, ntohl(headlen));
+            close(vrfh->file);
+            vrfh->file = fd;
+            _v3_func_leave("_v3_vrf_recover");
+            return V3_FAILURE;
+        }
+    }
+    if (vrfh->header.segcount) {
+        uint32_t ctr;
+        for (ctr = 0; ctr < vrfh->header.segcount; ctr++) {
+            segment = &vrfh->table[ctr];
+            memset(&audio, 0, sizeof(_v3_vrf_audio));
+            if (_v3_vrf_get_audio(vrfh, segment->offset, &audio) == V3_OK) {
+                audio.fragcount = segment->unknown1;
+                _v3_vrf_put_audio(&audio, &audio);
+                if (lseek(vrfh->file, segment->offset, SEEK_SET) < 0 ||
+                    write(vrfh->file, &audio, sizeof(_v3_vrf_audio)) < 0) {
+                    _v3_error("%s: write failed: %s\n", vrfh->filename, strerror(errno));
+                    close(vrfh->file);
+                    vrfh->file = fd;
+                    _v3_func_leave("_v3_vrf_recover");
+                    return V3_FAILURE;
+                }
+            }
+            segment->unknown1 = 0;
+            _v3_vrf_put_segment(ctr, segment, segment);
+        }
+    }
+    int64_t ret;
+    if ((ret = lseek(vrfh->file, 0, SEEK_END)) >= 0) {
+        _v3_vrf_record_finish(vrfh, ret);
+        fsync(vrfh->file);
+    }
+    close(vrfh->file);
+    vrfh->file = fd;
+
+    _v3_func_leave("_v3_vrf_recover");
+    return V3_OK;
 }/*}}}*/
 
 /*
@@ -2124,10 +3756,11 @@ _v3_destroy_decoders(void) {/*{{{*/
 int
 _v3_process_message(_v3_net_message *msg) {/*{{{*/
     _v3_func_enter("_v3_process_message");
+
     _v3_debug(V3_DEBUG_INTERNAL, "beginning packet processing on msg type '0x%02X' (%d)", msg->type, (uint16_t)msg->type);
     switch (msg->type) {
         case 0x06:/*{{{*/
-            if(!_v3_get_0x06(msg)) {
+            if (!_v3_get_0x06(msg)) {
                 _v3_destroy_packet(msg);
                 _v3_func_leave("_v3_process_message");
                 return V3_MALFORMED;
@@ -2136,56 +3769,57 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                 char buf[512] = "";
                 int error = false;
                 int disconnected = false;
-
                 _v3_lock_server();
-                if(m->subtype & 0x01) {
+                if (m->subtype & 0x01) {
                     error = true;
                     disconnected = true;
                     strncat(buf, "You have been disconnected from the server.\n", 511);
                     _v3_logout();
                 }
-                if(m->subtype & 0x02) {
+                if (m->subtype & 0x02) {
                     v3_event *ev = _v3_create_event(V3_EVENT_ADMIN_AUTH);
                     v3_queue_event(ev);
                 }
-                if(m->subtype & 0x04) {
+                if (m->subtype & 0x04) {
                     if (ventrilo_read_keys(&v3_server.client_key, &v3_server.server_key, m->encryption_key, msg->len - 12) < 0) {
                         _v3_error("could not parse keys from the server");
                         free(m->encryption_key);
+                        _v3_unlock_server();
                         _v3_func_leave("_v3_process_message");
                         return V3_FAILURE;
                     }
                     free(m->encryption_key);
                 }
-                if(m->subtype & 0x10) {
+                if (m->subtype & 0x10) {
                     _v3_debug(V3_DEBUG_INTERNAL, "FIXME: Unknown subtype, please report a packetdump.");
                 }
-                if(m->subtype & 0x20) {
+                if (m->subtype & 0x20) {
                     _v3_debug(V3_DEBUG_INTERNAL, "FIXME: Unknown subtype, please report a packetdump.");
                 }
-                if(m->subtype & 0x40) {
+                if (m->subtype & 0x40) {
                     error = true;
                     strncat(buf, "The supplied password is incorrect.\n", 511);
                 }
-                if(m->subtype & 0x100) {
+                if (m->subtype & 0x100) {
                     _v3_debug(V3_DEBUG_INTERNAL, "FIXME: Unknown subtype, please report a packetdump.");
                 }
-                if(m->subtype & 0x200) {
+                if (m->subtype & 0x200) {
                     error = true;
                     strncat(buf, _v3_server_disabled_errors[m->error_id-1], 511);
                 }
-                if(m->subtype & 0x400) {
+                if (m->subtype & 0x400) {
                     _v3_debug(V3_DEBUG_INTERNAL, "FIXME: Unknown subtype, please report a packetdump.");
                 }
-
                 _v3_destroy_packet(msg);
                 _v3_unlock_server();
-
                 if (error) {
-                    v3_event *ev = _v3_create_event(V3_EVENT_ERROR_MSG);
-                    ev->error.disconnected = disconnected;
-                    strncpy(ev->error.message, buf, 512);
-                    v3_queue_event(ev);
+                    _v3_error("%s", buf);
+                    if (v3_is_loggedin()) {
+                        v3_event *ev = _v3_create_event(V3_EVENT_ERROR_MSG);
+                        ev->error.disconnected = disconnected;
+                        strncpy(ev->error.message, buf, 512);
+                        v3_queue_event(ev);
+                    }
                     _v3_func_leave("_v3_process_message");
                     return V3_FAILURE;
                 } else {
@@ -2214,35 +3848,6 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
             _v3_destroy_packet(msg);
             _v3_func_leave("_v3_process_message");
             return V3_OK;/*}}}*/
-        case 0x3b:/*{{{*/
-            /*
-             *  This is almost identical to 0x53, so whatever you do here probably
-             *  needs to be done there, too.
-             */
-            if (!_v3_get_0x3b(msg)) {
-                _v3_destroy_packet(msg);
-                _v3_func_leave("_v3_process_message");
-                return V3_MALFORMED;
-            } else {
-                _v3_msg_0x3b *m = msg->contents;
-                v3_user *user;
-                if (!m->error_id) {
-                    _v3_debug(V3_DEBUG_INFO, "user %d force moved to channel %d", m->user_id, m->channel_id);
-                    user = v3_get_user(m->user_id);
-                    if (user) {
-                        user->channel = m->channel_id;
-                        _v3_update_user(user);
-                        v3_free_user(user);
-                        v3_event *ev = _v3_create_event(V3_EVENT_USER_CHAN_MOVE);
-                        ev->user.id = m->user_id;
-                        ev->channel.id = m->channel_id;
-                        v3_queue_event(ev);
-                    }
-                }
-            }
-            _v3_destroy_packet(msg);
-            _v3_func_leave("_v3_process_message");
-            return V3_OK;/*}}}*/
         case 0x34:/*{{{*/
             _v3_lock_server();
             _v3_debug(V3_DEBUG_INTERNAL, "scrambling client encryption keys");
@@ -2263,9 +3868,25 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                 _v3_msg_0x36 *m = msg->contents;
                 v3_rank *rl;
                 int ctr;
-
+                if (m->error_id) {
+                    if (m->error_id != 5) {
+                        char *error;
+                        if (m->error_id > (sizeof(_v3_ranks_errors) / sizeof(_v3_ranks_errors[0]))) {
+                            error = "Unknown";
+                        } else {
+                            error = _v3_ranks_errors[m->error_id - 1];
+                        }
+                        v3_event *ev = _v3_create_event(V3_EVENT_ERROR_MSG);
+                        strncpy(ev->error.message, "Rank editor error:\n", sizeof(ev->error.message));
+                        strncat(ev->error.message, error, sizeof(ev->error.message));
+                        v3_queue_event(ev);
+                    }
+                    _v3_destroy_0x36(msg);
+                    _v3_destroy_packet(msg);
+                    _v3_func_leave("_v3_process_message");
+                    return V3_OK;
+                }
                 _v3_lock_ranklist();
-
                 rl = calloc(m->rank_count, sizeof(v3_user));
                 switch (m->subtype) {
                     case V3_REMOVE_RANK:
@@ -2273,8 +3894,8 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                         for (ctr = 0; ctr < m->rank_count; ctr++) {
                             // do we need to queue an event?
                             v3_event *ev = _v3_create_event(V3_EVENT_RANK_REMOVE);
-                            ev->data.rank.id = m->rank_list[ctr].id;
-                            _v3_debug(V3_DEBUG_INFO, "queuing event type %d for user %d", ev->type, ev->user.id);
+                            ev->data->rank.id = m->rank_list[ctr].id;
+                            _v3_debug(V3_DEBUG_INFO, "queuing event type %d for rank %d", ev->type, ev->data->rank.id);
                             _v3_remove_rank(m->rank_list[ctr].id);
                             v3_queue_event(ev);
                         }
@@ -2282,33 +3903,18 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                     case V3_MODIFY_RANK:
                     case V3_ADD_RANK:
                     case V3_RANK_LIST:
-                        _v3_debug(V3_DEBUG_INFO, "adding %d ranks on rank list",  m->rank_count);
-                        for (ctr = 0; ctr < m->rank_count; ctr++) {
-                            _v3_update_rank(&m->rank_list[ctr]);
-                            v3_event *ev = _v3_create_event(m->subtype == V3_ADD_RANK ? V3_EVENT_RANK_ADD : V3_EVENT_RANK_MODIFY);
-                            ev->data.rank.id = m->rank_list[ctr].id;
-                            ev->data.rank.level = m->rank_list[ctr].level;
-                            strncpy(ev->text.name, m->rank_list[ctr].name, 31);
-                            strncpy(ev->text.comment, m->rank_list[ctr].description, 127);
-                            _v3_debug(V3_DEBUG_INFO, "queuing event type %d for user %d", ev->type, ev->user.id);
-                            v3_queue_event(ev);
-                        }
-                        break;
-#if 0
-                    case V3_RANK_LIST:
-                        // <strke>user 1 is always ourself in this subtype</strike>
-                        // TODO: this is a bad assumption... the userlist can span multiple 0x5d packets
                         _v3_debug(V3_DEBUG_INFO, "adding %d ranks to rank list",  m->rank_count);
                         for (ctr = 0; ctr < m->rank_count; ctr++) {
                             _v3_update_rank(&m->rank_list[ctr]);
-                            //v3_event *ev = _v3_create_event(V3_EVENT_RANK_LOGIN);
-                            //ev->rank.id = m->rank_list[ctr].id;
-                            //ev->channel.id = m->rank_list[ctr].channel;
-                            //_v3_debug(V3_DEBUG_INFO, "queuing event type %d for rank %d", ev->type, ev->rank.id);
-                            //v3_queue_event(ev);
+                            v3_event *ev = _v3_create_event(m->subtype == V3_ADD_RANK ? V3_EVENT_RANK_ADD : V3_EVENT_RANK_MODIFY);
+                            ev->data->rank.id = m->rank_list[ctr].id;
+                            ev->data->rank.level = m->rank_list[ctr].level;
+                            strncpy(ev->text.name, m->rank_list[ctr].name, 31);
+                            strncpy(ev->text.comment, m->rank_list[ctr].description, 127);
+                            _v3_debug(V3_DEBUG_INFO, "queuing event type %d for rank %d", ev->type, ev->data->rank.id);
+                            v3_queue_event(ev);
                         }
                         break;
-#endif
                 }
                 free(rl);
                 _v3_unlock_ranklist();
@@ -2337,6 +3943,61 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
             _v3_destroy_packet(msg);
             _v3_func_leave("_v3_process_message");
             return V3_OK;/*}}}*/
+        case 0x3a:/*{{{*/
+            /*
+             *  This is almost identical to 0x3f, so whatever you do here probably
+             *  needs to be done there, too.
+             */
+            if (!_v3_get_0x3a(msg)) {
+                _v3_destroy_packet(msg);
+                _v3_func_leave("_v3_process_message");
+                return V3_MALFORMED;
+            } else {
+                _v3_msg_0x3a *m = msg->contents;
+                v3_event *ev = _v3_create_event(V3_EVENT_TEXT_TO_SPEECH_MESSAGE);
+                ev->user.id = m->user_id;
+                strncpy(ev->data->chatmessage, m->msg, sizeof(ev->data->chatmessage) - 1);
+                v3_queue_event(ev);
+                _v3_vrf_record_event(V3_VRF_EVENT_TEXT_DATA, m->user_id, -1, -1, 0, 0, m->msg);
+                free(m->msg);
+            }
+            _v3_destroy_packet(msg);
+            _v3_func_leave("_v3_process_message");
+            return V3_OK;/*}}}*/
+        case 0x3b:/*{{{*/
+            /*
+             *  This is almost identical to 0x53, so whatever you do here probably
+             *  needs to be done there, too.
+             */
+            if (!_v3_get_0x3b(msg)) {
+                _v3_destroy_packet(msg);
+                _v3_func_leave("_v3_process_message");
+                return V3_MALFORMED;
+            } else {
+                _v3_msg_0x3b *m = msg->contents;
+                v3_user *user;
+                if (!m->error_id) {
+                    _v3_debug(V3_DEBUG_INFO, "user %d force moved to channel %d", m->user_id, m->channel_id);
+                    user = v3_get_user(m->user_id);
+                    if (user) {
+                        user->channel = m->channel_id;
+                        _v3_update_user(user);
+                        v3_free_user(user);
+                        v3_event *ev = _v3_create_event(V3_EVENT_USER_CHAN_MOVE);
+                        ev->user.id = m->user_id;
+                        ev->channel.id = m->channel_id;
+                        v3_queue_event(ev);
+                        _v3_vrf_record_event(
+                                (m->user_id == v3_get_user_id())
+                                    ? V3_VRF_EVENT_DATA_FLUSH
+                                    : V3_VRF_EVENT_AUDIO_STOP,
+                                m->user_id, -1, -1, 0, 0, NULL);
+                    }
+                }
+            }
+            _v3_destroy_packet(msg);
+            _v3_func_leave("_v3_process_message");
+            return V3_OK;/*}}}*/
         case 0x3c:/*{{{*/
             if (!_v3_get_0x3c(msg)) {
                 _v3_destroy_packet(msg);
@@ -2350,14 +4011,34 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
             _v3_destroy_packet(msg);
             _v3_func_leave("_v3_process_message");
             return V3_OK;/*}}}*/
+        case 0x3f:/*{{{*/
+            /*
+             *  This is almost identical to 0x3a, so whatever you do here probably
+             *  needs to be done there, too.
+             */
+            if (!_v3_get_0x3f(msg)) {
+                _v3_destroy_packet(msg);
+                _v3_func_leave("_v3_process_message");
+                return V3_MALFORMED;
+            } else {
+                _v3_msg_0x3f *m = msg->contents;
+                v3_event *ev = _v3_create_event(V3_EVENT_PLAY_WAVE_FILE_MESSAGE);
+                ev->user.id = m->user_id;
+                strncpy(ev->data->chatmessage, m->msg, sizeof(ev->data->chatmessage) - 1);
+                v3_queue_event(ev);
+                free(m->msg);
+            }
+            _v3_destroy_packet(msg);
+            _v3_func_leave("_v3_process_message");
+            return V3_OK;/*}}}*/
         case 0x42:/*{{{*/
-            if(!_v3_get_0x42(msg)) {
+            if (!_v3_get_0x42(msg)) {
                 _v3_destroy_packet(msg);
                 _v3_func_leave("_v3_process_message");
                 return V3_MALFORMED;
             } else {
                 _v3_msg_0x42 *m = msg->contents;
-                switch(m->subtype) {
+                switch (m->subtype) {
                     case V3_JOIN_CHAT:
                         {
                             v3_event *ev = _v3_create_event(V3_EVENT_CHAT_JOIN);
@@ -2376,7 +4057,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                         {
                             v3_event *ev = _v3_create_event(V3_EVENT_CHAT_MESSAGE);
                             ev->user.id = m->user_id;
-                            strncpy(ev->data.chatmessage, m->msg, sizeof(ev->data.chatmessage) - 1);
+                            strncpy(ev->data->chatmessage, m->msg, sizeof(ev->data->chatmessage) - 1);
                             free(m->msg);
                             v3_queue_event(ev);
                         }
@@ -2385,7 +4066,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                         {
                             v3_event *ev = _v3_create_event(V3_EVENT_CHAT_MESSAGE);
                             ev->user.id = 0;
-                            strncpy(ev->data.chatmessage, m->msg, sizeof(ev->data.chatmessage) - 1);
+                            strncpy(ev->data->chatmessage, m->msg, sizeof(ev->data->chatmessage) - 1);
                             free(m->msg);
                             v3_queue_event(ev);
                         }
@@ -2439,6 +4120,16 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                                 v3_queue_event(ev);
                             }
                             break;
+                        case V3_USER_CHANNEL_MUTE:
+                            {
+                                _v3_debug(V3_DEBUG_INFO, "setting user %d as channel muted = %d", m->user_id, m->value);
+                                u->channel_mute = m->value;
+                                v3_event *ev = _v3_create_event(V3_EVENT_USER_CHANNEL_MUTE_CHANGED);
+                                ev->user.id = u->id;
+                                _v3_debug(V3_DEBUG_INFO, "queuing event type %d for user %d", ev->type, ev->user.id);
+                                v3_queue_event(ev);
+                            }
+                            break;
                         default:
                             _v3_debug(V3_DEBUG_INFO, "unknown setting for user %d setting: %d = %d", m->user_id, m->setting, m->value);
                             break;
@@ -2456,7 +4147,6 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                 return V3_MALFORMED;
             } else {
                 _v3_msg_0x49 *m = msg->contents;
-
                 _v3_lock_channellist();
                 switch (m->subtype) {
                     case V3_REMOVE_CHANNEL:
@@ -2484,7 +4174,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                         {
                             v3_event *ev = _v3_create_event(V3_EVENT_CHAN_BADPASS);
                             ev->channel.id = m->channel->id;
-                            strncpy(ev->error.message, "Error switching to channel.  The password you entered is wrong or you do not have permission", 511);
+                            strncpy(ev->error.message, "Error switching to channel.  The password you entered is wrong or you do not have permission.", 511);
                             v3_queue_event(ev);
                         }
                         break;
@@ -2502,109 +4192,99 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                 return V3_MALFORMED;
             } else {
                 _v3_msg_0x4a *m = msg->contents;
-
                 if (m->error_id) {
                     if (m->error_id != 10) {
                         char *error;
-
-                        if (m->error_id > (sizeof(_v3_permissions_errors) / sizeof(_v3_permissions_errors[0])))
+                        if (m->error_id > (sizeof(_v3_permissions_errors) / sizeof(_v3_permissions_errors[0]))) {
                             error = "Unknown";
-                        else
+                        } else {
                             error = _v3_permissions_errors[m->error_id - 1];
-
+                        }
                         v3_event *ev = _v3_create_event(V3_EVENT_ERROR_MSG);
                         strncpy(ev->error.message, "User editor error:\n", sizeof(ev->error.message));
                         strncat(ev->error.message, error, sizeof(ev->error.message));
                         v3_queue_event(ev);
                     }
-
                     _v3_destroy_packet(msg);
                     _v3_func_leave("_v3_process_message");
                     return V3_OK;
                 }
-
                 switch (m->subtype) {
                     case V3_USERLIST_OPEN:
                     case V3_USERLIST_MODIFY:
                     case V3_USERLIST_ADD:
                         {
-                        int i;
-                        _v3_msg_0x4a_account *msub = msg->contents;
-                        _v3_debug(V3_DEBUG_INFO, "received %d user accounts", msub->acct_list_count);
-                        for (i = 0; i < msub->acct_list_count; i++) {
-                            _v3_update_account(msub->acct_list[i]);
-                            v3_event *ev = _v3_create_event((msub->header.subtype == V3_USERLIST_MODIFY) ? V3_EVENT_USERLIST_MODIFY : V3_EVENT_USERLIST_ADD);
-                            ev->account.id = msub->acct_list[i]->perms.account_id;
-                            _v3_debug(V3_DEBUG_INFO, "queuing event type %d for account id %d", ev->type, ev->account.id);
-                            v3_queue_event(ev);
-                        }
+                            int ctr;
+                            _v3_msg_0x4a_account *msub = msg->contents;
+                            _v3_debug(V3_DEBUG_INFO, "received %d user accounts", msub->acct_list_count);
+                            for (ctr = 0; ctr < msub->acct_list_count; ctr++) {
+                                _v3_update_account(msub->acct_list[ctr]);
+                                v3_event *ev = _v3_create_event((msub->header.subtype == V3_USERLIST_MODIFY) ? V3_EVENT_USERLIST_MODIFY : V3_EVENT_USERLIST_ADD);
+                                ev->account.id = msub->acct_list[ctr]->perms.account_id;
+                                _v3_debug(V3_DEBUG_INFO, "queuing event type %d for account id %d", ev->type, ev->account.id);
+                                v3_queue_event(ev);
+                            }
                         }
                         break;
                     case V3_USERLIST_REMOVE:
                         {
-                        _v3_msg_0x4a_perms *msub = msg->contents;
-                        _v3_debug(V3_DEBUG_INFO, "received remove account for %d", msub->perms.account_id);
-                        _v3_remove_account(msub->perms.account_id);
-
-                        v3_event *ev = _v3_create_event(V3_EVENT_USERLIST_REMOVE);
-                        ev->account.id = msub->perms.account_id;
-                        _v3_debug(V3_DEBUG_INFO, "queuing event type %d for account id %d", ev->type, ev->account.id);
-                        v3_queue_event(ev);
+                            _v3_msg_0x4a_perms *msub = msg->contents;
+                            _v3_debug(V3_DEBUG_INFO, "received remove account for %d", msub->perms.account_id);
+                            _v3_remove_account(msub->perms.account_id);
+                            v3_event *ev = _v3_create_event(V3_EVENT_USERLIST_REMOVE);
+                            ev->account.id = msub->perms.account_id;
+                            _v3_debug(V3_DEBUG_INFO, "queuing event type %d for account id %d", ev->type, ev->account.id);
+                            v3_queue_event(ev);
                         }
                         break;
                     case V3_USERLIST_LUSER:
                         {
-                        _v3_msg_0x4a_perms *msub = msg->contents;
-                        _v3_debug(V3_DEBUG_INFO, "received local user permissions");
-                        _v3_print_permissions(&msub->perms);
-
-                        _v3_lock_luser();
-                        v3_luser.perms = msub->perms;
-                        _v3_unlock_luser();
+                            _v3_msg_0x4a_perms *msub = msg->contents;
+                            _v3_debug(V3_DEBUG_INFO, "received local user permissions");
+                            _v3_print_permissions(&msub->perms);
+                            _v3_lock_luser();
+                            v3_luser.perms = msub->perms;
+                            _v3_unlock_luser();
+                            v3_event *ev = _v3_create_event(V3_EVENT_PERMS_UPDATED);
+                            v3_queue_event(ev);
                         }
                         break;
                     case V3_USERLIST_CHANGE_OWNER:
                         {
-                        v3_account *a;
-                        char *old_owner, *new_owner = NULL;
-                        _v3_msg_0x4a_perms *msub = msg->contents;
-
-                        _v3_debug(V3_DEBUG_INFO, "received change owner (%d => %d)", msub->perms.account_id, msub->perms.replace_owner_id);
-
-                        a = v3_get_account(msub->perms.account_id);
-                        if (a == NULL) {
-                            _v3_debug(V3_DEBUG_INFO, "can't find account id %d", msub->perms.account_id);
-                            break;
-                        }
-                        old_owner = strdup(a->username);
-                        v3_free_account(a);
-
-                        a = v3_get_account(msub->perms.replace_owner_id);
-                        if (new_owner == NULL) {
-                            _v3_debug(V3_DEBUG_INFO, "can't find account id %d", msub->perms.replace_owner_id);
+                            v3_account *a;
+                            char *old_owner, *new_owner = NULL;
+                            _v3_msg_0x4a_perms *msub = msg->contents;
+                            _v3_debug(V3_DEBUG_INFO, "received change owner (%d => %d)", msub->perms.account_id, msub->perms.replace_owner_id);
+                            a = v3_get_account(msub->perms.account_id);
+                            if (a == NULL) {
+                                _v3_debug(V3_DEBUG_INFO, "can't find account id %d", msub->perms.account_id);
+                                break;
+                            }
+                            old_owner = strdup(a->username);
+                            v3_free_account(a);
+                            a = v3_get_account(msub->perms.replace_owner_id);
+                            if (new_owner == NULL) {
+                                _v3_debug(V3_DEBUG_INFO, "can't find account id %d", msub->perms.replace_owner_id);
+                                free(old_owner);
+                                break;
+                            }
+                            new_owner = strdup(a->username);
+                            v3_free_account(a);
+                            _v3_lock_accountlist();
+                            for (a = v3_account_list; a != NULL; a = a->next) {
+                                if (strcmp(a->owner, old_owner)) {
+                                    continue;
+                                }
+                                free(a->owner);
+                                a->owner = strdup(new_owner);
+                                v3_event *ev = _v3_create_event(V3_EVENT_USERLIST_MODIFY);
+                                ev->account.id = a->perms.account_id;
+                                _v3_debug(V3_DEBUG_INFO, "queuing event type %d for account id %d", ev->type, ev->account.id);
+                                v3_queue_event(ev);
+                            }
+                            _v3_unlock_accountlist();
                             free(old_owner);
-                            break;
-                        }
-                        new_owner = strdup(a->username);
-                        v3_free_account(a);
-
-                        _v3_lock_accountlist();
-                        for (a = v3_account_list; a != NULL; a = a->next) {
-                            if (strcmp(a->owner, old_owner))
-                                continue;
-
-                            free(a->owner);
-                            a->owner = strdup(new_owner);
-
-                            v3_event *ev = _v3_create_event(V3_EVENT_USERLIST_MODIFY);
-                            ev->account.id = a->perms.account_id;
-                            _v3_debug(V3_DEBUG_INFO, "queuing event type %d for account id %d", ev->type, ev->account.id);
-                            v3_queue_event(ev);
-                        }
-                        _v3_unlock_accountlist();
-
-                        free(old_owner);
-                        free(new_owner);
+                            free(new_owner);
                         }
                         break;
                     default:
@@ -2622,98 +4302,301 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                 return V3_MALFORMED;
             } else {
                 _v3_msg_0x4c *m = msg->contents;
+                _v3_net_message *response;
                 _v3_lock_server();
+                v3_server_prop *prop = &_v3_server_prop;
+                char value[0x100] = "";
                 switch (m->subtype) {
-                    case 0x02:
-                        switch (m->property) {
-                            case V3_SERVER_CHAT_FILTER:
-                                switch (m->value) {
-                                    case 0x30:
-                                        v3_server.global_chat_filter = true;
-                                    break;
-                                    case 0x31:
-                                        v3_server.global_chat_filter = false;
-                                    break;
-                                    default:
-                                        _v3_func_leave("_v3_get_0x4c");
-                                        _v3_unlock_server();
-                                        _v3_destroy_packet(msg);
-                                        return V3_MALFORMED;
-                                    break;
-                                }
+                  case V3_SERVER_RECV_SETTING:
+                  case V3_SERVER_SEND_SETTING:
+                    if (m->transaction_id != _v3_server_prop_tid) {
+                        break;
+                    }
+                    if (m->subtype == V3_SERVER_RECV_SETTING) {
+                        _v3_debug(V3_DEBUG_INFO, "recv server property 0x%02X: %s", m->property, m->value);
+                        switch (m->property++) {
+                          case V3_SRV_PROP_INIT:
+                            memset(prop, 0, sizeof(v3_server_prop));
+                          case V3_SRV_PROP_START:
                             break;
-                            case V3_SERVER_ALPHABETIC:
-                                switch (m->value) {
-                                    case 0x30:
-                                        v3_server.channels_alphabetical = true;
-                                    break;
-                                    case 0x31:
-                                        v3_server.channels_alphabetical = false;
-                                    break;
-                                    default:
-                                        _v3_func_leave("_v3_get_0x4c");
-                                        _v3_unlock_server();
-                                        _v3_destroy_packet(msg);
-                                        return V3_MALFORMED;
-                                    break;
-                                }
+                          case V3_SRV_PROP_CHAT_FILTER:
+                            prop->chat_filter = atoi(m->value);
                             break;
-                            case V3_SERVER_MOTD_ALWAYS:
-                                switch (m->value) {
-                                    case 0x30:
-                                        v3_server.motd_always = false;
-                                    break;
-                                    case 0x31:
-                                        v3_server.motd_always = true;
-                                    break;
-                                    default:
-                                        _v3_func_leave("_v3_get_0x4c");
-                                        _v3_unlock_server();
-                                        _v3_destroy_packet(msg);
-                                        return V3_MALFORMED;
-                                    break;
-                                }
+                          case V3_SRV_PROP_CHAN_ORDER:
+                            prop->channel_order = atoi(m->value);
+                          case 0x04:
+                            m->property++;
                             break;
-                            default:
-                                _v3_debug(V3_DEBUG_PACKET_PARSE, "Unknown server property sub-type: 0x02 property: %d", m->subtype);
-                                _v3_func_leave("_v3_get_0x4c");
-                                _v3_unlock_server();
-                                _v3_destroy_packet(msg);
-                                return V3_MALFORMED;
+                          case V3_SRV_PROP_MOTD_ALWAYS:
+                            prop->motd_always = atoi(m->value);
+                          case 0x06:
+                            m->property++;
+                            break;
+                          case V3_SRV_PROP_CHAT_SPAM_FILT:
+                            _v3_parse_filter(&prop->chat_spam_filter, m->value);
+                            break;
+                          case V3_SRV_PROP_COMMENT_SPAM_FILT:
+                            _v3_parse_filter(&prop->comment_spam_filter, m->value);
+                            break;
+                          case V3_SRV_PROP_WAVE_SPAM_FILT:
+                            _v3_parse_filter(&prop->wave_spam_filter, m->value);
+                            break;
+                          case V3_SRV_PROP_TTS_SPAM_FILT:
+                            _v3_parse_filter(&prop->tts_spam_filter, m->value);
+                            break;
+                          case V3_SRV_PROP_INACTIVE_TIMEOUT:
+                            prop->inactivity_timeout = atoi(m->value);
+                            break;
+                          case V3_SRV_PROP_INACTIVE_ACTION:
+                            prop->inactivity_action = atoi(m->value);
+                            break;
+                          case V3_SRV_PROP_INACTIVE_CHAN:
+                            prop->inactivity_channel = v3_get_channel_id(m->value);
+                            break;
+                          case V3_SRV_PROP_REM_SRV_COMMENT:
+                            prop->rem_srv_comment = atoi(m->value);
+                            break;
+                          case V3_SRV_PROP_REM_CHAN_NAMES:
+                            prop->rem_chan_names = atoi(m->value);
+                            break;
+                          case V3_SRV_PROP_REM_CHAN_COMMENTS:
+                            prop->rem_chan_comments = atoi(m->value);
+                            break;
+                          case V3_SRV_PROP_REM_USER_NAMES:
+                            prop->rem_user_names = atoi(m->value);
+                            break;
+                          case V3_SRV_PROP_REM_USER_COMMENTS:
+                            prop->rem_user_comments = atoi(m->value);
+                            break;
+                          case V3_SRV_PROP_COMMENT:
+                            strncpy(prop->server_comment, m->value, sizeof(prop->server_comment) - 1);
+                            break;
+                          case V3_SRV_PROP_WAVE_BIND_FILT:
+                            prop->wave_bind_filter = atoi(m->value);
+                            break;
+                          case V3_SRV_PROP_TTS_BIND_FILT:
+                            prop->tts_bind_filter = atoi(m->value);
+                            break;
+                          case V3_SRV_PROP_CHAN_SPAM_FILT:
+                            _v3_parse_filter(&prop->channel_spam_filter, m->value);
+                          case 0x17:
+                            m->property++;
+                            break;
+                          case V3_SRV_PROP_REM_SHOW_LOGIN:
+                            prop->rem_show_login_names = atoi(m->value);
+                            break;
+                          case V3_SRV_PROP_MAX_GUEST_LOGIN:
+                            prop->max_guest = atoi(m->value);
+                            break;
+                          case V3_SRV_PROP_AUTOKICK_TIME:
+                            prop->autokick_time = atoi(m->value);
+                            break;
+                          case V3_SRV_PROP_AUTOBAN_TIME:
+                            prop->autoban_time = atoi(m->value);
+                            break;
+                          case V3_SRV_PROP_FINISH:
                             break;
                         }
+                    }
+                    if (m->subtype == V3_SERVER_SEND_SETTING) {
+                        _v3_debug(V3_DEBUG_INFO, "sent server property 0x%02X", m->property);
+                        switch (++m->property) {
+                          case V3_SRV_PROP_INIT:
+                          case V3_SRV_PROP_START:
+                            break;
+                          case V3_SRV_PROP_CHAT_FILTER:
+                            snprintf(value, sizeof(value) - 1, "%u", prop->chat_filter);
+                            break;
+                          case V3_SRV_PROP_CHAN_ORDER:
+                            snprintf(value, sizeof(value) - 1, "%u", prop->channel_order);
+                            break;
+                          case 0x04:
+                            m->property++;
+                          case V3_SRV_PROP_MOTD_ALWAYS:
+                            snprintf(value, sizeof(value) - 1, "%u", prop->motd_always);
+                            break;
+                          case 0x06:
+                            m->property++;
+                          case V3_SRV_PROP_CHAT_SPAM_FILT:
+                            snprintf(value, sizeof(value) - 1, "%u,%u,%u",
+                                    prop->chat_spam_filter.action,
+                                    prop->chat_spam_filter.interval,
+                                    prop->chat_spam_filter.times);
+                            break;
+                          case V3_SRV_PROP_COMMENT_SPAM_FILT:
+                            snprintf(value, sizeof(value) - 1, "%u,%u,%u",
+                                    prop->comment_spam_filter.action,
+                                    prop->comment_spam_filter.interval,
+                                    prop->comment_spam_filter.times);
+                            break;
+                          case V3_SRV_PROP_WAVE_SPAM_FILT:
+                            snprintf(value, sizeof(value) - 1, "%u,%u,%u",
+                                    prop->wave_spam_filter.action,
+                                    prop->wave_spam_filter.interval,
+                                    prop->wave_spam_filter.times);
+                            break;
+                          case V3_SRV_PROP_TTS_SPAM_FILT:
+                            snprintf(value, sizeof(value) - 1, "%u,%u,%u",
+                                    prop->tts_spam_filter.action,
+                                    prop->tts_spam_filter.interval,
+                                    prop->tts_spam_filter.times);
+                            break;
+                          case V3_SRV_PROP_INACTIVE_TIMEOUT:
+                            snprintf(value, sizeof(value) - 1, "%u", prop->inactivity_timeout);
+                            break;
+                          case V3_SRV_PROP_INACTIVE_ACTION:
+                            snprintf(value, sizeof(value) - 1, "%u", prop->inactivity_action);
+                            break;
+                          case V3_SRV_PROP_INACTIVE_CHAN:
+                          {
+                            char *path;
+                            if ((path = v3_get_channel_path(prop->inactivity_channel))) {
+                                strncpy(value, path, sizeof(value) - 1);
+                                free(path);
+                            }
+                            break;
+                          }
+                          case V3_SRV_PROP_REM_SRV_COMMENT:
+                            snprintf(value, sizeof(value) - 1, "%u", prop->rem_srv_comment);
+                            break;
+                          case V3_SRV_PROP_REM_CHAN_NAMES:
+                            snprintf(value, sizeof(value) - 1, "%u", prop->rem_chan_names);
+                            break;
+                          case V3_SRV_PROP_REM_CHAN_COMMENTS:
+                            snprintf(value, sizeof(value) - 1, "%u", prop->rem_chan_comments);
+                            break;
+                          case V3_SRV_PROP_REM_USER_NAMES:
+                            snprintf(value, sizeof(value) - 1, "%u", prop->rem_user_names);
+                            break;
+                          case V3_SRV_PROP_REM_USER_COMMENTS:
+                            snprintf(value, sizeof(value) - 1, "%u", prop->rem_user_comments);
+                            break;
+                          case V3_SRV_PROP_COMMENT:
+                            strncpy(value, prop->server_comment, sizeof(value) - 1);
+                            break;
+                          case V3_SRV_PROP_WAVE_BIND_FILT:
+                            snprintf(value, sizeof(value) - 1, "%u", prop->wave_bind_filter);
+                            break;
+                          case V3_SRV_PROP_TTS_BIND_FILT:
+                            snprintf(value, sizeof(value) - 1, "%u", prop->tts_bind_filter);
+                            break;
+                          case V3_SRV_PROP_CHAN_SPAM_FILT:
+                            snprintf(value, sizeof(value) - 1, "%u,%u,%u",
+                                    prop->channel_spam_filter.action,
+                                    prop->channel_spam_filter.interval,
+                                    prop->channel_spam_filter.times);
+                            break;
+                          case 0x17:
+                            m->property++;
+                          case V3_SRV_PROP_REM_SHOW_LOGIN:
+                            snprintf(value, sizeof(value) - 1, "%u", prop->rem_show_login_names);
+                            break;
+                          case V3_SRV_PROP_MAX_GUEST_LOGIN:
+                            snprintf(value, sizeof(value) - 1, "%u", prop->max_guest);
+                            break;
+                          case V3_SRV_PROP_AUTOKICK_TIME:
+                            snprintf(value, sizeof(value) - 1, "%u", prop->autokick_time);
+                            break;
+                          case V3_SRV_PROP_AUTOBAN_TIME:
+                            snprintf(value, sizeof(value) - 1, "%u", prop->autoban_time);
+                            break;
+                          case V3_SRV_PROP_FINISH:
+                            m->property++;
+                            break;
+                        }
+                    }
+                    if (m->property <= V3_SRV_PROP_FINISH) {
+                        if (m->subtype == V3_SERVER_SEND_SETTING) {
+                            _v3_debug(V3_DEBUG_INFO, "send server property 0x%02X: %s", m->property, m->value);
+                        }
+                        response = _v3_put_0x4c(
+                                m->subtype,
+                                m->property,
+                                m->transaction_id,
+                                (m->subtype == V3_SERVER_SEND_SETTING && strlen(value)) ? value : NULL);
+                        _v3_send(response);
+                        _v3_destroy_packet(response);
+                    } else {
+                        v3_event *ev = _v3_create_event(0);
+                        if (m->subtype == V3_SERVER_RECV_SETTING) {
+                            ev->type = V3_EVENT_SRV_PROP_RECV;
+                        }
+                        if (m->subtype == V3_SERVER_SEND_SETTING) {
+                            ev->type = V3_EVENT_SRV_PROP_SENT;
+                            response = _v3_put_0x4c(V3_SERVER_SEND_DONE, V3_SRV_PROP_INIT, m->transaction_id, NULL);
+                            _v3_send(response);
+                            _v3_destroy_packet(response);
+                        }
+                        memcpy(&ev->data->srvprop, prop, sizeof(v3_server_prop));
+                        v3_queue_event(ev);
+                        _v3_debug(V3_DEBUG_INFO, "chat filter...........: %u", prop->chat_filter);
+                        _v3_debug(V3_DEBUG_INFO, "channel order.........: %u", prop->channel_order);
+                        _v3_debug(V3_DEBUG_INFO, "motd always...........: %u", prop->motd_always);
+                        _v3_debug(V3_DEBUG_INFO, "chat spam filter......: %u, %u, %u",
+                                prop->chat_spam_filter.action,
+                                prop->chat_spam_filter.interval,
+                                prop->chat_spam_filter.times);
+                        _v3_debug(V3_DEBUG_INFO, "comment spam filter...: %u, %u, %u",
+                                prop->comment_spam_filter.action,
+                                prop->comment_spam_filter.interval,
+                                prop->comment_spam_filter.times);
+                        _v3_debug(V3_DEBUG_INFO, "wave spam filter......: %u, %u, %u",
+                                prop->wave_spam_filter.action,
+                                prop->wave_spam_filter.interval,
+                                prop->wave_spam_filter.times);
+                        _v3_debug(V3_DEBUG_INFO, "tts spam filter.......: %u, %u, %u",
+                                prop->tts_spam_filter.action,
+                                prop->tts_spam_filter.interval,
+                                prop->tts_spam_filter.times);
+                        _v3_debug(V3_DEBUG_INFO, "inactive timeout......: %u", prop->inactivity_timeout);
+                        _v3_debug(V3_DEBUG_INFO, "inactive action.......: %u", prop->inactivity_action);
+                        _v3_debug(V3_DEBUG_INFO, "inactive channel......: %u", prop->inactivity_channel);
+                        _v3_debug(V3_DEBUG_INFO, "rem srv comment.......: %u", prop->rem_srv_comment);
+                        _v3_debug(V3_DEBUG_INFO, "rem chan names........: %u", prop->rem_chan_names);
+                        _v3_debug(V3_DEBUG_INFO, "rem chan comments.....: %u", prop->rem_chan_comments);
+                        _v3_debug(V3_DEBUG_INFO, "rem user names........: %u", prop->rem_user_names);
+                        _v3_debug(V3_DEBUG_INFO, "rem user comments.....: %u", prop->rem_user_comments);
+                        _v3_debug(V3_DEBUG_INFO, "server comment........: %.*s",
+                                sizeof(prop->server_comment) - 1,
+                                prop->server_comment);
+                        _v3_debug(V3_DEBUG_INFO, "wave bind filter......: %u", prop->wave_bind_filter);
+                        _v3_debug(V3_DEBUG_INFO, "tts bind filter.......: %u", prop->tts_bind_filter);
+                        _v3_debug(V3_DEBUG_INFO, "channel spam filter...: %u, %u, %u",
+                                prop->channel_spam_filter.action,
+                                prop->channel_spam_filter.interval,
+                                prop->channel_spam_filter.times);
+                        _v3_debug(V3_DEBUG_INFO, "rem show login names..: %u", prop->rem_show_login_names);
+                        _v3_debug(V3_DEBUG_INFO, "max guest.............: %u", prop->max_guest);
+                        _v3_debug(V3_DEBUG_INFO, "autokick time.........: %u", prop->autokick_time);
+                        _v3_debug(V3_DEBUG_INFO, "autoban time..........: %u", prop->autoban_time);
+                    }
                     break;
-                    default:
-                        _v3_debug(V3_DEBUG_PACKET_PARSE, "Unknown server property sub-type: %d", m->subtype);
-                        _v3_func_leave("_v3_get_0x4c");
-                        _v3_unlock_server();
-                        _v3_destroy_packet(msg);
-                        return V3_MALFORMED;
+                  case V3_SERVER_CLIENT_SET:
+                    switch (m->property) {
+                      case V3_SRV_PROP_CHAT_FILTER:
+                        v3_server.per_channel_chat = atoi(m->value);
+                        break;
+                      case V3_SRV_PROP_CHAN_ORDER:
+                        v3_server.channel_manual_sort = atoi(m->value);
+                        break;
+                      case V3_SRV_PROP_MOTD_ALWAYS:
+                        v3_server.motd_always = atoi(m->value);
+                        break;
+                    }
+                    v3_event *ev = _v3_create_event(V3_EVENT_SERVER_PROPERTY_UPDATED);
+                    ev->serverproperty.property = m->property;
+                    ev->serverproperty.value = atoi(m->value);
+                    _v3_debug(V3_DEBUG_INFO, "queuing event type %u for property %u and value %u", ev->type, ev->serverproperty.property, ev->serverproperty.value);
+                    v3_queue_event(ev);
                     break;
                 }
-                v3_event *ev = _v3_create_event(V3_EVENT_SERVER_PROPERTY_UPDATED);
-                ev->serverproperty.property = m->property;
-                if (m->value == 0x30) {
-                    if (m->property == V3_SERVER_MOTD_ALWAYS) {
-                            ev->serverproperty.value = false;
-                    } else {
-                        ev->serverproperty.value = true;
-                    }
-                } else {
-                    if (m->property == V3_SERVER_MOTD_ALWAYS) {
-                            ev->serverproperty.value = true;
-                    } else {
-                        ev->serverproperty.value = false;
-                    }
+                if (m->value) {
+                    free(m->value);
                 }
-                _v3_debug(V3_DEBUG_INFO, "queuing event type %d for property %d and value %d", ev->type, ev->serverproperty.property, ev->serverproperty.value);
-                v3_queue_event(ev);
-
+                _v3_unlock_server();
             }
-
-            _v3_func_leave("_v3_process_message");
-            _v3_unlock_server();
             _v3_destroy_packet(msg);
+            _v3_func_leave("_v3_process_message");
             return V3_OK;/*}}}*/
         case 0x50:/*{{{*/
             if (!_v3_get_0x50(msg)) {
@@ -2723,13 +4606,12 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
             } else {
                 _v3_msg_0x50 *m = msg->contents;
                 v3_user *u;
-                uint8_t guest = 0;
+                uint8_t guest = false;
                 char **motd;
                 int size = 0;
-
                 _v3_lock_server();
-                if(m->message_id + 1 > m->message_num) {
-                    _v3_debug(V3_DEBUG_PACKET_PARSE, "Received %d packet but max packets is %d", m->message_id, m->message_num);
+                if (m->message_id + 1 > m->message_num) {
+                    _v3_debug(V3_DEBUG_PACKET_PARSE, "received %d packet but max packets is %d", m->message_id, m->message_num);
                     _v3_func_leave("_v3_get_0x50");
                     _v3_unlock_server();
                     return false;
@@ -2739,7 +4621,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                 } else {
                     motd = &v3_server.motd;
                 }
-                if(m->message_id == 0) {
+                if (m->message_id == 0) {
                     if (*motd != NULL) {
                         free(*motd);
                     }
@@ -2752,16 +4634,14 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                     memset(*motd + size, 0, m->message_size + 1);
                     memcpy(*motd + size, m->message, m->message_size);
                 }
-                if ((u = v3_get_user(v3_get_user_id()))) {
+                if ((u = _v3_get_user(v3_get_user_id()))) {
                     guest = u->guest;
-                } else {
-                    // this should never happen... but just in case....
-                    guest = false;
                 }
                 if ((m->message_id+1) == m->message_num) {
                     // At this point we have our motd, may want to notify the user here :)
                     v3_event *ev = _v3_create_event(V3_EVENT_DISPLAY_MOTD);
-                    strncpy(ev->data.motd, *motd, 2047);
+                    ev->flags = m->guest_motd_flag;
+                    strncpy(ev->data->motd, *motd, 2047);
                     v3_queue_event(ev);
                 }
                 _v3_destroy_packet(msg);
@@ -2778,9 +4658,8 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
             } else {
                 _v3_msg_0x52_0x01_in *m = (_v3_msg_0x52_0x01_in *)msg->contents;
                 v3_event *ev = _v3_create_event(0);
-                int queue = true;
                 switch (m->header.subtype) {
-                    case 0x00:
+                    case V3_AUDIO_START:
                     case 0x04:
                         {
                             ev->type = V3_EVENT_USER_TALK_START;
@@ -2792,192 +4671,65 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                             _v3_unlock_userlist();
                         }
                         break;
-                    case 0x02:
+                    case V3_AUDIO_STOP:
                         {
                             ev->type = V3_EVENT_USER_TALK_END;
                             ev->user.id = m->header.user_id;
                             _v3_lock_userlist();
                             _v3_get_user(m->header.user_id)->is_transmitting = false;
                             _v3_unlock_userlist();
+                            _v3_vrf_record_event(V3_VRF_EVENT_AUDIO_STOP, m->header.user_id, -1, -1, 0, 0, NULL);
                         }
                         break;
-                    case 0x01:
+                    case V3_AUDIO_DATA:
                         {
-                            _v3_msg_0x52_0x01_in *msub = (_v3_msg_0x52_0x01_in *)msg->contents;
-                            const v3_codec *codec = v3_get_codec(msub->header.codec, msub->header.codec_format);
+                            const v3_codec *codec = v3_get_codec(m->header.codec, m->header.codec_format);
                             ev->type = V3_EVENT_PLAY_AUDIO;
                             ev->user.id = m->header.user_id;
                             ev->pcm.send_type = m->header.send_type;
-                            ev->pcm.rate = v3_get_codec_rate(msub->header.codec, msub->header.codec_format);
-                            ev->pcm.channels = (msub->header.pcm_length - 2000 == 2) ? 2 : 1;
-                            int ctr;
+                            ev->pcm.rate = codec->rate;
+                            ev->pcm.channels = (m->header.pcm_length - 2000 == 2) ? 2 : 1;
+                            ev->pcm.length = sizeof(ev->data->sample);
+                            int ret;
 
-                            // TODO: it's too messy to have this here.  Write a function that decodes
-                            switch (msub->header.codec) {
-#if HAVE_GSM
-                                case 0x00: // GSM
-                                    {
-                                        uint8_t *gsmdataptr = msub->data.frames;
-
-                                        if (!v3_decoders[m->header.user_id].gsm) {
-                                            if (!(v3_decoders[m->header.user_id].gsm = gsm_create())) {
-                                                _v3_error("failed to create gsm decoder");
-                                                _v3_destroy_0x52(msg);
-                                                _v3_destroy_packet(msg);
-                                                free(ev);
-                                                _v3_func_leave("_v3_process_message");
-                                                return V3_MALFORMED; // it's not really a malformed packet...
-                                            }
-                                            int one = 1;
-                                            gsm_option(v3_decoders[m->header.user_id].gsm, GSM_OPT_WAV49, &one);
-                                        }
-                                        for (ctr = 0; ctr < msub->header.data_length / 65; ctr++) {
-                                            if (gsm_decode(v3_decoders[m->header.user_id].gsm, gsmdataptr+(ctr*65), (void *)ev->data.sample+(ctr*640)) || 
-                                                gsm_decode(v3_decoders[m->header.user_id].gsm, gsmdataptr+(ctr*65)+33, (void *)ev->data.sample+(ctr*640)+320)) {
-                                                _v3_debug(V3_DEBUG_INFO, "failed to decode gsm frame %d", ctr);
-                                                continue;
-                                            }
-                                        }
-                                        ev->pcm.length = (msub->header.data_length / 65) * 640;
-                                        _v3_debug(V3_DEBUG_EVENT, "queueing pcm msg length %d", ev->pcm.length);
-                                    }
-                                    break;
-#endif
-#if HAVE_CELT
-                                case 0x01: // CELT
-                                case 0x02:
-                                    {
-                                        void *celtmode           = v3_decoders[m->header.user_id].celtmode;
-                                        void *celtdec            = v3_decoders[m->header.user_id].celt;
-                                        static uint8_t last_chan = 0;
-                                        uint8_t channels         = ev->pcm.channels;
-                                        uint16_t pcm_frame_size  = codec->pcmframesize * channels;
-                                        uint16_t frame_size      = pcm_frame_size / channels;
-                                        uint8_t celt_frame_size;
-                                        uint8_t *celtdataptr     = msub->data.frames;
-                                        uint16_t celtdatalen     = msub->header.data_length;
-
-                                        if (!celtmode || !celtdec || channels != last_chan) {
-                                            if (celtdec) {
-                                                celt_decoder_destroy(celtdec);
-                                                celtdec = v3_decoders[m->header.user_id].celt = NULL;
-                                            }
-                                            if (celtmode) {
-                                                celt_mode_destroy(celtmode);
-                                                celtmode = v3_decoders[m->header.user_id].celtmode = NULL;
-                                            }
-                                            if (!(celtmode = celt_mode_create(44100, frame_size / sizeof(int16_t), NULL)) ||
-                                                !(celtdec = celt_decoder_create(celtmode, channels, NULL))) {
-                                                _v3_error("failed to create celt decoder");
-                                                _v3_destroy_0x52(msg);
-                                                _v3_destroy_packet(msg);
-                                                free(ev);
-                                                _v3_func_leave("_v3_process_message");
-                                                return V3_MALFORMED; // it's not really a malformed packet...
-                                            }
-                                            v3_decoders[m->header.user_id].celtmode = celtmode;
-                                            v3_decoders[m->header.user_id].celt = celtdec;
-                                            last_chan = channels;
-                                        }
-                                        while (celtdatalen) {
-                                            celt_frame_size = *celtdataptr++;
-                                            celtdatalen--;
-                                            if (!celt_frame_size || celtdatalen - celt_frame_size < 0) {
-                                                _v3_error("received a malformed celt packet");
-                                                _v3_destroy_0x52(msg);
-                                                _v3_destroy_packet(msg);
-                                                free(ev);
-                                                _v3_func_leave("_v3_process_message");
-                                                return V3_MALFORMED;
-                                            }
-                                            if (celt_decode(
-                                                            celtdec,
-                                                            (void *)celtdataptr,
-                                                            celt_frame_size,
-                                                            (void *)ev->data.sample + ev->pcm.length)) {
-                                                _v3_debug(V3_DEBUG_INFO, "failed to decode celt frame");
-                                            }
-                                            celtdataptr += celt_frame_size;
-                                            celtdatalen -= celt_frame_size;
-                                            ev->pcm.length += pcm_frame_size;
-                                        }
-                                        _v3_debug(V3_DEBUG_EVENT, "queueing pcm msg length %d", ev->pcm.length);
-                                    }
-                                    break;
-#endif
-#if HAVE_SPEEX
-                                case 0x03: // SPEEX
-                                    {
-                                        static uint32_t last_rate = 0;
-                                        uint16_t frame_count      = msub->data.speex.frame_count;
-                                        uint16_t pcm_frame_size   = codec->pcmframesize;
-                                        uint16_t spx_frame_size;
-                                        uint8_t *spxdataptr       = msub->data.speex.frames;
-                                        SpeexBits bits;
-
-                                        /*
-                                         * Two uint16_t as frame count and pcm frame size
-                                         * are prepended at the beginning of the speex data.
-                                         * A uint16_t specifying speex frame size is prepended
-                                         * to every frame but instead we ignore its value and
-                                         * calculate it by the total data length minus two
-                                         * uint16_t by frame count minus a uint16_t we ignore.
-                                         */
-                                        spx_frame_size = ((msub->header.data_length - 4) / frame_count) - 2;
-
-                                        if (!v3_decoders[m->header.user_id].speex || ev->pcm.rate != last_rate) {
-                                            if (v3_decoders[m->header.user_id].speex) {
-                                                speex_decoder_destroy(v3_decoders[m->header.user_id].speex);
-                                                v3_decoders[m->header.user_id].speex = NULL;
-                                            }
-                                            switch (ev->pcm.rate) {
-                                              case 8000:
-                                                v3_decoders[m->header.user_id].speex = speex_decoder_init(&speex_nb_mode);
-                                                break;
-                                              case 16000:
-                                                v3_decoders[m->header.user_id].speex = speex_decoder_init(&speex_wb_mode);
-                                                break;
-                                              case 32000:
-                                                v3_decoders[m->header.user_id].speex = speex_decoder_init(&speex_uwb_mode);
-                                                break;
-                                              default:
-                                                _v3_debug(V3_DEBUG_INFO, "received unknown pcm rate for speex %d", ev->pcm.rate);
-                                                _v3_destroy_0x52(msg);
-                                                _v3_destroy_packet(msg);
-                                                free(ev);
-                                                _v3_func_leave("_v3_process_message");
-                                                return V3_MALFORMED;
-                                            }
-                                            last_rate = ev->pcm.rate;
-                                        }
-                                        speex_bits_init(&bits);
-                                        for (ctr = 0; ctr < frame_count; ctr++) {
-                                            speex_bits_read_from(&bits, (void *)spxdataptr+(ctr*(spx_frame_size+2))+2, spx_frame_size);
-                                            speex_decode_int(v3_decoders[m->header.user_id].speex, &bits, (void *)ev->data.sample+(ctr*pcm_frame_size));
-                                        }
-                                        speex_bits_destroy(&bits);
-                                        ev->pcm.length = frame_count * pcm_frame_size;
-                                        _v3_debug(V3_DEBUG_EVENT, "queueing pcm msg length %d", ev->pcm.length);
-                                    }
-                                    break;
-#endif
-                                default:
-                                    _v3_debug(V3_DEBUG_INFO, "unsupported codec %d/%d", msub->header.codec, msub->header.codec_format);
-                                    queue = false;
-                                    break;
+                            _v3_vrf_record_event(
+                                    V3_VRF_EVENT_AUDIO_DATA,
+                                    m->header.user_id,
+                                    m->header.codec,
+                                    m->header.codec_format,
+                                    m->header.pcm_length,
+                                    m->header.data_length,
+                                    m->data);
+                            if ((ret = _v3_audio_decode(
+                                            /* encoded input */
+                                            codec,
+                                            &v3_decoders[m->header.user_id],
+                                            m->data,
+                                            m->header.data_length,
+                                            /* pcm output */
+                                            (void *)&ev->data->sample,
+                                            &ev->pcm.length,
+                                            /* optional args */
+                                            ev->pcm.channels)) != V3_OK) {
+                                _v3_destroy_0x52(msg);
+                                _v3_destroy_packet(msg);
+                                free(ev);
+                                _v3_func_leave("_v3_process_message");
+                                return ret;
                             }
                             // don't waste resources if we don't need to deal with it
                             static const int16_t maxsample = 0x7fff;
                             static const int16_t minsample = 0x7fff + 1;
                             register float tmpsample = 0;
+                            int ctr;
 
                             if (_v3_master_volume != 79) {
                                 float multiplier = tan(_v3_master_volume/100.0);
                                 _v3_debug(V3_DEBUG_INFO, "master: amplifying to level %d (%3.10f multiplier)", _v3_master_volume, multiplier);
                                 for (ctr = 0; ctr < ev->pcm.length / 2; ctr++) {
-                                    tmpsample = ev->data.sample16[ctr];
+                                    tmpsample = ev->data->sample16[ctr];
                                     tmpsample *= multiplier;
-                                    ev->data.sample16[ctr] = (tmpsample > maxsample)
+                                    ev->data->sample16[ctr] = (tmpsample > maxsample)
                                         ? maxsample
                                         : ((tmpsample < minsample) ? minsample : tmpsample);
                                 }
@@ -2986,9 +4738,9 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                                 float multiplier = tan(_v3_user_volumes[ev->user.id]/100.0);
                                 _v3_debug(V3_DEBUG_INFO, "user: amplifying to level %d (%3.10f multiplier)", _v3_user_volumes[ev->user.id], multiplier);
                                 for (ctr = 0; ctr < ev->pcm.length / 2; ctr++) {
-                                    tmpsample = ev->data.sample16[ctr];
+                                    tmpsample = ev->data->sample16[ctr];
                                     tmpsample *= multiplier;
-                                    ev->data.sample16[ctr] = (tmpsample > maxsample)
+                                    ev->data->sample16[ctr] = (tmpsample > maxsample)
                                         ? maxsample
                                         : ((tmpsample < minsample) ? minsample : tmpsample);
                                 }
@@ -2996,11 +4748,8 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                         }
                         break;
                 }
-                if (queue) {
-                    v3_queue_event(ev);
-                } else {
-                    free(ev);
-                }
+                _v3_debug(V3_DEBUG_EVENT, "queueing pcm msg length %d", ev->pcm.length);
+                v3_queue_event(ev);
                 _v3_destroy_0x52(msg);
             }
             _v3_destroy_packet(msg);
@@ -3017,7 +4766,6 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                 return V3_MALFORMED;
             } else {
                 _v3_msg_0x53 *m = (_v3_msg_0x53 *)msg->contents;
-
                 v3_user *user;
                 _v3_debug(V3_DEBUG_INFO, "user %d moved to channel %d", m->user_id, m->channel_id);
                 user = v3_get_user(m->user_id);
@@ -3029,6 +4777,11 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                     ev->user.id = m->user_id;
                     ev->channel.id = m->channel_id;
                     v3_queue_event(ev);
+                    _v3_vrf_record_event(
+                            (m->user_id == v3_get_user_id())
+                                ? V3_VRF_EVENT_DATA_FLUSH
+                                : V3_VRF_EVENT_AUDIO_STOP,
+                            m->user_id, -1, -1, 0, 0, NULL);
                 }
             }
             _v3_destroy_packet(msg);
@@ -3062,15 +4815,13 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                 return V3_MALFORMED;
             } else {
                 _v3_msg_0x58 *m = msg->contents;
-
                 if (m->error_id) {
                     char *error;
-
-                    if (m->error_id > (sizeof(_v3_phantom_errors) / sizeof(_v3_phantom_errors[0])))
+                    if (m->error_id > (sizeof(_v3_phantom_errors) / sizeof(_v3_phantom_errors[0]))) {
                         error = "Unknown";
-                    else
+                    } else {
                         error = _v3_phantom_errors[m->error_id - 1];
-
+                    }
                     v3_event *ev = _v3_create_event(V3_EVENT_ERROR_MSG);
                     strncpy(ev->error.message, "Phantom error:\n", sizeof(ev->error.message));
                     strncat(ev->error.message, error, sizeof(ev->error.message));
@@ -3078,12 +4829,11 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                 } else {
                     v3_user new_phantom_user = {0};
                     v3_event *ev;
-
                     switch (m->subtype) {
                         case V3_PHANTOM_ADD:
                             new_phantom_user.id = m->phantom_user_id;
                             new_phantom_user.channel = m->channel_id;
-                            new_phantom_user.name = v3_get_user(m->real_user_id)->name;
+                            new_phantom_user.name = _v3_get_user(m->real_user_id)->name;
                             new_phantom_user.comment = "";
                             new_phantom_user.phonetic = "";
                             new_phantom_user.integration_text = "";
@@ -3100,7 +4850,6 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                             _v3_debug(V3_DEBUG_INFO, "queuing event type %d for user %d", ev->type, ev->user.id);
                             v3_queue_event(ev);
                             break;
-
                         case V3_PHANTOM_REMOVE:
                             _v3_lock_userlist();
                             _v3_remove_user(m->phantom_user_id);
@@ -3110,17 +4859,14 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                             ev->user.id = m->phantom_user_id;
                             ev->channel.id = m->channel_id;
                             _v3_debug(V3_DEBUG_INFO, "queuing event type %d for user %d", ev->type, ev->user.id);
-
                             v3_queue_event(ev);
                             break;
-
                         default:
-                            _v3_error("bad phantom subtype");
+                            _v3_error("unknown phantom subtype %d", m->subtype);
                             _v3_destroy_packet(msg);
                             _v3_func_leave("_v3_process_message");
                             return V3_MALFORMED;
                     }
-
                 }
             }
             _v3_destroy_packet(msg);
@@ -3135,32 +4881,34 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                 char buf[1024];
                 _v3_msg_0x59 *m = msg->contents;
                 snprintf(buf, 1024, "%s%s", _v3_errors[m->error], m->message);
+                if (m->minutes_banned) {
+                    char buf2[1024];
+                    snprintf(buf2, 1024, " You can connect again in %d minutes", m->minutes_banned);
+                    strncat(buf, buf2, 1023);
+                }
+                _v3_error("%s", buf);
+                if (v3_is_loggedin()) {
+                    v3_event *ev = _v3_create_event(V3_EVENT_ERROR_MSG);
+                    ev->error.disconnected = m->close_connection;
+                    strncpy(ev->error.message, buf, 512);
+                    v3_queue_event(ev);
+                }
                 if (m->close_connection) {
-                    if (m->minutes_banned) {
-                        char buf2[1024];
-                        snprintf(buf2, 1024, " You can connect again in %d minutes", m->minutes_banned);
-                        strncat(buf, buf2, 1023);
-                    }
                     _v3_debug(V3_DEBUG_INTERNAL, "disconnecting from server");
                     _v3_logout();
                 }
-                v3_event *ev = _v3_create_event(V3_EVENT_ERROR_MSG);
-                ev->error.disconnected = m->close_connection;
-                strncpy(ev->error.message, buf, 512);
-                v3_queue_event(ev);
-                _v3_error(buf);
             }
             _v3_destroy_packet(msg);
             _v3_func_leave("_v3_process_message");
             return V3_OK;/*}}}*/
         case 0x5a:/*{{{*/
-            if(!_v3_get_0x5a(msg)) {
+            if (!_v3_get_0x5a(msg)) {
                 _v3_destroy_packet(msg);
                 _v3_func_leave("_v3_process_message");
                 return V3_MALFORMED;
             } else {
                 _v3_msg_0x5a *m = msg->contents;
-                switch(m->subtype) {
+                switch (m->subtype) {
                     case V3_START_PRIV_CHAT:
                         {
                             // for some reason, the server responds to us to tell us that we started chat?
@@ -3189,7 +4937,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                             ev->user.privchat_user1 = m->user1;
                             ev->user.privchat_user2 = m->user2;
                             ev->flags = m->error;
-                            strncpy(ev->data.chatmessage, m->msg, sizeof(ev->data.chatmessage) - 1);
+                            strncpy(ev->data->chatmessage, m->msg, sizeof(ev->data->chatmessage) - 1);
                             _v3_debug(V3_DEBUG_INFO, "received chat message from user id %d: %s", m->user2, m->msg);
                             free(m->msg);
                             v3_queue_event(ev);
@@ -3247,15 +4995,16 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                 _v3_msg_0x5d *m = msg->contents;
                 v3_user *ul, *u;
                 int ctr;
-
                 _v3_lock_luser();
                 _v3_lock_userlist();
-
                 ul = calloc(m->user_count, sizeof(v3_user));
                 switch (m->subtype) {
                     case V3_REMOVE_USER:
                         _v3_debug(V3_DEBUG_INFO, "removing %d users from user list",  m->user_count);
                         for (ctr = 0; ctr < m->user_count; ctr++) {
+                            if (_v3_get_user(m->user_list[ctr].id)->is_transmitting) {
+                                _v3_vrf_record_event(V3_VRF_EVENT_AUDIO_STOP, m->user_list[ctr].id, -1, -1, 0, 0, NULL);
+                            }
                             v3_event *ev = _v3_create_event(V3_EVENT_USER_LOGOUT);
                             ev->user.id = m->user_list[ctr].id;
                             ev->channel.id = m->user_list[ctr].channel;
@@ -3278,7 +5027,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                         break;
                     case V3_MODIFY_USER:
                     case V3_ADD_USER:
-                        _v3_debug(V3_DEBUG_INFO, "adding %d users on user list",  m->user_count);
+                        _v3_debug(V3_DEBUG_INFO, "adding %d users to user list",  m->user_count);
                         for (ctr = 0; ctr < m->user_count; ctr++) {
                             _v3_update_user(&m->user_list[ctr]);
                             v3_event *ev = _v3_create_event(m->subtype == V3_ADD_USER ? V3_EVENT_USER_LOGIN : V3_EVENT_USER_MODIFY);
@@ -3334,6 +5083,23 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                             v3_queue_event(ev);
                         }
                         break;
+                    case V3_RANKCHANGE_USER:
+                        _v3_debug(V3_DEBUG_INFO, "changing rank for %d users on user list",  m->user_count);
+                        {
+                            v3_user *u;
+                            _v3_lock_userlist();
+                            for (ctr = 0; ctr < m->user_count; ctr++) {
+                                if ((u = _v3_get_user(m->user_list[ctr].id))) {
+                                    u->rank_id = m->user_list[ctr].rank_id;
+                                }
+                                v3_event *ev = _v3_create_event(V3_EVENT_USER_RANK_CHANGE);
+                                ev->user.id = m->user_list[ctr].id;
+                                _v3_debug(V3_DEBUG_INFO, "queuing event type %d for user %d", ev->type, ev->user.id);
+                                v3_queue_event(ev);
+                            }
+                            _v3_unlock_userlist();
+                        }
+                        break;
                 }
                 free(ul);
                 _v3_unlock_userlist();
@@ -3354,7 +5120,6 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                 _v3_msg_0x60 *m = (_v3_msg_0x60 *)msg->contents;
                 v3_channel *cl;
                 int ctr;
-
                 _v3_lock_channellist();
                 _v3_debug(V3_DEBUG_INFO, "adding %d channels from channel list",  m->channel_count);
                 cl = calloc(m->channel_count, sizeof(v3_channel));
@@ -3372,6 +5137,45 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
             _v3_destroy_packet(msg);
             _v3_func_leave("_v3_process_message");
             return V3_OK;/*}}}*/
+        case 0x61:/*{{{*/
+            if (!_v3_get_0x61(msg)) {
+                _v3_destroy_packet(msg);
+                _v3_func_leave("_v3_process_message");
+                return V3_MALFORMED;
+            } else {
+                _v3_msg_0x61 *m = msg->contents;
+                v3_event *ev = _v3_create_event(V3_EVENT_ADMIN_BAN_LIST);
+                ev->data->ban.id = m->ban_id;
+                ev->data->ban.count = m->ban_count;
+                ev->data->ban.bitmask_id = m->bitmask_id;
+                ev->data->ban.ip_address = m->ip_address;
+                strncpy(ev->data->ban.user, m->banned_user, sizeof(ev->data->ban.user) - 1);
+                strncpy(ev->data->ban.by, m->banned_by, sizeof(ev->data->ban.user) - 1);
+                strncpy(ev->data->ban.reason, m->ban_reason, sizeof(ev->data->ban.reason) - 1);
+                _v3_debug(V3_DEBUG_INFO, "queuing event type %d for ban %d", ev->type, ev->data->ban.id);
+                v3_queue_event(ev);
+            }
+            _v3_destroy_packet(msg);
+            _v3_func_leave("_v3_process_message");
+            return V3_OK;/*}}}*/
+        case 0x62:/*{{{*/
+            if (!_v3_get_0x62(msg)) {
+                _v3_destroy_packet(msg);
+                _v3_func_leave("_v3_process_message");
+                return V3_MALFORMED;
+            } else {
+                _v3_msg_0x62 *m = msg->contents;
+                _v3_debug(V3_DEBUG_INFO, "got user page from user %d to user %d", m->user_id_from, m->user_id_to);
+                if (m->user_id_to == v3_get_user_id()) {
+                    v3_event *ev = _v3_create_event(V3_EVENT_USER_PAGE);
+                    ev->user.id = m->user_id_from;
+                    _v3_debug(V3_DEBUG_INFO, "queuing event type %d for user page from user %d", ev->type, ev->user.id);
+                    v3_queue_event(ev);
+                }
+            }
+            _v3_destroy_packet(msg);
+            _v3_func_leave("_v3_process_message");
+            return V3_OK;/*}}}*/
         default:
             _v3_debug(V3_DEBUG_NOTICE, "warning: unimplemented packet type: 0x%02X", msg->type);
             _v3_destroy_packet(msg);
@@ -3381,7 +5185,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
 }/*}}}*/
 
 /*
- * These are functions that are availble via the API for applications to use
+ * These are functions that are available via the API for applications to use.
  */
 int
 v3_login(char *server, char *username, char *password, char *phonetic) {/*{{{*/
@@ -3422,18 +5226,19 @@ v3_login(char *server, char *username, char *password, char *phonetic) {/*{{{*/
     srand(tv.tv_usec);
 
     if (strlen(username) >= 32) {
-        _v3_error("Login Failed: Username is too long (max is 32 characters).");
+        _v3_error("Login Failed: Username is too long (max is 31 characters).");
         _v3_func_leave("v3_login");
         return false;
     }
     if (strlen(phonetic) >= 32) {
-        _v3_error("Login Failed: Phonetic is too long (max is 32 characters).");
+        _v3_error("Login Failed: Phonetic is too long (max is 31 characters).");
         _v3_func_leave("v3_login");
         return false;
     }
     srvname = strdup(server);
     if ((sep = strchr(srvname, ':')) == NULL) {
         _v3_error("v3_login: invalid server name format.  expected: 'name:port'");
+        free(srvname);
         _v3_func_leave("v3_login");
         return false;
     }
@@ -3441,8 +5246,9 @@ v3_login(char *server, char *username, char *password, char *phonetic) {/*{{{*/
     srvport = sep+1;
     _v3_debug(V3_DEBUG_INTERNAL, "parsed server name: %s", srvname);
     _v3_debug(V3_DEBUG_INTERNAL, "parsed server port: %s", srvport);
+
     /*
-       If the supplied server name  is not an IP address, perform a DNS lookup
+     * If the supplied server name is not an IP address, perform a DNS lookup.
      */
     if (! inet_aton(srvname, &srvip)) {
         struct hostent *hp;
@@ -3455,58 +5261,76 @@ v3_login(char *server, char *username, char *password, char *phonetic) {/*{{{*/
 
         _v3_status(5, "Looking up hostname for %s", srvname);
         hstbuflen = 1024;
-        tmphstbuf = malloc (hstbuflen);
+        tmphstbuf = malloc(hstbuflen);
 
-        while ((res = gethostbyname_r (srvname, &hostbuf, tmphstbuf, hstbuflen, &hp, &herr)) == ERANGE) {
+        while ((res = gethostbyname_r(srvname, &hostbuf, tmphstbuf, hstbuflen, &hp, &herr)) == ERANGE) {
             /* Enlarge the buffer.  */
             hstbuflen *= 2;
-            tmphstbuf = realloc (tmphstbuf, hstbuflen);
+            tmphstbuf = realloc(tmphstbuf, hstbuflen);
         }
         free(tmphstbuf);
 #else
-        // if gethostbyname_r does not exist, assume that the gethostbyname is re-entrant
-        hp = gethostbyname (srvname);
+        // if gethostbyname_r does not exist, assume that gethostbyname is re-entrant
+        hp = gethostbyname(srvname);
 #endif
         if (res || hp == NULL || hp->h_length < 1) {
             _v3_error("Hostname lookup failed.");
+            free(srvname);
             _v3_func_leave("v3_login");
             return false;
         }
         memcpy(&srvip.s_addr, hp->h_addr_list[0], sizeof(srvip.s_addr));
         _v3_debug(V3_DEBUG_INTERNAL, "found host: %s", inet_ntoa(srvip));
     }
+
     /*
-     * Intialize the server and user structures;
+     * Create the outbound event queue.
+     */
+    if (pipe(v3_server.evpipe)) {
+        _v3_error("could not create outbound event queue: %s", strerror(errno));
+        free(srvname);
+        _v3_func_leave("v3_login");
+        return false;
+    }
+    int ctr, flags;
+    for (ctr = 0; ctr < 2; ctr++) {
+        if ((flags = fcntl(v3_server.evpipe[ctr], F_GETFL, 0)) >= 0) {
+            flags |= O_NONBLOCK;
+            fcntl(v3_server.evpipe[ctr], F_SETFL, flags);
+        } else {
+            _v3_error("could not set non-blocking mode for outbound event queue: %s", strerror(errno));
+            close(v3_server.evpipe[0]);
+            close(v3_server.evpipe[1]);
+            free(srvname);
+            _v3_func_leave("v3_login");
+            return false;
+        }
+    }
+
+    /*
+     * Initialize the server and user structures.
      */
     v3_server.ip = srvip.s_addr;
     v3_server.port = atoi(srvport);
     v3_luser.name = strdup(username);
     v3_luser.password = strdup(password);
     v3_luser.phonetic = strdup(phonetic);
-    _v3_init_decoders();
-    if (pipe(v3_server.evpipe)) {
-        _v3_error("could not create outbound event queue");
-        _v3_func_leave("v3_login");
-        return false;
-    }
-    v3_server.evinstream = fdopen(v3_server.evpipe[0], "r");
-    v3_server.evoutstream = fdopen(v3_server.evpipe[1], "w");
     free(srvname);
+    _v3_init_decoders();
+
     /*
-       Call home and verify the server's license
+     * Call home and verify the server's license.
      */
     _v3_status(10, "Checking server license.");
-    if (! _v3_server_auth(&srvip, (uint16_t) v3_server.port)) {
-        _v3_status(0, "Not connected.");
+    if (!_v3_server_auth(&srvip, (uint16_t)v3_server.port)) {
         _v3_func_leave("v3_login");
         return false;
     }
 
     /*
-       Create a TCP connection to the server
+     * Create a TCP connection to the server.
      */
-    if (!_v3_login_connect(&srvip, (uint16_t) v3_server.port)) {
-        _v3_status(0, "Not connected.");
+    if (!_v3_login_connect(&srvip, (uint16_t)v3_server.port)) {
         _v3_func_leave("v3_login");
         return false;
     }
@@ -3514,7 +5338,7 @@ v3_login(char *server, char *username, char *password, char *phonetic) {/*{{{*/
     gettimeofday(&v3_server.last_timestamp, NULL);
 
     /*
-       Initiate the encryption handshake by handing the server our randomly generated key.
+     * Initiate the encryption handshake by handing the server our randomly generated key.
      */
     msg = _v3_put_0x00();
     ventrilo_first_enc((uint8_t *)msg->data, msg->len);
@@ -3522,33 +5346,37 @@ v3_login(char *server, char *username, char *password, char *phonetic) {/*{{{*/
     _v3_destroy_packet(msg);
 
     /*
-       Grab server information.
+     * Grab server information.
      */
     msg = _v3_recv(V3_BLOCK);
+    if (!msg) {
+        _v3_func_leave("v3_login");
+        return false;
+    }
     type = msg->type;
     _v3_process_message(msg);
 
     /*
-       User was banned, get to the choppah!
+     * User was banned, get to the choppah!
      */
-    if(type == 0x59) {
+    if (type == 0x59) {
         _v3_func_leave("v3_login");
         return false;
     }
 
     /*
-       Send authentication info.
+     * Send authentication info.
      */
     msg = _v3_put_0x48();
     _v3_send(msg);
     _v3_destroy_packet(msg);
 
     /*
-       Process several messages until we're logged in.
+     * Process several messages until we're logged in.
      */
     do {
         msg = _v3_recv(V3_BLOCK);
-        if(!msg) {
+        if (!msg) {
             _v3_func_leave("v3_login");
             return false;
         }
@@ -3583,9 +5411,8 @@ v3_login(char *server, char *username, char *password, char *phonetic) {/*{{{*/
             case V3_FAILURE:
                 _v3_func_leave("v3_login");
                 return false;
-                break;
         }
-    } while(type != 0x34);
+    } while (type != 0x34);
 
     if (v3_is_loggedin()) {
         _v3_net_message *response;
@@ -3602,19 +5429,19 @@ v3_login(char *server, char *username, char *password, char *phonetic) {/*{{{*/
          * Tell server some specific client settings.
          */
         _v3_status(95, "Sending user settings.");
-        response = _v3_put_0x46(V3_USER_ACCEPT_PAGES, v3_luser.accept_pages);
+        response = _v3_put_0x46(v3_luser.id, V3_USER_ACCEPT_PAGES, v3_luser.accept_pages);
         _v3_send(response);
         _v3_destroy_packet(response);
 
-        response = _v3_put_0x46(V3_USER_ACCEPT_U2U, v3_luser.accept_u2u);
+        response = _v3_put_0x46(v3_luser.id, V3_USER_ACCEPT_U2U, v3_luser.accept_u2u);
         _v3_send(response);
         _v3_destroy_packet(response);
 
-        response = _v3_put_0x46(V3_USER_ACCEPT_CHAT, v3_luser.accept_chat);
+        response = _v3_put_0x46(v3_luser.id, V3_USER_ACCEPT_CHAT, v3_luser.accept_chat);
         _v3_send(response);
         _v3_destroy_packet(response);
 
-        response = _v3_put_0x46(V3_USER_ALLOW_RECORD, v3_luser.allow_recording);
+        response = _v3_put_0x46(v3_luser.id, V3_USER_ALLOW_RECORD, v3_luser.allow_recording);
         _v3_send(response);
         _v3_destroy_packet(response);
 
@@ -3634,6 +5461,26 @@ v3_login(char *server, char *username, char *password, char *phonetic) {/*{{{*/
     }
 }/*}}}*/
 
+int
+_v3_evpipe_write(int fd, v3_event *ev) {/*{{{*/
+    _v3_func_enter("_v3_evpipe_write");
+
+    if (fd < 0 || !ev) {
+        _v3_func_leave("_v3_evpipe_write");
+        return V3_FAILURE;
+    }
+    _v3_lock_sendq();
+    _v3_debug(V3_DEBUG_EVENT, "sending %lu bytes to event pipe", sizeof(v3_event));
+    if (write(fd, ev, sizeof(v3_event)) != sizeof(v3_event)) {
+        _v3_error("could not write to event pipe: %s", strerror(errno));
+    }
+    fsync(fd);
+    _v3_unlock_sendq();
+
+    _v3_func_leave("_v3_evpipe_write");
+    return V3_OK;
+}/*}}}*/
+
 void
 v3_join_chat(void) {/*{{{*/
     v3_event ev;
@@ -3645,21 +5492,13 @@ v3_join_chat(void) {/*{{{*/
     }
     memset(&ev, 0, sizeof(v3_event));
     ev.type = V3_EVENT_CHAT_JOIN;
-    _v3_lock_sendq();
-    _v3_debug(V3_DEBUG_EVENT, "sending %lu bytes to event pipe", sizeof(v3_event));
-    if (fwrite(&ev, sizeof(struct _v3_event), 1, v3_server.evoutstream) != 1) {
-        _v3_error("could not write to event pipe");
-        _v3_func_leave("v3_join_chat");
-        return;
-    }
-    fflush(v3_server.evoutstream);
-    _v3_unlock_sendq();
+
+    _v3_evpipe_write(v3_server.evpipe[1], &ev);
     _v3_func_leave("v3_join_chat");
-    return;
 }/*}}}*/
 
 void
-v3_leave_chat() {/*{{{*/
+v3_leave_chat(void) {/*{{{*/
     v3_event ev;
 
     _v3_func_enter("v3_leave_chat");
@@ -3669,21 +5508,13 @@ v3_leave_chat() {/*{{{*/
     }
     memset(&ev, 0, sizeof(v3_event));
     ev.type = V3_EVENT_CHAT_LEAVE;
-    _v3_lock_sendq();
-    _v3_debug(V3_DEBUG_EVENT, "sending %lu bytes to event pipe", sizeof(v3_event));
-    if (fwrite(&ev, sizeof(struct _v3_event), 1, v3_server.evoutstream) != 1) {
-        _v3_error("could not write to event pipe");
-        _v3_func_leave("v3_leave_chat");
-        return;
-    }
-    fflush(v3_server.evoutstream);
-    _v3_unlock_sendq();
+
+    _v3_evpipe_write(v3_server.evpipe[1], &ev);
     _v3_func_leave("v3_leave_chat");
-    return;
 }/*}}}*/
 
 void
-v3_send_chat_message(char* message) {/*{{{*/
+v3_send_chat_message(char *message) {/*{{{*/
     v3_event ev;
 
     _v3_func_enter("v3_send_chat_message");
@@ -3692,19 +5523,13 @@ v3_send_chat_message(char* message) {/*{{{*/
         return;
     }
     memset(&ev, 0, sizeof(v3_event));
+    ev.data = malloc(sizeof(v3_event_data));
+    memset(ev.data, 0, sizeof(v3_event_data));
     ev.type = V3_EVENT_CHAT_MESSAGE;
-    strncpy(ev.data.chatmessage, message, sizeof(ev.data.chatmessage)-1);
-    _v3_lock_sendq();
-    _v3_debug(V3_DEBUG_EVENT, "sending %lu bytes to event pipe", sizeof(v3_event));
-    if (fwrite(&ev, sizeof(struct _v3_event), 1, v3_server.evoutstream) != 1) {
-        _v3_error("could not write to event pipe");
-        _v3_func_leave("v3_send_chat_message");
-        return;
-    }
-    fflush(v3_server.evoutstream);
-    _v3_unlock_sendq();
+    strncpy(ev.data->chatmessage, message, sizeof(ev.data->chatmessage) - 1);
+
+    _v3_evpipe_write(v3_server.evpipe[1], &ev);
     _v3_func_leave("v3_send_chat_message");
-    return;
 }/*}}}*/
 
 void
@@ -3719,17 +5544,9 @@ v3_start_privchat(uint16_t userid) {/*{{{*/
     memset(&ev, 0, sizeof(v3_event));
     ev.type = V3_EVENT_PRIVATE_CHAT_START;
     ev.user.id = userid;
-    _v3_lock_sendq();
-    _v3_debug(V3_DEBUG_EVENT, "sending %lu bytes to event pipe", sizeof(v3_event));
-    if (fwrite(&ev, sizeof(struct _v3_event), 1, v3_server.evoutstream) != 1) {
-        _v3_error("could not write to event pipe");
-        _v3_func_leave("v3_start_privchat");
-        return;
-    }
-    fflush(v3_server.evoutstream);
-    _v3_unlock_sendq();
+
+    _v3_evpipe_write(v3_server.evpipe[1], &ev);
     _v3_func_leave("v3_start_privchat");
-    return;
 }/*}}}*/
 
 void
@@ -3744,21 +5561,13 @@ v3_end_privchat(uint16_t userid) {/*{{{*/
     memset(&ev, 0, sizeof(v3_event));
     ev.type = V3_EVENT_PRIVATE_CHAT_END;
     ev.user.id = userid;
-    _v3_lock_sendq();
-    _v3_debug(V3_DEBUG_EVENT, "sending %lu bytes to event pipe", sizeof(v3_event));
-    if (fwrite(&ev, sizeof(struct _v3_event), 1, v3_server.evoutstream) != 1) {
-        _v3_error("could not write to event pipe");
-        _v3_func_leave("v3_end_privchat");
-        return;
-    }
-    fflush(v3_server.evoutstream);
-    _v3_unlock_sendq();
+
+    _v3_evpipe_write(v3_server.evpipe[1], &ev);
     _v3_func_leave("v3_end_privchat");
-    return;
 }/*}}}*/
 
 void
-v3_send_privchat_message(uint16_t userid, char* message) {/*{{{*/
+v3_send_privchat_message(uint16_t userid, char *message) {/*{{{*/
     v3_event ev;
 
     _v3_func_enter("v3_send_privchat_message");
@@ -3767,20 +5576,14 @@ v3_send_privchat_message(uint16_t userid, char* message) {/*{{{*/
         return;
     }
     memset(&ev, 0, sizeof(v3_event));
+    ev.data = malloc(sizeof(v3_event_data));
+    memset(ev.data, 0, sizeof(v3_event_data));
     ev.type = V3_EVENT_PRIVATE_CHAT_MESSAGE;
     ev.user.id = userid;
-    strncpy(ev.data.chatmessage, message, sizeof(ev.data.chatmessage)-1);
-    _v3_lock_sendq();
-    _v3_debug(V3_DEBUG_EVENT, "sending %lu bytes to event pipe", sizeof(v3_event));
-    if (fwrite(&ev, sizeof(struct _v3_event), 1, v3_server.evoutstream) != 1) {
-        _v3_error("could not write to event pipe");
-        _v3_func_leave("v3_send_privchat_message");
-        return;
-    }
-    fflush(v3_server.evoutstream);
-    _v3_unlock_sendq();
+    strncpy(ev.data->chatmessage, message, sizeof(ev.data->chatmessage) - 1);
+
+    _v3_evpipe_write(v3_server.evpipe[1], &ev);
     _v3_func_leave("v3_send_privchat_message");
-    return;
 }/*}}}*/
 
 void
@@ -3795,17 +5598,9 @@ v3_send_privchat_away(uint16_t userid) {/*{{{*/
     memset(&ev, 0, sizeof(v3_event));
     ev.type = V3_EVENT_PRIVATE_CHAT_AWAY;
     ev.user.id = userid;
-    _v3_lock_sendq();
-    _v3_debug(V3_DEBUG_EVENT, "sending %lu bytes to event pipe", sizeof(v3_event));
-    if (fwrite(&ev, sizeof(struct _v3_event), 1, v3_server.evoutstream) != 1) {
-        _v3_error("could not write to event pipe");
-        _v3_func_leave("v3_send_privchat_away");
-        return;
-    }
-    fflush(v3_server.evoutstream);
-    _v3_unlock_sendq();
+
+    _v3_evpipe_write(v3_server.evpipe[1], &ev);
     _v3_func_leave("v3_send_privchat_away");
-    return;
 }/*}}}*/
 
 void
@@ -3820,17 +5615,64 @@ v3_send_privchat_back(uint16_t userid) {/*{{{*/
     memset(&ev, 0, sizeof(v3_event));
     ev.type = V3_EVENT_PRIVATE_CHAT_BACK;
     ev.user.id = userid;
-    _v3_lock_sendq();
-    _v3_debug(V3_DEBUG_EVENT, "sending %lu bytes to event pipe", sizeof(v3_event));
-    if (fwrite(&ev, sizeof(struct _v3_event), 1, v3_server.evoutstream) != 1) {
-        _v3_error("could not write to event pipe");
-        _v3_func_leave("v3_send_privchat_back");
+
+    _v3_evpipe_write(v3_server.evpipe[1], &ev);
+    _v3_func_leave("v3_send_privchat_back");
+}/*}}}*/
+
+void
+v3_send_tts_message(char *message) {/*{{{*/
+    v3_event ev;
+
+    _v3_func_enter("v3_send_tts_message");
+    if (!v3_is_loggedin()) {
+        _v3_func_leave("v3_send_tts_message");
         return;
     }
-    fflush(v3_server.evoutstream);
-    _v3_unlock_sendq();
-    _v3_func_leave("v3_send_privchat_back");
-    return;
+    memset(&ev, 0, sizeof(v3_event));
+    ev.data = malloc(sizeof(v3_event_data));
+    memset(ev.data, 0, sizeof(v3_event_data));
+    ev.type = V3_EVENT_TEXT_TO_SPEECH_MESSAGE;
+    strncpy(ev.data->chatmessage, message, sizeof(ev.data->chatmessage) - 1);
+
+    _v3_evpipe_write(v3_server.evpipe[1], &ev);
+    _v3_func_leave("v3_send_tts_message");
+}/*}}}*/
+
+void
+v3_send_play_wave_message(char *message) {/*{{{*/
+    v3_event ev;
+
+    _v3_func_enter("v3_send_play_wave_message");
+    if (!v3_is_loggedin()) {
+        _v3_func_leave("v3_send_play_wave_message");
+        return;
+    }
+    memset(&ev, 0, sizeof(v3_event));
+    ev.data = malloc(sizeof(v3_event_data));
+    memset(ev.data, 0, sizeof(v3_event_data));
+    ev.type = V3_EVENT_PLAY_WAVE_FILE_MESSAGE;
+    strncpy(ev.data->chatmessage, message, sizeof(ev.data->chatmessage) - 1);
+
+    _v3_evpipe_write(v3_server.evpipe[1], &ev);
+    _v3_func_leave("v3_send_play_wave_message");
+}/*}}}*/
+
+void
+v3_send_user_page(uint16_t user_id) {/*{{{*/
+    v3_event ev;
+
+    _v3_func_enter("v3_send_user_page");
+    if (!v3_is_loggedin()) {
+        _v3_func_leave("v3_send_user_page");
+        return;
+    }
+    memset(&ev, 0, sizeof(v3_event));
+    ev.type = V3_EVENT_USER_PAGE;
+    ev.user.id = user_id;
+
+    _v3_evpipe_write(v3_server.evpipe[1], &ev);
+    _v3_func_leave("v3_send_user_page");
 }/*}}}*/
 
 int
@@ -3856,15 +5698,19 @@ _v3_logout(void) {/*{{{*/
     _v3_destroy_decoders();
     _v3_destroy_channellist();
     _v3_destroy_userlist();
+    _v3_destroy_ranklist();
     _v3_destroy_accountlist();
     memset(v3_luser.channel_admin, 0, 65535);
     v3_luser.id = -1;
-    fclose(v3_server.evinstream);
-    fclose(v3_server.evoutstream);
-    close(v3_server.evpipe[0]);
-    close(v3_server.evpipe[1]);
+    if (v3_server.evpipe[0] >= 0) {
+        close(v3_server.evpipe[0]);
+    }
+    if (v3_server.evpipe[1] >= 0) {
+        close(v3_server.evpipe[1]);
+    }
     v3_server.evpipe[0] = -1;
     v3_server.evpipe[1] = -1;
+
     _v3_func_leave("_v3_logout");
     return true;
 }/*}}}*/
@@ -3887,11 +5733,12 @@ v3_debuglevel(uint32_t level) {/*{{{*/
     if (level != -1) {
         _v3_debuglevel = level;
     }
+
     return oldlevel;
 }/*}}}*/
 
 int
-v3_queue_size() {/*{{{*/
+v3_queue_size(void) {/*{{{*/
     _v3_net_message *msg;
     int ctr;
 
@@ -3904,23 +5751,22 @@ v3_queue_size() {/*{{{*/
     for (ctr = 0; v3_server.queue->next == NULL; ctr++) {
         msg = v3_server.queue->next;
     }
+
     return ctr;
 }/*}}}*/
 
 void
 v3_phantom_remove(uint16_t channel_id) {/*{{{*/
-    v3_event ev = {0};
+    v3_event ev;
     v3_user *u;
 
    _v3_func_enter("v3_phantom_remove");
-
     if (!v3_is_loggedin()) {
         _v3_func_leave("v3_phantom_remove");
         return;
     }
-
+    memset(&ev, 0, sizeof(v3_event));
     _v3_debug(V3_DEBUG_EVENT, "attempting to remove phantom from channel %d", channel_id);
-
     _v3_lock_userlist();
     for (u = v3_user_list; u != NULL; u = u->next) {
         if (u->channel == channel_id && u->real_user_id == v3_luser.id) {
@@ -3928,50 +5774,33 @@ v3_phantom_remove(uint16_t channel_id) {/*{{{*/
         }
     }
     _v3_unlock_userlist();
-
-    if (u == NULL) {
+    if (!u) {
         _v3_error("can't find a luser phantom in channel %d", channel_id);
-    } else {
-        ev.type = V3_EVENT_PHANTOM_REMOVE;
-        ev.user.id = u->id;
-
-        _v3_lock_sendq();
-        _v3_debug(V3_DEBUG_EVENT, "sending %lu bytes to event pipe", sizeof(v3_event));
-        if (fwrite(&ev, sizeof(struct _v3_event), 1, v3_server.evoutstream) != 1) {
-            _v3_error("could not write to event pipe");
-        }
-
-        fflush(v3_server.evoutstream);
-        _v3_unlock_sendq();
+        _v3_func_leave("v3_phantom_remove");
+        return;
     }
+    ev.type = V3_EVENT_PHANTOM_REMOVE;
+    ev.user.id = u->id;
 
+    _v3_evpipe_write(v3_server.evpipe[1], &ev);
     _v3_func_leave("v3_phantom_remove");
 }/*}}}*/
 
 void
 v3_phantom_add(uint16_t channel_id) {/*{{{*/
-    v3_event ev = {0};
+    v3_event ev;
 
    _v3_func_enter("v3_phantom_add");
-
     if (!v3_is_loggedin()) {
         _v3_func_leave("v3_phantom_add");
         return;
     }
-
+    memset(&ev, 0, sizeof(v3_event));
     _v3_debug(V3_DEBUG_EVENT, "attempting to add phantom to channel %d", channel_id);
-
     ev.type = V3_EVENT_PHANTOM_ADD;
     ev.channel.id = channel_id;
 
-    _v3_lock_sendq();
-    _v3_debug(V3_DEBUG_EVENT, "sending %lu bytes to event pipe", sizeof(v3_event));
-    if (fwrite(&ev, sizeof(struct _v3_event), 1, v3_server.evoutstream) != 1) {
-        _v3_error("could not write to event pipe");
-    }
-
-    fflush(v3_server.evoutstream);
-    _v3_unlock_sendq();
+    _v3_evpipe_write(v3_server.evpipe[1], &ev);
     _v3_func_leave("v3_phantom_add");
 }/*}}}*/
 
@@ -3988,15 +5817,9 @@ v3_force_channel_move(uint16_t user_id, uint16_t channel_id) {/*{{{*/
     ev.type = V3_EVENT_FORCE_CHAN_MOVE;
     ev.channel.id = channel_id;
     ev.user.id = user_id;
-    _v3_lock_sendq();
-    _v3_debug(V3_DEBUG_EVENT, "sending %lu bytes to event pipe", sizeof(v3_event));
-    if (fwrite(&ev, sizeof(struct _v3_event), 1, v3_server.evoutstream) != 1) {
-        _v3_error("could not write to event pipe");
-    }
-    fflush(v3_server.evoutstream);
-    _v3_unlock_sendq();
+
+    _v3_evpipe_write(v3_server.evpipe[1], &ev);
     _v3_func_leave("v3_force_channel_move");
-    return;
 }/*}}}*/
 
 void
@@ -4010,22 +5833,14 @@ v3_change_channel(uint16_t channel_id, char *password) {/*{{{*/
     }
     memset(&ev, 0, sizeof(v3_event));
     ev.type = V3_EVENT_CHANGE_CHANNEL;
-    if (password == NULL) {
-        strncpy(ev.text.password, "", 31);
-    } else {
-        strncpy(ev.text.password, password, 31);
+    if (password) {
+        strncpy(ev.text.password, password, sizeof(ev.text.password) - 1);
     }
     ev.channel.id = channel_id;
-    ev.user.id = v3_get_user_id();
-    _v3_lock_sendq();
-    _v3_debug(V3_DEBUG_EVENT, "sending %lu bytes to event pipe", sizeof(v3_event));
-    if (fwrite(&ev, sizeof(struct _v3_event), 1, v3_server.evoutstream) != 1) {
-        _v3_error("could not write to event pipe");
-    }
-    fflush(v3_server.evoutstream);
-    _v3_unlock_sendq();
+    ev.user.id = v3_luser.id;
+
+    _v3_evpipe_write(v3_server.evpipe[1], &ev);
     _v3_func_leave("v3_change_channel");
-    return;
 }/*}}}*/
 
 void
@@ -4033,23 +5848,16 @@ v3_admin_login(char *password) {/*{{{*/
     v3_event ev;
 
     _v3_func_enter("v3_admin_login");
-    if (!v3_is_loggedin() || password == NULL || !password[0]) {
+    if (!v3_is_loggedin() || !password || !*password) {
         _v3_func_leave("v3_admin_login");
         return;
     }
     memset(&ev, 0, sizeof(v3_event));
     ev.type = V3_EVENT_ADMIN_LOGIN;
-    strncpy(ev.text.password, password, sizeof(ev.text.password));
+    strncpy(ev.text.password, password, sizeof(ev.text.password) - 1);
 
-    _v3_lock_sendq();
-    _v3_debug(V3_DEBUG_EVENT, "sending %lu bytes to event pipe", sizeof(v3_event));
-    if (fwrite(&ev, sizeof(struct _v3_event), 1, v3_server.evoutstream) != 1) {
-        _v3_error("could not write to event pipe");
-    }
-    fflush(v3_server.evoutstream);
-    _v3_unlock_sendq();
+    _v3_evpipe_write(v3_server.evpipe[1], &ev);
     _v3_func_leave("v3_admin_login");
-    return;
 }/*}}}*/
 
 void
@@ -4064,30 +5872,26 @@ v3_admin_logout(void) {/*{{{*/
     memset(&ev, 0, sizeof(v3_event));
     ev.type = V3_EVENT_ADMIN_LOGOUT;
 
-    _v3_lock_sendq();
-    _v3_debug(V3_DEBUG_EVENT, "sending %lu bytes to event pipe", sizeof(v3_event));
-    if (fwrite(&ev, sizeof(struct _v3_event), 1, v3_server.evoutstream) != 1) {
-        _v3_error("could not write to event pipe");
-    }
-    fflush(v3_server.evoutstream);
-    _v3_unlock_sendq();
+    _v3_evpipe_write(v3_server.evpipe[1], &ev);
     _v3_func_leave("v3_admin_logout");
-    return;
 }/*}}}*/
 
 void
-v3_admin_boot(enum _v3_boot_types type, uint16_t user_id, char *reason) {/*{{{*/
-    v3_event ev = {0};
+v3_admin_boot(int type, uint16_t user_id, char *reason) {/*{{{*/
+    v3_event ev;
 
     _v3_func_enter("v3_admin_boot");
     if (!v3_is_loggedin()) {
         _v3_func_leave("v3_admin_boot");
         return;
     }
-
+    memset(&ev, 0, sizeof(v3_event));
+    ev.data = malloc(sizeof(v3_event_data));
+    memset(ev.data, 0, sizeof(v3_event_data));
     ev.user.id = user_id;
-    strncpy(ev.data.reason, reason ? reason : "", sizeof(ev.data.reason));
-
+    if (reason) {
+        strncpy(ev.data->reason, reason, sizeof(ev.data->reason) - 1);
+    }
     switch (type) {
         case V3_BOOT_KICK:
             ev.type = V3_EVENT_ADMIN_KICK;
@@ -4100,15 +5904,25 @@ v3_admin_boot(enum _v3_boot_types type, uint16_t user_id, char *reason) {/*{{{*/
             break;
     }
 
-    _v3_lock_sendq();
-    _v3_debug(V3_DEBUG_EVENT, "sending %lu bytes to event pipe", sizeof(v3_event));
-    if (fwrite(&ev, sizeof(struct _v3_event), 1, v3_server.evoutstream) != 1) {
-        _v3_error("could not write to event pipe");
-    }
-    fflush(v3_server.evoutstream);
-    _v3_unlock_sendq();
+    _v3_evpipe_write(v3_server.evpipe[1], &ev);
     _v3_func_leave("v3_admin_boot");
-    return;
+}/*}}}*/
+
+void
+v3_admin_global_mute(uint16_t user_id) {/*{{{*/
+    v3_event ev;
+
+    _v3_func_enter("v3_admin_global_mute");
+    if (!v3_is_loggedin()) {
+        _v3_func_leave("v3_admin_global_mute");
+        return;
+    }
+    memset(&ev, 0, sizeof(v3_event));
+    ev.type = V3_EVENT_ADMIN_GLOBAL_MUTE;
+    ev.user.id = user_id;
+
+    _v3_evpipe_write(v3_server.evpipe[1], &ev);
+    _v3_func_leave("v3_admin_global_mute");
 }/*}}}*/
 
 void
@@ -4123,15 +5937,8 @@ v3_userlist_open(void) {/*{{{*/
     memset(&ev, 0, sizeof(v3_event));
     ev.type = V3_EVENT_USERLIST_OPEN;
 
-    _v3_lock_sendq();
-    _v3_debug(V3_DEBUG_EVENT, "sending %lu bytes to event pipe", sizeof(v3_event));
-    if (fwrite(&ev, sizeof(struct _v3_event), 1, v3_server.evoutstream) != 1) {
-        _v3_error("could not write to event pipe");
-    }
-    fflush(v3_server.evoutstream);
-    _v3_unlock_sendq();
+    _v3_evpipe_write(v3_server.evpipe[1], &ev);
     _v3_func_leave("v3_userlist_open");
-    return;
 }/*}}}*/
 
 void
@@ -4143,21 +5950,13 @@ v3_userlist_close(void) {/*{{{*/
         _v3_func_leave("v3_userlist_close");
         return;
     }
-
-    _v3_destroy_accountlist();
-
     memset(&ev, 0, sizeof(v3_event));
     ev.type = V3_EVENT_USERLIST_CLOSE;
 
-    _v3_lock_sendq();
-    _v3_debug(V3_DEBUG_EVENT, "sending %lu bytes to event pipe", sizeof(v3_event));
-    if (fwrite(&ev, sizeof(struct _v3_event), 1, v3_server.evoutstream) != 1) {
-        _v3_error("could not write to event pipe");
-    }
-    fflush(v3_server.evoutstream);
-    _v3_unlock_sendq();
+    _v3_destroy_accountlist();
+
+    _v3_evpipe_write(v3_server.evpipe[1], &ev);
     _v3_func_leave("v3_userlist_close");
-    return;
 }/*}}}*/
 
 void
@@ -4173,15 +5972,8 @@ v3_userlist_remove(uint16_t account_id) {/*{{{*/
     ev.type = V3_EVENT_USERLIST_REMOVE;
     ev.account.id = account_id;
 
-    _v3_lock_sendq();
-    _v3_debug(V3_DEBUG_EVENT, "sending %lu bytes to event pipe", sizeof(v3_event));
-    if (fwrite(&ev, sizeof(struct _v3_event), 1, v3_server.evoutstream) != 1) {
-        _v3_error("could not write to event pipe");
-    }
-    fflush(v3_server.evoutstream);
-    _v3_unlock_sendq();
+    _v3_evpipe_write(v3_server.evpipe[1], &ev);
     _v3_func_leave("v3_userlist_remove");
-    return;
 }/*}}}*/
 
 void
@@ -4189,38 +5981,30 @@ v3_userlist_update(v3_account *account) {/*{{{*/
     v3_event ev;
 
     _v3_func_enter("v3_userlist_update");
-    if (!v3_is_loggedin()) {
+    if (!v3_is_loggedin() || !account) {
         _v3_func_leave("v3_userlist_update");
         return;
     }
-
     memset(&ev, 0, sizeof(v3_event));
-
+    ev.data = malloc(sizeof(v3_event_data));
+    memset(ev.data, 0, sizeof(v3_event_data));
     if (account->perms.account_id) {
         ev.type = V3_EVENT_USERLIST_MODIFY;
     } else {
         ev.type = V3_EVENT_USERLIST_ADD;
     }
+    ev.data->account.perms = account->perms;
+    strncpy(ev.data->account.username, account->username, sizeof(ev.data->account.username) - 1);
+    strncpy(ev.data->account.owner, account->owner, sizeof(ev.data->account.owner) - 1);
+    strncpy(ev.data->account.notes, account->notes, sizeof(ev.data->account.notes) - 1);
+    strncpy(ev.data->account.lock_reason, account->lock_reason, sizeof(ev.data->account.lock_reason) - 1);
+    ev.data->account.chan_admin_count = account->chan_admin_count;
+    memcpy(ev.data->account.chan_admin, account->chan_admin, ev.data->account.chan_admin_count * 2);
+    ev.data->account.chan_auth_count = account->chan_auth_count;
+    memcpy(ev.data->account.chan_auth, account->chan_auth, ev.data->account.chan_auth_count * 2);
 
-    ev.data.account.perms = account->perms;
-    strncpy(ev.data.account.username, account->username, sizeof(ev.data.account.username) - 1);
-    strncpy(ev.data.account.owner, account->owner, sizeof(ev.data.account.owner) - 1);
-    strncpy(ev.data.account.notes, account->notes, sizeof(ev.data.account.notes) - 1);
-    strncpy(ev.data.account.lock_reason, account->lock_reason, sizeof(ev.data.account.lock_reason) - 1);
-    ev.data.account.chan_admin_count = account->chan_admin_count;
-    memcpy(ev.data.account.chan_admin, account->chan_admin, ev.data.account.chan_admin_count * 2);
-    ev.data.account.chan_auth_count = account->chan_auth_count;
-    memcpy(ev.data.account.chan_auth, account->chan_auth, ev.data.account.chan_auth_count * 2);
-
-    _v3_lock_sendq();
-    _v3_debug(V3_DEBUG_EVENT, "sending %lu bytes to event pipe", sizeof(v3_event));
-    if (fwrite(&ev, sizeof(struct _v3_event), 1, v3_server.evoutstream) != 1) {
-        _v3_error("could not write to event pipe");
-    }
-    fflush(v3_server.evoutstream);
-    _v3_unlock_sendq();
+    _v3_evpipe_write(v3_server.evpipe[1], &ev);
     _v3_func_leave("v3_userlist_update");
-    return;
 }/*}}}*/
 
 void
@@ -4237,15 +6021,121 @@ v3_userlist_change_owner(uint16_t old_owner_id, uint16_t new_owner_id) {/*{{{*/
     ev.account.id = old_owner_id;
     ev.account.id2 = new_owner_id;
 
-    _v3_lock_sendq();
-    _v3_debug(V3_DEBUG_EVENT, "sending %lu bytes to event pipe", sizeof(v3_event));
-    if (fwrite(&ev, sizeof(struct _v3_event), 1, v3_server.evoutstream) != 1) {
-        _v3_error("could not write to event pipe");
-    }
-    fflush(v3_server.evoutstream);
-    _v3_unlock_sendq();
+    _v3_evpipe_write(v3_server.evpipe[1], &ev);
     _v3_func_leave("v3_userlist_change_owner");
-    return;
+}/*}}}*/
+
+void
+v3_serverprop_open(void) {/*{{{*/
+    v3_event ev;
+
+    _v3_func_enter("v3_serverprop_open");
+    if (!v3_is_loggedin()) {
+        _v3_func_leave("v3_serverprop_open");
+        return;
+    }
+    memset(&ev, 0, sizeof(v3_event));
+    ev.type = V3_EVENT_SRV_PROP_OPEN;
+
+    _v3_evpipe_write(v3_server.evpipe[1], &ev);
+    _v3_func_leave("v3_serverprop_open");
+}/*}}}*/
+
+void
+v3_serverprop_close(void) {/*{{{*/
+    v3_event ev;
+
+    _v3_func_enter("v3_serverprop_close");
+    if (!v3_is_loggedin()) {
+        _v3_func_leave("v3_serverprop_close");
+        return;
+    }
+    memset(&ev, 0, sizeof(v3_event));
+    ev.type = V3_EVENT_SRV_PROP_CLOSE;
+
+    _v3_evpipe_write(v3_server.evpipe[1], &ev);
+    _v3_func_leave("v3_serverprop_close");
+}/*}}}*/
+
+void
+v3_serverprop_update(const v3_server_prop *prop) {/*{{{*/
+    v3_event ev;
+
+    _v3_func_enter("v3_serverprop_update");
+    if (!v3_is_loggedin() || !prop) {
+        _v3_func_leave("v3_serverprop_update");
+        return;
+    }
+    memset(&ev, 0, sizeof(v3_event));
+    ev.data = malloc(sizeof(v3_event_data));
+    memset(ev.data, 0, sizeof(v3_event_data));
+    ev.type = V3_EVENT_SRV_PROP_UPDATE;
+    memcpy(&ev.data->srvprop, prop, sizeof(v3_server_prop));
+
+    _v3_evpipe_write(v3_server.evpipe[1], &ev);
+    _v3_func_leave("v3_serverprop_update");
+}/*}}}*/
+
+void
+v3_admin_ban_list(void) {/*{{{*/
+    v3_event ev;
+
+    _v3_func_enter("v3_admin_ban_list");
+    if (!v3_is_loggedin()) {
+        _v3_func_leave("v3_admin_ban_list");
+        return;
+    }
+    memset(&ev, 0, sizeof(v3_event));
+    ev.type = V3_EVENT_ADMIN_BAN_LIST;
+
+    _v3_evpipe_write(v3_server.evpipe[1], &ev);
+    _v3_func_leave("v3_admin_ban_list");
+}/*}}}*/
+
+void
+v3_admin_ban_add(uint16_t bitmask_id, uint32_t ip_address, const char *user, const char *reason) {/*{{{*/
+    v3_event ev;
+
+    _v3_func_enter("v3_admin_ban_add");
+    if (!v3_is_loggedin() || bitmask_id < 8 || !ip_address) {
+        _v3_func_leave("v3_admin_ban_add");
+        return;
+    }
+    memset(&ev, 0, sizeof(v3_event));
+    ev.data = malloc(sizeof(v3_event_data));
+    memset(ev.data, 0, sizeof(v3_event_data));
+    ev.type = V3_EVENT_ADMIN_BAN_ADD;
+    ev.data->ban.bitmask_id = bitmask_id;
+    ev.data->ban.ip_address = ip_address;
+    if (user) {
+        strncpy(ev.data->ban.user, user, sizeof(ev.data->ban.user) - 1);
+    }
+    if (reason) {
+        strncpy(ev.data->ban.reason, reason, sizeof(ev.data->ban.reason) - 1);
+    }
+
+    _v3_evpipe_write(v3_server.evpipe[1], &ev);
+    _v3_func_leave("v3_admin_ban_add");
+}/*}}}*/
+
+void
+v3_admin_ban_remove(uint16_t bitmask_id, uint32_t ip_address) {/*{{{*/
+    v3_event ev;
+
+    _v3_func_enter("v3_admin_ban_remove");
+    if (!v3_is_loggedin()) {
+        _v3_func_leave("v3_admin_ban_remove");
+        return;
+    }
+    memset(&ev, 0, sizeof(v3_event));
+    ev.data = malloc(sizeof(v3_event_data));
+    memset(ev.data, 0, sizeof(v3_event_data));
+    ev.type = V3_EVENT_ADMIN_BAN_REMOVE;
+    ev.data->ban.bitmask_id = bitmask_id;
+    ev.data->ban.ip_address = ip_address;
+
+    _v3_evpipe_write(v3_server.evpipe[1], &ev);
+    _v3_func_leave("v3_admin_ban_remove");
 }/*}}}*/
 
 void
@@ -4260,40 +6150,137 @@ v3_set_text(char *comment, char *url, char *integration_text, uint8_t silent) {/
     memset(&ev, 0, sizeof(v3_event));
     ev.type = V3_EVENT_USER_MODIFY;
     ev.user.id = v3_get_user_id();
-    strncpy(ev.text.comment, comment, 127);
-    strncpy(ev.text.url, url, 127);
-    strncpy(ev.text.integration_text, integration_text, 127);
-    _v3_lock_sendq();
-    _v3_debug(V3_DEBUG_EVENT, "sending %lu bytes to event pipe", sizeof(v3_event));
-    if (fwrite(&ev, sizeof(struct _v3_event), 1, v3_server.evoutstream) != 1) {
-        _v3_error("could not write to event pipe");
+    if (silent) {
+        ev.flags |= 0x100;
     }
-    fflush(v3_server.evoutstream);
-    _v3_unlock_sendq();
+    if (comment) {
+        strncpy(ev.text.comment, comment, sizeof(ev.text.comment) - 1);
+    }
+    if (url) {
+        strncpy(ev.text.url, url, sizeof(ev.text.comment) - 1);
+    }
+    if (integration_text) {
+        strncpy(ev.text.integration_text, integration_text, sizeof(ev.text.integration_text) - 1);
+    }
+
+    _v3_evpipe_write(v3_server.evpipe[1], &ev);
     _v3_func_leave("v3_set_text");
-    return;
 }/*}}}*/
 
 int
 v3_channel_count(void) {/*{{{*/
     v3_channel *c;
-    int ctr=0;
+    int ctr = 0;
 
     for (c = v3_channel_list; c != NULL; c = c->next, ctr++);
-    return ctr;
 
+    return ctr;
+}/*}}}*/
+
+uint16_t
+v3_get_channel_id(const char *path) {/*{{{*/
+    v3_channel *c;
+    const char *sep = "/";
+    const char *chan_name[32];
+    int chan_namelen[32];
+    int chan_namecnt = 0, seplen;
+    int cnt;
+    const char *p = path;
+    uint16_t parent_id;
+
+    seplen = strlen(sep);
+
+    _v3_func_enter("v3_get_channel_id");
+    _v3_lock_channellist();
+
+    // parse path into some arrays (make no copies)
+    if (strncmp(p, sep, seplen) == 0) {
+        p += seplen;
+    }
+    chan_name[0] = p;
+
+    while (*p != '\0') {
+         if (strncmp(p, sep, seplen) == 0) {
+             chan_namelen[chan_namecnt] = p - chan_name[chan_namecnt];
+             chan_namecnt++;
+             p += seplen;
+             chan_name[chan_namecnt] = p;
+         } else {
+             p++;
+         }
+    }
+    chan_namelen[chan_namecnt] = p - chan_name[chan_namecnt];
+    chan_namecnt++;
+
+    parent_id = 0;
+    for (cnt = 0; cnt < chan_namecnt; cnt++) {
+        for (c = v3_channel_list; c != NULL; c = c->next) {
+            if (!c) {
+                break;
+            }
+            if (c->parent == parent_id && strlen(c->name) == chan_namelen[cnt] && strncmp(c->name, chan_name[cnt], chan_namelen[cnt]) == 0) {
+                parent_id = c->id;
+                break;
+            }
+        }
+    }
+    _v3_unlock_channellist();
+
+    _v3_func_leave("v3_get_channel_id");
+    return parent_id;
+}/*}}}*/
+
+char *
+v3_get_channel_path(uint16_t channel_id) {/*{{{*/
+    v3_channel *c;
+    const char sep = '/';
+    uint16_t parent_id = 0;
+    char *path = NULL;
+    int pathlen;
+
+    _v3_func_enter("v3_get_channel_path");
+    _v3_lock_channellist();
+    for (c = v3_channel_list; c != NULL; c = (!c) ? v3_channel_list : c->next) {
+        if (!c) {
+            break;
+        }
+        if ((!parent_id && c->id == channel_id) || (parent_id && c->id == parent_id)) {
+            int chanlen = strlen(c->name);
+            if (!path) {
+                pathlen = chanlen + 1;
+                path = calloc(pathlen, 1);
+                memcpy(path, c->name, chanlen);
+            } else {
+                char *prepend = calloc(chanlen + 1 + pathlen, 1);
+                memcpy(prepend, c->name, chanlen);
+                prepend[chanlen] = sep;
+                memcpy(prepend + chanlen + 1, path, pathlen);
+                pathlen += chanlen + 1;
+                free(path);
+                path = prepend;
+            }
+            if (!(parent_id = c->parent)) {
+                break;
+            }
+            c = NULL;
+        }
+    }
+    _v3_unlock_channellist();
+
+    _v3_func_leave("v3_get_channel_path");
+    return path;
 }/*}}}*/
 
 int
 v3_user_count(void) {/*{{{*/
-    v3_user *c;
-    int ctr=0;
+    v3_user *u;
+    int ctr = 0;
 
     _v3_lock_userlist();
-    for (c = v3_user_list; c != NULL; c = c->next, ctr++);
+    for (u = v3_user_list; u != NULL; u = u->next, ctr++);
     _v3_unlock_userlist();
-    return ctr-1;
 
+    return ctr-1;
 }/*}}}*/
 
 /*
@@ -4310,6 +6297,7 @@ v3_get_user(uint16_t id) {/*{{{*/
         return ret_user;
     }
     _v3_unlock_userlist();
+
     return ret_user;
 }/*}}}*/
 
@@ -4330,6 +6318,7 @@ _v3_get_user(uint16_t id) {/*{{{*/
         }
     }
     _v3_unlock_userlist();
+
     return NULL;
 }/*}}}*/
 
@@ -4348,6 +6337,7 @@ v3_get_user_channel(uint16_t id) {/*{{{*/
         }
     }
     _v3_unlock_userlist();
+
     return -1;
 }/*}}}*/
 
@@ -4367,9 +6357,12 @@ v3_get_channel(uint16_t id) {/*{{{*/
 
     _v3_func_enter("v3_get_channel");
     _v3_lock_channellist();
-    ret_channel = malloc(sizeof(v3_channel));
     for (c = v3_channel_list; c != NULL; c = c->next) {
+        if (!c) {
+            break;
+        }
         if (c->id == id) {
+            ret_channel = malloc(sizeof(v3_channel));
             _v3_copy_channel(ret_channel, c);
             _v3_unlock_channellist();
             _v3_func_leave("v3_get_channel");
@@ -4377,6 +6370,7 @@ v3_get_channel(uint16_t id) {/*{{{*/
         }
     }
     _v3_unlock_channellist();
+
     _v3_func_leave("v3_get_channel");
     return NULL;
 }/*}}}*/
@@ -4388,46 +6382,38 @@ v3_free_channel(v3_channel *channel) {/*{{{*/
     free(channel->comment);
     free(channel);
 }/*}}}*/
+
 void
 v3_channel_update(v3_channel *channel, const char *password) {/*{{{*/
-    /* update or create channel */
     v3_event ev;
 
     _v3_func_enter("v3_channel_update");
-    if (!v3_is_loggedin()) {
+    if (!v3_is_loggedin() || !channel) {
         _v3_func_leave("v3_channel_update");
         return;
     }
-
     memset(&ev, 0, sizeof(v3_event));
-
+    ev.data = malloc(sizeof(v3_event_data));
+    memset(ev.data, 0, sizeof(v3_event_data));
     if (channel->id) {
         ev.type = V3_EVENT_CHAN_MODIFY;
     } else {
         ev.type = V3_EVENT_CHAN_ADD;
     }
-    
-    memcpy(&(ev.data.channel), channel, sizeof(v3_channel) - sizeof(void*) * 4);
+    memcpy(&ev.data->channel, channel, sizeof(v3_channel) - sizeof(void *) * 4);
     if (password) {
-        strncpy(ev.text.password, password, 31);
+        strncpy(ev.text.password, password, sizeof(ev.text.password) - 1);
     }
-    strncpy(ev.text.name, channel->name, 31);
-    strncpy(ev.text.phonetic, channel->phonetic, 31);
-    strncpy(ev.text.comment, channel->comment, 127);
+    strncpy(ev.text.name, channel->name, sizeof(ev.text.name) - 1);
+    strncpy(ev.text.phonetic, channel->phonetic, sizeof(ev.text.phonetic) - 1);
+    strncpy(ev.text.comment, channel->comment, sizeof(ev.text.comment) - 1);
 
-    _v3_lock_sendq();
-    _v3_debug(V3_DEBUG_EVENT, "sending %lu bytes to event pipe", sizeof(v3_event));
-    if (fwrite(&ev, sizeof(struct _v3_event), 1, v3_server.evoutstream) != 1) {
-        _v3_error("could not write to event pipe");
-    }
-    fflush(v3_server.evoutstream);
-    _v3_unlock_sendq();
+    _v3_evpipe_write(v3_server.evpipe[1], &ev);
     _v3_func_leave("v3_channel_update");
-    return;
 }/*}}}*/
+
 void
 v3_channel_remove(uint16_t channel_id) {/*{{{*/
-    /* remove channel */
     v3_event ev;
 
     _v3_func_enter("v3_channel_remove");
@@ -4435,23 +6421,15 @@ v3_channel_remove(uint16_t channel_id) {/*{{{*/
         _v3_func_leave("v3_channel_remove");
         return;
     }
-
     memset(&ev, 0, sizeof(v3_event));
-
     ev.type = V3_EVENT_CHAN_REMOVE;
     ev.channel.id = channel_id;
     ev.user.id = v3_get_user_id();
-    
-    _v3_lock_sendq();
-    _v3_debug(V3_DEBUG_EVENT, "sending %lu bytes to event pipe", sizeof(v3_event));
-    if (fwrite(&ev, sizeof(struct _v3_event), 1, v3_server.evoutstream) != 1) {
-        _v3_error("could not write to event pipe");
-    }
-    fflush(v3_server.evoutstream);
-    _v3_unlock_sendq();
+
+    _v3_evpipe_write(v3_server.evpipe[1], &ev);
     _v3_func_leave("v3_channel_remove");
-    return;
 }/*}}}*/
+
 v3_rank *
 v3_get_rank(uint16_t id) {/*{{{*/
     v3_rank *rank, *ret_rank;
@@ -4466,8 +6444,10 @@ v3_get_rank(uint16_t id) {/*{{{*/
         }
     }
     _v3_unlock_ranklist();
+
     return NULL;
 }/*}}}*/
+
 void
 v3_ranklist_open(void) {/*{{{*/
     v3_event ev;
@@ -4480,15 +6460,8 @@ v3_ranklist_open(void) {/*{{{*/
     memset(&ev, 0, sizeof(v3_event));
     ev.type = V3_EVENT_RANKLIST_OPEN;
 
-    _v3_lock_sendq();
-    _v3_debug(V3_DEBUG_EVENT, "sending %lu bytes to event pipe", sizeof(v3_event));
-    if (fwrite(&ev, sizeof(struct _v3_event), 1, v3_server.evoutstream) != 1) {
-        _v3_error("could not write to event pipe");
-    }
-    fflush(v3_server.evoutstream);
-    _v3_unlock_sendq();
+    _v3_evpipe_write(v3_server.evpipe[1], &ev);
     _v3_func_leave("v3_ranklist_open");
-    return;
 }/*}}}*/
 
 void
@@ -4500,55 +6473,41 @@ v3_ranklist_close(void) {/*{{{*/
         _v3_func_leave("v3_ranklist_close");
         return;
     }
-
     memset(&ev, 0, sizeof(v3_event));
     ev.type = V3_EVENT_RANKLIST_CLOSE;
 
-    _v3_lock_sendq();
-    _v3_debug(V3_DEBUG_EVENT, "sending %lu bytes to event pipe", sizeof(v3_event));
-    if (fwrite(&ev, sizeof(struct _v3_event), 1, v3_server.evoutstream) != 1) {
-        _v3_error("could not write to event pipe");
-    }
-    fflush(v3_server.evoutstream);
-    _v3_unlock_sendq();
+    _v3_evpipe_write(v3_server.evpipe[1], &ev);
     _v3_func_leave("v3_ranklist_close");
-    return;
 }/*}}}*/
 
 void
 v3_rank_update(v3_rank *rank) {/*{{{*/
-    /* update or create rank */
     v3_event ev;
 
     _v3_func_enter("v3_rank_update");
-    if (!v3_is_loggedin()) {
+    if (!v3_is_loggedin() || !rank) {
         _v3_func_leave("v3_rank_update");
         return;
     }
-    
     memset(&ev, 0, sizeof(v3_event));
-    
-    if (rank->id) ev.type = V3_EVENT_RANK_MODIFY;
-    else ev.type = V3_EVENT_RANK_ADD;
-    ev.data.rank.id = rank->id;
-    ev.data.rank.level = rank->level;
-    strncpy(ev.text.name, rank->name, 31);
-    strncpy(ev.text.comment, rank->description, 127);
-
-    _v3_lock_sendq();
-    _v3_debug(V3_DEBUG_EVENT, "sending %lu bytes to event pipe", sizeof(v3_event));
-    if (fwrite(&ev, sizeof(struct _v3_event), 1, v3_server.evoutstream) != 1) {
-        _v3_error("could not write to event pipe");
+    ev.data = malloc(sizeof(v3_event_data));
+    memset(ev.data, 0, sizeof(v3_event_data));
+    if (rank->id) {
+        ev.type = V3_EVENT_RANK_MODIFY;
+    } else {
+        ev.type = V3_EVENT_RANK_ADD;
     }
-    fflush(v3_server.evoutstream);
-    _v3_unlock_sendq();
+    ev.data->rank.id = rank->id;
+    ev.data->rank.level = rank->level;
+    strncpy(ev.text.name, rank->name, sizeof(ev.text.name) - 1);
+    strncpy(ev.text.comment, rank->description, sizeof(ev.text.comment) - 1);
+
+    _v3_evpipe_write(v3_server.evpipe[1], &ev);
     _v3_func_leave("v3_rank_update");
-    return;
-    
 }/*}}}*/
+
 void
 v3_rank_remove(uint16_t rankid) {/*{{{*/
-    /* remove rank */
     v3_event ev;
 
     _v3_func_enter("v3_rank_remove");
@@ -4556,30 +6515,25 @@ v3_rank_remove(uint16_t rankid) {/*{{{*/
         _v3_func_leave("v3_rank_remove");
         return;
     }
-    
     memset(&ev, 0, sizeof(v3_event));
+    ev.data = malloc(sizeof(v3_event_data));
+    memset(ev.data, 0, sizeof(v3_event_data));
     ev.type = V3_EVENT_RANK_REMOVE;
     v3_rank *rank = v3_get_rank(rankid);
-    if (! rank) {
+    if (!rank) {
         _v3_func_leave("v3_rank_remove");
         return;
     }
-    ev.data.rank.id = rankid;
-    ev.data.rank.level = rank->level;
-    strncpy(ev.text.name, rank->name, 31);
-    strncpy(ev.text.comment, rank->description, 127);
+    ev.data->rank.id = rankid;
+    ev.data->rank.level = rank->level;
+    strncpy(ev.text.name, rank->name, sizeof(ev.text.name) - 1);
+    strncpy(ev.text.comment, rank->description, sizeof(ev.text.comment) - 1);
+    v3_free_rank(rank);
 
-    _v3_lock_sendq();
-    _v3_debug(V3_DEBUG_EVENT, "sending %lu bytes to event pipe", sizeof(v3_event));
-    if (fwrite(&ev, sizeof(struct _v3_event), 1, v3_server.evoutstream) != 1) {
-        _v3_error("could not write to event pipe");
-    }
-    fflush(v3_server.evoutstream);
-    _v3_unlock_sendq();
+    _v3_evpipe_write(v3_server.evpipe[1], &ev);
     _v3_func_leave("v3_rank_remove");
-    return;
-    
 }/*}}}*/
+
 void
 v3_free_rank(v3_rank *rank) {/*{{{*/
     free(rank->name);
@@ -4609,6 +6563,7 @@ _v3_destroy_ranklist(void) {/*{{{*/
         rank = next;
     }
     v3_rank_list = NULL;
+
     _v3_func_leave("_v3_destroy_ranklist");
 }/*}}}*/
 
@@ -4622,17 +6577,15 @@ _v3_update_account(v3_account *account) {/*{{{*/
         a = malloc(sizeof(v3_account));
         memset(a, 0, sizeof(v3_account));
         memcpy(a, account, sizeof(v3_account));
-
         a->username     = strdup(account->username);
         a->owner        = strdup(account->owner);
         a->notes        = strdup(account->notes);
         a->lock_reason  = strdup(account->lock_reason);
-        a->chan_admin   = malloc(account->chan_admin_count);
+        a->chan_admin   = malloc(account->chan_admin_count * 2);
         memcpy(a->chan_admin, account->chan_admin, account->chan_admin_count * 2);
-        a->chan_auth    = malloc(account->chan_auth_count);
+        a->chan_auth    = malloc(account->chan_auth_count * 2);
         memcpy(a->chan_auth, account->chan_auth, account->chan_auth_count * 2);
-
-        a->next        = NULL;
+        a->next         = NULL;
         v3_account_list = a;
         _v3_debug(V3_DEBUG_INFO, "added first account %s (id %d)",  a->username, a->perms.account_id);
     } else {
@@ -4647,17 +6600,15 @@ _v3_update_account(v3_account *account) {/*{{{*/
                 free(a->chan_admin);
                 free(a->chan_auth);
                 tmp = a->next;
-
                 memcpy(a, account, sizeof(v3_account));
                 a->username     = strdup(account->username);
                 a->owner        = strdup(account->owner);
                 a->notes        = strdup(account->notes);
                 a->lock_reason  = strdup(account->lock_reason);
-                a->chan_admin   = malloc(account->chan_admin_count);
+                a->chan_admin   = malloc(account->chan_admin_count * 2);
                 memcpy(a->chan_admin, account->chan_admin, account->chan_admin_count * 2);
-                a->chan_auth    = malloc(account->chan_auth_count);
+                a->chan_auth    = malloc(account->chan_auth_count * 2);
                 memcpy(a->chan_auth, account->chan_auth, account->chan_auth_count * 2);
-
                 a->next = tmp;
                 _v3_debug(V3_DEBUG_INFO, "updated account %s (id %d)",  a->username, a->perms.account_id);
                 _v3_unlock_accountlist();
@@ -4669,29 +6620,27 @@ _v3_update_account(v3_account *account) {/*{{{*/
         a = last->next = malloc(sizeof(v3_account));
         memset(a, 0, sizeof(v3_account));
         memcpy(a, account, sizeof(v3_account));
-
         a->username     = strdup(account->username);
         a->owner        = strdup(account->owner);
         a->notes        = strdup(account->notes);
         a->lock_reason  = strdup(account->lock_reason);
-        a->chan_admin   = malloc(account->chan_admin_count);
+        a->chan_admin   = malloc(account->chan_admin_count * 2);
         memcpy(a->chan_admin, account->chan_admin, account->chan_admin_count * 2);
-        a->chan_auth    = malloc(account->chan_auth_count);
+        a->chan_auth    = malloc(account->chan_auth_count * 2);
         memcpy(a->chan_auth, account->chan_auth, account->chan_auth_count * 2);
-        a->next           = NULL;
-
+        a->next         = NULL;
         _v3_debug(V3_DEBUG_INFO, "added account %s (id %d)",  a->username, a->perms.account_id);
     }
     _v3_unlock_accountlist();
+
     _v3_func_leave("_v3_update_account");
     return true;
 }/*}}}*/
 
-
 void
 _v3_print_account_list(void) {/*{{{*/
     v3_account *c;
-    int ctr=0;
+    int ctr = 0;
 
     _v3_lock_accountlist();
     for (c = v3_account_list; c != NULL; c = c->next) {
@@ -4735,6 +6684,7 @@ _v3_destroy_accountlist(void) {/*{{{*/
     }
     v3_account_list = NULL;
     _v3_unlock_accountlist();
+
     _v3_func_leave("_v3_destroy_accountlist");
 }/*}}}*/
 
@@ -4756,22 +6706,22 @@ _v3_remove_account(uint16_t id) {/*{{{*/
         }
         last = a;
     }
-    _v3_func_leave("_v3_remove_account");
     _v3_unlock_accountlist();
+
+    _v3_func_leave("_v3_remove_account");
     return false;
 }/*}}}*/
 
 int
 v3_account_count(void) {/*{{{*/
     v3_account *a;
-    int ctr=0;
+    int ctr = 0;
 
     _v3_lock_accountlist();
     for (a = v3_account_list; a != NULL; a = a->next, ctr++);
     _v3_unlock_accountlist();
 
     return ctr;
-
 }/*}}}*/
 
 v3_account *
@@ -4790,6 +6740,7 @@ v3_get_account(uint16_t id) {/*{{{*/
         }
     }
     _v3_unlock_accountlist();
+
     _v3_func_leave("v3_get_account");
     return NULL;
 }/*}}}*/
@@ -4801,11 +6752,11 @@ _v3_copy_account(v3_account *dest, v3_account *src) {/*{{{*/
     dest->owner        = strdup(src->owner);
     dest->notes        = strdup(src->notes);
     dest->lock_reason  = strdup(src->lock_reason);
-    dest->chan_admin   = malloc(src->chan_admin_count);
+    dest->chan_admin   = malloc(src->chan_admin_count * 2);
     memcpy(dest->chan_admin, src->chan_admin, src->chan_admin_count * 2);
-    dest->chan_auth    = malloc(src->chan_auth_count);
+    dest->chan_auth    = malloc(src->chan_auth_count * 2);
     memcpy(dest->chan_auth, src->chan_auth, src->chan_auth_count * 2);
-    dest->next           = NULL;
+    dest->next         = NULL;
 }/*}}}*/
 
 void
@@ -4850,13 +6801,13 @@ v3_queue_event(v3_event *ev) {/*{{{*/
         // do not queue events if the mutex hasn't been initialized.  This
         // means the client isn't ready (or doesn't want) to receive events
         free(ev);
-        _v3_debug(V3_DEBUG_EVENT, "client does appear to be listening yet... not queueing");
+        _v3_debug(V3_DEBUG_EVENT, "client does not appear to be listening yet... not queueing");
         _v3_func_leave("v3_queue_event");
         return true;
     }
     pthread_mutex_lock(eventq_mutex);
     // if we're not allowed to see channels, gui should think any channel is the lobby
-    if(!v3_luser.perms.see_chan_list || !v3_channel_count()) {
+    if (!v3_luser.perms.see_chan_list || !v3_channel_count()) {
         ev->channel.id = 0;
     }
     ev->next = NULL;
@@ -4874,6 +6825,7 @@ v3_queue_event(v3_event *ev) {/*{{{*/
     last->next = ev;
     _v3_debug(V3_DEBUG_EVENT, "queued event type %d.  now have %d events in queue", ev->type, len);
     pthread_mutex_unlock(eventq_mutex);
+
     _v3_func_leave("v3_queue_event");
     return true;
 }/*}}}*/
@@ -4905,17 +6857,22 @@ v3_get_event(int block) {/*{{{*/
     ev = _v3_eventq;
     _v3_eventq = ev->next;
     pthread_mutex_unlock(eventq_mutex);
+
     return ev;
 }/*}}}*/
 
 v3_event *
 _v3_create_event(uint16_t event) {/*{{{*/
     v3_event *ev;
+
     ev = malloc(sizeof(v3_event));
     memset(ev, 0, sizeof(v3_event));
-    if(event) {
+    ev->data = malloc(sizeof(v3_event_data));
+    memset(ev->data, 0, sizeof(v3_event_data));
+    if (event) {
         ev->type = event;
     }
+
     return ev;
 }/*}}}*/
 
@@ -4923,6 +6880,7 @@ v3_event *
 _v3_get_last_event(int *len) {/*{{{*/
     v3_event *ev;
     int ctr;
+
     if (_v3_eventq == NULL) {
         return NULL;
     }
@@ -4930,21 +6888,35 @@ _v3_get_last_event(int *len) {/*{{{*/
     if (len != NULL) {
         *len = ctr;
     }
+
     return ev;
+}/*}}}*/
+
+void
+v3_free_event(v3_event *ev) {/*{{{*/
+    if (!ev) {
+        return;
+    }
+    if (ev->data) {
+        free(ev->data);
+        ev->data = NULL;
+    }
+    free(ev);
+    ev = NULL;
 }/*}}}*/
 
 void
 v3_clear_events(void) {/*{{{*/
     v3_event *ev;
+
     if (_v3_eventq == NULL) {
         return;
     }
     while (_v3_eventq != NULL) {
         ev = _v3_eventq->next;
-        free(_v3_eventq);
+        v3_free_event(_v3_eventq);
         _v3_eventq = ev;
     }
-    return;
 }/*}}}*/
 
 int
@@ -4958,12 +6930,12 @@ v3_is_licensed(void) {/*{{{*/
     return v3_server.is_licensed;
 }/*}}}*/
 
-uint32_t
+uint64_t
 v3_get_bytes_recv(void) {/*{{{*/
     return v3_server.recv_byte_count;
 }/*}}}*/
 
-uint32_t
+uint64_t
 v3_get_bytes_sent(void) {/*{{{*/
     return v3_server.sent_byte_count;
 }/*}}}*/
@@ -4992,7 +6964,7 @@ v3_get_codec_rate(uint16_t codec, uint16_t format) {/*{{{*/
     return 0;
 }/*}}}*/
 
-const v3_codec*
+const v3_codec *
 v3_get_codec(uint16_t codec, uint16_t format) {/*{{{*/
     int ctr = 0;
 
@@ -5003,10 +6975,10 @@ v3_get_codec(uint16_t codec, uint16_t format) {/*{{{*/
         ctr++;
     }
 
-    return NULL;
+    return &v3_codecs[ctr];
 }/*}}}*/
 
-const v3_codec*
+const v3_codec *
 v3_get_channel_codec(uint16_t channel_id) {/*{{{*/
     v3_channel *c;
     const v3_codec *codec_info;
@@ -5030,6 +7002,7 @@ v3_get_channel_codec(uint16_t channel_id) {/*{{{*/
     } else {
         _v3_debug(V3_DEBUG_INFO, "unknown codec for channel %d", channel_id);
     }
+
     _v3_func_leave("v3_get_channel_codec");
     return codec_info;
 }/*}}}*/
@@ -5054,6 +7027,7 @@ v3_channel_requires_password(uint16_t channel_id) {/*{{{*/
     }
     parent = c->parent;
     v3_free_channel(c);
+
     _v3_func_leave("v3_channel_requires_password");
     return v3_channel_requires_password(parent);
 }/*}}}*/
@@ -5074,17 +7048,9 @@ v3_logout(void) {/*{{{*/
     }
     memset(&ev, 0, sizeof(v3_event));
     ev.type = V3_EVENT_DISCONNECT;
-    _v3_lock_sendq();
-    _v3_debug(V3_DEBUG_EVENT, "sending %lu bytes to event pipe", sizeof(v3_event));
-    if (fwrite(&ev, sizeof(struct _v3_event), 1, v3_server.evoutstream) != 1) {
-        _v3_error("could not write to event pipe");
-        _v3_func_leave("v3_logout");
-        return;
-    }
-    fflush(v3_server.evoutstream);
-    _v3_unlock_sendq();
+
+    _v3_evpipe_write(v3_server.evpipe[1], &ev);
     _v3_func_leave("v3_logout");
-    return;
 }/*}}}*/
 
 void
@@ -5098,15 +7064,9 @@ v3_start_audio(uint16_t send_type) {/*{{{*/
     }
     memset(&ev, 0, sizeof(v3_event));
     ev.type = V3_EVENT_USER_TALK_START;
-    _v3_lock_sendq();
-    _v3_debug(V3_DEBUG_EVENT, "sending %lu bytes to event pipe for event type %d", sizeof(v3_event), ev.type);
-    if (fwrite(&ev, sizeof(struct _v3_event), 1, v3_server.evoutstream) != 1) {
-        _v3_error("could not write to event pipe");
-    }
-    fflush(v3_server.evoutstream);
-    _v3_unlock_sendq();
+
+    _v3_evpipe_write(v3_server.evpipe[1], &ev);
     _v3_func_leave("v3_start_audio");
-    return;
 }/*}}}*/
 
 uint32_t
@@ -5149,6 +7109,7 @@ v3_pcmlength_for_rate(uint32_t rate) {/*{{{*/
         _v3_func_leave("v3_pcmlength_for_rate");
         return bytestosend + bytestosend % 2;
     }
+
     _v3_func_leave("v3_pcmlength_for_rate");
     return 0;
 }/*}}}*/
@@ -5164,6 +7125,8 @@ v3_send_audio(uint16_t send_type, uint32_t rate, uint8_t *pcm, uint32_t length, 
         return 0;
     }
     memset(&ev, 0, sizeof(v3_event));
+    ev.data = malloc(sizeof(v3_event_data));
+    memset(ev.data, 0, sizeof(v3_event_data));
     ev.type = V3_EVENT_PLAY_AUDIO;
     ev.pcm.send_type = send_type;
     ev.pcm.rate = rate;
@@ -5202,7 +7165,7 @@ v3_send_audio(uint16_t send_type, uint32_t rate, uint8_t *pcm, uint32_t length, 
         }
         insamples  /= sizeof(int16_t) * channels;
         outsamples /= sizeof(int16_t) * channels;
-        err = speex_resampler_process_interleaved_int(resampler, (void *)pcm, &insamples, (void *)ev.data.sample, &outsamples);
+        err = speex_resampler_process_interleaved_int(resampler, (void *)pcm, &insamples, (void *)ev.data->sample, &outsamples);
         if (err) {
             _v3_error("resampling error: %d: %s\n", err, speex_resampler_strerror(err));
             _v3_func_leave("v3_send_audio");
@@ -5216,15 +7179,10 @@ v3_send_audio(uint16_t send_type, uint32_t rate, uint8_t *pcm, uint32_t length, 
         return codec->rate; // this is still needed for mangleraudio
 #endif
     } else {
-        memcpy(ev.data.sample, pcm, length);
+        memcpy(ev.data->sample, pcm, length);
     }
-    _v3_lock_sendq();
-    _v3_debug(V3_DEBUG_EVENT, "sending %lu bytes to event pipe for event type %d (pcm length %d)", sizeof(v3_event), ev.type, length);
-    if (fwrite(&ev, sizeof(struct _v3_event), 1, v3_server.evoutstream) != 1) {
-        _v3_error("could not write to event pipe");
-    }
-    fflush(v3_server.evoutstream);
-    _v3_unlock_sendq();
+
+    _v3_evpipe_write(v3_server.evpipe[1], &ev);
     _v3_func_leave("v3_send_audio");
     return rate;
 }/*}}}*/
@@ -5240,15 +7198,9 @@ v3_stop_audio(void) {/*{{{*/
     }
     memset(&ev, 0, sizeof(v3_event));
     ev.type = V3_EVENT_USER_TALK_END;
-    _v3_lock_sendq();
-    _v3_debug(V3_DEBUG_EVENT, "sending %lu bytes to event pipe for event type %d", sizeof(v3_event), ev.type);
-    if (fwrite(&ev, sizeof(struct _v3_event), 1, v3_server.evoutstream) != 1) {
-        _v3_error("could not write to event pipe");
-    }
-    fflush(v3_server.evoutstream);
-    _v3_unlock_sendq();
+
+    _v3_evpipe_write(v3_server.evpipe[1], &ev);
     _v3_func_leave("v3_start_audio");
-    return;
 }/*}}}*/
 
 void
@@ -5277,6 +7229,7 @@ v3_get_permissions(void) {/*{{{*/
 uint8_t
 v3_is_channel_admin(uint16_t channel_id) {/*{{{*/
     v3_channel *c;
+
     if (v3_luser.channel_admin[channel_id]) {
         return 1;
     }
@@ -5286,11 +7239,12 @@ v3_is_channel_admin(uint16_t channel_id) {/*{{{*/
     c = v3_get_channel(channel_id);
     channel_id = c->parent;
     v3_free_channel(c);
+
     return v3_is_channel_admin(channel_id);
 }/*}}}*/
 
 /*
- * Using these functions may chew up CPU since they perform mathmetical
+ * Using these functions may chew up CPU since they perform mathematical
  * operations on every 16 bit pcm sample.
  */
 void

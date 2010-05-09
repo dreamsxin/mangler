@@ -7,6 +7,7 @@
  * $URL$
  *
  * Copyright 2009-2010 Eric Kilfoil
+ * Copyright 2010 Roman Tetelman
  *
  * This file is part of Mangler.
  *
@@ -24,29 +25,23 @@
  * along with Mangler.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _MANGLERCONFIG_H
-#define _MANGLERCONFIG_H
+#ifndef _MANGLER_OSS_H
+#define _MANGLER_OSS_H
 
-#include "inilib.h"
+class ManglerOSS : public ManglerBackend {
+    int             oss_fd;
+    uint32_t        pcm_framesize;
+public:
+    virtual bool            open(int type, Glib::ustring device, int rate, int channels);
+    virtual void            close(bool drain = false);
+    virtual bool            write(uint8_t *sample, uint32_t length, int channels);
+    virtual bool            read(uint8_t* buf);
+    virtual Glib::ustring   getAudioSubsystem(void);
+    ManglerOSS(uint32_t rate, uint8_t channels, uint32_t pcm_framesize);
+    virtual ~ManglerOSS();
 
-class ManglerConfig {
-    public:
-        iniFile         config, servers;
-        //Glib::Mutex     mutex;
-        ManglerConfig();
-        ~ManglerConfig();
-        std::string confdir() const;
-        void save();
-        std::vector<int> PushToTalkXKeyCodes() const;
-        iniValue &operator[](const string &configVar);
-        bool hasUserVolume(const string &server, const string &user) const;
-        iniValue &UserVolume(const string &server, const string &user);
-        bool hasUserMuted(const string &server, const string &user) const;
-        iniValue &UserMuted(const string &server, const string &user);
-        iniValue &ChannelPassword(const string &server, uint16_t channel);
-    private:
-        static const char *DefaultConfiguration;
-        void ConvertOldConfig();
+    static void             getDeviceList(std::vector<ManglerAudioDevice*>& inputDevices, std::vector<ManglerAudioDevice*>& outputDevices);
 };
 
 #endif
+

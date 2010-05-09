@@ -24,29 +24,39 @@
  * along with Mangler.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _MANGLERCONFIG_H
-#define _MANGLERCONFIG_H
+#ifndef _MANGLEROSD_H
+#define _MANGLEROSD_H
 
-#include "inilib.h"
+#include "config.h"
 
-class ManglerConfig {
-    public:
-        iniFile         config, servers;
-        //Glib::Mutex     mutex;
-        ManglerConfig();
-        ~ManglerConfig();
-        std::string confdir() const;
-        void save();
-        std::vector<int> PushToTalkXKeyCodes() const;
-        iniValue &operator[](const string &configVar);
-        bool hasUserVolume(const string &server, const string &user) const;
-        iniValue &UserVolume(const string &server, const string &user);
-        bool hasUserMuted(const string &server, const string &user) const;
-        iniValue &UserMuted(const string &server, const string &user);
-        iniValue &ChannelPassword(const string &server, uint16_t channel);
+#ifdef HAVE_XOSD
+
+#include <stdint.h>
+#include <string>
+#include <list>
+#include <xosd.h>
+extern "C" {
+#include <ventrilo3.h>
+}
+
+class ManglerOsd {/*{{{*/
     private:
-        static const char *DefaultConfiguration;
-        void ConvertOldConfig();
-};
+        xosd                             *osd;
+        int                              osd_max_lines;
+        std::list<std::string>           userList;
+        void createOsd(void);
+
+    public:
+        ManglerOsd();
+        void destroyOsd(void);
+        bool checkOsdEnabled(void);
+        void updateOsd(void);
+        void addUser(uint32_t);
+        void removeUser(uint32_t);
+
+};/*}}}*/
 
 #endif
+
+#endif
+

@@ -29,21 +29,25 @@
 
 #include "config.h"
 
-#ifdef HAVE_PULSE
-# include <pulse/pulseaudio.h>
-# include <pulse/simple.h>
-# include <pulse/error.h>
-# include <pulse/gccmacro.h>
+#ifdef HAVE_OSS
+# include <fcntl.h>
+# include <sys/ioctl.h>
+# include <sys/soundcard.h>
 #endif
-#ifdef HAVE_ALSA
-# include <alsa/asoundlib.h>
-# define ALSA_BUF 640
+#ifdef HAVE_ESPEAK
+# include <espeak/speak_lib.h>
 #endif
+
+#include "manglerbackend.h"
+
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 
-#define AUDIO_INPUT  false
-#define AUDIO_OUTPUT true
+#define AUDIO_CONTROL 0
+#define AUDIO_INPUT   1
+#define AUDIO_OUTPUT  2
+#define AUDIO_NOTIFY  3
 
 class ManglerPCM
 {
@@ -76,70 +80,40 @@ class ManglerAudioDevice
 class ManglerAudio
 {
     public:
-        ManglerAudio(Glib::ustring type);
+        ManglerAudio(int type, uint32_t rate = 0, uint8_t channels = 1, uint32_t pcm_framesize = 0, uint8_t buffer = 4, bool check_loggedin = true);
         ~ManglerAudio();
-        void            open(uint32_t rate, bool type, uint32_t pcm_framesize = 0, uint8_t channels = 1);
-        bool            openOutput(uint32_t rate);
-        void            closeOutput(bool drain = false);
-        bool            openInput(uint32_t rate);
-        void            closeInput(bool drain = false);
-        void            queue(uint32_t length, uint8_t *sample);
-        void            output(void);
-        void            input(void);
-        void            finish(void);
 
-        void            getDeviceList(Glib::ustring audioSubsystem);
-        void            playNotification(Glib::ustring name);
-        void            playNotification_thread(Glib::ustring name);
-
-
-
-        GAsyncQueue*    pcm_queue;
+        ManglerBackend  *backend;
+        int             type;
         uint32_t        rate;
+        uint32_t        pcm_framesize;
         uint8_t         channels;
-#ifdef HAVE_PULSE
-        pa_sample_spec  pulse_samplespec;
-        pa_buffer_attr  buffer_attr;
-        pa_simple       *pulse_stream;
-#endif
-#ifdef HAVE_ALSA
-        snd_pcm_sframes_t alsa_frames;
-        snd_pcm_t       *alsa_stream;
-#endif
-        ManglerPCM      *pcmdata;
+        uint8_t         buffer;
+        bool            check_loggedin;
+        GAsyncQueue*    pcm_queue;
+        bool            outputStreamOpen;
+        bool            inputStreamOpen;
+        bool            stop_output;
+        bool            stop_input;
 
         std::map<Glib::ustring, ManglerPCM *> sounds;
 
-        std::vector<ManglerAudioDevice*> inputDevices;
         std::vector<ManglerAudioDevice*> outputDevices;
+        std::vector<ManglerAudioDevice*> inputDevices;
 
-        int             pulse_error;
-        int             alsa_error;
-
-        bool            stop_input;
-        bool            stop_output;
-        uint32_t        pcm_framesize;
-
-        bool            outputStreamOpen;
-        bool            inputStreamOpen;
+        bool            switchBackend(Glib::ustring audioSubsystem);
+        bool            open(void);
+        void            close(bool drain = false);
+        void            queue(uint32_t length, uint8_t *sample);
+        void            finish(bool drop = false);
+        void            output(void);
+        void            input(void);
+        void            getDeviceList(Glib::ustring audioSubsystem);
+        void            playNotification(Glib::ustring name);
+        void            playText(Glib::ustring text);
 };
 
-
-// this is easier in C
-#ifdef HAVE_PULSE
-typedef struct pa_devicelist {
-    uint8_t initialized;
-    char name[512];
-    uint32_t index;
-    char description[256];
-} pa_devicelist_t;
-
-void pa_state_cb(pa_context *c, void *userdata);
-void pa_sinklist_cb(pa_context *c, const pa_sink_info *l, int eol, void *userdata);
-void pa_sourcelist_cb(pa_context *c, const pa_source_info *l, int eol, void *userdata);
-int pa_get_devicelist(pa_devicelist_t *input, pa_devicelist_t *output);
-#endif
-
-int timeval_subtract (struct timeval *result, struct timeval *x, struct timeval *y);
+int timeval_subtract(struct timeval *result, struct timeval *x, struct timeval *y);
 
 #endif
+
