@@ -1689,6 +1689,16 @@ bool Mangler::getNetworkEvent() {/*{{{*/
             case V3_EVENT_SRV_PROP_SENT:/*{{{*/
                 admin->serverSettingsSendDone();
                 break;/*}}}*/
+            case V3_EVENT_ADMIN_BAN_LIST:/*{{{*/
+                admin->banList(
+                        ev->data->ban.id,
+                        ev->data->ban.count,
+                        ev->data->ban.bitmask_id,
+                        ev->data->ban.ip_address,
+                        ev->data->ban.user,
+                        ev->data->ban.by,
+                        ev->data->ban.reason);
+                break;/*}}}*/
             default:
                 fprintf(stderr, "******************************************************** got unknown event type %d\n", ev->type);
         }

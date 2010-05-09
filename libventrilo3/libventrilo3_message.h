@@ -74,7 +74,6 @@ typedef struct _v3_net_message_0x06 {/*{{{*/
     uint16_t unknown_1;         // 4
     uint16_t error_id;          // 6
     uint32_t subtype;           // 8
-
     uint8_t  unknown_2;         // 12 - variable length starts here
     uint8_t *encryption_key;
 } __attribute__ ((__packed__)) _v3_msg_0x06;
@@ -246,14 +245,14 @@ typedef struct _v3_net_message_0x52 {/*{{{*/
     uint16_t unknown_1;         // 14
     uint32_t data_length;       // 16
     uint32_t pcm_length;        // 20
-} __attribute__ ((__packed__)) _v3_msg_0x52; /*}}}*/
+} __attribute__ ((__packed__)) _v3_msg_0x52;/*}}}*/
 typedef struct _v3_net_message_0x52_0x00 {/*{{{*/
     _v3_msg_0x52 header;        // 0
     uint16_t unknown_4;         // 24
     uint16_t unknown_5;         // 26
     uint16_t unknown_6;         // 28
     uint16_t unknown_7;         // 30
-} __attribute__ ((__packed__)) _v3_msg_0x52_0x00; /*}}}*/
+} __attribute__ ((__packed__)) _v3_msg_0x52_0x00;/*}}}*/
 typedef struct _v3_net_message_0x52_0x01_in {/*{{{*/
     _v3_msg_0x52 header;        // 0
     uint16_t unknown_4;         // 24
@@ -271,10 +270,10 @@ typedef struct _v3_net_message_0x52_0x02 {/*{{{*/
     _v3_msg_0x52 header;        // 0
     uint16_t unknown_4;         // 24
     uint16_t unknown_5;         // 26
-} __attribute__ ((__packed__)) _v3_msg_0x52_0x02; /*}}}*/
+} __attribute__ ((__packed__)) _v3_msg_0x52_0x02;/*}}}*/
 typedef struct _v3_net_message_0x52_0x03 {/*{{{*/
     _v3_msg_0x52 header;        // 0
-} __attribute__ ((__packed__)) _v3_msg_0x52_0x03; /*}}}*/
+} __attribute__ ((__packed__)) _v3_msg_0x52_0x03;/*}}}*/
 int _v3_get_0x52(_v3_net_message *msg);
 _v3_net_message *_v3_put_0x52(uint8_t subtype, uint16_t codec, uint16_t codec_format, uint16_t send_type, uint32_t pcmlength, uint32_t length, void *data);
 int _v3_destroy_0x52(_v3_net_message *msg);
@@ -366,18 +365,20 @@ typedef struct _v3_net_message_0x61 {/*{{{*/
     uint32_t ip_address;        // 12
     uint16_t ban_count;         // 16
     uint16_t ban_id;            // 18
-    uint8_t  banned_user[32];   // 20
-    uint8_t  banned_by[32];     // 52
-    uint8_t  ban_msg[128];      // 84
-} __attribute__ ((__packed__)) _v3_msg_0x61;/*}}}*/
+    char     banned_user[32];   // 20
+    char     banned_by[32];     // 52
+    char     ban_reason[128];   // 84
+} __attribute__ ((__packed__)) _v3_msg_0x61;
+int _v3_get_0x61(_v3_net_message *msg);
+_v3_net_message *_v3_put_0x61(uint32_t subtype, uint32_t bitmask_id, uint32_t ip_address, char *banned_user, char *ban_reason);/*}}}*/
 typedef struct _v3_net_message_0x62 {/*{{{*/
     uint32_t type;              // 0
     uint16_t user_id_to;        // 4
     uint16_t user_id_from;      // 6
     uint32_t error_id;          // 8
-} __attribute__ ((__packed__)) _v3_msg_0x62;/*}}}*/
+} __attribute__ ((__packed__)) _v3_msg_0x62;
 int _v3_get_0x62(_v3_net_message *msg);
-_v3_net_message *_v3_put_0x62(uint16_t user_id);
+_v3_net_message *_v3_put_0x62(uint16_t user_id);/*}}}*/
 typedef struct _v3_net_message_0x63 {/*{{{*/
     uint32_t type;              // 0
     uint16_t subtype;           // 4

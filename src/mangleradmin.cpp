@@ -61,6 +61,7 @@ ManglerAdmin::ManglerAdmin(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
     builder->get_widget("ChannelsTab", ChannelsTab);
     builder->get_widget("UsersTab", UsersTab);
     builder->get_widget("RanksTab", RanksTab);
+    builder->get_widget("BansTab", BansTab);
     builder->get_widget("AdminStatusbar", AdminStatusbar);
     AdminStatusbar->set_has_resize_grip(false);
 
@@ -378,12 +379,49 @@ ManglerAdmin::ManglerAdmin(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
     builder->get_widget("RankUpdate", button);
     button->signal_clicked().connect(sigc::mem_fun(this, &ManglerAdmin::RankUpdate_clicked_cb));
 
-    /* set up the rank list */
-    clearRanks();
+    /* set up the ban editor stuff */
+    BanEditorModel = Gtk::TreeStore::create(BanEditorColumns);
+    builder->get_widget("BanTree", BanEditorTree);
+    BanEditorTree->set_model(BanEditorModel);
+    BanEditorTree->append_column("IP Address", banRecord.ip);
+    BanEditorTree->append_column("Netmask", banRecord.netmask);
+    BanEditorTree->append_column("User", banRecord.user);
+    BanEditorTree->append_column("Admin", banRecord.by);
+    BanEditorTree->append_column("Reason", banRecord.reason);
+    BanEditorTree->signal_cursor_changed().connect(sigc::mem_fun(this, &ManglerAdmin::BanEditorTree_cursor_changed_cb));
+
+    builder->get_widget("BanEditor", BanEditor);
+
+    builder->get_widget("BanNetmask", combobox);
+    BanNetmaskModel = Gtk::TreeStore::create(adminRecord);
+    combobox->set_model(BanNetmaskModel);
+    combobox->pack_start(adminRecord.name);
+    for (uint32_t ctr = 8; _v3_bitmasks[ctr] != NULL; ctr++) {
+        Gtk::TreeModel::iterator iter = BanNetmaskModel->append();
+        (*iter)[adminRecord.id] = ctr;
+        (*iter)[adminRecord.name] = c_to_ustring(_v3_bitmasks[ctr]);
+        combobox->set_active(iter);
+        BanNetmaskDefault = ctr;
+    }
+
+    builder->get_widget("BanAdd", button);
+    button->signal_clicked().connect(sigc::mem_fun(this, &ManglerAdmin::BanAdd_clicked_cb));
+
+    builder->get_widget("BanRemove", button);
+    button->signal_clicked().connect(sigc::mem_fun(this, &ManglerAdmin::BanRemove_clicked_cb));
+
+    builder->get_widget("BanUpdate", button);
+    button->signal_clicked().connect(sigc::mem_fun(this, &ManglerAdmin::BanUpdate_clicked_cb));
 
     /* set up the channel lists */
     readUserTemplates();
     clearChannels();
+    
+    /* set up the rank list */
+    clearRanks();
+
+    /* set up the ban list */
+    clearBans();
 
     isOpen = false;
 }/*}}}*/
@@ -401,19 +439,22 @@ void
 ManglerAdmin::adminWindow_show_cb(void) {/*{{{*/
     const v3_permissions *perms = v3_get_permissions();
     if (perms->srv_admin) {
-        builder->get_widget("ServerVBox", widget);
-        if (widget->get_sensitive()) {
-            v3_serverprop_open();
-        }
+        v3_admin_ban_list();
+        BansTab->show();
         v3_userlist_open();
         UsersTab->show();
         Gtk::TreeModel::Row row;
         row = *(UserOwnerModel->append());
         row[adminRecord.id] = 0; row[adminRecord.name] = "None";
         UserAdd->set_sensitive( perms->add_user );
+        builder->get_widget("ServerVBox", widget);
+        if (widget->get_sensitive()) {
+            v3_serverprop_open();
+        }
     } else {
         ServerTab->hide();
         UsersTab->hide();
+        BansTab->hide();
     }
     if (perms->edit_rank) {
         v3_ranklist_open();
@@ -1903,11 +1944,112 @@ ManglerAdmin::clearRanks(void) {/*{{{*/
 
     currentRankID = 0xff;
 }/*}}}*/
+/* ----------  Ban Editor Related Methods  ---------- */
+void
+ManglerAdmin::banList(uint16_t id, uint16_t count, uint16_t bitmask_id, uint32_t ip_address, char *user, char *by, char *reason) {/*{{{*/
+    if (!id) {
+        BanEditorModel->clear();
+    }
+    if (!count) {
+        clearBans();
+        return;
+    }
+    Gtk::TreeModel::iterator iter = BanEditorModel->append();
+    (*iter)[banRecord.id] = id;
+    (*iter)[banRecord.ip_val] = ip_address;
+    (*iter)[banRecord.netmask_id] = bitmask_id;
+    (*iter)[banRecord.ip] = Glib::ustring::compose("%1.%2.%3.%4",
+            Glib::ustring::format((ip_address >> 24) & 0xff),
+            Glib::ustring::format((ip_address >> 16) & 0xff),
+            Glib::ustring::format((ip_address >> 8) & 0xff),
+            Glib::ustring::format(ip_address & 0xff));
+    (*iter)[banRecord.netmask] = c_to_ustring(_v3_bitmasks[bitmask_id]);
+    (*iter)[banRecord.user] = c_to_ustring(user);
+    (*iter)[banRecord.by] = c_to_ustring(by);
+    (*iter)[banRecord.reason] = c_to_ustring(reason);
+}/*}}}*/
+void
+ManglerAdmin::BanEditorTree_cursor_changed_cb(void) {/*{{{*/
+    Gtk::TreeModel::Path path;
+    Gtk::TreeViewColumn *column;
+    BanEditorTree->get_cursor(path, column);
+    Gtk::TreeModel::iterator iter = BanEditorModel->get_iter(path);
+    bool isBan( false );
+    if (iter) {
+        isBan = true;
+        currentBanID = (*iter)[banRecord.id];
+        copyToEntry("BanIPAddress", (*iter)[banRecord.ip]);
+        copyToCombobox("BanNetmask", (*iter)[banRecord.netmask_id], BanNetmaskDefault);
+        copyToEntry("BanReason", (*iter)[banRecord.reason]);
+    }
+    setWidgetSensitive("BanAdd", true);
+    setWidgetSensitive("BanRemove", isBan);
+    BanEditor->set_sensitive(isBan);
+}/*}}}*/
+void
+ManglerAdmin::BanAdd_clicked_cb(void) {/*{{{*/
+    Glib::RefPtr<Gtk::TreeSelection> banSelection = BanEditorTree->get_selection();
+    banSelection->unselect_all();
+    currentBanID = BanEditorModel->children().size() + 1;
+    copyToEntry("BanIPAddress", "");
+    copyToCombobox("BanNetmask", BanNetmaskDefault);
+    copyToEntry("BanReason", "");
+    setWidgetSensitive("BanRemove", false);
+    setWidgetSensitive("BanAdd", false);
+    BanEditor->set_sensitive(true);
+}/*}}}*/
+void
+ManglerAdmin::BanRemove_clicked_cb(void) {/*{{{*/
+    Gtk::TreeModel::Path path;
+    Gtk::TreeViewColumn *column;
+    BanEditorTree->get_cursor(path, column);
+    Gtk::TreeModel::iterator iter = BanEditorModel->get_iter(path);
+    if (! iter) return;
+    uint32_t ip_address = (*iter)[banRecord.ip_val];
+    uint16_t bitmask_id = (*iter)[banRecord.netmask_id];
+    v3_admin_ban_remove(bitmask_id, ip_address);
+    v3_admin_ban_list();
+}/*}}}*/
+void
+ManglerAdmin::BanUpdate_clicked_cb(void) {/*{{{*/
+    uint32_t ip_address = 0;
+    char *ip_str = ::strdup(ustring_to_c(getFromEntry("BanIPAddress") + ".").c_str());
+    char *ip_pos[5] = { ip_str };
+    int ctr = 0;
+    while (ctr < 4 && (ip_pos[ctr+1] = strchr(ip_pos[ctr], '.')) && ++ctr) {
+        *ip_pos[ctr] = 0;
+        ip_pos[ctr] += 1;
+        ip_address |= ((uint8_t)atoi(ip_pos[ctr-1])) << (8*(4-ctr));
+    }
+    ::free(ip_str);
+    if (ctr != 4 || !ip_address) {
+        statusbarPush("Invalid IP address.");
+        return;
+    }
+    uint16_t bitmask_id = getFromCombobox("BanNetmask", BanNetmaskDefault);
+    char *reason = ::strdup(ustring_to_c(getFromEntry("BanReason")).c_str());
+    v3_admin_ban_remove(bitmask_id, ip_address);
+    v3_admin_ban_add(bitmask_id, ip_address, "Remotely added IP", reason);
+    ::free(reason);
+    v3_admin_ban_list();
+}/*}}}*/
+void
+ManglerAdmin::clearBans(void) {/*{{{*/
+    BanEditorModel->clear();
+
+    BanEditor->set_sensitive(false);
+    setWidgetSensitive("BanAdd", true);
+    setWidgetSensitive("BanRemove", false);
+    setWidgetSensitive("BanUpdate", true);
+
+    currentBanID = 0xff;
+}/*}}}*/
 
 void
 ManglerAdmin::clear(void) {/*{{{*/
     setWidgetSensitive("ServerVBox", true);
     clearChannels();
     clearRanks();
+    clearBans();
 }/*}}}*/
 

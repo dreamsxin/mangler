@@ -138,6 +138,10 @@
 #define V3_SRV_PROP_AUTOBAN_TIME      0x1B
 #define V3_SRV_PROP_FINISH            0x1C
 
+#define V3_ADMIN_BAN_LIST           0x00
+#define V3_ADMIN_BAN_REMOVE         0x01
+#define V3_ADMIN_BAN_ADD            0x02
+
 #define V3_DEBUG_NONE               0
 #define V3_DEBUG_STATUS             1
 #define V3_DEBUG_ERROR              1 << 2
@@ -281,6 +285,7 @@ enum _v3_events {
     V3_EVENT_USER_RANK_CHANGE,
     V3_EVENT_SRV_PROP_RECV,
     V3_EVENT_SRV_PROP_SENT,
+    V3_EVENT_ADMIN_BAN_LIST,
 
     // outbound specific event types
     V3_EVENT_CHANGE_CHANNEL,
@@ -298,6 +303,8 @@ enum _v3_events {
     V3_EVENT_SRV_PROP_OPEN,
     V3_EVENT_SRV_PROP_CLOSE,
     V3_EVENT_SRV_PROP_UPDATE,
+    V3_EVENT_ADMIN_BAN_ADD,
+    V3_EVENT_ADMIN_BAN_REMOVE,
 
     // not implemented
     V3_EVENT_USER_PAGE,
@@ -319,6 +326,8 @@ enum _v3_boot_types {
     V3_BOOT_BAN,
     V3_BOOT_CHANNEL_BAN,
 };
+
+extern char *_v3_bitmasks[];
 
 #define V3_AUDIO_SENDTYPE_UNK0   0x00  // possibly broadcast?
 #define V3_AUDIO_SENDTYPE_UNK1   0x01  // possibly broadcast to lobby?
@@ -402,6 +411,15 @@ union _v3_event_data {
         uint16_t allow_command_target;
     } channel;
     v3_server_prop srvprop;
+    struct {
+        uint16_t id;
+        uint16_t count;
+        uint16_t bitmask_id;
+        uint32_t ip_address;
+        char     user[32];
+        char     by[32];
+        char     reason[128];
+    } ban;
     struct {
         uint16_t id;
         uint16_t level;
@@ -713,6 +731,9 @@ void        v3_userlist_change_owner(uint16_t old_owner_id, uint16_t new_owner_i
 void        v3_serverprop_open(void);
 void        v3_serverprop_close(void);
 void        v3_serverprop_update(const v3_server_prop *prop);
+void        v3_admin_ban_list(void);
+void        v3_admin_ban_add(uint16_t bitmask_id, uint32_t ip_address, const char *user, const char *reason);
+void        v3_admin_ban_remove(uint16_t bitmask_id, uint32_t ip_address);
 
 int         v3_debuglevel(uint32_t level);
 int         v3_is_loggedin(void);

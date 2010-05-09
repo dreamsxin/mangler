@@ -1166,6 +1166,39 @@ _v3_recv(int block) {/*{{{*/
                             _v3_destroy_packet(msg);
                         }
                         break;/*}}}*/
+                    case V3_EVENT_ADMIN_BAN_LIST:/*{{{*/
+                        {
+                            _v3_net_message *msg = _v3_put_0x61(V3_ADMIN_BAN_LIST, 0, 0, NULL, NULL);
+                            if (_v3_send(msg)) {
+                                _v3_debug(V3_DEBUG_SOCKET, "sent admin ban list request to server");
+                            } else {
+                                _v3_debug(V3_DEBUG_SOCKET, "failed to send admin ban list request");
+                            }
+                            _v3_destroy_packet(msg);
+                        }
+                        break;/*}}}*/
+                    case V3_EVENT_ADMIN_BAN_ADD:/*{{{*/
+                        {
+                            _v3_net_message *msg = _v3_put_0x61(V3_ADMIN_BAN_ADD, ev.data->ban.bitmask_id, ev.data->ban.ip_address, ev.data->ban.user, ev.data->ban.reason);
+                            if (_v3_send(msg)) {
+                                _v3_debug(V3_DEBUG_SOCKET, "sent admin ban add request to server");
+                            } else {
+                                _v3_debug(V3_DEBUG_SOCKET, "failed to send admin ban add request");
+                            }
+                            _v3_destroy_packet(msg);
+                        }
+                        break;/*}}}*/
+                    case V3_EVENT_ADMIN_BAN_REMOVE:/*{{{*/
+                        {
+                            _v3_net_message *msg = _v3_put_0x61(V3_ADMIN_BAN_REMOVE, ev.data->ban.bitmask_id, ev.data->ban.ip_address, NULL, NULL);
+                            if (_v3_send(msg)) {
+                                _v3_debug(V3_DEBUG_SOCKET, "sent admin ban remove request to server");
+                            } else {
+                                _v3_debug(V3_DEBUG_SOCKET, "failed to send admin ban remove request");
+                            }
+                            _v3_destroy_packet(msg);
+                        }
+                        break;/*}}}*/
                     default:
                         _v3_debug(V3_DEBUG_EVENT, "received unknown event type %d from queue", ev.type);
                         break;
@@ -4733,7 +4766,6 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                 return V3_MALFORMED;
             } else {
                 _v3_msg_0x53 *m = (_v3_msg_0x53 *)msg->contents;
-
                 v3_user *user;
                 _v3_debug(V3_DEBUG_INFO, "user %d moved to channel %d", m->user_id, m->channel_id);
                 user = v3_get_user(m->user_id);
@@ -4963,10 +4995,8 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                 _v3_msg_0x5d *m = msg->contents;
                 v3_user *ul, *u;
                 int ctr;
-
                 _v3_lock_luser();
                 _v3_lock_userlist();
-
                 ul = calloc(m->user_count, sizeof(v3_user));
                 switch (m->subtype) {
                     case V3_REMOVE_USER:
@@ -5090,7 +5120,6 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                 _v3_msg_0x60 *m = (_v3_msg_0x60 *)msg->contents;
                 v3_channel *cl;
                 int ctr;
-
                 _v3_lock_channellist();
                 _v3_debug(V3_DEBUG_INFO, "adding %d channels from channel list",  m->channel_count);
                 cl = calloc(m->channel_count, sizeof(v3_channel));
@@ -5108,6 +5137,27 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
             _v3_destroy_packet(msg);
             _v3_func_leave("_v3_process_message");
             return V3_OK;/*}}}*/
+        case 0x61:/*{{{*/
+            if (!_v3_get_0x61(msg)) {
+                _v3_destroy_packet(msg);
+                _v3_func_leave("_v3_process_message");
+                return V3_MALFORMED;
+            } else {
+                _v3_msg_0x61 *m = msg->contents;
+                v3_event *ev = _v3_create_event(V3_EVENT_ADMIN_BAN_LIST);
+                ev->data->ban.id = m->ban_id;
+                ev->data->ban.count = m->ban_count;
+                ev->data->ban.bitmask_id = m->bitmask_id;
+                ev->data->ban.ip_address = m->ip_address;
+                strncpy(ev->data->ban.user, m->banned_user, sizeof(ev->data->ban.user) - 1);
+                strncpy(ev->data->ban.by, m->banned_by, sizeof(ev->data->ban.user) - 1);
+                strncpy(ev->data->ban.reason, m->ban_reason, sizeof(ev->data->ban.reason) - 1);
+                _v3_debug(V3_DEBUG_INFO, "queuing event type %d for ban %d", ev->type, ev->data->ban.id);
+                v3_queue_event(ev);
+            }
+            _v3_destroy_packet(msg);
+            _v3_func_leave("_v3_process_message");
+            return V3_OK;/*}}}*/
         case 0x62:/*{{{*/
             if (!_v3_get_0x62(msg)) {
                 _v3_destroy_packet(msg);
@@ -5115,7 +5165,6 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                 return V3_MALFORMED;
             } else {
                 _v3_msg_0x62 *m = msg->contents;
-
                 _v3_debug(V3_DEBUG_INFO, "got user page from user %d to user %d", m->user_id_from, m->user_id_to);
                 if (m->user_id_to == v3_get_user_id()) {
                     v3_event *ev = _v3_create_event(V3_EVENT_USER_PAGE);
@@ -6025,6 +6074,68 @@ v3_serverprop_update(const v3_server_prop *prop) {/*{{{*/
 
     _v3_evpipe_write(v3_server.evpipe[1], &ev);
     _v3_func_leave("v3_serverprop_update");
+}/*}}}*/
+
+void
+v3_admin_ban_list(void) {/*{{{*/
+    v3_event ev;
+
+    _v3_func_enter("v3_admin_ban_list");
+    if (!v3_is_loggedin()) {
+        _v3_func_leave("v3_admin_ban_list");
+        return;
+    }
+    memset(&ev, 0, sizeof(v3_event));
+    ev.type = V3_EVENT_ADMIN_BAN_LIST;
+
+    _v3_evpipe_write(v3_server.evpipe[1], &ev);
+    _v3_func_leave("v3_admin_ban_list");
+}/*}}}*/
+
+void
+v3_admin_ban_add(uint16_t bitmask_id, uint32_t ip_address, const char *user, const char *reason) {/*{{{*/
+    v3_event ev;
+
+    _v3_func_enter("v3_admin_ban_add");
+    if (!v3_is_loggedin() || bitmask_id < 8 || !ip_address) {
+        _v3_func_leave("v3_admin_ban_add");
+        return;
+    }
+    memset(&ev, 0, sizeof(v3_event));
+    ev.data = malloc(sizeof(v3_event_data));
+    memset(ev.data, 0, sizeof(v3_event_data));
+    ev.type = V3_EVENT_ADMIN_BAN_ADD;
+    ev.data->ban.bitmask_id = bitmask_id;
+    ev.data->ban.ip_address = ip_address;
+    if (user) {
+        strncpy(ev.data->ban.user, user, sizeof(ev.data->ban.user) - 1);
+    }
+    if (reason) {
+        strncpy(ev.data->ban.reason, reason, sizeof(ev.data->ban.reason) - 1);
+    }
+
+    _v3_evpipe_write(v3_server.evpipe[1], &ev);
+    _v3_func_leave("v3_admin_ban_add");
+}/*}}}*/
+
+void
+v3_admin_ban_remove(uint16_t bitmask_id, uint32_t ip_address) {/*{{{*/
+    v3_event ev;
+
+    _v3_func_enter("v3_admin_ban_remove");
+    if (!v3_is_loggedin()) {
+        _v3_func_leave("v3_admin_ban_remove");
+        return;
+    }
+    memset(&ev, 0, sizeof(v3_event));
+    ev.data = malloc(sizeof(v3_event_data));
+    memset(ev.data, 0, sizeof(v3_event_data));
+    ev.type = V3_EVENT_ADMIN_BAN_REMOVE;
+    ev.data->ban.bitmask_id = bitmask_id;
+    ev.data->ban.ip_address = ip_address;
+
+    _v3_evpipe_write(v3_server.evpipe[1], &ev);
+    _v3_func_leave("v3_admin_ban_remove");
 }/*}}}*/
 
 void

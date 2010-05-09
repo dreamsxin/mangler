@@ -47,36 +47,36 @@
 
 char *_v3_errors[] = {
     "Success",
-    "Operation can not be performed on your self",
-    "Specified object no longer exists",
-    "Invalid password",
-    "You do not have server admin rights",
-    "You do not have channel admin rights",
-    "Bad name specified",
-    "Insufficient resources to complete operation",
-    "Specified name is already taken",
-    "You are banned from the specified channel",
-    "The channel is full",
-    "You do not have admin permission",
-    "You do not have root channel admin permission",
-    "State change does not apply in this instance",
-    "Max channel width exceeded",
-    "Max channel depth exceeded",
-    "Ban failed. Might already be banned by subnet",
-    "Unable to update the USR file",
-    "The server requires that you enable the 'Show login name in remote status request' of your server definition for this server",
+    "Operation can not be performed on your self.",
+    "Specified object no longer exists.",
+    "Invalid password.",
+    "You do not have server admin rights.",
+    "You do not have channel admin rights.",
+    "Bad name specified.",
+    "Insufficient resources to complete operation.",
+    "Specified name is already taken.",
+    "You are banned from the specified channel.",
+    "The channel is full.",
+    "You do not have admin permission.",
+    "You do not have root channel admin permission.",
+    "State change does not apply in this instance.",
+    "Max channel width exceeded.",
+    "Max channel depth exceeded.",
+    "Ban failed. Might already be banned by subnet.",
+    "Unable to update the USR file.",
+    "The server requires that you enable the 'Show login name in remote status request' of your server definition for this server.",
     "Maximum number of allowed guest logins has been reached. Try again later.",
-    "Connection time limit (GUEST or INI) has been exceeded",
-    "You are not allowed to switch channels manually",
-    "You do not have sufficient rights to ban another user",
-    "You do not have sufficient rights to kick another user",
-    "You do not have sufficient rights to move another user to a different channel",
-    "You already have Server Admin rights",
-    "You do not have sufficient rights to issue RCon commands",
-    "You are not allowed to edit the regular MOTD",
-    "You are not allowed to edit the guest MOTD",
-    "You do not have sufficient rights to receive complaints",
-    "You do not have sufficient rights to send complaints",
+    "Connection time limit (GUEST or INI) has been exceeded.",
+    "You are not allowed to switch channels manually.",
+    "You do not have sufficient rights to ban another user.",
+    "You do not have sufficient rights to kick another user.",
+    "You do not have sufficient rights to move another user to a different channel.",
+    "You already have Server Admin rights.",
+    "You do not have sufficient rights to issue RCon commands.",
+    "You are not allowed to edit the regular MOTD.",
+    "You are not allowed to edit the guest MOTD.",
+    "You do not have sufficient rights to receive complaints.",
+    "You do not have sufficient rights to send complaints.",
     "Another client is currently using the User Editor. See name: ",
     "You have not been given access rights to enter a User Authorization mode channel.",
     "Another client is currently editing the Rank list. See name: ",
@@ -94,7 +94,7 @@ char *_v3_errors[] = {
     "You have been kicked because you provided a bad Server Admin password. You will be automatically banned if you fail several more times, so be sure that you are entering the correct password before you try again. Be advised that your attempts to use the Server Admin password are being logged. If you are not authorized to be a Server Admin you may be subject to legal action.",
     "You have been banned from the server. Reason: ",
     "You have been banned from the server for spamming.",
-    "You are temporarily banned. ",
+    "You are temporarily banned.",
     "You are on the banned list.",
     "Guest accounts are not allowed to join the specified channel."
 };
@@ -107,12 +107,12 @@ char *_v3_page_errors[] = {
 };
 
 char *_v3_move_errors[] = {
-    "Admin rights",
-    "Invalid source object",
-    "Invalid target object",
-    "Not support in given mode",
-    "Target channel is full",
-    "Target channel does not allow phantoms, or source does not have proper access rights"
+    "Admin rights.",
+    "Invalid source object.",
+    "Invalid target object.",
+    "Not support in given mode.",
+    "Target channel is full.",
+    "Target channel does not allow phantoms, or source does not have proper access rights."
 };
 
 char *_v3_server_disabled_errors[] = {
@@ -128,17 +128,17 @@ char *_v3_server_disabled_errors[] = {
 };
 
 char *_v3_phantom_errors[] = {
-    "Channel does not allow phantoms",
-    "Phantoms are restricted to USR file",
-    "Duplicate",
-    "Unknown channel",
-    "Not found",
-    "Not authenticated for specified channel",
-    "No slots available",
-    "Channel is full",
-    "Insufficient resources",
-    "Banned from channel",
-    "Insufficient access rights",
+    "Channel does not allow phantoms.",
+    "Phantoms are restricted to USR file.",
+    "Duplicate.",
+    "Unknown channel.",
+    "Not found.",
+    "Not authenticated for specified channel.",
+    "No slots available.",
+    "Channel is full.",
+    "Insufficient resources.",
+    "Banned from channel.",
+    "Insufficient access rights.",
 };
 
 char *_v3_permissions_errors[] = {
@@ -165,7 +165,7 @@ char *_v3_ranks_errors[] = {
     "Insufficient access rights.",
     NULL,
     "Maximum number of allowed Ranks has been reached.",
-    "Missing abreviation or description.",
+    "Missing abbreviation or description.",
 };
 
 char *_v3_bitmasks[] = {
@@ -201,7 +201,8 @@ char *_v3_bitmasks[] = {
     "255.255.255.248",
     "255.255.255.252",
     "255.255.255.254",
-    "255.255.255.255"
+    "255.255.255.255",
+    NULL
 };
 
 #define V3_OK        0

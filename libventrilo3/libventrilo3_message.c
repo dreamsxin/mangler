@@ -1780,6 +1780,71 @@ _v3_destroy_0x60(_v3_net_message *msg) {/*{{{*/
     return true;
 }/*}}}*/
 /*}}}*/
+// Message 0x61 (97) | BAN LIST MODIFICATION /*{{{*/
+int
+_v3_get_0x61(_v3_net_message *msg) {/*{{{*/
+    _v3_msg_0x61 *m;
+
+    _v3_func_enter("_v3_get_0x61");
+    if (msg->len != sizeof(_v3_msg_0x61)) {
+        _v3_debug(V3_DEBUG_PACKET_PARSE, "expected %d bytes, but message is %d bytes", sizeof(_v3_msg_0x61), msg->len);
+        _v3_func_leave("_v3_get_0x61");
+        return false;
+    }
+    m = msg->contents = msg->data;
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "Ban:");
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "subtype.............: %u", m->subtype);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "bitmask_id..........: %u", m->bitmask_id);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "ip_address..........: 0x%08X (%u.%u.%u.%u)",
+            m->ip_address,
+            (m->ip_address >> 24) & 0xff,
+            (m->ip_address >> 16) & 0xff,
+            (m->ip_address >> 8) & 0xff,
+            m->ip_address & 0xff);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "ban_count...........: %u", m->ban_count);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "ban_id..............: %u", m->ban_id);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "banned_user.........: %s", m->banned_user);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "banned_by...........: %s", m->banned_by);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "ban_reason..........: %s", m->ban_reason);
+
+    _v3_func_leave("_v3_get_0x61");
+    return true;
+}/*}}}*/
+_v3_net_message *
+_v3_put_0x61(uint32_t subtype, uint32_t bitmask_id, uint32_t ip_address, char *banned_user, char *ban_reason) {/*{{{*/
+    _v3_net_message *m;
+    _v3_msg_0x61 *mc;
+
+    _v3_func_enter("_v3_put_0x61");
+    m = malloc(sizeof(_v3_net_message));
+    memset(m, 0, sizeof(_v3_net_message));
+    m->type = 0x61;
+    m->len = sizeof(_v3_msg_0x61);
+
+    mc = malloc(m->len);
+    memset(mc, 0, m->len);
+    mc->type = 0x61;
+    mc->subtype = subtype;
+    if (subtype == V3_ADMIN_BAN_REMOVE || (subtype == V3_ADMIN_BAN_ADD && bitmask_id < 0x20)) {
+        mc->bitmask_id = bitmask_id;
+    }
+    mc->ip_address = ip_address;
+    if (subtype != V3_ADMIN_BAN_LIST) {
+        mc->ban_count = 1;
+    }
+    if (banned_user) {
+        strncpy(mc->banned_user, banned_user, sizeof(mc->banned_user) - 1);
+    }
+    if (ban_reason) {
+        strncpy(mc->ban_reason, ban_reason, sizeof(mc->ban_reason) - 1);
+    }
+    m->contents = mc;
+    m->data = (char *)mc;
+
+    _v3_func_leave("_v3_put_0x61");
+    return m;
+}/*}}}*/
+/*}}}*/
 // Message 0x62 (98) | USER PAGE /*{{{*/
 int
 _v3_get_0x62(_v3_net_message *msg) {/*{{{*/

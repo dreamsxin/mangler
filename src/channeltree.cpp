@@ -434,7 +434,7 @@ ManglerChannelTree::_refreshAllChannels(Gtk::TreeModel::Children children) {/*{{
         Gtk::TreeModel::Row row = *iter;
         uint32_t id = row[channelRecord.id];
         uint32_t isUser = row[channelRecord.isUser];
-        if (!isUser) {
+        if (id && !isUser) {
             refreshChannel(id);
         }
         if (row.children().size()) {
