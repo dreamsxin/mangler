@@ -30,10 +30,6 @@
 #include "config.h"
 #endif
 
-#include "ventrilo3.h"
-#include "libventrilo3.h"
-#include "libventrilo3_message.h"
-
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/stat.h>
@@ -59,6 +55,10 @@
 #define __USE_UNIX98
 #include <pthread.h>
 #undef __USE_UNIX98
+
+#include "ventrilo3.h"
+#include "libventrilo3.h"
+#include "libventrilo3_message.h"
 
 extern int h_errno;
 
