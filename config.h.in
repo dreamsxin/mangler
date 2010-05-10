@@ -51,9 +51,6 @@
 /* Define to 1 if you have the `gsm' library (-lgsm). */
 #undef HAVE_LIBGSM
 
-/* Define to 1 if you have the `mpdclient' library (-lmpdclient). */
-#undef HAVE_LIBMPDCLIENT
-
 /* Define to 1 if your system has a GNU libc compatible `malloc' function, and
    to 0 otherwise. */
 #undef HAVE_MALLOC

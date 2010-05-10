@@ -33,9 +33,9 @@ AC_CHECK_LIB([m], [tan], [:], [
 	echo "error: cannot find a working math library"
 	exit -1
 	])
-AC_CHECK_HEADER([mpd/client.h],
-	[AC_CHECK_LIB([mpdclient], [mpd_run_status])]
-)
+#AC_CHECK_HEADER([mpd/client.h],
+#	[AC_CHECK_LIB([mpdclient], [mpd_run_status])]
+#)
 
 AC_ARG_ENABLE(gsm,    [  --disable-gsm           disable GSM codec support], [disable_gsm=yes])
 AC_ARG_ENABLE(speex,  [  --disable-speex         disable Speex codec support], [disable_speex=yes])
