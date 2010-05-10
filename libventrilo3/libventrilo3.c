@@ -4511,7 +4511,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                                 m->subtype,
                                 m->property,
                                 m->transaction_id,
-                                (m->subtype == V3_SERVER_SEND_SETTING && strlen(value)) ? value : NULL);
+                                (m->subtype == V3_SERVER_SEND_SETTING) ? value : NULL);
                         _v3_send(response);
                         _v3_destroy_packet(response);
                     } else {

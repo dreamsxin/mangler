@@ -844,7 +844,7 @@ uint32_t pcm_resample(int16_t *sendbuf, uint32_t bytestoread, uint32_t bytestose
         resampler = NULL;
     }
     if (!resampler) {
-        resampler = speex_resampler_init(channels, in_rate, out_rate, 10, &err);
+        resampler = speex_resampler_init(channels, in_rate, out_rate, SPEEX_RESAMPLER_QUALITY_DEFAULT, &err);
     }
     if (err) {
         fprintf(stderr, "resample error: %d: %s\n", err, speex_resampler_strerror(err));
