@@ -67,6 +67,7 @@ class Mangler
 {
     public:
         Mangler(struct _cli_options *options);
+        void onDisconnectHandler(void);
         void startTransmit(void);
         void stopTransmit(void);
         void initialize(void);
@@ -191,7 +192,6 @@ class Mangler
                 bool acceptU2U = true,
                 bool acceptPrivateChat = true,
                 bool allowRecording = true);
-        void onDisconnectHandler(void);
         bool reconnectStatusHandler(void);
 
         // button signal handlers

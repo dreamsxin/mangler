@@ -53,6 +53,7 @@ ManglerAdmin::ManglerAdmin(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
     builder->get_widget("adminWindow", adminWindow);
     adminWindow->signal_show().connect(sigc::mem_fun(this, &ManglerAdmin::adminWindow_show_cb));
     adminWindow->signal_hide().connect(sigc::mem_fun(this, &ManglerAdmin::adminWindow_hide_cb));
+    builder->get_widget("adminNotebook", adminNotebook);
     builder->get_widget("CloseButton", button);
     button->signal_clicked().connect(sigc::mem_fun(this, &ManglerAdmin::CloseButton_clicked_cb));
 
@@ -680,10 +681,10 @@ ManglerAdmin::serverSettingsSendDone(void) {/*{{{*/
 /* ----------  Channel Editor Related Methods  ---------- */
 void
 ManglerAdmin::ChannelTree_cursor_changed_cb() {/*{{{*/
-    Gtk::TreeModel::Path path;
-    Gtk::TreeViewColumn *column;
-    ChannelEditorTree->get_cursor(path, column);
-    Gtk::TreeModel::iterator iter = ChannelEditorTreeModel->get_iter(path);
+    Gtk::TreeModel::iterator iter = ChannelEditorTree->get_selection()->get_selected();
+    if (!iter) {
+        return;
+    }
     Gtk::TreeModel::Row row = *iter;
     currentChannelID = row[adminRecord.id];
     
@@ -699,8 +700,7 @@ ManglerAdmin::ChannelTree_cursor_changed_cb() {/*{{{*/
         populateChannelEditor(channel);
         v3_free_channel(channel);
     } else {
-        builder->get_widget("ChannelEditorLabel", label);
-        label->set_text("Editing: NONE");
+        populateChannelEditor(NULL);
     }
     // get user permissions
     const v3_permissions *perms = v3_get_permissions();
@@ -828,7 +828,7 @@ ManglerAdmin::channelUpdated(v3_channel *channel) {/*{{{*/
         }
     }
     /* update status bar */
-    statusbarPush(Glib::ustring::compose("Channel %1 (%2) Updated.", Glib::ustring::format(channel->id), c_to_ustring(channel->name)));
+    statusbarPush(Glib::ustring::compose("Channel %1 (%2) updated.", Glib::ustring::format(channel->id), c_to_ustring(channel->name)));
 }/*}}}*/
 void
 ManglerAdmin::channelRemoved(uint32_t chanid) {/*{{{*/
@@ -837,7 +837,13 @@ ManglerAdmin::channelRemoved(uint32_t chanid) {/*{{{*/
     Gtk::TreeModel::Children::iterator iter;
 
     chanrow = getChannel(chanid, ChannelEditorTreeModel->children());
-    if (chanrow) ChannelEditorTreeModel->erase(chanrow);
+    if (chanrow) {
+        iter = ChannelEditorTree->get_selection()->get_selected();
+        if (iter && (*iter)[adminRecord.id] == chanrow[adminRecord.id]) {
+            populateChannelEditor(NULL);
+        }
+        ChannelEditorTreeModel->erase(chanrow);
+    }
     /* server inactive "move to" channel combo box */
     Gtk::TreeModel::Children siChildren = SrvInactChannelModel->children();
     if (siChildren.size()) {
@@ -869,7 +875,7 @@ ManglerAdmin::channelRemoved(uint32_t chanid) {/*{{{*/
     chanrow = getChannel(chanid, UserChanAuthModel->children());
     if (chanrow) UserChanAuthModel->erase(chanrow);
     /* update status bar */
-    statusbarPush(Glib::ustring::compose("Channel %1 Removed.", Glib::ustring::format(chanid)));
+    statusbarPush(Glib::ustring::compose("Channel %1 removed.", Glib::ustring::format(chanid)));
 }/*}}}*/
 void
 ManglerAdmin::channelRemoved(v3_channel *channel) {/*{{{*/
@@ -890,6 +896,15 @@ ManglerAdmin::channelAdded(v3_channel *channel) {/*{{{*/
     channelRow = *channelIter;
     channelRow[adminRecord.id] = channel->id;
     channelRow[adminRecord.name] = c_to_ustring(channel->name);
+    if (ChannelAdded) {
+        ChannelAdded = false;
+        if (c_to_ustring(channel->name) == getFromEntry("ChannelName")) {
+            if (parent) {
+                ChannelEditorTree->expand_row(ChannelEditorTreeModel->get_path(parent), false);
+            }
+            ChannelEditorTree->set_cursor(ChannelEditorTreeModel->get_path(channelIter));
+        }
+    }
     /* server inactive "move to" channel combo box */
     channelIter = SrvInactChannelModel->append();
     (*channelIter)[adminRecord.id] = channel->id;
@@ -921,38 +936,47 @@ ManglerAdmin::channelAdded(v3_channel *channel) {/*{{{*/
         channelRow[adminCheckRecord.name] = c_to_ustring(channel->name);
     }
     /* update status bar */
-    statusbarPush(Glib::ustring::compose("Channel %1 (%2) Added.", Glib::ustring::format(channel->id), c_to_ustring(channel->name)));
+    statusbarPush(Glib::ustring::compose("Channel %1 (%2) added.", Glib::ustring::format(channel->id), c_to_ustring(channel->name)));
 }/*}}}*/
 void
-ManglerAdmin::populateChannelEditor(v3_channel *channel) {/*{{{*/
-    currentChannelID = channel->id;
-    currentChannelParent = channel->parent;
+ManglerAdmin::populateChannelEditor(const v3_channel *channel) {/*{{{*/
+    v3_channel c;
+    ::memset(&c, 0, sizeof(v3_channel));
+    c.channel_codec = 0xffff;
+    if (channel) {
+        ::memcpy(&c, channel, sizeof(v3_channel));
+    } else {
+        ChannelEditor->set_sensitive(false);
+        ChannelRemove->set_sensitive(false);
+    }
+    currentChannelID = c.id;
+    currentChannelParent = c.parent;
     //fprintf(stderr, "Populate: channel %lu, parent %lu\n", currentChannelID, currentChannelParent);
-    copyToEntry("ChannelName", c_to_ustring(channel->name));
-    copyToEntry("ChannelPhonetic", c_to_ustring(channel->phonetic));
-    copyToEntry("ChannelComment", c_to_ustring(channel->comment));
-    if (channel->password_protected) copyToEntry("ChannelPassword", "        ");
+    copyToEntry("ChannelName", c_to_ustring(c.name));
+    copyToEntry("ChannelPhonetic", c_to_ustring(c.phonetic));
+    copyToEntry("ChannelComment", c_to_ustring(c.comment));
+    if (c.password_protected) copyToEntry("ChannelPassword", "        ");
     else copyToEntry("ChannelPassword", "");
-    copyToCombobox("ChannelProtMode", channel->protect_mode, 0);
-    copyToCombobox("ChannelVoiceMode", channel->voice_mode, 0);
-    copyToCheckbutton("AllowRecording", channel->allow_recording);
-    copyToCheckbutton("AllowCCxmit", channel->allow_cross_channel_transmit);
-    copyToCheckbutton("AllowPaging", channel->allow_paging);
-    copyToCheckbutton("AllowWaveBinds", channel->allow_wave_file_binds);
-    copyToCheckbutton("AllowTTSBinds", channel->allow_tts_binds);
-    copyToCheckbutton("AllowU2Uxmit", channel->allow_u2u_transmit);
-    copyToCheckbutton("AllowPhantoms", channel->allow_phantoms);
-    copyToCheckbutton("AllowGuests", channel->allow_guests);
-    copyToCheckbutton("AllowVoiceTargets", channel->allow_voice_target);
-    copyToCheckbutton("AllowCommandTargets", channel->allow_command_target);
-    copyToCheckbutton("TimerExempt", channel->inactive_exempt);
-    copyToCheckbutton("MuteGuests", channel->disable_guest_transmit);
-    copyToCheckbutton("DisableSoundEvents", channel->disable_sound_events);
-
+    copyToCombobox("ChannelProtMode", c.protect_mode, 0);
+    copyToCombobox("ChannelVoiceMode", c.voice_mode, 0);
+    copyToCheckbutton("AllowRecording", c.allow_recording);
+    copyToCheckbutton("AllowCCxmit", c.allow_cross_channel_transmit);
+    copyToCheckbutton("AllowPaging", c.allow_paging);
+    copyToCheckbutton("AllowWaveBinds", c.allow_wave_file_binds);
+    copyToCheckbutton("AllowTTSBinds", c.allow_tts_binds);
+    copyToCheckbutton("AllowU2Uxmit", c.allow_u2u_transmit);
+    copyToCheckbutton("AllowPhantoms", c.allow_phantoms);
+    copyToCheckbutton("AllowGuests", c.allow_guests);
+    copyToCheckbutton("AllowVoiceTargets", c.allow_voice_target);
+    copyToCheckbutton("AllowCommandTargets", c.allow_command_target);
+    copyToCheckbutton("TimerExempt", c.inactive_exempt);
+    copyToCheckbutton("MuteGuests", c.disable_guest_transmit);
+    copyToCheckbutton("DisableSoundEvents", c.disable_sound_events);
     if (v3_is_licensed()) {
-        copyToCombobox("ChannelCodec" , channel->channel_codec, 4);
-        if (channel->channel_codec != 0xffff)
-            copyToCombobox("ChannelFormat", channel->channel_format);
+        copyToCombobox("ChannelCodec" , c.channel_codec, 4);
+        if (c.channel_codec != 0xffff) {
+            copyToCombobox("ChannelFormat", c.channel_format);
+        }
         builder->get_widget("ChannelCodecLabel", widget);
         widget->set_sensitive(true);
         builder->get_widget("ChannelCodec", widget);
@@ -980,10 +1004,9 @@ ManglerAdmin::populateChannelEditor(v3_channel *channel) {/*{{{*/
         builder->get_widget("AllowCommandTargets", checkbutton);
         checkbutton->set_sensitive(false);
     }
-    builder->get_widget("ChannelEditorLabel", label);
-    Glib::ustring labelText = "Editing: ";
-    labelText.append(c_to_ustring(channel->name));
-    label->set_text(labelText);
+    Gtk::Label *channelLabel;
+    builder->get_widget("ChannelEditorLabel", channelLabel);
+    channelLabel->set_text("Editing: " + ((channel) ? c_to_ustring(c.name) : "NONE"));
     //LoadCodecFormats();
 }/*}}}*/
 void
@@ -1069,16 +1092,15 @@ ManglerAdmin::ChannelUpdate_clicked_cb(void) {/*{{{*/
     Glib::ustring password;
 
     memset(&channel, 0, sizeof(v3_channel));
-
     if (currentChannelID == 0xffff) {
         // New Record
         channel.id = 0;
+        ChannelAdded = true;
     } else {
         channel.id = currentChannelID;
     }
     channel.parent = currentChannelParent;
     //fprintf(stderr, "Update: channel %lu, parent %lu\n", channel.id, channel.parent);
-
     channel.name = ::strdup(ustring_to_c(getFromEntry("ChannelName")).c_str());
     channel.phonetic = ::strdup(ustring_to_c(getFromEntry("ChannelPhonetic")).c_str());
     channel.comment = ::strdup(ustring_to_c(getFromEntry("ChannelComment")).c_str());
@@ -1148,6 +1170,7 @@ ManglerAdmin::channelSortFunction(const Gtk::TreeModel::iterator &left, const Gt
 }/*}}}*/
 void
 ManglerAdmin::clearChannels(void) {/*{{{*/
+    ChannelAdded = false;
     ChannelEditorTreeModel->clear();
     Gtk::TreeModel::Row lobby = *(ChannelEditorTreeModel->append());
     lobby[adminRecord.id] = 0;
@@ -1180,7 +1203,7 @@ ManglerAdmin::LoadCodecFormats(void) {/*{{{*/
     const v3_codec *codec;
     Gtk::TreeModel::Row row;
     ChannelFormatModel->clear();
-    while ((codec = v3_get_codec(c, f)) && codec->codec != (uint8_t)-1) { // TODO: fix v3_get_codec*() !!!
+    while ((codec = v3_get_codec(c, f)) && codec->codec != (uint8_t)-1) {
         row = *(ChannelFormatModel->append());
         row[adminRecord.id] = f;
         row[adminRecord.name] = codec->name;
@@ -1246,7 +1269,7 @@ ManglerAdmin::accountUpdated(v3_account *account) {/*{{{*/
         acct[adminRecord.name] = c_to_ustring(account->username);
     }
     /* update status bar */
-    statusbarPush(Glib::ustring::compose("User %1 (%2) Updated.", Glib::ustring::format(account->perms.account_id), c_to_ustring(account->username)));
+    statusbarPush(Glib::ustring::compose("User %1 (%2) updated.", Glib::ustring::format(account->perms.account_id), c_to_ustring(account->username)));
 }/*}}}*/
 void
 ManglerAdmin::accountAdded(v3_account *account) {/*{{{*/
@@ -1265,7 +1288,7 @@ ManglerAdmin::accountAdded(v3_account *account) {/*{{{*/
         acct[adminRecord.name] = c_to_ustring(account->username);
     }
     /* update status bar */
-    statusbarPush(Glib::ustring::compose("User %1 (%2) Added.", Glib::ustring::format(account->perms.account_id), c_to_ustring(account->username)));
+    statusbarPush(Glib::ustring::compose("User %1 (%2) added.", Glib::ustring::format(account->perms.account_id), c_to_ustring(account->username)));
 }/*}}}*/
 void
 ManglerAdmin::accountRemoved(uint32_t acctid) {/*{{{*/
@@ -1277,7 +1300,7 @@ ManglerAdmin::accountRemoved(uint32_t acctid) {/*{{{*/
     acct = getAccount(acctid, UserOwnerModel->children());
     if (acct) UserOwnerModel->erase(acct);
     /* update status bar */
-    statusbarPush(Glib::ustring::compose("User %1 Removed.", Glib::ustring::format(acctid)));
+    statusbarPush(Glib::ustring::compose("User %1 removed.", Glib::ustring::format(acctid)));
 }/*}}}*/
 void
 ManglerAdmin::accountRemoved(v3_account *account) {/*{{{*/
@@ -1285,13 +1308,13 @@ ManglerAdmin::accountRemoved(v3_account *account) {/*{{{*/
 }/*}}}*/
 void
 ManglerAdmin::UserTree_cursor_changed_cb(void) {/*{{{*/
-    Gtk::TreeModel::Path path;
-    Gtk::TreeViewColumn *column;
-    UserEditorTree->get_cursor(path, column);
-    Gtk::TreeModel::iterator iter = UserEditorTreeModel->get_iter(path);
+    Gtk::TreeModel::iterator iter = UserEditorTree->get_selection()->get_selected();
+    if (!iter) {
+        return;
+    }
     Gtk::TreeModel::Row row = *iter;
     currentUserID = row[adminRecord.id];
-    
+
     if (currentUserID) {
         // load user data into editor
         v3_account *account = v3_get_account(currentUserID);
@@ -1444,6 +1467,7 @@ ManglerAdmin::UserAdd_clicked_cb(void) {/*{{{*/
     userSelection->unselect_all();
     v3_account blankAcct;
     ::memset(&blankAcct, 0, sizeof(v3_account));
+    builder->get_widget("UserEditorLabel", label);
     label->set_text("Editing: NEW USER");
     currentUserID = 0xffff;
     populateUserEditor(&blankAcct);
@@ -1797,7 +1821,7 @@ ManglerAdmin::UserTemplateSave_clicked_cb(void) {/*{{{*/
     tmpl["EditVoiceTargets"] = getFromCheckbutton("UserEditVoiceTargets");
     tmpl["EditCommandTargets"] = getFromCheckbutton("UserEditCommandTargets");
     tmpl["AssignReserved"] = getFromCheckbutton("UserAssignReserved");
-    
+
     std::vector<uint16_t> chan_admin, chan_auth;
     getAdminCheckTree(UserChanAdminModel->children(), chan_admin);
     if (chan_admin.size()) {
@@ -1819,6 +1843,7 @@ ManglerAdmin::UserTemplateSave_clicked_cb(void) {/*{{{*/
     Gtk::TreeStore::Row row = *UserTemplateModel->append();
     row[adminRecord.name] = tmplname;
 }/*}}}*/
+
 /* ----------  Rank Editor Related Methods  ---------- */
 Gtk::TreeModel::iterator
 ManglerAdmin::getRank(uint16_t id, Gtk::TreeModel::Children children) {/*{{{*/
@@ -1843,7 +1868,7 @@ ManglerAdmin::rankUpdated(v3_rank *rank) {/*{{{*/
     if (! row) row = *(UserRankModel->append());
     row[adminRecord.id] = rank->id; row[adminRecord.name] = c_to_ustring(rank->name);
     /* update status bar */
-    statusbarPush(Glib::ustring::compose("Rank %1 (%2) Updated.", Glib::ustring::format(rank->id), c_to_ustring(rank->name)));
+    statusbarPush(Glib::ustring::compose("Rank %1 (%2) updated.", Glib::ustring::format(rank->id), c_to_ustring(rank->name)));
 }/*}}}*/
 void
 ManglerAdmin::rankAdded(v3_rank *rank) {/*{{{*/
@@ -1856,7 +1881,7 @@ ManglerAdmin::rankAdded(v3_rank *rank) {/*{{{*/
     iter = UserRankModel->append();
     (*iter)[adminRecord.id] = rank->id; (*iter)[adminRecord.name] = c_to_ustring(rank->name);
     /* update status bar */
-    statusbarPush(Glib::ustring::compose("Rank %1 (%2) Added.", Glib::ustring::format(rank->id), c_to_ustring(rank->name)));
+    statusbarPush(Glib::ustring::compose("Rank %1 (%2) added.", Glib::ustring::format(rank->id), c_to_ustring(rank->name)));
 }/*}}}*/
 void
 ManglerAdmin::rankRemoved(uint16_t rankid) {/*{{{*/
@@ -1867,7 +1892,7 @@ ManglerAdmin::rankRemoved(uint16_t rankid) {/*{{{*/
     Gtk::TreeModel::Row row = getAccount(rankid, UserRankModel->children());
     if (row) UserRankModel->erase(row);
     /* update status bar */
-    statusbarPush(Glib::ustring::compose("Rank %1 Removed.", Glib::ustring::format(rankid)));
+    statusbarPush(Glib::ustring::compose("Rank %1 removed.", Glib::ustring::format(rankid)));
 }/*}}}*/
 void
 ManglerAdmin::rankRemoved(v3_rank *rank) {/*{{{*/
@@ -1886,10 +1911,7 @@ ManglerAdmin::RankUpdate_clicked_cb(void) {/*{{{*/
 }/*}}}*/
 void
 ManglerAdmin::RankEditorTree_cursor_changed_cb(void) {/*{{{*/
-    Gtk::TreeModel::Path path;
-    Gtk::TreeViewColumn *column;
-    RankEditorTree->get_cursor(path, column);
-    Gtk::TreeModel::iterator iter = RankEditorModel->get_iter(path);
+    Gtk::TreeModel::iterator iter = RankEditorTree->get_selection()->get_selected();
     bool isRank( false );
     if (iter) {
         isRank = true;
@@ -1916,10 +1938,7 @@ ManglerAdmin::RankAdd_clicked_cb(void) {/*{{{*/
 }/*}}}*/
 void
 ManglerAdmin::RankRemove_clicked_cb(void) {/*{{{*/
-    Gtk::TreeModel::Path path;
-    Gtk::TreeViewColumn *column;
-    RankEditorTree->get_cursor(path, column);
-    Gtk::TreeModel::iterator iter = RankEditorModel->get_iter(path);
+    Gtk::TreeModel::iterator iter = RankEditorTree->get_selection()->get_selected();
     if (! iter) return;
     uint16_t rankid = (*iter)[rankRecord.id];
     Glib::ustring rankname = (*iter)[rankRecord.name];
@@ -1939,6 +1958,7 @@ ManglerAdmin::clearRanks(void) {/*{{{*/
 
     currentRankID = 0xff;
 }/*}}}*/
+
 /* ----------  Ban Editor Related Methods  ---------- */
 void
 ManglerAdmin::banList(uint16_t id, uint16_t count, uint16_t bitmask_id, uint32_t ip_address, char *user, char *by, char *reason) {/*{{{*/
@@ -1965,10 +1985,7 @@ ManglerAdmin::banList(uint16_t id, uint16_t count, uint16_t bitmask_id, uint32_t
 }/*}}}*/
 void
 ManglerAdmin::BanEditorTree_cursor_changed_cb(void) {/*{{{*/
-    Gtk::TreeModel::Path path;
-    Gtk::TreeViewColumn *column;
-    BanEditorTree->get_cursor(path, column);
-    Gtk::TreeModel::iterator iter = BanEditorModel->get_iter(path);
+    Gtk::TreeModel::iterator iter = BanEditorTree->get_selection()->get_selected();
     bool isBan( false );
     if (iter) {
         isBan = true;
@@ -1995,10 +2012,7 @@ ManglerAdmin::BanAdd_clicked_cb(void) {/*{{{*/
 }/*}}}*/
 void
 ManglerAdmin::BanRemove_clicked_cb(void) {/*{{{*/
-    Gtk::TreeModel::Path path;
-    Gtk::TreeViewColumn *column;
-    BanEditorTree->get_cursor(path, column);
-    Gtk::TreeModel::iterator iter = BanEditorModel->get_iter(path);
+    Gtk::TreeModel::iterator iter = BanEditorTree->get_selection()->get_selected();
     if (! iter) return;
     uint32_t ip_address = (*iter)[banRecord.ip_val];
     uint16_t bitmask_id = (*iter)[banRecord.netmask_id];
@@ -2008,22 +2022,21 @@ ManglerAdmin::BanRemove_clicked_cb(void) {/*{{{*/
 void
 ManglerAdmin::BanUpdate_clicked_cb(void) {/*{{{*/
     uint32_t ip_address = 0;
-    char *ip_str = ::strdup(ustring_to_c(getFromEntry("BanIPAddress") + ".").c_str());
-    char *ip_pos[5] = { ip_str };
-    int ctr = 0;
-    while (ctr < 4 && (ip_pos[ctr+1] = strchr(ip_pos[ctr], '.')) && ++ctr) {
-        *ip_pos[ctr] = 0;
-        ip_pos[ctr] += 1;
-        ip_address |= ((uint8_t)atoi(ip_pos[ctr-1])) << (8*(4-ctr));
-    }
-    ::free(ip_str);
-    if (ctr != 4 || !ip_address) {
+    char *ip_str = ::strdup(ustring_to_c(getFromEntry("BanIPAddress")).c_str());
+    uint16_t b1 = 0, b2 = 0, b3 = 0, b4 = 0;
+    if (::sscanf(ip_str, "%hu.%hu.%hu.%hu", &b1, &b2, &b3, &b4) != 4) {
+        ::free(ip_str);
         statusbarPush("Invalid IP address.");
         return;
     }
+    ::free(ip_str);
+    ip_address =
+            ((b1 << 24) & 0xff000000) |
+            ((b2 << 16) & 0x00ff0000) |
+            ((b3 <<  8) & 0x0000ff00) |
+            ((b4)       & 0x000000ff);
     uint16_t bitmask_id = getFromCombobox("BanNetmask", BanNetmaskDefault);
     char *reason = ::strdup(ustring_to_c(getFromEntry("BanReason")).c_str());
-    v3_admin_ban_remove(bitmask_id, ip_address);
     v3_admin_ban_add(bitmask_id, ip_address, "Remotely added IP", reason);
     ::free(reason);
     v3_admin_ban_list();
@@ -2042,6 +2055,7 @@ ManglerAdmin::clearBans(void) {/*{{{*/
 
 void
 ManglerAdmin::clear(void) {/*{{{*/
+    adminNotebook->set_current_page(1);
     setWidgetSensitive("ServerVBox", true);
     SrvIsNotUpdating = true;
     clearChannels();

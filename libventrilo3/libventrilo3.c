@@ -1432,8 +1432,8 @@ _v3_is_connected(void) {/*{{{*/
     } else {
         _v3_debug(V3_DEBUG_SOCKET, "client is not connected", _v3_sockd);
     }
-    _v3_func_leave("_v3_is_connected");
 
+    _v3_func_leave("_v3_is_connected");
     return _v3_sockd == -1 ? false : true;
 }/*}}}*/
 
@@ -2410,7 +2410,7 @@ _v3_audio_decode(
             decoder->speexrate = codec->rate;
         }
         spxdataptr += sizeof(uint16_t) * 2;
-        if (spxdatalen - sizeof(uint16_t) * 2 < 0) {
+        if (spxdatalen - 4 < 0) {
             _v3_debug(V3_DEBUG_INFO, "received a malformed speex packet");
             _v3_func_leave("_v3_audio_decode");
             return V3_MALFORMED;
@@ -2420,7 +2420,7 @@ _v3_audio_decode(
         while (spxdatalen) {
             spx_frame_size = ntohs(*(uint16_t *)spxdataptr);
             spxdataptr += sizeof(uint16_t);
-            if (!spx_frame_size || spxdatalen - spx_frame_size - sizeof(uint16_t) < 0 || *pcmlen + pcm_frame_size > pcmmaxlen) {
+            if (!spx_frame_size || spxdatalen - spx_frame_size - 2 < 0 || *pcmlen + pcm_frame_size > pcmmaxlen) {
                 _v3_debug(V3_DEBUG_INFO, "received a malformed speex packet");
                 _v3_func_leave("_v3_audio_decode");
                 return V3_MALFORMED;
@@ -4824,8 +4824,9 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                     snprintf(ev->error.message, sizeof(ev->error.message)-1, "Phantom error:\n%s", error);
                     v3_queue_event(ev);
                 } else {
-                    v3_user new_phantom_user = {0};
                     v3_event *ev;
+                    v3_user new_phantom_user;
+                    memset(&new_phantom_user, 0, sizeof(v3_user));
                     switch (m->subtype) {
                         case V3_PHANTOM_ADD:
                             new_phantom_user.id = m->phantom_user_id;

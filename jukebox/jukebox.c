@@ -457,8 +457,8 @@ void *jukebox_player(void *connptr) {
             // figure out how much data we need to read in order to get the
             // proper amount of data to send after resampling
             bytestoread = bytestosend * ((float)musiclist[filenum]->rate / (float)codec->rate);
-            if (musiclist[filenum]->rate == 48000) { // this is a temporary hack to compensate for the speex resampler at 48->44.1khz
-                if (channels == 2 && bytestoread % sizeof(int16_t)) {
+            if (bytestoread % sizeof(int16_t)) { // this is a temporary hack to compensate for the speex resampler at 48->44.1khz
+                if (channels == 2) {
                     bytestoread += 7;
                 } else {
                     bytestoread += bytestoread % sizeof(int16_t);

@@ -462,6 +462,7 @@ void Mangler::onDisconnectHandler(void) {/*{{{*/
         builder->get_widget("progressbar", progressbar);
         progressbar->set_text("");
         progressbar->set_fraction(0);
+        progressbar->hide();
         builder->get_widget("statusbar", statusbar);
         statusbar->pop();
         statusbar->push("Disconnected");
@@ -474,7 +475,6 @@ void Mangler::onDisconnectHandler(void) {/*{{{*/
         builder->get_widget("codecLabel", label);
         label->set_label("N/A");
         mangler->statusIcon->set(icons["tray_icon_grey"]);
-        audioControl->playNotification("logout");
         isAdmin = false;
         isChanAdmin = false;
         builder->get_widget("adminSeparatorMenuItem", menuitem);
@@ -511,17 +511,18 @@ bool Mangler::reconnectStatusHandler(void) {/*{{{*/
     int reconnectTimer = (15 - (time(NULL) - lastAttempt));
 
     builder->get_widget("connectButton", connectbutton);
-    if (connectbutton->get_label() == "gtk-disconnect" || wantDisconnect) {
+    if (connectbutton->get_label() != "gtk-cancel" || wantDisconnect) {
         return false;
     }
     builder->get_widget("statusbar", statusbar);
-    snprintf(buf, 63, "Attempting reconnect in %d seconds", reconnectTimer);
+    snprintf(buf, 63, "Attempting reconnect in %d seconds...", (reconnectTimer < 0) ? 0 : reconnectTimer);
     statusbar->pop();
     statusbar->push(buf);
-    if (!reconnectTimer) {
+    if (reconnectTimer <= 0) {
         lastAttempt = time(NULL);
         connectbutton->set_label("gtk-connect");
         Mangler::connectButton_clicked_cb();
+        return false;
     }
 
     return true;
@@ -599,7 +600,6 @@ void Mangler::connectButton_clicked_cb(void) {/*{{{*/
             config["LastConnectedServerName"] = connectedServerName;
             config.config.save();
             wantDisconnect = false;
-            connectbutton->set_sensitive(false);
             onConnectHandler(
                     hostname,
                     port,
@@ -939,17 +939,19 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                 }
                 break;/*}}}*/
             case V3_EVENT_STATUS:/*{{{*/
-                builder->get_widget("progressbar", progressbar);
-                builder->get_widget("statusbar", statusbar);
-                if (ev->status.percent == 100) {
-                    progressbar->hide();
-                } else {
-                    progressbar->show();
-                    progressbar->set_fraction(ev->status.percent/(float)100);
+                if (v3_is_loggedin()) {
+                    builder->get_widget("progressbar", progressbar);
+                    builder->get_widget("statusbar", statusbar);
+                    if (ev->status.percent == 100) {
+                        progressbar->hide();
+                    } else {
+                        progressbar->show();
+                        progressbar->set_fraction(ev->status.percent/(float)100);
+                    }
+                    statusbar->pop();
+                    statusbar->push(ev->status.message);
+                    //fprintf(stderr, "got event type %d: %d %s\n", ev->type, ev->status.percent, ev->status.message);
                 }
-                statusbar->pop();
-                statusbar->push(ev->status.message);
-                //fprintf(stderr, "got event type %d: %d %s\n", ev->type, ev->status.percent, ev->status.message);
                 break;/*}}}*/
             case V3_EVENT_USER_LOGIN:/*{{{*/
                 u = v3_get_user(ev->user.id);
@@ -1245,7 +1247,7 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                 c = v3_get_channel(ev->channel.id);
                 if (! c) {
                     fprintf(stderr, "failed to retreive channel information for channel id %d\n", ev->channel.id);
-                    break;;
+                    break;
                 }
                 channelTree->addChannel(
                         (uint8_t)c->protect_mode,
@@ -1381,6 +1383,7 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                 break;/*}}}*/
             case V3_EVENT_DISCONNECT:/*{{{*/
                 onDisconnectHandler();
+                audioControl->playNotification("logout");
                 break;/*}}}*/
             case V3_EVENT_CHAT_JOIN:/*{{{*/
                 {
@@ -1568,7 +1571,7 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                     }
                     v3_user *lobby;
                     if ((lobby = v3_get_user(0))) {
-                        channelTree->updateLobby(c_to_ustring(lobby->name), c_to_ustring(lobby->comment), lobby->phonetic);
+                        channelTree->updateLobby(c_to_ustring(lobby->name), c_to_ustring(lobby->comment), c_to_ustring(lobby->phonetic));
                         v3_free_user(lobby);
                     }
                 }
@@ -1714,7 +1717,7 @@ bool Mangler::checkPushToTalkKeys(void) {/*{{{*/
     char        pressed_keys[32];
     GdkWindow   *rootwin = gdk_get_default_root_window();
     vector<int>::iterator i;
-    bool        ptt_on = true;;
+    bool        ptt_on = true;
 
     if (! config["PushToTalkKeyEnabled"].toBool()) {
         isTransmittingKey = false;

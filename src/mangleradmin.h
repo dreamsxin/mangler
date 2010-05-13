@@ -40,6 +40,7 @@ class ManglerAdmin {
         ManglerAdmin(Glib::RefPtr<Gtk::Builder> builder);
         ~ManglerAdmin();
         Gtk::Window         *adminWindow;
+        Gtk::Notebook       *adminNotebook;
         Gtk::Alignment      *ServerTab;
         Gtk::Alignment      *ChannelsTab;
         Gtk::Alignment      *UsersTab;
@@ -98,6 +99,7 @@ class ManglerAdmin {
         Glib::RefPtr<Gtk::TreeStore>        SrvSpamFilterWaveModel;
 
         /* channel editor stuff */
+        bool                                ChannelAdded;
         adminModelColumns                   ChannelEditorColumns;
         Glib::RefPtr<Gtk::TreeStore>        ChannelEditorTreeModel;
         adminModelColumns                   ChannelCodecColumns;
@@ -234,7 +236,7 @@ class ManglerAdmin {
         /* channel editor functions and callbacks */
         Glib::ustring getChannelPathString(uint32_t id, Gtk::TreeModel::Children children);
         Gtk::TreeModel::Row getChannel(uint32_t id, Gtk::TreeModel::Children children, bool hasCheckbox = false);
-        void populateChannelEditor(v3_channel *channel);
+        void populateChannelEditor(const v3_channel *channel);
         int channelSortFunction(const Gtk::TreeModel::iterator &left, const Gtk::TreeModel::iterator &right);
         void ChannelTree_cursor_changed_cb(void);
         void AddChannel_clicked_cb(void);
