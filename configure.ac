@@ -43,6 +43,7 @@ AC_ARG_ENABLE(celt,   [  --disable-celt          disable CELT codec support], [d
 AC_ARG_ENABLE(xosd,   [  --disable-xosd          disable XOSD overlay support], [disable_xosd=yes])
 AC_ARG_ENABLE(g15,    [  --disable-g15           disable Logitech G15 keyboard support], [disable_g15=yes])
 AC_ARG_ENABLE(espeak, [  --disable-espeak        disable eSpeak text to speech support], [disable_espeak=yes])
+AC_ARG_ENABLE(dbus,   [  --disable-dbus          disable dbus support for rhythmbox/amarok], [disable_dbus=yes])
 
 if test "$enable_gsm" != "no" ; then
 	AC_CHECK_LIB([gsm], [gsm_create], [], [
@@ -127,9 +128,11 @@ fi
 
 PKG_CHECK_MODULES(gtk, gtk+-2.0 >= 2.16.0)
 
-PKG_CHECK_MODULES(dbus, dbus-glib-1 >= 0.80, [AC_DEFINE(HAVE_DBUS, 1, [have dbus])], [:])
-AC_SUBST(dbus_CFLAGS)
-AC_SUBST(dbus_LIBS)
+if test "$enable_dbus" != "no" ; then
+	PKG_CHECK_MODULES(dbus, dbus-glib-1 >= 0.80, [AC_DEFINE(HAVE_DBUS, 1, [have dbus])], [:])
+	AC_SUBST(dbus_CFLAGS)
+	AC_SUBST(dbus_LIBS)
+fi
 
 PKG_CHECK_MODULES(gtkmm, gtkmm-2.4 >= 1.3.3)
 AC_SUBST(gtkmm_CFLAGS)
