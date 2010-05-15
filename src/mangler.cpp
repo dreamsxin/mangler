@@ -432,7 +432,6 @@ void Mangler::onDisconnectHandler(void) {/*{{{*/
 
     builder->get_widget("connectButton", connectbutton);
     if (connectbutton->get_label() == "gtk-disconnect") {
-        admin->adminWindow->hide();
         builder->get_widget("adminButton", button);
         button->set_sensitive(false);
         builder->get_widget("adminLoginMenuItem", menuitem);
@@ -456,6 +455,7 @@ void Mangler::onDisconnectHandler(void) {/*{{{*/
 #endif
         outputAudio.clear();
         channelTree->clear();
+        admin->hide();
         admin->clear();
         builder->get_widget("xmitButton", togglebutton);
         togglebutton->set_active(false);
@@ -660,19 +660,15 @@ void Mangler::adminButton_clicked_cb(void) {/*{{{*/
         password = mangler->getPasswordEntry("Admin Password");
         if (password.length()) {
             v3_admin_login((char *)password.c_str());
-            //admin->adminWindow->set_icon(icons["tray_icon"]);
-            //admin->adminWindow->show();
             wantAdminWindow = true;
             // if we tried sending a password, the only options are either
             // success or get booted from the server.
         }
     } else {
-        admin->adminWindow->set_icon(icons["tray_icon"]);
         admin->show();
     }
 }/*}}}*/
 void Mangler::adminWindowMenuItem_activated_cb(void) {/*{{{*/
-    admin->adminWindow->set_icon(icons["tray_icon"]);
     admin->show();
 }/*}}}*/
 void Mangler::settingsButton_clicked_cb(void) {/*{{{*/
@@ -1555,7 +1551,6 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                         menuitem->show();
                         if (wantAdminWindow) {
                             wantAdminWindow = false;
-                            admin->adminWindow->set_icon(icons["tray_icon"]);
                             admin->show();
                         }
                     } else {
@@ -1638,20 +1633,7 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                 }
                 break;/*}}}*/
             case V3_EVENT_PERMS_UPDATED:/*{{{*/
-                {
-                    const v3_permissions *perms = v3_get_permissions();
-                    if (perms->srv_admin) {
-                        admin->UserAdd->set_sensitive( perms->add_user );
-                        admin->UsersTab->show();
-                    } else {
-                        admin->UsersTab->hide();
-                    }
-                    if (perms->edit_rank) {
-                        admin->RanksTab->show();
-                    } else {
-                        admin->RanksTab->hide();
-                    }
-                }
+                admin->permsUpdated();
                 break;/*}}}*/
             case V3_EVENT_USER_RANK_CHANGE:/*{{{*/
                 {

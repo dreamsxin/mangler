@@ -1052,6 +1052,22 @@ _v3_recv(int block) {/*{{{*/
                             _v3_destroy_packet(msg);
                         }
                         break;/*}}}*/
+                    case V3_EVENT_ADMIN_CHANNEL_MUTE:/*{{{*/
+                        {
+                            v3_user *user;
+                            if (!(user = v3_get_user(ev.user.id))) {
+                                break;
+                            }
+                            _v3_net_message *msg = _v3_put_0x46(ev.user.id, V3_USER_CHANNEL_MUTE, !user->channel_mute);
+                            if (_v3_send(msg)) {
+                                _v3_debug(V3_DEBUG_SOCKET, "sent admin channel mute request to server");
+                            } else {
+                                _v3_debug(V3_DEBUG_SOCKET, "failed to send admin channel mute request");
+                            }
+                            v3_free_user(user);
+                            _v3_destroy_packet(msg);
+                        }
+                        break;/*}}}*/
                     case V3_EVENT_USERLIST_OPEN:/*{{{*/
                         {
                             _v3_net_message *msg = _v3_put_0x4a(V3_USERLIST_OPEN, NULL, NULL);
@@ -3326,7 +3342,7 @@ _v3_vrf_record_event(
     }
     _v3_vrf_lock(v3_vrfh);
     v3_user *u;
-    if (!(u = _v3_get_user(user_id))) {
+    if (!(u = v3_get_user(user_id))) {
         type = V3_VRF_EVENT_DATA_FLUSH;
     }
     _v3_vrf_rec *queue = &v3_vrfh->queue;
@@ -3418,7 +3434,7 @@ _v3_vrf_record_event(
       }
       case V3_VRF_EVENT_AUDIO_STOP:
         for (rec = queue; rec; rec = rec->next) {
-            if (rec->user_id == user_id && !rec->stopped) {
+            if (rec->user_id && rec->user_id == user_id && !rec->stopped) {
                 rec->stopped = true;
                 ev->record.index = rec->audio.index;
                 ev->record.stopped = true;
@@ -3486,6 +3502,9 @@ _v3_vrf_record_event(
     }
     if (ev) {
         v3_queue_event(ev);
+    }
+    if (u) {
+        v3_free_user(u);
     }
     _v3_vrf_unlock(v3_vrfh);
     pthread_mutex_unlock(vrfh_mutex);
@@ -4117,6 +4136,9 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                                 ev->user.id = u->id;
                                 _v3_debug(V3_DEBUG_INFO, "queuing event type %d for user %d", ev->type, ev->user.id);
                                 v3_queue_event(ev);
+                                if (m->value) {
+                                    _v3_vrf_record_event(V3_VRF_EVENT_AUDIO_STOP, m->user_id, -1, -1, 0, 0, NULL);
+                                }
                             }
                             break;
                         case V3_USER_CHANNEL_MUTE:
@@ -4127,6 +4149,9 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                                 ev->user.id = u->id;
                                 _v3_debug(V3_DEBUG_INFO, "queuing event type %d for user %d", ev->type, ev->user.id);
                                 v3_queue_event(ev);
+                                if (m->value) {
+                                    _v3_vrf_record_event(V3_VRF_EVENT_AUDIO_STOP, m->user_id, -1, -1, 0, 0, NULL);
+                                }
                             }
                             break;
                         default:
@@ -5000,9 +5025,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                     case V3_REMOVE_USER:
                         _v3_debug(V3_DEBUG_INFO, "removing %d users from user list",  m->user_count);
                         for (ctr = 0; ctr < m->user_count; ctr++) {
-                            if (_v3_get_user(m->user_list[ctr].id)->is_transmitting) {
-                                _v3_vrf_record_event(V3_VRF_EVENT_AUDIO_STOP, m->user_list[ctr].id, -1, -1, 0, 0, NULL);
-                            }
+                            _v3_vrf_record_event(V3_VRF_EVENT_AUDIO_STOP, m->user_list[ctr].id, -1, -1, 0, 0, NULL);
                             v3_event *ev = _v3_create_event(V3_EVENT_USER_LOGOUT);
                             ev->user.id = m->user_list[ctr].id;
                             ev->channel.id = m->user_list[ctr].channel;
@@ -5924,6 +5947,23 @@ v3_admin_global_mute(uint16_t user_id) {/*{{{*/
 }/*}}}*/
 
 void
+v3_admin_channel_mute(uint16_t user_id) {/*{{{*/
+    v3_event ev;
+
+    _v3_func_enter("v3_admin_channel_mute");
+    if (!v3_is_loggedin()) {
+        _v3_func_leave("v3_admin_channel_mute");
+        return;
+    }
+    memset(&ev, 0, sizeof(v3_event));
+    ev.type = V3_EVENT_ADMIN_CHANNEL_MUTE;
+    ev.user.id = user_id;
+
+    _v3_evpipe_write(v3_server.evpipe[1], &ev);
+    _v3_func_leave("v3_admin_channel_mute");
+}/*}}}*/
+
+void
 v3_userlist_open(void) {/*{{{*/
     v3_event ev;
 
@@ -6336,7 +6376,7 @@ v3_get_user_channel(uint16_t id) {/*{{{*/
     }
     _v3_unlock_userlist();
 
-    return -1;
+    return 0;
 }/*}}}*/
 
 void

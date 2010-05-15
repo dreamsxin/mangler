@@ -167,6 +167,13 @@ void ManglerServerList::clearEntries(void) {
     serverListPasswordEntry->set_text("");
     serverListPhoneticEntry->set_text("");
     serverListCommentEntry->set_text("");
+    serverListPageCheckButton->set_active(false);
+    serverListUtUCheckButton->set_active(false);
+    serverListPrivateChatCheckButton->set_active(false);
+    serverListRecordCheckButton->set_active(false);
+    serverListPersistentConnectionCheckButton->set_active(false);
+    serverListPersistentCommentsCheckButton->set_active(false);
+    serverListCharsetComboBox->get_entry()->set_text("");
 }
 
 void ManglerServerList::serverListNewButton_clicked_cb(void) {
@@ -288,8 +295,7 @@ void ManglerServerList::saveRow() {
     row[serverListColumns.port]     = server["Port"].toUString();
     row[serverListColumns.username] = server["Username"].toUString();
     if (editorName.empty()) {
-        serverListSelection = serverListView->get_selection();
-        serverListSelection->select(row);
+        serverListView->set_cursor(serverListTreeModel->get_path(row));
     }
     editorName = server_name;
     Mangler::config.servers.save();

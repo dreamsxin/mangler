@@ -102,6 +102,7 @@ class ManglerChannelTree
         Gtk::TreeView                       *channelView;
         Gtk::Menu                           *rcmenu_user;
         sigc::connection                    signalMute;
+        sigc::connection                    signalChannelMute;
         sigc::connection                    signalGlobalMute;
         Gtk::Menu                           *rcmenu_channel;
         sigc::connection                    signalDefaultChannel;
@@ -156,6 +157,7 @@ class ManglerChannelTree
         void kickUserMenuItem_activate_cb(void);
         void banUserMenuItem_activate_cb(void);
         void muteUserMenuItem_activate_cb(void);
+        void muteUserChannelMenuItem_activate_cb(void);
         void muteUserGlobalMenuItem_activate_cb(void);
         void pageUserMenuItem_activate_cb(void);
         void setDefaultChannelMenuItem_activate_cb(void);

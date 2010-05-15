@@ -34,6 +34,7 @@ ManglerPrivChat::ManglerPrivChat(uint16_t userid) {
     // We instantiate a new builder object here to get a completely new window (hopefully)
     builder = Gtk::Builder::create_from_string(ManglerUI, "privChatWindow");
     builder->get_widget("privChatWindow", chatWindow);
+    chatWindow->signal_hide().connect(sigc::mem_fun(this, &ManglerPrivChat::chatWindowCloseChat_clicked_cb));
     this->remoteUserId = userid;
 
     builder->get_widget("privSendChat", sendButton);

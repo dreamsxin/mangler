@@ -50,6 +50,8 @@ class ManglerAdmin {
 
         bool isOpen;
         void show(void);
+        void hide(void);
+        void permsUpdated(void);
         void serverSettingsUpdated(v3_server_prop &prop);
         void serverSettingsSendDone(void);
         void channelUpdated(v3_channel *channel);
@@ -62,6 +64,7 @@ class ManglerAdmin {
         void accountAdded(v3_account *account);
         void accountRemoved(uint32_t acctid);
         void accountRemoved(v3_account *account);
+        void clearUsers(void);
         static void trimString(Glib::ustring &s);
         void rankUpdated(v3_rank *rank);
         void rankAdded(v3_rank *rank);
@@ -239,8 +242,8 @@ class ManglerAdmin {
         void populateChannelEditor(const v3_channel *channel);
         int channelSortFunction(const Gtk::TreeModel::iterator &left, const Gtk::TreeModel::iterator &right);
         void ChannelTree_cursor_changed_cb(void);
-        void AddChannel_clicked_cb(void);
-        void RemoveChannel_clicked_cb(void);
+        void ChannelAdd_clicked_cb(void);
+        void ChannelRemove_clicked_cb(void);
         void ChannelUpdate_clicked_cb(void);
         void LoadCodecFormats(void);
         void ChannelProtMode_changed_cb(void);

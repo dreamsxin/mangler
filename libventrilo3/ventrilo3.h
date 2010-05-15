@@ -297,6 +297,7 @@ enum _v3_events {
     V3_EVENT_ADMIN_BAN,
     V3_EVENT_ADMIN_CHANNEL_BAN,
     V3_EVENT_ADMIN_GLOBAL_MUTE,
+    V3_EVENT_ADMIN_CHANNEL_MUTE,
     V3_EVENT_FORCE_CHAN_MOVE,
     V3_EVENT_USERLIST_OPEN,
     V3_EVENT_USERLIST_CLOSE,
@@ -720,6 +721,7 @@ void        v3_admin_login(char *password);
 void        v3_admin_logout(void);
 void        v3_admin_boot(int type, uint16_t user_id, char *reason);
 void        v3_admin_global_mute(uint16_t user_id);
+void        v3_admin_channel_mute(uint16_t user_id);
 void        v3_phantom_add(uint16_t channel_id);
 void        v3_phantom_remove(uint16_t channel_id);
 void        v3_force_channel_move(uint16_t user_id, uint16_t channel_id);

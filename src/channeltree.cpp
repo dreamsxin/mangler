@@ -88,6 +88,8 @@ ManglerChannelTree::ManglerChannelTree(Glib::RefPtr<Gtk::Builder> builder)/*{{{*
     menuitem->signal_activate().connect(sigc::mem_fun(this, &ManglerChannelTree::banUserMenuItem_activate_cb));
     builder->get_widget("muteUser", checkmenuitem);
     signalMute = checkmenuitem->signal_activate().connect(sigc::mem_fun(this, &ManglerChannelTree::muteUserMenuItem_activate_cb));
+    builder->get_widget("muteUserChannel", checkmenuitem);
+    signalChannelMute = checkmenuitem->signal_activate().connect(sigc::mem_fun(this, &ManglerChannelTree::muteUserChannelMenuItem_activate_cb));
     builder->get_widget("muteUserGlobal", checkmenuitem);
     signalGlobalMute = checkmenuitem->signal_activate().connect(sigc::mem_fun(this, &ManglerChannelTree::muteUserGlobalMenuItem_activate_cb));
     builder->get_widget("pageUser", menuitem);
@@ -786,10 +788,13 @@ ManglerChannelTree::channelView_buttonpress_event_cb(GdkEventButton* event) {/*{
             Glib::ustring comment = row[channelRecord.comment];
             Glib::ustring url = row[channelRecord.url];
             const v3_permissions *perms = v3_get_permissions();
-
             if (isUser) {
-                v3_user *user = v3_get_user(id);
+                v3_user *user;
+                if (!(user = v3_get_user(id))) {
+                    return;
+                }
                 bool isOurPhantom = user->real_user_id == v3_get_user_id();
+                bool isChanAdmin = v3_is_channel_admin(v3_get_user_channel(id));
                 builder->get_widget("removePhantom", menuitem);
                 if (isOurPhantom) {
                     // we clicked on one of our own phantoms
@@ -816,16 +821,25 @@ ManglerChannelTree::channelView_buttonpress_event_cb(GdkEventButton* event) {/*{
                     builder->get_widget("muteUser", checkmenuitem);
                     checkmenuitem->hide();
                     builder->get_widget("userRightClickMenuSeparator", menuitem);
-                    if ((perms->srv_admin || perms->mute_glbl) && !isOurPhantom) {
+                    if ((perms->srv_admin || isChanAdmin) && !isOurPhantom) {
                         menuitem->show();
                     } else {
                         menuitem->hide();
+                    }
+                    builder->get_widget("muteUserChannel", checkmenuitem);
+                    signalChannelMute.block();
+                    checkmenuitem->set_active(user->channel_mute);
+                    signalChannelMute.unblock();
+                    if ((perms->srv_admin || isChanAdmin) && !isOurPhantom) {
+                        checkmenuitem->show();
+                    } else {
+                        checkmenuitem->hide();
                     }
                     builder->get_widget("muteUserGlobal", checkmenuitem);
                     signalGlobalMute.block();
                     checkmenuitem->set_active(user->global_mute);
                     signalGlobalMute.unblock();
-                    if ((perms->srv_admin || perms->mute_glbl) && !isOurPhantom) {
+                    if (perms->srv_admin && !isOurPhantom) {
                         checkmenuitem->show();
                     } else {
                         checkmenuitem->hide();
@@ -863,16 +877,25 @@ ManglerChannelTree::channelView_buttonpress_event_cb(GdkEventButton* event) {/*{
                         checkmenuitem->hide();
                     }
                     builder->get_widget("userRightClickMenuSeparator", menuitem);
-                    if ((perms->srv_admin || perms->mute_glbl || perms->kick_user || perms->ban_user) && !isOurPhantom) {
+                    if ((perms->srv_admin || isChanAdmin || perms->kick_user || perms->ban_user) && !isOurPhantom) {
                         menuitem->show();
                     } else {
                         menuitem->hide();
+                    }
+                    builder->get_widget("muteUserChannel", checkmenuitem);
+                    signalChannelMute.block();
+                    checkmenuitem->set_active(user->channel_mute);
+                    signalChannelMute.unblock();
+                    if ((perms->srv_admin || isChanAdmin) && !isOurPhantom) {
+                        checkmenuitem->show();
+                    } else {
+                        checkmenuitem->hide();
                     }
                     builder->get_widget("muteUserGlobal", checkmenuitem);
                     signalGlobalMute.block();
                     checkmenuitem->set_active(user->global_mute);
                     signalGlobalMute.unblock();
-                    if ((perms->srv_admin || perms->mute_glbl) && !isOurPhantom) {
+                    if (perms->srv_admin && !isOurPhantom) {
                         checkmenuitem->show();
                     } else {
                         checkmenuitem->hide();
@@ -956,6 +979,7 @@ ManglerChannelTree::privateChatMenuItem_activate_cb(void) {/*{{{*/
         Glib::ustring name = row[channelRecord.name];
         //fprintf(stderr, "opening chat with %d\n", id);
         mangler->privateChatWindows[id] = new ManglerPrivChat(id);
+        mangler->privateChatWindows[id]->chatWindow->set_icon(mangler->icons["tray_icon"]);
         mangler->privateChatWindows[id]->addMessage("*** opened private chat with " + name);
         //fprintf(stderr, "opened chat window with %d\n", mangler->privateChatWindows[id]->remoteUserId);
     }
@@ -1044,6 +1068,17 @@ ManglerChannelTree::muteUserMenuItem_activate_cb(void) {/*{{{*/
             Mangler::config.servers.save();
         }
         refreshUser(id);
+    }
+}/*}}}*/
+
+void
+ManglerChannelTree::muteUserChannelMenuItem_activate_cb(void) {/*{{{*/
+    Glib::RefPtr<Gtk::TreeSelection> sel = channelView->get_selection();
+    Gtk::TreeModel::iterator iter = sel->get_selected();
+    if (iter) {
+        Gtk::TreeModel::Row row = *iter;
+        uint16_t id = row[channelRecord.id];
+        v3_admin_channel_mute(id);
     }
 }/*}}}*/
 
