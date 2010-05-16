@@ -14,6 +14,7 @@ public class ManglerDBAdapter {
     public static final String KEY_SERVERNAME = "servername";
     public static final String KEY_HOSTNAME = "hostname";
     public static final String KEY_PORTNUMBER = "portnumber";
+    public static final String KEY_PASSWORD = "password";
     public static final String KEY_USERNAME = "username";
     public static final String KEY_PHONETIC = "phonetic";
 
@@ -24,7 +25,7 @@ public class ManglerDBAdapter {
     
     // SQL string for creating database
     private static final String DATABASE_CREATE =
-        "create table servers (_id integer primary key autoincrement, servername text not null, hostname text not null, portnumber integer not null, username text not null, phonetic text not null);";
+        "create table servers (_id integer primary key autoincrement, servername text not null, hostname text not null, portnumber integer not null, password text not null, username text not null, phonetic text not null);";
 
     private static final String DATABASE_NAME = "manglerdata";
     private static final String DATABASE_SERVER_TABLE = "servers";
@@ -89,15 +90,17 @@ public class ManglerDBAdapter {
      * @param servername
      * @param hostname
      * @param portnumber
+     * @param password
      * @param username
      * @param phonetic
      * @return rowId or -1 if failed
      */
-    public long createServer(String servername, String hostname, int portnumber, String username, String phonetic) {
+    public long createServer(String servername, String hostname, int portnumber, String password, String username, String phonetic) {
         ContentValues initialValues = new ContentValues();
         initialValues.put(KEY_SERVERNAME, servername);
         initialValues.put(KEY_HOSTNAME, hostname);
         initialValues.put(KEY_PORTNUMBER, portnumber);
+        initialValues.put(KEY_PASSWORD, password);
         initialValues.put(KEY_USERNAME, username);
         initialValues.put(KEY_PHONETIC, phonetic);
 
@@ -123,7 +126,7 @@ public class ManglerDBAdapter {
     public Cursor fetchServers() {
 
         return db.query(DATABASE_SERVER_TABLE, new String[] {KEY_ROWID, KEY_SERVERNAME, 
-        		KEY_HOSTNAME, KEY_PORTNUMBER, KEY_USERNAME, KEY_PHONETIC}, null, null, null, null, null);
+        		KEY_HOSTNAME, KEY_PORTNUMBER, KEY_PASSWORD, KEY_USERNAME, KEY_PHONETIC}, null, null, null, null, null);
     }
     
     /**
@@ -137,7 +140,7 @@ public class ManglerDBAdapter {
 
         Cursor cursor =
                 db.query(true, DATABASE_SERVER_TABLE, new String[] {KEY_ROWID,
-                        KEY_SERVERNAME, KEY_HOSTNAME, KEY_PORTNUMBER, KEY_USERNAME, KEY_PHONETIC}, 
+                        KEY_SERVERNAME, KEY_HOSTNAME, KEY_PORTNUMBER, KEY_PASSWORD, KEY_USERNAME, KEY_PHONETIC}, 
                         KEY_ROWID + "=" + rowId, null, null, null, null, null);
         if (cursor != null) {
             cursor.moveToFirst();
@@ -153,13 +156,17 @@ public class ManglerDBAdapter {
      * @param servername
      * @param hostname
      * @param portnumber
-     * @return true if the user was successfully updated, false otherwise
+     * @param password
+     * @param username
+     * @param phonetic
+     * @return true if the server was successfully updated, false otherwise
      */
-    public boolean updateServer(long rowId, String servername, String hostname, int portnumber, String username, String phonetic) {
+    public boolean updateServer(long rowId, String servername, String hostname, int portnumber, String password, String username, String phonetic) {
         ContentValues args = new ContentValues();
         args.put(KEY_SERVERNAME, servername);
         args.put(KEY_HOSTNAME, hostname);
         args.put(KEY_PORTNUMBER, portnumber);
+        args.put(KEY_PASSWORD, password);
         args.put(KEY_USERNAME, username);
         args.put(KEY_PHONETIC, phonetic);
 

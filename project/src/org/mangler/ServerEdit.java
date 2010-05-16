@@ -13,6 +13,7 @@ public class ServerEdit extends Activity{
 	private EditText serverText;
 	private EditText hostText;
 	private EditText portText;
+	private EditText passText;
 	private EditText userText;
 	private EditText phoneticText;
 	
@@ -29,6 +30,7 @@ public class ServerEdit extends Activity{
         serverText = (EditText)findViewById(R.id.editServer);
         hostText = (EditText)findViewById(R.id.editHost);
         portText = (EditText)findViewById(R.id.editPort);
+        passText = (EditText)findViewById(R.id.editPass);
         userText = (EditText)findViewById(R.id.editUser);
         phoneticText = (EditText)findViewById(R.id.editPhonetic);
       
@@ -65,6 +67,7 @@ public class ServerEdit extends Activity{
             serverText.setText(servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_SERVERNAME)));
             hostText.setText(servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_HOSTNAME)));
             portText.setText(((Integer)servers.getInt(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_PORTNUMBER))).toString());
+            passText.setText(servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_PASSWORD)));
             userText.setText(servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_USERNAME)));
             phoneticText.setText(servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_PHONETIC)));
         }
@@ -90,13 +93,14 @@ public class ServerEdit extends Activity{
         if (port < 0) {
         	port = (short)(port * -1);
         }
+        String password = passText.getText().toString();
         String username = userText.getText().toString();
         String phonetic = phoneticText.getText().toString();
 
         if (rowID == null) {
-        	dbHelper.createServer(servername, hostname, port, username, phonetic);
+        	dbHelper.createServer(servername, hostname, port, password, username, phonetic);
         } else {
-            dbHelper.updateServer(rowID, servername, hostname, port, username, phonetic);
+            dbHelper.updateServer(rowID, servername, hostname, port, password, username, phonetic);
         }
     }
 }

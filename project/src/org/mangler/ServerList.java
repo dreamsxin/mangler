@@ -99,9 +99,10 @@ public class ServerList extends ListActivity {
 	        String servername = servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_SERVERNAME));
 	        String hostname = servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_HOSTNAME));
 	        int port = servers.getInt(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_PORTNUMBER));
+	        String password = servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_PASSWORD));
 	        String username = servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_USERNAME));
 	        String phonetic = servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_PHONETIC));
-			dbHelper.createServer(servername, hostname, port, username, phonetic);
+			dbHelper.createServer(servername, hostname, port, password, username, phonetic);
 	        fillData();
 	        return true;
 		case DELETE_ID:
@@ -131,6 +132,7 @@ public class ServerList extends ListActivity {
         startManagingCursor(servers);
         String hostname = servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_HOSTNAME));
         int port = servers.getInt(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_PORTNUMBER));
+        String password = servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_PASSWORD));
         String username = servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_USERNAME));
         String phonetic = servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_PHONETIC));
         
@@ -234,7 +236,7 @@ public class ServerList extends ListActivity {
         
     	(new Thread(event_runnable)).start();
     	VentriloInterface.debuglevel(VentriloDebugLevels.V3_DEBUG_INTERNAL);
-        if(VentriloInterface.login(hostname + ":" + port, username, "", phonetic)) {
+        if(VentriloInterface.login(hostname + ":" + port, username, password, phonetic)) {
 	    	(new Thread(recv_runnable)).start();
         }
     }
