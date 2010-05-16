@@ -204,7 +204,7 @@ class ManglerAdmin {
         Glib::RefPtr<Gtk::TreeStore>        BanNetmaskModel;
         uint16_t                            BanNetmaskDefault;
         Gtk::VBox                           *BanEditor;
-        uint16_t                            currentBanID;
+        uint32_t                            currentBanIP;
 
         /* generic pointers and window pointer */
         Gtk::Widget         *widget;
@@ -278,12 +278,14 @@ class ManglerAdmin {
         void RankAdd_clicked_cb(void);
         void RankRemove_clicked_cb(void);
         void RankUpdate_clicked_cb(void);
+        void clearRankEditor(void);
 
         /* ban editor functions and callbacks */
         void BanEditorTree_cursor_changed_cb(void);
         void BanAdd_clicked_cb(void);
         void BanRemove_clicked_cb(void);
         void BanUpdate_clicked_cb(void);
+        void clearBanEditor(void);
 };
 
 #endif

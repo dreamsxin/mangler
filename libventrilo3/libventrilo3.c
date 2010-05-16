@@ -336,7 +336,7 @@ _v3_print_permissions(v3_permissions *perms) {/*{{{*/
     _v3_debug(V3_DEBUG_PACKET_PARSE, "see_guest...........: %d",   perms->see_guest);
     _v3_debug(V3_DEBUG_PACKET_PARSE, "see_nonguest........: %d",   perms->see_nonguest);
     _v3_debug(V3_DEBUG_PACKET_PARSE, "see_motd............: %d",   perms->see_motd);
-    _v3_debug(V3_DEBUG_PACKET_PARSE, "see_srv_comment; ...: %d",   perms->see_srv_comment);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "see_srv_comment.....: %d",   perms->see_srv_comment);
     _v3_debug(V3_DEBUG_PACKET_PARSE, "see_chan_list.......: %d",   perms->see_chan_list);
     _v3_debug(V3_DEBUG_PACKET_PARSE, "see_chan_comment....: %d",   perms->see_chan_comment);
     _v3_debug(V3_DEBUG_PACKET_PARSE, "see_user_comment....: %d",   perms->see_user_comment);
@@ -2063,7 +2063,7 @@ _v3_parse_filter(v3_sp_filter *f, char *value) {/*{{{*/
     f->action = atoi(a);
     f->interval = atoi(i);
     f->times = atoi(t);
-    _v3_debug(V3_DEBUG_INFO, "parsed filter: %d, %d, %d\n", f->action, f->interval, f->times);
+    _v3_debug(V3_DEBUG_INFO, "parsed filter: %d, %d, %d", f->action, f->interval, f->times);
 
     _v3_func_leave("_v3_parse_filter");
     return true;
@@ -3675,7 +3675,7 @@ _v3_vrf_recover(_v3_vrf *vrfh) {/*{{{*/
             segment->type    = audio.type;
             segment->offset  = offset;
             if (read(vrfh->file, segment->username, sizeof(segment->username) - 1) < 0) {
-                _v3_error("%s: read failed: %s\n", vrfh->filename, strerror(errno));
+                _v3_error("%s: read failed: %s", vrfh->filename, strerror(errno));
                 close(vrfh->file);
                 vrfh->file = fd;
                 _v3_func_leave("_v3_vrf_recover");
@@ -3735,7 +3735,7 @@ _v3_vrf_recover(_v3_vrf *vrfh) {/*{{{*/
                 _v3_vrf_put_audio(&audio, &audio);
                 if (lseek(vrfh->file, segment->offset, SEEK_SET) < 0 ||
                     write(vrfh->file, &audio, sizeof(_v3_vrf_audio)) < 0) {
-                    _v3_error("%s: write failed: %s\n", vrfh->filename, strerror(errno));
+                    _v3_error("%s: write failed: %s", vrfh->filename, strerror(errno));
                     close(vrfh->file);
                     vrfh->file = fd;
                     _v3_func_leave("_v3_vrf_recover");
@@ -4530,7 +4530,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                     }
                     if (m->property <= V3_SRV_PROP_FINISH) {
                         if (m->subtype == V3_SERVER_SEND_SETTING) {
-                            _v3_debug(V3_DEBUG_INFO, "send server property 0x%02X: %s", m->property, m->value);
+                            _v3_debug(V3_DEBUG_INFO, "send server property 0x%02X: %s", m->property, value);
                         }
                         response = _v3_put_0x4c(
                                 m->subtype,
@@ -7197,7 +7197,7 @@ v3_send_audio(uint16_t send_type, uint32_t rate, uint8_t *pcm, uint32_t length, 
             return 0;
         }
         if (err) {
-            _v3_error("resampler initialization error: %d: %s\n", err, speex_resampler_strerror(err));
+            _v3_error("resampler initialization error: %d: %s", err, speex_resampler_strerror(err));
             _v3_func_leave("v3_send_audio");
             return 0;
         }
@@ -7205,7 +7205,7 @@ v3_send_audio(uint16_t send_type, uint32_t rate, uint8_t *pcm, uint32_t length, 
         outsamples /= sizeof(int16_t) * channels;
         err = speex_resampler_process_interleaved_int(resampler, (void *)pcm, &insamples, (void *)ev.data->sample, &outsamples);
         if (err) {
-            _v3_error("resampling error: %d: %s\n", err, speex_resampler_strerror(err));
+            _v3_error("resampling error: %d: %s", err, speex_resampler_strerror(err));
             _v3_func_leave("v3_send_audio");
             return 0;
         }

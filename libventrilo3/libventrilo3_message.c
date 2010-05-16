@@ -225,12 +225,12 @@ _v3_get_msg_account(void *offset, _v3_msg_account *account) {/*{{{*/
 
     account->chan_admin = _v3_get_msg_uint16_array(offset, &len);
     for (j=0;j<(len-2)/2;j++)
-        _v3_debug(V3_DEBUG_PACKET_PARSE, "chanadmin: 0x%x", account->chan_admin[j]);
+        _v3_debug(V3_DEBUG_PACKET_PARSE, "channel admin: %u", account->chan_admin[j]);
     account->chan_admin_count = (len - 2) / 2;
     offset += len;
     account->chan_auth = _v3_get_msg_uint16_array(offset, &len);
     for (j=0;j<(len-2)/2;j++)
-        _v3_debug(V3_DEBUG_PACKET_PARSE, "chanauth: 0x%x", account->chan_auth[j]);
+        _v3_debug(V3_DEBUG_PACKET_PARSE, "channel auth: %u", account->chan_auth[j]);
     account->chan_auth_count = (len - 2) / 2;
     offset += len;
 

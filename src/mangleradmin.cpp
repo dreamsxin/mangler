@@ -437,18 +437,17 @@ ManglerAdmin::hide(void) {/*{{{*/
 }/*}}}*/
 void
 ManglerAdmin::permsUpdated(void) {/*{{{*/
-    const v3_permissions *perms = v3_get_permissions();
     if (isOpen) {
         return;
     }
+    const v3_permissions *perms = v3_get_permissions();
     if (perms->srv_admin) {
-        UserAdd->set_sensitive( perms->add_user );
+        UserAdd->set_sensitive(true);
         UsersTab->show();
         BansTab->show();
     } else {
         ServerTab->hide();
         UsersTab->hide();
-        clearUsers();
         BansTab->hide();
     }
     if (perms->edit_rank) {
@@ -487,13 +486,15 @@ ManglerAdmin::adminWindow_hide_cb(void) {/*{{{*/
         if (SrvIsNotUpdating) {
             v3_serverprop_close();
         }
-        ServerTab->hide();
         v3_userlist_close();
     }
     if (perms->edit_rank) {
         v3_ranklist_close();
     }
+    ServerTab->hide();
     clearUsers();
+    clearRankEditor();
+    clearBans();
     isOpen = false;
 }/*}}}*/
 void
@@ -715,8 +716,8 @@ ManglerAdmin::ChannelTree_cursor_changed_cb() {/*{{{*/
     // get user permissions
     const v3_permissions *perms = v3_get_permissions();
     // enable or disable editor and necessary buttons
-    bool isCA( perms->srv_admin || mangler->isAdmin || v3_is_channel_admin(currentChannelID) );
-    if (isCA) {
+    bool editAccess( perms->srv_admin || v3_is_channel_admin(currentChannelID) );
+    if (editAccess) {
         if (ChannelProtModel->children().size() == 2) {
             row = *(ChannelProtModel->append());
             row[adminRecord.id] = 2;
@@ -731,9 +732,9 @@ ManglerAdmin::ChannelTree_cursor_changed_cb() {/*{{{*/
             if (iter) ChannelProtModel->erase(iter);
         }
     }
-    ChannelEditor->set_sensitive(isCA && currentChannelID);
-    ChannelRemove->set_sensitive(isCA && currentChannelID);
-    ChannelAdd->set_sensitive(isCA);
+    ChannelEditor->set_sensitive(editAccess && currentChannelID);
+    ChannelRemove->set_sensitive(editAccess && currentChannelID);
+    ChannelAdd->set_sensitive(editAccess);
 }/*}}}*/
 Gtk::TreeModel::Row
 ManglerAdmin::getChannel(uint32_t id, Gtk::TreeModel::Children children, bool hasCheckbox) {/*{{{*/
@@ -1297,10 +1298,10 @@ ManglerAdmin::UserTree_cursor_changed_cb(void) {/*{{{*/
     // get user permissions
     const v3_permissions *perms = v3_get_permissions();
     // enable or disable editor and necessary buttons
-    bool editAccess( currentUserID && perms->srv_admin );
-    UserEditor->set_sensitive( editAccess );
-    UserRemove->set_sensitive( editAccess && perms->del_user );
-    UserAdd->set_sensitive( perms->srv_admin && perms->add_user );
+    bool editAccess( perms->srv_admin );
+    UserEditor->set_sensitive(editAccess && currentUserID);
+    UserRemove->set_sensitive(editAccess && currentUserID);
+    UserAdd->set_sensitive(editAccess);
 }/*}}}*/
 void
 ManglerAdmin::populateUserEditor(v3_account *account) {/*{{{*/
@@ -1456,7 +1457,7 @@ void
 ManglerAdmin::UserUpdate_clicked_cb(void) {/*{{{*/
     v3_account account;
     ::memset(&account, 0, sizeof(v3_account));
-    account.perms.account_id = currentUserID == 0xffff ? 0 : currentUserID;
+    account.perms.account_id = (currentUserID == 0xffff) ? 0 : currentUserID;
     account.username = ::strdup(ustring_to_c(getFromEntry("UserLogin")).c_str());
     Glib::ustring password = getFromEntry("UserPassword");
     trimString(password);
@@ -1852,6 +1853,9 @@ ManglerAdmin::rankAdded(v3_rank *rank) {/*{{{*/
     (*iter)[rankRecord.level] = rank->level;
     (*iter)[rankRecord.name] = c_to_ustring(rank->name);
     (*iter)[rankRecord.description] = rank->description;
+    if (currentRankID == 0xffff && c_to_ustring(rank->name) == getFromEntry("RankName")) {
+        RankEditorTree->set_cursor(RankEditorModel->get_path(iter));
+    }
     /* now handle the User Rank combo box */
     iter = UserRankModel->append();
     (*iter)[adminRecord.id] = rank->id; (*iter)[adminRecord.name] = c_to_ustring(rank->name);
@@ -1861,7 +1865,14 @@ ManglerAdmin::rankAdded(v3_rank *rank) {/*{{{*/
 void
 ManglerAdmin::rankRemoved(uint16_t rankid) {/*{{{*/
     Gtk::TreeModel::iterator iter = getRank(rankid, RankEditorModel->children());
-    if (iter) RankEditorModel->erase(*iter);
+    if (iter) {
+        Gtk::TreeModel::Row rank = *iter;
+        iter = RankEditorTree->get_selection()->get_selected();
+        if (iter && (*iter)[rankRecord.id] == rank[rankRecord.id]) {
+            clearRankEditor();
+        }
+        RankEditorModel->erase(rank);
+    }
     /* now handle the User Rank combo box */
     /* the poorly named getAccount() will work fine for this */
     Gtk::TreeModel::Row row = getAccount(rankid, UserRankModel->children());
@@ -1876,7 +1887,7 @@ ManglerAdmin::rankRemoved(v3_rank *rank) {/*{{{*/
 void
 ManglerAdmin::RankUpdate_clicked_cb(void) {/*{{{*/
     v3_rank rank;
-    rank.id = currentRankID;
+    rank.id = (currentRankID == 0xffff) ? 0 : currentRankID;
     rank.name = ::strdup(ustring_to_c(getFromEntry("RankName")).c_str());
     rank.description = ::strdup(ustring_to_c(getFromEntry("RankDescription")).c_str());
     rank.level = uint16_t( getFromSpinbutton("RankLevel") );
@@ -1901,12 +1912,8 @@ ManglerAdmin::RankEditorTree_cursor_changed_cb(void) {/*{{{*/
 }/*}}}*/
 void
 ManglerAdmin::RankAdd_clicked_cb(void) {/*{{{*/
-    RankEditorTree->get_selection()->unselect_all();
-    currentRankID = 0;
-    copyToEntry("RankName", "");
-    copyToEntry("RankDescription", "");
-    copyToSpinbutton("RankLevel", 0);
-    setWidgetSensitive("RankRemove", false);
+    clearRankEditor();
+    currentRankID = 0xffff;
     setWidgetSensitive("RankAdd", false);
     RankEditor->set_sensitive(true);
 }/*}}}*/
@@ -1922,15 +1929,20 @@ ManglerAdmin::RankRemove_clicked_cb(void) {/*{{{*/
     }
 }/*}}}*/
 void
-ManglerAdmin::clearRanks(void) {/*{{{*/
-    RankEditorModel->clear();
-
+ManglerAdmin::clearRankEditor(void) {/*{{{*/
+    RankEditorTree->get_selection()->unselect_all();
     RankEditor->set_sensitive(false);
+    copyToEntry("RankName", "");
+    copyToEntry("RankDescription", "");
+    copyToSpinbutton("RankLevel", 0);
     setWidgetSensitive("RankAdd", true);
     setWidgetSensitive("RankRemove", false);
-    setWidgetSensitive("RankUpdate", true);
-
-    currentRankID = 0xff;
+    currentRankID = 0;
+}/*}}}*/
+void
+ManglerAdmin::clearRanks(void) {/*{{{*/
+    RankEditorModel->clear();
+    clearRankEditor();
 }/*}}}*/
 
 /* ----------  Ban Editor Related Methods  ---------- */
@@ -1940,7 +1952,7 @@ ManglerAdmin::banList(uint16_t id, uint16_t count, uint16_t bitmask_id, uint32_t
         BanEditorModel->clear();
     }
     if (!count) {
-        clearBans();
+        clearBanEditor();
         return;
     }
     Gtk::TreeModel::iterator iter = BanEditorModel->append();
@@ -1956,6 +1968,9 @@ ManglerAdmin::banList(uint16_t id, uint16_t count, uint16_t bitmask_id, uint32_t
     (*iter)[banRecord.user] = c_to_ustring(user);
     (*iter)[banRecord.by] = c_to_ustring(by);
     (*iter)[banRecord.reason] = c_to_ustring(reason);
+    if (ip_address == currentBanIP) {
+        BanEditorTree->set_cursor(BanEditorModel->get_path(iter));
+    }
 }/*}}}*/
 void
 ManglerAdmin::BanEditorTree_cursor_changed_cb(void) {/*{{{*/
@@ -1963,7 +1978,7 @@ ManglerAdmin::BanEditorTree_cursor_changed_cb(void) {/*{{{*/
     bool isBan( false );
     if (iter) {
         isBan = true;
-        currentBanID = (*iter)[banRecord.id];
+        currentBanIP = (*iter)[banRecord.ip_val];
         copyToEntry("BanIPAddress", (*iter)[banRecord.ip]);
         copyToCombobox("BanNetmask", (*iter)[banRecord.netmask_id], BanNetmaskDefault);
         copyToEntry("BanReason", (*iter)[banRecord.reason]);
@@ -1974,12 +1989,7 @@ ManglerAdmin::BanEditorTree_cursor_changed_cb(void) {/*{{{*/
 }/*}}}*/
 void
 ManglerAdmin::BanAdd_clicked_cb(void) {/*{{{*/
-    BanEditorTree->get_selection()->unselect_all();
-    currentBanID = BanEditorModel->children().size() + 1;
-    copyToEntry("BanIPAddress", "");
-    copyToCombobox("BanNetmask", BanNetmaskDefault);
-    copyToEntry("BanReason", "");
-    setWidgetSensitive("BanRemove", false);
+    clearBanEditor();
     setWidgetSensitive("BanAdd", false);
     BanEditor->set_sensitive(true);
 }/*}}}*/
@@ -1989,6 +1999,7 @@ ManglerAdmin::BanRemove_clicked_cb(void) {/*{{{*/
     if (! iter) return;
     uint32_t ip_address = (*iter)[banRecord.ip_val];
     uint16_t bitmask_id = (*iter)[banRecord.netmask_id];
+    clearBanEditor();
     v3_admin_ban_remove(bitmask_id, ip_address);
     v3_admin_ban_list();
 }/*}}}*/
@@ -1999,11 +2010,11 @@ ManglerAdmin::BanUpdate_clicked_cb(void) {/*{{{*/
     uint16_t b1 = 0, b2 = 0, b3 = 0, b4 = 0;
     if (::sscanf(ip_str, "%hu.%hu.%hu.%hu", &b1, &b2, &b3, &b4) != 4) {
         ::free(ip_str);
-        statusbarPush("Invalid IP address.");
+        statusbarPush("Invalid IPv4 address.");
         return;
     }
     ::free(ip_str);
-    ip_address =
+    currentBanIP = ip_address =
             ((b1 << 24) & 0xff000000) |
             ((b2 << 16) & 0x00ff0000) |
             ((b3 <<  8) & 0x0000ff00) |
@@ -2015,15 +2026,20 @@ ManglerAdmin::BanUpdate_clicked_cb(void) {/*{{{*/
     v3_admin_ban_list();
 }/*}}}*/
 void
-ManglerAdmin::clearBans(void) {/*{{{*/
-    BanEditorModel->clear();
-
+ManglerAdmin::clearBanEditor(void) {/*{{{*/
+    BanEditorTree->get_selection()->unselect_all();
     BanEditor->set_sensitive(false);
+    copyToEntry("BanIPAddress", "");
+    copyToCombobox("BanNetmask", BanNetmaskDefault);
+    copyToEntry("BanReason", "");
     setWidgetSensitive("BanAdd", true);
     setWidgetSensitive("BanRemove", false);
-    setWidgetSensitive("BanUpdate", true);
-
-    currentBanID = 0xff;
+    currentBanIP = -1;
+}/*}}}*/
+void
+ManglerAdmin::clearBans(void) {/*{{{*/
+    BanEditorModel->clear();
+    clearBanEditor();
 }/*}}}*/
 
 void
