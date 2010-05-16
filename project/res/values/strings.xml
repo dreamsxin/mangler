@@ -16,4 +16,7 @@
 <string name="phonetic">Phonetic</string>
 <string name="save">Save</string>
 <string name="password">Password</string>
+<string name="server_view">Server View</string>
+<string name="channel_list">Channel Lists</string>
+<string name="user_list">User List</string>
 </resources>

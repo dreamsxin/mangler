@@ -38,16 +38,16 @@ public class ServerEdit extends Activity{
        
         rowID = null;
         
-        if (savedInstanceState != null) {
+        /*if (savedInstanceState != null) {
         	rowID = savedInstanceState.getLong(ManglerDBAdapter.KEY_ROWID);
-        }
+        }*/
         
-        if (rowID == null) {
+        //if (rowID == null) {
         	Bundle extras = getIntent().getExtras();
         	if (extras != null) {
         		rowID = extras.getLong(ManglerDBAdapter.KEY_ROWID);
         	}
-        }
+        //}
         
         populateFields();
        
@@ -58,6 +58,12 @@ public class ServerEdit extends Activity{
         		finish();
         	}
 		});
+    }
+    
+    @Override
+    protected void onDestroy() {
+    	super.onDestroy();
+    	dbHelper.close();
     }
     
     private void populateFields() {
@@ -73,13 +79,13 @@ public class ServerEdit extends Activity{
         }
     }
     
-    @Override
+    /*@Override
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
         if (rowID != null) {
         	outState.putLong(ManglerDBAdapter.KEY_ROWID, rowID);
         }
-    }
+    }*/
     
     private void saveState() {
         String servername = serverText.getText().toString();

@@ -4,7 +4,6 @@ import android.app.ListActivity;
 import android.content.Intent;
 import android.database.Cursor;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.ContextMenu;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -18,7 +17,6 @@ public class ServerList extends ListActivity {
 	
 	private static final int ACTIVITY_CREATE = 0;
 	private static final int ACTIVITY_EDIT = 1;
-	//private static final int ACTIVITY_CONNECT = 2;
 	
 	private static final int ADD_ID = Menu.FIRST;
 	private static final int EDIT_ID = Menu.FIRST + 1;
@@ -35,8 +33,14 @@ public class ServerList extends ListActivity {
         setContentView(R.layout.server_list);
         dbHelper = new ManglerDBAdapter(this);
         dbHelper.open();
-        fillData();
+    	fillData();
         registerForContextMenu(getListView());
+    }
+    
+    @Override
+    protected void onDestroy() {
+    	super.onDestroy();
+    	dbHelper.close();
     }
     
     // Populate listview with entries from database
@@ -114,130 +118,25 @@ public class ServerList extends ListActivity {
 	}
     
     @Override
+    protected void onListItemClick(ListView l, View v, int position, long id) {
+        super.onListItemClick(l, v, position, id);
+
+        Cursor servers = dbHelper.fetchServer(id);
+        startManagingCursor(servers);
+        
+        Intent intent = new Intent(this, ServerView.class);
+        intent.putExtra("hostname", servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_HOSTNAME)));
+        intent.putExtra("port", servers.getInt(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_PORTNUMBER)));
+        intent.putExtra("password", servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_PASSWORD)));
+        intent.putExtra("username", servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_USERNAME)));
+        intent.putExtra("phonetic", servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_PHONETIC)));
+        
+        startActivity(intent);
+    }
+    
+    @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent intent) {
         super.onActivityResult(requestCode, resultCode, intent);
         fillData();
-    }
-    
-    private String StringFromBytes(byte[] bytes) {
-    	return new String(bytes, 0, (new String(bytes).indexOf(0)));
-    }
-    
-    // Currently connects to server immediately
-    // TODO: Move into seperate activity later
-    @Override
-    protected void onListItemClick(ListView l, View v, int position, long id) {
-        super.onListItemClick(l, v, position, id);
-        Cursor servers = dbHelper.fetchServer(id);
-        startManagingCursor(servers);
-        String hostname = servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_HOSTNAME));
-        int port = servers.getInt(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_PORTNUMBER));
-        String password = servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_PASSWORD));
-        String username = servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_USERNAME));
-        String phonetic = servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_PHONETIC));
-        
-        // We need to start this -before- calling v3_login. 
-    	Runnable event_runnable = new Runnable() {
-    		public void run() {
-		    	VentriloEventData data = new VentriloEventData();
-		    	while(true) {
-		    		VentriloInterface.getevent(data);
-		    		switch(data.type) {
-		    			case VentriloEvents.V3_EVENT_CHAT_MESSAGE:
-		    				Log.i("mangler", 
-		    						"User sent message: " + Integer.toString(data.user.id) +
-		    						" -> " + StringFromBytes(data.data.chatmessage));
-		    				break;
-		    				
-		    			case VentriloEvents.V3_EVENT_CHAT_JOIN:
-		    				Log.i("mangler", 
-		    						"User joined chat: " + Integer.toString(data.user.id));
-		    				break;
-		    			
-		    			case VentriloEvents.V3_EVENT_PING:
-		    				Log.i("mangler", 
-		    						"Ping: " + Integer.toString(data.ping));
-		    			break;
-		    			
-		    			case VentriloEvents.V3_EVENT_USER_TALK_START:
-		    				Log.i("mangler", 
-		    						"User started talking: " + Integer.toString(data.user.id) + 
-		    						" - Rate: " + Integer.toString(data.pcm.rate));
-		    			break;
-		    			
-		    			case VentriloEvents.V3_EVENT_USER_TALK_END:
-		    				Log.i("mangler", 
-		    						"User stopped talking: " + Integer.toString(data.user.id));
-			    			break;
-			    			
-		    			case VentriloEvents.V3_EVENT_STATUS:
-		    				Log.i("mangler", 
-		    						"Status: " + Integer.toString(data.status.percent) + "%" +
-		    						" -> " + StringFromBytes(data.status.message));
-		    				break;
-		    				
-		    			case VentriloEvents.V3_EVENT_CHAN_ADD:
-		    			case VentriloEvents.V3_EVENT_CHAN_MODIFY:
-		    				VentriloInterface.getchannel(data, data.channel.id);
-		    				Log.i("mangler", 
-		    						"Channel added / modified: " + Short.toString(data.channel.id) +
-		    						" -> " + StringFromBytes(data.text.name));
-		    				break;
-		    				
-		    			case VentriloEvents.V3_EVENT_USER_LOGIN:
-		    				VentriloInterface.getuser(data, data.user.id);
-		    				Log.i("mangler", 
-		    						"User logged in: " + Short.toString(data.user.id) +
-		    						" -> " + StringFromBytes(data.text.name));
-		    				break;
-		    				
-		    			case VentriloEvents.V3_EVENT_LOGIN_COMPLETE:
-		    				Log.i("mangler",
-		    						"Login complete!");
-		    				break;
-		    				
-		    			case VentriloEvents.V3_EVENT_DISPLAY_MOTD:
-		    				Log.i("mangler",
-		    						"MOTD: " + StringFromBytes(data.data.motd));
-		    					
-		    				break;
-		    				
-		    			case VentriloEvents.V3_EVENT_USER_CHAN_MOVE:
-		    				Log.i("mangler",
-		    						"User joined channel: " + Integer.toString(data.user.id) +
-		    						" - channel: " + Integer.toString(data.channel.id));
-		    				break;
-		    				
-		    			case VentriloEvents.V3_EVENT_USER_LOGOUT:
-		    				Log.i("mangler",
-		    						"User left server: " + Integer.toString(data.user.id));
-		    				break;
-		    				
-		    			case VentriloEvents.V3_EVENT_CHAT_LEAVE:
-		    				Log.i("mangler",
-		    						"User left chat: " + Integer.toString(data.user.id));
-		    				break;
-		    			
-		    			default:
-		    				Log.w("mangler", 
-		    						"Unknown event of type: " + Integer.toString(data.type));
-		    		}
-		    	}
-    		}
-    	};
-    	
-    	Runnable recv_runnable = new Runnable() {
-    		public void run() {
-    			while(true) {
-    				if(!VentriloInterface.recv()) break;
-    			}
-    		}
-    	};
-        
-    	(new Thread(event_runnable)).start();
-    	VentriloInterface.debuglevel(VentriloDebugLevels.V3_DEBUG_INTERNAL);
-        if(VentriloInterface.login(hostname + ":" + port, username, password, phonetic)) {
-	    	(new Thread(recv_runnable)).start();
-        }
     }
 }

@@ -4,9 +4,6 @@
     android:layout_width="fill_parent"
     android:layout_height="fill_parent" android:gravity="bottom|center_horizontal">
 
-	
-
-
-<Button android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/server_list" android:width="200px" android:id="@+id/ServerListButton" android:layout_marginBottom="25px"></Button>
-<Button android:layout_width="wrap_content" android:layout_height="wrap_content" android:id="@+id/SettingsButton" android:text="@string/settings" android:width="200px" android:layout_marginBottom="75px"></Button>
+	<Button android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/server_list" android:width="200dp" android:id="@+id/ServerListButton" android:layout_marginBottom="25dp"></Button>
+	<Button android:layout_width="wrap_content" android:layout_height="wrap_content" android:id="@+id/SettingsButton" android:text="@string/settings" android:width="200px" android:layout_marginBottom="75dp"></Button>
 </LinearLayout>
