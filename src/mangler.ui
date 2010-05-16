@@ -8007,25 +8007,6 @@ These are useful for developers.</property>
                 </child>
               </object>
             </child>
-            <child>
-              <object class="GtkMenuItem" id="recMiscMenuItem">
-                <property name="visible">True</property>
-                <property name="right_justified">True</property>
-                <property name="label" translatable="yes">...</property>
-                <child type="submenu">
-                  <object class="GtkMenu" id="recMiscMenu">
-                    <property name="visible">True</property>
-                    <child>
-                      <object class="GtkCheckMenuItem" id="recFlags">
-                        <property name="visible">True</property>
-                        <property name="label" translatable="yes">Dishonor Recording _Flags</property>
-                        <property name="use_underline">True</property>
-                      </object>
-                    </child>
-                  </object>
-                </child>
-              </object>
-            </child>
           </object>
           <packing>
             <property name="expand">False</property>

@@ -564,7 +564,6 @@ struct _v3_vrf {
     struct timeval  start;
     _v3_vrf_rec     queue;
 
-    uint8_t         honored;
     uint8_t         stopped;
 };
 

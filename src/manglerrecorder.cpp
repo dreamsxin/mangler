@@ -48,9 +48,6 @@ ManglerRecorder::ManglerRecorder(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
     menuitem->signal_activate().connect(sigc::mem_fun(this, &ManglerRecorder::saveas_activate_cb));
     builder->get_widget("recDelete", menuitem);
     menuitem->signal_activate().connect(sigc::mem_fun(this, &ManglerRecorder::delete_activate_cb));
-    builder->get_widget("recFlags", flagcheckitem);
-    flagcheckitem->signal_toggled().connect(sigc::mem_fun(this, &ManglerRecorder::flags_toggled_cb));
-    flagcheckitem->set_active(Mangler::config["RecordingFlagDishonor"].toBool());
 
     builder->get_widget("recPlayPause", button);
     button->signal_clicked().connect(sigc::mem_fun(this, &ManglerRecorder::playpause_clicked_cb));
@@ -152,10 +149,6 @@ ManglerRecorder::delete_activate_cb(void) {/*{{{*/
     }
 }/*}}}*/
 void
-ManglerRecorder::flags_toggled_cb(void) {/*{{{*/
-    Mangler::config["RecordingFlagDishonor"] = flagcheckitem->get_active();
-}/*}}}*/
-void
 ManglerRecorder::playpause_clicked_cb(void) {/*{{{*/
     if (!vrfh) {
         return;
@@ -218,8 +211,7 @@ void
 ManglerRecorder::set(bool isRecording) {/*{{{*/
     reset();
     if (isRecording) {
-        bool dishonor = Mangler::config["RecordingFlagDishonor"].toBool();
-        if (v3_vrf_record_start(filename.c_str(), dishonor) != V3_OK) {
+        if (v3_vrf_record_start(filename.c_str()) != V3_OK) {
             mangler->errorDialog(c_to_ustring(_v3_error(NULL)));
             recordbutton->set_active(false);
             return;

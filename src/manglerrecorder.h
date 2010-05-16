@@ -40,7 +40,6 @@ class ManglerRecorder {
         Gtk::Label             *label;
         Gtk::Entry             *entry;
         Gtk::Widget            *widget;
-        Gtk::CheckMenuItem     *flagcheckitem;
         Gtk::ToggleButton      *recordbutton;
         Gtk::Entry             *fileentry;
         Gtk::FileChooserDialog *filedialog;
@@ -106,7 +105,6 @@ class ManglerRecorder {
         void close_activate_cb(void);
         void saveas_activate_cb(void);
         void delete_activate_cb(void);
-        void flags_toggled_cb(void);
         void playpause_clicked_cb(void);
         void stop_clicked_cb(void);
         void record_toggled_cb(void);

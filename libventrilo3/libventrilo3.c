@@ -3351,7 +3351,7 @@ _v3_vrf_record_event(
     switch (type) {
       case V3_VRF_EVENT_AUDIO_DATA:
       case V3_VRF_EVENT_TEXT_DATA:
-        if (!data || (!u->allow_recording && v3_vrfh->honored)) {
+        if (!data) {
             break;
         }
         for (rec = queue; rec; rec = rec->next) {
@@ -3541,7 +3541,7 @@ _v3_vrf_record_finish(_v3_vrf *vrfh, uint32_t segtable) {/*{{{*/
 }/*}}}*/
 
 int
-v3_vrf_record_start(const char *filename, uint8_t dishonor) {/*{{{*/
+v3_vrf_record_start(const char *filename) {/*{{{*/
     _v3_func_enter("v3_vrf_record_start");
 
     if (v3_vrfh) {
@@ -3591,7 +3591,6 @@ v3_vrf_record_start(const char *filename, uint8_t dishonor) {/*{{{*/
         vrfh_mutex = malloc(sizeof(pthread_mutex_t));
         pthread_mutex_init(vrfh_mutex, &mta);
     }
-    vrfh->honored = !dishonor;
     v3_vrfh = vrfh;
 
     _v3_func_leave("v3_vrf_record_start");
