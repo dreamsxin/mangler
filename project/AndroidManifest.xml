@@ -13,7 +13,8 @@
 		<activity android:name="ServerList" android:label="@string/server_list"></activity>
 		<activity android:name="ServerEdit" android:label="@string/server_edit"></activity>
 
-<activity android:name="ServerView" android:label="@string/server_view"></activity><activity android:name="ChannelList" android:label="@string/channel_list"></activity>
+<activity android:name="ServerView" android:label="@string/server_view"></activity>
+<activity android:name="ChannelList" android:label="@string/channel_list"></activity>
 <activity android:name="UserList" android:label="@string/user_list"></activity>
 
 </application>

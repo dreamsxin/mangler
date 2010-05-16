@@ -37,15 +37,14 @@ public class ServerView extends TabActivity {
     		connect(hostname, port, password, username, phonetic);
     	}
         
-        // Create an Intent to launch an Activity for the tab (to be reused)
         intent = new Intent().setClass(this, ChannelList.class);
+        intent.putExtra("numchannels", VentriloInterface.channelcount());
 
-     // Initialize a TabSpec for each tab and add it to the TabHost
         tabSpec = tabHost.newTabSpec("channels").setIndicator("Channels").setContent(intent);
         tabHost.addTab(tabSpec);
 
-        // Do the same for the other tabs
         intent = new Intent().setClass(this, UserList.class);
+        intent.putExtra("numusers", VentriloInterface.usercount());
         tabSpec = tabHost.newTabSpec("users").setIndicator("Users").setContent(intent);
         tabHost.addTab(tabSpec);
         
