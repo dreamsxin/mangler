@@ -2,35 +2,60 @@ package org.mangler;
 
 import android.app.ListActivity;
 import android.os.Bundle;
-import android.widget.ArrayAdapter;
+import android.view.View;
+import android.widget.ListView;
+import android.widget.SimpleAdapter;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
 
 public class UserList extends ListActivity {
+	
+	HashMap<Short, String> userMap;
 	
 	public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.user_list);
         
-        int numUsers = -1;
+        userMap = new HashMap<Short, String>();
         
     	Bundle extras = getIntent().getExtras();
     	if (extras != null) {
-    		numUsers = extras.getInt("numusers");
+    		userMap = (HashMap<Short, String>)extras.getSerializable("users");
     	}
         
-    	fillData(numUsers);
+    	fillData();
         registerForContextMenu(getListView());
     }
 
     // Populate user list
-    private void fillData(int numUsers) {
-    	String[] usernames = new String[numUsers];
-    	
-    	for (int i = 1; i <= numUsers; i++) {
-    		usernames[i - 1] = "User " + i;
-    	}
-    	
-    	ArrayAdapter<String> users = new ArrayAdapter<String>(this, R.layout.user_row, R.id.urowtext, usernames);
+    private void fillData() {
+    	ArrayList<HashMap<String, Object>> resources = new ArrayList<HashMap<String, Object>>();
 
-        setListAdapter(users);
+    	HashMap<String, Object> data;
+       
+    	Iterator<Short> iterator = userMap.keySet().iterator();
+
+    	while (iterator.hasNext()) {
+    		data = new HashMap<String, Object>();
+    		short id = iterator.next();
+    		data.put("name", userMap.get(id));
+    		data.put("id", id);
+    		resources.add(data);
+    	}
+       
+    	SimpleAdapter userAdapter = new SimpleAdapter(this, resources, R.layout.user_row, new String[] { "name", "id" }, new int[] { R.id.urowtext, R.id.urowid } );
+       
+    	setListAdapter(userAdapter);
+    }
+    
+    @Override
+    protected void onListItemClick(ListView l, View v, int position, long id) {
+        super.onListItemClick(l, v, position, id);
+
+        HashMap<String, Object> temp = (HashMap<String, Object>)getListView().getItemAtPosition(position); 
+        
+        VentriloInterface.changechannel(VentriloInterface.getuserchannel((Short)temp.get("id")), "");
     }
 }

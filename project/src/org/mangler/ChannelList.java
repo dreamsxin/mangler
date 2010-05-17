@@ -2,35 +2,60 @@ package org.mangler;
 
 import android.app.ListActivity;
 import android.os.Bundle;
-import android.widget.ArrayAdapter;
+import android.view.View;
+import android.widget.ListView;
+import android.widget.SimpleAdapter;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
 
 public class ChannelList extends ListActivity {
+	
+	HashMap<Short, String> channelMap;
 	
 	public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.channel_list);
         
-        int numChannels = -1;
+        channelMap = new HashMap<Short, String>();
         
     	Bundle extras = getIntent().getExtras();
     	if (extras != null) {
-    		numChannels = extras.getInt("numchannels");
+    		channelMap = (HashMap<Short, String>)extras.getSerializable("channels");
     	}
         
-    	fillData(numChannels);
+    	fillData();
         registerForContextMenu(getListView());
     }
-
+    
     // Populate channel list
-    private void fillData(int numChannels) {
-    	String[] channelnames = new String[numChannels];
-    	
-    	for (int i = 1; i <= numChannels; i++) {
-    		channelnames[i - 1] = "Channel " + i;
-    	}
-    	
-    	ArrayAdapter<String> channels = new ArrayAdapter<String>(this, R.layout.channel_row, R.id.crowtext, channelnames);
+    private void fillData() {
+    	ArrayList<HashMap<String, Object>> resources = new ArrayList<HashMap<String, Object>>();
 
-        setListAdapter(channels);
+    	HashMap<String, Object> data;
+       
+    	Iterator<Short> iterator = channelMap.keySet().iterator();
+
+    	while (iterator.hasNext()) {
+    		data = new HashMap<String, Object>();
+    		short id = iterator.next();
+    		data.put("name", channelMap.get(id));
+    		data.put("id", id);
+    		resources.add(data);
+    	}
+       
+    	SimpleAdapter channelAdapter = new SimpleAdapter(this, resources, R.layout.channel_row, new String[] { "name", "id" }, new int[] { R.id.crowtext, R.id.crowid } );
+       
+    	setListAdapter(channelAdapter);
+    }
+    
+    @Override
+    protected void onListItemClick(ListView l, View v, int position, long id) {
+        super.onListItemClick(l, v, position, id);
+
+        HashMap<String, Object> temp = (HashMap<String, Object>)getListView().getItemAtPosition(position); 
+        
+        VentriloInterface.changechannel((Short)temp.get("id"), "");
     }
 }

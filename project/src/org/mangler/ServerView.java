@@ -6,9 +6,14 @@ import android.os.Bundle;
 import android.util.Log;
 import android.widget.TabHost;
 
+import java.util.HashMap;
+
 public class ServerView extends TabActivity {
 	
 	boolean stopEventThread;
+	
+	HashMap<Short, String> channels;
+	HashMap<Short, String> users;
 	
 	String hostname;
 	int port;
@@ -21,6 +26,11 @@ public class ServerView extends TabActivity {
     public void onCreate(Bundle savedInstanceState) {
     	super.onCreate(savedInstanceState);
         setContentView(R.layout.server_view);
+
+        channels = new HashMap<Short, String>();
+        channels.put((short)0, "Lobby");
+        
+        users = new HashMap<Short, String>();
 
         TabHost tabHost = getTabHost();
         TabHost.TabSpec tabSpec;
@@ -36,15 +46,19 @@ public class ServerView extends TabActivity {
     		
     		connect(hostname, port, password, username, phonetic);
     	}
-        
+    	
+    	//tabSpec = tabHost.newTabSpec("talk").setIndicator("Talk").setContent(R.id.talkView);
+        //tabHost.addTab(tabSpec);
+    	
         intent = new Intent().setClass(this, ChannelList.class);
-        intent.putExtra("numchannels", VentriloInterface.channelcount());
+        intent.putExtra("channels", channels);
 
         tabSpec = tabHost.newTabSpec("channels").setIndicator("Channels").setContent(intent);
         tabHost.addTab(tabSpec);
 
         intent = new Intent().setClass(this, UserList.class);
-        intent.putExtra("numusers", VentriloInterface.usercount());
+        intent.putExtra("users", users);
+        
         tabSpec = tabHost.newTabSpec("users").setIndicator("Users").setContent(intent);
         tabHost.addTab(tabSpec);
         
@@ -120,6 +134,13 @@ public class ServerView extends TabActivity {
 		    				break;
 		    				
 		    			case VentriloEvents.V3_EVENT_CHAN_ADD:
+		    				VentriloInterface.getchannel(data, data.channel.id);
+		    				channels.put(data.channel.id, StringFromBytes(data.text.name));
+		    				
+		    				Log.i("mangler", 
+		    						"Channel added / modified: " + Short.toString(data.channel.id) +
+		    						" -> " + StringFromBytes(data.text.name));
+		    				break;
 		    			case VentriloEvents.V3_EVENT_CHAN_MODIFY:
 		    				VentriloInterface.getchannel(data, data.channel.id);
 		    				Log.i("mangler", 
@@ -129,6 +150,8 @@ public class ServerView extends TabActivity {
 		    				
 		    			case VentriloEvents.V3_EVENT_USER_LOGIN:
 		    				VentriloInterface.getuser(data, data.user.id);
+		    				users.put(data.user.id, StringFromBytes(data.text.name));
+		    				
 		    				Log.i("mangler", 
 		    						"User logged in: " + Short.toString(data.user.id) +
 		    						" -> " + StringFromBytes(data.text.name));
