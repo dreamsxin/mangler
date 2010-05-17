@@ -79,10 +79,15 @@ ManglerRecorder::ManglerRecorder(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
     builder->get_widget("recListTree", recListTree);
     recListTree->set_model(recListModel);
     recListTree->append_column("Time", recRecord.time);
+    recListTree->get_column(0)->set_sizing(Gtk::TREE_VIEW_COLUMN_AUTOSIZE);
     recListTree->append_column("Duration", recRecord.duration);
+    recListTree->get_column(1)->set_sizing(Gtk::TREE_VIEW_COLUMN_AUTOSIZE);
     recListTree->append_column("Status", recRecord.status);
+    recListTree->get_column(2)->set_sizing(Gtk::TREE_VIEW_COLUMN_AUTOSIZE);
     recListTree->append_column("Username", recRecord.username);
+    recListTree->get_column(3)->set_sizing(Gtk::TREE_VIEW_COLUMN_AUTOSIZE);
     recListTree->append_column("", recRecord.text);
+    recListTree->get_column(4)->set_sizing(Gtk::TREE_VIEW_COLUMN_AUTOSIZE);
     recListTree->signal_cursor_changed().connect(sigc::mem_fun(this, &ManglerRecorder::recListTree_cursor_changed_cb));
     recListTree->signal_row_activated().connect(sigc::mem_fun(this, &ManglerRecorder::recListTree_row_activated_cb));
 

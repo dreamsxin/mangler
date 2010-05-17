@@ -997,7 +997,7 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                         break;
                     }
                     if (u->id == 0) {
-                        channelTree->updateLobby(c_to_ustring(u->name), c_to_ustring(u->comment), u->phonetic);
+                        channelTree->updateLobby(c_to_ustring(u->name), c_to_ustring(u->comment), c_to_ustring(u->phonetic));
                     } else {
                         if (u->rank_id) {
                             v3_rank *r;
@@ -1644,7 +1644,7 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                             break;
                         }
                         if (u->id == 0) {
-                            channelTree->updateLobby(c_to_ustring(u->name), c_to_ustring(u->comment), u->phonetic);
+                            channelTree->updateLobby(c_to_ustring(u->name), c_to_ustring(u->comment), c_to_ustring(u->phonetic));
                         } else {
                             if (u->rank_id) {
                                 v3_rank *r;

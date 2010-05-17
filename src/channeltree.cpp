@@ -51,12 +51,14 @@ ManglerChannelTree::ManglerChannelTree(Glib::RefPtr<Gtk::Builder> builder)/*{{{*
     Gtk::TreeView::Column* pColumn = Gtk::manage( new Gtk::TreeView::Column("Name") );
     pColumn->pack_start(channelRecord.icon, false);
     pColumn->pack_start(channelRecord.displayName);
+    pColumn->set_sizing(Gtk::TREE_VIEW_COLUMN_AUTOSIZE);
     pColumn->set_expand(true);
     pColumn->set_reorderable(true);
     channelView->append_column(*pColumn);
     channelView->set_expander_column(*pColumn);
     pColumn = Gtk::manage( new Gtk::TreeView::Column("Last Transmit") );
     pColumn->pack_start(channelRecord.last_transmit);
+    pColumn->set_sizing(Gtk::TREE_VIEW_COLUMN_AUTOSIZE);
     pColumn->set_reorderable(true);
     channelView->append_column(*pColumn);
     channelView->signal_columns_changed().connect(sigc::mem_fun(this, &ManglerChannelTree::channelView_columns_changed_cb));

@@ -170,6 +170,7 @@ ManglerAdmin::ManglerAdmin(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
     ChannelEditorTree->set_model(ChannelEditorTreeModel);
     pColumn = Gtk::manage( new Gtk::TreeView::Column("Channels") );
     pColumn->pack_start(adminRecord.name);
+    pColumn->set_sizing(Gtk::TREE_VIEW_COLUMN_AUTOSIZE);
     pColumn->set_expand(true);
     ChannelEditorTree->append_column(*pColumn);
     ChannelEditorTree->signal_cursor_changed().connect(sigc::mem_fun(this, &ManglerAdmin::ChannelTree_cursor_changed_cb));
@@ -242,6 +243,7 @@ ManglerAdmin::ManglerAdmin(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
     UserEditorTree->set_model(UserEditorTreeModel);
     pColumn = Gtk::manage( new Gtk::TreeView::Column("Users") );
     pColumn->pack_start(adminRecord.name);
+    pColumn->set_sizing(Gtk::TREE_VIEW_COLUMN_AUTOSIZE);
     pColumn->set_expand(true);
     UserEditorTree->append_column(*pColumn);
     UserEditorTree->signal_cursor_changed().connect(sigc::mem_fun(this, &ManglerAdmin::UserTree_cursor_changed_cb));
@@ -251,8 +253,10 @@ ManglerAdmin::ManglerAdmin(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
     UserChanAdminTree->set_model(UserChanAdminModel);
     pColumn = Gtk::manage( new Gtk::TreeView::Column("Channels") );
     pColumn->pack_start(adminCheckRecord.name);
+    pColumn->set_sizing(Gtk::TREE_VIEW_COLUMN_AUTOSIZE);
     pColumn->set_expand(true);
     UserChanAdminTree->append_column_editable("Select", adminCheckRecord.on);
+    UserChanAdminTree->get_column(0)->set_sizing(Gtk::TREE_VIEW_COLUMN_AUTOSIZE);
     UserChanAdminTree->append_column(*pColumn);
 
     UserChanAuthModel = Gtk::TreeStore::create(UserChanAuthColumns);
@@ -260,8 +264,10 @@ ManglerAdmin::ManglerAdmin(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
     UserChanAuthTree->set_model(UserChanAuthModel);
     pColumn = Gtk::manage( new Gtk::TreeView::Column("Channels") );
     pColumn->pack_start(adminCheckRecord.name);
+    pColumn->set_sizing(Gtk::TREE_VIEW_COLUMN_AUTOSIZE);
     pColumn->set_expand(true);
     UserChanAuthTree->append_column_editable("Select", adminCheckRecord.on);
+    UserChanAuthTree->get_column(0)->set_sizing(Gtk::TREE_VIEW_COLUMN_AUTOSIZE);
     UserChanAuthTree->append_column(*pColumn);
 
     builder->get_widget("UserInfoSection", UserInfoSection);
@@ -365,8 +371,11 @@ ManglerAdmin::ManglerAdmin(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
     builder->get_widget("RankTree", RankEditorTree);
     RankEditorTree->set_model(RankEditorModel);
     RankEditorTree->append_column("Name", rankRecord.name);
+    RankEditorTree->get_column(0)->set_sizing(Gtk::TREE_VIEW_COLUMN_AUTOSIZE);
     RankEditorTree->append_column("Level", rankRecord.level);
+    RankEditorTree->get_column(1)->set_sizing(Gtk::TREE_VIEW_COLUMN_AUTOSIZE);
     RankEditorTree->append_column("Description", rankRecord.description);
+    RankEditorTree->get_column(2)->set_sizing(Gtk::TREE_VIEW_COLUMN_AUTOSIZE);
     RankEditorTree->signal_cursor_changed().connect(sigc::mem_fun(this, &ManglerAdmin::RankEditorTree_cursor_changed_cb));
 
     builder->get_widget("RankEditor", RankEditor);
@@ -385,10 +394,15 @@ ManglerAdmin::ManglerAdmin(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
     builder->get_widget("BanTree", BanEditorTree);
     BanEditorTree->set_model(BanEditorModel);
     BanEditorTree->append_column("IP Address", banRecord.ip);
+    BanEditorTree->get_column(0)->set_sizing(Gtk::TREE_VIEW_COLUMN_AUTOSIZE);
     BanEditorTree->append_column("Netmask", banRecord.netmask);
+    BanEditorTree->get_column(1)->set_sizing(Gtk::TREE_VIEW_COLUMN_AUTOSIZE);
     BanEditorTree->append_column("User", banRecord.user);
+    BanEditorTree->get_column(2)->set_sizing(Gtk::TREE_VIEW_COLUMN_AUTOSIZE);
     BanEditorTree->append_column("Admin", banRecord.by);
+    BanEditorTree->get_column(3)->set_sizing(Gtk::TREE_VIEW_COLUMN_AUTOSIZE);
     BanEditorTree->append_column("Reason", banRecord.reason);
+    BanEditorTree->get_column(4)->set_sizing(Gtk::TREE_VIEW_COLUMN_AUTOSIZE);
     BanEditorTree->signal_cursor_changed().connect(sigc::mem_fun(this, &ManglerAdmin::BanEditorTree_cursor_changed_cb));
 
     builder->get_widget("BanEditor", BanEditor);
