@@ -318,6 +318,52 @@ _v3_put_msg_rank(void *buffer, _v3_msg_rank *rank) {/*{{{*/
     _v3_func_leave("_v3_put_msg_rank");
     return (buffer - start_buffer);
 }/*}}}*/
+
+int
+_v3_parse_filter(v3_sp_filter *f, char *value) {/*{{{*/
+    char *a, *i, *t, *tmp;
+
+    _v3_func_enter("_v3_parse_filter");
+    a = value;
+    i = strchr(a, ',') + 1;
+    // make sure strchr didn't return null (in which case it would be 1 since
+    // we added 1)
+    if (i == (void *)1) {
+        _v3_func_leave("_v3_parse_filter");
+        return false;
+    }
+    tmp = i - 1;
+    *tmp = 0;
+    t = strchr(i, ',') + 1;
+    if (t == (void *)1) {
+        _v3_func_leave("_v3_parse_filter");
+        return false;
+    }
+    tmp = t - 1;
+    *tmp = 0;
+    f->action = atoi(a);
+    f->interval = atoi(i);
+    f->times = atoi(t);
+    _v3_debug(V3_DEBUG_INFO, "parsed filter: %d, %d, %d", f->action, f->interval, f->times);
+
+    _v3_func_leave("_v3_parse_filter");
+    return true;
+}/*}}}*/
+
+int
+_v3_strip_c0_set(char *s) {/*{{{*/
+    char *start = s;
+
+    _v3_func_enter("_v3_strip_c0_set");
+
+    while (*s) {
+        *s = (*s < 0x20) ? 0x20 : *s;
+        s++;
+    }
+
+    _v3_func_leave("_v3_strip_c0_set");
+    return (s - start);
+}/*}}}*/
 /*}}}*/
 
 /*

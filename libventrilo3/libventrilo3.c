@@ -2038,37 +2038,6 @@ _v3_destroy_decoders(void) {/*{{{*/
     _v3_func_leave("_v3_destroy_decoders");
 }/*}}}*/
 
-uint8_t
-_v3_parse_filter(v3_sp_filter *f, char *value) {/*{{{*/
-    char *a, *i, *t, *tmp;
-
-    _v3_func_enter("_v3_parse_filter");
-    a = value;
-    i = strchr(a, ',') + 1;
-    // make sure strchr didn't return null (in which case it would be 1 since
-    // we added 1)
-    if (i == (void *)1) {
-        _v3_func_leave("_v3_parse_filter");
-        return false;
-    }
-    tmp = i - 1;
-    *tmp = 0;
-    t = strchr(i, ',') + 1;
-    if (t == (void *)1) {
-        _v3_func_leave("_v3_parse_filter");
-        return false;
-    }
-    tmp = t - 1;
-    *tmp = 0;
-    f->action = atoi(a);
-    f->interval = atoi(i);
-    f->times = atoi(t);
-    _v3_debug(V3_DEBUG_INFO, "parsed filter: %d, %d, %d", f->action, f->interval, f->times);
-
-    _v3_func_leave("_v3_parse_filter");
-    return true;
-}/*}}}*/
-
 uint8_t *
 _v3_audio_encode(
         /* pcm input */
@@ -5538,7 +5507,7 @@ v3_send_chat_message(char *message) {/*{{{*/
     v3_event ev;
 
     _v3_func_enter("v3_send_chat_message");
-    if (!v3_is_loggedin()) {
+    if (!v3_is_loggedin() || !message) {
         _v3_func_leave("v3_send_chat_message");
         return;
     }
@@ -5547,6 +5516,7 @@ v3_send_chat_message(char *message) {/*{{{*/
     memset(ev.data, 0, sizeof(v3_event_data));
     ev.type = V3_EVENT_CHAT_MESSAGE;
     strncpy(ev.data->chatmessage, message, sizeof(ev.data->chatmessage) - 1);
+    _v3_strip_c0_set(ev.data->chatmessage);
 
     _v3_evpipe_write(v3_server.evpipe[1], &ev);
     _v3_func_leave("v3_send_chat_message");
@@ -6192,12 +6162,15 @@ v3_set_text(char *comment, char *url, char *integration_text, uint8_t silent) {/
     }
     if (comment) {
         strncpy(ev.text.comment, comment, sizeof(ev.text.comment) - 1);
+        _v3_strip_c0_set(ev.text.comment);
     }
     if (url) {
         strncpy(ev.text.url, url, sizeof(ev.text.comment) - 1);
+        _v3_strip_c0_set(ev.text.url);
     }
     if (integration_text) {
         strncpy(ev.text.integration_text, integration_text, sizeof(ev.text.integration_text) - 1);
+        _v3_strip_c0_set(ev.text.integration_text);
     }
 
     _v3_evpipe_write(v3_server.evpipe[1], &ev);

@@ -401,6 +401,8 @@ int         _v3_get_msg_user(void *offset, _v3_msg_user *user);
 int         _v3_put_msg_user(void *buf, _v3_msg_user *user);
 int         _v3_get_msg_account(void *offset, _v3_msg_account *account);
 int         _v3_put_msg_account(void *buf, _v3_msg_account *account);
+int         _v3_parse_filter(v3_sp_filter *f, char *value);
+int         _v3_strip_c0_set(char *s);
 
 #endif // _LIBVENTRILO3_MESSAGE_H
 
