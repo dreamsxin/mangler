@@ -3186,6 +3186,19 @@ These are useful for developers.</property>
                         <property name="position">0</property>
                       </packing>
                     </child>
+                    <child>
+                      <object class="GtkVScale" id="volumevscale">
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <property name="orientation">vertical</property>
+                        <property name="inverted">True</property>
+                        <property name="digits">0</property>
+                        <property name="value_pos">left</property>
+                      </object>
+                      <packing>
+                        <property name="position">1</property>
+                      </packing>
+                    </child>
                   </object>
                   <packing>
                     <property name="expand">False</property>

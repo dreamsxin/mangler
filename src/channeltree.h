@@ -161,7 +161,8 @@ class ManglerChannelTree
         void muteUserGlobalMenuItem_activate_cb(void);
         void pageUserMenuItem_activate_cb(void);
         void setDefaultChannelMenuItem_activate_cb(void);
-        void volumeAdjustment_value_changed_cb(uint16_t);
+        Glib::ustring volumevscale_format_value_cb(double value);
+        void volumeAdjustment_value_changed_cb(uint16_t id);
         void userSettingsWindow(Gtk::TreeModel::Row row);
 };
 

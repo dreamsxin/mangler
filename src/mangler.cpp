@@ -351,6 +351,7 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
     checkmenuitem->signal_toggled().connect(sigc::mem_fun(this, &Mangler::muteSoundCheckMenuItem_toggled_cb));
     checkmenuitem->set_active(config["MuteSound"].toBool());
     iconified = false;
+    setTooltip();
 
     // Music (Now playing)
     integration = new ManglerIntegration();
@@ -775,18 +776,34 @@ void Mangler::statusIcon_buttonpress_event_cb(GdkEventButton* event) {/*{{{*/
 }
 /*}}}*/
 void Mangler::statusIcon_scroll_event_cb(GdkEventScroll* event) {/*{{{*/
-    int volume;
-    if ((event->type == GDK_SCROLL) && (event->direction == GDK_SCROLL_UP)) {
-        volume = Mangler::config["MasterVolumeLevel"].toInt();
-        volume+=5;
-        Mangler::config["MasterVolumeLevel"] = volume;
-        v3_set_volume_master(Mangler::config["MasterVolumeLevel"].toInt());
-    } else if ((event->type == GDK_SCROLL) && (event->direction == GDK_SCROLL_DOWN)) {
-        volume = Mangler::config["MasterVolumeLevel"].toInt();
-        volume-=5;
-        Mangler::config["MasterVolumeLevel"] = volume;
-        v3_set_volume_master(Mangler::config["MasterVolumeLevel"].toInt());
+    if (event->type != GDK_SCROLL) {
+        return;
     }
+    int volume = config["MasterVolumeLevel"].toInt();
+    switch (event->direction) {
+      case GDK_SCROLL_UP:
+        volume = (volume + 5 > 148) ? 148 : volume + 5;
+        break;
+      case GDK_SCROLL_DOWN:
+        volume = (volume - 5 < 0) ? 0 : volume - 5;
+        break;
+      default:
+        return;
+    }
+    if (volume + 5 > 79 && volume - 5 < 79) {
+        volume = 79;
+    }
+    config["MasterVolumeLevel"] = volume;
+    settings->volumeAdjustment->set_value(volume); 
+    v3_set_volume_master(volume);
+    setTooltip();
+}/*}}}*/
+void Mangler::setTooltip(void) {/*{{{*/
+    Glib::ustring tooltip = "Mangler: volume: ";
+    float value = config["MasterVolumeLevel"].toInt();
+    value = (value > 79) ? ((value-79)/69)*100+100 : (value/79)*100;
+    tooltip += Glib::ustring::format((int)value) + "%" + ((config["MuteSound"].toBool()) ? " (muted)" : "");
+    statusIcon->set_tooltip_text(tooltip);
 }/*}}}*/
 void Mangler::startTransmit(void) {/*{{{*/
     const v3_codec *codec;
@@ -835,6 +852,7 @@ void Mangler::muteSoundCheckButton_toggled_cb(void) {/*{{{*/
     builder->get_widget("muteSoundCheckButton", checkbutton);
     muteSound = checkbutton->get_active();
     config["MuteSound"] = muteSound;
+    setTooltip();
 }/*}}}*/
 
 // Quick Mic Mute
@@ -2055,6 +2073,7 @@ main(int argc, char **argv) {
     gdk_threads_enter();
     Gtk::Main::run(*mangler->manglerWindow);
     gdk_threads_leave();
+    delete mangler;
 
     exit(EXIT_SUCCESS);
     return 0;

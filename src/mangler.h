@@ -172,6 +172,7 @@ class Mangler
         uint32_t getActiveServer(void);
         void setActiveServer(uint32_t row_number);
         void errorDialog(Glib::ustring message);
+        void setTooltip(void);
 
     protected:
         struct _cli_options *options;

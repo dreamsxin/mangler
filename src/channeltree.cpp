@@ -74,7 +74,7 @@ ManglerChannelTree::ManglerChannelTree(Glib::RefPtr<Gtk::Builder> builder)/*{{{*
     channelView->enable_model_drag_source();
     channelView->enable_model_drag_dest();
 
-    // create our right click context menu for users and connect its signal
+    // create our right click context menu for users and connect it's signal
     builder->get_widget("userRightClickMenu", rcmenu_user);
     builder->get_widget("userSettings", menuitem);
     menuitem->signal_activate().connect(sigc::mem_fun(this, &ManglerChannelTree::userSettingsMenuItem_activate_cb));
@@ -106,23 +106,21 @@ ManglerChannelTree::ManglerChannelTree(Glib::RefPtr<Gtk::Builder> builder)/*{{{*
     builder->get_widget("setDefaultChannel", checkmenuitem);
     signalDefaultChannel = checkmenuitem->signal_activate().connect(sigc::mem_fun(this, &ManglerChannelTree::setDefaultChannelMenuItem_activate_cb));
 
-    /*
-     * We have to finish off our user settings window.  I can't find a way to
-     * do this in builder, so let's pack our volume adjustment manually
-     */
-    volumeAdjustment = new Gtk::Adjustment(79, 0, 148, 1, 10, 10);
-    volumevscale = new Gtk::VScale(*volumeAdjustment);
-    volumevscale->add_mark(138, Gtk::POS_LEFT, "200%");
-    volumevscale->add_mark(79, Gtk::POS_LEFT, "100%");
-    volumevscale->add_mark(0, Gtk::POS_LEFT, "0%");
-    volumevscale->set_inverted(true);
-    volumevscale->set_draw_value(false);
-    builder->get_widget("userSettingsVolumeAdjustVBox", vbox);
-    vbox->pack_start(*volumevscale);
+    // set up our user settings volume scale
+    builder->get_widget("volumevscale", volumevscale);
+    volumevscale->signal_format_value().connect(sigc::mem_fun(this, &ManglerChannelTree::volumevscale_format_value_cb));
+    volumeAdjustment = volumevscale->get_adjustment();
+    volumeAdjustment->set_step_increment(1);
+    volumeAdjustment->set_page_increment(10);
+    volumevscale->set_range(0, 148);
+    volumevscale->set_value(79);
+    volumevscale->add_mark(148, Gtk::POS_LEFT, "");
+    volumevscale->add_mark(79, Gtk::POS_LEFT, "");
+    volumevscale->add_mark(0, Gtk::POS_LEFT, "");
 }/*}}}*/
 
 /*
- *  The GTK cell renederer for the channel tree view
+ *  The GTK cell renderer for the channel tree view
  *
  *  This function sets the colors, weight, etc for each row in the tree
  */
@@ -709,6 +707,9 @@ ManglerChannelTree::clear(void) {/*{{{*/
 
 void
 ManglerChannelTree::channelView_row_activated_cb(const Gtk::TreeModel::Path& path, Gtk::TreeViewColumn* column) {/*{{{*/
+    if (!v3_is_loggedin()) {
+        return;
+    }
     v3_channel *channel;
     Glib::ustring password;
     bool password_required = false;
@@ -1155,13 +1156,18 @@ ManglerChannelTree::forgetChannelSavedPassword(uint16_t channel_id) {/*{{{*/
     setChannelSavedPassword(channel_id, "");
 }/*}}}*/
 
+Glib::ustring
+ManglerChannelTree::volumevscale_format_value_cb(double value) {/*{{{*/
+    return Glib::ustring::format((int)((value > 79) ? ((value-79)/69)*100+100 : (value/79)*100)) + "%  ";
+}/*}}}*/
+
 void
 ManglerChannelTree::volumeAdjustment_value_changed_cb(uint16_t id) {/*{{{*/
     if (! mangler->connectedServerName.empty()) {
         v3_user *u;
-        if ((u = v3_get_user(id)) != NULL) {
+        if ((u = v3_get_user(id))) {
             Mangler::config.UserVolume(mangler->connectedServerName, u->name) = volumeAdjustment->get_value();
-            Mangler::config.servers.save();
+            v3_free_user(u);
         }
     }
     v3_set_volume_user(id, (int)volumeAdjustment->get_value());
@@ -1318,7 +1324,7 @@ ManglerChannelTree::userSettingsWindow(Gtk::TreeModel::Row row) {/*{{{*/
         Glib::ustring comment = row[channelRecord.comment];
         Glib::ustring url = row[channelRecord.url];
         bool accept_pages = false, accept_u2u = false, accept_chat = false, allow_recording = false;
-        if ((u = v3_get_user(id)) != NULL) {
+        if ((u = v3_get_user(id))) {
             accept_pages = u->accept_pages;
             accept_u2u = u->accept_u2u;
             accept_chat = u->accept_chat;
