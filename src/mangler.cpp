@@ -1368,10 +1368,10 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                         motdKey = "MOTDhashUser";
                         motdNotebook->set_show_tabs(true);
                         motdNotebook->set_current_page(0);
-                        motdUsers->get_buffer()->set_text(c_to_ustring(ev->data->motd));
+                        motdUsers->get_buffer()->set_text(c_to_ustring(stripMotdRtf(ev->data->motd).c_str()));
                     } else {
                         motdKey = "MOTDhash";
-                        motdGuests->get_buffer()->set_text(c_to_ustring(ev->data->motd));
+                        motdGuests->get_buffer()->set_text(c_to_ustring(stripMotdRtf(ev->data->motd).c_str()));
                     }
                     motdIgnore->set_sensitive(!connectedServerName.empty());
                     motdIgnore->set_active(connectedServerName.length() && config.servers[connectedServerName]["MOTDignore"].toBool());
@@ -2028,6 +2028,172 @@ ManglerError::ManglerError(uint32_t code, Glib::ustring message, Glib::ustring m
     this->code = code;
     this->message = message;
     this->module = module;
+}/*}}}*/
+
+std::string Mangler::stripMotdRtf(const char *input) {/*{{{*/
+    std::string motd; // I use std::string since the RTF in the MOTDs is not unicode
+
+    if (!input || strlen(input) < 5 || memcmp("{\\rtf", input, 5) != 0) // if the motd is not RTF
+    {
+        motd = input;
+        return motd;
+    }
+
+    // Note this function only strips RTF markup to make RTF MOTDs human readable. It doesn't support any advanced interpretation of RTF markup.
+    size_t inputlen = strlen(input);
+    motd.reserve(inputlen); // allocate enough space, the resulting string will be smaller than input length
+    // rtf_status is what is the loop looking at, i.e. do we need to interpret controls
+    enum {RTF_TEXT, RTF_CONTROL, RTF_CONTROL_END, RTF_IGNORE, RTF_BIN} rtf_status = RTF_TEXT;
+
+    size_t ignorecount; // number of closing braces to ignore for "\*"
+    size_t controlpos; // stores the position of the first character of a control word
+
+    for (size_t pos = 0; pos < inputlen; ++pos)
+    {
+        if (rtf_status == RTF_IGNORE)
+        {
+            if (inputlen - pos > 4 && memcmp("\\bin", input + pos, 4) == 0 && input[pos + 4] >= '0' && input[pos + 4] <= '9')
+            { // Encountered some binary data that we have to ignore. We have to ignore this a special way since the data may contain special characters
+                pos += 4;
+                size_t binskip = 0; // how much data to skip
+                for(; input[pos] >= '0' && input[pos] <= '9'; ++pos)
+                {
+                    binskip = (binskip * 10) + (input[pos] - '0');
+                }
+                pos += binskip;
+                continue; // every \binN has a space between it and its binary data, continue skips that too.
+            }
+            if (input[pos] == '{') ++ignorecount;
+            if (input[pos] == '}' && --ignorecount == 0) rtf_status = RTF_TEXT; // we can stop ignoring now
+            continue; // still ignoring, or ignore the ending brace;
+        }
+
+        if (rtf_status == RTF_CONTROL)
+        {
+            if ((input[pos] >= 'a' && input[pos] <= 'z') || // valid characters in a control word are a-z, A-Z, 0-9, and - (for negative numbers)
+                (input[pos] >= 'A' && input[pos] <= 'Z') ||
+                (input[pos] >= '0' && input[pos] <= '9') ||
+                (input[pos] == '\'' && pos == controlpos) || // apostrophe is valid, but only as the first character of a control word
+                input[pos] == '-') continue;
+            else rtf_status = RTF_CONTROL_END; // Any control word has ended
+        }
+
+        if (rtf_status == RTF_CONTROL_END)
+        {
+            // note all RTF control words are case-sensitive. So memcmp can be used instead of stricmp
+            size_t controllen = pos - controlpos;
+            // check all exact matches first
+            if (controllen == 3 && input[controlpos] == '\'') // 8-bit hex character
+            {
+                char hh = -1, h; // hh is the full interpreted hex character, h is a working value for each hex digit
+                h = input[controlpos + 1];
+                if (h >= '0' && h <= '9') hh = h - '0'; // temporarily store the value and check for errors in the second digit
+                else if (h >= 'a' && h <= 'f') hh = h - 'a' + 10;
+                else if (h >= 'A' && h <= 'F') hh = h - 'A' + 10; // technically only lowercase letters are supported by RTF
+
+                h = input[controlpos + 2];
+                if (h >= '0' && h <= '9') h = h - '0'; // temporarily store the value
+                else if (h >= 'a' && h <= 'f') h = h - 'a' + 10;
+                else if (h >= 'A' && h <= 'F') h = h - 'A' + 10; // technically only lowercase letters are supported by RTF
+                else h = -1;
+
+                if (hh >= 0 && h >= 0) // both hex digits were valid
+                {
+                    hh = (hh * 16) + h; // convert each value to the whole character
+                    motd.append(1, hh);
+                }
+            }
+            else if (controllen == 3 && memcmp("tab", input + controlpos, 3) == 0)
+            {
+                motd.append(1, '\t'); // in case Mangler's motd window doesn't properly handle tabs, this can be changed to (4, ' ') for 4 spaces
+            }
+            else if (controllen == 3 && memcmp("par", input + controlpos, 3) == 0)
+            {
+                motd.append("\r\n");
+            }
+            else if (controllen == 4 && (memcmp("line", input + controlpos, 4) == 0 ||
+                memcmp("page", input + controlpos, 4) == 0) || memcmp("sect", input + controlpos, 4) == 0)
+            {
+                motd.append("\r\n");
+            }
+            else if (controllen == 7 && (memcmp("fonttbl", input + controlpos, 7) == 0 || // nonvisible formatting table
+                memcmp("filetbl", input + controlpos, 4) == 0)) // sub-documents table
+            {
+                ignorecount = 1;
+                rtf_status = RTF_IGNORE; // we're going to ignore a table
+            }
+            else if (controllen == 8 && memcmp("colortbl", input + controlpos, 8) == 0) // nonvisible formatting table
+            {
+                ignorecount = 1;
+                rtf_status = RTF_IGNORE; // we're going to ignore a table
+            }
+            else if (controllen == 10 && (memcmp("stylesheet", input + controlpos, 10) == 0 || // nonvisible formatting table
+                memcmp("listtables", input + controlpos, 10) == 0)) // stores formatting information for lists
+            {
+                ignorecount = 1;
+                rtf_status = RTF_IGNORE; // we're going to ignore a table
+            }
+            else if (controllen == 6 && memcmp("revtbl", input + controlpos, 6) == 0) // This table contains nonvisible information about revisions
+            {
+                ignorecount = 1;
+                rtf_status = RTF_IGNORE; // we're going to ignore a table
+            }
+            else if (controllen == 4 && memcmp("info", input + controlpos, 4) == 0) // The info table contains nonvisible metadata, like author etc..
+            {
+                ignorecount = 1;
+                rtf_status = RTF_IGNORE; // we're going to ignore a table
+            }
+            // Now start to look for partial matches
+            else if (controllen > 3 && memcmp("bin", input + controlpos, 3) == 0 && input[controlpos + 3] >= '0' && input[controlpos + 3] <= '9')
+            { // We encountered some binary data that we need to skip
+                size_t binskip = 0; // how much data to skip
+                for (size_t bpos = controlpos + 3; input[bpos] >= '0' && input [bpos] <= '9'; ++bpos)
+                {
+                    binskip = (binskip * 10) + (input[bpos] - '0');
+                }
+                pos += binskip;
+                rtf_status = RTF_TEXT;
+                continue;
+            }
+
+            if (input[pos] != ' ') --pos; // we need to reevaluate the delimiter if it wasn't a space
+            if (rtf_status != RTF_IGNORE) rtf_status = RTF_TEXT;
+            continue;
+        }
+
+        if (rtf_status == RTF_TEXT)
+        {
+            if (input[pos] == '\\')
+            {
+                // First check for "\{", "\}", "\\" and "\*", which each would break this function if not explicitly looked for right away
+                if (inputlen - pos < 2) break; // we need at least 2 characters, probably a malformed RTF message.
+                ++pos; // increment it here once, so we don't have to add one for each check
+                if (input[pos] == '{' || input[pos] == '}' || input[pos] == '\\')
+                {
+                    motd.append(1, input[pos]);
+                    continue;
+                }
+                else if (input[pos] == '*')
+                {
+                    ignorecount = 1;
+                    rtf_status = RTF_IGNORE;
+                    continue;
+                }
+                else
+                {
+                    controlpos = pos--; // the control word starts at the incremented pos, but we need to decrement it again to examine it
+                    rtf_status = RTF_CONTROL;
+                    continue;
+                }
+            }
+            else if (input[pos] != '{' && input[pos] != '}' && // we're just ignoring groups since we're not formatting
+                    input[pos] != '\r' && input[pos] != '\n') // ignore CRs and LFs in the RTF text
+            {
+                motd.append(1, input[pos]);
+            }
+        }
+    }
+    return motd;
 }/*}}}*/
 
 int

@@ -4634,9 +4634,10 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                 _v3_lock_server();
                 if (m->message_id + 1 > m->message_num) {
                     _v3_debug(V3_DEBUG_PACKET_PARSE, "received %d packet but max packets is %d", m->message_id, m->message_num);
-                    _v3_func_leave("_v3_get_0x50");
+                    _v3_destroy_packet(msg);
                     _v3_unlock_server();
-                    return false;
+                    _v3_func_leave("_v3_get_0x50");
+                    return V3_MALFORMED;
                 }
                 if (m->guest_motd_flag == 1 && &v3_server.guest_motd != NULL) {
                     motd = &v3_server.guest_motd;
@@ -4663,14 +4664,13 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                     // At this point we have our motd, may want to notify the user here :)
                     v3_event *ev = _v3_create_event(V3_EVENT_DISPLAY_MOTD);
                     ev->flags = m->guest_motd_flag;
-                    strncpy(ev->data->motd, *motd, 2047);
+                    strncpy(ev->data->motd, *motd, sizeof(ev->data->motd) - 1);
                     v3_queue_event(ev);
                 }
-                _v3_destroy_packet(msg);
-                _v3_unlock_server();
-                _v3_func_leave("_v3_process_message");
-                return V3_MALFORMED;
             }
+            _v3_destroy_packet(msg);
+            _v3_unlock_server();
+            _v3_func_leave("_v3_process_message");
             return V3_OK;/*}}}*/
         case 0x52:/*{{{*/
             if (!_v3_get_0x52(msg)) {

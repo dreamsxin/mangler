@@ -173,6 +173,7 @@ class Mangler
         void setActiveServer(uint32_t row_number);
         void errorDialog(Glib::ustring message);
         void setTooltip(void);
+        std::string stripMotdRtf(const char *input); 
 
     protected:
         struct _cli_options *options;

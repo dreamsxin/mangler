@@ -427,7 +427,7 @@ union _v3_event_data {
     } rank;
     int16_t sample16[16384];
     uint8_t sample[32768];
-    char    motd[2048];
+    char    motd[32768];
     char    chatmessage[256];
     char    reason[128];
 };
