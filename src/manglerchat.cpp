@@ -121,14 +121,11 @@ void ManglerChat::addMessage(Glib::ustring message) {/*{{{*/
         t = tv.tv_sec;
         tmp = localtime(&t);
         if (strftime(timestamp, sizeof(timestamp), "%T", tmp) != 0) {
-            message = "[" + (Glib::ustring)timestamp + "] " + message;
+            message = "[" + Glib::ustring(timestamp) + "] " + message;
         }
     }
     buffer->insert(buffer->end(), message + "\n");
-
-    Gtk::TextIter end = buffer->end();
-    Glib::RefPtr<Gtk::TextMark> end_mark = buffer->create_mark(end);
-    chatBox->scroll_to(end_mark, 0.0);
+    chatBox->scroll_to(buffer->create_mark(buffer->end()), 0.0);
 }/*}}}*/
 
 Glib::ustring ManglerChat::nameFromId(uint16_t user_id) {/*{{{*/

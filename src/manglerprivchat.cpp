@@ -35,6 +35,7 @@ ManglerPrivChat::ManglerPrivChat(uint16_t userid) {
     builder = Gtk::Builder::create_from_string(ManglerUI, "privChatWindow");
     builder->get_widget("privChatWindow", chatWindow);
     chatWindow->signal_hide().connect(sigc::mem_fun(this, &ManglerPrivChat::chatWindowCloseChat_clicked_cb));
+    chatWindow->set_title(chatWindow->get_title() + " - " + nameFromId(userid));
     this->remoteUserId = userid;
 
     builder->get_widget("privSendChat", sendButton);
@@ -51,7 +52,7 @@ ManglerPrivChat::ManglerPrivChat(uint16_t userid) {
 }
 
 void ManglerPrivChat::chatWindowSendChat_clicked_cb(void) {
-    if(chatMessage->get_text_length()) {
+    if (chatMessage->get_text_length()) {
         v3_send_privchat_message(remoteUserId, (char *)ustring_to_c(chatMessage->get_text()).c_str());
         chatMessage->set_text("");
     }
@@ -63,12 +64,22 @@ void ManglerPrivChat::chatWindowCloseChat_clicked_cb(void) {
 }
 
 void ManglerPrivChat::addMessage(Glib::ustring message) {
-    Glib::RefPtr<Gtk::TextBuffer> buffer = chatBox->get_buffer();
-    buffer->set_text(buffer->get_text() + message + "\n");
+    char timestamp[200];
+    time_t t;
+    struct tm *tmp;
+    struct timeval tv;
 
-    Gtk::TextIter end = buffer->end();
-    Glib::RefPtr<Gtk::TextMark> end_mark = buffer->create_mark(end);
-    chatBox->scroll_to(end_mark, 0.0);
+    Glib::RefPtr<Gtk::TextBuffer> buffer = chatBox->get_buffer();
+    if (Mangler::config["ChatTimestamps"].toBool()) {
+        gettimeofday(&tv, NULL);
+        t = tv.tv_sec;
+        tmp = localtime(&t);
+        if (strftime(timestamp, sizeof(timestamp), "%T", tmp) != 0) {
+            message = "[" + Glib::ustring(timestamp) + "] " + message;
+        }
+    }
+    buffer->insert(buffer->end(), message + "\n");
+    chatBox->scroll_to(buffer->create_mark(buffer->end()), 0.0);
 }
 
 void ManglerPrivChat::remoteClosed() {
@@ -104,46 +115,3 @@ Glib::ustring ManglerPrivChat::nameFromId(uint16_t user_id) {
     return name;
 }
 
-/*
-void ManglerChat::chatClose_clicked_cb() {
-    chatWindow->hide();
-}
-
-void ManglerChat::addRconMessage(Glib::ustring message) {
-    addMessage("[RCON]: " + message);
-}
-
-void ManglerChat::addUser(uint16_t user_id) {
-    if (isUserInChat(user_id)) {
-        return;
-    }
-    Glib::ustring name = nameFromId(user_id);
-    chatUserIter = chatUserTreeModel->append();
-    chatUserRow = *chatUserIter;
-    chatUserRow[chatUserColumns.id] = user_id;
-    chatUserRow[chatUserColumns.name] = name;
-    addMessage("* " + name + " has joined the chat.");
-}
-
-void ManglerChat::removeUser(uint16_t user_id) {
-    Gtk::TreeModel::Row row;
-    Gtk::TreeModel::Children::iterator iter = chatUserTreeModel->children().begin();
-
-    while (iter != chatUserTreeModel->children().end()) {
-        row = *iter;
-        uint32_t rowId = row[chatUserColumns.id];
-        if (rowId == user_id) {
-            addMessage("* " + row[chatUserColumns.name] + " has left the chat.");
-            chatUserTreeModel->erase(row);
-            return;
-        }
-        iter++;
-    }
-    return;
-}
-
-void ManglerChat::clear(void) {
-    chatUserTreeModel->clear();
-}
-
-*/
