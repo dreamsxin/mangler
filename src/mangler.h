@@ -67,6 +67,7 @@ class Mangler
 {
     public:
         Mangler(struct _cli_options *options);
+        ~Mangler();
         void onDisconnectHandler(void);
         void startTransmit(void);
         void stopTransmit(void);

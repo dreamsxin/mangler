@@ -374,6 +374,24 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
     Glib::signal_timeout().connect(sigc::mem_fun(*this, &Mangler::getNetworkEvent), 10);
 }/*}}}*/
 
+Mangler::~Mangler() {/*{{{*/
+    delete channelTree;
+    delete network;
+    delete settings;
+    delete audioControl;
+    delete serverList;
+    delete chat;
+    delete admin;
+    delete recorder;
+    delete integration;
+#ifdef HAVE_XOSD
+    delete osd;
+#endif
+#ifdef HAVE_G15
+    delete g15;
+#endif
+}/*}}}*/
+
 /*
  * Main Window Callbacks
  */
