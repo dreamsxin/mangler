@@ -439,6 +439,7 @@ ManglerAdmin::ManglerAdmin(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
     /* set up the editor lists */
     clear();
 
+    tmpldialog = NULL;
     isOpen = false;
 }/*}}}*/
 ManglerAdmin::~ManglerAdmin() {/*{{{*/
