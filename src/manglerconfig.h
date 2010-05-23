@@ -35,7 +35,7 @@ class ManglerConfig {
         //Glib::Mutex     mutex;
         ManglerConfig();
         ~ManglerConfig();
-        std::string confdir() const;
+        static std::string confdir();
         void save();
         std::vector<int> PushToTalkXKeyCodes() const;
         iniValue &operator[](const string &configVar);

@@ -97,7 +97,7 @@ ManglerRecorder::ManglerRecorder(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
     builder->get_widget("recInfoSave", button);
     button->signal_clicked().connect(sigc::mem_fun(this, &ManglerRecorder::recInfoDialog_save_clicked_cb));
 
-    recdir = mangler->config.confdir() + "/recordings";
+    recdir = ManglerConfig::confdir() + "/recordings";
     DIR *testdir;
     if ((testdir = opendir(recdir.c_str()))) {
         closedir(testdir);
@@ -114,6 +114,7 @@ ManglerRecorder::ManglerRecorder(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
 }/*}}}*/
 ManglerRecorder::~ManglerRecorder() {/*{{{*/
     reset();
+    delete filedialog;
 }/*}}}*/
 
 void

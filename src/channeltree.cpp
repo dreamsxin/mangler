@@ -736,12 +736,11 @@ ManglerChannelTree::channelView_row_activated_cb(const Gtk::TreeModel::Path& pat
         }
         if (id != 0) {
             channel = v3_get_channel(id);
-            const v3_permissions *perms = v3_get_permissions();
             if (! channel) {
                 fprintf(stderr, "failed to retrieve channel information for channel id %d\n", id);
                 return;
             }
-            if (!perms->srv_admin && (pw_cid = v3_channel_requires_password(channel->id))) {  // Channel is password protected
+            if (!mangler->isAdmin && (pw_cid = v3_channel_requires_password(channel->id))) { // channel is password protected
                 password_required = true;
                 password = getChannelSavedPassword(pw_cid);
                 // if we didn't find a saved password, prompt the user
@@ -824,7 +823,7 @@ ManglerChannelTree::channelView_buttonpress_event_cb(GdkEventButton* event) {/*{
                     builder->get_widget("muteUser", checkmenuitem);
                     checkmenuitem->hide();
                     builder->get_widget("userRightClickMenuSeparator", menuitem);
-                    if ((perms->srv_admin || isChanAdmin) && !isOurPhantom) {
+                    if ((mangler->isAdmin || isChanAdmin) && !isOurPhantom) {
                         menuitem->show();
                     } else {
                         menuitem->hide();
@@ -833,7 +832,7 @@ ManglerChannelTree::channelView_buttonpress_event_cb(GdkEventButton* event) {/*{
                     signalChannelMute.block();
                     checkmenuitem->set_active(user->channel_mute);
                     signalChannelMute.unblock();
-                    if ((perms->srv_admin || isChanAdmin) && !isOurPhantom) {
+                    if ((mangler->isAdmin || isChanAdmin) && !isOurPhantom) {
                         checkmenuitem->show();
                     } else {
                         checkmenuitem->hide();
@@ -842,7 +841,7 @@ ManglerChannelTree::channelView_buttonpress_event_cb(GdkEventButton* event) {/*{
                     signalGlobalMute.block();
                     checkmenuitem->set_active(user->global_mute);
                     signalGlobalMute.unblock();
-                    if (perms->srv_admin && !isOurPhantom) {
+                    if (mangler->isAdmin && !isOurPhantom) {
                         checkmenuitem->show();
                     } else {
                         checkmenuitem->hide();
@@ -880,7 +879,7 @@ ManglerChannelTree::channelView_buttonpress_event_cb(GdkEventButton* event) {/*{
                         checkmenuitem->hide();
                     }
                     builder->get_widget("userRightClickMenuSeparator", menuitem);
-                    if ((perms->srv_admin || isChanAdmin || perms->kick_user || perms->ban_user) && !isOurPhantom) {
+                    if ((mangler->isAdmin || isChanAdmin || perms->kick_user || perms->ban_user) && !isOurPhantom) {
                         menuitem->show();
                     } else {
                         menuitem->hide();
@@ -889,7 +888,7 @@ ManglerChannelTree::channelView_buttonpress_event_cb(GdkEventButton* event) {/*{
                     signalChannelMute.block();
                     checkmenuitem->set_active(user->channel_mute);
                     signalChannelMute.unblock();
-                    if ((perms->srv_admin || isChanAdmin) && !isOurPhantom) {
+                    if ((mangler->isAdmin || isChanAdmin) && !isOurPhantom) {
                         checkmenuitem->show();
                     } else {
                         checkmenuitem->hide();
@@ -898,19 +897,19 @@ ManglerChannelTree::channelView_buttonpress_event_cb(GdkEventButton* event) {/*{
                     signalGlobalMute.block();
                     checkmenuitem->set_active(user->global_mute);
                     signalGlobalMute.unblock();
-                    if (perms->srv_admin && !isOurPhantom) {
+                    if (mangler->isAdmin && !isOurPhantom) {
                         checkmenuitem->show();
                     } else {
                         checkmenuitem->hide();
                     }
                     builder->get_widget("kickUser", menuitem);
-                    if ((perms->srv_admin || perms->kick_user) && !isOurPhantom) {
+                    if ((mangler->isAdmin || perms->kick_user) && !isOurPhantom) {
                         menuitem->show();
                     } else {
                         menuitem->hide();
                     }
                     builder->get_widget("banUser", menuitem);
-                    if ((perms->srv_admin || perms->ban_user) && !isOurPhantom) {
+                    if ((mangler->isAdmin || perms->ban_user) && !isOurPhantom) {
                         menuitem->show();
                     } else {
                         menuitem->hide();
@@ -1245,12 +1244,13 @@ ManglerChannelStore::row_draggable_vfunc(const Gtk::TreeModel::Path& path) const
     const v3_permissions *perms = v3_get_permissions();
     ManglerChannelStore* unconstThis = const_cast<ManglerChannelStore*>(this);
     const_iterator iter = unconstThis->get_iter(path);
-    if (!iter)
+    if (!iter) {
         return Gtk::TreeStore::row_draggable_vfunc(path);
-
+    }
     Row row = *iter;
-    if (row[c.isUser] && perms->move_user && (perms->srv_admin || v3_is_channel_admin(v3_get_user_channel(row[c.id]))))
+    if (row[c.isUser] && perms->move_user && (mangler->isAdmin || v3_is_channel_admin(v3_get_user_channel(row[c.id])))) {
         return true;
+    }
     return false;
 }/*}}}*/
 

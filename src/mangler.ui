@@ -44,11 +44,15 @@
                       </object>
                     </child>
                     <child>
-                      <object class="GtkSeparatorMenuItem" id="adminSeparatorMenuItem"/>
+                      <object class="GtkSeparatorMenuItem" id="adminSeparatorMenuItem">
+                        <property name="visible">True</property>
+                      </object>
                     </child>
                     <child>
                       <object class="GtkImageMenuItem" id="adminLoginMenuItem">
                         <property name="label" translatable="yes">_Admin Login</property>
+                        <property name="visible">True</property>
+                        <property name="sensitive">False</property>
                         <property name="use_underline">True</property>
                         <property name="image">image7</property>
                         <property name="use_stock">False</property>
@@ -56,7 +60,9 @@
                     </child>
                     <child>
                       <object class="GtkImageMenuItem" id="adminWindowMenuItem">
-                        <property name="label" translatable="yes">_Admin Window</property>
+                        <property name="label" translatable="yes">Admin _Window</property>
+                        <property name="visible">True</property>
+                        <property name="sensitive">False</property>
                         <property name="use_underline">True</property>
                         <property name="image">image5</property>
                         <property name="use_stock">False</property>
@@ -1181,8 +1187,9 @@ to the server to set the default channel</property>
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkCheckButton" id="serverListPersistentChannelCheckButton">
-                            <property name="label" translatable="yes">Restore previous channel on reconnect</property>
+                          <object class="GtkCheckButton" id="serverListPersistentCommentsCheckButton">
+                            <property name="label" translatable="yes">Restore previous comment on reconnect</property>
+                            <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">False</property>
                             <property name="draw_indicator">True</property>
@@ -1195,9 +1202,8 @@ to the server to set the default channel</property>
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkCheckButton" id="serverListPersistentCommentsCheckButton">
-                            <property name="label" translatable="yes">Restore previous comment on reconnect</property>
-                            <property name="visible">True</property>
+                          <object class="GtkCheckButton" id="serverListPersistentChannelCheckButton">
+                            <property name="label" translatable="yes">Restore previous channel on reconnect</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">False</property>
                             <property name="draw_indicator">True</property>
@@ -1210,7 +1216,7 @@ to the server to set the default channel</property>
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkHBox" id="hbox10">
+                          <object class="GtkHBox" id="serverListCharsetHBox">
                             <property name="visible">True</property>
                             <property name="spacing">5</property>
                             <child>
@@ -1225,7 +1231,7 @@ to the server to set the default channel</property>
                             </child>
                             <child>
                               <object class="GtkComboBoxEntry" id="serverListCharsetComboBox">
-                                <property name="height_request">20</property>
+                                <property name="height_request">1</property>
                                 <property name="visible">True</property>
                                 <accessibility>
                                   <relation type="labelled-by" target="serverListCharsetLabel"/>
@@ -1551,6 +1557,7 @@ who figured out the encryption.
               <object class="GtkEntry" id="qcUsername">
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
+                <property name="max_length">31</property>
                 <property name="invisible_char">&#x25CF;</property>
                 <property name="activates_default">True</property>
                 <accessibility>
@@ -1568,6 +1575,7 @@ who figured out the encryption.
               <object class="GtkEntry" id="qcPassword">
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
+                <property name="max_length">31</property>
                 <property name="visibility">False</property>
                 <property name="invisible_char">&#x25CF;</property>
                 <property name="activates_default">True</property>
@@ -2910,6 +2918,7 @@ These are useful for developers.</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="has_focus">True</property>
+                <property name="max_length">31</property>
                 <property name="visibility">False</property>
                 <property name="invisible_char">&#x25CF;</property>
                 <property name="activates_default">True</property>
@@ -3981,6 +3990,7 @@ These are useful for developers.</property>
               <object class="GtkEntry" id="reasonEntry">
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
+                <property name="max_length">127</property>
                 <property name="invisible_char">&#x25CF;</property>
                 <property name="activates_default">True</property>
                 <accessibility>
@@ -5925,20 +5935,21 @@ These are useful for developers.</property>
                             </child>
                             <child>
                               <object class="GtkHBox" id="hbox11">
+                                <property name="visible">True</property>
                                 <property name="spacing">5</property>
                                 <child>
-                                  <object class="GtkLabel" id="label21">
+                                  <object class="GtkLabel" id="UserTemplateLabel">
                                     <property name="visible">True</property>
                                     <property name="label" translatable="yes">Template:</property>
                                   </object>
                                   <packing>
                                     <property name="expand">False</property>
-                                    <property name="padding">2</property>
                                     <property name="position">0</property>
                                   </packing>
                                 </child>
                                 <child>
-                                  <object class="GtkComboBoxEntry" id="UserTemplate">
+                                  <object class="GtkComboBox" id="UserTemplate">
+                                    <property name="height_request">1</property>
                                     <property name="visible">True</property>
                                   </object>
                                   <packing>
@@ -5958,8 +5969,8 @@ These are useful for developers.</property>
                                   </packing>
                                 </child>
                                 <child>
-                                  <object class="GtkButton" id="UserTemplateSave">
-                                    <property name="label" translatable="yes">Save</property>
+                                  <object class="GtkButton" id="UserTemplateDelete">
+                                    <property name="label" translatable="yes">Delete</property>
                                     <property name="visible">True</property>
                                     <property name="can_focus">True</property>
                                     <property name="receives_default">True</property>
@@ -5969,11 +5980,33 @@ These are useful for developers.</property>
                                     <property name="position">3</property>
                                   </packing>
                                 </child>
+                                <child>
+                                  <object class="GtkVSeparator" id="UserTemplateSeparator">
+                                    <property name="visible">True</property>
+                                    <property name="orientation">vertical</property>
+                                  </object>
+                                  <packing>
+                                    <property name="expand">False</property>
+                                    <property name="position">4</property>
+                                  </packing>
+                                </child>
+                                <child>
+                                  <object class="GtkButton" id="UserTemplateSave">
+                                    <property name="label" translatable="yes">Save...</property>
+                                    <property name="visible">True</property>
+                                    <property name="can_focus">True</property>
+                                    <property name="receives_default">True</property>
+                                  </object>
+                                  <packing>
+                                    <property name="expand">False</property>
+                                    <property name="position">5</property>
+                                  </packing>
+                                </child>
                               </object>
                               <packing>
                                 <property name="expand">False</property>
                                 <property name="fill">False</property>
-                                <property name="padding">2</property>
+                                <property name="padding">3</property>
                                 <property name="position">1</property>
                               </packing>
                             </child>
@@ -8478,6 +8511,7 @@ These are useful for developers.</property>
                   <object class="GtkEntry" id="recInfoByEntry">
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
+                    <property name="max_length">127</property>
                     <property name="invisible_char">&#x25CF;</property>
                     <accessibility>
                       <relation type="labelled-by" target="recInfoByLabel"/>

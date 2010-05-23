@@ -124,18 +124,18 @@ class iniSection : public map<string, iniValue, iniCaselessCmp> {
     bool contains(const string &s) const;
     iniValue::size_type count(const string &s) const;
     protected:
-    ostream &save(ostream &out) const;
-    static vector<string> parseLine(const string &s);
-    static ostream &saveLine(ostream &out, const string &keyName, const string &value);
+    ostream &save(ostream &out, bool quotes) const;
+    static vector<string> parseLine(string s, bool quotes);
+    static ostream &saveLine(ostream &out, const string &keyName, const string &value, bool quotes);
     static string quoteString(const string &s);
-    static vector<string> tokenizeString(const string &s);
     static void trimString(string &s);
+    static void unquoteString(string &s);
 };
 
 class iniFile : public map<string, iniSection, iniCaselessCmp> {
     public:
     iniFile();
-    iniFile(const string &filename);
+    iniFile(const string &filename, bool rdonly = false, bool quotes = true);
     void setFilename(const string &filename);
     string getFilename() const;
     istream &load(istream &in);
@@ -150,6 +150,8 @@ class iniFile : public map<string, iniSection, iniCaselessCmp> {
     private:
     string mFilename;
     pthread_mutex_t mymutex;
+    bool rdonly;
+    bool quotes;
 };
 
 istream &operator>>(istream &in, iniFile &f);

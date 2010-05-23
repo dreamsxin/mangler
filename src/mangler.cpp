@@ -190,13 +190,11 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
     builder->get_widget("serverListMenuItem", menuitem);
     menuitem->signal_activate().connect(sigc::mem_fun(this, &Mangler::serverListButton_clicked_cb));
 
-    builder->get_widget("adminSeparatorMenuItem", menuitem);
-
     builder->get_widget("adminLoginMenuItem", menuitem);
-    menuitem->signal_activate().connect(sigc::mem_fun(this, &Mangler::adminButton_clicked_cb));
+    menuitem->signal_activate().connect(sigc::mem_fun(this, &Mangler::adminLoginMenuItem_activate_cb));
 
     builder->get_widget("adminWindowMenuItem", menuitem);
-    menuitem->signal_activate().connect(sigc::mem_fun(this, &Mangler::adminWindowMenuItem_activated_cb));
+    menuitem->signal_activate().connect(sigc::mem_fun(this, &Mangler::adminWindowMenuItem_activate_cb));
 
     builder->get_widget("settingsMenuItem", menuitem);
     menuitem->signal_activate().connect(sigc::mem_fun(this, &Mangler::settingsButton_clicked_cb));
@@ -320,6 +318,8 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
     builder->get_widget("serverSelectComboBox", combobox);
     combobox->set_model(serverList->serverListTreeModel);
     combobox->pack_start(serverList->serverListColumns.name);
+    Gtk::CellRendererText *renderer = (Gtk::CellRendererText*)(*(combobox->get_cells().begin()));
+    renderer->property_ellipsize() = Pango::ELLIPSIZE_END;
     int serverSelection = 0, ctr = 0;
     iniFile::iterator server = config.servers.begin();
     while (server != config.servers.end()) {
@@ -454,6 +454,7 @@ void Mangler::onDisconnectHandler(void) {/*{{{*/
         builder->get_widget("adminButton", button);
         button->set_sensitive(false);
         builder->get_widget("adminLoginMenuItem", menuitem);
+        menuitem->set_label("_Admin Login");
         menuitem->set_sensitive(false);
         builder->get_widget("adminWindowMenuItem", menuitem);
         menuitem->set_sensitive(false);
@@ -496,12 +497,6 @@ void Mangler::onDisconnectHandler(void) {/*{{{*/
         mangler->statusIcon->set(icons["tray_icon_grey"]);
         isAdmin = false;
         isChanAdmin = false;
-        builder->get_widget("adminSeparatorMenuItem", menuitem);
-        menuitem->hide();
-        builder->get_widget("adminLoginMenuItem", menuitem);
-        menuitem->hide();
-        builder->get_widget("adminWindowMenuItem", menuitem);
-        menuitem->hide();
         motdWindow->hide();
         motdNotebook->set_current_page(1);
         motdNotebook->set_show_tabs(false);
@@ -687,7 +682,15 @@ void Mangler::adminButton_clicked_cb(void) {/*{{{*/
         admin->show();
     }
 }/*}}}*/
-void Mangler::adminWindowMenuItem_activated_cb(void) {/*{{{*/
+void Mangler::adminLoginMenuItem_activate_cb(void) {/*{{{*/
+    builder->get_widget("adminLoginMenuItem", menuitem);
+    if (menuitem->get_label() == "_Admin Logout") {
+        v3_admin_logout();
+    } else {
+        adminButton_clicked_cb();
+    }
+}/*}}}*/
+void Mangler::adminWindowMenuItem_activate_cb(void) {/*{{{*/
     admin->show();
 }/*}}}*/
 void Mangler::settingsButton_clicked_cb(void) {/*{{{*/
@@ -750,7 +753,7 @@ void Mangler::hideGuestFlagMenuItem_toggled_cb(void) {/*{{{*/
 }/*}}}*/
 void Mangler::motdMenuItem_activate_cb(void) {/*{{{*/
     motdIgnore->set_sensitive(!connectedServerName.empty());
-    motdIgnore->set_active(connectedServerName.length() && config.servers[connectedServerName]["MOTDignore"].toBool());
+    motdIgnore->set_active(connectedServerName.length() && config.servers[connectedServerName]["MotdIgnore"].toBool());
     motdOkButton->grab_focus();
     motdWindow->present();
 }/*}}}*/
@@ -812,7 +815,7 @@ void Mangler::statusIcon_scroll_event_cb(GdkEventScroll* event) {/*{{{*/
         volume = 79;
     }
     config["MasterVolumeLevel"] = volume;
-    settings->volumeAdjustment->set_value(volume); 
+    settings->volumeAdjustment->set_value(volume);
     v3_set_volume_master(volume);
     setTooltip();
 }/*}}}*/
@@ -924,7 +927,7 @@ void Mangler::qcCancelButton_clicked_cb(void) {/*{{{*/
 // MOTD Window Callbacks
 void Mangler::motdIgnore_toggled_cb(void) {/*{{{*/
     if (connectedServerName.length()) {
-        config.servers[connectedServerName]["MOTDignore"] = motdIgnore->get_active();
+        config.servers[connectedServerName]["MotdIgnore"] = motdIgnore->get_active();
     }
 }/*}}}*/
 void Mangler::motdOkButton_clicked_cb(void) {/*{{{*/
@@ -1074,10 +1077,6 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                             c->phonetic);
                     if (! isAdmin && ! isChanAdmin && v3_is_channel_admin(c->id)) {
                         isChanAdmin = true;
-                        builder->get_widget("adminSeparatorMenuItem", menuitem);
-                        menuitem->show();
-                        builder->get_widget("adminWindowMenuItem", menuitem);
-                        menuitem->show();
                     }
                     admin->channelUpdated(c);
                     if (ev->channel.id == v3_get_user_channel(v3_get_user_id())) {
@@ -1123,10 +1122,7 @@ bool Mangler::getNetworkEvent() {/*{{{*/
 
                     builder->get_widget("adminButton", button);
                     button->set_sensitive(true);
-                    builder->get_widget("adminSeparatorMenuItem", menuitem);
-                    menuitem->show();
                     builder->get_widget("adminLoginMenuItem", menuitem);
-                    menuitem->show();
                     menuitem->set_sensitive(true);
                     builder->get_widget("adminWindowMenuItem", menuitem);
                     menuitem->set_sensitive(true);
@@ -1290,10 +1286,6 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                         c->phonetic);
                 if (! isAdmin && ! isChanAdmin && v3_is_channel_admin(c->id)) {
                     isChanAdmin = true;
-                    builder->get_widget("adminSeparatorMenuItem", menuitem);
-                    menuitem->show();
-                    builder->get_widget("adminWindowMenuItem", menuitem);
-                    menuitem->show();
                 }
                 admin->channelAdded(c);
                 v3_free_channel(c);
@@ -1383,16 +1375,16 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                     uint32_t motdhash = 0;
 
                     if (!ev->flags) {
-                        motdKey = "MOTDhashUser";
+                        motdKey = "MotdHashUser";
                         motdNotebook->set_show_tabs(true);
                         motdNotebook->set_current_page(0);
                         motdUsers->get_buffer()->set_text(c_to_ustring(stripMotdRtf(ev->data->motd).c_str()));
                     } else {
-                        motdKey = "MOTDhash";
+                        motdKey = "MotdHash";
                         motdGuests->get_buffer()->set_text(c_to_ustring(stripMotdRtf(ev->data->motd).c_str()));
                     }
                     motdIgnore->set_sensitive(!connectedServerName.empty());
-                    motdIgnore->set_active(connectedServerName.length() && config.servers[connectedServerName]["MOTDignore"].toBool());
+                    motdIgnore->set_active(connectedServerName.length() && config.servers[connectedServerName]["MotdIgnore"].toBool());
                     if (motdIgnore->get_active() || !strlen(ev->data->motd)) {
                         break;
                     }
@@ -1579,12 +1571,10 @@ bool Mangler::getNetworkEvent() {/*{{{*/
             case V3_EVENT_ADMIN_AUTH:/*{{{*/
                 {
                     const v3_permissions *perms = v3_get_permissions();
-                    if (perms->srv_admin) {
+                    if (perms->srv_admin && !isAdmin) {
                         isAdmin = true;
                         builder->get_widget("adminLoginMenuItem", menuitem);
-                        menuitem->hide();
-                        builder->get_widget("adminWindowMenuItem", menuitem);
-                        menuitem->show();
+                        menuitem->set_label("_Admin Logout");
                         if (wantAdminWindow) {
                             wantAdminWindow = false;
                             admin->show();
@@ -1592,13 +1582,7 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                     } else {
                         isAdmin = false;
                         builder->get_widget("adminLoginMenuItem", menuitem);
-                        menuitem->show();
-                        builder->get_widget("adminWindowMenuItem", menuitem);
-                        if (isChanAdmin) {
-                            menuitem->show();
-                        } else {
-                            menuitem->hide();
-                        }
+                        menuitem->set_label("_Admin Login");
                     }
                     v3_user *lobby;
                     if ((lobby = v3_get_user(0))) {
@@ -2049,7 +2033,7 @@ ManglerError::ManglerError(uint32_t code, Glib::ustring message, Glib::ustring m
 }/*}}}*/
 
 std::string Mangler::stripMotdRtf(const char *input) {/*{{{*/
-    // commentary by x87bliss for your reading pleasure
+    // commentary by x87bliss (Russ Kubes) for your reading pleasure
 
     std::string motd; // I use std::string since the RTF in the MOTDs is not unicode
 

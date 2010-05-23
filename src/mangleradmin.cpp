@@ -29,6 +29,10 @@
 #include "manglercharset.h"
 #include "inilib.h"
 
+#include <unistd.h>
+#include <sys/stat.h>
+#include <dirent.h>
+
 int natsort(const char *l, const char *r);
 
 void
@@ -70,7 +74,7 @@ ManglerAdmin::ManglerAdmin(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
     StatusbarCount = 0;
 
     Glib::signal_timeout().connect_seconds(sigc::mem_fun(this, &ManglerAdmin::statusbarPop), 1);
-    
+
     /* set up the server settings editor stuff */
     builder->get_widget("ServerChatFilter", combobox);
     SrvChatFilterModel = Gtk::TreeStore::create(adminRecord);
@@ -80,7 +84,7 @@ ManglerAdmin::ManglerAdmin(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
     row[adminRecord.id] = 0; row[adminRecord.name] = "Global to Server";
     row = *(SrvChatFilterModel->append());
     row[adminRecord.id] = 1; row[adminRecord.name] = "Per Channel";
-    
+
     builder->get_widget("ServerChannelOrdering", combobox);
     SrvChanOrderModel = Gtk::TreeStore::create(adminRecord);
     combobox->set_model(SrvChanOrderModel);
@@ -89,7 +93,7 @@ ManglerAdmin::ManglerAdmin(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
     row[adminRecord.id] = 0; row[adminRecord.name] = "Sort Alphabetically";
     row = *(SrvChanOrderModel->append());
     row[adminRecord.id] = 1; row[adminRecord.name] = "Manual";
-    
+
     builder->get_widget("ServerAction", combobox);
     SrvInactActionModel = Gtk::TreeStore::create(adminRecord);
     combobox->set_model(SrvInactActionModel);
@@ -98,14 +102,14 @@ ManglerAdmin::ManglerAdmin(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
     row[adminRecord.id] = 0; row[adminRecord.name] = "Kick User";
     row = *(SrvInactActionModel->append());
     row[adminRecord.id] = 1; row[adminRecord.name] = "Move to Channel";
-    
+
     builder->get_widget("ServerChannel", combobox);
     SrvInactChannelModel = Gtk::TreeStore::create(adminRecord);
     combobox->set_model(SrvInactChannelModel);
     combobox->pack_start(adminRecord.name);
     renderer = (Gtk::CellRendererText*)(*(combobox->get_cells().begin()));
     renderer->property_ellipsize() = Pango::ELLIPSIZE_MIDDLE;
-    
+
     builder->get_widget("ServerSpamFilterChannelAction", combobox);
     SrvSpamFilterChannelModel = Gtk::TreeStore::create(adminRecord);
     combobox->set_model(SrvSpamFilterChannelModel);
@@ -186,8 +190,8 @@ ManglerAdmin::ManglerAdmin(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
     ChannelRemove->set_sensitive(false);
     ChannelRemove->signal_clicked().connect(sigc::mem_fun(this, &ManglerAdmin::ChannelRemove_clicked_cb));
 
-    builder->get_widget("ChannelUpdate", button);
-    button->signal_clicked().connect(sigc::mem_fun(this, &ManglerAdmin::ChannelUpdate_clicked_cb));
+    builder->get_widget("ChannelUpdate", ChannelUpdate);
+    ChannelUpdate->signal_clicked().connect(sigc::mem_fun(this, &ManglerAdmin::ChannelUpdate_clicked_cb));
 
     currentChannelID = 0;
     currentChannelParent = 0;
@@ -327,8 +331,8 @@ ManglerAdmin::ManglerAdmin(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
     builder->get_widget("UserRemove", UserRemove);
     UserRemove->signal_clicked().connect(sigc::mem_fun(this, &ManglerAdmin::UserRemove_clicked_cb));
 
-    builder->get_widget("UserUpdate", button);
-    button->signal_clicked().connect(sigc::mem_fun(this, &ManglerAdmin::UserUpdate_clicked_cb));
+    builder->get_widget("UserUpdate", UserUpdate);
+    UserUpdate->signal_clicked().connect(sigc::mem_fun(this, &ManglerAdmin::UserUpdate_clicked_cb));
 
     currentUserID = 0;
 
@@ -357,11 +361,15 @@ ManglerAdmin::ManglerAdmin(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
     UserTemplateModel = Gtk::TreeStore::create(UserTemplateColumns);
     UserTemplate->set_model(UserTemplateModel);
     UserTemplate->pack_start(adminRecord.name);
-    UserTemplate->set_text_column(adminRecord.name);
+    renderer = (Gtk::CellRendererText*)(*(UserTemplate->get_cells().begin()));
+    renderer->property_ellipsize() = Pango::ELLIPSIZE_MIDDLE;
     UserTemplate->signal_changed().connect(sigc::mem_fun(this, &ManglerAdmin::UserTemplate_changed_cb));
 
     builder->get_widget("UserTemplateLoad", button);
     button->signal_clicked().connect(sigc::mem_fun(this, &ManglerAdmin::UserTemplateLoad_clicked_cb));
+
+    builder->get_widget("UserTemplateDelete", button);
+    button->signal_clicked().connect(sigc::mem_fun(this, &ManglerAdmin::UserTemplateDelete_clicked_cb));
 
     builder->get_widget("UserTemplateSave", button);
     button->signal_clicked().connect(sigc::mem_fun(this, &ManglerAdmin::UserTemplateSave_clicked_cb));
@@ -429,14 +437,13 @@ ManglerAdmin::ManglerAdmin(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
     button->signal_clicked().connect(sigc::mem_fun(this, &ManglerAdmin::BanUpdate_clicked_cb));
 
     /* set up the editor lists */
-    readUserTemplates();
     clear();
 
     isOpen = false;
 }/*}}}*/
 ManglerAdmin::~ManglerAdmin() {/*{{{*/
-    if (usertemplates) {
-        delete usertemplates;
+    if (tmpldialog) {
+        delete tmpldialog;
     }
 }/*}}}*/
 
@@ -455,35 +462,40 @@ ManglerAdmin::permsUpdated(void) {/*{{{*/
         return;
     }
     const v3_permissions *perms = v3_get_permissions();
-    if (perms->srv_admin) {
-        UserAdd->set_sensitive(true);
+    if (mangler->isAdmin || perms->add_user || perms->del_user) {
+        UserAdd->set_sensitive(mangler->isAdmin || perms->add_user);
         UsersTab->show();
-        BansTab->show();
     } else {
-        ServerTab->hide();
         UsersTab->hide();
-        BansTab->hide();
     }
-    if (perms->edit_rank) {
+    if (mangler->isAdmin || perms->edit_rank) {
         RanksTab->show();
     } else {
         RanksTab->hide();
+    }
+    if (mangler->isAdmin || perms->ban_user) {
+        BansTab->show();
+    } else {
+        BansTab->hide();
     }
 }/*}}}*/
 void
 ManglerAdmin::adminWindow_show_cb(void) {/*{{{*/
     const v3_permissions *perms = v3_get_permissions();
     permsUpdated();
-    if (perms->srv_admin) {
+    if (mangler->isAdmin || perms->ban_user) {
         v3_admin_ban_list();
-        v3_userlist_open();
-        if (SrvIsNotUpdating) {
-            v3_serverprop_open();
-        }
     }
-    if (perms->edit_rank) {
+    if (mangler->isAdmin || perms->add_user || perms->del_user) {
+        v3_userlist_open();
+    }
+    if (mangler->isAdmin || perms->edit_rank) {
         v3_ranklist_open();
     }
+    if (mangler->isAdmin && SrvIsNotUpdating) {
+        v3_serverprop_open();
+    }
+    loadUserTemplates();
     ChannelEditorTree->expand_all();
     UserChanAdminTree->expand_all();
     UserChanAuthTree->expand_all();
@@ -496,14 +508,14 @@ ManglerAdmin::adminWindow_show_cb(void) {/*{{{*/
 void
 ManglerAdmin::adminWindow_hide_cb(void) {/*{{{*/
     const v3_permissions *perms = v3_get_permissions();
-    if (perms->srv_admin) {
-        if (SrvIsNotUpdating) {
-            v3_serverprop_close();
-        }
-        v3_userlist_close();
+    if (mangler->isAdmin && SrvIsNotUpdating) {
+        v3_serverprop_close();
     }
-    if (perms->edit_rank) {
+    if (mangler->isAdmin || perms->edit_rank) {
         v3_ranklist_close();
+    }
+    if (mangler->isAdmin || perms->add_user || perms->del_user) {
+        v3_userlist_close();
     }
     ServerTab->hide();
     clearUsers();
@@ -714,39 +726,25 @@ ManglerAdmin::ChannelTree_cursor_changed_cb() {/*{{{*/
 
     if (currentChannelID) {
         // load channel data into editor
-        v3_channel *channel = v3_get_channel(currentChannelID);
-        if (! channel) {
+        v3_channel *channel;
+        if ((channel = v3_get_channel(currentChannelID))) {
+            populateChannelEditor(channel);
+            v3_free_channel(channel);
+        } else {
             fprintf(stderr, "failed to retrieve channel information for channel id %d\n", currentChannelID);
             populateChannelEditor(NULL);
             currentChannelID = 0;
             currentChannelParent = 0;
-            return;
         }
-        populateChannelEditor(channel);
-        v3_free_channel(channel);
     } else {
         populateChannelEditor(NULL);
     }
     // get user permissions
-    const v3_permissions *perms = v3_get_permissions();
+    //const v3_permissions *perms = v3_get_permissions();
     // enable or disable editor and necessary buttons
-    bool editAccess( perms->srv_admin || v3_is_channel_admin(currentChannelID) );
-    if (editAccess) {
-        if (ChannelProtModel->children().size() == 2) {
-            row = *(ChannelProtModel->append());
-            row[adminRecord.id] = 2;
-            row[adminRecord.name] = "User Authorization";
-        }
-    } else {
-        Gtk::TreeModel::Children items = ChannelProtModel->children();
-        if (items.size() == 3) {
-            iter = items.begin();   // 0
-            if (iter) iter++;       // 1
-            if (iter) iter++;       // 2 !!
-            if (iter) ChannelProtModel->erase(iter);
-        }
-    }
-    ChannelEditor->set_sensitive(editAccess && currentChannelID);
+    bool editAccess( mangler->isAdmin || v3_is_channel_admin(currentChannelID) );
+    ChannelUpdate->set_sensitive(editAccess && currentChannelID);
+    ChannelEditor->set_sensitive(currentChannelID);
     ChannelRemove->set_sensitive(editAccess && currentChannelID);
     ChannelAdd->set_sensitive(editAccess);
 }/*}}}*/
@@ -1299,44 +1297,51 @@ ManglerAdmin::UserTree_cursor_changed_cb(void) {/*{{{*/
 
     if (currentUserID) {
         // load user data into editor
-        v3_account *account = v3_get_account(currentUserID);
-        if (! account) {
+        v3_account *account;
+        if ((account = v3_get_account(currentUserID))) {
+            populateUserEditor(account);
+            v3_free_account(account);
+        } else {
             fprintf(stderr, "failed to retrieve user information for account id %d\n", currentUserID);
             populateUserEditor(NULL);
             currentUserID = 0;
-            return;
         }
-        populateUserEditor(account);
-        v3_free_account(account);
+    } else {
+        populateUserEditor(NULL);
     }
     // get user permissions
     const v3_permissions *perms = v3_get_permissions();
     // enable or disable editor and necessary buttons
-    bool editAccess( perms->srv_admin );
-    UserEditor->set_sensitive(editAccess && currentUserID);
-    UserRemove->set_sensitive(editAccess && currentUserID);
-    UserAdd->set_sensitive(editAccess);
+    bool editAccess( mangler->isAdmin );
+    UserUpdate->set_sensitive((editAccess || perms->add_user) && currentUserID);
+    UserEditor->set_sensitive(currentUserID);
+    UserRemove->set_sensitive((editAccess || perms->del_user) && currentUserID);
+    UserAdd->set_sensitive(editAccess || perms->add_user);
 }/*}}}*/
 void
-ManglerAdmin::populateUserEditor(v3_account *account) {/*{{{*/
+ManglerAdmin::populateUserEditor(const v3_account *account, bool isTemplate) {/*{{{*/
     v3_account a;
     ::memset(&a, 0, sizeof(v3_account));
-    if (account) {
-        ::memcpy(&a, account, sizeof(v3_account));
-        setWidgetSensitive("UserLogin", false);
-    } else {
-        setWidgetSensitive("UserLogin", true);
-        UserEditor->set_sensitive(false);
-        UserRemove->set_sensitive(false);
-    }
     bool isLicensed( v3_is_licensed() );
-    copyToEntry("UserLogin", c_to_ustring(a.username));
-    copyToEntry("UserPassword", "");
-    copyToCombobox("UserRank", a.perms.rank_id, 0);
-    copyToCombobox("UserOwner", a.perms.replace_owner_id, 0);
-    Gtk::TextView *textview;
-    builder->get_widget("UserNotes", textview);
-    textview->get_buffer()->set_text(c_to_ustring(a.notes));
+    if (!isTemplate) {
+        if (account) {
+            ::memcpy(&a, account, sizeof(v3_account));
+            setWidgetSensitive("UserLogin", false);
+        } else {
+            setWidgetSensitive("UserLogin", true);
+            UserEditor->set_sensitive(false);
+            UserRemove->set_sensitive(false);
+        }
+        copyToEntry("UserLogin", c_to_ustring(a.username));
+        copyToEntry("UserPassword", "");
+        copyToCombobox("UserRank", a.perms.rank_id, 0);
+        copyToCombobox("UserOwner", a.perms.replace_owner_id, 0);
+        Gtk::TextView *textview;
+        builder->get_widget("UserNotes", textview);
+        textview->get_buffer()->set_text(c_to_ustring(a.notes));
+    } else if (account) {
+        ::memcpy(&a, account, sizeof(v3_account));
+    }
     copyToCheckbutton("UserLocked", a.perms.lock_acct);
     copyToEntry("UserLockedReason", c_to_ustring(a.lock_reason));
     copyToCheckbutton("UserInReservedList", a.perms.in_reserve_list);
@@ -1390,11 +1395,13 @@ ManglerAdmin::populateUserEditor(v3_account *account) {/*{{{*/
     copyToCheckbutton("UserEditCommandTargets", a.perms.edit_command_target);
     setWidgetSensitive("UserEditCommandTargets", isLicensed);
     copyToCheckbutton("UserAssignReserved", a.perms.assign_reserved);
-    setAdminCheckTree(UserChanAdminModel->children(), a.chan_admin, a.chan_admin_count);
-    setAdminCheckTree(UserChanAuthModel->children(), a.chan_auth, a.chan_auth_count);
-    builder->get_widget("UserEditorLabel", label);
-    label->set_text("Editing: " + ((account) ? c_to_ustring(a.username) : "NONE"));
-    setWidgetSensitive("UserPassword", a.perms.account_id != 1);
+    if (!isTemplate) {
+        setAdminCheckTree(UserChanAdminModel->children(), a.chan_admin, a.chan_admin_count);
+        setAdminCheckTree(UserChanAuthModel->children(), a.chan_auth, a.chan_auth_count);
+        builder->get_widget("UserEditorLabel", label);
+        label->set_text("Editing: " + ((account) ? c_to_ustring(a.username) : "NONE"));
+        setWidgetSensitive("UserPassword", a.perms.account_id != 1);
+    }
 }/*}}}*/
 void
 ManglerAdmin::setAdminCheckTree(Gtk::TreeModel::Children children, uint16_t *chanids, int chan_count) {/*{{{*/
@@ -1448,7 +1455,35 @@ ManglerAdmin::getAdminCheckTree(Gtk::TreeModel::Children children, uint16_t *&ch
 void
 ManglerAdmin::UserAdd_clicked_cb(void) {/*{{{*/
     UserEditorTree->get_selection()->unselect_all();
+    v3_account a;
+    memset(&a, 0, sizeof(v3_account));
+    a.perms.recv_bcast       = true;
+    a.perms.add_phantom      = true;
+    a.perms.record           = true;
+    a.perms.send_complaint   = true;
+    a.perms.switch_chan      = true;
+    a.perms.bcast            = true;
+    a.perms.bcast_lobby      = true;
+    a.perms.bcast_user       = true;
+    a.perms.bcast_x_chan     = true;
+    a.perms.send_tts_bind    = true;
+    a.perms.send_wav_bind    = true;
+    a.perms.send_page        = true;
+    a.perms.set_phon_name    = true;
+    a.perms.send_comment     = true;
+    a.perms.gen_comment_snds = true;
+    a.perms.event_snds       = true;
+    a.perms.glbl_chat        = true;
+    a.perms.start_priv_chat  = true;
+    a.perms.see_guest        = true;
+    a.perms.see_nonguest     = true;
+    a.perms.see_motd         = true;
+    a.perms.see_srv_comment  = true;
+    a.perms.see_chan_list    = true;
+    a.perms.see_chan_comment = true;
+    a.perms.see_user_comment = true;
     populateUserEditor(NULL);
+    populateUserEditor(&a, true);
     builder->get_widget("UserEditorLabel", label);
     label->set_text("Editing: NEW USER");
     currentUserID = 0xffff;
@@ -1649,189 +1684,252 @@ ManglerAdmin::clearUsers(void) {/*{{{*/
 }/*}}}*/
 /* user editor 'profile' methods */
 void
-ManglerAdmin::readUserTemplates(void) {/*{{{*/
-    std::string utfilename = getenv("HOME");
-    int utflen = utfilename.length();
-    if (utflen == 0) utfilename = "/etc/"; // should never happen
-    if (utfilename[utflen-1] != '/') utfilename.append("/");
-    utfilename.append(".mangler/usertemplates.ini");
-    usertemplates = new iniFile( utfilename );
-    iniFile::iterator iter = usertemplates->begin();
-    while (iter != usertemplates->end()) {
-        Gtk::TreeStore::Row row = *UserTemplateModel->append();
-        row[adminRecord.name] = iter->first;
-        iter++;
+ManglerAdmin::loadUserTemplates(void) {/*{{{*/
+    tmpldir = ManglerConfig::confdir() + "/templates";
+    UserTemplateModel->clear();
+    Gtk::TreeStore::Row row = *(UserTemplateModel->append());
+    row[adminRecord.id] = 0;
+    row[adminRecord.name] = "Default Admin";
+    row = *(UserTemplateModel->append());
+    row[adminRecord.id] = 1;
+    row[adminRecord.name] = "Default User";
+    row = *(UserTemplateModel->append());
+    row[adminRecord.id] = 2;
+    row[adminRecord.name] = "(None)";
+    UserTemplate->set_active(2);
+    DIR *testdir;
+    if ((testdir = opendir(tmpldir.c_str()))) {
+        closedir(testdir);
+    } else if (mkdir(tmpldir.c_str(), 0700)) {
+        tmpldir = "";
+        return;
     }
-    setWidgetSensitive("UserTemplateLoad", false);
-    setWidgetSensitive("UserTemplateSave", false);
+    Glib::Dir dir(tmpldir);
+    int ctr = 3;
+    for (Glib::DirIterator iter = dir.begin(); iter != dir.end(); iter++) {
+        row = *(UserTemplateModel->append());
+        row[adminRecord.id] = ctr++;
+        row[adminRecord.name] = *iter;
+    }
 }/*}}}*/
 void
 ManglerAdmin::UserTemplate_changed_cb(void) {/*{{{*/
-    string tmplname = UserTemplate->get_active_text();
-    setWidgetSensitive("UserTemplateLoad", usertemplates->contains(tmplname));
-    setWidgetSensitive("UserTemplateSave", tmplname.length());
+    Gtk::TreeStore::iterator iter = UserTemplate->get_active();
+    setWidgetSensitive("UserTemplateDelete", tmpldir.length() && iter && (*iter)[adminRecord.id] > 2);
 }/*}}}*/
 void
 ManglerAdmin::UserTemplateLoad_clicked_cb(void) {/*{{{*/
-    string tmplname = UserTemplate->get_active_text();
-    iniSection &tmpl = usertemplates->at(tmplname);
-    //copyToCombobox("UserRank", account->perms.rank_id, 0);
-    //copyToCombobox("UserOwner", account->perms.replace_owner_id, 0);
-    //Gtk::TextView *textview;
-    //builder->get_widget("UserNotes", textview);
-    //if (account->notes) textview->get_buffer()->set_text(c_to_ustring(tmpl["notes"]));
-    //else textview->get_buffer()->set_text("");
-    copyToCheckbutton("UserLocked", tmpl["Locked"].toBool());
-    copyToEntry("UserLockedReason", c_to_ustring(tmpl["LockedReason"].toCString()));
-    copyToCheckbutton("UserInReservedList", tmpl["InReservedList"].toBool());
-    copyToCheckbutton("UserReceiveBroadcasts", tmpl["ReceiveBroadcasts"].toBool());
-    copyToCheckbutton("UserAddPhantoms", tmpl["AddPhantoms"].toBool());
-    copyToCheckbutton("UserAllowRecord", tmpl["AllowRecord"].toBool());
-    copyToCheckbutton("UserIgnoreTimers", tmpl["IgnoreTimers"].toBool());
-    copyToCheckbutton("UserSendComplaints", tmpl["SendComplaints"].toBool());
-    copyToCheckbutton("UserReceiveComplaints", tmpl["ReceiveComplaints"].toBool());
-    copyToCombobox("UserDuplicateIPs", tmpl["DuplicateIPs"].toInt(), 0);
-    copyToCheckbutton("UserSwitchChannels", tmpl["SwitchChannels"].toBool());
-    copyToCombobox("UserDefaultChannel", tmpl["DefaultChannel"].toInt());
-    copyToCheckbutton("UserBroadcast", tmpl["Broadcast"].toBool());
-    copyToCheckbutton("UserBroadcastLobby", tmpl["BroadcastLobby"].toBool());
-    copyToCheckbutton("UserBroadcastU2U", tmpl["BroadcastU2U"].toBool());
-    copyToCheckbutton("UserBroadcastxChan", tmpl["BroadcastxChan"].toBool());
-    copyToCheckbutton("UserSendTTSBinds", tmpl["SendTTSBinds"].toBool());
-    copyToCheckbutton("UserSendWaveBinds", tmpl["SendWaveBinds"].toBool());
-    copyToCheckbutton("UserSendPages", tmpl["SendPages"].toBool());
-    copyToCheckbutton("UserSetPhonetic", tmpl["SetPhonetic"].toBool());
-    copyToCheckbutton("UserSendComment", tmpl["SendComment"].toBool());
-    copyToCheckbutton("UserGenCommentSounds", tmpl["GenCommentSounds"].toBool());
-    copyToCheckbutton("UserEventSounds", tmpl["EventSounds"].toBool());
-    copyToCheckbutton("UserMuteGlobally", tmpl["MuteGlobally"].toBool());
-    copyToCheckbutton("UserMuteOthers", tmpl["MuteOthers"].toBool());
-    copyToCheckbutton("UserGlobalChat", tmpl["GlobalChat"].toBool());
-    copyToCheckbutton("UserPrivateChat", tmpl["PrivateChat"].toBool());
-    copyToCheckbutton("UserEqOut", tmpl["EqOut"].toBool());
-    copyToCheckbutton("UserSeeGuests", tmpl["SeeGuests"].toBool());
-    copyToCheckbutton("UserSeeNonGuests", tmpl["SeeNonGuests"].toBool());
-    copyToCheckbutton("UserSeeMOTD", tmpl["SeeMOTD"].toBool());
-    copyToCheckbutton("UserSeeServerComment", tmpl["SeeServerComment"].toBool());
-    copyToCheckbutton("UserSeeChannelList", tmpl["SeeChannelList"].toBool());
-    copyToCheckbutton("UserSeeChannelComments", tmpl["SeeChannelComments"].toBool());
-    copyToCheckbutton("UserSeeUserComments", tmpl["SeeUserComments"].toBool());
-    copyToCheckbutton("UserServerAdmin", tmpl["ServerAdmin"].toBool());
-    copyToCheckbutton("UserRemoveUsers", tmpl["RemoveUsers"].toBool());
-    copyToCheckbutton("UserAddUsers", tmpl["AddUsers"].toBool());
-    copyToCheckbutton("UserBanUsers", tmpl["BanUsers"].toBool());
-    copyToCheckbutton("UserKickUsers", tmpl["KickUsers"].toBool());
-    copyToCheckbutton("UserMoveUsers", tmpl["MoveUsers"].toBool());
-    copyToCheckbutton("UserAssignChanAdmin", tmpl["AssignChanAdmin"].toBool());
-    copyToCheckbutton("UserAssignRank", tmpl["AssignRank"].toBool());
-    copyToCheckbutton("UserEditRanks", tmpl["EditRanks"].toBool());
-    copyToCheckbutton("UserEditMOTD", tmpl["EditMOTD"].toBool());
-    copyToCheckbutton("UserEditGuestMOTD", tmpl["EditGuestMOTD"].toBool());
-    copyToCheckbutton("UserIssueRcon", tmpl["IssueRcon"].toBool());
-    copyToCheckbutton("UserEditVoiceTargets", tmpl["EditVoiceTargets"].toBool());
-    copyToCheckbutton("UserEditCommandTargets", tmpl["EditCommandTargets"].toBool());
-    copyToCheckbutton("UserAssignReserved", tmpl["AssignReserved"].toBool());
-    
-    if (tmpl.contains("ChannelAdmin")) {
-        int chan_admin_count = tmpl["ChannelAdmin"].count();
-        uint16_t chan_admin[chan_admin_count];
-        for (int n = 0; n < chan_admin_count; ++n) {
-            chan_admin[n] = tmpl["ChannelAdmin"][n].toULong();
+    Gtk::TreeStore::iterator iter = UserTemplate->get_active();
+    if (!iter) {
+        return;
+    }
+    uint32_t id = (*iter)[adminRecord.id];
+    Glib::ustring name = (*iter)[adminRecord.name];
+    v3_account a;
+    memset(&a, 0, sizeof(v3_account));
+    if (id < 2) {
+        a.perms.recv_bcast       = true;
+        a.perms.add_phantom      = true;
+        a.perms.record           = true;
+        a.perms.send_complaint   = true;
+        a.perms.switch_chan      = true;
+        a.perms.bcast            = true;
+        a.perms.bcast_lobby      = true;
+        a.perms.bcast_user       = true;
+        a.perms.bcast_x_chan     = true;
+        a.perms.send_tts_bind    = true;
+        a.perms.send_wav_bind    = true;
+        a.perms.send_page        = true;
+        a.perms.set_phon_name    = true;
+        a.perms.send_comment     = true;
+        a.perms.gen_comment_snds = true;
+        a.perms.event_snds       = true;
+        a.perms.glbl_chat        = true;
+        a.perms.start_priv_chat  = true;
+        a.perms.see_guest        = true;
+        a.perms.see_nonguest     = true;
+        a.perms.see_motd         = true;
+        a.perms.see_srv_comment  = true;
+        a.perms.see_chan_list    = true;
+        a.perms.see_chan_comment = true;
+        a.perms.see_user_comment = true;
+        if (id == 0) {
+            a.perms.in_reserve_list   = true;
+            a.perms.recv_complaint    = true;
+            a.perms.add_user          = true;
+            a.perms.del_user          = true;
+            a.perms.ban_user          = true;
+            a.perms.kick_user         = true;
+            a.perms.move_user         = true;
+            a.perms.assign_chan_admin = true;
         }
-        setAdminCheckTree(UserChanAdminModel->children(), chan_admin, chan_admin_count);
-    } else setAdminCheckTree(UserChanAdminModel->children(), NULL, 0);
-
-    if (tmpl.contains("ChannelAuth")) {
-        int chan_auth_count = tmpl["ChannelAuth"].count();
-        uint16_t chan_auth[chan_auth_count];
-        for (int n = 0; n < chan_auth_count; ++n) {
-            chan_auth[n] = tmpl["ChannelAuth"][n].toULong();
+    } else if (id > 2 && tmpldir.length() && name.length()) {
+        iniFile tmplfile(tmpldir + "/" + name, true, false);
+        if (!tmplfile.contains("Profile")) {
+            statusbarPush("Error: No 'Profile' section found in template.");
+            return;
         }
-        setAdminCheckTree(UserChanAuthModel->children(), chan_auth, chan_auth_count);
-    } else setAdminCheckTree(UserChanAuthModel->children(), NULL, 0);
-
+        iniSection &tmpl(tmplfile["Profile"]);
+        a.perms.lock_acct           = tmpl["Locked"].toBool();
+        a.perms.in_reserve_list     = tmpl["Reserved"].toBool();
+        a.perms.recv_bcast          = tmpl["RecvStreams"].toBool();
+        a.perms.add_phantom         = tmpl["Phantoms"].toBool();
+        a.perms.record              = tmpl["Record"].toBool();
+        a.perms.inactive_exempt     = tmpl["IgnoreInactivity"].toBool();
+        a.perms.send_complaint      = tmpl["SendComplaints"].toBool();
+        a.perms.recv_complaint      = tmpl["RecvComplaints"].toBool();
+        a.perms.switch_chan         = tmpl["SwitchChannels"].toBool();
+        a.lock_reason               = ::strdup(tmpl["LockedReason"].toCString());
+        a.perms.dfl_chan            = v3_get_channel_id(tmpl["DefChan"].toCString());
+        a.perms.dupe_ip             = tmpl["DuplicateIPs"].toInt();
+        a.perms.bcast               = tmpl["Broadcast"].toBool();
+        a.perms.bcast_lobby         = tmpl["BroadcastLobby"].toBool();
+        a.perms.bcast_user          = tmpl["BroadcastU2U"].toBool();
+        a.perms.bcast_x_chan        = tmpl["BroadcastCrossChannel"].toBool();
+        a.perms.send_tts_bind       = tmpl["SendTTS"].toBool();
+        a.perms.send_wav_bind       = tmpl["SendWave"].toBool();
+        a.perms.send_page           = tmpl["SendPages"].toBool();
+        a.perms.set_phon_name       = tmpl["SetPhonetic"].toBool();
+        a.perms.send_comment        = tmpl["SendComments"].toBool();
+        a.perms.gen_comment_snds    = tmpl["CommentSounds"].toBool();
+        a.perms.event_snds          = tmpl["EventSounds"].toBool();
+        a.perms.mute_glbl           = tmpl["MuteGlobally"].toBool();
+        a.perms.mute_other          = tmpl["MuteOthersPTT"].toBool();
+        a.perms.glbl_chat           = tmpl["Chat"].toBool();
+        a.perms.start_priv_chat     = tmpl["InitPrivateChat"].toBool();
+        a.perms.eq_out              = tmpl["Equalizer"].toBool();
+        a.perms.see_guest           = tmpl["SeeGuest"].toBool();
+        a.perms.see_nonguest        = tmpl["SeeNonGuest"].toBool();
+        a.perms.see_motd            = tmpl["SeeMotd"].toBool();
+        a.perms.see_srv_comment     = tmpl["SeeServerComment"].toBool();
+        a.perms.see_chan_list       = tmpl["SeeChannels"].toBool();
+        a.perms.see_chan_comment    = tmpl["SeeChannelComments"].toBool();
+        a.perms.see_user_comment    = tmpl["SeeUserComments"].toBool();
+        a.perms.srv_admin           = tmpl["ServerAdmin"].toBool();
+        a.perms.add_user            = tmpl["AddUsers"].toBool();
+        a.perms.del_user            = tmpl["DeleteUsers"].toBool();
+        a.perms.ban_user            = tmpl["BanUsers"].toBool();
+        a.perms.kick_user           = tmpl["KickUsers"].toBool();
+        a.perms.move_user           = tmpl["MoveUsers"].toBool();
+        a.perms.assign_chan_admin   = tmpl["EditChanAdmins"].toBool();
+        a.perms.edit_rank           = tmpl["EditRanks"].toBool();
+        a.perms.edit_motd           = tmpl["EditMotd"].toBool();
+        a.perms.edit_guest_motd     = tmpl["EditGuestMotd"].toBool();
+        a.perms.issue_rcon_cmd      = tmpl["RCon"].toBool();
+        a.perms.edit_voice_target   = tmpl["GroupEditVoice"].toBool();
+        a.perms.edit_command_target = tmpl["GroupEditCmd"].toBool();
+        a.perms.assign_rank         = tmpl["RankAssign"].toBool();
+        a.perms.assign_reserved     = tmpl["ReservedAssign"].toBool();
+    }
+    populateUserEditor(&a, true);
+    if (a.lock_reason) {
+        ::free(a.lock_reason);
+    }
+    statusbarPush("Loaded '" + name + "' template.");
+}/*}}}*/
+void
+ManglerAdmin::UserTemplateDelete_clicked_cb(void) {/*{{{*/
+    Gtk::TreeStore::iterator iter = UserTemplate->get_active();
+    if (!iter || tmpldir.empty()) {
+        return;
+    }
+    Glib::ustring name = (*iter)[adminRecord.name];
+    Gtk::MessageDialog confirm("<b>Are you sure you want to delete \"" + name + "\"?</b>",
+            true, Gtk::MESSAGE_WARNING, Gtk::BUTTONS_YES_NO, true);
+    if (confirm.run() == Gtk::RESPONSE_YES) {
+        unlink(Glib::ustring(tmpldir + "/" + name).c_str());
+        loadUserTemplates();
+    }
 }/*}}}*/
 void
 ManglerAdmin::UserTemplateSave_clicked_cb(void) {/*{{{*/
-    string tmplname = UserTemplate->get_active_text();
-    iniSection &tmpl = (*usertemplates)[tmplname];
-    //copyToCombobox("UserRank", account->perms.rank_id, 0);
-    //copyToCombobox("UserOwner", account->perms.replace_owner_id, 0);
-    //Gtk::TextView *textview;
-    //builder->get_widget("UserNotes", textview);
-    //if (account->notes) textview->get_buffer()->set_text(c_to_ustring(tmpl["notes"]));
-    //else textview->get_buffer()->set_text("");
-    tmpl["Locked"] = getFromCheckbutton("UserLocked");
-    tmpl["LockedReason"] = getFromEntry("UserLockedReason").raw();
-    tmpl["InReservedList"] = getFromCheckbutton("UserInReservedList");
-    tmpl["ReceiveBroadcasts"] = getFromCheckbutton("UserReceiveBroadcasts");
-    tmpl["AddPhantoms"] = getFromCheckbutton("UserAddPhantoms");
-    tmpl["AllowRecord"] = getFromCheckbutton("UserAllowRecord");
-    tmpl["IgnoreTimers"] = getFromCheckbutton("UserIgnoreTimers");
-    tmpl["SendComplaints"] = getFromCheckbutton("UserSendComplaints");
-    tmpl["ReceiveComplaints"] = getFromCheckbutton("UserReceiveComplaints");
-    tmpl["DuplicateIPs"] = getFromCombobox("UserDuplicateIPs", 0);
-    tmpl["SwitchChannels"] = getFromCheckbutton("UserSwitchChannels");
-    tmpl["DefaultChannel"] = getFromCombobox("UserDefaultChannel");
-    tmpl["Broadcast"] = getFromCheckbutton("UserBroadcast");
-    tmpl["BroadcastLobby"] = getFromCheckbutton("UserBroadcastLobby");
-    tmpl["BroadcastU2U"] = getFromCheckbutton("UserBroadcastU2U");
-    tmpl["BroadcastxChan"] = getFromCheckbutton("UserBroadcastxChan");
-    tmpl["SendTTSBinds"] = getFromCheckbutton("UserSendTTSBinds");
-    tmpl["SendWaveBinds"] = getFromCheckbutton("UserSendWaveBinds");
-    tmpl["SendPages"] = getFromCheckbutton("UserSendPages");
-    tmpl["SetPhonetic"] = getFromCheckbutton("UserSetPhonetic");
-    tmpl["SendComment"] = getFromCheckbutton("UserSendComment");
-    tmpl["GenCommentSounds"] = getFromCheckbutton("UserGenCommentSounds");
-    tmpl["EventSounds"] = getFromCheckbutton("UserEventSounds");
-    tmpl["MuteGlobally"] = getFromCheckbutton("UserMuteGlobally");
-    tmpl["MuteOthers"] = getFromCheckbutton("UserMuteOthers");
-    tmpl["GlobalChat"] = getFromCheckbutton("UserGlobalChat");
-    tmpl["PrivateChat"] = getFromCheckbutton("UserPrivateChat");
-    tmpl["EqOut"] = getFromCheckbutton("UserEqOut");
-    tmpl["SeeGuests"] = getFromCheckbutton("UserSeeGuests");
-    tmpl["SeeNonGuests"] = getFromCheckbutton("UserSeeNonGuests");
-    tmpl["SeeMOTD"] = getFromCheckbutton("UserSeeMOTD");
-    tmpl["SeeServerComment"] = getFromCheckbutton("UserSeeServerComment");
-    tmpl["SeeChannelList"] = getFromCheckbutton("UserSeeChannelList");
-    tmpl["SeeChannelComments"] = getFromCheckbutton("UserSeeChannelComments");
-    tmpl["SeeUserComments"] = getFromCheckbutton("UserSeeUserComments");
-    tmpl["ServerAdmin"] = getFromCheckbutton("UserServerAdmin");
-    tmpl["RemoveUsers"] = getFromCheckbutton("UserRemoveUsers");
-    tmpl["AddUsers"] = getFromCheckbutton("UserAddUsers");
-    tmpl["BanUsers"] = getFromCheckbutton("UserBanUsers");
-    tmpl["KickUsers"] = getFromCheckbutton("UserKickUsers");
-    tmpl["MoveUsers"] = getFromCheckbutton("UserMoveUsers");
-    tmpl["AssignChanAdmin"] = getFromCheckbutton("UserAssignChanAdmin");
-    tmpl["AssignRank"] = getFromCheckbutton("UserAssignRank");
-    tmpl["EditRanks"] = getFromCheckbutton("UserEditRanks");
-    tmpl["EditMOTD"] = getFromCheckbutton("UserEditMOTD");
-    tmpl["EditGuestMOTD"] = getFromCheckbutton("UserEditGuestMOTD");
-    tmpl["IssueRcon"] = getFromCheckbutton("UserIssueRcon");
-    tmpl["EditVoiceTargets"] = getFromCheckbutton("UserEditVoiceTargets");
-    tmpl["EditCommandTargets"] = getFromCheckbutton("UserEditCommandTargets");
-    tmpl["AssignReserved"] = getFromCheckbutton("UserAssignReserved");
-
-    std::vector<uint16_t> chan_admin, chan_auth;
-    getAdminCheckTree(UserChanAdminModel->children(), chan_admin);
-    if (chan_admin.size()) {
-        tmpl["ChannelAdmin"] = chan_admin[0];
-        for (unsigned n = 1; n < chan_admin.size(); ++n) {
-            tmpl["ChannelAdmin"] += chan_admin[n];
+    if (!tmpldialog) {
+        tmpldialog = new Gtk::FileChooserDialog("Save User Template", Gtk::FILE_CHOOSER_ACTION_SAVE);
+        tmpldialog->add_button(Gtk::Stock::CANCEL, Gtk::RESPONSE_CANCEL);
+        tmpldialog->add_button(Gtk::Stock::SAVE, Gtk::RESPONSE_OK);
+        tpl_filter.set_name("Ventrilo User Editor Profile (*.vuep, *.ini)");
+        tpl_filter.add_pattern("*.vuep");
+        tpl_filter.add_pattern("*.ini");
+        tmpldialog->add_filter(tpl_filter);
+        all_filter.set_name("All Files");
+        all_filter.add_pattern("*");
+        tmpldialog->add_filter(all_filter);
+        if (tmpldir.length()) {
+            tmpldialog->set_current_folder(tmpldir);
         }
-    } else tmpl.erase("ChannelAdmin");
-
-    getAdminCheckTree(UserChanAuthModel->children(), chan_auth);
-    if (chan_auth.size()) {
-        tmpl["ChannelAuth"] = chan_auth[0];
-        for (unsigned n = 1; n < chan_auth.size(); ++n) {
-            tmpl["ChannelAuth"] += chan_auth[n];
+    }
+    int result = tmpldialog->run();
+    tmpldialog->hide();
+    if (result != Gtk::RESPONSE_OK) {
+        return;
+    }
+    Glib::ustring filename = tmpldialog->get_filename();
+    if (tmpldialog->get_filter() == &tpl_filter) {
+        Glib::PatternSpec vuep("*.vuep"), ini("*.ini");
+        if (!vuep.match(filename) && !ini.match(filename)) {
+            filename.append(".vuep");
         }
-    } else tmpl.erase("ChannelAuth");
-
-    usertemplates->save();
-    Gtk::TreeStore::Row row = *UserTemplateModel->append();
-    row[adminRecord.name] = tmplname;
+    }
+    Glib::ustring name = filename.substr(tmpldialog->get_current_folder().length() + 1);
+    char *path = v3_get_channel_path(getFromCombobox("UserDefaultChannel", 0));
+    iniFile tmplfile(filename, false, false);
+    iniSection &tmpl(tmplfile["Profile"]);
+    tmpl["Locked"]                = (int)getFromCheckbutton("UserLocked");
+    tmpl["Reserved"]              = (int)getFromCheckbutton("UserInReservedList");
+    tmpl["RecvStreams"]           = (int)getFromCheckbutton("UserReceiveBroadcasts");
+    tmpl["Phantoms"]              = (int)getFromCheckbutton("UserAddPhantoms");
+    tmpl["Record"]                = (int)getFromCheckbutton("UserAllowRecord");
+    tmpl["IgnoreInactivity"]      = (int)getFromCheckbutton("UserIgnoreTimers");
+    tmpl["SendComplaints"]        = (int)getFromCheckbutton("UserSendComplaints");
+    tmpl["RecvComplaints"]        = (int)getFromCheckbutton("UserReceiveComplaints");
+    tmpl["SwitchChannels"]        = (int)getFromCheckbutton("UserSwitchChannels");
+    tmpl["LockedReason"]          = getFromEntry("UserLockedReason").raw();
+    tmpl["DefChan"]               = c_to_ustring(path).raw();
+    tmpl["DuplicateIPs"]          = (int)getFromCombobox("UserDuplicateIPs", 0);
+    tmpl["Broadcast"]             = (int)getFromCheckbutton("UserBroadcast");
+    tmpl["BroadcastLobby"]        = (int)getFromCheckbutton("UserBroadcastLobby");
+    tmpl["BroadcastU2U"]          = (int)getFromCheckbutton("UserBroadcastU2U");
+    tmpl["BroadcastCrossChannel"] = (int)getFromCheckbutton("UserBroadcastxChan");
+    tmpl["SendTTS"]               = (int)getFromCheckbutton("UserSendTTSBinds");
+    tmpl["SendWave"]              = (int)getFromCheckbutton("UserSendWaveBinds");
+    tmpl["SendPages"]             = (int)getFromCheckbutton("UserSendPages");
+    tmpl["SetPhonetic"]           = (int)getFromCheckbutton("UserSetPhonetic");
+    tmpl["SendComments"]          = (int)getFromCheckbutton("UserSendComment");
+    tmpl["CommentSounds"]         = (int)getFromCheckbutton("UserGenCommentSounds");
+    tmpl["EventSounds"]           = (int)getFromCheckbutton("UserEventSounds");
+    tmpl["MuteGlobally"]          = (int)getFromCheckbutton("UserMuteGlobally");
+    tmpl["MuteOthersPTT"]         = (int)getFromCheckbutton("UserMuteOthers");
+    tmpl["Chat"]                  = (int)getFromCheckbutton("UserGlobalChat");
+    tmpl["InitPrivateChat"]       = (int)getFromCheckbutton("UserPrivateChat");
+    tmpl["Equalizer"]             = (int)getFromCheckbutton("UserEqOut");
+    tmpl["SeeGuest"]              = (int)getFromCheckbutton("UserSeeGuests");
+    tmpl["SeeNonGuest"]           = (int)getFromCheckbutton("UserSeeNonGuests");
+    tmpl["SeeMotd"]               = (int)getFromCheckbutton("UserSeeMOTD");
+    tmpl["SeeServerComment"]      = (int)getFromCheckbutton("UserSeeServerComment");
+    tmpl["SeeChannels"]           = (int)getFromCheckbutton("UserSeeChannelList");
+    tmpl["SeeChannelComments"]    = (int)getFromCheckbutton("UserSeeChannelComments");
+    tmpl["SeeUserComments"]       = (int)getFromCheckbutton("UserSeeUserComments");
+    tmpl["ServerAdmin"]           = (int)getFromCheckbutton("UserServerAdmin");
+    tmpl["AddUsers"]              = (int)getFromCheckbutton("UserAddUsers");
+    tmpl["DeleteUsers"]           = (int)getFromCheckbutton("UserRemoveUsers");
+    tmpl["BanUsers"]              = (int)getFromCheckbutton("UserBanUsers");
+    tmpl["KickUsers"]             = (int)getFromCheckbutton("UserKickUsers");
+    tmpl["MoveUsers"]             = (int)getFromCheckbutton("UserMoveUsers");
+    tmpl["EditChanAdmins"]        = (int)getFromCheckbutton("UserAssignChanAdmin");
+    tmpl["EditRanks"]             = (int)getFromCheckbutton("UserEditRanks");
+    tmpl["EditMotd"]              = (int)getFromCheckbutton("UserEditMOTD");
+    tmpl["EditGuestMotd"]         = (int)getFromCheckbutton("UserEditGuestMOTD");
+    tmpl["RCon"]                  = (int)getFromCheckbutton("UserIssueRcon");
+    tmpl["GroupEditVoice"]        = (int)getFromCheckbutton("UserEditVoiceTargets");
+    tmpl["GroupEditCmd"]          = (int)getFromCheckbutton("UserEditCommandTargets");
+    tmpl["RankAssign"]            = (int)getFromCheckbutton("UserAssignRank");
+    tmpl["ReservedAssign"]        = (int)getFromCheckbutton("UserAssignReserved");
+    tmplfile.save();
+    if (path) {
+        ::free(path);
+    }
+    loadUserTemplates();
+    statusbarPush("Saved '" + name + "' template.");
 }/*}}}*/
 
 /* ----------  Rank Editor Related Methods  ---------- */

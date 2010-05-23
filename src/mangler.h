@@ -166,7 +166,7 @@ class Mangler
         Glib::ustring                       url;
         Glib::ustring                       integration_text;
 
-        Glib::Thread                        *networkThread;
+        //Glib::Thread                        *networkThread;
 
         Glib::ustring getPasswordEntry(Glib::ustring title = "Password", Glib::ustring prompt = "Password");
         bool getReasonEntry(Glib::ustring title = "Reason", Glib::ustring prompt = "Reason");
@@ -220,7 +220,8 @@ class Mangler
         void motdMenuItem_activate_cb(void);
         void recorderMenuItem_activate_cb(void);
         void quitMenuItem_activate_cb(void);
-        void adminWindowMenuItem_activated_cb(void);
+        void adminLoginMenuItem_activate_cb(void);
+        void adminWindowMenuItem_activate_cb(void);
 
         bool getNetworkEvent(void);
         bool updateIntegration(void); // music player integration

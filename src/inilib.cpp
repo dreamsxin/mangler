@@ -264,23 +264,23 @@ iniValue::size_type iniSection::count(const string &s) const {
     else return 0;
 }
 
-ostream &iniSection::save(ostream &out) const {
+ostream &iniSection::save(ostream &out, bool quotes) const {
     map<string, iniValue>::const_iterator iter;
     for (iter = begin(); iter != end(); iter++) {
         int vcnt = iter->second.size();
         for (int i = 0; i < vcnt; ++i) {
-            saveLine(out, iter->first, iter->second.at(i).toString());
+            saveLine(out, iter->first, iter->second.at(i).toString(), quotes);
         }
     }
     return out;
 }
 
-ostream &iniSection::saveLine(ostream &out, const string &keyName, const string &value) {
+ostream &iniSection::saveLine(ostream &out, const string &keyName, const string &value, bool quotes) {
     // this is lame, and i've never seen it used outside of mysql's config
     //if (value.empty()) {
     //    out << quoteString(keyName) << endl;
     //} else {
-    out << quoteString(keyName) << " = " << quoteString(value) << endl;
+    out << ((quotes) ? quoteString(keyName) : keyName) << " = " << ((quotes) ? quoteString(value) : value) << endl;
     //}
     return out;
 }
@@ -294,7 +294,8 @@ string iniSection::quoteString(const string &s) {
         if (c == ' ' || c == '\t' || c == '=' || c == '#' || c == ';') {
             needs_quotes = true;
         }
-        if (c == '\"') {
+        if (c == '\"' || c == '\\') {
+            needs_quotes = true;
             ret.append("\\");
         }
         ret += c;
@@ -316,90 +317,63 @@ void iniSection::trimString(string &s) {
     if (s.empty()) {
         return;
     }
-    long right = (long)(s.length()) - 1l;
-    while (right > -1l && (s[right] == ' ' || s[right] == '\t')) {
-        right--;
-    }
-    if (right < (long)(s.length()) - 1l) {
-        s.erase(right, s.npos);
-    }
-}
-
-vector<string> iniSection::tokenizeString(const string &s) {
-    vector<string> ret;
-    string temp;
-    int len( s.length() );
-    if (! len) {
-        return ret;
-    }
-    int i = 0;
-    while (i < len) {
-        if (s[i] == '\"') {
-            ++i;
-            while (i < len) {
-                if (s[i] == '\\') {
-                    ++i; if (i < len - 1) temp += s[i];
-                } else if (s[i] == '\"') {
-                    break;
-                } else {
-                    temp += s[i];
-                }
-                ++i;
-            }
-            trimString(temp);
-            if (temp.length()) {
-                ret.push_back(temp);
-            }
-            temp.clear();
-        } else if (s[i] == '\t' || s[i] == ' ') {
-            trimString(temp);
-            if (temp.length()) {
-                ret.push_back(temp);
-            }
-            temp.clear();
-        } else if (s[i] == '=') {
-            trimString(temp);
-            if (temp.length()) {
-                ret.push_back(temp);
-            }
-            temp.clear();
-            ret.push_back("=");
-        } else {
-            temp += s[i];
+    for (int i = s.length() - 1; i >= 0; --i) {
+        if (s[i] == '\n') {
+            continue;
         }
-        ++i;
+        if (s[i] != ' ' && s[i] != '\t') {
+            break;
+        }
+        s.erase(i, 1);
     }
-    trimString(temp);
-    if (temp.length()) {
-        ret.push_back(temp);
-    }
-    return ret;
 }
 
-vector<string> iniSection::parseLine(const string &s) {
-    vector<string> ret, tokens = tokenizeString(s);
-    // allow sloppy ini files
-    int i = 1, len = tokens.size();
-    if (! len || tokens[0] == "=") {
+void iniSection::unquoteString(string &s) {
+    if (s.empty()) {
+        return;
+    }
+    for (int i = 0, len = s.length(); i < len; ++i) {
+        if (s[i] != '\"') {
+            continue;
+        }
+        s.erase(i, 1);
+        --len;
+        while (i < len) {
+            if (s[i] == '\\') {
+                s.erase(i, 1);
+                --len;
+            }
+            if (++i < len && s[i] == '\"') {
+                s.erase(i, 1);
+                --len;
+            }
+        }
+    }
+}
+
+vector<string> iniSection::parseLine(string s, bool quotes) {
+    vector<string> ret;
+    trimString(s);
+    if (s.empty() || s[0] == '=') {
         return ret;
     }
-    ret.push_back(tokens[0]);
-    while (i < len && tokens[i] != "=") {
-        ret[0].append(" ");
-        ret[0].append(tokens[i]);
-        ++i;
-    }
-    ++i; // skip the =
-    if (i < len) {
-        ret.push_back(tokens[i]);
-        ++i;
-    } else {
-        ret.push_back("");
-    }
-    while (i < len) {
-        ret[1].append(" ");
-        ret[1].append(tokens[i]);
-        ++i;
+    for (int i = 0, len = s.length(); i < len; ++i) {
+        if (s[i] != '=') {
+            continue;
+        }
+        string temp = s.substr(0, i);
+        trimString(temp);
+        if (quotes) {
+            unquoteString(temp);
+        }
+        ret.push_back(temp);
+        temp = s.substr(i + 1);
+        trimString(temp);
+        if (quotes) {
+            unquoteString(temp);
+        }
+        ret.push_back(temp);
+        break;
     }
     return ret;
 }
@@ -408,11 +382,12 @@ iniFile::iniFile() {
     pthread_mutex_init(&mymutex, NULL);
 }
 
-iniFile::iniFile(const string &filename) : mFilename( filename ) {
+iniFile::iniFile(const string &filename, bool rdonly, bool quotes) : mFilename( filename ) {
+    this->rdonly = rdonly;
+    this->quotes = quotes;
     pthread_mutex_init(&mymutex, NULL);
     reload();
 }
-
 
 void iniFile::setFilename(const string &filename)
     { mFilename = filename; }
@@ -439,8 +414,8 @@ istream &iniFile::load(istream &in) {
             removeBrackets(temp);
             curSect = temp;
         } else {
-            vector<string> kvPair( iniSection::parseLine(temp) );
-            if (kvPair.size() == 2 && ! curSect.empty())  {
+            vector<string> kvPair( iniSection::parseLine(temp, quotes) );
+            if (kvPair.size() == 2 && curSect.length()) {
                 (*this)[curSect][kvPair[0]].append(kvPair[1]);
             }
             // else print parse error message
@@ -453,13 +428,16 @@ ostream &iniFile::save(ostream &out) const {
     map<string, iniSection>::const_iterator iter;
     for (iter = begin(); iter != end(); iter++) {
         out << '[' << iter->first << ']' << endl;
-        iter->second.save(out);
+        iter->second.save(out, quotes);
         out << endl;
     }
     return out;
 }
 
 void iniFile::save() const {
+    if (rdonly) {
+        return;
+    }
     pthread_mutex_lock((pthread_mutex_t *)&mymutex);
     if (! mFilename.empty()) {
         ofstream fout( mFilename.c_str() );
@@ -491,9 +469,14 @@ bool iniFile::contains(const string &s) const {
 }
 
 void iniFile::cleanLine(string &s) {
-    int len = s.length();
     bool in_quotes( false );
-    for (int i = 0; i < len; ++i) {
+    for (int i = 0, len = s.length(); i < len; ++i) {
+        if (s[i] == '\r') {
+            s.erase(i--, 1);
+            --len;
+        }
+    }
+    for (int i = 0, len = s.length(); i < len; ++i) {
         if (s[i] == '\"') {
             in_quotes = ! in_quotes;
         } else if (! in_quotes && (s[i] == '#' || s[i] == ';')) {

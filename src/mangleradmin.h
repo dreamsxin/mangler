@@ -80,7 +80,10 @@ class ManglerAdmin {
         Gtk::Statusbar                      *AdminStatusbar;
         guint                               StatusbarCount;
         time_t                              StatusbarTime;
-        iniFile                             *usertemplates;
+        Glib::ustring                       tmpldir;
+        Gtk::FileChooserDialog              *tmpldialog;
+        Gtk::FileFilter                     tpl_filter;
+        Gtk::FileFilter                     all_filter;
 
         class adminModelColumns : public Gtk::TreeModel::ColumnRecord {
             public:
@@ -114,6 +117,7 @@ class ManglerAdmin {
         adminModelColumns                   ChannelVoiceColumns;
         Glib::RefPtr<Gtk::TreeStore>        ChannelVoiceModel;
         Gtk::TreeView                       *ChannelEditorTree;
+        Gtk::Button                         *ChannelUpdate;
         Gtk::VBox                           *ChannelEditor;
         Gtk::Button                         *ChannelRemove;
         Gtk::Button                         *ChannelAdd;
@@ -155,16 +159,17 @@ class ManglerAdmin {
         adminModelColumns                   UserDefaultChannelColumns;
         Glib::RefPtr<Gtk::TreeStore>        UserDefaultChannelModel;
 
-        Gtk::ComboBoxEntry                  *UserTemplate;
+        Gtk::ComboBox                       *UserTemplate;
         adminModelColumns                   UserTemplateColumns;
         Glib::RefPtr<Gtk::TreeStore>        UserTemplateModel;
 
-        Gtk::VBox                           *UserEditor;
         Gtk::Table                          *UserInfoSection;
         Gtk::VBox                           *UserNetworkSection;
         Gtk::VBox                           *UserTransmitSection;
         Gtk::VBox                           *UserDisplaySection;
         Gtk::VBox                           *UserAdminSection;
+        Gtk::Button                         *UserUpdate;
+        Gtk::VBox                           *UserEditor;
         Gtk::Button                         *UserRemove;
         uint32_t                            currentUserID;
 
@@ -251,7 +256,7 @@ class ManglerAdmin {
 
         /* user editor functions and callbacks */
         Gtk::TreeModel::Row getAccount(uint32_t id, Gtk::TreeModel::Children children);
-        void populateUserEditor(v3_account *account);
+        void populateUserEditor(const v3_account *account, bool isTemplate = false);
         void setAdminCheckTree(Gtk::TreeModel::Children children, uint16_t *chanids, int chan_count);
         void getAdminCheckTree(Gtk::TreeModel::Children children, std::vector<uint16_t> &chanids);
         void getAdminCheckTree(Gtk::TreeModel::Children children, uint16_t *&chanids, int &chan_count);
@@ -267,9 +272,10 @@ class ManglerAdmin {
         void UserChanAdminButton_toggled_cb(void);
         void UserChanAuthButton_toggled_cb(void);
         /* user editor 'profile' stuff */
-        void readUserTemplates(void);
+        void loadUserTemplates(void);
         void UserTemplate_changed_cb(void);
         void UserTemplateLoad_clicked_cb(void);
+        void UserTemplateDelete_clicked_cb(void);
         void UserTemplateSave_clicked_cb(void);
 
         /* rank editor functions and callbacks */
