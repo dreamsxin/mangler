@@ -126,6 +126,7 @@ ManglerOsd::addUser(uint32_t id) {/*{{{*/
         string s(u->name);
         userList.push_front(s);
         updateOsd();
+        v3_free_user(u);
     }
 }/*}}}*/
 
@@ -144,6 +145,7 @@ ManglerOsd::removeUser(uint32_t id) {/*{{{*/
         string s(u->name);
         userList.remove(s);
         updateOsd();
+        v3_free_user(u);
     }
 }/*}}}*/
 
