@@ -140,10 +140,10 @@ class ManglerChannelTree
         void forgetChannelSavedPassword(uint16_t channel_id);
         bool isMuted(uint16_t userid);
         void muteUserToggle(uint16_t userid);
-        bool expand_all(void);
-        bool collapse_all(void);
+        void queue_resize(void);
+        void expand_all(void);
+        void collapse_all(void);
         void clear(void);
-        void setSort(bool);
 
         void channelView_row_activated_cb(const Gtk::TreeModel::Path& path, Gtk::TreeViewColumn* column);
         void channelView_columns_changed_cb(void);

@@ -112,7 +112,7 @@ class ManglerRecorder {
         void recListTree_cursor_changed_cb(void);
         void recListTree_row_activated_cb(const Gtk::TreeModel::Path& path, Gtk::TreeViewColumn* column);
         void set(bool isRecording);
-        void reset(void);
+        void reset(bool destroying = false);
         void play(void);
 
         void recInfoDialog_cancel_clicked_cb(void);

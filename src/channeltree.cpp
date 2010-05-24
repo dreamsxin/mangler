@@ -37,9 +37,9 @@
 
 using namespace std;
 
-ManglerChannelTree::ManglerChannelTree(Glib::RefPtr<Gtk::Builder> builder)/*{{{*/
-{
+ManglerChannelTree::ManglerChannelTree(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
     this->builder = builder;
+
     // Create the Channel Store
     channelStore = ManglerChannelStore::create();
 
@@ -51,14 +51,12 @@ ManglerChannelTree::ManglerChannelTree(Glib::RefPtr<Gtk::Builder> builder)/*{{{*
     Gtk::TreeView::Column* pColumn = Gtk::manage( new Gtk::TreeView::Column("Name") );
     pColumn->pack_start(channelRecord.icon, false);
     pColumn->pack_start(channelRecord.displayName);
-    pColumn->set_sizing(Gtk::TREE_VIEW_COLUMN_AUTOSIZE);
     pColumn->set_expand(true);
     pColumn->set_reorderable(true);
     channelView->append_column(*pColumn);
     channelView->set_expander_column(*pColumn);
     pColumn = Gtk::manage( new Gtk::TreeView::Column("Last Transmit") );
     pColumn->pack_start(channelRecord.last_transmit);
-    pColumn->set_sizing(Gtk::TREE_VIEW_COLUMN_AUTOSIZE);
     pColumn->set_reorderable(true);
     channelView->append_column(*pColumn);
     channelView->signal_columns_changed().connect(sigc::mem_fun(this, &ManglerChannelTree::channelView_columns_changed_cb));
@@ -300,6 +298,7 @@ ManglerChannelTree::addChannel(uint8_t protect_mode, uint32_t id, uint32_t paren
     channelRow[channelRecord.integration_text]  = "";
     channelRow[channelRecord.rank]              = "";
     channelRow[channelRecord.password]          = "";
+    queue_resize();
 }/*}}}*/
 
 /*
@@ -349,6 +348,7 @@ ManglerChannelTree::updateChannel(uint8_t protect_mode, uint32_t id, uint32_t pa
     channel[channelRecord.integration_text]  = "";
     channel[channelRecord.rank]              = "";
     channel[channelRecord.password]          = "";
+    queue_resize();
 }/*}}}*/
 
 void
@@ -373,6 +373,7 @@ ManglerChannelTree::refreshChannel(uint32_t id) {/*{{{*/
         displayName = displayName + " (" + comment + ")";
     }
     channel[channelRecord.displayName]       = displayName;
+    queue_resize();
 }/*}}}*/
 
 void
@@ -531,6 +532,7 @@ ManglerChannelTree::refreshUser(uint32_t id) {/*{{{*/
     user[channelRecord.displayName] = displayName;
     mangler->chat->updateUser(id);
     mangler->chat->chatUserTreeModelFilter->refilter();
+    queue_resize();
 }/*}}}*/
 
 void
@@ -571,6 +573,7 @@ ManglerChannelTree::removeUser(uint32_t id) {/*{{{*/
         return;
     }
     channelStore->erase(user);
+    queue_resize();
 }/*}}}*/
 
 /*
@@ -587,6 +590,7 @@ ManglerChannelTree::removeChannel(uint32_t id) {/*{{{*/
         return;
     }
     channelStore->erase(channel);
+    queue_resize();
 }/*}}}*/
 
 // Recursively search the channel store for a specific channel id and returns the row
@@ -663,6 +667,7 @@ ManglerChannelTree::updateLobby(Glib::ustring name, Glib::ustring comment, Glib:
     lobby[channelRecord.phonetic]          = phonetic;
     lobby[channelRecord.url]               = "";
     lobby[channelRecord.integration_text]  = "";
+    queue_resize();
 }/*}}}*/
 
 void
@@ -687,22 +692,28 @@ ManglerChannelTree::setUserIcon(uint16_t id, Glib::ustring color, bool updateLas
     }
 }/*}}}*/
 
-bool
+void
+ManglerChannelTree::queue_resize(void) {/*{{{*/
+    for (int ctr = 0, cnt = channelView->get_columns().size(); ctr < cnt; ctr++) {
+        channelView->get_column(ctr)->queue_resize();
+    }
+}/*}}}*/
+
+void
 ManglerChannelTree::expand_all(void) {/*{{{*/
     channelView->expand_all();
     channelView->show_all();
-    return false;
 }/*}}}*/
 
-bool
+void
 ManglerChannelTree::collapse_all(void) {/*{{{*/
     channelView->collapse_all();
-    return false;
 }/*}}}*/
 
 void
 ManglerChannelTree::clear(void) {/*{{{*/
     channelStore->clear();
+    queue_resize();
 }/*}}}*/
 
 void
@@ -922,7 +933,7 @@ ManglerChannelTree::channelView_buttonpress_event_cb(GdkEventButton* event) {/*{
                 menuitem->set_sensitive(!comment.empty());
                 builder->get_widget("channelRightClickMenuSeparator", menuitem);
                 builder->get_widget("setDefaultChannel", checkmenuitem);
-                if (mangler->connectedServerName.empty() || row[channelRecord.id] == 0) { // hide default channel on quick connects or lobby
+                if (mangler->connectedServerName.empty()) { // hide default channel on quick connects
                     menuitem->hide();
                     checkmenuitem->hide();
                 } else {
@@ -1248,7 +1259,7 @@ ManglerChannelStore::row_draggable_vfunc(const Gtk::TreeModel::Path& path) const
         return Gtk::TreeStore::row_draggable_vfunc(path);
     }
     Row row = *iter;
-    if (row[c.isUser] && perms->move_user && (mangler->isAdmin || v3_is_channel_admin(v3_get_user_channel(row[c.id])))) {
+    if (row[c.isUser] && (perms->move_user || mangler->isAdmin || v3_is_channel_admin(v3_get_user_channel(row[c.id])))) {
         return true;
     }
     return false;
@@ -1279,7 +1290,7 @@ ManglerChannelStore::drag_data_received_vfunc(const Gtk::TreeModel::Path& dest, 
     // because GTK allows you to drop things in places that don't really make
     // sense in terms of ventrilo, we need to modify the drop path to make sense
     // basically, if the path doesn't end in a 0, it's either in between users
-    // or in between channels.  Instead of adding to the parrent channel, tack
+    // or in between channels.  Instead of adding to the parent channel, tack
     // a 0 on to the end of the path and decrement the destination to give us
     // the previous channel/user
     Gtk::TreeModel::Path dest_parent = dest;

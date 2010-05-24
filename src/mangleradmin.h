@@ -235,8 +235,9 @@ class ManglerAdmin {
         bool getFromCheckbutton(const char *widgetName);
         uint32_t getFromCombobox(const char *widgetName, uint32_t deflt = 0);
         void setWidgetSensitive(const char *widgetName, bool widgetSens = true);
-        bool statusbarPop(void);
+        void queue_resize(Gtk::TreeView *treeview);
         void statusbarPush(Glib::ustring msg);
+        bool statusbarPop(void);
 
         /* server settings functions and callbacks */
         void ServerUpdate_clicked_cb(void);

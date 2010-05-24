@@ -174,7 +174,6 @@ ManglerAdmin::ManglerAdmin(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
     ChannelEditorTree->set_model(ChannelEditorTreeModel);
     pColumn = Gtk::manage( new Gtk::TreeView::Column("Channels") );
     pColumn->pack_start(adminRecord.name);
-    pColumn->set_sizing(Gtk::TREE_VIEW_COLUMN_AUTOSIZE);
     pColumn->set_expand(true);
     ChannelEditorTree->append_column(*pColumn);
     ChannelEditorTree->signal_cursor_changed().connect(sigc::mem_fun(this, &ManglerAdmin::ChannelTree_cursor_changed_cb));
@@ -247,7 +246,6 @@ ManglerAdmin::ManglerAdmin(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
     UserEditorTree->set_model(UserEditorTreeModel);
     pColumn = Gtk::manage( new Gtk::TreeView::Column("Users") );
     pColumn->pack_start(adminRecord.name);
-    pColumn->set_sizing(Gtk::TREE_VIEW_COLUMN_AUTOSIZE);
     pColumn->set_expand(true);
     UserEditorTree->append_column(*pColumn);
     UserEditorTree->signal_cursor_changed().connect(sigc::mem_fun(this, &ManglerAdmin::UserTree_cursor_changed_cb));
@@ -257,10 +255,8 @@ ManglerAdmin::ManglerAdmin(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
     UserChanAdminTree->set_model(UserChanAdminModel);
     pColumn = Gtk::manage( new Gtk::TreeView::Column("Channels") );
     pColumn->pack_start(adminCheckRecord.name);
-    pColumn->set_sizing(Gtk::TREE_VIEW_COLUMN_AUTOSIZE);
     pColumn->set_expand(true);
     UserChanAdminTree->append_column_editable("Select", adminCheckRecord.on);
-    UserChanAdminTree->get_column(0)->set_sizing(Gtk::TREE_VIEW_COLUMN_AUTOSIZE);
     UserChanAdminTree->append_column(*pColumn);
 
     UserChanAuthModel = Gtk::TreeStore::create(UserChanAuthColumns);
@@ -268,10 +264,8 @@ ManglerAdmin::ManglerAdmin(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
     UserChanAuthTree->set_model(UserChanAuthModel);
     pColumn = Gtk::manage( new Gtk::TreeView::Column("Channels") );
     pColumn->pack_start(adminCheckRecord.name);
-    pColumn->set_sizing(Gtk::TREE_VIEW_COLUMN_AUTOSIZE);
     pColumn->set_expand(true);
     UserChanAuthTree->append_column_editable("Select", adminCheckRecord.on);
-    UserChanAuthTree->get_column(0)->set_sizing(Gtk::TREE_VIEW_COLUMN_AUTOSIZE);
     UserChanAuthTree->append_column(*pColumn);
 
     builder->get_widget("UserInfoSection", UserInfoSection);
@@ -379,11 +373,8 @@ ManglerAdmin::ManglerAdmin(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
     builder->get_widget("RankTree", RankEditorTree);
     RankEditorTree->set_model(RankEditorModel);
     RankEditorTree->append_column("Name", rankRecord.name);
-    RankEditorTree->get_column(0)->set_sizing(Gtk::TREE_VIEW_COLUMN_AUTOSIZE);
     RankEditorTree->append_column("Level", rankRecord.level);
-    RankEditorTree->get_column(1)->set_sizing(Gtk::TREE_VIEW_COLUMN_AUTOSIZE);
     RankEditorTree->append_column("Description", rankRecord.description);
-    RankEditorTree->get_column(2)->set_sizing(Gtk::TREE_VIEW_COLUMN_AUTOSIZE);
     RankEditorTree->signal_cursor_changed().connect(sigc::mem_fun(this, &ManglerAdmin::RankEditorTree_cursor_changed_cb));
 
     builder->get_widget("RankEditor", RankEditor);
@@ -402,15 +393,10 @@ ManglerAdmin::ManglerAdmin(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
     builder->get_widget("BanTree", BanEditorTree);
     BanEditorTree->set_model(BanEditorModel);
     BanEditorTree->append_column("IP Address", banRecord.ip);
-    BanEditorTree->get_column(0)->set_sizing(Gtk::TREE_VIEW_COLUMN_AUTOSIZE);
     BanEditorTree->append_column("Netmask", banRecord.netmask);
-    BanEditorTree->get_column(1)->set_sizing(Gtk::TREE_VIEW_COLUMN_AUTOSIZE);
     BanEditorTree->append_column("User", banRecord.user);
-    BanEditorTree->get_column(2)->set_sizing(Gtk::TREE_VIEW_COLUMN_AUTOSIZE);
     BanEditorTree->append_column("Admin", banRecord.by);
-    BanEditorTree->get_column(3)->set_sizing(Gtk::TREE_VIEW_COLUMN_AUTOSIZE);
     BanEditorTree->append_column("Reason", banRecord.reason);
-    BanEditorTree->get_column(4)->set_sizing(Gtk::TREE_VIEW_COLUMN_AUTOSIZE);
     BanEditorTree->signal_cursor_changed().connect(sigc::mem_fun(this, &ManglerAdmin::BanEditorTree_cursor_changed_cb));
 
     builder->get_widget("BanEditor", BanEditor);
@@ -523,6 +509,12 @@ ManglerAdmin::adminWindow_hide_cb(void) {/*{{{*/
     clearRankEditor();
     clearBans();
     isOpen = false;
+}/*}}}*/
+void
+ManglerAdmin::queue_resize(Gtk::TreeView *treeview) {/*{{{*/
+    for (int ctr = 0, cnt = treeview->get_columns().size(); ctr < cnt; ctr++) {
+        treeview->get_column(ctr)->queue_resize();
+    }
 }/*}}}*/
 void
 ManglerAdmin::statusbarPush(Glib::ustring msg) {/*{{{*/
@@ -799,6 +791,7 @@ ManglerAdmin::channelUpdated(v3_channel *channel) {/*{{{*/
         chanrow[adminRecord.name] = c_to_ustring(channel->name);
         if (currentChannelID == channel->id) populateChannelEditor(channel);
     }
+    queue_resize(ChannelEditorTree);
     /* server inactive "move to" channel combo box */
     Gtk::TreeModel::Children siChildren = SrvInactChannelModel->children();
     bool found( false );
@@ -837,6 +830,7 @@ ManglerAdmin::channelUpdated(v3_channel *channel) {/*{{{*/
         chanrow[adminCheckRecord.id] = channel->id;
         chanrow[adminCheckRecord.name] = c_to_ustring(channel->name);
     }
+    queue_resize(UserChanAdminTree);
     /* user channel auth tree */
     chanrow = getChannel(channel->id, UserChanAuthModel->children(), true);
     if (chanrow) {
@@ -851,6 +845,7 @@ ManglerAdmin::channelUpdated(v3_channel *channel) {/*{{{*/
             chanrow[adminCheckRecord.name] = c_to_ustring(channel->name);
         }
     }
+    queue_resize(UserChanAuthTree);
     /* update status bar */
     statusbarPush(Glib::ustring::compose("Channel %1 (%2) updated.", Glib::ustring::format(channel->id), c_to_ustring(channel->name)));
 }/*}}}*/
@@ -870,6 +865,7 @@ ManglerAdmin::channelRemoved(uint32_t chanid) {/*{{{*/
         }
         ChannelEditorTreeModel->erase(chanrow);
     }
+    queue_resize(ChannelEditorTree);
     /* server inactive "move to" channel combo box */
     Gtk::TreeModel::Children siChildren = SrvInactChannelModel->children();
     if (siChildren.size()) {
@@ -897,9 +893,11 @@ ManglerAdmin::channelRemoved(uint32_t chanid) {/*{{{*/
     /* user channel admin tree */
     chanrow = getChannel(chanid, UserChanAdminModel->children());
     if (chanrow) UserChanAdminModel->erase(chanrow);
+    queue_resize(UserChanAdminTree);
     /* user channel auth tree */
     chanrow = getChannel(chanid, UserChanAuthModel->children());
     if (chanrow) UserChanAuthModel->erase(chanrow);
+    queue_resize(UserChanAuthTree);
     /* update status bar */
     statusbarPush(Glib::ustring::compose("Channel %1 removed.", Glib::ustring::format(chanid)));
 }/*}}}*/
@@ -931,6 +929,7 @@ ManglerAdmin::channelAdded(v3_channel *channel) {/*{{{*/
             ChannelEditorTree->set_cursor(ChannelEditorTreeModel->get_path(channelIter));
         }
     }
+    queue_resize(ChannelEditorTree);
     /* server inactive "move to" channel combo box */
     channelIter = SrvInactChannelModel->append();
     (*channelIter)[adminRecord.id] = channel->id;
@@ -949,6 +948,7 @@ ManglerAdmin::channelAdded(v3_channel *channel) {/*{{{*/
     channelRow = *channelIter;
     channelRow[adminCheckRecord.id] = channel->id;
     channelRow[adminCheckRecord.name] = c_to_ustring(channel->name);
+    queue_resize(UserChanAdminTree);
     /* user channel auth tree */
     if (channel->protect_mode == 2) {
         parent = getChannel(channel->parent, UserChanAuthModel->children(), true);
@@ -961,6 +961,7 @@ ManglerAdmin::channelAdded(v3_channel *channel) {/*{{{*/
         channelRow[adminCheckRecord.id] = channel->id;
         channelRow[adminCheckRecord.name] = c_to_ustring(channel->name);
     }
+    queue_resize(UserChanAuthTree);
     /* update status bar */
     statusbarPush(Glib::ustring::compose("Channel %1 (%2) added.", Glib::ustring::format(channel->id), c_to_ustring(channel->name)));
 }/*}}}*/
@@ -974,6 +975,7 @@ ManglerAdmin::populateChannelEditor(const v3_channel *channel) {/*{{{*/
         currentChannelID = c.id;
         currentChannelParent = c.parent;
     } else {
+        ChannelUpdate->set_sensitive(false);
         ChannelEditor->set_sensitive(false);
         ChannelRemove->set_sensitive(false);
     }
@@ -1044,6 +1046,7 @@ ManglerAdmin::ChannelAdd_clicked_cb(void) {/*{{{*/
     ChannelAdd->set_sensitive(false);
     ChannelRemove->set_sensitive(false);
     ChannelEditor->set_sensitive(true);
+    ChannelUpdate->set_sensitive(true);
 }/*}}}*/
 void
 ManglerAdmin::ChannelRemove_clicked_cb(void) {/*{{{*/
@@ -1141,11 +1144,13 @@ void
 ManglerAdmin::clearChannels(void) {/*{{{*/
     ChannelAdded = false;
     ChannelEditorTreeModel->clear();
+    queue_resize(ChannelEditorTree);
     Gtk::TreeModel::Row lobby = *(ChannelEditorTreeModel->append());
     lobby[adminRecord.id] = 0;
     lobby[adminRecord.name] = "(Lobby)";
     currentChannelID = 0;
     currentChannelParent = 0;
+    ChannelUpdate->set_sensitive(false);
     ChannelEditor->set_sensitive(false);
     ChannelRemove->set_sensitive(false);
     ChannelAdd->set_sensitive(false);
@@ -1158,7 +1163,9 @@ ManglerAdmin::clearChannels(void) {/*{{{*/
     lobby[adminRecord.id] = 0;
     lobby[adminRecord.name] = "(Lobby)";
     UserChanAdminModel->clear();
+    queue_resize(UserChanAdminTree);
     UserChanAuthModel->clear();
+    queue_resize(UserChanAuthTree);
 }/*}}}*/
 void
 ManglerAdmin::LoadCodecFormats(void) {/*{{{*/
@@ -1221,6 +1228,7 @@ ManglerAdmin::accountUpdated(v3_account *account) {/*{{{*/
     if (! acct) return;
     acct[adminRecord.name] = c_to_ustring(account->username);
     if (account->perms.account_id == currentUserID) populateUserEditor(account);
+    queue_resize(UserEditorTree);
     /* User Owner combo box */
     acct = getAccount(account->perms.account_id, UserOwnerModel->children());
     if (acct) {
@@ -1252,6 +1260,7 @@ ManglerAdmin::accountAdded(v3_account *account) {/*{{{*/
     if (currentUserID == 0xffff && c_to_ustring(account->username) == getFromEntry("UserLogin")) {
         UserEditorTree->set_cursor(UserEditorTreeModel->get_path(iter));
     }
+    queue_resize(UserEditorTree);
     /* User Owner combo box */
     if (account->perms.srv_admin) {
         /* needs to be added to owner list */
@@ -1277,6 +1286,7 @@ ManglerAdmin::accountRemoved(uint32_t acctid) {/*{{{*/
         }
         UserEditorTreeModel->erase(acct);
     }
+    queue_resize(UserEditorTree);
     /* User Owner combo box */
     acct = getAccount(acctid, UserOwnerModel->children());
     if (acct) UserOwnerModel->erase(acct);
@@ -1330,6 +1340,7 @@ ManglerAdmin::populateUserEditor(const v3_account *account, bool isTemplate) {/*
             setWidgetSensitive("UserLogin", false);
         } else {
             setWidgetSensitive("UserLogin", true);
+            UserUpdate->set_sensitive(false);
             UserEditor->set_sensitive(false);
             UserRemove->set_sensitive(false);
         }
@@ -1489,6 +1500,7 @@ ManglerAdmin::UserAdd_clicked_cb(void) {/*{{{*/
     label->set_text("Editing: NEW USER");
     currentUserID = 0xffff;
     // enable or disable editor and necessary buttons
+    UserUpdate->set_sensitive(true);
     UserEditor->set_sensitive(true);
     UserRemove->set_sensitive(false);
     UserAdd->set_sensitive(false);
@@ -1673,8 +1685,10 @@ ManglerAdmin::UserChanAuthButton_toggled_cb(void) {/*{{{*/
 void
 ManglerAdmin::clearUsers(void) {/*{{{*/
     UserEditorTreeModel->clear();
+    queue_resize(UserEditorTree);
     populateUserEditor(NULL);
     currentUserID = 0;
+    UserUpdate->set_sensitive(false);
     UserEditor->set_sensitive(false);
     UserRemove->set_sensitive(false);
     UserAdd->set_sensitive(false);
@@ -1951,6 +1965,7 @@ ManglerAdmin::rankUpdated(v3_rank *rank) {/*{{{*/
     (*iter)[rankRecord.level] = rank->level;
     (*iter)[rankRecord.name] = c_to_ustring(rank->name);
     (*iter)[rankRecord.description] = c_to_ustring(rank->description);
+    queue_resize(RankEditorTree);
     /* now handle the User Rank combo box */
     /* the poorly named getAccount() will work fine for this */
     Gtk::TreeModel::Row row = getAccount(rank->id, UserRankModel->children());
@@ -1969,6 +1984,7 @@ ManglerAdmin::rankAdded(v3_rank *rank) {/*{{{*/
     if (currentRankID == 0xffff && c_to_ustring(rank->name) == getFromEntry("RankName")) {
         RankEditorTree->set_cursor(RankEditorModel->get_path(iter));
     }
+    queue_resize(RankEditorTree);
     /* now handle the User Rank combo box */
     iter = UserRankModel->append();
     (*iter)[adminRecord.id] = rank->id; (*iter)[adminRecord.name] = c_to_ustring(rank->name);
@@ -1986,6 +2002,7 @@ ManglerAdmin::rankRemoved(uint16_t rankid) {/*{{{*/
         }
         RankEditorModel->erase(rank);
     }
+    queue_resize(RankEditorTree);
     /* now handle the User Rank combo box */
     /* the poorly named getAccount() will work fine for this */
     Gtk::TreeModel::Row row = getAccount(rankid, UserRankModel->children());
@@ -2055,6 +2072,7 @@ ManglerAdmin::clearRankEditor(void) {/*{{{*/
 void
 ManglerAdmin::clearRanks(void) {/*{{{*/
     RankEditorModel->clear();
+    queue_resize(RankEditorTree);
     clearRankEditor();
 }/*}}}*/
 
@@ -2063,6 +2081,7 @@ void
 ManglerAdmin::banList(uint16_t id, uint16_t count, uint16_t bitmask_id, uint32_t ip_address, char *user, char *by, char *reason) {/*{{{*/
     if (!id) {
         BanEditorModel->clear();
+        queue_resize(BanEditorTree);
     }
     if (!count) {
         clearBanEditor();
@@ -2084,6 +2103,7 @@ ManglerAdmin::banList(uint16_t id, uint16_t count, uint16_t bitmask_id, uint32_t
     if (ip_address == currentBanIP) {
         BanEditorTree->set_cursor(BanEditorModel->get_path(iter));
     }
+    queue_resize(BanEditorTree);
 }/*}}}*/
 void
 ManglerAdmin::BanEditorTree_cursor_changed_cb(void) {/*{{{*/
@@ -2152,6 +2172,7 @@ ManglerAdmin::clearBanEditor(void) {/*{{{*/
 void
 ManglerAdmin::clearBans(void) {/*{{{*/
     BanEditorModel->clear();
+    queue_resize(BanEditorTree);
     clearBanEditor();
 }/*}}}*/
 

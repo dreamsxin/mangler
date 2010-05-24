@@ -79,15 +79,10 @@ ManglerRecorder::ManglerRecorder(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
     builder->get_widget("recListTree", recListTree);
     recListTree->set_model(recListModel);
     recListTree->append_column("Time", recRecord.time);
-    recListTree->get_column(0)->set_sizing(Gtk::TREE_VIEW_COLUMN_AUTOSIZE);
     recListTree->append_column("Duration", recRecord.duration);
-    recListTree->get_column(1)->set_sizing(Gtk::TREE_VIEW_COLUMN_AUTOSIZE);
     recListTree->append_column("Status", recRecord.status);
-    recListTree->get_column(2)->set_sizing(Gtk::TREE_VIEW_COLUMN_AUTOSIZE);
     recListTree->append_column("Username", recRecord.username);
-    recListTree->get_column(3)->set_sizing(Gtk::TREE_VIEW_COLUMN_AUTOSIZE);
     recListTree->append_column("", recRecord.text);
-    recListTree->get_column(4)->set_sizing(Gtk::TREE_VIEW_COLUMN_AUTOSIZE);
     recListTree->signal_cursor_changed().connect(sigc::mem_fun(this, &ManglerRecorder::recListTree_cursor_changed_cb));
     recListTree->signal_row_activated().connect(sigc::mem_fun(this, &ManglerRecorder::recListTree_row_activated_cb));
 
@@ -113,7 +108,7 @@ ManglerRecorder::ManglerRecorder(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
     player = NULL;
 }/*}}}*/
 ManglerRecorder::~ManglerRecorder() {/*{{{*/
-    reset();
+    reset(true);
     delete filedialog;
 }/*}}}*/
 
@@ -286,8 +281,8 @@ ManglerRecorder::set(bool isRecording) {/*{{{*/
     }
 }/*}}}*/
 void
-ManglerRecorder::reset(void) {/*{{{*/
-    player = NULL;
+ManglerRecorder::reset(bool destroying) {/*{{{*/
+    player = (Glib::Thread*)destroying;
     isPlaying = false;
     if (isRecording) {
         v3_vrf_record_stop();
@@ -298,9 +293,15 @@ ManglerRecorder::reset(void) {/*{{{*/
         v3_vrf_destroy(vrfh);
         vrfh = NULL;
     }
-    fileentry->set_text("");
     recListModel->clear();
+    if (destroying) {
+        return;
+    }
+    for (int ctr = 0, cnt = recListTree->get_columns().size(); ctr < cnt; ctr++) {
+        recListTree->get_column(ctr)->queue_resize();
+    }
     recListTree->set_sensitive(false);
+    fileentry->set_text("");
     builder->get_widget("recType", label);
     label->set_text("N/A");
     builder->get_widget("recSize", label);
@@ -447,6 +448,7 @@ ManglerRecorder::play(void) {/*{{{*/
                 iter++;
             }
         }
+        double duration = 0;
         for (recIter = recData.begin(); recIter != recData.end() && recData.size();) {
             ManglerRecorderData *recd = recIter->second;
             if (player == self && recd->next > elapsed) {
@@ -473,7 +475,11 @@ ManglerRecorder::play(void) {/*{{{*/
                     label->set_text(c_to_ustring(v3_get_codec(vrfd->codec, vrfd->codecformat)->name));
                     gdk_threads_leave();
                 }
-                recd->next += (vrfd->length / (float)(vrfd->rate * sizeof(int16_t) * vrfd->channels)) * 1000.0;
+                duration += (vrfd->length / (float)(vrfd->rate * sizeof(int16_t) * vrfd->channels)) * 1000.0;
+                if (duration < 10) {
+                    continue;
+                }
+                recd->next += duration;
                 recIter++;
                 break;
               case V3_VRF_DATA_TEXT:
@@ -500,6 +506,7 @@ ManglerRecorder::play(void) {/*{{{*/
                 recIter = recData.begin();
                 break;
             }
+            duration = 0;
         }
         usleep(10000);
     }
