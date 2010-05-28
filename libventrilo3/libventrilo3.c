@@ -4663,6 +4663,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                         }
                         break;
                     case V3_AUDIO_STOP:
+                    case 0x03:
                         {
                             ev->type = V3_EVENT_USER_TALK_END;
                             ev->user.id = m->header.user_id;

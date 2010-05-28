@@ -1286,6 +1286,7 @@ _v3_get_0x52(_v3_net_message *msg) {/*{{{*/
             }
             break;
         case V3_AUDIO_STOP:
+        case 0x03:
             {
                 _v3_msg_0x52_0x02 *msub = (_v3_msg_0x52_0x02 *)m;
                 msub = realloc(m, sizeof(_v3_msg_0x52_0x02));
