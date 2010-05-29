@@ -9,7 +9,7 @@ LOCAL_SRC_FILES		:= add.c			code.c				debug.c				decode.c \
 				       gsm_destroy.c	gsm_decode.c		gsm_encode.c		gsm_explode.c \
 				       gsm_implode.c	gsm_create.c		gsm_print.c			gsm_option.c \
 				       short_term.c		table.c
-LOCAL_CFLAGS		:= -I$(LOCAL_PATH)/../inc -O3
+LOCAL_CFLAGS		:= -I$(LOCAL_PATH)/../inc -DWAV49 -O3
 include $(BUILD_STATIC_LIBRARY)
 
 # Build libspeex
