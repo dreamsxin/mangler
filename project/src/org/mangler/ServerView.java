@@ -20,6 +20,7 @@ public class ServerView extends TabActivity {
 	String password;
 	String username;
 	String phonetic;
+	Player player = new Player();
 	
 	/** Called when the activity is first created. */
     @Override
@@ -87,7 +88,7 @@ public class ServerView extends TabActivity {
     	// We need to start this before calling v3_login
     	startEventThread();
     	
-    	VentriloInterface.debuglevel(VentriloDebugLevels.V3_DEBUG_INTERNAL);
+    	VentriloInterface.debuglevel(VentriloDebugLevels.V3_DEBUG_INFO);
         if(VentriloInterface.login(hostname + ":" + port, username, password, phonetic)) {
 	    	startRecvThread();
         }
@@ -114,13 +115,18 @@ public class ServerView extends TabActivity {
 		    			case VentriloEvents.V3_EVENT_PING:
 		    				Log.i("mangler", 
 		    						"Ping: " + Integer.toString(data.ping));
-		    			break;
+		    				break;
 		    			
 		    			case VentriloEvents.V3_EVENT_USER_TALK_START:
 		    				Log.i("mangler", 
 		    						"User started talking: " + Integer.toString(data.user.id) + 
 		    						" - Rate: " + Integer.toString(data.pcm.rate));
-		    			break;
+		    				break;
+		    				
+		    			case VentriloEvents.V3_EVENT_PLAY_AUDIO:
+		    					Log.i("mangler", "Feeding player with: " + Integer.toString(data.pcm.length));
+		    					player.write(data.data.sample, data.pcm.length);
+		    				break;
 		    			
 		    			case VentriloEvents.V3_EVENT_USER_TALK_END:
 		    				Log.i("mangler", 
@@ -137,7 +143,7 @@ public class ServerView extends TabActivity {
 		    				VentriloInterface.getchannel(data, data.channel.id);
 		    				channels.put(data.channel.id, StringFromBytes(data.text.name));
 		    				
-		    				Log.i("mangler", 
+		    				Log.i("mangler",
 		    						"Channel added / modified: " + Short.toString(data.channel.id) +
 		    						" -> " + StringFromBytes(data.text.name));
 		    				break;
@@ -172,6 +178,12 @@ public class ServerView extends TabActivity {
 		    				Log.i("mangler",
 		    						"User joined channel: " + Integer.toString(data.user.id) +
 		    						" - channel: " + Integer.toString(data.channel.id));
+		    				
+		    					if(data.user.id == VentriloInterface.getuserid()) {
+		    						VentriloInterface.getchannel(data, data.channel.id);
+		    						int rate = VentriloInterface.getcodecrate(data.data.channel.channel_codec, data.data.channel.channel_format);
+		    						player.set_rate(rate);
+		    					}
 		    				break;
 		    				
 		    			case VentriloEvents.V3_EVENT_USER_LOGOUT:

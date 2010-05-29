@@ -8,34 +8,27 @@ public class Recorder {
 	
 	private byte[] buffer;
 	boolean is_recording = false;
-	private int rate = 0;
 	private int	pcmlength = 0;
+	private int rate = 0;
 	private AudioRecord audiorecord;
 	
 	public Recorder(int rate) {
 		if(!VentriloInterface.isloggedin()) {
 			throw new RuntimeException("Login before instantiating recorder instance.");
-		}
-		
-		if(rate <= 0) {
-			throw new RuntimeException("Incorrect rate specified.");
-		}
-		this.rate = rate;
-		
-		this.pcmlength = VentriloInterface.pcmlengthforrate(this.rate);
-		if(this.pcmlength == 0) {
-			throw new RuntimeException("Libventrilo could not determine pcm length.");
-		}
-		
+		}	
+		set_rate(rate);
+	}
+	
+	public void set_rate(int rate) {
 		try {
 			this.audiorecord = new AudioRecord(
 				MediaRecorder.AudioSource.MIC,
-				this.rate, 
+				rate, 
 				AudioFormat.CHANNEL_CONFIGURATION_MONO, 
 				AudioFormat.ENCODING_PCM_16BIT, 
 		        AudioRecord.getMinBufferSize
 		        (
-					this.rate, 
+					rate, 
 					AudioFormat.CHANNEL_CONFIGURATION_MONO, 
 					AudioFormat.ENCODING_PCM_16BIT
 				)
@@ -43,6 +36,11 @@ public class Recorder {
 		}
 		catch(IllegalArgumentException ex) {
 			throw ex;
+		}
+		this.rate = rate;
+		this.pcmlength = VentriloInterface.pcmlengthforrate(rate);
+		if(this.pcmlength == 0) {
+			throw new RuntimeException("Libventrilo could not determine pcm length.");
 		}
 		
 		this.buffer = new byte[this.pcmlength];
@@ -74,7 +72,7 @@ public class Recorder {
 	}
 	
 	public void start() {
-		if(recording()) {
+		if(recording() || this.audiorecord == null) {
 			return;
 		}
 		this.recording(true);
