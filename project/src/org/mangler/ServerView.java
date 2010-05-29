@@ -4,6 +4,9 @@ import android.app.TabActivity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
+import android.view.View.OnClickListener;
+import android.widget.Button;
 import android.widget.TabHost;
 
 import java.util.HashMap;
@@ -21,6 +24,7 @@ public class ServerView extends TabActivity {
 	String username;
 	String phonetic;
 	Player player = new Player();
+	Recorder recorder;
 	
 	/** Called when the activity is first created. */
     @Override
@@ -48,8 +52,26 @@ public class ServerView extends TabActivity {
     		connect(hostname, port, password, username, phonetic);
     	}
     	
-    	//tabSpec = tabHost.newTabSpec("talk").setIndicator("Talk").setContent(R.id.talkView);
-        //tabHost.addTab(tabSpec);
+    	// Default recorder initialization to 8khz
+    	recorder = new Recorder(8000);
+    	
+    	final Button ttalk = (Button)findViewById(R.id.ToggleTalkButton);
+    	ttalk.setText(R.string.start_talk);
+        
+        ttalk.setOnClickListener(new OnClickListener() {
+			public void onClick(View v) {
+				if (!recorder.recording()) {
+					recorder.start();
+					ttalk.setText(R.string.stop_talk);
+				} else {
+					recorder.stop();
+					ttalk.setText(R.string.start_talk);
+				}
+			}
+        });
+    	  	
+    	tabSpec = tabHost.newTabSpec("talk").setIndicator("Talk").setContent(R.id.talkView);
+        tabHost.addTab(tabSpec);
     	
         intent = new Intent().setClass(this, ChannelList.class);
         intent.putExtra("channels", channels);
@@ -69,6 +91,7 @@ public class ServerView extends TabActivity {
     @Override
     protected void onStop() {
     	super.onStop();
+    	recorder.stop();
     	stopEventThread = true;
     	VentriloInterface.logout();
     }
@@ -183,6 +206,9 @@ public class ServerView extends TabActivity {
 		    						VentriloInterface.getchannel(data, data.channel.id);
 		    						int rate = VentriloInterface.getcodecrate(data.data.channel.channel_codec, data.data.channel.channel_format);
 		    						player.set_rate(rate);
+		    						
+		    						recorder.stop();
+		    						recorder = new Recorder(rate);
 		    					}
 		    				break;
 		    				

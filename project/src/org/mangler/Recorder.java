@@ -12,7 +12,7 @@ public class Recorder {
 	private int rate = 0;
 	private AudioRecord audiorecord;
 	
-	public Recorder() {
+	public Recorder(int rate) {
 		if(!VentriloInterface.isloggedin()) {
 			throw new RuntimeException("Login before instantiating recorder instance.");
 		}	
@@ -24,7 +24,7 @@ public class Recorder {
 				AudioFormat.ENCODING_PCM_16BIT, 
 		        AudioRecord.getMinBufferSize
 		        (
-					8000, 
+					rate, 
 					AudioFormat.CHANNEL_CONFIGURATION_MONO, 
 					AudioFormat.ENCODING_PCM_16BIT
 				)
@@ -58,7 +58,7 @@ public class Recorder {
 		}
 	}
 	
-	private synchronized boolean recording() {
+	public synchronized boolean recording() {
 		return this.is_recording;
 	}
 	
