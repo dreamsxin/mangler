@@ -12,14 +12,10 @@ public class Recorder {
 	private int rate = 0;
 	private AudioRecord audiorecord;
 	
-	public Recorder(int rate) {
+	public Recorder() {
 		if(!VentriloInterface.isloggedin()) {
 			throw new RuntimeException("Login before instantiating recorder instance.");
 		}	
-		set_rate(rate);
-	}
-	
-	public void set_rate(int rate) {
 		try {
 			this.audiorecord = new AudioRecord(
 				MediaRecorder.AudioSource.MIC,
@@ -28,7 +24,7 @@ public class Recorder {
 				AudioFormat.ENCODING_PCM_16BIT, 
 		        AudioRecord.getMinBufferSize
 		        (
-					rate, 
+					8000, 
 					AudioFormat.CHANNEL_CONFIGURATION_MONO, 
 					AudioFormat.ENCODING_PCM_16BIT
 				)
@@ -42,7 +38,6 @@ public class Recorder {
 		if(this.pcmlength == 0) {
 			throw new RuntimeException("Libventrilo could not determine pcm length.");
 		}
-		
 		this.buffer = new byte[this.pcmlength];
 	}
 	
