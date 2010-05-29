@@ -1235,6 +1235,11 @@ _v3_get_0x52(_v3_net_message *msg) {/*{{{*/
     _v3_msg_0x52 *m;
 
     _v3_func_enter("_v3_get_0x52");
+    if (msg->len < sizeof(_v3_msg_0x52)) {
+        _v3_debug(V3_DEBUG_PACKET_PARSE, "expected more than %d bytes, but message is %d bytes", sizeof(_v3_msg_0x52), msg->len);
+        _v3_func_leave("_v3_get_0x52");
+        return false;
+    }
     m = malloc(sizeof(_v3_msg_0x52));
     memcpy(m, msg->data, sizeof(_v3_msg_0x52));
     _v3_debug(V3_DEBUG_PACKET_PARSE, "subtype.......: %d", m->subtype);
@@ -1299,13 +1304,15 @@ _v3_get_0x52(_v3_net_message *msg) {/*{{{*/
         case V3_AUDIO_MUTE:
             {
                 _v3_msg_0x52_0x03 *msub = (_v3_msg_0x52_0x03 *)m;
-                if (msg->len != sizeof(_v3_msg_0x52_0x03)) {
-                    _v3_debug(V3_DEBUG_PACKET_PARSE, "expected %d bytes, but message is %d bytes", sizeof(_v3_msg_0x52_0x03), msg->len);
-                    free(msub);
-                    _v3_func_leave("_v3_get_0x52");
-                    return false;
-                }
-                _v3_debug(V3_DEBUG_PACKET_PARSE, "user %d transmit muted from server", msub->header.user_id);
+                _v3_debug(V3_DEBUG_PACKET_PARSE, "user %d is transmit muted from server", msub->header.user_id);
+                msg->contents = msub;
+                _v3_func_leave("_v3_get_0x52");
+                return true;
+            }
+        case V3_AUDIO_START_LOGIN:
+            {
+                _v3_msg_0x52_0x03 *msub = (_v3_msg_0x52_0x03 *)m;
+                _v3_debug(V3_DEBUG_PACKET_PARSE, "user %d was transmitting before login", msub->header.user_id);
                 msg->contents = msub;
                 _v3_func_leave("_v3_get_0x52");
                 return true;

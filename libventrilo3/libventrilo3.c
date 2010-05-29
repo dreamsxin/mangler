@@ -4650,6 +4650,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                 v3_event *ev = _v3_create_event(0);
                 switch (m->header.subtype) {
                     case V3_AUDIO_START:
+                    case V3_AUDIO_START_LOGIN:
                         {
                             ev->type = V3_EVENT_USER_TALK_START;
                             ev->user.id = m->header.user_id;
