@@ -86,7 +86,7 @@
 #define V3_AUDIO_START              0x00
 #define V3_AUDIO_DATA               0x01
 #define V3_AUDIO_STOP               0x02
-#define V3_AUDIO_UNK                0x03
+#define V3_AUDIO_MUTE               0x03
 
 #define V3_PHANTOM_ADD              0x00
 #define V3_PHANTOM_REMOVE           0x01
@@ -258,6 +258,7 @@ enum _v3_events {
     V3_EVENT_ERROR_MSG,
     V3_EVENT_USER_TALK_START,
     V3_EVENT_USER_TALK_END,
+    V3_EVENT_USER_TALK_MUTE,
     V3_EVENT_PLAY_AUDIO,
     V3_EVENT_RECORD_UPDATE,
     V3_EVENT_DISPLAY_MOTD,

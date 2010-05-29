@@ -705,7 +705,7 @@ _v3_recv(int block) {/*{{{*/
                         {
                             _v3_debug(V3_DEBUG_INFO, "got outbound user talk start event");
                             const v3_codec *codec = v3_get_channel_codec(v3_get_user_channel(v3_get_user_id()));
-                            _v3_net_message *msg = _v3_put_0x52(V3_AUDIO_START, codec->codec, codec->format, ev.pcm.send_type, 0, 0, NULL);
+                            _v3_net_message *msg = _v3_put_0x52(V3_AUDIO_START, codec->codec, codec->format, 0, 0, NULL);
                             if (_v3_send(msg)) {
                                 _v3_debug(V3_DEBUG_SOCKET, "sent user talk start message to server");
                             } else {
@@ -751,7 +751,6 @@ _v3_recv(int block) {/*{{{*/
                                                 V3_AUDIO_DATA,
                                                 codec->codec,
                                                 codec->format,
-                                                ev.pcm.send_type,
                                                 2000 + ev.pcm.channels, // max: <= 3000
                                                 pktlen, // max: 0x01: < 200; 0x02: < 110
                                                 celtdataptr);
@@ -779,7 +778,6 @@ _v3_recv(int block) {/*{{{*/
                                             V3_AUDIO_DATA,
                                             codec->codec,
                                             codec->format,
-                                            ev.pcm.send_type,
                                             ev.pcm.length,
                                             datalen,
                                             data);
@@ -807,7 +805,8 @@ _v3_recv(int block) {/*{{{*/
                     case V3_EVENT_USER_TALK_END:/*{{{*/
                         {
                             _v3_debug(V3_DEBUG_INFO, "got outbound user talk end event");
-                            _v3_net_message *msg = _v3_put_0x52(V3_AUDIO_STOP, -1, -1, 0, 0, 0, NULL);
+                            const v3_codec *codec = v3_get_channel_codec(v3_get_user_channel(v3_get_user_id()));
+                            _v3_net_message *msg = _v3_put_0x52(V3_AUDIO_STOP, codec->codec, codec->format, 0, 0, NULL);
                             if (_v3_send(msg)) {
                                 _v3_debug(V3_DEBUG_SOCKET, "sent user talk end message to server");
                             } else {
@@ -4651,7 +4650,6 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                 v3_event *ev = _v3_create_event(0);
                 switch (m->header.subtype) {
                     case V3_AUDIO_START:
-                    case 0x04:
                         {
                             ev->type = V3_EVENT_USER_TALK_START;
                             ev->user.id = m->header.user_id;
@@ -4663,7 +4661,6 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                         }
                         break;
                     case V3_AUDIO_STOP:
-                    case 0x03:
                         {
                             ev->type = V3_EVENT_USER_TALK_END;
                             ev->user.id = m->header.user_id;
@@ -4671,6 +4668,12 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                             _v3_get_user(m->header.user_id)->is_transmitting = false;
                             _v3_unlock_userlist();
                             _v3_vrf_record_event(V3_VRF_EVENT_AUDIO_STOP, m->header.user_id, -1, -1, 0, 0, NULL);
+                        }
+                        break;
+                    case V3_AUDIO_MUTE:
+                        {
+                            ev->type = V3_EVENT_USER_TALK_MUTE;
+                            ev->user.id = m->header.user_id;
                         }
                         break;
                     case V3_AUDIO_DATA:

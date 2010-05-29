@@ -1298,40 +1298,28 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                 errorDialog(c_to_ustring(ev->error.message));
                 break;/*}}}*/
             case V3_EVENT_USER_TALK_START:/*{{{*/
-                v3_user *me, *user;
-                me = v3_get_user(v3_get_user_id());
-                user = v3_get_user(ev->user.id);
-                channelTree->refreshUser(ev->user.id);
-                if (me && user && me->channel == user->channel) {
-                    v3_free_user(me);
-                    v3_free_user(user);
-                } else {
-                    if (!me) {
-                        fprintf(stderr, "couldn't find my own user info %d\n", v3_get_user_id());
-                    } else {
-                        v3_free_user(me);
-                    }
-                    if (!user) {
-                        fprintf(stderr, "couldn't find user for for user id %d\n", ev->user.id);
-                    } else {
-                        v3_free_user(user);
-                    }
+                if (v3_is_loggedin()) {
+                    channelTree->refreshUser(ev->user.id);
                 }
                 break;/*}}}*/
             case V3_EVENT_USER_TALK_END:/*{{{*/
                 if (v3_is_loggedin()) {
-                    //fprintf(stderr, "user %d stopped talking\n", ev->user.id);
                     channelTree->refreshUser(ev->user.id);
 #ifdef HAVE_XOSD
                     osd->removeUser(ev->user.id);
 #endif
-                    // TODO: this is bad, there must be a flag in the last audio
-                    // packet saying that it's the last one.  Need to figure out
-                    // what that flag is and close it in V3_EVENT_PLAY_AUDIO
                     if (outputAudio[ev->user.id]) {
                         outputAudio[ev->user.id]->finish();
                         outputAudio.erase(ev->user.id);
                     }
+                }
+                break;/*}}}*/
+            case V3_EVENT_USER_TALK_MUTE:/*{{{*/
+                if (v3_is_loggedin()) {
+                    channelTree->refreshUser(ev->user.id);
+#ifdef HAVE_XOSD
+                    osd->removeUser(ev->user.id);
+#endif
                 }
                 break;/*}}}*/
             case V3_EVENT_PLAY_AUDIO:/*{{{*/
