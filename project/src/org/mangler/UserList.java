@@ -29,46 +29,58 @@ import java.util.Iterator;
 
 public class UserList extends ListActivity {
 	
-	HashMap<Short, String> userMap;
+	ArrayList<HashMap<String, Object>> resources = new ArrayList<HashMap<String, Object>>();
+	SimpleAdapter userAdapter;
 	
 	public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.user_list);
+
+        // Create empty adapter.
+        userAdapter = new SimpleAdapter(this, resources, R.layout.user_row, new String[] { "name", "id" }, new int[] { R.id.urowtext, R.id.urowid } );
+        setListAdapter(userAdapter);
         
-        userMap = new HashMap<Short, String>();
-        
+        // Grab users (if any) and add them to our resources.
     	Bundle extras = getIntent().getExtras();
     	if (extras != null) {
-    		userMap = (HashMap<Short, String>)extras.getSerializable("users");
+    		@SuppressWarnings("unchecked")
+			HashMap<Short, String> userMap = (HashMap<Short, String>)extras.getSerializable("users");
+			if(userMap != null) {
+				Iterator<Short> iterator = userMap.keySet().iterator();
+		    	while(iterator.hasNext()) {
+		    		short id = iterator.next();
+		    		if(id > 0) {
+		    			addUser(id, userMap.get(id));
+		    		}
+		    	}
+			}
     	}
-        
-    	fillData();
+
         registerForContextMenu(getListView());
     }
-
-    // Populate user list
-    private void fillData() {
-    	ArrayList<HashMap<String, Object>> resources = new ArrayList<HashMap<String, Object>>();
-
-    	HashMap<String, Object> data;
-       
-    	Iterator<Short> iterator = userMap.keySet().iterator();
-
-    	while (iterator.hasNext()) {
-    		short id = iterator.next();
-    		if(id > 0) {
-	    		data = new HashMap<String, Object>();
-	    		data.put("name", userMap.get(id));
-	    		data.put("id", id);
-	    		resources.add(data);
-    		}
-    	}
-       
-    	SimpleAdapter userAdapter = new SimpleAdapter(this, resources, R.layout.user_row, new String[] { "name", "id" }, new int[] { R.id.urowtext, R.id.urowid } );
-       
-    	setListAdapter(userAdapter);
-    }
+	
+	public void addUser(int id, String username) {
+		// Add data.
+		HashMap<String, Object> data = new HashMap<String, Object>();
+		data.put("name", username);
+		data.put("id", id);
+		resources.add(data);
+		
+		// Update list.
+		userAdapter.notifyDataSetChanged();
+	}
     
+	public void delUser(int id) {
+		for(Iterator<HashMap<String, Object>> iterator = resources.iterator(); iterator.hasNext(); ) {
+			if((Integer)iterator.next().get("id") == id) {
+				// Remove data and update list.
+				iterator.remove();
+				userAdapter.notifyDataSetChanged();
+				return;
+			}
+		}
+	}
+	
     @Override
     protected void onListItemClick(ListView l, View v, int position, long id) {
         super.onListItemClick(l, v, position, id);
