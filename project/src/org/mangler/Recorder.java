@@ -6,13 +6,17 @@ import android.media.MediaRecorder;
 
 public class Recorder {
 	
-	private byte[] buffer;
-	boolean is_recording = false;
-	private int	pcmlength = 0;
-	private int rate = 0;
+	private boolean		is_recording = false;
+	private byte[] 		buffer;
+	private int			pcmlength = 0;
+	private int 		rate = 0;
 	private AudioRecord audiorecord;
+	private Thread 		recordthread;
 	
 	public Recorder(int rate) {
+		this.rate = rate;
+		
+		// Attempt to initialize recorder instance.
 		if(!VentriloInterface.isloggedin()) {
 			throw new RuntimeException("Login before instantiating recorder instance.");
 		}	
@@ -24,7 +28,7 @@ public class Recorder {
 				AudioFormat.ENCODING_PCM_16BIT, 
 		        AudioRecord.getMinBufferSize
 		        (
-					rate, 
+					rate,
 					AudioFormat.CHANNEL_CONFIGURATION_MONO, 
 					AudioFormat.ENCODING_PCM_16BIT
 				)
@@ -33,53 +37,63 @@ public class Recorder {
 		catch(IllegalArgumentException ex) {
 			throw ex;
 		}
-		this.rate = rate;
-		this.pcmlength = VentriloInterface.pcmlengthforrate(rate);
+
+		// Generate pcm length from input rate and create buffer.
+		pcmlength = VentriloInterface.pcmlengthforrate(rate);
 		if(this.pcmlength == 0) {
-			throw new RuntimeException("Libventrilo could not determine pcm length.");
+			throw new RuntimeException("libventrilo could not determine pcm length.");
 		}
-		this.buffer = new byte[this.pcmlength];
+		buffer = new byte[this.pcmlength];
 	}
 	
 	private class RecordThread implements Runnable {
 		public void run() {
-			while(recording()) {
+			while(true) {
 		        int offset = 0;
 		        do {
+		        	// Read number of bytes equal to pcmlength - offset.
 		        	int pcm_read = audiorecord.read(buffer, offset, pcmlength - offset);
-		        	if(pcm_read == -3 || pcm_read == -2) {
+		        	if(pcm_read < 0) {
 		        		throw new RuntimeException("Audiorecord read failed: " + Integer.toString(pcm_read));
 		        	}
+		        	
+		        	// Increment offset based on bytes read.
 		        	offset += pcm_read;
 		        }
 		        while(offset < pcmlength);
+		        
+		        // Transmit recorded audio.
 		        VentriloInterface.sendaudio(buffer, pcmlength, rate);
 			}
 		}
 	}
 	
-	public synchronized boolean recording() {
-		return this.is_recording;
+	public boolean recording() {
+		return is_recording;
 	}
 	
-	private synchronized void recording(boolean is_recording) {
+	private void recording(boolean is_recording) {
 		this.is_recording = is_recording;
 	}
 	
 	public void start() {
-		if(recording() || this.audiorecord == null) {
+		if(recording() || audiorecord == null) {
 			return;
 		}
-		this.recording(true);
-		this.audiorecord.startRecording();
+		recording(true);
+		audiorecord.startRecording();
 		VentriloInterface.startaudio((short) 3);
-		(new Thread(new RecordThread())).start();
+		recordthread = new Thread(new RecordThread());
 	}
 	
 	public void stop() {
+		if(!recording()) {
+			return;
+		}
+		recording(false);
+		audiorecord.stop();
 		VentriloInterface.stopaudio();
-		this.recording(false);
-		this.audiorecord.stop();
+		recordthread.stop();
 	}
 	
 }
