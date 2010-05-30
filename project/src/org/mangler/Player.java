@@ -9,24 +9,34 @@ public class Player {
 	
 	private AudioTrack audiotrack;
 	
-	public Player() {
-		this.audiotrack = new AudioTrack(
-			AudioManager.STREAM_VOICE_CALL, 
-			8000,
-			AudioFormat.CHANNEL_CONFIGURATION_MONO, 
-			AudioFormat.ENCODING_PCM_16BIT, 
-			32768, 
-			AudioTrack.MODE_STREAM
-		);
-		this.audiotrack.play();
+	public Player(int rate) {
+		// Attempt to initialize AudioTrack instance.
+		try {
+			audiotrack = new AudioTrack(
+				AudioManager.STREAM_VOICE_CALL, 
+				rate,
+				AudioFormat.CHANNEL_CONFIGURATION_MONO, 
+				AudioFormat.ENCODING_PCM_16BIT, 
+				32768, 
+				AudioTrack.MODE_STREAM
+			);
+		}
+		catch(IllegalArgumentException e) {
+			throw e;
+		}
+		audiotrack.play();
 	}
 	
-	public void set_rate(int rate) {
-		this.audiotrack.setPlaybackRate(rate);
+	public void rate(int rate) {
+		audiotrack.setPlaybackRate(rate);
+	}
+	
+	public int rate() {
+		return audiotrack.getPlaybackRate();
 	}
 	
 	public void write(byte[] sample, int length) {
-		this.audiotrack.write(sample, 0, length);
+		audiotrack.write(sample, 0, length);
 	}
 	
 }

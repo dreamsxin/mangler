@@ -13,18 +13,17 @@ import java.util.HashMap;
 
 public class ServerView extends TabActivity {
 	
-	boolean stopEventThread;
+	private HashMap<Short, String> channels;
+	private HashMap<Short, String> users;
 	
-	HashMap<Short, String> channels;
-	HashMap<Short, String> users;
-	
-	String hostname;
-	int port;
-	String password;
-	String username;
-	String phonetic;
-	Player player = new Player();
-	Recorder recorder;
+	private boolean  stopEventThread;
+	private String 	 hostname;
+	private int 	 port;
+	private String 	 password;
+	private String 	 username;
+	private String 	 phonetic;
+	private Player 	 player;
+	private Recorder recorder;
 	
 	/** Called when the activity is first created. */
     @Override
@@ -51,10 +50,7 @@ public class ServerView extends TabActivity {
     		
     		connect(hostname, port, password, username, phonetic);
     	}
-    	
-    	// Default recorder initialization to 8khz
-    	recorder = new Recorder(8000);
-    	
+ 
     	final Button ttalk = (Button)findViewById(R.id.ToggleTalkButton);
     	ttalk.setText(R.string.start_talk);
         
@@ -125,106 +121,86 @@ public class ServerView extends TabActivity {
 		    		VentriloInterface.getevent(data);
 		    		switch(data.type) {
 		    			case VentriloEvents.V3_EVENT_CHAT_MESSAGE:
-		    				Log.i("mangler", 
-		    						"User sent message: " + Integer.toString(data.user.id) +
-		    						" -> " + StringFromBytes(data.data.chatmessage));
+		    				Log.i("mangler", "User sent message: " + Integer.toString(data.user.id) + " -> " + StringFromBytes(data.data.chatmessage));
 		    				break;
 		    				
 		    			case VentriloEvents.V3_EVENT_CHAT_JOIN:
-		    				Log.i("mangler", 
-		    						"User joined chat: " + Integer.toString(data.user.id));
+		    				Log.i("mangler", "User joined chat: " + Integer.toString(data.user.id));
 		    				break;
 		    			
 		    			case VentriloEvents.V3_EVENT_PING:
-		    				Log.i("mangler", 
-		    						"Ping: " + Integer.toString(data.ping));
+		    				Log.i("mangler", "Ping: " + Integer.toString(data.ping));
 		    				break;
 		    			
 		    			case VentriloEvents.V3_EVENT_USER_TALK_START:
-		    				Log.i("mangler", 
-		    						"User started talking: " + Integer.toString(data.user.id) + 
-		    						" - Rate: " + Integer.toString(data.pcm.rate));
+		    				Log.i("mangler", "User started talking: " + Integer.toString(data.user.id) + " - Rate: " + Integer.toString(data.pcm.rate));
 		    				break;
 		    				
 		    			case VentriloEvents.V3_EVENT_PLAY_AUDIO:
-		    					Log.i("mangler", "Feeding player with: " + Integer.toString(data.pcm.length));
 		    					player.write(data.data.sample, data.pcm.length);
 		    				break;
 		    			
 		    			case VentriloEvents.V3_EVENT_USER_TALK_END:
-		    				Log.i("mangler", 
-		    						"User stopped talking: " + Integer.toString(data.user.id));
+		    				Log.i("mangler", "User stopped talking: " + Integer.toString(data.user.id));
 			    			break;
 			    			
 		    			case VentriloEvents.V3_EVENT_STATUS:
-		    				Log.i("mangler", 
-		    						"Status: " + Integer.toString(data.status.percent) + "%" +
-		    						" -> " + StringFromBytes(data.status.message));
+		    				Log.i("mangler", "Status: " + Integer.toString(data.status.percent) + "%" + " -> " + StringFromBytes(data.status.message));
 		    				break;
 		    				
 		    			case VentriloEvents.V3_EVENT_CHAN_ADD:
 		    				VentriloInterface.getchannel(data, data.channel.id);
 		    				channels.put(data.channel.id, StringFromBytes(data.text.name));
 		    				
-		    				Log.i("mangler",
-		    						"Channel added / modified: " + Short.toString(data.channel.id) +
-		    						" -> " + StringFromBytes(data.text.name));
+		    				Log.i("mangler", "Channel added / modified: " + Short.toString(data.channel.id) + " -> " + StringFromBytes(data.text.name));
 		    				break;
 		    			case VentriloEvents.V3_EVENT_CHAN_MODIFY:
 		    				VentriloInterface.getchannel(data, data.channel.id);
-		    				Log.i("mangler", 
-		    						"Channel added / modified: " + Short.toString(data.channel.id) +
-		    						" -> " + StringFromBytes(data.text.name));
+		    				Log.i("mangler", "Channel added / modified: " + Short.toString(data.channel.id) +" -> " + StringFromBytes(data.text.name));
 		    				break;
 		    				
 		    			case VentriloEvents.V3_EVENT_USER_LOGIN:
 		    				VentriloInterface.getuser(data, data.user.id);
 		    				users.put(data.user.id, StringFromBytes(data.text.name));
 		    				
-		    				Log.i("mangler", 
-		    						"User logged in: " + Short.toString(data.user.id) +
-		    						" -> " + StringFromBytes(data.text.name));
+		    				Log.i("mangler", "User logged in: " + Short.toString(data.user.id) + " -> " + StringFromBytes(data.text.name));
 		    				break;
 		    				
 		    			case VentriloEvents.V3_EVENT_LOGIN_COMPLETE:
-		    				Log.i("mangler",
-		    						"Login complete!");
+		    				int lobby_rate = VentriloInterface.getchannelrate((short)0);
+		    				player 	 = new Player(lobby_rate);
+		    				recorder = new Recorder(lobby_rate);
+		    				
+		    				Log.i("mangler", "Login complete!");
 		    				break;
 		    				
 		    			case VentriloEvents.V3_EVENT_DISPLAY_MOTD:
-		    				Log.i("mangler",
-		    						"MOTD: " + StringFromBytes(data.data.motd));
-		    					
+		    				Log.i("mangler", "MOTD: " + StringFromBytes(data.data.motd));
 		    				break;
 		    				
 		    			case VentriloEvents.V3_EVENT_USER_CHAN_MOVE:
-		    				Log.i("mangler",
-		    						"User joined channel: " + Integer.toString(data.user.id) +
-		    						" - channel: " + Integer.toString(data.channel.id));
-		    				
-		    					if(data.user.id == VentriloInterface.getuserid()) {
-		    						VentriloInterface.getchannel(data, data.channel.id);
-		    						int rate = VentriloInterface.getcodecrate(data.data.channel.channel_codec, data.data.channel.channel_format);
-		    						player.set_rate(rate);
-		    						
-		    						recorder.stop();
-		    						recorder = new Recorder(rate);
-		    					}
+		    				VentriloInterface.getchannel(data, data.channel.id);
+	    					if(data.user.id == VentriloInterface.getuserid()) {
+	    						// Set new rate on our player and recorder.
+	    						int channel_rate = VentriloInterface.getcodecrate(data.data.channel.channel_codec, data.data.channel.channel_format);
+	    						player.rate(channel_rate);
+	    						recorder.stop();
+	    						recorder = new Recorder(channel_rate);
+	    					}
+	    					
+	    					Log.i("mangler", "User joined channel: " + Integer.toString(data.user.id) + " - channel: " + Integer.toString(data.channel.id));
 		    				break;
 		    				
 		    			case VentriloEvents.V3_EVENT_USER_LOGOUT:
-		    				Log.i("mangler",
-		    						"User left server: " + Integer.toString(data.user.id));
+		    				Log.i("mangler", "User left server: " + Integer.toString(data.user.id));
 		    				break;
 		    				
 		    			case VentriloEvents.V3_EVENT_CHAT_LEAVE:
-		    				Log.i("mangler",
-		    						"User left chat: " + Integer.toString(data.user.id));
+		    				Log.i("mangler", "User left chat: " + Integer.toString(data.user.id));
 		    				break;
 		    			
 		    			default:
-		    				Log.w("mangler", 
-		    						"Unknown event of type: " + Integer.toString(data.type));
+		    				Log.w("mangler", "Unknown event of type: " + Integer.toString(data.type));
 		    		}
 		    		
 		    		if (stopEventThread) break;

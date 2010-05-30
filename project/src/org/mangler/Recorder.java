@@ -11,17 +11,15 @@ public class Recorder {
 	private int			pcmlength = 0;
 	private int 		rate = 0;
 	private AudioRecord audiorecord;
-	private Thread 		recordthread;
 	
 	public Recorder(int rate) {
-		this.rate = rate;
-		
-		// Attempt to initialize recorder instance.
 		if(!VentriloInterface.isloggedin()) {
 			throw new RuntimeException("Login before instantiating recorder instance.");
 		}	
+		
+		// Attempt to initialize AudioRecord instance.
 		try {
-			this.audiorecord = new AudioRecord(
+			audiorecord = new AudioRecord(
 				MediaRecorder.AudioSource.MIC,
 				rate, 
 				AudioFormat.CHANNEL_CONFIGURATION_MONO, 
@@ -37,13 +35,15 @@ public class Recorder {
 		catch(IllegalArgumentException ex) {
 			throw ex;
 		}
+		
+		this.rate = rate;
 
 		// Generate pcm length from input rate and create buffer.
 		pcmlength = VentriloInterface.pcmlengthforrate(rate);
-		if(this.pcmlength == 0) {
+		if(pcmlength <= 0) {
 			throw new RuntimeException("libventrilo could not determine pcm length.");
 		}
-		buffer = new byte[this.pcmlength];
+		buffer = new byte[pcmlength];
 	}
 	
 	private class RecordThread implements Runnable {
@@ -51,6 +51,7 @@ public class Recorder {
 			while(true) {
 		        int offset = 0;
 		        do {
+		        	// Kill thread if we stopped recording.
 		        	if(!recording()) {
 		        		return;
 		        	}
@@ -81,14 +82,13 @@ public class Recorder {
 	}
 	
 	public void start() {
-		if(recording() || audiorecord == null) {
+		if(recording()) {
 			return;
 		}
 		recording(true);
 		audiorecord.startRecording();
 		VentriloInterface.startaudio((short) 3);
-		recordthread = new Thread(new RecordThread());
-		recordthread.start();
+		(new Thread(new RecordThread())).start();
 	}
 	
 	public void stop() {

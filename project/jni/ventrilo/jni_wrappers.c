@@ -128,6 +128,11 @@ JNIEXPORT int JNICALL Java_org_mangler_VentriloInterface_debuglevel(JNIEnv* env,
 	return v3_debuglevel(level);
 }
 
+JNIEXPORT int JNICALL Java_org_mangler_VentriloInterface_getchannelrate(JNIEnv* env, jobject obj, jchar channelid) {
+	const v3_codec *codec = v3_get_channel_codec(channelid);
+	return codec ? codec->rate : 0;
+}
+
 JNIEXPORT jboolean JNICALL Java_org_mangler_VentriloInterface_login(JNIEnv* env, jobject obj, jstring server, jstring username, jstring password, jstring phonetic) {
 	char* _server = get_string(env, server);
 	char* _username = get_string(env, username);

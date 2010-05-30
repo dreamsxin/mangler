@@ -7,6 +7,7 @@ public class VentriloInterface {
 	public static native void 		clearevents();
 	public static native int  		debuglevel(int level);
 	public static native void		getchannel(VentriloEventData data, short channelid);
+	public static native int		getchannelrate(short channelid);
 	public static native int 		getcodecrate(short codec, short format);
 	public static native void		getevent(VentriloEventData data);
 	public static native int 		getmaxclients();
