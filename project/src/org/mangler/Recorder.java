@@ -51,6 +51,10 @@ public class Recorder {
 			while(true) {
 		        int offset = 0;
 		        do {
+		        	if(!recording()) {
+		        		return;
+		        	}
+		        
 		        	// Read number of bytes equal to pcmlength - offset.
 		        	int pcm_read = audiorecord.read(buffer, offset, pcmlength - offset);
 		        	if(pcm_read < 0) {
@@ -94,7 +98,6 @@ public class Recorder {
 		recording(false);
 		audiorecord.stop();
 		VentriloInterface.stopaudio();
-		recordthread.stop();
 	}
 	
 }
