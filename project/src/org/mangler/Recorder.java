@@ -84,6 +84,7 @@ public class Recorder {
 		audiorecord.startRecording();
 		VentriloInterface.startaudio((short) 3);
 		recordthread = new Thread(new RecordThread());
+		recordthread.start();
 	}
 	
 	public void stop() {
