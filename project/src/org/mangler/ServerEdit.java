@@ -1,3 +1,25 @@
+/*
+ * $LastChangedDate: 2010-05-28 20:39:54 +0200 (Fri, 28 May 2010) $
+ * $Revision: 846 $
+ * $LastChangedBy: clearscreen $
+ * $URL: http://svn.mangler.org/mangler/trunk/libventrilo3/libventrilo3.c $
+ *
+ * This file is part of Mangler.
+ *
+ * Mangler is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Mangler is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Mangler.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package org.mangler;
 
 import android.app.Activity;
@@ -90,14 +112,14 @@ public class ServerEdit extends Activity{
     private void saveState() {
         String servername = serverText.getText().toString();
         String hostname = hostText.getText().toString();
-        short port;
+        int port;
         try {
-        	port = (short)Integer.parseInt(portText.getText().toString());
+        	port = Integer.parseInt(portText.getText().toString());
         } catch (NumberFormatException e) {
         	port = 3847;
         }
         if (port < 0) {
-        	port = (short)(port * -1);
+        	port *= -1;
         }
         String password = passText.getText().toString();
         String username = userText.getText().toString();
