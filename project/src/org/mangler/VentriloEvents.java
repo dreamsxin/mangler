@@ -1,9 +1,4 @@
 /*
- * $LastChangedDate: 2010-05-28 20:39:54 +0200 (Fri, 28 May 2010) $
- * $Revision: 846 $
- * $LastChangedBy: clearscreen $
- * $URL: http://svn.mangler.org/mangler/trunk/libventrilo3/libventrilo3.c $
- *
  * This file is part of Mangler.
  *
  * Mangler is free software: you can redistribute it and/or modify

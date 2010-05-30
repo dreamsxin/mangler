@@ -1,9 +1,4 @@
 /*
- * $LastChangedDate: 2010-05-28 20:39:54 +0200 (Fri, 28 May 2010) $
- * $Revision: 846 $
- * $LastChangedBy: clearscreen $
- * $URL: http://svn.mangler.org/mangler/trunk/libventrilo3/libventrilo3.c $
- *
  * This file is part of Mangler.
  *
  * Mangler is free software: you can redistribute it and/or modify
@@ -47,47 +42,5 @@ public class main extends Activity{
 				startActivity(intent);
 			}
         });
-
-        // Connection code currently at bottom of ServerList class
-        
-    	/*if(VentriloInterface.login("vent.mangler.org:9047", "droid_test", "", "") != 0) {
-	    	
-	    	Runnable runnable = new Runnable() {
-	    		public void run() {
-	    			while(true) {
-	    				if(!VentriloInterface.recv()) break;
-	    			}
-	    		}
-	    	};
-	    	Thread t = new Thread(runnable);
-	    	t.start();
-	    */
-	    	/*
-	    	// Play incoming audio.
-	    	AudioTrack at = new AudioTrack(
-	    		AudioManager.STREAM_VOICE_CALL, 
-	    		8000, // set this to channel rate
-	    		AudioFormat.CHANNEL_CONFIGURATION_MONO, 
-	    		AudioFormat.ENCODING_PCM_16BIT, 
-	    		32768, 
-	    		AudioTrack.MODE_STREAM
-	    	);
-	    	at.play();
-	    	*/
-	    	
-	    	/*
-	    	// Send recorded audio.
-	    	try {
-		    	Recorder rec = new Recorder(8000);
-		    	rec.start();
-		    	try { Thread.sleep(5000); } catch(InterruptedException e) {}
-		    	rec.stop();
-	    	}
-	    	catch(RuntimeException e) {
-	    		Log.e("RuntimeException", e.toString());
-	    	}
-	    	*/
-	        
-	    //}
     }
 }
