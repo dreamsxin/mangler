@@ -13,6 +13,7 @@ import android.view.View.OnKeyListener;
 import android.view.inputmethod.InputMethodManager;
 import android.view.KeyEvent;
 import android.widget.EditText;
+import android.widget.ScrollView;
 import android.widget.TextView;
 
 public class ChatView extends Activity {
@@ -69,14 +70,17 @@ public class ChatView extends Activity {
         	case OPTION_JOIN_CHAT:
         		VentriloInterface.joinchat();
         		message.setEnabled(true);
-        		return true;
+        		break;
         	
         	case OPTION_LEAVE_CHAT:
         		VentriloInterface.leavechat();
         		message.setEnabled(false);
-        		return true;
+        		break;
+        		
+        	default:
+        		return false;
         }
-        return false;
+        return true;
     }
     
 	private BroadcastReceiver receiver = new BroadcastReceiver() {
@@ -95,6 +99,14 @@ public class ChatView extends Activity {
 			 		messages.append("\n" + intent.getStringExtra("username") + ": " + intent.getStringExtra("message"));
 			 		break;
 			 }
+			
+			// Scroll to bottom.
+			final ScrollView chatscroll = (ScrollView)findViewById(R.id.chatscroll);
+			chatscroll.post(new Runnable() {
+				public void run() {
+					chatscroll.fullScroll(ScrollView.FOCUS_DOWN); 
+				}
+			});
 		 }
 	 };
     

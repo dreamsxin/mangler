@@ -82,7 +82,7 @@ public class UserList extends ListActivity {
     
 	private void delUser(short id) {
 		for(Iterator<HashMap<String, Object>> iterator = resources.iterator(); iterator.hasNext(); ) {
-			if((Integer)iterator.next().get("id") == id) {
+			if((Short)iterator.next().get("id") == id) {
 				// Remove data.
 				iterator.remove();
 				

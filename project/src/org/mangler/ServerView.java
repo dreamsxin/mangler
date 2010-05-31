@@ -92,6 +92,7 @@ public class ServerView extends TabActivity {
         
         // Load activities that need to register broadcastreceivers.
         // I'm sure we can do this in a better way.
+        tabHost.setCurrentTab(3);
         tabHost.setCurrentTab(2);
         tabHost.setCurrentTab(1);
         tabHost.setCurrentTab(0);
