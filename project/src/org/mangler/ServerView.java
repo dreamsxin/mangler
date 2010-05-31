@@ -158,7 +158,7 @@ public class ServerView extends TabActivity {
 		    				break;
 		    				
 		    			case VentriloEvents.V3_EVENT_PLAY_AUDIO:
-		    					player.write(data.data.sample, data.pcm.length);
+		    				player.write(data.data.sample, data.pcm.length);
 		    				break;
 		    			
 		    			case VentriloEvents.V3_EVENT_USER_TALK_END:
