@@ -33,82 +33,60 @@ import java.util.Iterator;
 
 public class UserList extends ListActivity {
 	
-	ArrayList<HashMap<String, Object>> resources = new ArrayList<HashMap<String, Object>>();
-	SimpleAdapter userAdapter;
+	// Local variables.
+	private ArrayList<HashMap<String, Object>> resources = new ArrayList<HashMap<String, Object>>();
+	private SimpleAdapter userAdapter;
 	
+	// User events.
+	public static final int EVENT_ADD = 1;
+	public static final int EVENT_DEL = 2;
+	
+	@Override
 	public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.user_list);
 
-        // Create empty adapter.
+	    // Start receiving userlist intents.
+	    registerReceiver(receiver, new IntentFilter(ServerView.USERLIST_ACTION));
+        
         userAdapter = new SimpleAdapter(this, resources, R.layout.user_row, new String[] { "name", "id" }, new int[] { R.id.urowtext, R.id.urowid } );
         setListAdapter(userAdapter);
-        
-        // Grab users (if any) and add them to our resources.
-    	Bundle extras = getIntent().getExtras();
-    	if (extras != null) {
-    		@SuppressWarnings("unchecked")
-			HashMap<Short, String> userMap = (HashMap<Short, String>)extras.getSerializable("users");
-			if(userMap != null) {
-				Iterator<Short> iterator = userMap.keySet().iterator();
-		    	while(iterator.hasNext()) {
-		    		short id = iterator.next();
-		    		if(id > 0) {
-		    			addUser(id, userMap.get(id));
-		    		}
-		    	}
-			}
-    	}
-
         registerForContextMenu(getListView());
     }
 	
-	@Override
-	public void onResume()
-	{
-		super.onResume();
-		
-		 registerReceiver(receiver, new IntentFilter(ServerView.USERLIST_ACTION));
-	}
+	public BroadcastReceiver receiver = new BroadcastReceiver() {
+		public void onReceive(Context context, Intent intent) {
+			short id = intent.getShortExtra("userid", (short)0);
+			switch(intent.getIntExtra("event", -1)) {
+				case EVENT_ADD:
+					addUser(id, intent.getStringExtra("username"));
+					break;
+					
+				case EVENT_DEL:
+					delUser(id);
+					break;
+			}
+		}
+	};
 	
-	@Override
-	public void onPause()
-	{
-		super.onPause();
-		
-		unregisterReceiver(receiver);
-	}
-	
-	 private BroadcastReceiver receiver = new BroadcastReceiver() {
-		 public void onReceive(Context context, Intent intent) {
-			 boolean add = intent.getBooleanExtra("useradd", true);
-			 short id = intent.getShortExtra("userid", (short)0);
-			 String name = intent.getStringExtra("username");
-			 
-			 if (add) {
-				 addUser(id, name);
-			 } else {
-				 delUser(id);
-			 }
-		 }
-	 };
-	
-	public void addUser(int id, String username) {
+	private void addUser(short id, String username) {
 		// Add data.
 		HashMap<String, Object> data = new HashMap<String, Object>();
-		data.put("name", username);
 		data.put("id", id);
+		data.put("name", username);
 		resources.add(data);
 		
 		// Update list.
 		userAdapter.notifyDataSetChanged();
 	}
     
-	public void delUser(int id) {
+	private void delUser(short id) {
 		for(Iterator<HashMap<String, Object>> iterator = resources.iterator(); iterator.hasNext(); ) {
 			if((Integer)iterator.next().get("id") == id) {
-				// Remove data and update list.
+				// Remove data.
 				iterator.remove();
+				
+				// Update list and return.
 				userAdapter.notifyDataSetChanged();
 				return;
 			}
@@ -118,9 +96,8 @@ public class UserList extends ListActivity {
     @Override
     protected void onListItemClick(ListView l, View v, int position, long id) {
         super.onListItemClick(l, v, position, id);
-
-        HashMap<String, Object> temp = (HashMap<String, Object>)getListView().getItemAtPosition(position); 
         
-        VentriloInterface.changechannel(VentriloInterface.getuserchannel(((Integer)temp.get("id")).shortValue()), "");
+        // Join channel of selected user.
+        VentriloInterface.changechannel(VentriloInterface.getuserchannel((Short)((HashMap<String, Object>)getListView().getItemAtPosition(position)).get("id")), "");
     }
 }

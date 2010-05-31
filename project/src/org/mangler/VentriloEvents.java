@@ -34,40 +34,26 @@ public class VentriloEvents {
 	public static final int V3_EVENT_USER_TALK_END 				= 14;
 	public static final int V3_EVENT_USER_TALK_MUTE				= 15;
 	public static final int V3_EVENT_PLAY_AUDIO 				= 16;
-	public static final int V3_EVENT_DISPLAY_MOTD 				= 17;
-	public static final int V3_EVENT_DISCONNECT 				= 18;
-	public static final int V3_EVENT_USER_MODIFY 				= 19;
-	public static final int V3_EVENT_CHAT_JOIN 					= 20;
-	public static final int V3_EVENT_CHAT_LEAVE 				= 21;
-	public static final int V3_EVENT_CHAT_MESSAGE 				= 22;
-	public static final int V3_EVENT_ADMIN_AUTH 				= 23;
-	public static final int V3_EVENT_CHAN_ADMIN_UPDATED 		= 24;
-	public static final int V3_EVENT_PRIVATE_CHAT_MESSAGE 		= 25;
-	public static final int V3_EVENT_PRIVATE_CHAT_START 		= 26;
-	public static final int V3_EVENT_PRIVATE_CHAT_END 			= 27;
-	public static final int V3_EVENT_PRIVATE_CHAT_AWAY 			= 28;
-	public static final int V3_EVENT_PRIVATE_CHAT_BACK 			= 29;
-	public static final int V3_EVENT_USERLIST_ADD 				= 30;
-	public static final int V3_EVENT_USERLIST_MODIFY 			= 31;
-	public static final int V3_EVENT_USERLIST_REMOVE 			= 32;
-	public static final int V3_EVENT_USERLIST_CHANGE_OWNER 		= 33;
-	public static final int V3_EVENT_USER_GLOBAL_MUTE_CHANGED 	= 34;
-	public static final int V3_EVENT_USER_CHANNEL_MUTE_CHANGED 	= 35;
-	public static final int V3_EVENT_PERMS_UPDATED 				= 36;
-	public static final int V3_EVENT_USER_RANK_CHANGE 			= 37;
-	
-	/*
-	 * Probably won't need this because we call into native functions that handle this for us.
-	 * 
-	public static final int V3_EVENT_CHANGE_CHANNEL 			= 0;
-	public static final int V3_EVENT_PHANTOM_ADD 				= 0;
-	public static final int V3_EVENT_PHANTOM_REMOVE 			= 0;
-	public static final int V3_EVENT_ADMIN_LOGIN 				= 0;
-	public static final int V3_EVENT_ADMIN_LOGOUT 				= 0;
-	public static final int V3_EVENT_ADMIN_KICK 				= 0;
-	public static final int V3_EVENT_ADMIN_BAN 					= 0;
-	public static final int V3_EVENT_ADMIN_CHANNEL_BAN 			= 0;
-	public static final int V3_EVENT_FORCE_CHAN_MOVE 			= 0;
-	public static final int V3_EVENT_USERLIST_OPEN 				= 0;
-	public static final int V3_EVENT_USERLIST_CLOSE 			= 0;*/
+	public static final int V3_EVENT_RECORD_UPDATE				= 17;
+	public static final int V3_EVENT_DISPLAY_MOTD 				= 18;
+	public static final int V3_EVENT_DISCONNECT 				= 19;
+	public static final int V3_EVENT_USER_MODIFY 				= 20;
+	public static final int V3_EVENT_CHAT_JOIN 					= 21;
+	public static final int V3_EVENT_CHAT_LEAVE 				= 22;
+	public static final int V3_EVENT_CHAT_MESSAGE 				= 23;
+	public static final int V3_EVENT_ADMIN_AUTH 				= 24;
+	public static final int V3_EVENT_CHAN_ADMIN_UPDATED 		= 25;
+	public static final int V3_EVENT_PRIVATE_CHAT_MESSAGE 		= 26;
+	public static final int V3_EVENT_PRIVATE_CHAT_START 		= 27;
+	public static final int V3_EVENT_PRIVATE_CHAT_END 			= 28;
+	public static final int V3_EVENT_PRIVATE_CHAT_AWAY 			= 29;
+	public static final int V3_EVENT_PRIVATE_CHAT_BACK 			= 30;
+	public static final int V3_EVENT_USERLIST_ADD 				= 31;
+	public static final int V3_EVENT_USERLIST_MODIFY 			= 32;
+	public static final int V3_EVENT_USERLIST_REMOVE 			= 33;
+	public static final int V3_EVENT_USERLIST_CHANGE_OWNER 		= 34;
+	public static final int V3_EVENT_USER_GLOBAL_MUTE_CHANGED 	= 35;
+	public static final int V3_EVENT_USER_CHANNEL_MUTE_CHANGED 	= 36;
+	public static final int V3_EVENT_PERMS_UPDATED 				= 37;
+	public static final int V3_EVENT_USER_RANK_CHANGE 			= 38;
 }

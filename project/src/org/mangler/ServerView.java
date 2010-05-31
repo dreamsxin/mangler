@@ -30,13 +30,12 @@ import java.util.HashMap;
 
 public class ServerView extends TabActivity {
 	
-	public static final String USERLIST_ACTION = "org.mangler.UserListUpdateEvent";
+	// Actions.
+	public static final String CHANNELLIST_ACTION = "org.mangler.ChannelListUpdateEvent";
+	public static final String USERLIST_ACTION 	  = "org.mangler.UserListUpdateEvent";
+	public static final String CHAT_ACTION		  = "org.mangler.ChatUpdateEvent";
 	
-	private Intent userBroadcast;
-	
-	private HashMap<Short, String> channels;
-	private HashMap<Short, String> users;
-	
+	// Local variables.
 	private boolean  stopEventThread;
 	private String 	 hostname;
 	private int 	 port;
@@ -45,36 +44,16 @@ public class ServerView extends TabActivity {
 	private String 	 phonetic;
 	private Player 	 player;
 	private Recorder recorder;
+	private Intent	 broadcastIntent;
 	
-	/** Called when the activity is first created. */
     @Override
     public void onCreate(Bundle savedInstanceState) {
     	super.onCreate(savedInstanceState);
         setContentView(R.layout.server_view);
 
-        channels = new HashMap<Short, String>();
-        channels.put((short)0, "Lobby");
-        
-        users = new HashMap<Short, String>();
-
-        TabHost tabHost = getTabHost();
-        TabHost.TabSpec tabSpec;
-        Intent intent;
-        
-    	Bundle extras = getIntent().getExtras();
-    	if (extras != null) {
-    		hostname = extras.getString("hostname");
-    		port = extras.getInt("port");
-    		password = extras.getString("password");
-    		username = extras.getString("username");
-    		phonetic = extras.getString("phonetic");
-    		
-    		connect(hostname, port, password, username, phonetic);
-    	}
- 
+        // Talk button.
     	final Button ttalk = (Button)findViewById(R.id.ToggleTalkButton);
     	ttalk.setText(R.string.start_talk);
-        
         ttalk.setOnClickListener(new OnClickListener() {
 			public void onClick(View v) {
 				if (!recorder.recording()) {
@@ -86,23 +65,47 @@ public class ServerView extends TabActivity {
 				}
 			}
         });
-    	  	
+        
+        // Tabs.
+        TabHost tabHost = getTabHost();
+        TabHost.TabSpec tabSpec;
+        Intent intent;
+        
+        // Talk tab.
     	tabSpec = tabHost.newTabSpec("talk").setIndicator("Talk").setContent(R.id.talkView);
         tabHost.addTab(tabSpec);
     	
+        // Channel tab.
         intent = new Intent().setClass(this, ChannelList.class);
-        intent.putExtra("channels", channels);
-
         tabSpec = tabHost.newTabSpec("channels").setIndicator("Channels").setContent(intent);
         tabHost.addTab(tabSpec);
 
+        // User tab.
         intent = new Intent().setClass(this, UserList.class);
-        intent.putExtra("users", users);
-        
         tabSpec = tabHost.newTabSpec("users").setIndicator("Users").setContent(intent);
         tabHost.addTab(tabSpec);
         
+        // Chat tab.
+        intent = new Intent().setClass(this, ChatView.class);
+        tabSpec = tabHost.newTabSpec("chat").setIndicator("Chat").setContent(intent);
+        tabHost.addTab(tabSpec);
+        
+        // Load activities that need to register broadcastreceivers.
+        // I'm sure we can do this in a better way.
+        tabHost.setCurrentTab(2);
+        tabHost.setCurrentTab(1);
         tabHost.setCurrentTab(0);
+        
+        // Connect to server.
+    	Bundle extras = getIntent().getExtras();
+    	if (extras != null) {
+    		hostname = extras.getString("hostname");
+    		port = extras.getInt("port");
+    		password = extras.getString("password");
+    		username = extras.getString("username");
+    		phonetic = extras.getString("phonetic");
+    		connect(hostname, port, password, username, phonetic);
+    	}
     }
     
     @Override
@@ -125,7 +128,6 @@ public class ServerView extends TabActivity {
     }
     
     protected void connect(String hostname, int port, String password, String username, String phonetic) {
-    	// We need to start this before calling v3_login
     	startEventThread();
     	
     	VentriloInterface.debuglevel(VentriloDebugLevels.V3_DEBUG_INFO);
@@ -142,107 +144,84 @@ public class ServerView extends TabActivity {
 		    		VentriloInterface.getevent(data);
 		    		switch(data.type) {
 		    			case VentriloEvents.V3_EVENT_CHAT_MESSAGE:
-		    				Log.i("mangler", "User sent message: " + Integer.toString(data.user.id) + " -> " + StringFromBytes(data.data.chatmessage));
+		    				VentriloInterface.getuser(data, data.user.id);
+		    				broadcastIntent = new Intent(CHAT_ACTION);
+		    				broadcastIntent.putExtra("event", ChatView.EVENT_MSG);
+		    				broadcastIntent.putExtra("username", StringFromBytes(data.text.name));
+		    				broadcastIntent.putExtra("message", StringFromBytes(data.data.chatmessage));
+		    			    sendBroadcast(broadcastIntent);
 		    				break;
 		    				
 		    			case VentriloEvents.V3_EVENT_CHAT_JOIN:
-		    				Log.i("mangler", "User joined chat: " + Integer.toString(data.user.id));
-		    				break;
-		    			
-		    			case VentriloEvents.V3_EVENT_PING:
-		    				Log.i("mangler", "Ping: " + Integer.toString(data.ping));
-		    				break;
-		    			
-		    			case VentriloEvents.V3_EVENT_USER_TALK_START:
-		    				Log.i("mangler", "User started talking: " + Integer.toString(data.user.id) + " - Rate: " + Integer.toString(data.pcm.rate));
-		    				break;
-		    				
-		    			case VentriloEvents.V3_EVENT_PLAY_AUDIO:
-		    				player.write(data.data.sample, data.pcm.length);
-		    				break;
-		    			
-		    			case VentriloEvents.V3_EVENT_USER_TALK_END:
-		    				Log.i("mangler", "User stopped talking: " + Integer.toString(data.user.id));
-			    			break;
-			    			
-		    			case VentriloEvents.V3_EVENT_STATUS:
-		    				Log.i("mangler", "Status: " + Integer.toString(data.status.percent) + "%" + " -> " + StringFromBytes(data.status.message));
-		    				break;
-		    				
-		    			case VentriloEvents.V3_EVENT_CHAN_ADD:
-		    				VentriloInterface.getchannel(data, data.channel.id);
-		    				channels.put(data.channel.id, StringFromBytes(data.text.name));
-		    				
-		    				Log.i("mangler", "Channel added / modified: " + Short.toString(data.channel.id) + " -> " + StringFromBytes(data.text.name));
-		    				break;
-		    			case VentriloEvents.V3_EVENT_CHAN_MODIFY:
-		    				VentriloInterface.getchannel(data, data.channel.id);
-		    				Log.i("mangler", "Channel added / modified: " + Short.toString(data.channel.id) +" -> " + StringFromBytes(data.text.name));
-		    				break;
-		    				
-		    			case VentriloEvents.V3_EVENT_USER_LOGIN:
 		    				VentriloInterface.getuser(data, data.user.id);
-		    				
-		    				userBroadcast = new Intent(USERLIST_ACTION);
-		    				userBroadcast.putExtra("useradd", true);
-		    				userBroadcast.putExtra("userid", data.user.id);
-		    				userBroadcast.putExtra("username", StringFromBytes(data.text.name));
-		    			    sendBroadcast(userBroadcast);
-
-		    				//sendBroadcast();
-		    				users.put(data.user.id, StringFromBytes(data.text.name));
-		    				Log.i("mangler", "User logged in: " + Short.toString(data.user.id) + " -> " + StringFromBytes(data.text.name));
+		    				broadcastIntent = new Intent(CHAT_ACTION);
+		    				broadcastIntent.putExtra("event", ChatView.EVENT_JOIN);
+		    				broadcastIntent.putExtra("username", StringFromBytes(data.text.name));
+		    			    sendBroadcast(broadcastIntent);
 		    				break;
 		    				
-		    			case VentriloEvents.V3_EVENT_LOGIN_COMPLETE:
-		    				int lobby_rate = VentriloInterface.getchannelrate((short)0);
-		    				player 	 = new Player(lobby_rate);
-		    				recorder = new Recorder(lobby_rate);
-		    				
-		    				Log.i("mangler", "Login complete!");
-		    				break;
-		    				
-		    			case VentriloEvents.V3_EVENT_DISPLAY_MOTD:
-		    				Log.i("mangler", "MOTD: " + StringFromBytes(data.data.motd));
+		    			case VentriloEvents.V3_EVENT_CHAT_LEAVE:
+		    				VentriloInterface.getuser(data, data.user.id);
+		    				broadcastIntent = new Intent(CHAT_ACTION);
+		    				broadcastIntent.putExtra("event", ChatView.EVENT_LEAVE);
+		    				broadcastIntent.putExtra("username", StringFromBytes(data.text.name));
+		    			    sendBroadcast(broadcastIntent);
 		    				break;
 		    				
 		    			case VentriloEvents.V3_EVENT_USER_CHAN_MOVE:
 	    					if(data.user.id == VentriloInterface.getuserid()) {
-	    						// Set new rate on our player and recorder.
 	    						int channel_rate = VentriloInterface.getchannelrate(data.channel.id);
 	    						player.rate(channel_rate);
 	    						recorder.stop();
 	    						recorder = new Recorder(channel_rate);
 	    					}
-	    					
-	    					Log.i("mangler", "User joined channel: " + Integer.toString(data.user.id) + " - channel: " + Integer.toString(data.channel.id));
+		    				break;
+		    				
+		    			case VentriloEvents.V3_EVENT_USER_LOGIN:
+		    				if(data.user.id != 0) {
+			    				VentriloInterface.getuser(data, data.user.id);
+			    				broadcastIntent = new Intent(USERLIST_ACTION);
+			    				broadcastIntent.putExtra("event", UserList.EVENT_ADD);
+			    				broadcastIntent.putExtra("userid", data.user.id);
+			    				broadcastIntent.putExtra("username", StringFromBytes(data.text.name));
+			    			    sendBroadcast(broadcastIntent);
+		    				}
 		    				break;
 		    				
 		    			case VentriloEvents.V3_EVENT_USER_LOGOUT:
-		    				users.remove(data.user.id);
-		    				
-		    				userBroadcast = new Intent(USERLIST_ACTION);
-		    				userBroadcast.putExtra("useradd", false);
-		    				userBroadcast.putExtra("userid", data.user.id);
-		    				userBroadcast.putExtra("username", "");
-		    			    sendBroadcast(userBroadcast);
-		    			    
-		    				Log.i("mangler", "User left server: " + Integer.toString(data.user.id));
+		    				broadcastIntent = new Intent(USERLIST_ACTION);
+		    				broadcastIntent.putExtra("event", UserList.EVENT_DEL);
+		    				broadcastIntent.putExtra("userid", data.user.id);
+		    			    sendBroadcast(broadcastIntent);
 		    				break;
 		    				
-		    			case VentriloEvents.V3_EVENT_CHAT_LEAVE:
-		    				Log.i("mangler", "User left chat: " + Integer.toString(data.user.id));
+		    			case VentriloEvents.V3_EVENT_LOGIN_COMPLETE:
+		    				int lobby_rate = VentriloInterface.getchannelrate((short)0);
+		    				player = new Player(lobby_rate);
+		    				recorder = new Recorder(lobby_rate);
 		    				break;
-		    			
+		    				
+		    			case VentriloEvents.V3_EVENT_PLAY_AUDIO:
+		    				player.write(data.data.sample, data.pcm.length);
+		    				break;
+		
+		    			case VentriloEvents.V3_EVENT_CHAN_ADD:
+		    				VentriloInterface.getchannel(data, data.channel.id);
+		    				broadcastIntent = new Intent(CHANNELLIST_ACTION);
+		    				broadcastIntent.putExtra("event", ChannelList.EVENT_ADD);
+		    				broadcastIntent.putExtra("channelid", data.channel.id);
+		    				broadcastIntent.putExtra("channelname", StringFromBytes(data.text.name));
+		    			    sendBroadcast(broadcastIntent);
+		    				break;
+		    				
 		    			default:
-		    				Log.w("mangler", "Unknown event of type: " + Integer.toString(data.type));
+		    				Log.w("mangler", "Unhandled event of type: " + Integer.toString(data.type));
 		    		}
 		    		
 		    		if (stopEventThread) break;
 		    	}
     		}
     	};
-    	
     	(new Thread(event_runnable)).start();
     }
     

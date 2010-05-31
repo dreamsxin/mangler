@@ -20,13 +20,12 @@ package org.mangler;
 import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioTrack;
-import android.util.Log;
 
 public class Player {
 	
 	private AudioTrack audiotrack;
-	
-	public Player(int rate) {
+
+	public Player(final int rate) {
 		// Attempt to initialize AudioTrack instance.
 		try {
 			audiotrack = new AudioTrack(
@@ -44,7 +43,7 @@ public class Player {
 		audiotrack.play();
 	}
 	
-	public void rate(int rate) {
+	public void rate(final int rate) {
 		audiotrack.setPlaybackRate(rate);
 	}
 	
@@ -52,7 +51,7 @@ public class Player {
 		return audiotrack.getPlaybackRate();
 	}
 	
-	public void write(byte[] sample, int length) {
+	public void write(final byte[] sample, final int length) {
 		audiotrack.write(sample, 0, length);
 	}
 	

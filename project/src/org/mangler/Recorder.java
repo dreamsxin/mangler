@@ -29,7 +29,7 @@ public class Recorder {
 	private int 		rate = 0;
 	private AudioRecord audiorecord;
 	
-	public Recorder(int rate) {
+	public Recorder(final int rate) {
 		if(!VentriloInterface.isloggedin()) {
 			throw new RuntimeException("Login before instantiating recorder instance.");
 		}	
@@ -94,7 +94,7 @@ public class Recorder {
 		return is_recording;
 	}
 	
-	private void recording(boolean is_recording) {
+	private void recording(final boolean is_recording) {
 		this.is_recording = is_recording;
 	}
 	
