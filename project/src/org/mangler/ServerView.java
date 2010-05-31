@@ -207,10 +207,9 @@ public class ServerView extends TabActivity {
 		    				break;
 		    				
 		    			case VentriloEvents.V3_EVENT_USER_CHAN_MOVE:
-		    				VentriloInterface.getchannel(data, data.channel.id);
 	    					if(data.user.id == VentriloInterface.getuserid()) {
 	    						// Set new rate on our player and recorder.
-	    						int channel_rate = VentriloInterface.getcodecrate(data.data.channel.channel_codec, data.data.channel.channel_format);
+	    						int channel_rate = VentriloInterface.getchannelrate(data.channel.id);
 	    						player.rate(channel_rate);
 	    						recorder.stop();
 	    						recorder = new Recorder(channel_rate);
