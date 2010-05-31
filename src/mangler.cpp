@@ -1271,6 +1271,10 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                     v3_free_user(u);
                 }
                 break;/*}}}*/
+            case V3_EVENT_CHAN_MOVE:/*{{{*/
+                channelTree->refreshAllChannels();
+                admin->channelResort();
+                break;/*}}}*/
             case V3_EVENT_CHAN_ADD:/*{{{*/
                 c = v3_get_channel(ev->channel.id);
                 if (! c) {
@@ -1593,7 +1597,7 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                         chat->chatUserTreeModelFilter->refilter();
                         break;
                     case V3_SRV_PROP_CHAN_ORDER:
-                        channelTree->sortAlphanumeric = ev->serverproperty.value;
+                        channelTree->sortManual = ev->serverproperty.value;
                         channelTree->refreshAllChannels();
                         admin->channelSort(ev->serverproperty.value);
                         break;

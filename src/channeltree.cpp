@@ -379,11 +379,11 @@ ManglerChannelTree::refreshChannel(uint32_t id) {/*{{{*/
 void
 ManglerChannelTree::refreshAllChannels(void) {/*{{{*/
     _refreshAllChannels(channelStore->children());
-    if (!sortAlphanumeric) {
-        channelStore->set_sort_func (0, sigc::mem_fun (*this, &ManglerChannelTree::sortFunction));
+    if (!sortManual) {
+        channelStore->set_sort_func(0, sigc::mem_fun(*this, &ManglerChannelTree::sortFunction));
         channelStore->set_sort_column(channelRecord.displayName, Gtk::SORT_ASCENDING);
     } else {
-        channelStore->set_sort_func (channelRecord.id, sigc::mem_fun (*this, &ManglerChannelTree::sortFunction));
+        channelStore->set_sort_func(channelRecord.id, sigc::mem_fun(*this, &ManglerChannelTree::sortFunction));
         channelStore->set_sort_column(channelRecord.id, Gtk::SORT_ASCENDING);
     }
 }/*}}}*/
@@ -403,30 +403,24 @@ ManglerChannelTree::sortFunction(const Gtk::TreeModel::iterator& a, const Gtk::T
         if (isUser_b) {
             return natsort(sortName_a, sortName_b);
         } else {
-            //A = User, B = Channel
+            // a = user, b = channel
             return -1;
         }
     } else {
         if (isUser_b) {
-            //A = Channel, B = User
+            // a = channel, b = user
             return 1;
         } else {
-            // Both are Channels
-            if (!sortAlphanumeric) {
-                //Sort alphabetical
+            // both are channels
+            if (!sortManual) {
+                // sort alphabetical
                 return natsort(sortName_a, sortName_b);
             } else {
-                //Sort manual
-                if ((*a)[channelRecord.id] > (*b)[channelRecord.id]) {
-                    return 1;
-                } else if ((*a)[channelRecord.id] < (*b)[channelRecord.id]) {
-                    return -1;
-                }
+                // sort manual
+                return v3_get_channel_sort((*a)[channelRecord.id], (*b)[channelRecord.id]);
             }
-            return 0;
         }
     }
-    fprintf(stderr, "sorting failed to find if one or both options were users or channels\n");
     return 0;
 }/*}}}*/
 
@@ -1324,55 +1318,53 @@ ManglerChannelStore::drag_data_received_vfunc(const Gtk::TreeModel::Path& dest, 
 
 void
 ManglerChannelTree::userSettingsWindow(Gtk::TreeModel::Row row) {/*{{{*/
-    int id = row[channelRecord.id];
-    // double clicked a user
+    uint16_t id = row[channelRecord.id];
+    // double clicked a user and is not ourself
     if (id == v3_get_user_id()) {
-        // clicked on ourself
-    } else {
-        v3_user *u;
-        uint16_t id = row[channelRecord.id];
-        Glib::ustring name = row[channelRecord.name];
-        Glib::ustring comment = row[channelRecord.comment];
-        Glib::ustring url = row[channelRecord.url];
-        bool accept_pages = false, accept_u2u = false, accept_chat = false, allow_recording = false;
-        if ((u = v3_get_user(id))) {
-            accept_pages = u->accept_pages;
-            accept_u2u = u->accept_u2u;
-            accept_chat = u->accept_chat;
-            allow_recording = u->allow_recording;
-            v3_free_user(u);
-        }
+        return;
+    }
+    Glib::ustring name = row[channelRecord.name];
+    Glib::ustring comment = row[channelRecord.comment];
+    Glib::ustring url = row[channelRecord.url];
+    bool accept_pages = false, accept_u2u = false, accept_chat = false, allow_recording = false;
+    v3_user *u;
+    if ((u = v3_get_user(id))) {
+        accept_pages = u->accept_pages;
+        accept_u2u = u->accept_u2u;
+        accept_chat = u->accept_chat;
+        allow_recording = u->allow_recording;
+        v3_free_user(u);
+    }
 
-        // disconnect whatever was connected before and reconnect
-        volumeAdjustSignalConnection.disconnect();
-        volumeAdjustSignalConnection = volumeAdjustment->signal_value_changed().connect(
+    // disconnect whatever was connected before and reconnect
+    volumeAdjustSignalConnection.disconnect();
+    volumeAdjustSignalConnection = volumeAdjustment->signal_value_changed().connect(
             sigc::bind(sigc::mem_fun(this, &ManglerChannelTree::volumeAdjustment_value_changed_cb), id));
 
-        // set the value label
-        builder->get_widget("userSettingsNameValueLabel", label);
-        label->set_text(name);
-        builder->get_widget("userSettingsCommentValue", label);
-        label->set_text(comment);
-        builder->get_widget("userSettingsURLValue", linkbutton);
-        linkbutton->set_uri(url);
-        linkbutton->set_label(url);
-        builder->get_widget("userSettingsU2UValue", label);
-        label->set_text(accept_u2u ? "Yes" : "No");
-        builder->get_widget("userSettingsRecordValue", label);
-        label->set_text(allow_recording ? "Yes" : "No");
-        builder->get_widget("userSettingsPageValue", label);
-        label->set_text(accept_pages ? "Yes" : "No");
-        builder->get_widget("userSettingsChatValue", label);
-        label->set_text(accept_chat ? "Yes" : "No");
+    // set the value label
+    builder->get_widget("userSettingsNameValueLabel", label);
+    label->set_text(name);
+    builder->get_widget("userSettingsCommentValue", label);
+    label->set_text(comment);
+    builder->get_widget("userSettingsURLValue", linkbutton);
+    linkbutton->set_uri(url);
+    linkbutton->set_label(url);
+    builder->get_widget("userSettingsU2UValue", label);
+    label->set_text(accept_u2u ? "Yes" : "No");
+    builder->get_widget("userSettingsRecordValue", label);
+    label->set_text(allow_recording ? "Yes" : "No");
+    builder->get_widget("userSettingsPageValue", label);
+    label->set_text(accept_pages ? "Yes" : "No");
+    builder->get_widget("userSettingsChatValue", label);
+    label->set_text(accept_chat ? "Yes" : "No");
 
-        // set the current volume level for this user
-        volumeAdjustment->set_value(v3_get_volume_user(id));
+    // set the current volume level for this user
+    volumeAdjustment->set_value(v3_get_volume_user(id));
 
-        builder->get_widget("userSettingsWindow", window);
-        window->show_all();
-        window->queue_resize();
-        window->present();
-    }
+    builder->get_widget("userSettingsWindow", window);
+    window->show_all();
+    window->queue_resize();
+    window->present();
 }/*}}}*/
 
 /*

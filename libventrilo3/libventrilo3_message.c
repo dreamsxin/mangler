@@ -666,7 +666,7 @@ _v3_get_0x3b(_v3_net_message *msg) {/*{{{*/
     }
     m = msg->contents = msg->data;
     _v3_debug(V3_DEBUG_PACKET_PARSE, "Force Channel Move:");
-    _v3_debug(V3_DEBUG_PACKET_PARSE, "user id.............: %d",   m->user_id);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "id..................: %d",   m->id);
     _v3_debug(V3_DEBUG_PACKET_PARSE, "channel id..........: %d",   m->channel_id);
     _v3_debug(V3_DEBUG_PACKET_PARSE, "error id............: %d",   m->error_id);
 
@@ -674,7 +674,7 @@ _v3_get_0x3b(_v3_net_message *msg) {/*{{{*/
     return true;
 }/*}}}*/
 _v3_net_message *
-_v3_put_0x3b(uint16_t userid, uint16_t channelid) {/*{{{*/
+_v3_put_0x3b(uint16_t id, uint16_t channel_id) {/*{{{*/
     _v3_net_message *m;
     _v3_msg_0x3b *mc;
 
@@ -690,8 +690,8 @@ _v3_put_0x3b(uint16_t userid, uint16_t channelid) {/*{{{*/
     memset(mc, 0, sizeof(_v3_msg_0x3b));
 
     mc->type = 0x3b;
-    mc->user_id = userid;
-    mc->channel_id = channelid;
+    mc->id = id;
+    mc->channel_id = channel_id;
     m->contents = mc;
     m->data = (char *)mc;
 
@@ -901,6 +901,38 @@ _v3_put_0x48(void) {/*{{{*/
 }/*}}}*/
 /*}}}*/
 // Message 0x49 (73) | GET/REQUEST CHANNEL LIST MODIFICATION /*{{{*/
+int
+_v3_get_0x49(_v3_net_message *msg) {/*{{{*/
+    /*
+     * PACKET: message type: 0x49 (73)
+     * PACKET: data length : 98
+     * PACKET:     49 00 00 00 00 00 01 00 00 00 00 00 00 00 00 00      I...............
+     * PACKET:     00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00      ................
+     * PACKET:     00 00 00 00 00 00 00 00 16 00 02 00 00 00 00 00      ................
+     * PACKET:     01 00 01 00 01 00 01 00 01 00 01 00 00 00 00 00      ................
+     * PACKET:     00 00 00 00 01 00 00 00 01 00 00 00 00 00 00 00      ................
+     * PACKET:     00 00 00 00 00 00 00 00 00 04 74 65 73 74 00 00      ..........test..
+     * PACKET:     00 00                                                ..
+     */
+    _v3_msg_0x49 *m;
+
+    _v3_func_enter("_v3_get_0x49");
+    m = malloc(sizeof(_v3_msg_0x49));
+    memcpy(m, msg->data, sizeof(_v3_msg_0x49) - sizeof(void *));
+    m->channel = malloc(sizeof(v3_channel));
+    _v3_get_msg_channel(msg->data+sizeof(_v3_msg_0x49) - sizeof(void *), m->channel);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "got channel: id: %d | parent: %d | name: %s | phonetic: %s | comment: %s",
+            m->channel->id,
+            m->channel->parent,
+            m->channel->name,
+            m->channel->phonetic,
+            m->channel->comment
+            );
+    msg->contents = m;
+
+    _v3_func_leave("_v3_get_0x49");
+    return true;
+}/*}}}*/
 _v3_net_message *
 _v3_put_0x49(uint16_t subtype, uint16_t user_id, char *channel_password, _v3_msg_channel *channel) {/*{{{*/
     _v3_net_message *msg;
@@ -965,38 +997,6 @@ _v3_put_0x49(uint16_t subtype, uint16_t user_id, char *channel_password, _v3_msg
 
     _v3_func_leave("_v3_put_0x49");
     return NULL;
-}/*}}}*/
-int
-_v3_get_0x49(_v3_net_message *msg) {/*{{{*/
-    /*
-     * PACKET: message type: 0x49 (73)
-     * PACKET: data length : 98
-     * PACKET:     49 00 00 00 00 00 01 00 00 00 00 00 00 00 00 00      I...............
-     * PACKET:     00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00      ................
-     * PACKET:     00 00 00 00 00 00 00 00 16 00 02 00 00 00 00 00      ................
-     * PACKET:     01 00 01 00 01 00 01 00 01 00 01 00 00 00 00 00      ................
-     * PACKET:     00 00 00 00 01 00 00 00 01 00 00 00 00 00 00 00      ................
-     * PACKET:     00 00 00 00 00 00 00 00 00 04 74 65 73 74 00 00      ..........test..
-     * PACKET:     00 00                                                ..
-     */
-    _v3_msg_0x49 *m;
-
-    _v3_func_enter("_v3_get_0x49");
-    m = malloc(sizeof(_v3_msg_0x49));
-    memcpy(m, msg->data, sizeof(_v3_msg_0x49) - sizeof(void *));
-    m->channel = malloc(sizeof(v3_channel));
-    _v3_get_msg_channel(msg->data+sizeof(_v3_msg_0x49) - sizeof(void *), m->channel);
-    _v3_debug(V3_DEBUG_PACKET_PARSE, "got channel: id: %d | parent: %d | name: %s | phonetic: %s | comment: %s",
-            m->channel->id,
-            m->channel->parent,
-            m->channel->name,
-            m->channel->phonetic,
-            m->channel->comment
-            );
-    msg->contents = m;
-
-    _v3_func_leave("_v3_get_0x49");
-    return true;
 }/*}}}*/
 /*}}}*/
 // Message 0x4a (74) | USER PERMISSIONS /*{{{*/

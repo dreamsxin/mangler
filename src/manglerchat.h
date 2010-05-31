@@ -53,6 +53,12 @@ class ManglerChat {
         Gtk::Entry    *chatMessage;
         Gtk::CheckButton   *checkbutton;
         Gtk::TextView *chatBox;
+
+        std::map<uint32_t, Glib::ustring> histEntry;
+        std::map<uint32_t, Glib::ustring>::iterator histIter;
+        uint32_t      histCount;
+        uint32_t      histPos;
+
         bool          isOpen;
         bool          isJoined;
         bool          isPerChannel;
@@ -61,6 +67,7 @@ class ManglerChat {
         void chatWindow_show_cb(void);
         void chatWindow_hide_cb(void);
         void chatMessage_activate_cb(void);
+        bool chatMessage_key_press_event_cb(GdkEventKey* event);
         void chatClear_clicked_cb(void);
         void chatClose_clicked_cb(void);
         void chatHide_clicked_cb(void);

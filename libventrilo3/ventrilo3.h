@@ -252,6 +252,7 @@ enum _v3_events {
     V3_EVENT_LOGIN_COMPLETE,
     V3_EVENT_LOGIN_FAIL,
     V3_EVENT_USER_CHAN_MOVE,
+    V3_EVENT_CHAN_MOVE,
     V3_EVENT_CHAN_ADD,
     V3_EVENT_CHAN_MODIFY,
     V3_EVENT_CHAN_REMOVE,
@@ -726,7 +727,7 @@ void        v3_admin_global_mute(uint16_t user_id);
 void        v3_admin_channel_mute(uint16_t user_id);
 void        v3_phantom_add(uint16_t channel_id);
 void        v3_phantom_remove(uint16_t channel_id);
-void        v3_force_channel_move(uint16_t user_id, uint16_t channel_id);
+void        v3_force_channel_move(uint16_t id, uint16_t channel_id);
 void        v3_userlist_open(void);
 void        v3_userlist_close(void);
 void        v3_userlist_remove(uint16_t account_id);
@@ -780,6 +781,7 @@ v3_user     *v3_get_user(uint16_t id);
 int         v3_channel_count(void);
 void        v3_free_channel(v3_channel *channel);
 v3_channel  *v3_get_channel(uint16_t id);
+int         v3_get_channel_sort(uint16_t id_left, uint16_t id_right);
 uint16_t    v3_get_channel_id(const char *path);
 char *      v3_get_channel_path(uint16_t channel_id);
 

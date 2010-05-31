@@ -973,7 +973,7 @@ _v3_recv(int block) {/*{{{*/
                         {
                             _v3_net_message *msg = _v3_put_0x3b(ev.user.id, ev.channel.id);
                             if (_v3_send(msg)) {
-                                _v3_debug(V3_DEBUG_SOCKET, "sent force channel move request to server (userid %d to chan %d)", ev.user.id, ev.channel.id);
+                                _v3_debug(V3_DEBUG_SOCKET, "sent force channel move request to server (id %d to channel %d)", ev.user.id, ev.channel.id);
                             } else {
                                 _v3_debug(V3_DEBUG_SOCKET, "failed to send force channel move request");
                             }
@@ -1472,7 +1472,6 @@ _v3_update_channel(v3_channel *channel) {/*{{{*/
         for (c = v3_channel_list; c != NULL; c = c->next) {
             if (c->id == channel->id) {
                 void *tmp;
-                _v3_debug(V3_DEBUG_INFO, "updating channel %s",  c->name);
                 free(c->name);
                 free(c->phonetic);
                 free(c->comment);
@@ -1481,7 +1480,7 @@ _v3_update_channel(v3_channel *channel) {/*{{{*/
                 c->name           = strdup(channel->name);
                 c->phonetic       = strdup(channel->phonetic);
                 c->comment        = strdup(channel->comment);
-                c->next = tmp;
+                c->next           = tmp;
                 _v3_debug(V3_DEBUG_INFO, "updated channel %s (codec %d/%d)",  c->name, c->channel_codec, c->channel_format);
                 _v3_unlock_channellist();
                 _v3_func_leave("_v3_update_channel");
@@ -1658,14 +1657,17 @@ _v3_destroy_channellist(void) {/*{{{*/
 
 int
 _v3_remove_user(uint16_t id) {/*{{{*/
-    v3_user *u, *last;
+    v3_user *u, *last = NULL;
 
     _v3_func_enter("_v3_remove_user");
     _v3_lock_userlist();
-    last = v3_user_list;
     for (u = v3_user_list; u != NULL; u = u->next) {
         if (u->id == id) {
-            last->next = u->next;
+            if (!last) {
+                v3_user_list = u->next;
+            } else {
+                last->next = u->next;
+            }
             _v3_debug(V3_DEBUG_INFO, "removed user %s",  u->name);
             v3_free_user(u);
             _v3_func_leave("_v3_remove_user");
@@ -1682,17 +1684,17 @@ _v3_remove_user(uint16_t id) {/*{{{*/
 
 int
 _v3_remove_channel(uint16_t id) {/*{{{*/
-    v3_channel *c, *last;
+    v3_channel *c, *last = NULL;
 
     _v3_func_enter("_v3_remove_channel");
     _v3_lock_channellist();
-    last = v3_channel_list;
     for (c = v3_channel_list; c != NULL; c = c->next) {
-        if (!c) {
-            break;
-        }
         if (c->id == id) {
-            last->next = c->next;
+            if (!last) {
+                v3_channel_list = c->next;
+            } else {
+                last->next = c->next;
+            }
             _v3_debug(V3_DEBUG_INFO, "removed channel %s",  c->name);
             v3_free_channel(c);
             _v3_func_leave("_v3_remove_channel");
@@ -1709,14 +1711,17 @@ _v3_remove_channel(uint16_t id) {/*{{{*/
 
 int
 _v3_remove_rank(uint16_t id) {/*{{{*/
-    v3_rank *r, *last;
+    v3_rank *r, *last = NULL;
 
     _v3_func_enter("_v3_remove_rank");
     _v3_lock_ranklist();
-    last = v3_rank_list;
     for (r = v3_rank_list; r != NULL; r = r->next) {
         if (r->id == id) {
-            last->next = r->next;
+            if (!last) {
+                v3_rank_list = r->next;
+            } else {
+                last->next = r->next;
+            }
             _v3_debug(V3_DEBUG_INFO, "removed rank %s",  r->name);
             v3_free_rank(r);
             _v3_func_leave("_v3_remove_rank");
@@ -3960,23 +3965,63 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                 return V3_MALFORMED;
             } else {
                 _v3_msg_0x3b *m = msg->contents;
-                v3_user *user;
+                v3_user *u;
+                v3_channel *c;
                 if (!m->error_id) {
-                    _v3_debug(V3_DEBUG_INFO, "user %d force moved to channel %d", m->user_id, m->channel_id);
-                    user = v3_get_user(m->user_id);
-                    if (user) {
-                        user->channel = m->channel_id;
-                        _v3_update_user(user);
-                        v3_free_user(user);
+                    _v3_debug(V3_DEBUG_INFO, "user/channel %d force moved to channel %d", m->id, m->channel_id);
+                    if ((u = v3_get_user(m->id))) {
+                        u->channel = m->channel_id;
+                        _v3_update_user(u);
+                        v3_free_user(u);
                         v3_event *ev = _v3_create_event(V3_EVENT_USER_CHAN_MOVE);
-                        ev->user.id = m->user_id;
+                        ev->user.id = m->id;
                         ev->channel.id = m->channel_id;
                         v3_queue_event(ev);
                         _v3_vrf_record_event(
-                                (m->user_id == v3_get_user_id())
+                                (m->id == v3_get_user_id())
                                     ? V3_VRF_EVENT_DATA_FLUSH
                                     : V3_VRF_EVENT_AUDIO_STOP,
-                                m->user_id, -1, -1, 0, 0, NULL);
+                                m->id, -1, -1, 0, 0, NULL);
+                    } else {
+                        v3_channel *last = NULL, *dest = NULL;
+                        uint8_t found = false;
+                        _v3_lock_channellist();
+                        for (c = v3_channel_list; c != NULL; last = c, c = c->next) {
+                            if (!found) {
+                                if (c->id != m->channel_id) {
+                                    continue;
+                                }
+                                found = true;
+                                dest = last;
+                                last = NULL;
+                                c = v3_channel_list;
+                            }
+                            if (c->id != m->id) {
+                                continue;
+                            }
+                            if (c == dest) {
+                                break;
+                            }
+                            if (!last) {
+                                v3_channel_list = c->next;
+                            } else {
+                                last->next = c->next;
+                            }
+                            if (!dest) {
+                                last = v3_channel_list;
+                                v3_channel_list = c;
+                            } else {
+                                last = dest->next;
+                                dest->next = c;
+                            }
+                            c->next = last;
+                            v3_event *ev = _v3_create_event(V3_EVENT_CHAN_MOVE);
+                            ev->user.id = m->id;
+                            ev->channel.id = m->channel_id;
+                            v3_queue_event(ev);
+                            break;
+                        }
+                        _v3_unlock_channellist();
                     }
                 }
             }
@@ -4762,13 +4807,12 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                 return V3_MALFORMED;
             } else {
                 _v3_msg_0x53 *m = (_v3_msg_0x53 *)msg->contents;
-                v3_user *user;
+                v3_user *u;
                 _v3_debug(V3_DEBUG_INFO, "user %d moved to channel %d", m->user_id, m->channel_id);
-                user = v3_get_user(m->user_id);
-                if (user) {
-                    user->channel = m->channel_id;
-                    _v3_update_user(user);
-                    v3_free_user(user);
+                if ((u = v3_get_user(m->user_id))) {
+                    u->channel = m->channel_id;
+                    _v3_update_user(u);
+                    v3_free_user(u);
                     v3_event *ev = _v3_create_event(V3_EVENT_USER_CHAN_MOVE);
                     ev->user.id = m->user_id;
                     ev->channel.id = m->channel_id;
@@ -5755,7 +5799,7 @@ v3_phantom_remove(uint16_t channel_id) {/*{{{*/
     v3_event ev;
     v3_user *u;
 
-   _v3_func_enter("v3_phantom_remove");
+    _v3_func_enter("v3_phantom_remove");
     if (!v3_is_loggedin()) {
         _v3_func_leave("v3_phantom_remove");
         return;
@@ -5785,7 +5829,7 @@ void
 v3_phantom_add(uint16_t channel_id) {/*{{{*/
     v3_event ev;
 
-   _v3_func_enter("v3_phantom_add");
+    _v3_func_enter("v3_phantom_add");
     if (!v3_is_loggedin()) {
         _v3_func_leave("v3_phantom_add");
         return;
@@ -5800,7 +5844,7 @@ v3_phantom_add(uint16_t channel_id) {/*{{{*/
 }/*}}}*/
 
 void
-v3_force_channel_move(uint16_t user_id, uint16_t channel_id) {/*{{{*/
+v3_force_channel_move(uint16_t id, uint16_t channel_id) {/*{{{*/
     v3_event ev;
 
     _v3_func_enter("v3_force_channel_move");
@@ -5810,8 +5854,8 @@ v3_force_channel_move(uint16_t user_id, uint16_t channel_id) {/*{{{*/
     }
     memset(&ev, 0, sizeof(v3_event));
     ev.type = V3_EVENT_FORCE_CHAN_MOVE;
+    ev.user.id = id;
     ev.channel.id = channel_id;
-    ev.user.id = user_id;
 
     _v3_evpipe_write(v3_server.evpipe[1], &ev);
     _v3_func_leave("v3_force_channel_move");
@@ -6192,6 +6236,34 @@ v3_channel_count(void) {/*{{{*/
     return ctr;
 }/*}}}*/
 
+int
+v3_get_channel_sort(uint16_t id_left, uint16_t id_right) {/*{{{*/
+    v3_channel *c;
+    int sort = 0, lpos = -1, rpos = -1;
+    int ctr;
+
+    _v3_func_enter("v3_get_channel_sort");
+    _v3_lock_channellist();
+    for (c = v3_channel_list, ctr = 0; c != NULL; c = c->next, ctr++) {
+        if (!c) {
+            break;
+        }
+        if (c->id == id_left) {
+            lpos = ctr;
+        }
+        if (c->id == id_right) {
+            rpos = ctr;
+        }
+    }
+    _v3_unlock_channellist();
+    if (lpos != -1 && rpos != -1 && lpos != rpos) {
+        sort = (lpos < rpos) ? -1 : 1;
+    }
+
+    _v3_func_leave("v3_get_channel_sort");
+    return sort;
+}/*}}}*/
+
 uint16_t
 v3_get_channel_id(const char *path) {/*{{{*/
     v3_channel *c;
@@ -6415,7 +6487,7 @@ v3_channel_update(v3_channel *channel, const char *password) {/*{{{*/
     } else {
         ev.type = V3_EVENT_CHAN_ADD;
     }
-    memcpy(&ev.data->channel, channel, sizeof(v3_channel) - sizeof(void *) * 4);
+    memcpy(&ev.data->channel, channel, sizeof(v3_channel));
     if (password) {
         strncpy(ev.text.password, password, sizeof(ev.text.password) - 1);
     }
@@ -6705,14 +6777,17 @@ _v3_destroy_accountlist(void) {/*{{{*/
 
 int
 _v3_remove_account(uint16_t id) {/*{{{*/
-    v3_account *a, *last;
+    v3_account *a, *last = NULL;
 
     _v3_lock_accountlist();
     _v3_func_enter("_v3_remove_account");
-    last = v3_account_list;
     for (a = v3_account_list; a != NULL; a = a->next) {
         if (a->perms.account_id == id) {
-            last->next = a->next;
+            if (!last) {
+                v3_account_list = a->next;
+            } else {
+                last->next = a->next;
+            }
             _v3_debug(V3_DEBUG_INFO, "removed account %s", a->username);
             v3_free_account(a);
             _v3_func_leave("_v3_remove_account");
@@ -7246,14 +7321,17 @@ v3_is_channel_admin(uint16_t channel_id) {/*{{{*/
     v3_channel *c;
 
     if (v3_luser.channel_admin[channel_id]) {
-        return 1;
+        return true;
     }
     if (! channel_id) {
-        return 0;
+        return false;
     }
-    c = v3_get_channel(channel_id);
-    channel_id = c->parent;
-    v3_free_channel(c);
+    if ((c = v3_get_channel(channel_id))) {
+        channel_id = c->parent;
+        v3_free_channel(c);
+    } else {
+        return false;
+    }
 
     return v3_is_channel_admin(channel_id);
 }/*}}}*/

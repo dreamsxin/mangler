@@ -35,7 +35,29 @@ extern "C" {
 
 class iniFile;
 
+class adminModelColumns : public Gtk::TreeModel::ColumnRecord {
+    public:
+        adminModelColumns() { add(id); add(name); }
+        Gtk::TreeModelColumn<uint32_t>      id;
+        Gtk::TreeModelColumn<Glib::ustring> name;
+};
+
+class adminChannelStore : public Gtk::TreeStore {
+    public:
+        static Glib::RefPtr<adminChannelStore> create();
+        adminModelColumns                   c;
+
+    protected:
+        adminChannelStore() {
+            set_column_types(c);
+        }
+        virtual bool row_draggable_vfunc(const Gtk::TreeModel::Path& path) const;
+        virtual bool row_drop_possible_vfunc(const Gtk::TreeModel::Path& dest, const Gtk::SelectionData& selection_data) const;
+        virtual bool drag_data_received_vfunc(const Gtk::TreeModel::Path& dest, const Gtk::SelectionData& selection_data);
+};
+
 class ManglerAdmin {
+    friend class adminChannelStore;
     public:
         ManglerAdmin(Glib::RefPtr<Gtk::Builder> builder);
         ~ManglerAdmin();
@@ -58,7 +80,8 @@ class ManglerAdmin {
         void channelRemoved(uint32_t chanid);
         void channelRemoved(v3_channel *channel);
         void channelAdded(v3_channel *channel);
-        void channelSort(bool alphanumeric);
+        void channelSort(bool manual);
+        void channelResort(void);
         void clearChannels(void);
         void accountUpdated(v3_account *account);
         void accountAdded(v3_account *account);
@@ -85,12 +108,7 @@ class ManglerAdmin {
         Gtk::FileFilter                     tpl_filter;
         Gtk::FileFilter                     all_filter;
 
-        class adminModelColumns : public Gtk::TreeModel::ColumnRecord {
-            public:
-                adminModelColumns() { add(id); add(name); }
-                Gtk::TreeModelColumn<uint32_t>              id;
-                Gtk::TreeModelColumn<Glib::ustring>         name;
-        } adminRecord;
+        adminModelColumns                   adminRecord;
 
         /* server settings editor stuff */
         bool                                SrvIsNotUpdating;
@@ -123,7 +141,7 @@ class ManglerAdmin {
         Gtk::Button                         *ChannelAdd;
         uint32_t                            currentChannelID;
         uint32_t                            currentChannelParent;
-        bool                                channelsortAlphanumeric;
+        bool                                channelSortManual;
 
         /* user editor stuff */
         class adminCheckModelColumns : public Gtk::TreeModel::ColumnRecord {

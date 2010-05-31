@@ -170,13 +170,15 @@ ManglerAdmin::ManglerAdmin(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
 
     /* set up the channel editor stuff */
     builder->get_widget("ChannelEditorTree", ChannelEditorTree);
-    ChannelEditorTreeModel = Gtk::TreeStore::create(ChannelEditorColumns);
+    ChannelEditorTreeModel = adminChannelStore::create();
     ChannelEditorTree->set_model(ChannelEditorTreeModel);
     pColumn = Gtk::manage( new Gtk::TreeView::Column("Channels") );
     pColumn->pack_start(adminRecord.name);
     pColumn->set_expand(true);
     ChannelEditorTree->append_column(*pColumn);
     ChannelEditorTree->signal_cursor_changed().connect(sigc::mem_fun(this, &ManglerAdmin::ChannelTree_cursor_changed_cb));
+    ChannelEditorTree->enable_model_drag_source();
+    ChannelEditorTree->enable_model_drag_dest();
 
     builder->get_widget("ChannelEditor", ChannelEditor);
     ChannelEditor->set_sensitive(false);
@@ -708,6 +710,42 @@ ManglerAdmin::serverSettingsSendDone(void) {/*{{{*/
 }/*}}}*/
 
 /* ----------  Channel Editor Related Methods  ---------- */
+Glib::RefPtr<adminChannelStore>
+adminChannelStore::create() {/*{{{*/
+    return Glib::RefPtr<adminChannelStore>( new adminChannelStore() );
+}/*}}}*/
+bool
+adminChannelStore::row_draggable_vfunc(const Gtk::TreeModel::Path& path) const {/*{{{*/
+    adminChannelStore* _this = const_cast<adminChannelStore*>(this);
+    const_iterator iter = _this->get_iter(path);
+    if (!iter) {
+        return Gtk::TreeStore::row_draggable_vfunc(path);
+    }
+    return (mangler->isAdmin && mangler->admin->channelSortManual && (*iter)[c.id] != 0);
+}/*}}}*/
+bool
+adminChannelStore::row_drop_possible_vfunc(const Gtk::TreeModel::Path& dest, const Gtk::SelectionData& selection_data) const {/*{{{*/
+    Gtk::TreeModel::Path sel;
+    Gtk::TreeModel::Path::get_from_selection_data(selection_data, sel);
+    return (sel.get_depth() == dest.get_depth());
+}/*}}}*/
+bool
+adminChannelStore::drag_data_received_vfunc(const Gtk::TreeModel::Path& dest, const Gtk::SelectionData& selection_data) {/*{{{*/
+    Gtk::TreeModel::Path sel;
+    Gtk::TreeModel::Path::get_from_selection_data(selection_data, sel);
+    if (sel.get_depth() != dest.get_depth()) {
+        return false;
+    }
+    adminChannelStore* _this = const_cast<adminChannelStore*>(this);
+    const_iterator iter;
+    uint16_t src_id, dest_id;
+    if (!(iter = _this->get_iter(sel)) || !(src_id = (*iter)[c.id]) ||
+        !(iter = _this->get_iter(dest)) || !(dest_id = (*iter)[c.id]) || src_id == dest_id) {
+        return false;
+    }
+    v3_force_channel_move(src_id, dest_id);
+    return false;
+}/*}}}*/
 void
 ManglerAdmin::ChannelTree_cursor_changed_cb() {/*{{{*/
     Gtk::TreeModel::iterator iter = ChannelEditorTree->get_selection()->get_selected();
@@ -1114,9 +1152,9 @@ ManglerAdmin::ChannelUpdate_clicked_cb(void) {/*{{{*/
     ::free(channel.comment);
 }/*}}}*/
 void
-ManglerAdmin::channelSort(bool alphanumeric) {/*{{{*/
-    channelsortAlphanumeric = alphanumeric;
-    if (!alphanumeric) {
+ManglerAdmin::channelSort(bool manual) {/*{{{*/
+    channelSortManual = manual;
+    if (!manual) {
         ChannelEditorTreeModel->set_sort_func(0, sigc::mem_fun(*this, &ManglerAdmin::channelSortFunction));
         ChannelEditorTreeModel->set_sort_column(adminRecord.name, Gtk::SORT_ASCENDING);
     } else {
@@ -1124,20 +1162,18 @@ ManglerAdmin::channelSort(bool alphanumeric) {/*{{{*/
         ChannelEditorTreeModel->set_sort_column(adminRecord.id, Gtk::SORT_ASCENDING);
     }
 }/*}}}*/
+void
+ManglerAdmin::channelResort(void) {/*{{{*/
+    channelSort(channelSortManual);
+}/*}}}*/
 int
 ManglerAdmin::channelSortFunction(const Gtk::TreeModel::iterator &left, const Gtk::TreeModel::iterator &right) {/*{{{*/
-    if (!channelsortAlphanumeric) {
+    if (!channelSortManual) {
         Glib::ustring leftstr = (*left)[adminRecord.name];
         Glib::ustring rightstr = (*right)[adminRecord.name];
         return natsort(leftstr.c_str(), rightstr.c_str());
     } else {
-        if ((*left)[adminRecord.id] < (*right)[adminRecord.id]) {
-            return -1;
-        } else if ((*left)[adminRecord.id] > (*right)[adminRecord.id]) {
-            return 1;
-        } else {
-            return 0;
-        }
+        return v3_get_channel_sort((*left)[adminRecord.id], (*right)[adminRecord.id]);
     }
 }/*}}}*/
 void

@@ -39,6 +39,7 @@ ManglerChat::ManglerChat(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
 
     builder->get_widget("chatMessage", chatMessage);
     chatMessage->signal_activate().connect(sigc::mem_fun(this, &ManglerChat::chatMessage_activate_cb));
+    chatMessage->signal_key_press_event().connect(sigc::mem_fun(this, &ManglerChat::chatMessage_key_press_event_cb));
 
     builder->get_widget("chatClear", button);
     button->signal_clicked().connect(sigc::mem_fun(this, &ManglerChat::chatClear_clicked_cb));
@@ -61,6 +62,10 @@ ManglerChat::ManglerChat(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
     checkbutton->signal_toggled().connect(sigc::mem_fun(this, &ManglerChat::chatTimestampCheckButton_toggled_cb));
 
     builder->get_widget("chatBox", chatBox);
+
+    histCount = 0;
+    histPos = 0;
+
     isOpen = false;
     isJoined = false;
 }/*}}}*/
@@ -88,13 +93,41 @@ void ManglerChat::chatWindow_hide_cb(void) {/*{{{*/
 
 void ManglerChat::chatMessage_activate_cb(void) {/*{{{*/
     if (chatMessage->get_text_length()) {
+        histEntry[histCount] = chatMessage->get_text();
+        histEntry[histPos = ++histCount] = "";
         v3_send_chat_message((char *)ustring_to_c(chatMessage->get_text()).c_str());
         chatMessage->set_text("");
     }
 }/*}}}*/
 
+bool ManglerChat::chatMessage_key_press_event_cb(GdkEventKey* event) {/*{{{*/
+    switch (event->keyval) {
+      case GDK_Up:
+        if ((histIter = histEntry.find(histPos - 1)) != histEntry.end()) {
+            if (histPos == histCount) {
+                histEntry[histPos] = chatMessage->get_text();
+            }
+            histPos--;
+            chatMessage->set_text(histIter->second);
+            chatMessage->set_position(histIter->second.length());
+        }
+        return true;
+      case GDK_Down:
+        if ((histIter = histEntry.find(histPos + 1)) != histEntry.end()) {
+            histPos++;
+            chatMessage->set_text(histIter->second);
+            chatMessage->set_position(histIter->second.length());
+        }
+        return true;
+    }
+    return false;
+}/*}}}*/
+
 void ManglerChat::chatClear_clicked_cb(void) {/*{{{*/
     chatBox->get_buffer()->set_text("");
+    histEntry.clear();
+    histCount = 0;
+    histPos = 0;
 }/*}}}*/
 
 void ManglerChat::chatClose_clicked_cb(void) {/*{{{*/
