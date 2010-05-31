@@ -18,6 +18,10 @@
 package org.mangler;
 
 import android.app.ListActivity;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.ListView;
@@ -59,6 +63,36 @@ public class UserList extends ListActivity {
         registerForContextMenu(getListView());
     }
 	
+	@Override
+	public void onResume()
+	{
+		super.onResume();
+		
+		 registerReceiver(receiver, new IntentFilter(ServerView.USERLIST_ACTION));
+	}
+	
+	@Override
+	public void onPause()
+	{
+		super.onPause();
+		
+		unregisterReceiver(receiver);
+	}
+	
+	 private BroadcastReceiver receiver = new BroadcastReceiver() {
+		 public void onReceive(Context context, Intent intent) {
+			 boolean add = intent.getBooleanExtra("useradd", true);
+			 short id = intent.getShortExtra("userid", (short)0);
+			 String name = intent.getStringExtra("username");
+			 
+			 if (add) {
+				 addUser(id, name);
+			 } else {
+				 delUser(id);
+			 }
+		 }
+	 };
+	
 	public void addUser(int id, String username) {
 		// Add data.
 		HashMap<String, Object> data = new HashMap<String, Object>();
@@ -87,6 +121,6 @@ public class UserList extends ListActivity {
 
         HashMap<String, Object> temp = (HashMap<String, Object>)getListView().getItemAtPosition(position); 
         
-        VentriloInterface.changechannel(VentriloInterface.getuserchannel((Short)temp.get("id")), "");
+        VentriloInterface.changechannel(VentriloInterface.getuserchannel(((Integer)temp.get("id")).shortValue()), "");
     }
 }

@@ -107,15 +107,12 @@ public class ServerEdit extends Activity{
     private void saveState() {
         String servername = serverText.getText().toString();
         String hostname = hostText.getText().toString();
-        int port;
-        try {
-        	port = Integer.parseInt(portText.getText().toString());
-        } catch (NumberFormatException e) {
-        	port = 3847;
+        int port = Integer.parseInt(portText.getText().toString());
+
+        if (port > 65535) {
+        	port = 65535;
         }
-        if (port < 0) {
-        	port *= -1;
-        }
+        
         String password = passText.getText().toString();
         String username = userText.getText().toString();
         String phonetic = phoneticText.getText().toString();

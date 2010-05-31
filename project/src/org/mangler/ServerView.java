@@ -30,6 +30,10 @@ import java.util.HashMap;
 
 public class ServerView extends TabActivity {
 	
+	public static final String USERLIST_ACTION = "org.mangler.UserListUpdateEvent";
+	
+	private Intent userBroadcast;
+	
 	private HashMap<Short, String> channels;
 	private HashMap<Short, String> users;
 	
@@ -178,6 +182,14 @@ public class ServerView extends TabActivity {
 		    				
 		    			case VentriloEvents.V3_EVENT_USER_LOGIN:
 		    				VentriloInterface.getuser(data, data.user.id);
+		    				
+		    				userBroadcast = new Intent(USERLIST_ACTION);
+		    				userBroadcast.putExtra("useradd", true);
+		    				userBroadcast.putExtra("userid", data.user.id);
+		    				userBroadcast.putExtra("username", StringFromBytes(data.text.name));
+		    			    sendBroadcast(userBroadcast);
+
+		    				//sendBroadcast();
 		    				users.put(data.user.id, StringFromBytes(data.text.name));
 		    				Log.i("mangler", "User logged in: " + Short.toString(data.user.id) + " -> " + StringFromBytes(data.text.name));
 		    				break;
@@ -209,6 +221,13 @@ public class ServerView extends TabActivity {
 		    				
 		    			case VentriloEvents.V3_EVENT_USER_LOGOUT:
 		    				users.remove(data.user.id);
+		    				
+		    				userBroadcast = new Intent(USERLIST_ACTION);
+		    				userBroadcast.putExtra("useradd", false);
+		    				userBroadcast.putExtra("userid", data.user.id);
+		    				userBroadcast.putExtra("username", "");
+		    			    sendBroadcast(userBroadcast);
+		    			    
 		    				Log.i("mangler", "User left server: " + Integer.toString(data.user.id));
 		    				break;
 		    				
