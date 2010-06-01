@@ -284,7 +284,7 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
     audioControl = new ManglerAudio(AUDIO_CONTROL);
     audioControl->getDeviceList(config["AudioSubsystem"].toUString());
 
-    // set the default window size from the settings
+    // set saved window size from settings
     unsigned windowWidth( config["WindowWidth"].toUInt() );
     unsigned windowHeight( config["WindowHeight"].toUInt() );
     if (windowWidth > 0 && windowHeight > 0) manglerWindow->set_default_size(windowWidth, windowHeight);
@@ -1156,7 +1156,7 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                                     (char *)ustring_to_c(integration_text).c_str(),
                                     true);
                         }
-                        uint32_t channel_id = server["DefaultChannel"].toULong();
+                        uint32_t channel_id = v3_get_channel_id(ustring_to_c(server["DefaultChannel"].toUString()).c_str());
                         if (channel_id && (c = v3_get_channel(channel_id))) {
                             Glib::ustring password = channelTree->getChannelSavedPassword(channel_id);
                             uint16_t pw_channel = 0;

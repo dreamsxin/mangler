@@ -935,7 +935,11 @@ ManglerChannelTree::channelView_buttonpress_event_cb(GdkEventButton* event) {/*{
                     checkmenuitem->show();
                     iniSection &server(Mangler::config.servers[mangler->connectedServerName]);
                     signalDefaultChannel.block();
-                    checkmenuitem->set_active(server["DefaultChannel"].toULong() == row[channelRecord.id]);
+                    char *path = v3_get_channel_path(row[channelRecord.id]);
+                    checkmenuitem->set_active(server["DefaultChannel"].toUString() == (path ? c_to_ustring(path) : ""));
+                    if (path) {
+                        free(path);
+                    }
                     signalDefaultChannel.unblock();
                 }
                 rcmenu_channel->popup(event->button, event->time);
@@ -1120,7 +1124,11 @@ ManglerChannelTree::setDefaultChannelMenuItem_activate_cb(void) {/*{{{*/
         uint16_t id = row[channelRecord.id];
         if (mangler->connectedServerName.length()) {
             iniSection &server(Mangler::config.servers[mangler->connectedServerName]);
-            server["DefaultChannel"] = (server["DefaultChannel"] == id) ? 0 : id;
+            char *path = v3_get_channel_path(id);
+            server["DefaultChannel"] = (path && server["DefaultChannel"].toUString() != c_to_ustring(path)) ? c_to_ustring(path) : "";
+            if (path) {
+                free(path);
+            }
         }
     }
 }/*}}}*/
@@ -1132,7 +1140,7 @@ ManglerChannelTree::getUserChannelId(uint16_t userid) {/*{{{*/
         fprintf(stderr, "getUserChannelId: could not find user id %d\n", userid);
         return 0;
     }
-    return(user[channelRecord.parent_id]);
+    return user[channelRecord.parent_id];
 }/*}}}*/
 
 Glib::ustring

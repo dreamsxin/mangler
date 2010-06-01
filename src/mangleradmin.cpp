@@ -1830,8 +1830,8 @@ ManglerAdmin::UserTemplateLoad_clicked_cb(void) {/*{{{*/
         a.perms.send_complaint      = tmpl["SendComplaints"].toBool();
         a.perms.recv_complaint      = tmpl["RecvComplaints"].toBool();
         a.perms.switch_chan         = tmpl["SwitchChannels"].toBool();
-        a.lock_reason               = ::strdup(tmpl["LockedReason"].toCString());
-        a.perms.dfl_chan            = v3_get_channel_id(tmpl["DefChan"].toCString());
+        a.lock_reason               = ::strdup(ustring_to_c(tmpl["LockedReason"].toUString()).c_str());
+        a.perms.dfl_chan            = v3_get_channel_id(ustring_to_c(tmpl["DefChan"].toUString()).c_str());
         a.perms.dupe_ip             = tmpl["DuplicateIPs"].toInt();
         a.perms.bcast               = tmpl["Broadcast"].toBool();
         a.perms.bcast_lobby         = tmpl["BroadcastLobby"].toBool();

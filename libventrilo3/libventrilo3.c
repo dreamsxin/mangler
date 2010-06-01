@@ -6245,9 +6245,6 @@ v3_get_channel_sort(uint16_t id_left, uint16_t id_right) {/*{{{*/
     _v3_func_enter("v3_get_channel_sort");
     _v3_lock_channellist();
     for (c = v3_channel_list, ctr = 0; c != NULL; c = c->next, ctr++) {
-        if (!c) {
-            break;
-        }
         if (c->id == id_left) {
             lpos = ctr;
         }
@@ -6267,54 +6264,62 @@ v3_get_channel_sort(uint16_t id_left, uint16_t id_right) {/*{{{*/
 uint16_t
 v3_get_channel_id(const char *path) {/*{{{*/
     v3_channel *c;
-    const char *sep = "/";
-    const char *chan_name[32];
-    int chan_namelen[32];
-    int chan_namecnt = 0, seplen;
-    int cnt;
+    const char sep = '/';
     const char *p = path;
-    uint16_t parent_id;
-
-    seplen = strlen(sep);
+    const char **names = NULL;
+    int depth = 0;
+    int len = 0;
+    int ctr;
+    uint16_t channel_id = 0;
 
     _v3_func_enter("v3_get_channel_id");
-    _v3_lock_channellist();
-
-    // parse path into some arrays (make no copies)
-    if (strncmp(p, sep, seplen) == 0) {
-        p += seplen;
+    if (!path || !strlen(path)) {
+        _v3_func_leave("v3_get_channel_id");
+        return 0;
     }
-    chan_name[0] = p;
-
-    while (*p != '\0') {
-         if (strncmp(p, sep, seplen) == 0) {
-             chan_namelen[chan_namecnt] = p - chan_name[chan_namecnt];
-             chan_namecnt++;
-             p += seplen;
-             chan_name[chan_namecnt] = p;
-         } else {
-             p++;
-         }
-    }
-    chan_namelen[chan_namecnt] = p - chan_name[chan_namecnt];
-    chan_namecnt++;
-
-    parent_id = 0;
-    for (cnt = 0; cnt < chan_namecnt; cnt++) {
-        for (c = v3_channel_list; c != NULL; c = c->next) {
-            if (!c) {
+    for (;;) {
+        if (*p == sep || *p == '\0') {
+            names = realloc(names, sizeof(*names) * ++depth);
+            if (!len) {
+                free(names);
+                _v3_func_leave("v3_get_channel_id");
+                return 0;
+            }
+            names[depth - 1] = p - len;
+            len = 0;
+            if (*p == '\0') {
                 break;
             }
-            if (c->parent == parent_id && strlen(c->name) == chan_namelen[cnt] && strncmp(c->name, chan_name[cnt], chan_namelen[cnt]) == 0) {
-                parent_id = c->id;
+        } else {
+            len++;
+        }
+        p++;
+    }
+    _v3_lock_channellist();
+    for (ctr = 0; ctr < depth; ctr++) {
+        char name[32] = "";
+        len = strlen(names[ctr]) - ((ctr + 1 < depth) ? strlen(names[ctr + 1]) + 1 : 0);
+        if (len > sizeof(name)) {
+            channel_id = 0;
+            break;
+        }
+        strncpy(name, names[ctr], len);
+        for (c = v3_channel_list; c != NULL; c = c->next) {
+            if (c->parent == channel_id && !strncmp(c->name, name, sizeof(name))) {
+                channel_id = c->id;
                 break;
+            }
+            if (!c->next) {
+                ctr = depth;
+                channel_id = 0;
             }
         }
     }
     _v3_unlock_channellist();
+    free(names);
 
     _v3_func_leave("v3_get_channel_id");
-    return parent_id;
+    return channel_id;
 }/*}}}*/
 
 char *
@@ -6328,9 +6333,6 @@ v3_get_channel_path(uint16_t channel_id) {/*{{{*/
     _v3_func_enter("v3_get_channel_path");
     _v3_lock_channellist();
     for (c = v3_channel_list; c != NULL; c = (!c) ? v3_channel_list : c->next) {
-        if (!c) {
-            break;
-        }
         if ((!parent_id && c->id == channel_id) || (parent_id && c->id == parent_id)) {
             int chanlen = strlen(c->name);
             if (!path) {
@@ -6445,9 +6447,6 @@ v3_get_channel(uint16_t id) {/*{{{*/
     _v3_func_enter("v3_get_channel");
     _v3_lock_channellist();
     for (c = v3_channel_list; c != NULL; c = c->next) {
-        if (!c) {
-            break;
-        }
         if (c->id == id) {
             ret_channel = malloc(sizeof(v3_channel));
             _v3_copy_channel(ret_channel, c);

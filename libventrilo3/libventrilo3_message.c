@@ -352,17 +352,18 @@ _v3_parse_filter(v3_sp_filter *f, char *value) {/*{{{*/
 
 int
 _v3_strip_c0_set(char *s) {/*{{{*/
-    char *start = s;
+    void *start = s;
+    uint8_t *str = (uint8_t *)s;
 
     _v3_func_enter("_v3_strip_c0_set");
 
-    while (*s) {
-        *s = (*s < 0x20) ? 0x20 : *s;
-        s++;
+    while (*str) {
+        *str = (*str < 0x20) ? 0x20 : *str;
+        str++;
     }
 
     _v3_func_leave("_v3_strip_c0_set");
-    return (s - start);
+    return ((void *)str - start);
 }/*}}}*/
 /*}}}*/
 
