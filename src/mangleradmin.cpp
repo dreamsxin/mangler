@@ -36,7 +36,7 @@
 int natsort(const char *l, const char *r);
 
 void
-ManglerAdmin::trimString(Glib::ustring &s) {
+ManglerAdmin::trimString(Glib::ustring &s) {/*{{{*/
     if (s.empty()) {
         return;
     }
@@ -55,7 +55,7 @@ ManglerAdmin::trimString(Glib::ustring &s) {
         }
         s.erase(i, 1);
     }
-}
+}/*}}}*/
 
 ManglerAdmin::ManglerAdmin(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
     /* set up the basic window variables */

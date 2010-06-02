@@ -1306,7 +1306,8 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                     channelTree->refreshUser(ev->user.id);
                 }
                 break;/*}}}*/
-            case V3_EVENT_USER_TALK_END:/*{{{*/
+            case V3_EVENT_USER_TALK_END:
+            case V3_EVENT_USER_TALK_MUTE:/*{{{*/
                 if (v3_is_loggedin()) {
                     channelTree->refreshUser(ev->user.id);
 #ifdef HAVE_XOSD
@@ -1316,14 +1317,6 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                         outputAudio[ev->user.id]->finish();
                         outputAudio.erase(ev->user.id);
                     }
-                }
-                break;/*}}}*/
-            case V3_EVENT_USER_TALK_MUTE:/*{{{*/
-                if (v3_is_loggedin()) {
-                    channelTree->refreshUser(ev->user.id);
-#ifdef HAVE_XOSD
-                    osd->removeUser(ev->user.id);
-#endif
                 }
                 break;/*}}}*/
             case V3_EVENT_PLAY_AUDIO:/*{{{*/
@@ -1349,6 +1342,9 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                         if (outputAudio[ev->user.id]) {
                             outputAudio[ev->user.id]->queue(ev->pcm.length, (uint8_t *)ev->data->sample);
                         }
+                    } else if (outputAudio[ev->user.id]) {
+                        outputAudio[ev->user.id]->finish();
+                        outputAudio.erase(ev->user.id);
                     }
                 }
                 break;/*}}}*/
@@ -1589,6 +1585,10 @@ bool Mangler::getNetworkEvent() {/*{{{*/
             case V3_EVENT_USER_GLOBAL_MUTE_CHANGED:
             case V3_EVENT_USER_CHANNEL_MUTE_CHANGED:/*{{{*/
                 channelTree->refreshUser(ev->user.id);
+                if (outputAudio[ev->user.id]) {
+                    outputAudio[ev->user.id]->finish();
+                    outputAudio.erase(ev->user.id);
+                }
                 break;/*}}}*/
             case V3_EVENT_SERVER_PROPERTY_UPDATED:/*{{{*/
                 switch (ev->serverproperty.property) {
