@@ -36,16 +36,26 @@
 int natsort(const char *l, const char *r);
 
 void
-ManglerAdmin::trimString(Glib::ustring &s) {/*{{{*/
-    return;
-    int len = s.length();
-    int left = 0;
-    while (left < len && s[left] == ' ') left++;
-    int right = len - 1;
-    while (right > 0 && s[right] == ' ') right--;
-    if (right < len - 1) s.erase(right + 1);
-    if (left > 0) s.erase(0, left - 1);
-}/*}}}*/
+ManglerAdmin::trimString(Glib::ustring &s) {
+    if (s.empty()) {
+        return;
+    }
+    while (s.length() && (s[0] == ' ' || s[0] == '\t')) {
+        s.erase(0, 1);
+    }
+    if (s.empty()) {
+        return;
+    }
+    for (int i = s.length() - 1; i >= 0; --i) {
+        if (s[i] == '\n') {
+            continue;
+        }
+        if (s[i] != ' ' && s[i] != '\t') {
+            break;
+        }
+        s.erase(i, 1);
+    }
+}
 
 ManglerAdmin::ManglerAdmin(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
     /* set up the basic window variables */
@@ -290,8 +300,6 @@ ManglerAdmin::ManglerAdmin(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
     UserRankModel = Gtk::TreeStore::create(UserRankColumns);
     combobox->set_model(UserRankModel);
     combobox->pack_start(adminRecord.name);
-    row = *(UserRankModel->append());
-    row[adminRecord.id] = 0; row[adminRecord.name] = "(None)";
 
     builder->get_widget("UserDuplicateIPs", combobox);
     UserDuplicateIPsModel = Gtk::TreeStore::create(UserDuplicateIPsColumns);
@@ -424,7 +432,7 @@ ManglerAdmin::ManglerAdmin(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
     builder->get_widget("BanUpdate", button);
     button->signal_clicked().connect(sigc::mem_fun(this, &ManglerAdmin::BanUpdate_clicked_cb));
 
-    /* set up the editor lists */
+    /* set up the editor tabs */
     clear();
 
     tmpldialog = NULL;
@@ -1146,7 +1154,7 @@ ManglerAdmin::ChannelUpdate_clicked_cb(void) {/*{{{*/
     }
     //fprintf(stderr, "Updating:\nname: %s\nphonetic: %s\ncomment: %s\npassword: %s\n",
     //    channel.name, channel.phonetic, channel.comment, password.c_str());
-    v3_channel_update(&channel, password.c_str());
+    v3_channel_update(&channel, ustring_to_c(password).c_str());
     ::free(channel.name);
     ::free(channel.phonetic);
     ::free(channel.comment);
@@ -1268,14 +1276,14 @@ ManglerAdmin::accountUpdated(v3_account *account) {/*{{{*/
     /* User Owner combo box */
     acct = getAccount(account->perms.account_id, UserOwnerModel->children());
     if (acct) {
-        if (account->perms.srv_admin) {
+        if (account->perms.srv_admin || account->perms.add_user) {
             /* update name in owner list */
             acct[adminRecord.name] = c_to_ustring(account->username);
         } else {
             /* needs to be removed, no longer an admin */
             UserOwnerModel->erase(acct);
         }
-    } else if (account->perms.srv_admin) {
+    } else if (account->perms.srv_admin || account->perms.add_user) {
         /* needs to be added to owner list */
         acct = *(UserOwnerModel->append());
         acct[adminRecord.id] = account->perms.account_id;
@@ -1298,7 +1306,7 @@ ManglerAdmin::accountAdded(v3_account *account) {/*{{{*/
     }
     queue_resize(UserEditorTree);
     /* User Owner combo box */
-    if (account->perms.srv_admin) {
+    if (account->perms.srv_admin || account->perms.add_user) {
         /* needs to be added to owner list */
         acct = *(UserOwnerModel->append());
         acct[adminRecord.id] = account->perms.account_id;
@@ -1381,9 +1389,21 @@ ManglerAdmin::populateUserEditor(const v3_account *account, bool isTemplate) {/*
             UserRemove->set_sensitive(false);
         }
         copyToEntry("UserLogin", c_to_ustring(a.username));
-        copyToEntry("UserPassword", "");
+        copyToEntry("UserPassword", (a.perms.account_id > 1) ? "        " : "");
+        setWidgetSensitive("UserPassword", a.perms.account_id != 1);
         copyToCombobox("UserRank", a.perms.rank_id, 0);
-        copyToCombobox("UserOwner", a.perms.replace_owner_id, 0);
+        copyToCombobox("UserOwner", 0);
+        Glib::ustring ownerName = c_to_ustring(a.owner);
+        if (ownerName.length()) {
+            Gtk::TreeModel::iterator iter = UserOwnerModel->children().begin();
+            while (iter != UserOwnerModel->children().end()) {
+                if ((*iter)[adminRecord.name] == ownerName) {
+                    copyToCombobox("UserOwner", (*iter)[adminRecord.id], 0);
+                    break;
+                }
+                iter++;
+            }
+        }
         Gtk::TextView *textview;
         builder->get_widget("UserNotes", textview);
         textview->get_buffer()->set_text(c_to_ustring(a.notes));
@@ -1448,7 +1468,6 @@ ManglerAdmin::populateUserEditor(const v3_account *account, bool isTemplate) {/*
         setAdminCheckTree(UserChanAuthModel->children(), a.chan_auth, a.chan_auth_count);
         builder->get_widget("UserEditorLabel", label);
         label->set_text("Editing: " + ((account) ? c_to_ustring(a.username) : "NONE"));
-        setWidgetSensitive("UserPassword", a.perms.account_id != 1);
     }
 }/*}}}*/
 void
@@ -1560,15 +1579,14 @@ ManglerAdmin::UserUpdate_clicked_cb(void) {/*{{{*/
     Glib::ustring password = getFromEntry("UserPassword");
     trimString(password);
     if (password.length()) {
-        _v3_hash_password((uint8_t *)(ustring_to_c(password).c_str()), (uint8_t *)account.perms.hash_password);
+        _v3_hash_password((uint8_t *)ustring_to_c(password).c_str(), (uint8_t *)account.perms.hash_password);
     }
     account.perms.rank_id = getFromCombobox("UserRank", 0);
     uint16_t ownerID = getFromCombobox("UserOwner", 0);
-    account.perms.replace_owner_id = ownerID;
     if (ownerID) {
         Gtk::TreeModel::Row ownerRow = getAccount(ownerID, UserEditorTreeModel->children());
         Glib::ustring ownerName = ownerRow[adminRecord.name];
-        account.owner = ::strdup(ownerName.c_str());
+        account.owner = ::strdup(ustring_to_c(ownerName).c_str());
     } else {
         account.owner = ::strdup("");
     }
@@ -1626,6 +1644,7 @@ ManglerAdmin::UserUpdate_clicked_cb(void) {/*{{{*/
     account.perms.edit_command_target = getFromCheckbutton("UserEditCommandTargets");
     account.perms.assign_reserved = getFromCheckbutton("UserAssignReserved");
     getAdminCheckTree(UserChanAdminModel->children(), account.chan_admin, account.chan_admin_count);
+    getAdminCheckTree(UserChanAuthModel->children(), account.chan_auth, account.chan_auth_count);
     v3_userlist_update(&account);
     ::free(account.username);
     ::free(account.owner);
@@ -1934,8 +1953,8 @@ ManglerAdmin::UserTemplateSave_clicked_cb(void) {/*{{{*/
     tmpl["SendComplaints"]        = (int)getFromCheckbutton("UserSendComplaints");
     tmpl["RecvComplaints"]        = (int)getFromCheckbutton("UserReceiveComplaints");
     tmpl["SwitchChannels"]        = (int)getFromCheckbutton("UserSwitchChannels");
-    tmpl["LockedReason"]          = getFromEntry("UserLockedReason").raw();
-    tmpl["DefChan"]               = c_to_ustring(path).raw();
+    tmpl["LockedReason"]          = getFromEntry("UserLockedReason");
+    tmpl["DefChan"]               = c_to_ustring(path);
     tmpl["DuplicateIPs"]          = (int)getFromCombobox("UserDuplicateIPs", 0);
     tmpl["Broadcast"]             = (int)getFromCheckbutton("UserBroadcast");
     tmpl["BroadcastLobby"]        = (int)getFromCheckbutton("UserBroadcastLobby");
@@ -2110,6 +2129,10 @@ ManglerAdmin::clearRanks(void) {/*{{{*/
     RankEditorModel->clear();
     queue_resize(RankEditorTree);
     clearRankEditor();
+    UserRankModel->clear();
+    Gtk::TreeModel::Row row = *(UserRankModel->append());
+    row[adminRecord.id] = 0;
+    row[adminRecord.name] = "(None)";
 }/*}}}*/
 
 /* ----------  Ban Editor Related Methods  ---------- */

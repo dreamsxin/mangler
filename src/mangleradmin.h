@@ -59,16 +59,10 @@ class adminChannelStore : public Gtk::TreeStore {
 class ManglerAdmin {
     friend class adminChannelStore;
     public:
+        static void trimString(Glib::ustring &s);
+
         ManglerAdmin(Glib::RefPtr<Gtk::Builder> builder);
         ~ManglerAdmin();
-        Gtk::Window         *adminWindow;
-        Gtk::Notebook       *adminNotebook;
-        Gtk::Alignment      *ServerTab;
-        Gtk::Alignment      *ChannelsTab;
-        Gtk::Alignment      *UsersTab;
-        Gtk::Alignment      *RanksTab;
-        Gtk::HBox           *BansTab;
-        Gtk::Button         *UserAdd;
 
         bool isOpen;
         void show(void);
@@ -88,7 +82,6 @@ class ManglerAdmin {
         void accountRemoved(uint32_t acctid);
         void accountRemoved(v3_account *account);
         void clearUsers(void);
-        static void trimString(Glib::ustring &s);
         void rankUpdated(v3_rank *rank);
         void rankAdded(v3_rank *rank);
         void rankRemoved(uint16_t rankid);
@@ -100,6 +93,14 @@ class ManglerAdmin {
 
     protected:
         Glib::RefPtr<Gtk::Builder>          builder;
+        Gtk::Window                         *adminWindow;
+        Gtk::Notebook                       *adminNotebook;
+        Gtk::Alignment                      *ServerTab;
+        Gtk::Alignment                      *ChannelsTab;
+        Gtk::Alignment                      *UsersTab;
+        Gtk::Alignment                      *RanksTab;
+        Gtk::HBox                           *BansTab;
+        Gtk::Button                         *UserAdd;
         Gtk::Statusbar                      *AdminStatusbar;
         guint                               StatusbarCount;
         time_t                              StatusbarTime;

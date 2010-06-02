@@ -1108,16 +1108,14 @@ _v3_recv(int block) {/*{{{*/
                             v3_account a;
                             memset(&a, 0, sizeof(v3_account));
                             a.perms = ev.data->account.perms;
-                            a.username = strdup(ev.data->account.username);
-                            a.owner = strdup(ev.data->account.owner);
-                            a.notes = strdup(ev.data->account.notes);
-                            a.lock_reason = strdup(ev.data->account.lock_reason);
+                            a.username = ev.data->account.username;
+                            a.owner = ev.data->account.owner;
+                            a.notes = ev.data->account.notes;
+                            a.lock_reason = ev.data->account.lock_reason;
                             a.chan_admin_count = ev.data->account.chan_admin_count;
-                            a.chan_admin = malloc(a.chan_admin_count * 2);
-                            memcpy(a.chan_admin, ev.data->account.chan_admin, ev.data->account.chan_admin_count * 2);
+                            a.chan_admin = ev.data->account.chan_admin;
                             a.chan_auth_count = ev.data->account.chan_auth_count;
-                            a.chan_auth = malloc(a.chan_auth_count * 2);
-                            memcpy(a.chan_auth, ev.data->account.chan_auth, ev.data->account.chan_auth_count * 2);
+                            a.chan_auth = ev.data->account.chan_auth;
                             a.next = NULL;
                             _v3_net_message *msg = _v3_put_0x4a(ev.type == V3_EVENT_USERLIST_ADD ? V3_USERLIST_ADD : V3_USERLIST_MODIFY, &a, NULL);
                             if (_v3_send(msg)) {
@@ -1239,15 +1237,11 @@ _v3_recv(int block) {/*{{{*/
             if ((msg->len = _v3_recv_enc_msg(msgdata)) <= 0) {
                 if (msg->len == 0) {
                     _v3_debug(V3_DEBUG_SOCKET, "server closed connection");
-                    _v3_logout();
                 } else {
                     _v3_debug(V3_DEBUG_SOCKET, "receive failed");
-                    free(msg);
-                    _v3_logout();
-                    _v3_func_leave("_v3_recv");
-                    return NULL;
                 }
                 free(msg);
+                _v3_logout();
                 _v3_func_leave("_v3_recv");
                 return NULL;
             } else {
