@@ -96,27 +96,6 @@ public class VentriloEventData {
 			public short channel_codec;
 			public short channel_format;
 			public boolean password_protected;
-	        /*
-			// Probably won't be needing these.
-	        short voice_mode;
-	        short transmit_time_limit;
-	        short max_clients;
-	        short protect_mode;
-	        short transmit_rank_level;
-	        boolean allow_recording;
-	        boolean allow_cross_channel_transmit;
-	        boolean allow_paging;
-	        boolean allow_wave_file_binds;
-	        boolean allow_tts_binds;
-	        boolean allow_u2u_transmit;
-	        boolean allow_voice_target;
-	        boolean allow_command_target;
-	        boolean allow_guests;
-	        boolean allow_phantoms;
-	        boolean disable_guest_transmit;
-	        boolean disable_sound_events;
-	        boolean inactive_exempt;
-	        */
 		}
 		_channel channel = new _channel();
 		

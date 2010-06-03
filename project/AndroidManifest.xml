@@ -4,7 +4,7 @@
       android:versionCode="1"
       android:versionName="1.0">
     <application android:label="@string/app_name" android:icon="@drawable/mangler_logo" android:debuggable="true">
-        <activity android:label="@string/app_name" android:name="main">
+        <activity android:label="@string/app_name" android:name="Main">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -13,11 +13,13 @@
 		<activity android:name="ServerList" android:label="@string/server_list"></activity>
 		<activity android:name="ServerEdit" android:label="@string/server_edit"></activity>
 
-<activity android:name="ServerView" android:label="@string/server_view" android:configChanges="keyboardHidden|orientation" android:screenOrientation="portrait"></activity>
-<activity android:name="ChannelList" android:label="@string/channel_list"></activity>
-<activity android:name="UserList" android:label="@string/user_list"></activity>
+		<activity android:name="ServerView" 
+			android:label="@string/server_view" 
+			android:configChanges="keyboardHidden|orientation" 
+			android:screenOrientation="portrait">
+		</activity>
 
-<activity android:name="ChatView" android:label="@string/chat_view"></activity>
+<service android:name="EventService"></service>
 </application>
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />

@@ -28,6 +28,7 @@ import android.view.View;
 import android.view.ContextMenu.ContextMenuInfo;
 import android.widget.ListView;
 import android.widget.SimpleCursorAdapter;
+import android.widget.Toast;
 import android.widget.AdapterView.AdapterContextMenuInfo;
 
 public class ServerList extends ListActivity {
@@ -141,14 +142,16 @@ public class ServerList extends ListActivity {
         Cursor servers = dbHelper.fetchServer(id);
         startManagingCursor(servers);
         
-        Intent intent = new Intent(this, ServerView.class);
-        intent.putExtra("hostname", servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_HOSTNAME)));
-        intent.putExtra("port", servers.getInt(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_PORTNUMBER)));
-        intent.putExtra("password", servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_PASSWORD)));
-        intent.putExtra("username", servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_USERNAME)));
-        intent.putExtra("phonetic", servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_PHONETIC)));
-        
-        startActivity(intent);
+        if(VentriloInterface.login(
+        		servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_HOSTNAME)) + ":" + Integer.toString( servers.getInt(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_PORTNUMBER))),
+        		servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_USERNAME)),
+        		servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_PASSWORD)),
+        		servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_PHONETIC)))) {
+        	startActivity(new Intent(this, ServerView.class));
+        }
+        else {
+        	Toast.makeText(getApplicationContext(), "Connection to server failed.", Toast.LENGTH_SHORT).show();
+        }
     }
     
     @Override

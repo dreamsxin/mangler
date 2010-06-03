@@ -17,224 +17,229 @@
 
 package org.mangler;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+
 import android.app.TabActivity;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Bundle;
-import android.util.Log;
+import android.view.KeyEvent;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.view.View.OnKeyListener;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
-import android.widget.TabHost;
-
-import java.util.HashMap;
+import android.widget.EditText;
+import android.widget.ScrollView;
+import android.widget.SimpleAdapter;
+import android.widget.TextView;
 
 public class ServerView extends TabActivity {
 	
-	// Actions.
-	public static final String CHANNELLIST_ACTION = "org.mangler.ChannelListUpdateEvent";
-	public static final String USERLIST_ACTION 	  = "org.mangler.UserListUpdateEvent";
-	public static final String CHAT_ACTION		  = "org.mangler.ChatUpdateEvent";
+	// Events.
+	public static final int EVENT_CHAT_JOIN	  = 1;
+	public static final int EVENT_CHAT_LEAVE  = 2;
+	public static final int EVENT_CHAT_MSG	  = 3;
+	public static final int EVENT_USER_ADD    = 4;
+	public static final int EVENT_USER_DEL	  = 5;
+	public static final int EVENT_CHANNEL_ADD = 6;
 	
-	// Local variables.
-	private boolean  stopEventThread;
-	private String 	 hostname;
-	private int 	 port;
-	private String 	 password;
-	private String 	 username;
-	private String 	 phonetic;
-	private Player 	 player;
-	private Recorder recorder;
-	private Intent	 broadcastIntent;
+	// Menu options.
+	private final int OPTION_JOIN_CHAT  = 1;
+	private final int OPTION_LEAVE_CHAT = 2;
+	
+	// List adapters.
+	private SimpleAdapter channelAdapter;
+	private SimpleAdapter userAdapter;
+	
+	// List containers.
+	private ArrayList<HashMap<String, Object>> channelData 	= new ArrayList<HashMap<String, Object>>();
+	private ArrayList<HashMap<String, Object>> userData 	= new ArrayList<HashMap<String, Object>>();
 	
     @Override
     public void onCreate(Bundle savedInstanceState) {
     	super.onCreate(savedInstanceState);
         setContentView(R.layout.server_view);
+        
+        // Create adapters.
+	    channelAdapter 	= new SimpleAdapter(this, channelData, R.layout.channel_row, new String[] { "name", "id" }, new int[] { R.id.crowtext, R.id.crowid } );  
+	    userAdapter 	= new SimpleAdapter(this, userData, R.layout.user_row, new String[] { "name", "id" }, new int[] { R.id.urowtext, R.id.urowid } );
+        
+        // Register receivers.
+        registerReceiver(chatReceiver, new IntentFilter(ReceiverIntents.CHATVIEW_ACTION));
+        registerReceiver(channelReceiver, new IntentFilter(ReceiverIntents.CHANNELLIST_ACTION));
+        registerReceiver(userReceiver, new IntentFilter(ReceiverIntents.USERLIST_ACTION));
+        
+        // Control listeners.
+	    ((EditText)findViewById(R.id.message)).setOnKeyListener(onChatMessageEnter);
+	    ((Button)findViewById(R.id.talkButton)).setOnClickListener(onTalkPress);
+        
+        // Start receiving packets.
+    	startRecvThread();
+    }
 
-        // Talk button.
-    	final Button ttalk = (Button)findViewById(R.id.ToggleTalkButton);
-    	ttalk.setText(R.string.start_talk);
-        ttalk.setOnClickListener(new OnClickListener() {
-			public void onClick(View v) {
-				if (!recorder.recording()) {
-					recorder.start();
-					ttalk.setText(R.string.stop_talk);
-				} else {
-					recorder.stop();
-					ttalk.setText(R.string.start_talk);
-				}
-			}
-        });
-        
-        // Tabs.
-        TabHost tabHost = getTabHost();
-        TabHost.TabSpec tabSpec;
-        Intent intent;
-        
-        // Talk tab.
-    	tabSpec = tabHost.newTabSpec("talk").setIndicator("Talk").setContent(R.id.talkView);
-        tabHost.addTab(tabSpec);
-    	
-        // Channel tab.
-        intent = new Intent().setClass(this, ChannelList.class);
-        tabSpec = tabHost.newTabSpec("channels").setIndicator("Channels").setContent(intent);
-        tabHost.addTab(tabSpec);
-
-        // User tab.
-        intent = new Intent().setClass(this, UserList.class);
-        tabSpec = tabHost.newTabSpec("users").setIndicator("Users").setContent(intent);
-        tabHost.addTab(tabSpec);
-        
-        // Chat tab.
-        intent = new Intent().setClass(this, ChatView.class);
-        tabSpec = tabHost.newTabSpec("chat").setIndicator("Chat").setContent(intent);
-        tabHost.addTab(tabSpec);
-        
-        // Load activities that need to register broadcastreceivers.
-        // I'm sure we can do this in a better way.
-        tabHost.setCurrentTab(3);
-        tabHost.setCurrentTab(2);
-        tabHost.setCurrentTab(1);
-        tabHost.setCurrentTab(0);
-        
-        // Connect to server.
-    	Bundle extras = getIntent().getExtras();
-    	if (extras != null) {
-    		hostname = extras.getString("hostname");
-    		port = extras.getInt("port");
-    		password = extras.getString("password");
-    		username = extras.getString("username");
-    		phonetic = extras.getString("phonetic");
-    		connect(hostname, port, password, username, phonetic);
-    	}
+    public boolean onCreateOptionsMenu(Menu menu) {
+    	 // Create our menu buttons.
+    	menu.add(0, OPTION_JOIN_CHAT, 0, "Join chat").setIcon(R.drawable.menu_join_chat);
+        menu.add(0, OPTION_LEAVE_CHAT, 0, "Leave chat").setIcon(R.drawable.menu_leave_chat);
+        return true;
     }
     
-    @Override
-    protected void onStop() {
-    	super.onStop();
-    	recorder.stop();
-    	stopEventThread = true;
-    	VentriloInterface.logout();
-    }
-    
-    @Override
-    protected void onRestart() {
-    	super.onRestart();
-    	stopEventThread = false;
-    	connect(hostname, port, password, username, phonetic);
-    }
-    
-    private String StringFromBytes(byte[] bytes) {
-    	return new String(bytes, 0, (new String(bytes).indexOf(0)));
-    }
-    
-    protected void connect(String hostname, int port, String password, String username, String phonetic) {
-    	startEventThread();
-    	
-    	VentriloInterface.debuglevel(VentriloDebugLevels.V3_DEBUG_INFO);
-        if(VentriloInterface.login(hostname + ":" + port, username, password, phonetic)) {
-	    	startRecvThread();
+    public boolean onOptionsItemSelected(MenuItem item) {
+    	// Handle menu buttons.
+    	final EditText message = (EditText)findViewById(R.id.message);
+        switch(item.getItemId()) {
+        	case OPTION_JOIN_CHAT:
+        		VentriloInterface.joinchat();
+        		message.setEnabled(true);
+        		break;
+        	
+        	case OPTION_LEAVE_CHAT:
+        		VentriloInterface.leavechat();
+        		message.setEnabled(false);
+        		break;
+        		
+        	default:
+        		return false;
         }
-    }
-    
-    private void startEventThread() {
-    	Runnable event_runnable = new Runnable() {
-    		public void run() {
-		    	VentriloEventData data = new VentriloEventData();
-		    	while(true) {
-		    		VentriloInterface.getevent(data);
-		    		switch(data.type) {
-		    			case VentriloEvents.V3_EVENT_CHAT_MESSAGE:
-		    				VentriloInterface.getuser(data, data.user.id);
-		    				broadcastIntent = new Intent(CHAT_ACTION);
-		    				broadcastIntent.putExtra("event", ChatView.EVENT_MSG);
-		    				broadcastIntent.putExtra("username", StringFromBytes(data.text.name));
-		    				broadcastIntent.putExtra("message", StringFromBytes(data.data.chatmessage));
-		    			    sendBroadcast(broadcastIntent);
-		    				break;
-		    				
-		    			case VentriloEvents.V3_EVENT_CHAT_JOIN:
-		    				VentriloInterface.getuser(data, data.user.id);
-		    				broadcastIntent = new Intent(CHAT_ACTION);
-		    				broadcastIntent.putExtra("event", ChatView.EVENT_JOIN);
-		    				broadcastIntent.putExtra("username", StringFromBytes(data.text.name));
-		    			    sendBroadcast(broadcastIntent);
-		    				break;
-		    				
-		    			case VentriloEvents.V3_EVENT_CHAT_LEAVE:
-		    				VentriloInterface.getuser(data, data.user.id);
-		    				broadcastIntent = new Intent(CHAT_ACTION);
-		    				broadcastIntent.putExtra("event", ChatView.EVENT_LEAVE);
-		    				broadcastIntent.putExtra("username", StringFromBytes(data.text.name));
-		    			    sendBroadcast(broadcastIntent);
-		    				break;
-		    				
-		    			case VentriloEvents.V3_EVENT_USER_CHAN_MOVE:
-	    					if(data.user.id == VentriloInterface.getuserid()) {
-	    						int channel_rate = VentriloInterface.getchannelrate(data.channel.id);
-	    						player.rate(channel_rate);
-	    						recorder.stop();
-	    						recorder = new Recorder(channel_rate);
-	    					}
-		    				break;
-		    				
-		    			case VentriloEvents.V3_EVENT_USER_LOGIN:
-		    				if(data.user.id != 0) {
-			    				VentriloInterface.getuser(data, data.user.id);
-			    				broadcastIntent = new Intent(USERLIST_ACTION);
-			    				broadcastIntent.putExtra("event", UserList.EVENT_ADD);
-			    				broadcastIntent.putExtra("userid", data.user.id);
-			    				broadcastIntent.putExtra("username", StringFromBytes(data.text.name));
-			    			    sendBroadcast(broadcastIntent);
-		    				}
-		    				break;
-		    				
-		    			case VentriloEvents.V3_EVENT_USER_LOGOUT:
-		    				broadcastIntent = new Intent(USERLIST_ACTION);
-		    				broadcastIntent.putExtra("event", UserList.EVENT_DEL);
-		    				broadcastIntent.putExtra("userid", data.user.id);
-		    			    sendBroadcast(broadcastIntent);
-		    				break;
-		    				
-		    			case VentriloEvents.V3_EVENT_LOGIN_COMPLETE:
-		    				int lobby_rate = VentriloInterface.getchannelrate((short)0);
-		    				player = new Player(lobby_rate);
-		    				recorder = new Recorder(lobby_rate);
-		    				break;
-		    				
-		    			case VentriloEvents.V3_EVENT_PLAY_AUDIO:
-		    				player.write(data.data.sample, data.pcm.length);
-		    				break;
-		
-		    			case VentriloEvents.V3_EVENT_CHAN_ADD:
-		    				VentriloInterface.getchannel(data, data.channel.id);
-		    				broadcastIntent = new Intent(CHANNELLIST_ACTION);
-		    				broadcastIntent.putExtra("event", ChannelList.EVENT_ADD);
-		    				broadcastIntent.putExtra("channelid", data.channel.id);
-		    				broadcastIntent.putExtra("channelname", StringFromBytes(data.text.name));
-		    			    sendBroadcast(broadcastIntent);
-		    				break;
-		    				
-		    			default:
-		    				Log.w("mangler", "Unhandled event of type: " + Integer.toString(data.type));
-		    		}
-		    		
-		    		if (stopEventThread) break;
-		    	}
-    		}
-    	};
-    	(new Thread(event_runnable)).start();
+        return true;
     }
     
     private void startRecvThread() {
-    	Runnable recv_runnable = new Runnable() {
+    	Runnable recvRunnable = new Runnable() {
     		public void run() {
     			while(true) {
-    				if(!VentriloInterface.recv()) break;
+    				if(!VentriloInterface.recv()) {
+    					break;
+    				}
     			}
     		}
     	};
-    	
-    	(new Thread(recv_runnable)).start();
+    	(new Thread(recvRunnable)).start();
     }
+    
+	private BroadcastReceiver chatReceiver = new BroadcastReceiver() {
+		public void onReceive(Context context, Intent intent) {
+			final TextView messages = (TextView)findViewById(R.id.messages);
+			switch(intent.getIntExtra("event", -1)) {
+				case EVENT_CHAT_JOIN:
+					messages.append("\n* " + intent.getStringExtra("username") + " has joined the chat.");
+					break;
+					
+				case EVENT_CHAT_LEAVE:
+					messages.append("\n* " + intent.getStringExtra("username") + " has left the chat.");
+					break;
+			 		
+			 	case EVENT_CHAT_MSG:
+			 		messages.append("\n" + intent.getStringExtra("username") + ": " + intent.getStringExtra("message"));
+			 		break;
+			 }
+			
+			// Scroll to bottom.
+			final ScrollView chatscroll = (ScrollView)findViewById(R.id.chatScroll);
+			chatscroll.post(new Runnable() {
+				public void run() {
+					chatscroll.fullScroll(ScrollView.FOCUS_DOWN); 
+				}
+			});
+		 }
+	 };
+	 
+	private BroadcastReceiver userReceiver = new BroadcastReceiver() {
+		public void onReceive(Context context, Intent intent) {
+			short id = intent.getShortExtra("userid", (short)0);
+			switch(intent.getIntExtra("event", -1)) {
+				case EVENT_USER_ADD:
+					addUser(id, intent.getStringExtra("username"));
+					break;
+						
+				case EVENT_USER_DEL:
+					delUser(id);
+					break;
+			}
+		}
+	};
+	 
+	private BroadcastReceiver channelReceiver = new BroadcastReceiver() {
+		public void onReceive(Context context, Intent intent) {
+			switch(intent.getIntExtra("event", -1)) {
+				case EVENT_CHANNEL_ADD:
+					addChannel(intent.getShortExtra("channelid", (short)0), intent.getStringExtra("channelname"));
+					break;
+			}
+		}
+	};
+
+	
+	private OnClickListener onTalkPress = new OnClickListener() {
+		public void onClick(View v) {
+			/*if (!recorder.recording()) {
+				recorder.start();
+				talkButton.setText(R.string.stop_talk);
+			} else {
+				recorder.stop();
+				talkButton.setText(R.string.start_talk);
+			}*/
+		}
+	};
+	 
+	private OnKeyListener onChatMessageEnter = new OnKeyListener() {
+		public boolean onKey(View v, int keyCode, KeyEvent event) {
+			if ((event.getAction() == KeyEvent.ACTION_DOWN) && (keyCode == KeyEvent.KEYCODE_ENTER)) {
+				// Send chat message.
+				final EditText message = (EditText)findViewById(R.id.message);
+				VentriloInterface.sendchatmessage(message.getText().toString());
+				
+				// Clear message field.
+				message.setText("");
+				
+				// Hide keyboard.
+	           ((InputMethodManager)getSystemService(INPUT_METHOD_SERVICE)).hideSoftInputFromWindow(message.getWindowToken(), 0);
+				return true;
+			}
+			return false;
+		}
+	};
+		
+	private void addUser(short id, String username) {
+		// Add data.
+		HashMap<String, Object> data = new HashMap<String, Object>();
+		data.put("id", id);
+		data.put("name", username);
+		userData.add(data);
+		
+		// Update list.
+		userAdapter.notifyDataSetChanged();
+	}
+    
+	private void delUser(short id) {
+		for(Iterator<HashMap<String, Object>> iterator = userData.iterator(); iterator.hasNext(); ) {
+			if((Short)iterator.next().get("id") == id) {
+				// Remove data.
+				iterator.remove();
+				
+				// Update list and return.
+				userAdapter.notifyDataSetChanged();
+				return;
+			}
+		}
+	}
+	
+	private void addChannel(short id, String channelname) {
+		// Add data.
+		HashMap<String, Object> data = new HashMap<String, Object>();
+		data.put("id", id);
+		data.put("name", channelname);
+		channelData.add(data);
+		
+		// Update list.
+		channelAdapter.notifyDataSetChanged();
+	}
+	
 }
