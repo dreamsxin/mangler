@@ -837,7 +837,7 @@ ManglerChannelTree::channelView_buttonpress_event_cb(GdkEventButton* event) {/*{
                     signalChannelMute.block();
                     checkmenuitem->set_active(user->channel_mute);
                     signalChannelMute.unblock();
-                    if ((mangler->isAdmin || isChanAdmin) && !isOurPhantom) {
+                    if ((mangler->isAdmin || isChanAdmin) && user->channel && !isOurPhantom) {
                         checkmenuitem->show();
                     } else {
                         checkmenuitem->hide();
@@ -893,7 +893,7 @@ ManglerChannelTree::channelView_buttonpress_event_cb(GdkEventButton* event) {/*{
                     signalChannelMute.block();
                     checkmenuitem->set_active(user->channel_mute);
                     signalChannelMute.unblock();
-                    if ((mangler->isAdmin || isChanAdmin) && !isOurPhantom) {
+                    if ((mangler->isAdmin || isChanAdmin) && user->channel && !isOurPhantom) {
                         checkmenuitem->show();
                     } else {
                         checkmenuitem->hide();
@@ -908,13 +908,13 @@ ManglerChannelTree::channelView_buttonpress_event_cb(GdkEventButton* event) {/*{
                         checkmenuitem->hide();
                     }
                     builder->get_widget("kickUser", menuitem);
-                    if ((mangler->isAdmin || perms->kick_user) && !isOurPhantom) {
+                    if (perms->kick_user && !isOurPhantom) {
                         menuitem->show();
                     } else {
                         menuitem->hide();
                     }
                     builder->get_widget("banUser", menuitem);
-                    if ((mangler->isAdmin || perms->ban_user) && !isOurPhantom) {
+                    if (perms->ban_user && !isOurPhantom) {
                         menuitem->show();
                     } else {
                         menuitem->hide();
@@ -1260,8 +1260,7 @@ ManglerChannelStore::row_draggable_vfunc(const Gtk::TreeModel::Path& path) const
     if (!iter) {
         return Gtk::TreeStore::row_draggable_vfunc(path);
     }
-    Row row = *iter;
-    if (row[c.isUser] && (perms->move_user || mangler->isAdmin || v3_is_channel_admin(v3_get_user_channel(row[c.id])))) {
+    if ((*iter)[c.isUser] && perms->move_user) {
         return true;
     }
     return false;

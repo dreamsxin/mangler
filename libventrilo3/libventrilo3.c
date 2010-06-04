@@ -1332,7 +1332,7 @@ int
 v3_message_waiting(int block) {/*{{{*/
     fd_set rset;
     int ret;
-    struct timeval tv, now;
+    struct timeval tv;
 
     _v3_func_enter("v3_message_waiting");
     if (! _v3_is_connected()) {
@@ -1349,7 +1349,6 @@ v3_message_waiting(int block) {/*{{{*/
      * such, if we're blocking, we need to timeout in those 10 second intervals.
      */
     if (block) {
-        gettimeofday(&now, NULL);
         _v3_next_timestamp(&tv, &v3_server.last_timestamp);
         _v3_debug(V3_DEBUG_INFO, "outbound timestamp pending in %d.%d seconds", tv.tv_sec, tv.tv_usec);
     } else {
@@ -1357,12 +1356,12 @@ v3_message_waiting(int block) {/*{{{*/
         tv.tv_usec = 0;
     }
     while ((ret = select(_v3_sockd > v3_server.evpipe[0] ? _v3_sockd+1 : v3_server.evpipe[0]+1, &rset, NULL, NULL, &tv)) >= 0) {
-        _v3_next_timestamp(&tv, &v3_server.last_timestamp);
-        _v3_debug(V3_DEBUG_INFO, "outbound timestamp pending in %d.%d seconds", tv.tv_sec, tv.tv_usec);
         if (!_v3_is_connected()) {
             _v3_func_leave("v3_message_waiting");
             return false;
         }
+        _v3_next_timestamp(&tv, &v3_server.last_timestamp);
+        _v3_debug(V3_DEBUG_INFO, "outbound timestamp pending in %d.%d seconds", tv.tv_sec, tv.tv_usec);
         if (ret == 0 && block) {
             _v3_net_message *m;
             FD_ZERO(&rset);

@@ -35,16 +35,16 @@
 
 int natsort(const char *l, const char *r);
 
-void
-ManglerAdmin::trimString(Glib::ustring &s) {/*{{{*/
+Glib::ustring
+ManglerAdmin::trimString(Glib::ustring s) {/*{{{*/
     if (s.empty()) {
-        return;
+        return s;
     }
     while (s.length() && (s[0] == ' ' || s[0] == '\t')) {
         s.erase(0, 1);
     }
     if (s.empty()) {
-        return;
+        return s;
     }
     for (int i = s.length() - 1; i >= 0; --i) {
         if (s[i] == '\n') {
@@ -55,13 +55,14 @@ ManglerAdmin::trimString(Glib::ustring &s) {/*{{{*/
         }
         s.erase(i, 1);
     }
+    return s;
 }/*}}}*/
 
 ManglerAdmin::ManglerAdmin(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
     /* set up the basic window variables */
     this->builder = builder;
     Gtk::TreeModel::Row row;
-    Gtk::TreeView::Column *pColumn; 
+    Gtk::TreeView::Column *pColumn;
     Gtk::CellRendererText *renderer;
 
     builder->get_widget("adminWindow", adminWindow);
@@ -448,29 +449,29 @@ void
 ManglerAdmin::show(void) {/*{{{*/
     adminWindow->set_icon(mangler->icons["tray_icon"]);
     adminWindow->present();
+    if (isOpen) {
+        permsUpdated(true);
+    }
 }/*}}}*/
 void
 ManglerAdmin::hide(void) {/*{{{*/
     adminWindow->hide();
 }/*}}}*/
 void
-ManglerAdmin::permsUpdated(void) {/*{{{*/
-    if (isOpen) {
+ManglerAdmin::permsUpdated(bool refresh) {/*{{{*/
+    const v3_permissions *perms = v3_get_permissions();
+    clearRankEditor();
+    setWidgetSensitive("RankAdd", RankEditorOpen && perms->edit_rank);
+    if (isOpen && !refresh) {
         return;
     }
-    const v3_permissions *perms = v3_get_permissions();
     if (mangler->isAdmin || perms->add_user || perms->del_user) {
         UserAdd->set_sensitive(mangler->isAdmin || perms->add_user);
         UsersTab->show();
     } else {
         UsersTab->hide();
     }
-    if (mangler->isAdmin || perms->edit_rank) {
-        RanksTab->show();
-    } else {
-        RanksTab->hide();
-    }
-    if (mangler->isAdmin || perms->ban_user) {
+    if (perms->ban_user) {
         BansTab->show();
     } else {
         BansTab->hide();
@@ -480,16 +481,19 @@ void
 ManglerAdmin::adminWindow_show_cb(void) {/*{{{*/
     const v3_permissions *perms = v3_get_permissions();
     permsUpdated();
-    if (mangler->isAdmin || perms->ban_user) {
+    if (perms->ban_user) {
         v3_admin_ban_list();
     }
     if (mangler->isAdmin || perms->add_user || perms->del_user) {
+        UserEditorOpen = true;
         v3_userlist_open();
     }
-    if (mangler->isAdmin || perms->edit_rank) {
+    if (perms->edit_rank) {
+        RankEditorOpen = true;
         v3_ranklist_open();
     }
     if (mangler->isAdmin && SrvIsNotUpdating) {
+        SrvEditorOpen = true;
         v3_serverprop_open();
     }
     loadUserTemplates();
@@ -504,14 +508,16 @@ ManglerAdmin::adminWindow_show_cb(void) {/*{{{*/
 }/*}}}*/
 void
 ManglerAdmin::adminWindow_hide_cb(void) {/*{{{*/
-    const v3_permissions *perms = v3_get_permissions();
-    if (mangler->isAdmin && SrvIsNotUpdating) {
+    if (SrvEditorOpen && SrvIsNotUpdating) {
+        SrvEditorOpen = false;
         v3_serverprop_close();
     }
-    if (mangler->isAdmin || perms->edit_rank) {
+    if (RankEditorOpen) {
+        RankEditorOpen = false;
         v3_ranklist_close();
     }
-    if (mangler->isAdmin || perms->add_user || perms->del_user) {
+    if (UserEditorOpen) {
+        UserEditorOpen = false;
         v3_userlist_close();
     }
     ServerTab->hide();
@@ -710,7 +716,7 @@ ManglerAdmin::serverSettingsSendDone(void) {/*{{{*/
     statusbarPush("Sending server properties... done.");
     v3_serverprop_close();
     SrvIsNotUpdating = true;
-    if (isOpen) {
+    if ((SrvEditorOpen = isOpen)) {
         v3_serverprop_open();
     } else {
         setWidgetSensitive("ServerVBox", true);
@@ -968,7 +974,7 @@ ManglerAdmin::channelAdded(v3_channel *channel) {/*{{{*/
     channelRow[adminRecord.name] = c_to_ustring(channel->name);
     if (ChannelAdded) {
         ChannelAdded = false;
-        if (currentChannelID == 0xffff && c_to_ustring(channel->name) == getFromEntry("ChannelName")) {
+        if (currentChannelID == 0xffff && c_to_ustring(channel->name) == trimString(getFromEntry("ChannelName"))) {
             if (parent) {
                 ChannelEditorTree->expand_row(ChannelEditorTreeModel->get_path(parent), false);
             }
@@ -1122,8 +1128,7 @@ ManglerAdmin::ChannelUpdate_clicked_cb(void) {/*{{{*/
     channel.name = ::strdup(ustring_to_c(getFromEntry("ChannelName")).c_str());
     channel.phonetic = ::strdup(ustring_to_c(getFromEntry("ChannelPhonetic")).c_str());
     channel.comment = ::strdup(ustring_to_c(getFromEntry("ChannelComment")).c_str());
-    password = getFromEntry("ChannelPassword");
-    trimString(password);
+    password = trimString(getFromEntry("ChannelPassword"));
     if (password.length()) channel.password_protected = 1;
     channel.protect_mode = getFromCombobox("ChannelProtMode", 0);
     channel.voice_mode = getFromCombobox("ChannelVoiceMode", 0);
@@ -1271,8 +1276,6 @@ ManglerAdmin::accountUpdated(v3_account *account) {/*{{{*/
     acct = getAccount(account->perms.account_id, UserEditorTreeModel->children());
     if (! acct) return;
     acct[adminRecord.name] = c_to_ustring(account->username);
-    if (account->perms.account_id == currentUserID) populateUserEditor(account);
-    queue_resize(UserEditorTree);
     /* User Owner combo box */
     acct = getAccount(account->perms.account_id, UserOwnerModel->children());
     if (acct) {
@@ -1289,6 +1292,8 @@ ManglerAdmin::accountUpdated(v3_account *account) {/*{{{*/
         acct[adminRecord.id] = account->perms.account_id;
         acct[adminRecord.name] = c_to_ustring(account->username);
     }
+    if (account->perms.account_id == currentUserID) populateUserEditor(account);
+    queue_resize(UserEditorTree);
     /* update status bar */
     statusbarPush(Glib::ustring::compose("User %1 (%2) updated.", Glib::ustring::format(account->perms.account_id), c_to_ustring(account->username)));
 }/*}}}*/
@@ -1301,10 +1306,6 @@ ManglerAdmin::accountAdded(v3_account *account) {/*{{{*/
     acct = *iter;
     acct[adminRecord.id] = account->perms.account_id;
     acct[adminRecord.name] = c_to_ustring(account->username);
-    if (currentUserID == 0xffff && c_to_ustring(account->username) == getFromEntry("UserLogin")) {
-        UserEditorTree->set_cursor(UserEditorTreeModel->get_path(iter));
-    }
-    queue_resize(UserEditorTree);
     /* User Owner combo box */
     if (account->perms.srv_admin || account->perms.add_user) {
         /* needs to be added to owner list */
@@ -1312,6 +1313,10 @@ ManglerAdmin::accountAdded(v3_account *account) {/*{{{*/
         acct[adminRecord.id] = account->perms.account_id;
         acct[adminRecord.name] = c_to_ustring(account->username);
     }
+    if (currentUserID == 0xffff && c_to_ustring(account->username) == trimString(getFromEntry("UserLogin"))) {
+        UserEditorTree->set_cursor(UserEditorTreeModel->get_path(iter));
+    }
+    queue_resize(UserEditorTree);
     /* update status bar */
     statusbarPush(Glib::ustring::compose("User %1 (%2) added.", Glib::ustring::format(account->perms.account_id), c_to_ustring(account->username)));
 }/*}}}*/
@@ -1576,8 +1581,7 @@ ManglerAdmin::UserUpdate_clicked_cb(void) {/*{{{*/
     ::memset(&account, 0, sizeof(v3_account));
     account.perms.account_id = (currentUserID == 0xffff) ? 0 : currentUserID;
     account.username = ::strdup(ustring_to_c(getFromEntry("UserLogin")).c_str());
-    Glib::ustring password = getFromEntry("UserPassword");
-    trimString(password);
+    Glib::ustring password = trimString(getFromEntry("UserPassword"));
     if (password.length()) {
         _v3_hash_password((uint8_t *)ustring_to_c(password).c_str(), (uint8_t *)account.perms.hash_password);
     }
@@ -2025,7 +2029,8 @@ ManglerAdmin::rankUpdated(v3_rank *rank) {/*{{{*/
     /* the poorly named getAccount() will work fine for this */
     Gtk::TreeModel::Row row = getAccount(rank->id, UserRankModel->children());
     if (! row) row = *(UserRankModel->append());
-    row[adminRecord.id] = rank->id; row[adminRecord.name] = c_to_ustring(rank->name);
+    row[adminRecord.id] = rank->id;
+    row[adminRecord.name] = c_to_ustring(rank->name);
     /* update status bar */
     statusbarPush(Glib::ustring::compose("Rank %1 (%2) updated.", Glib::ustring::format(rank->id), c_to_ustring(rank->name)));
 }/*}}}*/
@@ -2036,13 +2041,14 @@ ManglerAdmin::rankAdded(v3_rank *rank) {/*{{{*/
     (*iter)[rankRecord.level] = rank->level;
     (*iter)[rankRecord.name] = c_to_ustring(rank->name);
     (*iter)[rankRecord.description] = rank->description;
-    if (currentRankID == 0xffff && c_to_ustring(rank->name) == getFromEntry("RankName")) {
+    if (currentRankID == 0xffff && c_to_ustring(rank->name) == trimString(getFromEntry("RankName"))) {
         RankEditorTree->set_cursor(RankEditorModel->get_path(iter));
     }
     queue_resize(RankEditorTree);
     /* now handle the User Rank combo box */
     iter = UserRankModel->append();
-    (*iter)[adminRecord.id] = rank->id; (*iter)[adminRecord.name] = c_to_ustring(rank->name);
+    (*iter)[adminRecord.id] = rank->id;
+    (*iter)[adminRecord.name] = c_to_ustring(rank->name);
     /* update status bar */
     statusbarPush(Glib::ustring::compose("Rank %1 (%2) added.", Glib::ustring::format(rank->id), c_to_ustring(rank->name)));
 }/*}}}*/
@@ -2091,8 +2097,11 @@ ManglerAdmin::RankEditorTree_cursor_changed_cb(void) {/*{{{*/
         copyToEntry("RankDescription", (*iter)[rankRecord.description]);
         copyToSpinbutton("RankLevel", (*iter)[rankRecord.level]);
     }
-    setWidgetSensitive("RankAdd", true);
-    setWidgetSensitive("RankRemove", isRank);
+    const v3_permissions *perms = v3_get_permissions();
+    bool editAccess( RankEditorOpen && perms->edit_rank );
+    setWidgetSensitive("RankAdd", editAccess);
+    setWidgetSensitive("RankRemove", editAccess && isRank);
+    setWidgetSensitive("RankUpdate", editAccess && isRank);
     RankEditor->set_sensitive(isRank);
 }/*}}}*/
 void
@@ -2100,6 +2109,7 @@ ManglerAdmin::RankAdd_clicked_cb(void) {/*{{{*/
     clearRankEditor();
     currentRankID = 0xffff;
     setWidgetSensitive("RankAdd", false);
+    setWidgetSensitive("RankUpdate", true);
     RankEditor->set_sensitive(true);
 }/*}}}*/
 void
@@ -2120,8 +2130,9 @@ ManglerAdmin::clearRankEditor(void) {/*{{{*/
     copyToEntry("RankName", "");
     copyToEntry("RankDescription", "");
     copyToSpinbutton("RankLevel", 0);
-    setWidgetSensitive("RankAdd", true);
+    setWidgetSensitive("RankAdd", RankEditorOpen);
     setWidgetSensitive("RankRemove", false);
+    setWidgetSensitive("RankUpdate", RankEditorOpen);
     currentRankID = 0;
 }/*}}}*/
 void
@@ -2240,6 +2251,10 @@ ManglerAdmin::clear(void) {/*{{{*/
     adminNotebook->set_current_page(1);
     setWidgetSensitive("ServerVBox", true);
     SrvIsNotUpdating = true;
+    ChannelAdded = false;
+    SrvEditorOpen = false;
+    UserEditorOpen = false;
+    RankEditorOpen = false;
     clearChannels();
     clearUsers();
     clearRanks();

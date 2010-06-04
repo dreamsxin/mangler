@@ -497,6 +497,7 @@ void Mangler::onDisconnectHandler(void) {/*{{{*/
         mangler->statusIcon->set(icons["tray_icon_grey"]);
         isAdmin = false;
         isChanAdmin = false;
+        wantAdminWindow = false;
         motdWindow->hide();
         motdNotebook->set_current_page(1);
         motdNotebook->set_show_tabs(false);

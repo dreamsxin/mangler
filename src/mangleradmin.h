@@ -59,7 +59,7 @@ class adminChannelStore : public Gtk::TreeStore {
 class ManglerAdmin {
     friend class adminChannelStore;
     public:
-        static void trimString(Glib::ustring &s);
+        static Glib::ustring trimString(Glib::ustring s);
 
         ManglerAdmin(Glib::RefPtr<Gtk::Builder> builder);
         ~ManglerAdmin();
@@ -67,7 +67,7 @@ class ManglerAdmin {
         bool isOpen;
         void show(void);
         void hide(void);
-        void permsUpdated(void);
+        void permsUpdated(bool refresh = false);
         void serverSettingsUpdated(v3_server_prop &prop);
         void serverSettingsSendDone(void);
         void channelUpdated(v3_channel *channel);
@@ -112,7 +112,6 @@ class ManglerAdmin {
         adminModelColumns                   adminRecord;
 
         /* server settings editor stuff */
-        bool                                SrvIsNotUpdating;
         Glib::RefPtr<Gtk::TreeStore>        SrvChatFilterModel;
         Glib::RefPtr<Gtk::TreeStore>        SrvChanOrderModel;
         Glib::RefPtr<Gtk::TreeStore>        SrvInactActionModel;
@@ -122,9 +121,10 @@ class ManglerAdmin {
         Glib::RefPtr<Gtk::TreeStore>        SrvSpamFilterCommentModel;
         Glib::RefPtr<Gtk::TreeStore>        SrvSpamFilterTTSModel;
         Glib::RefPtr<Gtk::TreeStore>        SrvSpamFilterWaveModel;
+        bool                                SrvEditorOpen;
+        bool                                SrvIsNotUpdating;
 
         /* channel editor stuff */
-        bool                                ChannelAdded;
         adminModelColumns                   ChannelEditorColumns;
         Glib::RefPtr<Gtk::TreeStore>        ChannelEditorTreeModel;
         adminModelColumns                   ChannelCodecColumns;
@@ -143,6 +143,7 @@ class ManglerAdmin {
         uint32_t                            currentChannelID;
         uint32_t                            currentChannelParent;
         bool                                channelSortManual;
+        bool                                ChannelAdded;
 
         /* user editor stuff */
         class adminCheckModelColumns : public Gtk::TreeModel::ColumnRecord {
@@ -190,6 +191,7 @@ class ManglerAdmin {
         Gtk::Button                         *UserUpdate;
         Gtk::VBox                           *UserEditor;
         Gtk::Button                         *UserRemove;
+        bool                                UserEditorOpen;
         uint32_t                            currentUserID;
 
         /* rank editor stuff */
@@ -206,6 +208,7 @@ class ManglerAdmin {
         Glib::RefPtr<Gtk::TreeStore>        RankEditorModel;
         Gtk::TreeView                       *RankEditorTree;
         Gtk::VBox                           *RankEditor;
+        bool                                RankEditorOpen;
         uint16_t                            currentRankID;
 
         /* ban editor stuff */
