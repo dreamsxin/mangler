@@ -23,10 +23,11 @@ import android.media.MediaRecorder;
 
 public class Recorder {
 	
-	private boolean		is_recording = false;
-	private byte[] 		buffer;
-	private int			pcmlength = 0;
-	private int 		rate = 0;
+	public static Recorder recorder;
+	private boolean is_recording = false;
+	private byte[] buffer;
+	private int	pcmlength = 0;
+	private int rate = 0;
 	private AudioRecord audiorecord;
 	
 	public Recorder(final int rate) {

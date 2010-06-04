@@ -23,9 +23,10 @@ import android.media.AudioTrack;
 
 public class Player {
 	
+	public static Player player;
 	private AudioTrack audiotrack;
 
-	public Player(final int rate) {
+	public Player(int rate) {
 		// Attempt to initialize AudioTrack instance.
 		try {
 			audiotrack = new AudioTrack(

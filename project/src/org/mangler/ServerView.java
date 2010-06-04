@@ -17,6 +17,8 @@
 
 package org.mangler;
 
+import java.util.HashMap;
+
 import android.app.TabActivity;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -30,6 +32,7 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.View.OnKeyListener;
 import android.view.inputmethod.InputMethodManager;
+import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
@@ -37,6 +40,7 @@ import android.widget.ScrollView;
 import android.widget.SimpleAdapter;
 import android.widget.TabHost;
 import android.widget.TextView;
+import android.widget.AdapterView.OnItemClickListener;
 
 public class ServerView extends TabActivity {
 	
@@ -79,6 +83,10 @@ public class ServerView extends TabActivity {
 	    ((ListView)findViewById(R.id.channelList)).setAdapter(channelAdapter);
 	    ((ListView)findViewById(R.id.userList)).setAdapter(userAdapter);
         
+	    // List item clicks.
+	    ((ListView)findViewById(R.id.channelList)).setOnItemClickListener(onChannelListClick);
+	    ((ListView)findViewById(R.id.userList)).setOnItemClickListener(onUserListClick);
+	    
         // Register receivers.
         registerReceiver(chatReceiver, new IntentFilter(CHATVIEW_ACTION));
         registerReceiver(channelReceiver, new IntentFilter(CHANNELLIST_ACTION));
@@ -176,17 +184,28 @@ public class ServerView extends TabActivity {
 			channelAdapter.notifyDataSetChanged();
 		}
 	};
-
+	
+	private OnItemClickListener onChannelListClick = new OnItemClickListener() {
+		public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+			VentriloInterface.changechannel((Short)((HashMap<String, Object>)(parent.getItemAtPosition(position))).get("id"), "");
+		}
+	};
+	
+	private OnItemClickListener onUserListClick = new OnItemClickListener() {
+		public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+			VentriloInterface.changechannel(VentriloInterface.getuserchannel((Short)((HashMap<String, Object>)parent.getItemAtPosition(position)).get("id")), "");
+		}
+	};
 	
 	private OnClickListener onTalkPress = new OnClickListener() {
 		public void onClick(View v) {
-			/*if (!recorder.recording()) {
-				recorder.start();
-				talkButton.setText(R.string.stop_talk);
+			if (!Recorder.recorder.recording()) {
+				Recorder.recorder.start();
+				((Button)findViewById(R.id.talkButton)).setText(R.string.stop_talk);
 			} else {
-				recorder.stop();
-				talkButton.setText(R.string.start_talk);
-			}*/
+				Recorder.recorder.stop();
+				((Button)findViewById(R.id.talkButton)).setText(R.string.start_talk);
+			}
 		}
 	};
 	 

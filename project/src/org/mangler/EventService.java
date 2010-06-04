@@ -73,12 +73,10 @@ public class EventService extends Service {
 	    				
 	    			case VentriloEvents.V3_EVENT_USER_CHAN_MOVE:
     					if(data.user.id == VentriloInterface.getuserid()) {
-    					//	int channel_rate = VentriloInterface.getchannelrate(data.channel.id);
-    						
-    						/*
-    						player.rate(channel_rate);
-    						recorder.stop();
-    						recorder = new Recorder(channel_rate);*/
+    						int channel_rate = VentriloInterface.getchannelrate(data.channel.id);
+    						Player.player.rate(channel_rate);
+    						Recorder.recorder.stop();
+    						Recorder.recorder = new Recorder(channel_rate);
     					}
 	    				break;
 	    				
@@ -96,14 +94,13 @@ public class EventService extends Service {
 	    				break;
 	    				
 	    			case VentriloEvents.V3_EVENT_LOGIN_COMPLETE:
-	    				//int lobby_rate = VentriloInterface.getchannelrate((short)0);
-	    				/*
-	    				player = new Player(lobby_rate);
-	    				recorder = new Recorder(lobby_rate);*/
+	    				int lobby_rate = VentriloInterface.getchannelrate((short)0);
+	    				Player.player = new Player(lobby_rate);
+	    				Recorder.recorder = new Recorder(lobby_rate);
 	    				break;
 	    				
 	    			case VentriloEvents.V3_EVENT_PLAY_AUDIO:
-	    				//player.write(data.data.sample, data.pcm.length);
+	    				Player.player.write(data.data.sample, data.pcm.length);
 	    				break;
 	
 	    			case VentriloEvents.V3_EVENT_CHAN_ADD:
