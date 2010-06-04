@@ -528,13 +528,13 @@ ManglerRecorder::recInfoDialog_save_clicked_cb(void) {/*{{{*/
         v3_vrf_data vrfd;
         v3_vrf_data_init(&vrfd);
         builder->get_widget("recInfoByEntry", entry);
-        strncpy(vrfd.username, entry->get_text().c_str(), sizeof(vrfd.username));
+        strncpy(vrfd.username, ustring_to_c(entry->get_text()).c_str(), sizeof(vrfd.username));
         builder->get_widget("recInfoComment", textview);
-        strncpy(vrfd.comment, textview->get_buffer()->get_text().c_str(), sizeof(vrfd.comment));
+        strncpy(vrfd.comment, ustring_to_c(textview->get_buffer()->get_text()).c_str(), sizeof(vrfd.comment));
         builder->get_widget("recInfoURL", textview);
-        strncpy(vrfd.url, textview->get_buffer()->get_text().c_str(), sizeof(vrfd.url));
+        strncpy(vrfd.url, ustring_to_c(textview->get_buffer()->get_text()).c_str(), sizeof(vrfd.url));
         builder->get_widget("recInfoCopyright", textview);
-        strncpy(vrfd.copyright, textview->get_buffer()->get_text().c_str(), sizeof(vrfd.copyright));
+        strncpy(vrfd.copyright, ustring_to_c(textview->get_buffer()->get_text()).c_str(), sizeof(vrfd.copyright));
         if (v3_vrf_put_info(vrfh, &vrfd) != V3_OK) {
             mangler->errorDialog(c_to_ustring(_v3_error(NULL)));
         }
