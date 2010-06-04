@@ -42,17 +42,13 @@ public class EventService extends Service {
         }
     	
 		public void run() {
-			
 	    	VentriloEventData data = new VentriloEventData();
-	    	
 	    	while(running) {
-	    		
 	    		VentriloInterface.getevent(data);
-	    		
 	    		switch(data.type) {
 	    			case VentriloEvents.V3_EVENT_CHAT_MESSAGE:
 	    				VentriloInterface.getuser(data, data.user.id);
-	    				broadcastIntent = new Intent(ReceiverIntents.CHATVIEW_ACTION);
+	    				broadcastIntent = new Intent(ServerView.CHATVIEW_ACTION);
 	    				broadcastIntent.putExtra("event", ServerView.EVENT_CHAT_MSG);
 	    				broadcastIntent.putExtra("username", StringFromBytes(data.text.name));
 	    				broadcastIntent.putExtra("message", StringFromBytes(data.data.chatmessage));
@@ -61,7 +57,7 @@ public class EventService extends Service {
 	    				
 	    			case VentriloEvents.V3_EVENT_CHAT_JOIN:
 	    				VentriloInterface.getuser(data, data.user.id);
-	    				broadcastIntent = new Intent(ReceiverIntents.CHATVIEW_ACTION);
+	    				broadcastIntent = new Intent(ServerView.CHATVIEW_ACTION);
 	    				broadcastIntent.putExtra("event", ServerView.EVENT_CHAT_JOIN);
 	    				broadcastIntent.putExtra("username", StringFromBytes(data.text.name));
 	    			    sendBroadcast(broadcastIntent);
@@ -69,7 +65,7 @@ public class EventService extends Service {
 	    				
 	    			case VentriloEvents.V3_EVENT_CHAT_LEAVE:
 	    				VentriloInterface.getuser(data, data.user.id);
-	    				broadcastIntent = new Intent(ReceiverIntents.CHATVIEW_ACTION);
+	    				broadcastIntent = new Intent(ServerView.CHATVIEW_ACTION);
 	    				broadcastIntent.putExtra("event", ServerView.EVENT_CHAT_LEAVE);
 	    				broadcastIntent.putExtra("username", StringFromBytes(data.text.name));
 	    			    sendBroadcast(broadcastIntent);
@@ -88,21 +84,15 @@ public class EventService extends Service {
 	    				
 	    			case VentriloEvents.V3_EVENT_USER_LOGIN:
 	    				if(data.user.id != 0) {
-	    					Log.w("mangler", "sending broadcast");
 		    				VentriloInterface.getuser(data, data.user.id);
-		    				broadcastIntent = new Intent(ReceiverIntents.USERLIST_ACTION);
-		    				broadcastIntent.putExtra("event", ServerView.EVENT_USER_ADD);
-		    				broadcastIntent.putExtra("userid", data.user.id);
-		    				broadcastIntent.putExtra("username", StringFromBytes(data.text.name));
-		    			    sendBroadcast(broadcastIntent);
+		    				SharedData.addData(SharedData.userData, data.user.id, StringFromBytes(data.text.name));
+		    			    sendBroadcast(new Intent(ServerView.USERLIST_ACTION));
 	    				}
 	    				break;
 	    				
 	    			case VentriloEvents.V3_EVENT_USER_LOGOUT:
-	    				broadcastIntent = new Intent(ReceiverIntents.USERLIST_ACTION);
-	    				broadcastIntent.putExtra("event", ServerView.EVENT_USER_DEL);
-	    				broadcastIntent.putExtra("userid", data.user.id);
-	    			    sendBroadcast(broadcastIntent);
+	    				SharedData.delData(SharedData.userData, data.user.id);
+	    			    sendBroadcast(new Intent(ServerView.USERLIST_ACTION));
 	    				break;
 	    				
 	    			case VentriloEvents.V3_EVENT_LOGIN_COMPLETE:
@@ -118,11 +108,8 @@ public class EventService extends Service {
 	
 	    			case VentriloEvents.V3_EVENT_CHAN_ADD:
 	    				VentriloInterface.getchannel(data, data.channel.id);
-	    				broadcastIntent = new Intent(ReceiverIntents.CHANNELLIST_ACTION);
-	    				broadcastIntent.putExtra("event", ServerView.EVENT_CHANNEL_ADD);
-	    				broadcastIntent.putExtra("channelid", data.channel.id);
-	    				broadcastIntent.putExtra("channelname", StringFromBytes(data.text.name));
-	    			    sendBroadcast(broadcastIntent);
+	    				SharedData.addData(SharedData.channelData, data.channel.id, StringFromBytes(data.text.name));
+	    			    sendBroadcast(new Intent(ServerView.CHANNELLIST_ACTION));
 	    				break;
 	    				
 	    			default:

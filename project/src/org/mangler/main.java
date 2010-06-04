@@ -29,32 +29,28 @@ import android.view.View.OnClickListener;
 import android.widget.Button;
 
 public class Main extends Activity {
-	
-	// Create a new connection to our service.
-	private EventService eventservice;
-	private ServiceConnection serviceconnection = new ServiceConnection() {
-		public void onServiceConnected(ComponentName className, IBinder service) {
-			eventservice = ((EventService.EventBinder)service).getService();
-		}
-		
-		public void onServiceDisconnected(ComponentName arg0) {
-			eventservice = null;
-		}
-	};
-	
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
         
+    	final ServiceConnection serviceconnection = new ServiceConnection() {
+    		public void onServiceConnected(ComponentName className, IBinder service) {
+    			// eventservice = ((EventService.EventBinder)service).getService();
+    		}
+    		
+    		public void onServiceDisconnected(ComponentName arg0) {
+    			// eventservice = null;
+    		}
+    	};
+    	bindService(new Intent(this, EventService.class), serviceconnection, Context.BIND_AUTO_CREATE);
+        
     	// Load native library.
     	System.loadLibrary("ventrilo_interface");
     	
-    	// Start receiving events.
-    	bindService(new Intent(Main.this, EventService.class), serviceconnection, Context.BIND_AUTO_CREATE);
-    	
     	// Set debug level.
-    	 VentriloInterface.debuglevel(VentriloDebugLevels.V3_DEBUG_ALL);
+    	VentriloInterface.debuglevel(VentriloDebugLevels.V3_DEBUG_INFO);
         
         ((Button)findViewById(R.id.ServerListButton)).setOnClickListener(new OnClickListener() {
 			public void onClick(View v) {

@@ -141,6 +141,9 @@ public class ServerList extends ListActivity {
 
         Cursor servers = dbHelper.fetchServer(id);
         startManagingCursor(servers);
+    	
+        // Get rid of any data from previous connections.
+        SharedData.clearAll();
         
         if(VentriloInterface.login(
         		servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_HOSTNAME)) + ":" + Integer.toString( servers.getInt(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_PORTNUMBER))),

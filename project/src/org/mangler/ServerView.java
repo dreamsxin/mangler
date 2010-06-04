@@ -17,10 +17,6 @@
 
 package org.mangler;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-
 import android.app.TabActivity;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -36,50 +32,62 @@ import android.view.View.OnKeyListener;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ListView;
 import android.widget.ScrollView;
 import android.widget.SimpleAdapter;
+import android.widget.TabHost;
 import android.widget.TextView;
 
 public class ServerView extends TabActivity {
+	
+	// Actions.
+	public static final String CHANNELLIST_ACTION = "org.mangler.ChannelListAction";
+	public static final String USERLIST_ACTION 	  = "org.mangler.UserListAction";
+	public static final String CHATVIEW_ACTION	  = "org.mangler.ChatViewAction";
 	
 	// Events.
 	public static final int EVENT_CHAT_JOIN	  = 1;
 	public static final int EVENT_CHAT_LEAVE  = 2;
 	public static final int EVENT_CHAT_MSG	  = 3;
-	public static final int EVENT_USER_ADD    = 4;
-	public static final int EVENT_USER_DEL	  = 5;
-	public static final int EVENT_CHANNEL_ADD = 6;
 	
 	// Menu options.
 	private final int OPTION_JOIN_CHAT  = 1;
 	private final int OPTION_LEAVE_CHAT = 2;
+	private final int OPTION_DISCONNECT = 3;
 	
 	// List adapters.
 	private SimpleAdapter channelAdapter;
 	private SimpleAdapter userAdapter;
-	
-	// List containers.
-	private ArrayList<HashMap<String, Object>> channelData 	= new ArrayList<HashMap<String, Object>>();
-	private ArrayList<HashMap<String, Object>> userData 	= new ArrayList<HashMap<String, Object>>();
-	
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
     	super.onCreate(savedInstanceState);
         setContentView(R.layout.server_view);
         
+        // Add tabs.
+        TabHost tabhost = getTabHost();
+        tabhost.addTab(tabhost.newTabSpec("talk").setContent(R.id.talkView).setIndicator("Talk"));
+        tabhost.addTab(tabhost.newTabSpec("channel").setContent(R.id.channelView).setIndicator("Channels"));
+        tabhost.addTab(tabhost.newTabSpec("user").setContent(R.id.userView).setIndicator("Users"));
+    	tabhost.addTab(tabhost.newTabSpec("chat").setContent(R.id.chatView).setIndicator("Chat"));
+        
         // Create adapters.
-	    channelAdapter 	= new SimpleAdapter(this, channelData, R.layout.channel_row, new String[] { "name", "id" }, new int[] { R.id.crowtext, R.id.crowid } );  
-	    userAdapter 	= new SimpleAdapter(this, userData, R.layout.user_row, new String[] { "name", "id" }, new int[] { R.id.urowtext, R.id.urowid } );
+	    channelAdapter 	= new SimpleAdapter(this, SharedData.channelData, R.layout.channel_row, new String[] { "name", "id" }, new int[] { R.id.crowtext, R.id.crowid } );  
+	    userAdapter 	= new SimpleAdapter(this, SharedData.userData, R.layout.user_row, new String[] { "name", "id" }, new int[] { R.id.urowtext, R.id.urowid } );
+	    
+	    // Set adapters.
+	    ((ListView)findViewById(R.id.channelList)).setAdapter(channelAdapter);
+	    ((ListView)findViewById(R.id.userList)).setAdapter(userAdapter);
         
         // Register receivers.
-        registerReceiver(chatReceiver, new IntentFilter(ReceiverIntents.CHATVIEW_ACTION));
-        registerReceiver(channelReceiver, new IntentFilter(ReceiverIntents.CHANNELLIST_ACTION));
-        registerReceiver(userReceiver, new IntentFilter(ReceiverIntents.USERLIST_ACTION));
+        registerReceiver(chatReceiver, new IntentFilter(CHATVIEW_ACTION));
+        registerReceiver(channelReceiver, new IntentFilter(CHANNELLIST_ACTION));
+        registerReceiver(userReceiver, new IntentFilter(USERLIST_ACTION));
         
         // Control listeners.
 	    ((EditText)findViewById(R.id.message)).setOnKeyListener(onChatMessageEnter);
 	    ((Button)findViewById(R.id.talkButton)).setOnClickListener(onTalkPress);
-        
+
         // Start receiving packets.
     	startRecvThread();
     }
@@ -88,6 +96,7 @@ public class ServerView extends TabActivity {
     	 // Create our menu buttons.
     	menu.add(0, OPTION_JOIN_CHAT, 0, "Join chat").setIcon(R.drawable.menu_join_chat);
         menu.add(0, OPTION_LEAVE_CHAT, 0, "Leave chat").setIcon(R.drawable.menu_leave_chat);
+        menu.add(0, OPTION_DISCONNECT, 0, "Disconnect").setIcon(R.drawable.menu_leave_chat);
         return true;
     }
     
@@ -103,6 +112,11 @@ public class ServerView extends TabActivity {
         	case OPTION_LEAVE_CHAT:
         		VentriloInterface.leavechat();
         		message.setEnabled(false);
+        		break;
+        		
+        	case OPTION_DISCONNECT:
+        		VentriloInterface.logout();
+        		startActivity(new Intent(ServerView.this, ServerList.class));
         		break;
         		
         	default:
@@ -153,26 +167,13 @@ public class ServerView extends TabActivity {
 	 
 	private BroadcastReceiver userReceiver = new BroadcastReceiver() {
 		public void onReceive(Context context, Intent intent) {
-			short id = intent.getShortExtra("userid", (short)0);
-			switch(intent.getIntExtra("event", -1)) {
-				case EVENT_USER_ADD:
-					addUser(id, intent.getStringExtra("username"));
-					break;
-						
-				case EVENT_USER_DEL:
-					delUser(id);
-					break;
-			}
+			userAdapter.notifyDataSetChanged();
 		}
 	};
 	 
 	private BroadcastReceiver channelReceiver = new BroadcastReceiver() {
 		public void onReceive(Context context, Intent intent) {
-			switch(intent.getIntExtra("event", -1)) {
-				case EVENT_CHANNEL_ADD:
-					addChannel(intent.getShortExtra("channelid", (short)0), intent.getStringExtra("channelname"));
-					break;
-			}
+			channelAdapter.notifyDataSetChanged();
 		}
 	};
 
@@ -206,40 +207,5 @@ public class ServerView extends TabActivity {
 			return false;
 		}
 	};
-		
-	private void addUser(short id, String username) {
-		// Add data.
-		HashMap<String, Object> data = new HashMap<String, Object>();
-		data.put("id", id);
-		data.put("name", username);
-		userData.add(data);
-		
-		// Update list.
-		userAdapter.notifyDataSetChanged();
-	}
-    
-	private void delUser(short id) {
-		for(Iterator<HashMap<String, Object>> iterator = userData.iterator(); iterator.hasNext(); ) {
-			if((Short)iterator.next().get("id") == id) {
-				// Remove data.
-				iterator.remove();
-				
-				// Update list and return.
-				userAdapter.notifyDataSetChanged();
-				return;
-			}
-		}
-	}
-	
-	private void addChannel(short id, String channelname) {
-		// Add data.
-		HashMap<String, Object> data = new HashMap<String, Object>();
-		data.put("id", id);
-		data.put("name", channelname);
-		channelData.add(data);
-		
-		// Update list.
-		channelAdapter.notifyDataSetChanged();
-	}
 	
 }
