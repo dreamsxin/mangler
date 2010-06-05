@@ -29,6 +29,7 @@
 #include <sys/types.h>
 #include <stdint.h>
 #include <iostream>
+#include <X11/extensions/XInput.h>
 #include "manglerconfig.h"
 
 class ManglerChannelTree;
@@ -129,6 +130,10 @@ class Mangler
         bool                                muteMic;
         bool                                motdAlways;
         bool                                wantAdminWindow;
+
+        Glib::ustring                       CurrentOpenMouse;
+        XDevice                             *dev; // the currently open mouse device pointer
+
 
         // Autoreconnect feature stuff - Need ID's to kill threads if needed
         bool                                wantDisconnect;
