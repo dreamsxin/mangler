@@ -5304,13 +5304,13 @@ v3_login(char *server, char *username, char *password, char *phonetic) {/*{{{*/
         // if gethostbyname_r does not exist, assume that gethostbyname is re-entrant
         hp = gethostbyname(srvname);
 #endif
-        if (res || hp == NULL || hp->h_length < 1) {
+        if (res || !hp || !hp->h_addr || hp->h_length < 1) {
             _v3_error("Hostname lookup failed.");
             free(srvname);
             _v3_func_leave("v3_login");
             return false;
         }
-        memcpy(&srvip.s_addr, hp->h_addr_list[0], sizeof(srvip.s_addr));
+        memcpy(&srvip.s_addr, hp->h_addr, sizeof(srvip.s_addr));
         _v3_debug(V3_DEBUG_INTERNAL, "found host: %s", inet_ntoa(srvip));
     }
 
