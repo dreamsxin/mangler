@@ -1762,11 +1762,9 @@ bool Mangler::checkPushToTalkMouse(void) {/*{{{*/
     }
 
     if (CurrentOpenMouse != config["MouseDeviceName"].toString()) {
-        fprintf(stderr, "opening %s\n", config["MouseDeviceName"].toString().c_str());
         if (dev) {
             XCloseDevice(GDK_WINDOW_XDISPLAY(rootwin), dev);
         }
-        fprintf(stderr, "list devs\n");
         xdev = XListInputDevices(GDK_WINDOW_XDISPLAY(rootwin), &ndevices_return);
         for (ctr = 0; ctr < ndevices_return; ctr++) {
             Glib::ustring name = xdev[ctr].name;
@@ -1774,19 +1772,16 @@ bool Mangler::checkPushToTalkMouse(void) {/*{{{*/
                 break;
             }
         }
-        fprintf(stderr, "got list\n");
         if (ctr == ndevices_return) {
             XFreeDeviceList(xdev);
             return true;
         }
-        fprintf(stderr, "found dev\n");
         dev = XOpenDevice(GDK_WINDOW_XDISPLAY(rootwin), xdev[ctr].id);
         XFreeDeviceList(xdev);
         if (! dev) {
             return true;
         }
         CurrentOpenMouse = config["MouseDeviceName"].toString();
-        fprintf(stderr, "dev opened\n");
     }
     xds = (XDeviceState *)XQueryDeviceState(GDK_WINDOW_XDISPLAY(rootwin), dev);
     for (ctr = 0, xic = xds->data; ctr < xds->num_classes; ctr++, xic += xic->length/2) {
