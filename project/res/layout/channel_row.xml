@@ -14,10 +14,10 @@
         android:layout_width="fill_parent"
         android:layout_height="fill_parent"/>
 
-    <TextView android:id="@+id/crowid"
+	<!--<TextView android:id="@+id/crowid"
         android:textSize="12sp"
         android:typeface="sans"
         android:layout_width="fill_parent"
-        android:layout_height="fill_parent"/>
+        android:layout_height="fill_parent"/>-->
 
 </LinearLayout>

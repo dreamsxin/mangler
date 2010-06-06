@@ -36,13 +36,26 @@ public class EventService extends Service {
     private Runnable eventRunnable = new Runnable() {
     	
     	private Intent broadcastIntent;
+    	private VentriloEventData data = new VentriloEventData();
     	
         private String StringFromBytes(byte[] bytes) {
         	return new String(bytes, 0, (new String(bytes).indexOf(0)));
         }
+        
+        private String getChannel(short channelid) {
+			String channelname;
+			if(channelid != 0) {
+				VentriloInterface.getchannel(data, channelid);
+				channelname = StringFromBytes(data.text.name);
+			}
+			else {
+				channelname = "Lobby";
+			}
+			return channelname;
+        }
     	
 		public void run() {
-	    	VentriloEventData data = new VentriloEventData();
+	    	
 	    	while(running) {
 	    		VentriloInterface.getevent(data);
 	    		switch(data.type) {
@@ -78,18 +91,21 @@ public class EventService extends Service {
     						Recorder.recorder.stop();
     						Recorder.recorder = new Recorder(channel_rate);
     					}
+    					UserList.changeChannel(data.user.id, data.channel.id, getChannel(data.channel.id));
+    					sendBroadcast(new Intent(ServerView.USERLIST_ACTION));
 	    				break;
 	    				
 	    			case VentriloEvents.V3_EVENT_USER_LOGIN:
 	    				if(data.user.id != 0) {
 		    				VentriloInterface.getuser(data, data.user.id);
-		    				SharedData.addData(SharedData.userData, data.user.id, StringFromBytes(data.text.name));
+		    				String username = StringFromBytes(data.text.name);
+		    				UserList.addUser(data.user.id, username, data.channel.id, getChannel(data.channel.id));
 		    			    sendBroadcast(new Intent(ServerView.USERLIST_ACTION));
 	    				}
 	    				break;
 	    				
 	    			case VentriloEvents.V3_EVENT_USER_LOGOUT:
-	    				SharedData.delData(SharedData.userData, data.user.id);
+	    				UserList.delUser(data.user.id);
 	    			    sendBroadcast(new Intent(ServerView.USERLIST_ACTION));
 	    				break;
 	    				
@@ -105,7 +121,7 @@ public class EventService extends Service {
 	
 	    			case VentriloEvents.V3_EVENT_CHAN_ADD:
 	    				VentriloInterface.getchannel(data, data.channel.id);
-	    				SharedData.addData(SharedData.channelData, data.channel.id, StringFromBytes(data.text.name));
+	    				ChannelList.addChannel(data.channel.id, StringFromBytes(data.text.name));
 	    			    sendBroadcast(new Intent(ServerView.CHANNELLIST_ACTION));
 	    				break;
 	    				

@@ -76,16 +76,16 @@ public class ServerView extends TabActivity {
     	tabhost.addTab(tabhost.newTabSpec("chat").setContent(R.id.chatView).setIndicator("Chat"));
         
         // Create adapters.
-	    channelAdapter 	= new SimpleAdapter(this, SharedData.channelData, R.layout.channel_row, new String[] { "name", "id" }, new int[] { R.id.crowtext, R.id.crowid } );  
-	    userAdapter 	= new SimpleAdapter(this, SharedData.userData, R.layout.user_row, new String[] { "name", "id" }, new int[] { R.id.urowtext, R.id.urowid } );
+	    channelAdapter 	= new SimpleAdapter(this, ChannelList.data, R.layout.channel_row, new String[] { "channelname" }, new int[] { R.id.crowtext } );  
+	    userAdapter 	= new SimpleAdapter(this, UserList.data, R.layout.user_row, new String[] { "username", "channelname" }, new int[] { R.id.urowtext, R.id.urowid } );
 	    
 	    // Set adapters.
 	    ((ListView)findViewById(R.id.channelList)).setAdapter(channelAdapter);
 	    ((ListView)findViewById(R.id.userList)).setAdapter(userAdapter);
         
 	    // List item clicks.
-	    ((ListView)findViewById(R.id.channelList)).setOnItemClickListener(onChannelListClick);
-	    ((ListView)findViewById(R.id.userList)).setOnItemClickListener(onUserListClick);
+	    ((ListView)findViewById(R.id.channelList)).setOnItemClickListener(onListClick);
+	    ((ListView)findViewById(R.id.userList)).setOnItemClickListener(onListClick);
 	    
         // Register receivers.
         registerReceiver(chatReceiver, new IntentFilter(CHATVIEW_ACTION));
@@ -170,8 +170,8 @@ public class ServerView extends TabActivity {
 					chatscroll.fullScroll(ScrollView.FOCUS_DOWN); 
 				}
 			});
-		 }
-	 };
+		}
+	};
 	 
 	private BroadcastReceiver userReceiver = new BroadcastReceiver() {
 		public void onReceive(Context context, Intent intent) {
@@ -185,17 +185,18 @@ public class ServerView extends TabActivity {
 		}
 	};
 	
-	private OnItemClickListener onChannelListClick = new OnItemClickListener() {
-		public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-			VentriloInterface.changechannel((Short)((HashMap<String, Object>)(parent.getItemAtPosition(position))).get("id"), "");
+	private void changeChannel(short channelid) {
+		short currentchannel = VentriloInterface.getuserchannel(VentriloInterface.getuserid());
+		if(currentchannel != channelid) {
+			VentriloInterface.changechannel(channelid, "");
 		}
-	};
+	}
 	
-	private OnItemClickListener onUserListClick = new OnItemClickListener() {
+	private OnItemClickListener onListClick = new OnItemClickListener() {
+		@SuppressWarnings("unchecked")
 		public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-			if (VentriloInterface.getuserchannel((Short)((HashMap<String, Object>)parent.getItemAtPosition(position)).get("id")) != VentriloInterface.getuserchannel(VentriloInterface.getuserid())) { 
-				VentriloInterface.changechannel(VentriloInterface.getuserchannel((Short)((HashMap<String, Object>)parent.getItemAtPosition(position)).get("id")), "");
-			}
+			short channelid = (Short)((HashMap<String, Object>)(parent.getItemAtPosition(position))).get("channelid");
+			changeChannel(channelid);
 		}
 	};
 	

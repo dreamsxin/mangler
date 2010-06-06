@@ -21,7 +21,6 @@ import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
 import android.os.Build;
-import android.provider.Settings;
 
 public class Recorder {
 	

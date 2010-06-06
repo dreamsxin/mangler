@@ -143,7 +143,8 @@ public class ServerList extends ListActivity {
         startManagingCursor(servers);
     	
         // Get rid of any data from previous connections.
-        SharedData.clearAll();
+        UserList.clear();
+        ChannelList.clear();
         
         if(VentriloInterface.login(
         		servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_HOSTNAME)) + ":" + Integer.toString( servers.getInt(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_PORTNUMBER))),
