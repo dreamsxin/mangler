@@ -20,6 +20,8 @@ package org.mangler;
 import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
+import android.os.Build;
+import android.provider.Settings;
 
 public class Recorder {
 	
@@ -33,18 +35,21 @@ public class Recorder {
 	public Recorder(final int rate) {
 		if(!VentriloInterface.isloggedin()) {
 			throw new RuntimeException("Login before instantiating recorder instance.");
-		}	
-		
+		}
+
+		// Check for emulator.
+		int _rate = "sdk".equals(Build.PRODUCT) ? 8000 : rate;
+
 		// Attempt to initialize AudioRecord instance.
 		try {
 			audiorecord = new AudioRecord(
 				MediaRecorder.AudioSource.MIC,
-				rate, 
+				_rate, 
 				AudioFormat.CHANNEL_CONFIGURATION_MONO, 
 				AudioFormat.ENCODING_PCM_16BIT, 
 		        AudioRecord.getMinBufferSize
 		        (
-					rate,
+					_rate,
 					AudioFormat.CHANNEL_CONFIGURATION_MONO, 
 					AudioFormat.ENCODING_PCM_16BIT
 				)
@@ -54,10 +59,10 @@ public class Recorder {
 			throw ex;
 		}
 		
-		this.rate = rate;
+		this.rate = _rate;
 
 		// Generate pcm length from input rate and create buffer.
-		pcmlength = VentriloInterface.pcmlengthforrate(rate);
+		pcmlength = VentriloInterface.pcmlengthforrate(_rate);
 		if(pcmlength <= 0) {
 			throw new RuntimeException("libventrilo could not determine pcm length.");
 		}
