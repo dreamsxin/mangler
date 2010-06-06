@@ -193,7 +193,9 @@ public class ServerView extends TabActivity {
 	
 	private OnItemClickListener onUserListClick = new OnItemClickListener() {
 		public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-			VentriloInterface.changechannel(VentriloInterface.getuserchannel((Short)((HashMap<String, Object>)parent.getItemAtPosition(position)).get("id")), "");
+			if (VentriloInterface.getuserchannel((Short)((HashMap<String, Object>)parent.getItemAtPosition(position)).get("id")) != VentriloInterface.getuserchannel(VentriloInterface.getuserid())) { 
+				VentriloInterface.changechannel(VentriloInterface.getuserchannel((Short)((HashMap<String, Object>)parent.getItemAtPosition(position)).get("id")), "");
+			}
 		}
 	};
 	
