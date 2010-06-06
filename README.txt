@@ -1,7 +1,19 @@
 These instructions are only valid from Android NDK Revision 4 and up.
 
 To run Mangler for Android, you will need to have libventrilo built with the Android NDK.
-Below are instructions on how to do so with Windows & Cygwin. However, this process should be very similar on GNU/Linux or Mac machines.
+
+LINUX USERS (you will need subversion installed):
+mkdir -p ~/src/mangler-droid
+cd ~/src/mangler-droid
+wget http://dl.google.com/android/ndk/android-ndk-r4-linux-x86.zip 
+unzip android-ndk-r4-linux-x86.zip
+svn co http://svn.mangler.org/mangler/branches/android
+svn co http://svn.mangler.org/mangler/trunk/
+cd android-ndk-r4
+./ndk-build -C ~/src/mangler-droid/android/project LIBPATH=~/src/mangler-droid/trunk/libventrilo3
+
+WINDOWS USERS:
+Below are instructions on how to do so with Windows & Cygwin. However, this process should be very similar on Mac machines.
 
 - Install subversion and checkout the mangler repository:
 $ cd C:\
@@ -23,3 +35,5 @@ You're done!
 Note:
 - If you already imported the Java project into eclipse make sure to refresh the project.
 - If you don't see libs/armeabi/ventrilo_interface.so, you did not properly build the native library.
+
+
