@@ -21,7 +21,6 @@ import android.app.ListActivity;
 import android.app.ProgressDialog;
 import android.content.Intent;
 import android.database.Cursor;
-import android.media.AudioManager;
 import android.os.Bundle;
 import android.view.ContextMenu;
 import android.view.Menu;
@@ -30,7 +29,6 @@ import android.view.View;
 import android.view.ContextMenu.ContextMenuInfo;
 import android.widget.ListView;
 import android.widget.SimpleCursorAdapter;
-import android.widget.Toast;
 import android.widget.AdapterView.AdapterContextMenuInfo;
 
 public class ServerList extends ListActivity {
@@ -51,10 +49,8 @@ public class ServerList extends ListActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
     	super.onCreate(savedInstanceState);
-    	
-    	setVolumeControlStream(AudioManager.STREAM_MUSIC);
-    	
         setContentView(R.layout.server_list);
+        
         dbHelper = new ManglerDBAdapter(this);
         dbHelper.open();
     	fillData();

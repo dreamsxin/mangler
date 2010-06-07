@@ -24,7 +24,6 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.media.AudioManager;
 import android.os.Bundle;
 import android.view.KeyEvent;
 import android.view.Menu;
@@ -69,8 +68,6 @@ public class ServerView extends TabActivity {
     public void onCreate(Bundle savedInstanceState) {
     	super.onCreate(savedInstanceState);
         setContentView(R.layout.server_view);
-        
-        setVolumeControlStream(AudioManager.STREAM_MUSIC);
         
         // Add tabs.
         TabHost tabhost = getTabHost();

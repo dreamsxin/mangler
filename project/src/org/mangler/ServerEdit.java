@@ -39,9 +39,7 @@ public class ServerEdit extends Activity{
 
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        
-        setVolumeControlStream(AudioManager.STREAM_MUSIC);
-        
+
         dbHelper = new ManglerDBAdapter(this);
         dbHelper.open();
         
