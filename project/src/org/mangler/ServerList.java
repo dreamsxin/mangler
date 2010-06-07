@@ -19,7 +19,10 @@ package org.mangler;
 
 import android.app.ListActivity;
 import android.app.ProgressDialog;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.database.Cursor;
 import android.os.Bundle;
 import android.view.ContextMenu;
@@ -29,6 +32,7 @@ import android.view.View;
 import android.view.ContextMenu.ContextMenuInfo;
 import android.widget.ListView;
 import android.widget.SimpleCursorAdapter;
+import android.widget.Toast;
 import android.widget.AdapterView.AdapterContextMenuInfo;
 
 public class ServerList extends ListActivity {
@@ -37,11 +41,12 @@ public class ServerList extends ListActivity {
 	private static final int ACTIVITY_CREATE = 1;
 	private static final int ACTIVITY_EDIT = 2;
 	
-	
 	private static final int ADD_ID = Menu.FIRST;
 	private static final int EDIT_ID = Menu.FIRST + 1;
 	private static final int CLONE_ID = Menu.FIRST + 2;
     private static final int DELETE_ID = Menu.FIRST + 3;
+    
+    private static final String SERVERLIST_NOTIFICATION = "org.mangler.ServerListNotification";
     
 	private ManglerDBAdapter dbHelper;
 	
@@ -50,6 +55,9 @@ public class ServerList extends ListActivity {
     public void onCreate(Bundle savedInstanceState) {
     	super.onCreate(savedInstanceState);
         setContentView(R.layout.server_list);
+        
+        // Notification broadcast receiver.
+        registerReceiver(notificationReceiver, new IntentFilter(SERVERLIST_NOTIFICATION));
         
         dbHelper = new ManglerDBAdapter(this);
         dbHelper.open();
@@ -145,12 +153,21 @@ public class ServerList extends ListActivity {
 		        	dialog.dismiss();
 		        	startActivityForResult(new Intent(ServerList.this, ServerView.class), ACTIVITY_CONNECT);
 		        }
+		        else {
+		        	Intent broadcastIntent = new Intent(ServerList.SERVERLIST_NOTIFICATION);
+		        	broadcastIntent.putExtra("notification", "Connection to server failed.");
+		        	sendBroadcast(broadcastIntent);
+		        }
 		        dialog.dismiss();
 		    }
     	}).start();
-        
-        //Toast.makeText(this, "Connection to server failed.", Toast.LENGTH_SHORT).show();
     }
+    
+	private BroadcastReceiver notificationReceiver = new BroadcastReceiver() {
+		public void onReceive(Context context, Intent intent) {
+			Toast.makeText(ServerList.this, intent.getStringExtra("notification"), Toast.LENGTH_SHORT).show();
+		}
+	};
     
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent intent) {
