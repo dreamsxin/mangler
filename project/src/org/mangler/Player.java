@@ -30,7 +30,7 @@ public class Player {
 		// Attempt to initialize AudioTrack instance.
 		try {
 			audiotrack = new AudioTrack(
-				AudioManager.STREAM_VOICE_CALL, 
+				AudioManager.STREAM_MUSIC, 
 				rate,
 				AudioFormat.CHANNEL_CONFIGURATION_MONO, 
 				AudioFormat.ENCODING_PCM_16BIT, 

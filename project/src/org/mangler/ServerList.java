@@ -146,6 +146,9 @@ public class ServerList extends ListActivity {
         UserList.clear();
         ChannelList.clear();
         
+        // Add lobby.
+        ChannelList.addChannel((short)0, "Lobby");
+        
         if(VentriloInterface.login(
         		servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_HOSTNAME)) + ":" + Integer.toString( servers.getInt(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_PORTNUMBER))),
         		servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_USERNAME)),

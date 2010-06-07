@@ -22,6 +22,7 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.media.AudioManager;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.view.View;
@@ -34,6 +35,9 @@ public class Main extends Activity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
+
+        // Volume controls.
+        setVolumeControlStream(AudioManager.STREAM_MUSIC);
         
     	final ServiceConnection serviceconnection = new ServiceConnection() {
     		public void onServiceConnected(ComponentName className, IBinder service) {
