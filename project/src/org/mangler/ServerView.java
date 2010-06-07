@@ -24,6 +24,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.media.AudioManager;
 import android.os.Bundle;
 import android.view.KeyEvent;
 import android.view.Menu;
@@ -40,6 +41,7 @@ import android.widget.ScrollView;
 import android.widget.SimpleAdapter;
 import android.widget.TabHost;
 import android.widget.TextView;
+import android.widget.Toast;
 import android.widget.AdapterView.OnItemClickListener;
 
 public class ServerView extends TabActivity {
@@ -67,6 +69,8 @@ public class ServerView extends TabActivity {
     public void onCreate(Bundle savedInstanceState) {
     	super.onCreate(savedInstanceState);
         setContentView(R.layout.server_view);
+        
+        setVolumeControlStream(AudioManager.STREAM_MUSIC);
         
         // Add tabs.
         TabHost tabhost = getTabHost();
@@ -124,7 +128,7 @@ public class ServerView extends TabActivity {
         		
         	case OPTION_DISCONNECT:
         		VentriloInterface.logout();
-        		startActivity(new Intent(ServerView.this, ServerList.class));
+        		finish();
         		break;
         		
         	default:
@@ -189,6 +193,7 @@ public class ServerView extends TabActivity {
 		short currentchannel = VentriloInterface.getuserchannel(VentriloInterface.getuserid());
 		if(currentchannel != channelid) {
 			VentriloInterface.changechannel(channelid, "");
+			Toast.makeText(getApplicationContext(), "Changed channels.", Toast.LENGTH_SHORT).show();
 		}
 	}
 	
@@ -229,5 +234,4 @@ public class ServerView extends TabActivity {
 			return false;
 		}
 	};
-	
 }

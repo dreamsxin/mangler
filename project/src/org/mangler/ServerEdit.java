@@ -19,6 +19,7 @@ package org.mangler;
 
 import android.app.Activity;
 import android.database.Cursor;
+import android.media.AudioManager;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
@@ -38,6 +39,8 @@ public class ServerEdit extends Activity{
 
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        
+        setVolumeControlStream(AudioManager.STREAM_MUSIC);
         
         dbHelper = new ManglerDBAdapter(this);
         dbHelper.open();
@@ -107,7 +110,9 @@ public class ServerEdit extends Activity{
     private void saveState() {
         String servername = serverText.getText().toString();
         String hostname = hostText.getText().toString();
-        int port = Integer.parseInt(portText.getText().toString());
+        int port = 0;
+        if (!portText.getText().toString().equals(""))
+        	port = Integer.parseInt(portText.getText().toString());
 
         if (port > 65535) {
         	port = 65535;

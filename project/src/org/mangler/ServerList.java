@@ -18,8 +18,10 @@
 package org.mangler;
 
 import android.app.ListActivity;
+import android.app.ProgressDialog;
 import android.content.Intent;
 import android.database.Cursor;
+import android.media.AudioManager;
 import android.os.Bundle;
 import android.view.ContextMenu;
 import android.view.Menu;
@@ -33,14 +35,15 @@ import android.widget.AdapterView.AdapterContextMenuInfo;
 
 public class ServerList extends ListActivity {
 	
-	private static final int ACTIVITY_CREATE = 0;
-	private static final int ACTIVITY_EDIT = 1;
+	private static final int ACTIVITY_CONNECT = 0;
+	private static final int ACTIVITY_CREATE = 1;
+	private static final int ACTIVITY_EDIT = 2;
+	
 	
 	private static final int ADD_ID = Menu.FIRST;
 	private static final int EDIT_ID = Menu.FIRST + 1;
 	private static final int CLONE_ID = Menu.FIRST + 2;
     private static final int DELETE_ID = Menu.FIRST + 3;
-    
     
 	private ManglerDBAdapter dbHelper;
 	
@@ -48,6 +51,9 @@ public class ServerList extends ListActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
     	super.onCreate(savedInstanceState);
+    	
+    	setVolumeControlStream(AudioManager.STREAM_MUSIC);
+    	
         setContentView(R.layout.server_list);
         dbHelper = new ManglerDBAdapter(this);
         dbHelper.open();
@@ -66,17 +72,8 @@ public class ServerList extends ListActivity {
         Cursor serverCursor = dbHelper.fetchServers();
         startManagingCursor(serverCursor);
         
-        // Fields we want to display in the list
-        String[] from = new String[]{ManglerDBAdapter.KEY_SERVERNAME};
-        
-        // TODO: Add field to display username as well
-        
-        // Fields we want to bind the display fields to
-        int[] to = new int[]{R.id.srowtext};
-        
         // Display simple cursor adapter
-        SimpleCursorAdapter servers = 
-        	    new SimpleCursorAdapter(this, R.layout.server_row, serverCursor, from, to);
+        SimpleCursorAdapter servers = new SimpleCursorAdapter(this, R.layout.server_row, serverCursor, new String[]{ManglerDBAdapter.KEY_SERVERNAME}, new int[]{R.id.srowtext});
         setListAdapter(servers);
     }
     
@@ -107,30 +104,21 @@ public class ServerList extends ListActivity {
     @Override
 	public boolean onContextItemSelected(MenuItem item) {
 		AdapterContextMenuInfo info = (AdapterContextMenuInfo) item.getMenuInfo();
-		Cursor servers = dbHelper.fetchServer(info.id);
-        startManagingCursor(servers);
 		switch(item.getItemId()) {
-		case EDIT_ID:
-	        Intent i = new Intent(this, ServerEdit.class);
-	        i.putExtra(ManglerDBAdapter.KEY_ROWID, info.id);
-	        startActivityForResult(i, ACTIVITY_EDIT);
-	        fillData();
-	        return true;
-		case CLONE_ID:
-	        startManagingCursor(servers);
-	        String servername = servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_SERVERNAME));
-	        String hostname = servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_HOSTNAME));
-	        int port = servers.getInt(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_PORTNUMBER));
-	        String password = servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_PASSWORD));
-	        String username = servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_USERNAME));
-	        String phonetic = servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_PHONETIC));
-			dbHelper.createServer(servername, hostname, port, password, username, phonetic);
-	        fillData();
-	        return true;
-		case DELETE_ID:
-	        dbHelper.deleteServer(info.id);
-	        fillData();
-	        return true;
+			case EDIT_ID:
+		        Intent i = new Intent(this, ServerEdit.class);
+		        i.putExtra(ManglerDBAdapter.KEY_ROWID, info.id);
+		        startActivityForResult(i, ACTIVITY_EDIT);
+		        fillData();
+		        return true;
+			case CLONE_ID:
+		        dbHelper.cloneServer(info.id);
+		        fillData();
+		        return true;
+			case DELETE_ID:
+		        dbHelper.deleteServer(info.id);
+		        fillData();
+		        return true;
 		}
 		return super.onContextItemSelected(item);
 	}
@@ -138,8 +126,10 @@ public class ServerList extends ListActivity {
     @Override
     protected void onListItemClick(ListView l, View v, int position, long id) {
         super.onListItemClick(l, v, position, id);
-
-        Cursor servers = dbHelper.fetchServer(id);
+        
+        final ProgressDialog dialog = ProgressDialog.show(this, "", "Connecting. Please wait...", true);	
+        
+        final Cursor servers = dbHelper.fetchServer(id);
         startManagingCursor(servers);
     	
         // Get rid of any data from previous connections.
@@ -149,21 +139,31 @@ public class ServerList extends ListActivity {
         // Add lobby.
         ChannelList.addChannel((short)0, "Lobby");
         
-        if(VentriloInterface.login(
-        		servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_HOSTNAME)) + ":" + Integer.toString( servers.getInt(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_PORTNUMBER))),
-        		servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_USERNAME)),
-        		servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_PASSWORD)),
-        		servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_PHONETIC)))) {
-        	startActivity(new Intent(this, ServerView.class));
-        }
-        else {
-        	Toast.makeText(getApplicationContext(), "Connection to server failed.", Toast.LENGTH_SHORT).show();
-        }
+        new Thread(new Runnable(){
+        	public void run(){
+		        if(VentriloInterface.login(
+		        		servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_HOSTNAME)) + ":" + Integer.toString( servers.getInt(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_PORTNUMBER))),
+		        		servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_USERNAME)),
+		        		servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_PASSWORD)),
+		        		servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_PHONETIC)))) {
+		        	dialog.dismiss();
+		        	startActivityForResult(new Intent(ServerList.this, ServerView.class), ACTIVITY_CONNECT);
+		        }
+		        dialog.dismiss();
+		    }
+    	}).start();
+        
+        //Toast.makeText(this, "Connection to server failed.", Toast.LENGTH_SHORT).show();
     }
     
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent intent) {
         super.onActivityResult(requestCode, resultCode, intent);
+        
+        if (requestCode == ACTIVITY_CONNECT) {
+        	VentriloInterface.logout();
+        }
+        
         fillData();
     }
 }

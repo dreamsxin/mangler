@@ -125,6 +125,26 @@ public class ManglerDBAdapter {
     }
     
     /**
+     * Clone a server. If the server is successfully created return the new rowId for that server, otherwise return
+     * a -1 to indicate failure.
+     * 
+     * @param rowId of server to copy
+     * @return rowId of copied server or -1 if failed
+     */
+    public long cloneServer(long rowId) {
+    	Cursor cursor = fetchServer(rowId);
+        ContentValues initialValues = new ContentValues();
+        initialValues.put(KEY_SERVERNAME, cursor.getString(cursor.getColumnIndexOrThrow(ManglerDBAdapter.KEY_SERVERNAME)));
+        initialValues.put(KEY_HOSTNAME, cursor.getString(cursor.getColumnIndexOrThrow(ManglerDBAdapter.KEY_HOSTNAME)));
+        initialValues.put(KEY_PORTNUMBER, cursor.getInt(cursor.getColumnIndexOrThrow(ManglerDBAdapter.KEY_PORTNUMBER)));
+        initialValues.put(KEY_PASSWORD, cursor.getString(cursor.getColumnIndexOrThrow(ManglerDBAdapter.KEY_PASSWORD)));
+        initialValues.put(KEY_USERNAME, cursor.getString(cursor.getColumnIndexOrThrow(ManglerDBAdapter.KEY_USERNAME)));
+        initialValues.put(KEY_PHONETIC, cursor.getString(cursor.getColumnIndexOrThrow(ManglerDBAdapter.KEY_PHONETIC)));
+
+        return db.insert(DATABASE_SERVER_TABLE, null, initialValues);
+    }
+    
+    /**
      * Delete the server with the given rowId
      * 
      * @param rowId id of server to delete
