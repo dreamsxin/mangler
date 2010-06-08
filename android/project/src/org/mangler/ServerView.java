@@ -44,22 +44,22 @@ import android.widget.Toast;
 import android.widget.AdapterView.OnItemClickListener;
 
 public class ServerView extends TabActivity {
-	
+
 	// Actions.
 	public static final String CHANNELLIST_ACTION = "org.mangler.ChannelListAction";
 	public static final String USERLIST_ACTION 	  = "org.mangler.UserListAction";
 	public static final String CHATVIEW_ACTION	  = "org.mangler.ChatViewAction";
-	
+
 	// Events.
 	public static final int EVENT_CHAT_JOIN	  = 1;
 	public static final int EVENT_CHAT_LEAVE  = 2;
 	public static final int EVENT_CHAT_MSG	  = 3;
-	
+
 	// Menu options.
 	private final int OPTION_JOIN_CHAT  = 1;
 	private final int OPTION_LEAVE_CHAT = 2;
 	private final int OPTION_DISCONNECT = 3;
-	
+
 	// List adapters.
 	private SimpleAdapter channelAdapter;
 	private SimpleAdapter userAdapter;
@@ -68,31 +68,34 @@ public class ServerView extends TabActivity {
     public void onCreate(Bundle savedInstanceState) {
     	super.onCreate(savedInstanceState);
         setContentView(R.layout.server_view);
-        
+
+        // Volume controls.
+        setVolumeControlStream(AudioManager.STREAM_MUSIC);
+
         // Add tabs.
         TabHost tabhost = getTabHost();
         tabhost.addTab(tabhost.newTabSpec("talk").setContent(R.id.talkView).setIndicator("Talk"));
         tabhost.addTab(tabhost.newTabSpec("channel").setContent(R.id.channelView).setIndicator("Channels"));
         tabhost.addTab(tabhost.newTabSpec("user").setContent(R.id.userView).setIndicator("Users"));
     	tabhost.addTab(tabhost.newTabSpec("chat").setContent(R.id.chatView).setIndicator("Chat"));
-        
+
         // Create adapters.
-	    channelAdapter 	= new SimpleAdapter(this, ChannelList.data, R.layout.channel_row, new String[] { "channelname" }, new int[] { R.id.crowtext } );  
+	    channelAdapter 	= new SimpleAdapter(this, ChannelList.data, R.layout.channel_row, new String[] { "channelname" }, new int[] { R.id.crowtext } );
 	    userAdapter 	= new SimpleAdapter(this, UserList.data, R.layout.user_row, new String[] { "username", "channelname" }, new int[] { R.id.urowtext, R.id.urowid } );
-	    
+
 	    // Set adapters.
 	    ((ListView)findViewById(R.id.channelList)).setAdapter(channelAdapter);
 	    ((ListView)findViewById(R.id.userList)).setAdapter(userAdapter);
-        
+
 	    // List item clicks.
 	    ((ListView)findViewById(R.id.channelList)).setOnItemClickListener(onListClick);
 	    ((ListView)findViewById(R.id.userList)).setOnItemClickListener(onListClick);
-	    
+
         // Register receivers.
         registerReceiver(chatReceiver, new IntentFilter(CHATVIEW_ACTION));
         registerReceiver(channelReceiver, new IntentFilter(CHANNELLIST_ACTION));
         registerReceiver(userReceiver, new IntentFilter(USERLIST_ACTION));
-        
+
         // Control listeners.
 	    ((EditText)findViewById(R.id.message)).setOnKeyListener(onChatMessageEnter);
 	    ((Button)findViewById(R.id.talkButton)).setOnClickListener(onTalkPress);
@@ -108,7 +111,7 @@ public class ServerView extends TabActivity {
         menu.add(0, OPTION_DISCONNECT, 0, "Disconnect").setIcon(R.drawable.menu_leave_chat);
         return true;
     }
-    
+
     public boolean onOptionsItemSelected(MenuItem item) {
     	// Handle menu buttons.
     	final EditText message = (EditText)findViewById(R.id.message);
@@ -117,23 +120,23 @@ public class ServerView extends TabActivity {
         		VentriloInterface.joinchat();
         		message.setEnabled(true);
         		break;
-        	
+
         	case OPTION_LEAVE_CHAT:
         		VentriloInterface.leavechat();
         		message.setEnabled(false);
         		break;
-        		
+
         	case OPTION_DISCONNECT:
         		VentriloInterface.logout();
         		finish();
         		break;
-        		
+
         	default:
         		return false;
         }
         return true;
     }
-    
+
     private void startRecvThread() {
     	Runnable recvRunnable = new Runnable() {
     		public void run() {
@@ -146,7 +149,7 @@ public class ServerView extends TabActivity {
     	};
     	(new Thread(recvRunnable)).start();
     }
-    
+
 	private BroadcastReceiver chatReceiver = new BroadcastReceiver() {
 		public void onReceive(Context context, Intent intent) {
 			final TextView messages = (TextView)findViewById(R.id.messages);
@@ -154,38 +157,38 @@ public class ServerView extends TabActivity {
 				case EVENT_CHAT_JOIN:
 					messages.append("\n* " + intent.getStringExtra("username") + " has joined the chat.");
 					break;
-					
+
 				case EVENT_CHAT_LEAVE:
 					messages.append("\n* " + intent.getStringExtra("username") + " has left the chat.");
 					break;
-			 		
+
 			 	case EVENT_CHAT_MSG:
 			 		messages.append("\n" + intent.getStringExtra("username") + ": " + intent.getStringExtra("message"));
 			 		break;
 			 }
-			
+
 			// Scroll to bottom.
 			final ScrollView chatscroll = (ScrollView)findViewById(R.id.chatScroll);
 			chatscroll.post(new Runnable() {
 				public void run() {
-					chatscroll.fullScroll(ScrollView.FOCUS_DOWN); 
+					chatscroll.fullScroll(ScrollView.FOCUS_DOWN);
 				}
 			});
 		}
 	};
-	 
+
 	private BroadcastReceiver userReceiver = new BroadcastReceiver() {
 		public void onReceive(Context context, Intent intent) {
 			userAdapter.notifyDataSetChanged();
 		}
 	};
-	 
+
 	private BroadcastReceiver channelReceiver = new BroadcastReceiver() {
 		public void onReceive(Context context, Intent intent) {
 			channelAdapter.notifyDataSetChanged();
 		}
 	};
-	
+
 	private void changeChannel(short channelid) {
 		short currentchannel = VentriloInterface.getuserchannel(VentriloInterface.getuserid());
 		if(currentchannel != channelid) {
@@ -193,7 +196,7 @@ public class ServerView extends TabActivity {
 			Toast.makeText(getApplicationContext(), "Changed channels.", Toast.LENGTH_SHORT).show();
 		}
 	}
-	
+
 	private OnItemClickListener onListClick = new OnItemClickListener() {
 		@SuppressWarnings("unchecked")
 		public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
@@ -201,7 +204,7 @@ public class ServerView extends TabActivity {
 			changeChannel(channelid);
 		}
 	};
-	
+
 	private OnClickListener onTalkPress = new OnClickListener() {
 		public void onClick(View v) {
 			if (!Recorder.recorder.recording()) {
@@ -213,17 +216,17 @@ public class ServerView extends TabActivity {
 			}
 		}
 	};
-	 
+
 	private OnKeyListener onChatMessageEnter = new OnKeyListener() {
 		public boolean onKey(View v, int keyCode, KeyEvent event) {
 			if ((event.getAction() == KeyEvent.ACTION_DOWN) && (keyCode == KeyEvent.KEYCODE_ENTER)) {
 				// Send chat message.
 				final EditText message = (EditText)findViewById(R.id.message);
 				VentriloInterface.sendchatmessage(message.getText().toString());
-				
+
 				// Clear message field.
 				message.setText("");
-				
+
 				// Hide keyboard.
 	           ((InputMethodManager)getSystemService(INPUT_METHOD_SERVICE)).hideSoftInputFromWindow(message.getWindowToken(), 0);
 				return true;

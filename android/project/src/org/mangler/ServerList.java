@@ -36,51 +36,54 @@ import android.widget.Toast;
 import android.widget.AdapterView.AdapterContextMenuInfo;
 
 public class ServerList extends ListActivity {
-	
+
 	private static final int ACTIVITY_CONNECT = 0;
 	private static final int ACTIVITY_CREATE = 1;
 	private static final int ACTIVITY_EDIT = 2;
-	
+
 	private static final int ADD_ID = Menu.FIRST;
 	private static final int EDIT_ID = Menu.FIRST + 1;
 	private static final int CLONE_ID = Menu.FIRST + 2;
     private static final int DELETE_ID = Menu.FIRST + 3;
-    
+
     private static final String SERVERLIST_NOTIFICATION = "org.mangler.ServerListNotification";
-    
+
 	private ManglerDBAdapter dbHelper;
-	
+
     /** Called when the activity is first created. */
     @Override
     public void onCreate(Bundle savedInstanceState) {
     	super.onCreate(savedInstanceState);
         setContentView(R.layout.server_list);
-        
+
+        // Volume controls.
+        setVolumeControlStream(AudioManager.STREAM_MUSIC);
+
         // Notification broadcast receiver.
         registerReceiver(notificationReceiver, new IntentFilter(SERVERLIST_NOTIFICATION));
-        
+
         dbHelper = new ManglerDBAdapter(this);
         dbHelper.open();
     	fillData();
         registerForContextMenu(getListView());
     }
-    
+
     @Override
     protected void onDestroy() {
     	super.onDestroy();
     	dbHelper.close();
     }
-    
+
     // Populate listview with entries from database
     private void fillData() {
         Cursor serverCursor = dbHelper.fetchServers();
         startManagingCursor(serverCursor);
-        
+
         // Display simple cursor adapter
         SimpleCursorAdapter servers = new SimpleCursorAdapter(this, R.layout.server_row, serverCursor, new String[]{ManglerDBAdapter.KEY_SERVERNAME}, new int[]{R.id.srowtext});
         setListAdapter(servers);
     }
-    
+
     public boolean onCreateOptionsMenu(Menu menu) {
         menu.add(0, ADD_ID, 0, "Add Server")
         	.setIcon(R.drawable.menu_add);
@@ -96,7 +99,7 @@ public class ServerList extends ListActivity {
         }
         return false;
     }
-    
+
     @Override
 	public void onCreateContextMenu(ContextMenu menu, View v, ContextMenuInfo menuInfo) {
 		super.onCreateContextMenu(menu, v, menuInfo);
@@ -104,7 +107,7 @@ public class ServerList extends ListActivity {
 		menu.add(0, CLONE_ID, 1, "Clone Server");
 		menu.add(0, DELETE_ID, 2, "Delete Server");
 	}
-    
+
     @Override
 	public boolean onContextItemSelected(MenuItem item) {
 		AdapterContextMenuInfo info = (AdapterContextMenuInfo) item.getMenuInfo();
@@ -126,23 +129,23 @@ public class ServerList extends ListActivity {
 		}
 		return super.onContextItemSelected(item);
 	}
-    
+
     @Override
     protected void onListItemClick(ListView l, View v, int position, long id) {
         super.onListItemClick(l, v, position, id);
-        
-        final ProgressDialog dialog = ProgressDialog.show(this, "", "Connecting. Please wait...", true);	
-        
+
+        final ProgressDialog dialog = ProgressDialog.show(this, "", "Connecting. Please wait...", true);
+
         final Cursor servers = dbHelper.fetchServer(id);
         startManagingCursor(servers);
-    	
+
         // Get rid of any data from previous connections.
         UserList.clear();
         ChannelList.clear();
-        
+
         // Add lobby.
         ChannelList.addChannel((short)0, "Lobby");
-        
+
         new Thread(new Runnable(){
         	public void run(){
 		        if(VentriloInterface.login(
@@ -162,21 +165,21 @@ public class ServerList extends ListActivity {
 		    }
     	}).start();
     }
-    
+
 	private BroadcastReceiver notificationReceiver = new BroadcastReceiver() {
 		public void onReceive(Context context, Intent intent) {
 			Toast.makeText(ServerList.this, intent.getStringExtra("notification"), Toast.LENGTH_SHORT).show();
 		}
 	};
-    
+
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent intent) {
         super.onActivityResult(requestCode, resultCode, intent);
-        
+
         if (requestCode == ACTIVITY_CONNECT) {
         	VentriloInterface.logout();
         }
-        
+
         fillData();
     }
 }

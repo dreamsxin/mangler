@@ -25,7 +25,7 @@ import android.widget.Button;
 import android.widget.EditText;
 
 public class ServerEdit extends Activity{
-	
+
 	private Long rowID;
 	private EditText serverText;
 	private EditText hostText;
@@ -33,41 +33,44 @@ public class ServerEdit extends Activity{
 	private EditText passText;
 	private EditText userText;
 	private EditText phoneticText;
-	
+
 	private ManglerDBAdapter dbHelper;
 
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+		// Volume controls.
+        setVolumeControlStream(AudioManager.STREAM_MUSIC);
+
         dbHelper = new ManglerDBAdapter(this);
         dbHelper.open();
-        
+
         setContentView(R.layout.server_edit);
-        
+
         serverText = (EditText)findViewById(R.id.editServer);
         hostText = (EditText)findViewById(R.id.editHost);
         portText = (EditText)findViewById(R.id.editPort);
         passText = (EditText)findViewById(R.id.editPass);
         userText = (EditText)findViewById(R.id.editUser);
         phoneticText = (EditText)findViewById(R.id.editPhonetic);
-      
+
         Button saveButton = (Button)findViewById(R.id.editSave);
-       
+
         rowID = null;
-        
+
         /*if (savedInstanceState != null) {
         	rowID = savedInstanceState.getLong(ManglerDBAdapter.KEY_ROWID);
         }*/
-        
+
         //if (rowID == null) {
         	Bundle extras = getIntent().getExtras();
         	if (extras != null) {
         		rowID = extras.getLong(ManglerDBAdapter.KEY_ROWID);
         	}
         //}
-        
+
         populateFields();
-       
+
         saveButton.setOnClickListener(new View.OnClickListener() {
         	public void onClick(View view) {
         		saveState();
@@ -76,13 +79,13 @@ public class ServerEdit extends Activity{
         	}
 		});
     }
-    
+
     @Override
     protected void onDestroy() {
     	super.onDestroy();
     	dbHelper.close();
     }
-    
+
     private void populateFields() {
         if (rowID != null) {
             Cursor servers = dbHelper.fetchServer(rowID);
@@ -95,7 +98,7 @@ public class ServerEdit extends Activity{
             phoneticText.setText(servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_PHONETIC)));
         }
     }
-    
+
     /*@Override
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
@@ -103,7 +106,7 @@ public class ServerEdit extends Activity{
         	outState.putLong(ManglerDBAdapter.KEY_ROWID, rowID);
         }
     }*/
-    
+
     private void saveState() {
         String servername = serverText.getText().toString();
         String hostname = hostText.getText().toString();
@@ -114,7 +117,7 @@ public class ServerEdit extends Activity{
         if (port > 65535) {
         	port = 65535;
         }
-        
+
         String password = passText.getText().toString();
         String username = userText.getText().toString();
         String phonetic = phoneticText.getText().toString();
