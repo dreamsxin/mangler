@@ -2,6 +2,7 @@ package org.mangler;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.ListIterator;
 
 public class ChannelList {
 
@@ -12,6 +13,15 @@ public class ChannelList {
 		channel.put("channelid", channelid);
 		channel.put("channelname", channelname);
 		data.add(channel);
+	}
+	
+	public static HashMap<String, Object> getChannel(short channelid) {
+		for(ListIterator<HashMap<String, Object>> iterator = data.listIterator(); iterator.hasNext(); ) {
+			if(((Short)iterator.next().get("channelid")).equals(channelid)) {
+				return data.get(iterator.previousIndex());
+			}
+		}
+		return null;
 	}
 	
 	public static void clear() {

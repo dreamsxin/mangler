@@ -20,7 +20,7 @@ package org.mangler;
 public class VentriloInterface {
 	public static native void 		changechannel(short channelid, String password);
 	public static native int 		channelcount();
-	public static native short 		channelrequirespassword(short channelid);
+	public static native boolean	channelrequirespassword(short channelid);
 	public static native void 		clearevents();
 	public static native int  		debuglevel(int level);
 	public static native void		getchannel(VentriloEventData data, short channelid);

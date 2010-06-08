@@ -41,18 +41,6 @@ public class EventService extends Service {
         private String StringFromBytes(byte[] bytes) {
         	return new String(bytes, 0, (new String(bytes).indexOf(0)));
         }
-        
-        private String getChannel(short channelid) {
-			String channelname;
-			if(channelid != 0) {
-				VentriloInterface.getchannel(data, channelid);
-				channelname = StringFromBytes(data.text.name);
-			}
-			else {
-				channelname = "Lobby";
-			}
-			return channelname;
-        }
     	
 		public void run() {
 	    	
@@ -91,7 +79,7 @@ public class EventService extends Service {
     						Recorder.recorder.stop();
     						Recorder.recorder = new Recorder(channel_rate);
     					}
-    					UserList.changeChannel(data.user.id, data.channel.id, getChannel(data.channel.id));
+    					UserList.changeChannel(data.user.id, data.channel.id);
     					sendBroadcast(new Intent(ServerView.USERLIST_ACTION));
 	    				break;
 	    				
@@ -99,7 +87,7 @@ public class EventService extends Service {
 	    				if(data.user.id != 0) {
 		    				VentriloInterface.getuser(data, data.user.id);
 		    				String username = StringFromBytes(data.text.name);
-		    				UserList.addUser(data.user.id, username, data.channel.id, getChannel(data.channel.id));
+		    				UserList.addUser(data.user.id, username, data.channel.id);
 		    			    sendBroadcast(new Intent(ServerView.USERLIST_ACTION));
 	    				}
 	    				break;

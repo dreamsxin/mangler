@@ -19,9 +19,11 @@ package org.mangler;
 
 import java.util.HashMap;
 
+import android.app.AlertDialog;
 import android.app.TabActivity;
 import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.media.AudioManager;
@@ -41,7 +43,6 @@ import android.widget.ScrollView;
 import android.widget.SimpleAdapter;
 import android.widget.TabHost;
 import android.widget.TextView;
-import android.widget.Toast;
 import android.widget.AdapterView.OnItemClickListener;
 
 public class ServerView extends TabActivity {
@@ -190,11 +191,31 @@ public class ServerView extends TabActivity {
 		}
 	};
 
-	private void changeChannel(short channelid) {
-		short currentchannel = VentriloInterface.getuserchannel(VentriloInterface.getuserid());
-		if(currentchannel != channelid) {
-			VentriloInterface.changechannel(channelid, "");
-			Toast.makeText(getApplicationContext(), "Changed channels.", Toast.LENGTH_SHORT).show();
+	private void changeChannel(final short channelid) {
+		if(VentriloInterface.getuserchannel(VentriloInterface.getuserid()) != channelid) {
+			if(VentriloInterface.channelrequirespassword(channelid)) {
+				final EditText input = new EditText(this);
+				// Create dialog box for password.
+				AlertDialog.Builder alert = new AlertDialog.Builder(this)
+					.setTitle("Channel is password protected")
+					.setMessage("Please insert a password to join this channel.")
+					.setView(input)
+					.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+						public void onClick(DialogInterface dialog, int whichButton) {
+							VentriloInterface.changechannel(channelid, input.getText().toString());
+						}
+					})
+					.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+						public void onClick(DialogInterface dialog, int whichButton) {
+							// No password entered.
+						}
+					});
+				alert.show();
+			}
+			else {
+				// No password required.
+				VentriloInterface.changechannel(channelid, "");
+			}
 		}
 	}
 
