@@ -7166,6 +7166,9 @@ v3_pcmlength_for_rate(uint32_t rate) {/*{{{*/
         switch (codec->codec) {
           case 0:
             switch (codec->format) {
+              case 0:
+                bytestosend *= 3;
+                break;
               case 1:
                 bytestosend *= 4;
                 break;
