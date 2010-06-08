@@ -19,6 +19,7 @@ package org.mangler;
 
 import android.app.Activity;
 import android.database.Cursor;
+import android.media.AudioManager;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
@@ -115,7 +116,7 @@ public class ServerEdit extends Activity{
         	port = Integer.parseInt(portText.getText().toString());
 
         if (port > 65535) {
-        	port = 65535;
+        	port = 3874;
         }
 
         String password = passText.getText().toString();

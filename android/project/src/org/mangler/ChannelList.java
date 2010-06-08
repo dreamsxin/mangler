@@ -3,9 +3,9 @@ package org.mangler;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-public class ChannelList extends DataList<ChannelList> {
+public class ChannelList {
 
-	protected static ArrayList<HashMap<String, Object>> data = new ArrayList<HashMap<String, Object>>();
+	public static ArrayList<HashMap<String, Object>> data = new ArrayList<HashMap<String, Object>>();
 	
 	public static void addChannel(short channelid, String channelname) {
 		HashMap<String, Object> channel = new HashMap<String, Object>();
@@ -14,4 +14,8 @@ public class ChannelList extends DataList<ChannelList> {
 		data.add(channel);
 	}
 	
+	public static void clear() {
+		data.clear();
+	}
+
 }
