@@ -6,5 +6,5 @@ all:
 		-lspeex \
 		`if grep "HAVE_CELT 1" ../config.h >/dev/null; then pkg-config --cflags --libs celt; fi` \
 		-lmpg123 \
-		-lspeexdsp
+		-lspeexdsp -lm
 
