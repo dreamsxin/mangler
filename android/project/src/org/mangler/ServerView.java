@@ -93,17 +93,27 @@ public class ServerView extends TabActivity {
 	    ((ListView)findViewById(R.id.channelList)).setOnItemClickListener(onListClick);
 	    ((ListView)findViewById(R.id.userList)).setOnItemClickListener(onListClick);
 
-        // Register receivers.
+	    // Register receivers.
         registerReceiver(chatReceiver, new IntentFilter(CHATVIEW_ACTION));
         registerReceiver(channelReceiver, new IntentFilter(CHANNELLIST_ACTION));
         registerReceiver(userReceiver, new IntentFilter(USERLIST_ACTION));
-
+	    
         // Control listeners.
 	    ((EditText)findViewById(R.id.message)).setOnKeyListener(onChatMessageEnter);
 	    ((Button)findViewById(R.id.talkButton)).setOnClickListener(onTalkPress);
 
         // Start receiving packets.
     	startRecvThread();
+    }
+    
+    @Override
+    public void onDestroy() {
+    	super.onDestroy();
+    	
+    	// Unregister receivers.
+		unregisterReceiver(chatReceiver);
+        unregisterReceiver(channelReceiver);
+        unregisterReceiver(userReceiver);
     }
 
     public boolean onCreateOptionsMenu(Menu menu) {

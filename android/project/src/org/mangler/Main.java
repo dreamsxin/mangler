@@ -38,16 +38,7 @@ public class Main extends Activity {
 
         // Volume controls.
         setVolumeControlStream(AudioManager.STREAM_MUSIC);
-        
-    	final ServiceConnection serviceconnection = new ServiceConnection() {
-    		public void onServiceConnected(ComponentName className, IBinder service) {
-    			// eventservice = ((EventService.EventBinder)service).getService();
-    		}
-    		
-    		public void onServiceDisconnected(ComponentName arg0) {
-    			// eventservice = null;
-    		}
-    	};
+    	
     	bindService(new Intent(this, EventService.class), serviceconnection, Context.BIND_AUTO_CREATE);
         
     	// Load native library.
@@ -63,4 +54,21 @@ public class Main extends Activity {
 			}
         });
     }
+    
+    @Override
+    public void onDestroy() {
+    	super.onDestroy();
+    	
+    	unbindService(serviceconnection);
+    }
+    
+	final ServiceConnection serviceconnection = new ServiceConnection() {
+		public void onServiceConnected(ComponentName className, IBinder service) {
+			// eventservice = ((EventService.EventBinder)service).getService();
+		}
+		
+		public void onServiceDisconnected(ComponentName arg0) {
+			// eventservice = null;
+		}
+	};
 }

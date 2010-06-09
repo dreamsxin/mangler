@@ -72,7 +72,11 @@ public class ServerList extends ListActivity {
     @Override
     protected void onDestroy() {
     	super.onDestroy();
-    	dbHelper.close();
+    	
+    	// Unregister notification broadcase receiver.
+        unregisterReceiver(notificationReceiver);
+    	
+        dbHelper.close();
     }
 
     // Populate listview with entries from database
