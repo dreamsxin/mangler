@@ -54,6 +54,7 @@ public class Player {
 	
 	public void write(final byte[] sample, final int length) {
 		audiotrack.write(sample, 0, length);
+		audiotrack.flush();
 	}
 	
 }
