@@ -455,6 +455,6 @@ JNIEXPORT void JNICALL Java_org_mangler_VentriloInterface_getevent(JNIEnv* env, 
 				}
 				break;
 		}
-		v3_free_data(ev);
+		v3_free_event(ev);
 	}
 }
