@@ -268,19 +268,24 @@ void *jukebox_player(void *connptr) {
                         if (ev->data->chatmessage[8]) {
                             char *level = ev->data->chatmessage + 8;
                             int newpol = -1;
-                            if (strncmp(level, " off", 4)) {
-                                newpol = atoi(level);
-                                if (newpol > -1 && newpol < 61) politeness = newpol;
+                            if (strncmp(level, "off", 3) == 0) {
+                                politeness = -1;
                             } else {
-                                v3_send_chat_message("invalid politeness level");
-                                break;
+                                newpol = atoi(level);
+                                if (newpol > -1 && newpol < 61) {
+                                    politeness = newpol;
+                                }
                             }
-                        } else politeness = -1;
+                        } else {
+                            politeness = -1;
+                        }
                         if (politeness > -1) {
                             char chat_msg[50];
                             sprintf(chat_msg, "politeness is now %d seconds", politeness);
                             v3_send_chat_message(chat_msg);
-                        } else v3_send_chat_message("politeness is now off");
+                        } else {
+                            v3_send_chat_message("politeness is now off");
+                        }
                         break;
                     } else if (! stopped && strncmp(ev->data->chatmessage, "!volume ", 8) == 0) {
                         char *volume = ev->data->chatmessage + 8;
