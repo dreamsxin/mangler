@@ -31,7 +31,7 @@ public class Player {
 
 	private static Map<Short, AudioTrack> audiotracks = new HashMap<Short, AudioTrack>();
 
-	private static AudioTrack open(final short id, final int rate, final byte channels) {
+	private static AudioTrack open(final short id, final int rate, final byte channels, final int buffer) {
 		AudioTrack audiotrack;
 		close(id);
 		try {
@@ -42,14 +42,7 @@ public class Player {
 					? AudioFormat.CHANNEL_CONFIGURATION_STEREO
 					: AudioFormat.CHANNEL_CONFIGURATION_MONO,
 				AudioFormat.ENCODING_PCM_16BIT,
-				AudioTrack.getMinBufferSize
-				(
-					rate,
-					(channels == 2)
-						? AudioFormat.CHANNEL_CONFIGURATION_STEREO
-						: AudioFormat.CHANNEL_CONFIGURATION_MONO,
-					AudioFormat.ENCODING_PCM_16BIT
-				),
+				buffer,
 				AudioTrack.MODE_STREAM
 			);
 			audiotracks.put(id, audiotrack);
@@ -96,7 +89,7 @@ public class Player {
 	public static void write(final short id, final int rate, final byte channels, final byte[] sample, final int length) {
 		AudioTrack audiotrack;
 		if ((audiotrack = audiotracks.get(id)) == null) {
-			audiotrack = open(id, rate, channels);
+			audiotrack = open(id, rate, channels, VentriloInterface.pcmlengthforrate(rate) * channels * 2);
 			audiotrack.play();
 		}
 		audiotrack.write(sample, 0, length);
