@@ -42,7 +42,14 @@ public class Player {
 					? AudioFormat.CHANNEL_CONFIGURATION_STEREO
 					: AudioFormat.CHANNEL_CONFIGURATION_MONO,
 				AudioFormat.ENCODING_PCM_16BIT,
-				32768,
+				AudioTrack.getMinBufferSize
+				(
+					rate,
+					(channels == 2)
+						? AudioFormat.CHANNEL_CONFIGURATION_STEREO
+						: AudioFormat.CHANNEL_CONFIGURATION_MONO,
+					AudioFormat.ENCODING_PCM_16BIT
+				),
 				AudioTrack.MODE_STREAM
 			);
 			audiotracks.put(id, audiotrack);
@@ -56,7 +63,6 @@ public class Player {
 	public static void close(final short id) {
 		AudioTrack audiotrack;
 		if ((audiotrack = audiotracks.get(id)) != null) {
-			audiotrack.flush();
 			audiotrack.release();
 			audiotracks.remove(id);
 		}
@@ -66,7 +72,7 @@ public class Player {
 		Set<Entry<Short, AudioTrack>> set = audiotracks.entrySet();
 		for (Iterator<Entry<Short, AudioTrack>> iter = set.iterator(); iter.hasNext();) {
 			Entry<Short, AudioTrack> entry = iter.next();
-			entry.getValue().stop();
+			entry.getValue().flush();
 			entry.getValue().release();
 		}
 		audiotracks.clear();
