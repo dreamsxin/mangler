@@ -263,6 +263,7 @@ JNIEXPORT void JNICALL Java_org_mangler_VentriloInterface_getevent(JNIEnv* env, 
 				break;
 				
 			case V3_EVENT_USER_TALK_END:
+			case V3_EVENT_USER_TALK_MUTE:
 			case V3_EVENT_CHAT_JOIN:
 			case V3_EVENT_CHAT_LEAVE:
 			case V3_EVENT_PRIVATE_CHAT_START:

@@ -17,44 +17,83 @@
 
 package org.mangler;
 
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+
 import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioTrack;
 
 public class Player {
-	
-	public static Player player;
-	private AudioTrack audiotrack;
 
-	public Player(int rate) {
-		// Attempt to initialize AudioTrack instance.
+	private static Map<Short, AudioTrack> audiotracks = new HashMap<Short, AudioTrack>();
+
+	private static AudioTrack open(final short id, final int rate, final byte channels) {
+		AudioTrack audiotrack;
+		close(id);
 		try {
 			audiotrack = new AudioTrack(
-				AudioManager.STREAM_MUSIC, 
+				AudioManager.STREAM_MUSIC,
 				rate,
-				AudioFormat.CHANNEL_CONFIGURATION_MONO, 
-				AudioFormat.ENCODING_PCM_16BIT, 
-				32768, 
+				(channels == 2)
+					? AudioFormat.CHANNEL_CONFIGURATION_STEREO
+					: AudioFormat.CHANNEL_CONFIGURATION_MONO,
+				AudioFormat.ENCODING_PCM_16BIT,
+				32768,
 				AudioTrack.MODE_STREAM
 			);
+			audiotracks.put(id, audiotrack);
+			return audiotrack;
 		}
-		catch(IllegalArgumentException e) {
+		catch (IllegalArgumentException e) {
 			throw e;
 		}
-		audiotrack.play();
 	}
-	
-	public void rate(final int rate) {
-		audiotrack.setPlaybackRate(rate);
+
+	public static void close(final short id) {
+		AudioTrack audiotrack;
+		if ((audiotrack = audiotracks.get(id)) != null) {
+			audiotrack.flush();
+			audiotrack.release();
+			audiotracks.remove(id);
+		}
 	}
-	
-	public int rate() {
-		return audiotrack.getPlaybackRate();
+
+	public static void clear() {
+		Set<Entry<Short, AudioTrack>> set = audiotracks.entrySet();
+		for (Iterator<Entry<Short, AudioTrack>> iter = set.iterator(); iter.hasNext();) {
+			Entry<Short, AudioTrack> entry = iter.next();
+			entry.getValue().stop();
+			entry.getValue().release();
+		}
+		audiotracks.clear();
 	}
-	
-	public void write(final byte[] sample, final int length) {
+
+	public static void rate(final short id, final int rate) {
+		AudioTrack audiotrack;
+		if ((audiotrack = audiotracks.get(id)) != null) {
+			audiotrack.setPlaybackRate(rate);
+		}
+	}
+
+	public static int rate(final short id) {
+		AudioTrack audiotrack;
+		if ((audiotrack = audiotracks.get(id)) != null) {
+			return audiotrack.getPlaybackRate();
+		}
+		return 0;
+	}
+
+	public static void write(final short id, final int rate, final byte channels, final byte[] sample, final int length) {
+		AudioTrack audiotrack;
+		if ((audiotrack = audiotracks.get(id)) == null) {
+			audiotrack = open(id, rate, channels);
+			audiotrack.play();
+		}
 		audiotrack.write(sample, 0, length);
-		audiotrack.flush();
 	}
-	
+
 }
