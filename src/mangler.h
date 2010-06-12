@@ -121,6 +121,7 @@ class Mangler
 
         bool                                isTransmitting;
         bool                                isTransmittingButton;
+        bool                                isTransmittingVA;
         bool                                isTransmittingKey;
         bool                                isTransmittingMouse;
         bool                                iconified;
@@ -231,6 +232,7 @@ class Mangler
         bool getNetworkEvent(void);
         bool updateIntegration(void); // music player integration
         bool checkPushToTalkKeys(void);
+        bool checkVoiceActivation(void);
         bool checkPushToTalkMouse(void);
         bool updateXferAmounts(void);
 

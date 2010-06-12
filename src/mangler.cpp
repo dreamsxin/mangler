@@ -274,10 +274,12 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
     // user has PTT key/mouse enabled, start a timer here
     settings = new ManglerSettings(builder);
     isTransmittingButton = 0;
+    isTransmittingVA = 0;
     isTransmittingMouse = 0;
     isTransmittingKey = 0;
     isTransmitting = 0;
     Glib::signal_timeout().connect(sigc::mem_fun(this, &Mangler::checkPushToTalkKeys), 100);
+    Glib::signal_timeout().connect(sigc::mem_fun(this, &Mangler::checkVoiceActivation), 100);
     Glib::signal_timeout().connect(sigc::mem_fun(this, &Mangler::checkPushToTalkMouse), 100);
 
     // Create our audio control object for managing devices
@@ -1733,12 +1735,24 @@ bool Mangler::checkPushToTalkKeys(void) {/*{{{*/
         startTransmit();
     } else {
         isTransmittingKey = false;
-        if (! isTransmittingButton && ! isTransmittingMouse) {
+        if (! isTransmittingButton && ! isTransmittingMouse && ! isTransmittingVA) {
             stopTransmit();
         }
     }
     return(true);
 
+}/*}}}*/
+bool Mangler::checkVoiceActivation(void) {/*{{{*/
+    if (Mangler::config["VoiceActivationEnabled"].toBool()) {
+        isTransmittingVA = true;
+        startTransmit();
+    } else {
+        isTransmittingKey = false;
+        if (! isTransmittingButton && ! isTransmittingMouse && ! isTransmittingKey) {
+            stopTransmit();
+        }
+    }
+    return true;
 }/*}}}*/
 bool Mangler::checkPushToTalkMouse(void) {/*{{{*/
     GdkWindow   *rootwin = gdk_get_default_root_window();
@@ -1813,7 +1827,7 @@ bool Mangler::checkPushToTalkMouse(void) {/*{{{*/
         startTransmit();
     } else {
         isTransmittingMouse = false;
-        if (! isTransmittingButton && ! isTransmittingKey) {
+        if (! isTransmittingButton && ! isTransmittingKey && ! isTransmittingVA) {
             stopTransmit();
         }
     }
