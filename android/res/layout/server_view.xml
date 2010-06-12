@@ -2,7 +2,8 @@
 <TabHost xmlns:android="http://schemas.android.com/apk/res/android"
 		android:id="@android:id/tabhost"
 		android:layout_width="fill_parent"
-		android:layout_height="fill_parent">
+		android:layout_height="fill_parent"
+		android:background="#f2f2f2">
 		
 	<LinearLayout android:orientation="vertical"
 		android:layout_width="fill_parent" 
@@ -70,7 +71,8 @@
 						<TextView android:id="@+id/messages" 
 							android:text="* Press menu to join or leave the chat room." 
 							android:layout_height="wrap_content" 
-							android:layout_width="wrap_content" />
+							android:layout_width="wrap_content"
+							android:textColor="#770077" />
 						
 				</ScrollView>
 				

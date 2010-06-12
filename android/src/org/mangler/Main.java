@@ -26,15 +26,24 @@ import android.media.AudioManager;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.view.View;
+import android.view.WindowManager;
 import android.view.View.OnClickListener;
 import android.widget.Button;
 
 public class Main extends Activity {
 
+	protected boolean isPortrait;
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.main);
+        if (getWindowManager().getDefaultDisplay().getWidth() < getWindowManager().getDefaultDisplay().getHeight()) {
+        	isPortrait = true;
+        	setContentView(R.layout.main_portrait);
+        } else {
+        	isPortrait = false;
+        	setContentView(R.layout.main_landscape);
+        }
 
         // Volume controls.
         setVolumeControlStream(AudioManager.STREAM_MUSIC);
@@ -60,6 +69,22 @@ public class Main extends Activity {
     	super.onDestroy();
     	
     	unbindService(serviceconnection);
+    }
+    
+    public void onWindowAttributesChanged(WindowManager.LayoutParams params) {
+        if (getWindowManager().getDefaultDisplay().getWidth() < getWindowManager()
+                        .getDefaultDisplay().getHeight()) {
+                if (!isPortrait) {
+                        isPortrait = true;
+                        setContentView(R.layout.main_portrait);
+                }
+        } else {
+                if (isPortrait) {
+                        isPortrait = false;
+                        setContentView(R.layout.main_landscape);
+                }
+        }
+
     }
     
 	final ServiceConnection serviceconnection = new ServiceConnection() {

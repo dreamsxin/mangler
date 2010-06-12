@@ -13,12 +13,14 @@
         android:typeface="sans"
         android:height="30dp"
         android:layout_width="fill_parent"
-        android:layout_height="fill_parent"/>
+        android:layout_height="fill_parent"
+        android:textColor="#770077" />
 
     <TextView android:id="@+id/urowid"
         android:textSize="12sp"
         android:typeface="sans"
         android:layout_width="fill_parent"
-        android:layout_height="fill_parent"/>
+        android:layout_height="fill_parent"
+        android:textColor="#770077" />
 
 </LinearLayout>
