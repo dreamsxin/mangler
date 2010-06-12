@@ -323,6 +323,9 @@ ManglerAudio::input(void) {/*{{{*/
                     xmit = true;
                     mangler->audioControl->playNotification("talkstart");
                     v3_start_audio(V3_AUDIO_SENDTYPE_U2CCUR);
+                } else {
+                    // if we're transmitting, always update VA start so PTT methods end properly
+                    gettimeofday(&vastart, NULL);
                 }
                 mangler->channelTree->setUserIcon(v3_get_user_id(), "green", true);
                 mangler->statusIcon->set(mangler->icons["tray_icon_green"]);
