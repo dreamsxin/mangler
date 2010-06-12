@@ -470,6 +470,11 @@ void Mangler::onDisconnectHandler(void) {/*{{{*/
         button->set_sensitive(false);
         builder->get_widget("commentMenuItem", menuitem);
         menuitem->set_sensitive(false);
+        isTransmittingMouse = false;
+        isTransmittingKey = false;
+        isTransmittingVA = false;
+        isTransmittingButton = false;
+        stopTransmit();
 
         connectbutton->set_sensitive(true);
 #ifdef HAVE_XOSD
@@ -886,7 +891,7 @@ void Mangler::muteMicCheckButton_toggled_cb(void) {/*{{{*/
     config["MuteMic"] = muteMic;
     if (muteMic && isTransmitting) {
         stopTransmit();
-    } else if (!muteMic && (isTransmittingMouse || isTransmittingKey || isTransmittingButton)) {
+    } else if (!muteMic && (isTransmittingMouse || isTransmittingKey || isTransmittingButton || isTransmittingVA)) {
         startTransmit();
     }
 }/*}}}*/

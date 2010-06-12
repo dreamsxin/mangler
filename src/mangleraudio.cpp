@@ -289,7 +289,10 @@ ManglerAudio::input(void) {/*{{{*/
             pcmpeak = log10(((pcmpeak / 0x7fff) * 9) + 1);
             pcmpeak = (pcmpeak > 1) ? 1 : pcmpeak;
             gdk_threads_enter();
-            if (Mangler::config["VoiceActivationEnabled"].toBool() && !mangler->isTransmittingKey && !mangler->isTransmittingMouse && !mangler->isTransmittingButton) {
+            if (Mangler::config["VoiceActivationEnabled"].toBool() &&
+                    !mangler->isTransmittingKey &&
+                    !mangler->isTransmittingMouse &&
+                    !mangler->isTransmittingButton) {
                 vasilencedur = Mangler::config["VoiceActivationSilenceDuration"].toInt();
                 vapercent = Mangler::config["VoiceActivationSensitivity"].toUInt();
                 if (pcmpeak * 100 >= vapercent) {
