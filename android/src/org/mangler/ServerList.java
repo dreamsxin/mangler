@@ -33,6 +33,7 @@ import android.view.View;
 import android.view.ContextMenu.ContextMenuInfo;
 import android.widget.ListView;
 import android.widget.SimpleCursorAdapter;
+import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.AdapterView.AdapterContextMenuInfo;
 
@@ -62,7 +63,7 @@ public class ServerList extends ListActivity {
 
         // Notification broadcast receiver.
         registerReceiver(notificationReceiver, new IntentFilter(SERVERLIST_NOTIFICATION));
-
+        
         dbHelper = new ManglerDBAdapter(this);
         dbHelper.open();
     	fillData();
@@ -84,6 +85,16 @@ public class ServerList extends ListActivity {
         Cursor serverCursor = dbHelper.fetchServers();
         startManagingCursor(serverCursor);
 
+        TextView temp = (TextView)findViewById(R.id.emptyServerList);
+        if (serverCursor.getCount() > 0)
+        {
+            temp.setVisibility(TextView.GONE);
+        }
+        else
+        {
+        	temp.setVisibility(TextView.VISIBLE);
+        }
+        
         // Display simple cursor adapter
         SimpleCursorAdapter servers = new SimpleCursorAdapter(this, R.layout.server_row, serverCursor, new String[]{ManglerDBAdapter.KEY_SERVERNAME}, new int[]{R.id.srowtext});
         setListAdapter(servers);
