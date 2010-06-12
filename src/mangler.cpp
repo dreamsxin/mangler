@@ -717,8 +717,10 @@ void Mangler::xmitButton_toggled_cb(void) {/*{{{*/
         isTransmittingButton = true;
         startTransmit();
     } else {
-        stopTransmit();
         isTransmittingButton = false;
+        if (! isTransmittingKey && ! isTransmittingMouse && ! isTransmittingVA) {
+            stopTransmit();
+        }
     }
 }/*}}}*/
 
