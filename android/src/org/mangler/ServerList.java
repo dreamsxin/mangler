@@ -90,8 +90,7 @@ public class ServerList extends ListActivity {
     }
 
     public boolean onCreateOptionsMenu(Menu menu) {
-        menu.add(0, ADD_ID, 0, "Add Server")
-        	.setIcon(R.drawable.menu_add);
+        menu.add(0, ADD_ID, 0, "Add Server").setIcon(R.drawable.menu_add);
         return true;
     }
 
