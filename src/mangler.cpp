@@ -1747,7 +1747,7 @@ bool Mangler::checkVoiceActivation(void) {/*{{{*/
         isTransmittingVA = true;
         startTransmit();
     } else {
-        isTransmittingKey = false;
+        isTransmittingVA = false;
         if (! isTransmittingButton && ! isTransmittingMouse && ! isTransmittingKey) {
             stopTransmit();
         }
