@@ -435,16 +435,19 @@ ostream &iniFile::save(ostream &out) const {
 }
 
 void iniFile::save() const {
+    Glib::ustring tmpfile = "";
     if (rdonly) {
         return;
     }
     pthread_mutex_lock((pthread_mutex_t *)&mymutex);
     if (! mFilename.empty()) {
-        ofstream fout( mFilename.c_str() );
+        tmpfile = mFilename + "~";
+        ofstream fout( tmpfile.c_str() );
         if (fout) {
             save(fout);
         }
         fout.close();
+        rename(tmpfile.c_str(), mFilename.c_str());
     }
     pthread_mutex_unlock((pthread_mutex_t *)&mymutex);
 }
