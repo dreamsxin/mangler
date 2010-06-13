@@ -8,7 +8,8 @@
 	<LinearLayout android:orientation="vertical"
 		android:layout_width="fill_parent" 
 		android:layout_height="fill_parent" 
-		android:padding="5dp">
+		android:padding="5dp" 
+		android:background="@drawable/background">
 		
 		<TabWidget android:id="@android:id/tabs" 
 			android:layout_width="fill_parent" 
@@ -27,12 +28,13 @@
 			    android:layout_height="fill_parent" 
 			    android:gravity="center_vertical|center_horizontal">
 				
-				<Button android:height="100px" 
+				<ImageView android:id="@+id/transmitStatus" android:layout_height="30px" android:layout_width="30px" android:src="@drawable/transmit_off" android:layout_marginTop="-15dp" android:layout_marginBottom="15dp"></ImageView><Button android:height="100px" 
 					android:layout_height="wrap_content" 
 					android:layout_width="wrap_content" 
 					android:width="200px" android:id="@+id/talkButton" android:text="@string/start_talk"/>
 			
-			</LinearLayout>
+			
+</LinearLayout>
 		
 			<LinearLayout android:layout_width="wrap_content" 
 				android:layout_height="wrap_content" 
@@ -41,7 +43,7 @@
 				
 				<ListView android:layout_width="fill_parent"
 			       	android:layout_height="fill_parent" 
-			       	android:isScrollContainer="true" android:id="@+id/channelList"></ListView>
+			       	android:isScrollContainer="true" android:id="@+id/channelList" android:cacheColorHint="#00000000" android:divider="@drawable/list_divider" android:dividerHeight="1px"></ListView>
 			       	 
 			</LinearLayout>
 			
@@ -52,7 +54,7 @@
 				
 			    <ListView android:layout_width="fill_parent"
 			       	android:layout_height="fill_parent" 
-			       	android:isScrollContainer="true" android:id="@+id/userList"></ListView>
+			       	android:isScrollContainer="true" android:id="@+id/userList" android:cacheColorHint="#00000000" android:divider="@drawable/list_divider" android:dividerHeight="1px"></ListView>
 				
 			</LinearLayout>
 

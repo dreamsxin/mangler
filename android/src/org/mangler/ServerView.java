@@ -24,6 +24,8 @@ package org.mangler;
 
 import java.util.HashMap;
 
+import com.nullwire.trace.ExceptionHandler;
+
 import android.app.AlertDialog;
 import android.app.TabActivity;
 import android.content.BroadcastReceiver;
@@ -43,6 +45,7 @@ import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.ScrollView;
 import android.widget.SimpleAdapter;
@@ -71,10 +74,16 @@ public class ServerView extends TabActivity {
 	private SimpleAdapter channelAdapter;
 	private SimpleAdapter userAdapter;
 
+	// State variables.
+	private boolean userInChat = false;
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
     	super.onCreate(savedInstanceState);
         setContentView(R.layout.server_view);
+
+        // Send crash reports to server
+        ExceptionHandler.register(this, "http://www.mangler.org/errors/upload.php");
 
         // Volume controls.
         setVolumeControlStream(AudioManager.STREAM_MUSIC);
@@ -102,19 +111,30 @@ public class ServerView extends TabActivity {
         registerReceiver(chatReceiver, new IntentFilter(CHATVIEW_ACTION));
         registerReceiver(channelReceiver, new IntentFilter(CHANNELLIST_ACTION));
         registerReceiver(userReceiver, new IntentFilter(USERLIST_ACTION));
-	    
+
         // Control listeners.
 	    ((EditText)findViewById(R.id.message)).setOnKeyListener(onChatMessageEnter);
 	    ((Button)findViewById(R.id.talkButton)).setOnClickListener(onTalkPress);
 
-        // Start receiving packets.
-    	startRecvThread();
+	    // Restore state.
+	    if(savedInstanceState != null) {
+	    	userInChat = savedInstanceState.getBoolean("chatopen");
+	    	((TextView)findViewById(R.id.messages)).setText(savedInstanceState.getString("chatmessages"));
+	    	((EditText)findViewById(R.id.message)).setEnabled(userInChat);
+	    }
     }
-    
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+    	outState.putString("chatmessages", ((TextView)findViewById(R.id.messages)).getText().toString());
+    	outState.putBoolean("chatopen", userInChat);
+    	super.onSaveInstanceState(outState);
+    }
+
     @Override
     public void onDestroy() {
     	super.onDestroy();
-    	
+
     	// Unregister receivers.
 		unregisterReceiver(chatReceiver);
         unregisterReceiver(channelReceiver);
@@ -146,25 +166,13 @@ public class ServerView extends TabActivity {
         	case OPTION_DISCONNECT:
         		VentriloInterface.logout();
         		finish();
-        		break;
+        		return true;
 
         	default:
         		return false;
         }
+        userInChat = !userInChat;
         return true;
-    }
-
-    private void startRecvThread() {
-    	Runnable recvRunnable = new Runnable() {
-    		public void run() {
-    			while(true) {
-    				if(!VentriloInterface.recv()) {
-    					break;
-    				}
-    			}
-    		}
-    	};
-    	(new Thread(recvRunnable)).start();
     }
 
 	private BroadcastReceiver chatReceiver = new BroadcastReceiver() {
@@ -247,9 +255,11 @@ public class ServerView extends TabActivity {
 			if (!Recorder.recorder.recording()) {
 				Recorder.recorder.start();
 				((Button)findViewById(R.id.talkButton)).setText(R.string.stop_talk);
+				((ImageView)findViewById(R.id.transmitStatus)).setImageResource(R.drawable.transmit_on);
 			} else {
 				Recorder.recorder.stop();
 				((Button)findViewById(R.id.talkButton)).setText(R.string.start_talk);
+				((ImageView)findViewById(R.id.transmitStatus)).setImageResource(R.drawable.transmit_off);
 			}
 		}
 	};

@@ -31,39 +31,15 @@ import android.media.AudioManager;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.view.View;
-import android.view.WindowManager;
 import android.view.View.OnClickListener;
 import android.widget.Button;
-import android.widget.ImageView;
 
 public class Main extends Activity {
-
-	private boolean isPortrait;
-	private int screenHeight;
-	private int screenWidth;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        screenWidth = getWindowManager().getDefaultDisplay().getWidth();
-        screenHeight = getWindowManager().getDefaultDisplay().getHeight();
-        if (screenWidth < screenHeight) {
-        	isPortrait = true;
-        	setContentView(R.layout.main_portrait);
-        	ImageView logo = (ImageView) findViewById(R.id.main_portrait_logo);
-        	logo.setAdjustViewBounds(true);
-        	logo.setMaxHeight((int) (screenHeight/2.5));
-        	logo.setMaxWidth((int) (screenHeight/2.5));
-        	logo.setPadding(0, screenHeight/25, 0, screenHeight/25);
-        } else {
-        	isPortrait = false;
-        	setContentView(R.layout.main_landscape);
-        	ImageView logo = (ImageView) findViewById(R.id.main_landscape_logo);
-        	logo.setAdjustViewBounds(true);
-        	logo.setMaxHeight(screenWidth/2);
-        	logo.setMaxWidth(screenWidth/2);
-        	logo.setPadding(screenWidth/25, screenWidth/25, screenWidth/25, screenWidth/25);
-        }
+        setContentView(R.layout.main);
 
         // Volume controls.
         setVolumeControlStream(AudioManager.STREAM_MUSIC);
@@ -89,22 +65,6 @@ public class Main extends Activity {
     	super.onDestroy();
     	
     	unbindService(serviceconnection);
-    }
-    
-    public void onWindowAttributesChanged(WindowManager.LayoutParams params) {
-        if (getWindowManager().getDefaultDisplay().getWidth() < getWindowManager()
-                        .getDefaultDisplay().getHeight()) {
-                if (!isPortrait) {
-                        isPortrait = true;
-                        setContentView(R.layout.main_portrait);
-                }
-        } else {
-                if (isPortrait) {
-                        isPortrait = false;
-                        setContentView(R.layout.main_landscape);
-                }
-        }
-
     }
     
 	final ServiceConnection serviceconnection = new ServiceConnection() {

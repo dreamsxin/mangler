@@ -22,6 +22,8 @@
 
 package org.mangler;
 
+import com.nullwire.trace.ExceptionHandler;
+
 import android.app.ListActivity;
 import android.app.ProgressDialog;
 import android.content.BroadcastReceiver;
@@ -63,12 +65,15 @@ public class ServerList extends ListActivity {
     	super.onCreate(savedInstanceState);
         setContentView(R.layout.server_list);
 
+        // Send crash reports to server
+        ExceptionHandler.register(this, "http://www.mangler.org/errors/upload.php");
+
         // Volume controls.
         setVolumeControlStream(AudioManager.STREAM_MUSIC);
 
         // Notification broadcast receiver.
         registerReceiver(notificationReceiver, new IntentFilter(SERVERLIST_NOTIFICATION));
-        
+
         dbHelper = new ManglerDBAdapter(this);
         dbHelper.open();
     	fillData();
@@ -78,10 +83,10 @@ public class ServerList extends ListActivity {
     @Override
     protected void onDestroy() {
     	super.onDestroy();
-    	
+
     	// Unregister notification broadcase receiver.
         unregisterReceiver(notificationReceiver);
-    	
+
         dbHelper.close();
     }
 
@@ -99,7 +104,7 @@ public class ServerList extends ListActivity {
         {
         	temp.setVisibility(TextView.VISIBLE);
         }
-        
+
         // Display simple cursor adapter
         SimpleCursorAdapter servers = new SimpleCursorAdapter(this, R.layout.server_row, serverCursor, new String[]{ManglerDBAdapter.KEY_SERVERNAME}, new int[]{R.id.srowtext});
         setListAdapter(servers);
@@ -174,6 +179,8 @@ public class ServerList extends ListActivity {
 		        		servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_PASSWORD)),
 		        		servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_PHONETIC)))) {
 		        	dialog.dismiss();
+		            // Start receiving packets.
+		        	startRecvThread();
 		        	startActivityForResult(new Intent(ServerList.this, ServerView.class), ACTIVITY_CONNECT);
 		        }
 		        else {
@@ -184,6 +191,19 @@ public class ServerList extends ListActivity {
 		        dialog.dismiss();
 		    }
     	}).start();
+    }
+
+    private void startRecvThread() {
+    	Runnable recvRunnable = new Runnable() {
+    		public void run() {
+    			while(true) {
+    				if(!VentriloInterface.recv()) {
+    					break;
+    				}
+    			}
+    		}
+    	};
+    	(new Thread(recvRunnable)).start();
     }
 
 	private BroadcastReceiver notificationReceiver = new BroadcastReceiver() {
