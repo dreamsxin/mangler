@@ -43,7 +43,6 @@ import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.ImageSwitcher;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.ScrollView;
@@ -73,7 +72,8 @@ public class ServerView extends TabActivity {
 	private SimpleAdapter channelAdapter;
 	private SimpleAdapter userAdapter;
 	
-	private ImageSwitcher transmitImage;
+	// State variables.
+	private boolean userInChat = false;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -110,6 +110,20 @@ public class ServerView extends TabActivity {
         // Control listeners.
 	    ((EditText)findViewById(R.id.message)).setOnKeyListener(onChatMessageEnter);
 	    ((Button)findViewById(R.id.talkButton)).setOnClickListener(onTalkPress);
+	    
+	    // Restore state.
+	    if(savedInstanceState != null) {
+	    	userInChat = savedInstanceState.getBoolean("chatopen");
+	    	((TextView)findViewById(R.id.messages)).setText(savedInstanceState.getString("chatmessages"));
+	    	((EditText)findViewById(R.id.message)).setEnabled(userInChat);
+	    }
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+    	outState.putString("chatmessages", ((TextView)findViewById(R.id.messages)).getText().toString());
+    	outState.putBoolean("chatopen", userInChat);
+    	super.onSaveInstanceState(outState);
     }
     
     @Override
@@ -147,11 +161,12 @@ public class ServerView extends TabActivity {
         	case OPTION_DISCONNECT:
         		VentriloInterface.logout();
         		finish();
-        		break;
+        		return true;
 
         	default:
         		return false;
         }
+        userInChat = !userInChat;
         return true;
     }
 
