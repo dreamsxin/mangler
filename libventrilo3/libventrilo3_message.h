@@ -118,12 +118,12 @@ int _v3_get_0x3a(_v3_net_message *msg);
 _v3_net_message *_v3_put_0x3a(char *message);
 typedef struct _v3_net_message_0x3b {/*{{{*/
     uint32_t type;              // 0
-    uint16_t user_id;           // 4
+    uint16_t id;                // 4
     uint16_t channel_id;        // 6
     uint32_t error_id;          // 8
 } __attribute__ ((__packed__)) _v3_msg_0x3b;
 int _v3_get_0x3b(_v3_net_message *msg);
-_v3_net_message *_v3_put_0x3b(uint16_t userid, uint16_t channelid);/*}}}*/
+_v3_net_message *_v3_put_0x3b(uint16_t id, uint16_t channel_id);/*}}}*/
 typedef struct _v3_net_message_0x3c {/*{{{*/
     uint32_t type;              // 0
     uint8_t  unknown1[4];       // 4
@@ -275,7 +275,7 @@ typedef struct _v3_net_message_0x52_0x03 {/*{{{*/
     _v3_msg_0x52 header;        // 0
 } __attribute__ ((__packed__)) _v3_msg_0x52_0x03;/*}}}*/
 int _v3_get_0x52(_v3_net_message *msg);
-_v3_net_message *_v3_put_0x52(uint8_t subtype, uint16_t codec, uint16_t codec_format, uint16_t send_type, uint32_t pcmlength, uint32_t length, void *data);
+_v3_net_message *_v3_put_0x52(uint8_t subtype, uint16_t codec, uint16_t codec_format, uint32_t pcmlength, uint32_t length, void *data);
 int _v3_destroy_0x52(_v3_net_message *msg);
 typedef struct _v3_net_message_0x53 {/*{{{*/
     uint32_t type;              // 0
@@ -401,6 +401,8 @@ int         _v3_get_msg_user(void *offset, _v3_msg_user *user);
 int         _v3_put_msg_user(void *buf, _v3_msg_user *user);
 int         _v3_get_msg_account(void *offset, _v3_msg_account *account);
 int         _v3_put_msg_account(void *buf, _v3_msg_account *account);
+int         _v3_parse_filter(v3_sp_filter *f, char *value);
+int         _v3_strip_c0_set(char *s);
 
 #endif // _LIBVENTRILO3_MESSAGE_H
 

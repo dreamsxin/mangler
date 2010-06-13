@@ -84,22 +84,22 @@ class ManglerServerList {
 
         // Editor Buttons
         Gtk::Button *serverListServerUpdateButton;
-        Gtk::Button *serverListServerDeleteButton;
+        Gtk::Button *serverListServerAddButton;
+        Gtk::Button *serverListServerRemoveButton;
         Gtk::Button *serverListServerCloneButton;
 
-        void serverListWindow_show_cb(void);
+        void serverListWindow_hide_cb(void);
         void serverListSelection_changed_cb(void);
-        void serverListNewButton_clicked_cb(void);
-        void serverListDeleteButton_clicked_cb(void);
+        void serverListAddButton_clicked_cb(void);
+        void serverListRemoveButton_clicked_cb(void);
         void serverListCloneButton_clicked_cb(void);
-        void serverListSetDefaultButton_clicked_cb(void);
         void serverListCloseButton_clicked_cb(void);
         void serverListServerUpdateButton_clicked_cb(void);
-        void serverListServerClearButton_clicked_cb(void);
 
         void editRow(const std::string &name);
         void saveRow();
         void clearEntries(void);
+        void queue_resize(void);
 
         Glib::ustring trim(Glib::ustring const& orig);
 

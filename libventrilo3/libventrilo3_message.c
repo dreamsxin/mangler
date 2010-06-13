@@ -225,12 +225,12 @@ _v3_get_msg_account(void *offset, _v3_msg_account *account) {/*{{{*/
 
     account->chan_admin = _v3_get_msg_uint16_array(offset, &len);
     for (j=0;j<(len-2)/2;j++)
-        _v3_debug(V3_DEBUG_PACKET_PARSE, "chanadmin: 0x%x", account->chan_admin[j]);
+        _v3_debug(V3_DEBUG_PACKET_PARSE, "channel admin: %u", account->chan_admin[j]);
     account->chan_admin_count = (len - 2) / 2;
     offset += len;
     account->chan_auth = _v3_get_msg_uint16_array(offset, &len);
     for (j=0;j<(len-2)/2;j++)
-        _v3_debug(V3_DEBUG_PACKET_PARSE, "chanauth: 0x%x", account->chan_auth[j]);
+        _v3_debug(V3_DEBUG_PACKET_PARSE, "channel auth: %u", account->chan_auth[j]);
     account->chan_auth_count = (len - 2) / 2;
     offset += len;
 
@@ -317,6 +317,53 @@ _v3_put_msg_rank(void *buffer, _v3_msg_rank *rank) {/*{{{*/
 
     _v3_func_leave("_v3_put_msg_rank");
     return (buffer - start_buffer);
+}/*}}}*/
+
+int
+_v3_parse_filter(v3_sp_filter *f, char *value) {/*{{{*/
+    char *a, *i, *t, *tmp;
+
+    _v3_func_enter("_v3_parse_filter");
+    a = value;
+    i = strchr(a, ',') + 1;
+    // make sure strchr didn't return null (in which case it would be 1 since
+    // we added 1)
+    if (i == (void *)1) {
+        _v3_func_leave("_v3_parse_filter");
+        return false;
+    }
+    tmp = i - 1;
+    *tmp = 0;
+    t = strchr(i, ',') + 1;
+    if (t == (void *)1) {
+        _v3_func_leave("_v3_parse_filter");
+        return false;
+    }
+    tmp = t - 1;
+    *tmp = 0;
+    f->action = atoi(a);
+    f->interval = atoi(i);
+    f->times = atoi(t);
+    _v3_debug(V3_DEBUG_INFO, "parsed filter: %d, %d, %d", f->action, f->interval, f->times);
+
+    _v3_func_leave("_v3_parse_filter");
+    return true;
+}/*}}}*/
+
+int
+_v3_strip_c0_set(char *s) {/*{{{*/
+    void *start = s;
+    uint8_t *str = (uint8_t *)s;
+
+    _v3_func_enter("_v3_strip_c0_set");
+
+    while (*str) {
+        *str = (*str < 0x20) ? 0x20 : *str;
+        str++;
+    }
+
+    _v3_func_leave("_v3_strip_c0_set");
+    return ((void *)str - start);
 }/*}}}*/
 /*}}}*/
 
@@ -620,7 +667,7 @@ _v3_get_0x3b(_v3_net_message *msg) {/*{{{*/
     }
     m = msg->contents = msg->data;
     _v3_debug(V3_DEBUG_PACKET_PARSE, "Force Channel Move:");
-    _v3_debug(V3_DEBUG_PACKET_PARSE, "user id.............: %d",   m->user_id);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "id..................: %d",   m->id);
     _v3_debug(V3_DEBUG_PACKET_PARSE, "channel id..........: %d",   m->channel_id);
     _v3_debug(V3_DEBUG_PACKET_PARSE, "error id............: %d",   m->error_id);
 
@@ -628,7 +675,7 @@ _v3_get_0x3b(_v3_net_message *msg) {/*{{{*/
     return true;
 }/*}}}*/
 _v3_net_message *
-_v3_put_0x3b(uint16_t userid, uint16_t channelid) {/*{{{*/
+_v3_put_0x3b(uint16_t id, uint16_t channel_id) {/*{{{*/
     _v3_net_message *m;
     _v3_msg_0x3b *mc;
 
@@ -644,8 +691,8 @@ _v3_put_0x3b(uint16_t userid, uint16_t channelid) {/*{{{*/
     memset(mc, 0, sizeof(_v3_msg_0x3b));
 
     mc->type = 0x3b;
-    mc->user_id = userid;
-    mc->channel_id = channelid;
+    mc->id = id;
+    mc->channel_id = channel_id;
     m->contents = mc;
     m->data = (char *)mc;
 
@@ -855,6 +902,38 @@ _v3_put_0x48(void) {/*{{{*/
 }/*}}}*/
 /*}}}*/
 // Message 0x49 (73) | GET/REQUEST CHANNEL LIST MODIFICATION /*{{{*/
+int
+_v3_get_0x49(_v3_net_message *msg) {/*{{{*/
+    /*
+     * PACKET: message type: 0x49 (73)
+     * PACKET: data length : 98
+     * PACKET:     49 00 00 00 00 00 01 00 00 00 00 00 00 00 00 00      I...............
+     * PACKET:     00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00      ................
+     * PACKET:     00 00 00 00 00 00 00 00 16 00 02 00 00 00 00 00      ................
+     * PACKET:     01 00 01 00 01 00 01 00 01 00 01 00 00 00 00 00      ................
+     * PACKET:     00 00 00 00 01 00 00 00 01 00 00 00 00 00 00 00      ................
+     * PACKET:     00 00 00 00 00 00 00 00 00 04 74 65 73 74 00 00      ..........test..
+     * PACKET:     00 00                                                ..
+     */
+    _v3_msg_0x49 *m;
+
+    _v3_func_enter("_v3_get_0x49");
+    m = malloc(sizeof(_v3_msg_0x49));
+    memcpy(m, msg->data, sizeof(_v3_msg_0x49) - sizeof(void *));
+    m->channel = malloc(sizeof(v3_channel));
+    _v3_get_msg_channel(msg->data+sizeof(_v3_msg_0x49) - sizeof(void *), m->channel);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "got channel: id: %d | parent: %d | name: %s | phonetic: %s | comment: %s",
+            m->channel->id,
+            m->channel->parent,
+            m->channel->name,
+            m->channel->phonetic,
+            m->channel->comment
+            );
+    msg->contents = m;
+
+    _v3_func_leave("_v3_get_0x49");
+    return true;
+}/*}}}*/
 _v3_net_message *
 _v3_put_0x49(uint16_t subtype, uint16_t user_id, char *channel_password, _v3_msg_channel *channel) {/*{{{*/
     _v3_net_message *msg;
@@ -919,38 +998,6 @@ _v3_put_0x49(uint16_t subtype, uint16_t user_id, char *channel_password, _v3_msg
 
     _v3_func_leave("_v3_put_0x49");
     return NULL;
-}/*}}}*/
-int
-_v3_get_0x49(_v3_net_message *msg) {/*{{{*/
-    /*
-     * PACKET: message type: 0x49 (73)
-     * PACKET: data length : 98
-     * PACKET:     49 00 00 00 00 00 01 00 00 00 00 00 00 00 00 00      I...............
-     * PACKET:     00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00      ................
-     * PACKET:     00 00 00 00 00 00 00 00 16 00 02 00 00 00 00 00      ................
-     * PACKET:     01 00 01 00 01 00 01 00 01 00 01 00 00 00 00 00      ................
-     * PACKET:     00 00 00 00 01 00 00 00 01 00 00 00 00 00 00 00      ................
-     * PACKET:     00 00 00 00 00 00 00 00 00 04 74 65 73 74 00 00      ..........test..
-     * PACKET:     00 00                                                ..
-     */
-    _v3_msg_0x49 *m;
-
-    _v3_func_enter("_v3_get_0x49");
-    m = malloc(sizeof(_v3_msg_0x49));
-    memcpy(m, msg->data, sizeof(_v3_msg_0x49) - sizeof(void *));
-    m->channel = malloc(sizeof(v3_channel));
-    _v3_get_msg_channel(msg->data+sizeof(_v3_msg_0x49) - sizeof(void *), m->channel);
-    _v3_debug(V3_DEBUG_PACKET_PARSE, "got channel: id: %d | parent: %d | name: %s | phonetic: %s | comment: %s",
-            m->channel->id,
-            m->channel->parent,
-            m->channel->name,
-            m->channel->phonetic,
-            m->channel->comment
-            );
-    msg->contents = m;
-
-    _v3_func_leave("_v3_get_0x49");
-    return true;
 }/*}}}*/
 /*}}}*/
 // Message 0x4a (74) | USER PERMISSIONS /*{{{*/
@@ -1189,6 +1236,11 @@ _v3_get_0x52(_v3_net_message *msg) {/*{{{*/
     _v3_msg_0x52 *m;
 
     _v3_func_enter("_v3_get_0x52");
+    if (msg->len < sizeof(_v3_msg_0x52)) {
+        _v3_debug(V3_DEBUG_PACKET_PARSE, "expected more than %d bytes, but message is %d bytes", sizeof(_v3_msg_0x52), msg->len);
+        _v3_func_leave("_v3_get_0x52");
+        return false;
+    }
     m = malloc(sizeof(_v3_msg_0x52));
     memcpy(m, msg->data, sizeof(_v3_msg_0x52));
     _v3_debug(V3_DEBUG_PACKET_PARSE, "subtype.......: %d", m->subtype);
@@ -1201,7 +1253,6 @@ _v3_get_0x52(_v3_net_message *msg) {/*{{{*/
     _v3_debug(V3_DEBUG_PACKET_PARSE, "pcm_length....: %d", m->pcm_length);
     switch (m->subtype) {
         case V3_AUDIO_START:
-        case 0x04:
             {
                 _v3_msg_0x52_0x00 *msub = (_v3_msg_0x52_0x00 *)m;
                 msub = realloc(m, sizeof(_v3_msg_0x52_0x00));
@@ -1251,6 +1302,22 @@ _v3_get_0x52(_v3_net_message *msg) {/*{{{*/
                 _v3_func_leave("_v3_get_0x52");
                 return true;
             }
+        case V3_AUDIO_MUTE:
+            {
+                _v3_msg_0x52_0x03 *msub = (_v3_msg_0x52_0x03 *)m;
+                _v3_debug(V3_DEBUG_PACKET_PARSE, "user %d is transmit muted from server", msub->header.user_id);
+                msg->contents = msub;
+                _v3_func_leave("_v3_get_0x52");
+                return true;
+            }
+        case V3_AUDIO_START_LOGIN:
+            {
+                _v3_msg_0x52_0x03 *msub = (_v3_msg_0x52_0x03 *)m;
+                _v3_debug(V3_DEBUG_PACKET_PARSE, "user %d was transmitting before login", msub->header.user_id);
+                msg->contents = msub;
+                _v3_func_leave("_v3_get_0x52");
+                return true;
+            }
     }
     _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown 0x52 subtype %02x", m->subtype);
     free(m);
@@ -1259,7 +1326,7 @@ _v3_get_0x52(_v3_net_message *msg) {/*{{{*/
     return false;
 }/*}}}*/
 _v3_net_message *
-_v3_put_0x52(uint8_t subtype, uint16_t codec, uint16_t codec_format, uint16_t send_type, uint32_t pcmlength, uint32_t length, void *data) {/*{{{*/
+_v3_put_0x52(uint8_t subtype, uint16_t codec, uint16_t codec_format, uint32_t pcmlength, uint32_t length, void *data) {/*{{{*/
     _v3_net_message *msg;
     _v3_msg_0x52_0x01_out *msgdata;
 
@@ -1276,16 +1343,12 @@ _v3_put_0x52(uint8_t subtype, uint16_t codec, uint16_t codec_format, uint16_t se
             msgdata = malloc(sizeof(_v3_msg_0x52_0x00));
             memset(msgdata, 0, sizeof(_v3_msg_0x52_0x00));
             msg->len = sizeof(_v3_msg_0x52_0x00);
-            msgdata->header.subtype = V3_AUDIO_START;
-            msgdata->header.data_length = 0;
-            msgdata->header.user_id = v3_get_user_id();
-            msgdata->header.send_type = send_type;
             msgdata->unknown_4 = htons(1);
             msgdata->unknown_5 = htons(2);
             msgdata->unknown_6 = htons(1);
             break;
         case V3_AUDIO_DATA:
-            _v3_debug(V3_DEBUG_PACKET_PARSE, "sending 0x52 subtype 0x01 header size %d data size %d", sizeof(_v3_msg_0x52_0x00), length);
+            _v3_debug(V3_DEBUG_PACKET_PARSE, "sending 0x52 subtype 0x01 header size %d data size %d", sizeof(_v3_msg_0x52_0x01_out), length);
             msgdata = malloc(sizeof(_v3_msg_0x52_0x01_out));
             memset(msgdata, 0, sizeof(_v3_msg_0x52_0x01_out));
             msg->len = sizeof(_v3_msg_0x52_0x01_out) + length;
@@ -1298,16 +1361,13 @@ _v3_put_0x52(uint8_t subtype, uint16_t codec, uint16_t codec_format, uint16_t se
             msgdata->unknown_6 = htons(1);
             break;
         case V3_AUDIO_STOP:
-            _v3_debug(V3_DEBUG_PACKET_PARSE, "sending 0x52 subtype 0x02 size %d", sizeof(_v3_msg_0x52_0x00));
+            _v3_debug(V3_DEBUG_PACKET_PARSE, "sending 0x52 subtype 0x02 size %d", sizeof(_v3_msg_0x52_0x02));
             msgdata = malloc(sizeof(_v3_msg_0x52_0x02));
             memset(msgdata, 0, sizeof(_v3_msg_0x52_0x02));
             msg->len = sizeof(_v3_msg_0x52_0x02);
-            msgdata->header.subtype = V3_AUDIO_STOP;
-            msgdata->header.data_length = 0;
-            msgdata->header.user_id = v3_get_user_id();
-            msgdata->header.send_type = send_type;
             break;
         default:
+            free(msg);
             _v3_func_leave("_v3_put_0x52");
             return NULL;
     }
@@ -1315,7 +1375,6 @@ _v3_put_0x52(uint8_t subtype, uint16_t codec, uint16_t codec_format, uint16_t se
     msgdata->header.subtype = subtype;
     msgdata->header.codec = codec;
     msgdata->header.codec_format = codec_format;
-    _v3_debug(V3_DEBUG_PACKET_PARSE, "user id is %d - send_type is %d (from %d)", msgdata->header.user_id, msgdata->header.send_type, send_type);
 
     /*
      * Now we allocate the actual msg->data for the network packet representation
@@ -1332,7 +1391,6 @@ _v3_put_0x52(uint8_t subtype, uint16_t codec, uint16_t codec_format, uint16_t se
             memcpy(msg->data, msgdata, sizeof(_v3_msg_0x52_0x00));
             break;
         case V3_AUDIO_DATA:
-            _v3_debug(V3_DEBUG_PACKET_PARSE, "send_type is %d", msgdata->header.send_type);
             memcpy(msg->data, msgdata, sizeof(_v3_msg_0x52_0x01_out));
             memcpy(msg->data + sizeof(_v3_msg_0x52_0x01_out), data, length);
             break;

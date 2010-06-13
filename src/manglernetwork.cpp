@@ -37,29 +37,21 @@ ManglerNetwork::ManglerNetwork(Glib::RefPtr<Gtk::Builder> builder) {
 
 void
 ManglerNetwork::connect(Glib::ustring hostname, Glib::ustring port, Glib::ustring username, Glib::ustring password, Glib::ustring phonetic) {/*{{{*/
-    Gtk::MessageDialog *msgdialog;
-    Gtk::Statusbar *statusbar;
-    Gtk::ProgressBar *progressbar;
-    v3_debuglevel(Mangler::config["lv3_debuglevel"].toULong());
     Glib::ustring server = hostname + ":" + port;
-    //Glib::ustring server = "tungsten.typefrag.com:29549"; Glib::ustring password = "";
+    gdk_threads_enter();
+    builder->get_widget("connectButton", button);
+    button->set_sensitive(false);
+    gdk_threads_leave();
+    v3_debuglevel(Mangler::config["lv3_debuglevel"].toULong());
     if (! v3_login((char *)server.c_str(), (char *)ustring_to_c(username).c_str(), (char *)password.c_str(), (char *)phonetic.c_str())) {
         gdk_threads_enter();
-        builder->get_widget("connectButton", button);
-        button->set_label("gtk-connect");
-        button->set_sensitive(true);
-        builder->get_widget("errorDialog", msgdialog);
-        msgdialog->set_icon(mangler->icons["tray_icon"]);
-        msgdialog->set_message(c_to_ustring(_v3_error(NULL)));
-        builder->get_widget("progressbar", progressbar);
-        progressbar->set_fraction(0);
-        progressbar->hide();
+        button->set_label("gtk-disconnect");
+        mangler->errorDialog(c_to_ustring(_v3_error(NULL)));
+        mangler->wantDisconnect = true;
+        mangler->onDisconnectHandler();
         builder->get_widget("statusbar", statusbar);
         statusbar->pop();
         statusbar->push("Not connected.");
-        mangler->channelTree->clear();
-        msgdialog->run();
-        msgdialog->hide();
         gdk_threads_leave();
         return;
     }
@@ -97,8 +89,7 @@ ManglerNetwork::connect(Glib::ustring hostname, Glib::ustring port, Glib::ustrin
                 */
                 break;
         }
-    } while(v3_is_loggedin());
-    return;
+    } while (v3_is_loggedin());
 }/*}}}*/
 
 void

@@ -27,12 +27,12 @@
 #include <gtkmm.h>
 #include <iostream>
 #include <stdio.h>
-#include "mangler.h"
-#include "manglerui.h"
-#include "mangler-icons.h"
 #include <gdk/gdkx.h>
 #include <X11/extensions/XInput.h>
 
+#include "mangler.h"
+#include "manglerui.h"
+#include "mangler-icons.h"
 #include "channeltree.h"
 #include "manglernetwork.h"
 #include "mangleraudio.h"
@@ -190,13 +190,11 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
     builder->get_widget("serverListMenuItem", menuitem);
     menuitem->signal_activate().connect(sigc::mem_fun(this, &Mangler::serverListButton_clicked_cb));
 
-    builder->get_widget("adminSeparatorMenuItem", menuitem);
-
     builder->get_widget("adminLoginMenuItem", menuitem);
-    menuitem->signal_activate().connect(sigc::mem_fun(this, &Mangler::adminButton_clicked_cb));
+    menuitem->signal_activate().connect(sigc::mem_fun(this, &Mangler::adminLoginMenuItem_activate_cb));
 
     builder->get_widget("adminWindowMenuItem", menuitem);
-    menuitem->signal_activate().connect(sigc::mem_fun(this, &Mangler::adminWindowMenuItem_activated_cb));
+    menuitem->signal_activate().connect(sigc::mem_fun(this, &Mangler::adminWindowMenuItem_activate_cb));
 
     builder->get_widget("settingsMenuItem", menuitem);
     menuitem->signal_activate().connect(sigc::mem_fun(this, &Mangler::settingsButton_clicked_cb));
@@ -276,17 +274,19 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
     // user has PTT key/mouse enabled, start a timer here
     settings = new ManglerSettings(builder);
     isTransmittingButton = 0;
+    isTransmittingVA = 0;
     isTransmittingMouse = 0;
     isTransmittingKey = 0;
     isTransmitting = 0;
     Glib::signal_timeout().connect(sigc::mem_fun(this, &Mangler::checkPushToTalkKeys), 100);
+    Glib::signal_timeout().connect(sigc::mem_fun(this, &Mangler::checkVoiceActivation), 100);
     Glib::signal_timeout().connect(sigc::mem_fun(this, &Mangler::checkPushToTalkMouse), 100);
 
     // Create our audio control object for managing devices
     audioControl = new ManglerAudio(AUDIO_CONTROL);
     audioControl->getDeviceList(config["AudioSubsystem"].toUString());
 
-    // set the default window size from the settings
+    // set saved window size from settings
     unsigned windowWidth( config["WindowWidth"].toUInt() );
     unsigned windowHeight( config["WindowHeight"].toUInt() );
     if (windowWidth > 0 && windowHeight > 0) manglerWindow->set_default_size(windowWidth, windowHeight);
@@ -320,6 +320,8 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
     builder->get_widget("serverSelectComboBox", combobox);
     combobox->set_model(serverList->serverListTreeModel);
     combobox->pack_start(serverList->serverListColumns.name);
+    Gtk::CellRendererText *renderer = (Gtk::CellRendererText*)(*(combobox->get_cells().begin()));
+    renderer->property_ellipsize() = Pango::ELLIPSIZE_END;
     int serverSelection = 0, ctr = 0;
     iniFile::iterator server = config.servers.begin();
     while (server != config.servers.end()) {
@@ -351,6 +353,7 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
     checkmenuitem->signal_toggled().connect(sigc::mem_fun(this, &Mangler::muteSoundCheckMenuItem_toggled_cb));
     checkmenuitem->set_active(config["MuteSound"].toBool());
     iconified = false;
+    setTooltip();
 
     // Music (Now playing)
     integration = new ManglerIntegration();
@@ -371,12 +374,40 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
     Glib::signal_timeout().connect(sigc::mem_fun(this, &Mangler::updateIntegration), 1000);
     Glib::signal_timeout().connect(sigc::mem_fun(*this, &Mangler::updateXferAmounts), 500);
     Glib::signal_timeout().connect(sigc::mem_fun(*this, &Mangler::getNetworkEvent), 10);
+    nagscreenshown = false;
+
+}/*}}}*/
+
+Mangler::~Mangler() {/*{{{*/
+    delete channelTree;
+    delete network;
+    delete settings;
+    delete audioControl;
+    delete serverList;
+    delete chat;
+    delete admin;
+    delete recorder;
+    delete integration;
+#ifdef HAVE_XOSD
+    delete osd;
+#endif
+#ifdef HAVE_G15
+    delete g15;
+#endif
 }/*}}}*/
 
 /*
  * Main Window Callbacks
  */
 void Mangler::mangler_show_cb(void) {/*{{{*/
+
+    if (! nagscreenshown) {
+        builder->get_widget("deprecatedDialog", msgdialog);
+        msgdialog->set_icon(icons["tray_icon"]);
+        msgdialog->run();
+        msgdialog->hide();
+        nagscreenshown = true;
+    }
     if (options) {
         // Command Line Quick Connect
         if (!options->qc_server.empty()) {
@@ -432,10 +463,10 @@ void Mangler::onDisconnectHandler(void) {/*{{{*/
 
     builder->get_widget("connectButton", connectbutton);
     if (connectbutton->get_label() == "gtk-disconnect") {
-        admin->adminWindow->hide();
         builder->get_widget("adminButton", button);
         button->set_sensitive(false);
         builder->get_widget("adminLoginMenuItem", menuitem);
+        menuitem->set_label("_Admin Login");
         menuitem->set_sensitive(false);
         builder->get_widget("adminWindowMenuItem", menuitem);
         menuitem->set_sensitive(false);
@@ -449,6 +480,11 @@ void Mangler::onDisconnectHandler(void) {/*{{{*/
         button->set_sensitive(false);
         builder->get_widget("commentMenuItem", menuitem);
         menuitem->set_sensitive(false);
+        isTransmittingMouse = false;
+        isTransmittingKey = false;
+        isTransmittingVA = false;
+        isTransmittingButton = false;
+        stopTransmit();
 
         connectbutton->set_sensitive(true);
 #ifdef HAVE_XOSD
@@ -456,12 +492,14 @@ void Mangler::onDisconnectHandler(void) {/*{{{*/
 #endif
         outputAudio.clear();
         channelTree->clear();
+        admin->hide();
         admin->clear();
         builder->get_widget("xmitButton", togglebutton);
         togglebutton->set_active(false);
         builder->get_widget("progressbar", progressbar);
         progressbar->set_text("");
         progressbar->set_fraction(0);
+        progressbar->hide();
         builder->get_widget("statusbar", statusbar);
         statusbar->pop();
         statusbar->push("Disconnected");
@@ -474,15 +512,9 @@ void Mangler::onDisconnectHandler(void) {/*{{{*/
         builder->get_widget("codecLabel", label);
         label->set_label("N/A");
         mangler->statusIcon->set(icons["tray_icon_grey"]);
-        audioControl->playNotification("logout");
         isAdmin = false;
         isChanAdmin = false;
-        builder->get_widget("adminSeparatorMenuItem", menuitem);
-        menuitem->hide();
-        builder->get_widget("adminLoginMenuItem", menuitem);
-        menuitem->hide();
-        builder->get_widget("adminWindowMenuItem", menuitem);
-        menuitem->hide();
+        wantAdminWindow = false;
         motdWindow->hide();
         motdNotebook->set_current_page(1);
         motdNotebook->set_show_tabs(false);
@@ -511,17 +543,18 @@ bool Mangler::reconnectStatusHandler(void) {/*{{{*/
     int reconnectTimer = (15 - (time(NULL) - lastAttempt));
 
     builder->get_widget("connectButton", connectbutton);
-    if (connectbutton->get_label() == "gtk-disconnect" || wantDisconnect) {
+    if (connectbutton->get_label() != "gtk-cancel" || wantDisconnect) {
         return false;
     }
     builder->get_widget("statusbar", statusbar);
-    snprintf(buf, 63, "Attempting reconnect in %d seconds", reconnectTimer);
+    snprintf(buf, 63, "Attempting reconnect in %d seconds...", (reconnectTimer < 0) ? 0 : reconnectTimer);
     statusbar->pop();
     statusbar->push(buf);
-    if (!reconnectTimer) {
+    if (reconnectTimer <= 0) {
         lastAttempt = time(NULL);
         connectbutton->set_label("gtk-connect");
         Mangler::connectButton_clicked_cb();
+        return false;
     }
 
     return true;
@@ -599,7 +632,6 @@ void Mangler::connectButton_clicked_cb(void) {/*{{{*/
             config["LastConnectedServerName"] = connectedServerName;
             config.config.save();
             wantDisconnect = false;
-            connectbutton->set_sensitive(false);
             onConnectHandler(
                     hostname,
                     port,
@@ -660,19 +692,23 @@ void Mangler::adminButton_clicked_cb(void) {/*{{{*/
         password = mangler->getPasswordEntry("Admin Password");
         if (password.length()) {
             v3_admin_login((char *)password.c_str());
-            //admin->adminWindow->set_icon(icons["tray_icon"]);
-            //admin->adminWindow->show();
             wantAdminWindow = true;
             // if we tried sending a password, the only options are either
             // success or get booted from the server.
         }
     } else {
-        admin->adminWindow->set_icon(icons["tray_icon"]);
         admin->show();
     }
 }/*}}}*/
-void Mangler::adminWindowMenuItem_activated_cb(void) {/*{{{*/
-    admin->adminWindow->set_icon(icons["tray_icon"]);
+void Mangler::adminLoginMenuItem_activate_cb(void) {/*{{{*/
+    builder->get_widget("adminLoginMenuItem", menuitem);
+    if (menuitem->get_label() == "_Admin Logout") {
+        v3_admin_logout();
+    } else {
+        adminButton_clicked_cb();
+    }
+}/*}}}*/
+void Mangler::adminWindowMenuItem_activate_cb(void) {/*{{{*/
     admin->show();
 }/*}}}*/
 void Mangler::settingsButton_clicked_cb(void) {/*{{{*/
@@ -691,8 +727,10 @@ void Mangler::xmitButton_toggled_cb(void) {/*{{{*/
         isTransmittingButton = true;
         startTransmit();
     } else {
-        stopTransmit();
         isTransmittingButton = false;
+        if (! isTransmittingKey && ! isTransmittingMouse && ! isTransmittingVA) {
+            stopTransmit();
+        }
     }
 }/*}}}*/
 
@@ -735,7 +773,7 @@ void Mangler::hideGuestFlagMenuItem_toggled_cb(void) {/*{{{*/
 }/*}}}*/
 void Mangler::motdMenuItem_activate_cb(void) {/*{{{*/
     motdIgnore->set_sensitive(!connectedServerName.empty());
-    motdIgnore->set_active(connectedServerName.length() && config.servers[connectedServerName]["MOTDignore"].toBool());
+    motdIgnore->set_active(connectedServerName.length() && config.servers[connectedServerName]["MotdIgnore"].toBool());
     motdOkButton->grab_focus();
     motdWindow->present();
 }/*}}}*/
@@ -779,18 +817,34 @@ void Mangler::statusIcon_buttonpress_event_cb(GdkEventButton* event) {/*{{{*/
 }
 /*}}}*/
 void Mangler::statusIcon_scroll_event_cb(GdkEventScroll* event) {/*{{{*/
-    int volume;
-    if ((event->type == GDK_SCROLL) && (event->direction == GDK_SCROLL_UP)) {
-        volume = Mangler::config["MasterVolumeLevel"].toInt();
-        volume+=5;
-        Mangler::config["MasterVolumeLevel"] = volume;
-        v3_set_volume_master(Mangler::config["MasterVolumeLevel"].toInt());
-    } else if ((event->type == GDK_SCROLL) && (event->direction == GDK_SCROLL_DOWN)) {
-        volume = Mangler::config["MasterVolumeLevel"].toInt();
-        volume-=5;
-        Mangler::config["MasterVolumeLevel"] = volume;
-        v3_set_volume_master(Mangler::config["MasterVolumeLevel"].toInt());
+    if (event->type != GDK_SCROLL) {
+        return;
     }
+    int volume = config["MasterVolumeLevel"].toInt();
+    switch (event->direction) {
+      case GDK_SCROLL_UP:
+        volume = (volume + 5 > 148) ? 148 : volume + 5;
+        break;
+      case GDK_SCROLL_DOWN:
+        volume = (volume - 5 < 0) ? 0 : volume - 5;
+        break;
+      default:
+        return;
+    }
+    if (volume + 5 > 79 && volume - 5 < 79) {
+        volume = 79;
+    }
+    config["MasterVolumeLevel"] = volume;
+    settings->volumeAdjustment->set_value(volume);
+    v3_set_volume_master(volume);
+    setTooltip();
+}/*}}}*/
+void Mangler::setTooltip(void) {/*{{{*/
+    Glib::ustring tooltip = "Mangler: volume: ";
+    float value = config["MasterVolumeLevel"].toInt();
+    value = (value > 79) ? ((value-79)/69)*100+100 : (value/79)*100;
+    tooltip += Glib::ustring::format((int)value) + "%" + ((config["MuteSound"].toBool()) ? " (muted)" : "");
+    statusIcon->set_tooltip_text(tooltip);
 }/*}}}*/
 void Mangler::startTransmit(void) {/*{{{*/
     const v3_codec *codec;
@@ -839,6 +893,7 @@ void Mangler::muteSoundCheckButton_toggled_cb(void) {/*{{{*/
     builder->get_widget("muteSoundCheckButton", checkbutton);
     muteSound = checkbutton->get_active();
     config["MuteSound"] = muteSound;
+    setTooltip();
 }/*}}}*/
 
 // Quick Mic Mute
@@ -848,7 +903,7 @@ void Mangler::muteMicCheckButton_toggled_cb(void) {/*{{{*/
     config["MuteMic"] = muteMic;
     if (muteMic && isTransmitting) {
         stopTransmit();
-    } else if (!muteMic && (isTransmittingMouse || isTransmittingKey || isTransmittingButton)) {
+    } else if (!muteMic && (isTransmittingMouse || isTransmittingKey || isTransmittingButton || isTransmittingVA)) {
         startTransmit();
     }
 }/*}}}*/
@@ -892,7 +947,7 @@ void Mangler::qcCancelButton_clicked_cb(void) {/*{{{*/
 // MOTD Window Callbacks
 void Mangler::motdIgnore_toggled_cb(void) {/*{{{*/
     if (connectedServerName.length()) {
-        config.servers[connectedServerName]["MOTDignore"] = motdIgnore->get_active();
+        config.servers[connectedServerName]["MotdIgnore"] = motdIgnore->get_active();
     }
 }/*}}}*/
 void Mangler::motdOkButton_clicked_cb(void) {/*{{{*/
@@ -939,17 +994,19 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                 }
                 break;/*}}}*/
             case V3_EVENT_STATUS:/*{{{*/
-                builder->get_widget("progressbar", progressbar);
-                builder->get_widget("statusbar", statusbar);
-                if (ev->status.percent == 100) {
-                    progressbar->hide();
-                } else {
-                    progressbar->show();
-                    progressbar->set_fraction(ev->status.percent/(float)100);
+                if (v3_is_loggedin()) {
+                    builder->get_widget("progressbar", progressbar);
+                    builder->get_widget("statusbar", statusbar);
+                    if (ev->status.percent == 100) {
+                        progressbar->hide();
+                    } else {
+                        progressbar->show();
+                        progressbar->set_fraction(ev->status.percent/(float)100);
+                    }
+                    statusbar->pop();
+                    statusbar->push(ev->status.message);
+                    //fprintf(stderr, "got event type %d: %d %s\n", ev->type, ev->status.percent, ev->status.message);
                 }
-                statusbar->pop();
-                statusbar->push(ev->status.message);
-                //fprintf(stderr, "got event type %d: %d %s\n", ev->type, ev->status.percent, ev->status.message);
                 break;/*}}}*/
             case V3_EVENT_USER_LOGIN:/*{{{*/
                 u = v3_get_user(ev->user.id);
@@ -999,7 +1056,7 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                         break;
                     }
                     if (u->id == 0) {
-                        channelTree->updateLobby(c_to_ustring(u->name), c_to_ustring(u->comment), u->phonetic);
+                        channelTree->updateLobby(c_to_ustring(u->name), c_to_ustring(u->comment), c_to_ustring(u->phonetic));
                     } else {
                         if (u->rank_id) {
                             v3_rank *r;
@@ -1040,10 +1097,6 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                             c->phonetic);
                     if (! isAdmin && ! isChanAdmin && v3_is_channel_admin(c->id)) {
                         isChanAdmin = true;
-                        builder->get_widget("adminSeparatorMenuItem", menuitem);
-                        menuitem->show();
-                        builder->get_widget("adminWindowMenuItem", menuitem);
-                        menuitem->show();
                     }
                     admin->channelUpdated(c);
                     if (ev->channel.id == v3_get_user_channel(v3_get_user_id())) {
@@ -1089,10 +1142,7 @@ bool Mangler::getNetworkEvent() {/*{{{*/
 
                     builder->get_widget("adminButton", button);
                     button->set_sensitive(true);
-                    builder->get_widget("adminSeparatorMenuItem", menuitem);
-                    menuitem->show();
                     builder->get_widget("adminLoginMenuItem", menuitem);
-                    menuitem->show();
                     menuitem->set_sensitive(true);
                     builder->get_widget("adminWindowMenuItem", menuitem);
                     menuitem->set_sensitive(true);
@@ -1126,7 +1176,7 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                                     (char *)ustring_to_c(integration_text).c_str(),
                                     true);
                         }
-                        uint32_t channel_id = server["DefaultChannel"].toULong();
+                        uint32_t channel_id = v3_get_channel_id(ustring_to_c(server["DefaultChannel"].toUString()).c_str());
                         if (channel_id && (c = v3_get_channel(channel_id))) {
                             Glib::ustring password = channelTree->getChannelSavedPassword(channel_id);
                             uint16_t pw_channel = 0;
@@ -1241,11 +1291,15 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                     v3_free_user(u);
                 }
                 break;/*}}}*/
+            case V3_EVENT_CHAN_MOVE:/*{{{*/
+                channelTree->refreshAllChannels();
+                admin->channelResort();
+                break;/*}}}*/
             case V3_EVENT_CHAN_ADD:/*{{{*/
                 c = v3_get_channel(ev->channel.id);
                 if (! c) {
                     fprintf(stderr, "failed to retreive channel information for channel id %d\n", ev->channel.id);
-                    break;;
+                    break;
                 }
                 channelTree->addChannel(
                         (uint8_t)c->protect_mode,
@@ -1256,10 +1310,6 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                         c->phonetic);
                 if (! isAdmin && ! isChanAdmin && v3_is_channel_admin(c->id)) {
                     isChanAdmin = true;
-                    builder->get_widget("adminSeparatorMenuItem", menuitem);
-                    menuitem->show();
-                    builder->get_widget("adminWindowMenuItem", menuitem);
-                    menuitem->show();
                 }
                 admin->channelAdded(c);
                 v3_free_channel(c);
@@ -1272,36 +1322,17 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                 errorDialog(c_to_ustring(ev->error.message));
                 break;/*}}}*/
             case V3_EVENT_USER_TALK_START:/*{{{*/
-                v3_user *me, *user;
-                me = v3_get_user(v3_get_user_id());
-                user = v3_get_user(ev->user.id);
-                channelTree->refreshUser(ev->user.id);
-                if (me && user && me->channel == user->channel) {
-                    v3_free_user(me);
-                    v3_free_user(user);
-                } else {
-                    if (!me) {
-                        fprintf(stderr, "couldn't find my own user info %d\n", v3_get_user_id());
-                    } else {
-                        v3_free_user(me);
-                    }
-                    if (!user) {
-                        fprintf(stderr, "couldn't find user for for user id %d\n", ev->user.id);
-                    } else {
-                        v3_free_user(user);
-                    }
+                if (v3_is_loggedin()) {
+                    channelTree->refreshUser(ev->user.id);
                 }
                 break;/*}}}*/
-            case V3_EVENT_USER_TALK_END:/*{{{*/
+            case V3_EVENT_USER_TALK_END:
+            case V3_EVENT_USER_TALK_MUTE:/*{{{*/
                 if (v3_is_loggedin()) {
-                    //fprintf(stderr, "user %d stopped talking\n", ev->user.id);
                     channelTree->refreshUser(ev->user.id);
 #ifdef HAVE_XOSD
                     osd->removeUser(ev->user.id);
 #endif
-                    // TODO: this is bad, there must be a flag in the last audio
-                    // packet saying that it's the last one.  Need to figure out
-                    // what that flag is and close it in V3_EVENT_PLAY_AUDIO
                     if (outputAudio[ev->user.id]) {
                         outputAudio[ev->user.id]->finish();
                         outputAudio.erase(ev->user.id);
@@ -1331,6 +1362,9 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                         if (outputAudio[ev->user.id]) {
                             outputAudio[ev->user.id]->queue(ev->pcm.length, (uint8_t *)ev->data->sample);
                         }
+                    } else if (outputAudio[ev->user.id]) {
+                        outputAudio[ev->user.id]->finish();
+                        outputAudio.erase(ev->user.id);
                     }
                 }
                 break;/*}}}*/
@@ -1349,16 +1383,16 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                     uint32_t motdhash = 0;
 
                     if (!ev->flags) {
-                        motdKey = "MOTDhashUser";
+                        motdKey = "MotdHashUser";
                         motdNotebook->set_show_tabs(true);
                         motdNotebook->set_current_page(0);
-                        motdUsers->get_buffer()->set_text(c_to_ustring(ev->data->motd));
+                        motdUsers->get_buffer()->set_text(c_to_ustring(stripMotdRtf(ev->data->motd).c_str()));
                     } else {
-                        motdKey = "MOTDhash";
-                        motdGuests->get_buffer()->set_text(c_to_ustring(ev->data->motd));
+                        motdKey = "MotdHash";
+                        motdGuests->get_buffer()->set_text(c_to_ustring(stripMotdRtf(ev->data->motd).c_str()));
                     }
                     motdIgnore->set_sensitive(!connectedServerName.empty());
-                    motdIgnore->set_active(connectedServerName.length() && config.servers[connectedServerName]["MOTDignore"].toBool());
+                    motdIgnore->set_active(connectedServerName.length() && config.servers[connectedServerName]["MotdIgnore"].toBool());
                     if (motdIgnore->get_active() || !strlen(ev->data->motd)) {
                         break;
                     }
@@ -1381,6 +1415,7 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                 break;/*}}}*/
             case V3_EVENT_DISCONNECT:/*{{{*/
                 onDisconnectHandler();
+                audioControl->playNotification("logout");
                 break;/*}}}*/
             case V3_EVENT_CHAT_JOIN:/*{{{*/
                 {
@@ -1544,31 +1579,22 @@ bool Mangler::getNetworkEvent() {/*{{{*/
             case V3_EVENT_ADMIN_AUTH:/*{{{*/
                 {
                     const v3_permissions *perms = v3_get_permissions();
-                    if (perms->srv_admin) {
+                    if (perms->srv_admin && !isAdmin) {
                         isAdmin = true;
                         builder->get_widget("adminLoginMenuItem", menuitem);
-                        menuitem->hide();
-                        builder->get_widget("adminWindowMenuItem", menuitem);
-                        menuitem->show();
+                        menuitem->set_label("_Admin Logout");
                         if (wantAdminWindow) {
                             wantAdminWindow = false;
-                            admin->adminWindow->set_icon(icons["tray_icon"]);
                             admin->show();
                         }
                     } else {
                         isAdmin = false;
                         builder->get_widget("adminLoginMenuItem", menuitem);
-                        menuitem->show();
-                        builder->get_widget("adminWindowMenuItem", menuitem);
-                        if (isChanAdmin) {
-                            menuitem->show();
-                        } else {
-                            menuitem->hide();
-                        }
+                        menuitem->set_label("_Admin Login");
                     }
                     v3_user *lobby;
                     if ((lobby = v3_get_user(0))) {
-                        channelTree->updateLobby(c_to_ustring(lobby->name), c_to_ustring(lobby->comment), lobby->phonetic);
+                        channelTree->updateLobby(c_to_ustring(lobby->name), c_to_ustring(lobby->comment), c_to_ustring(lobby->phonetic));
                         v3_free_user(lobby);
                     }
                 }
@@ -1579,6 +1605,10 @@ bool Mangler::getNetworkEvent() {/*{{{*/
             case V3_EVENT_USER_GLOBAL_MUTE_CHANGED:
             case V3_EVENT_USER_CHANNEL_MUTE_CHANGED:/*{{{*/
                 channelTree->refreshUser(ev->user.id);
+                if (outputAudio[ev->user.id]) {
+                    outputAudio[ev->user.id]->finish();
+                    outputAudio.erase(ev->user.id);
+                }
                 break;/*}}}*/
             case V3_EVENT_SERVER_PROPERTY_UPDATED:/*{{{*/
                 switch (ev->serverproperty.property) {
@@ -1587,7 +1617,7 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                         chat->chatUserTreeModelFilter->refilter();
                         break;
                     case V3_SRV_PROP_CHAN_ORDER:
-                        channelTree->sortAlphanumeric = ev->serverproperty.value;
+                        channelTree->sortManual = ev->serverproperty.value;
                         channelTree->refreshAllChannels();
                         admin->channelSort(ev->serverproperty.value);
                         break;
@@ -1635,20 +1665,7 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                 }
                 break;/*}}}*/
             case V3_EVENT_PERMS_UPDATED:/*{{{*/
-                {
-                    const v3_permissions *perms = v3_get_permissions();
-                    if (perms->srv_admin) {
-                        admin->UserAdd->set_sensitive( perms->add_user );
-                        admin->UsersTab->show();
-                    } else {
-                        admin->UsersTab->hide();
-                    }
-                    if (perms->edit_rank) {
-                        admin->RanksTab->show();
-                    } else {
-                        admin->RanksTab->hide();
-                    }
-                }
+                admin->permsUpdated();
                 break;/*}}}*/
             case V3_EVENT_USER_RANK_CHANGE:/*{{{*/
                 {
@@ -1659,7 +1676,7 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                             break;
                         }
                         if (u->id == 0) {
-                            channelTree->updateLobby(c_to_ustring(u->name), c_to_ustring(u->comment), u->phonetic);
+                            channelTree->updateLobby(c_to_ustring(u->name), c_to_ustring(u->comment), c_to_ustring(u->phonetic));
                         } else {
                             if (u->rank_id) {
                                 v3_rank *r;
@@ -1714,7 +1731,7 @@ bool Mangler::checkPushToTalkKeys(void) {/*{{{*/
     char        pressed_keys[32];
     GdkWindow   *rootwin = gdk_get_default_root_window();
     vector<int>::iterator i;
-    bool        ptt_on = true;;
+    bool        ptt_on = true;
 
     if (! config["PushToTalkKeyEnabled"].toBool()) {
         isTransmittingKey = false;
@@ -1735,16 +1752,27 @@ bool Mangler::checkPushToTalkKeys(void) {/*{{{*/
         startTransmit();
     } else {
         isTransmittingKey = false;
-        if (! isTransmittingButton && ! isTransmittingMouse) {
+        if (! isTransmittingButton && ! isTransmittingMouse && ! isTransmittingVA) {
             stopTransmit();
         }
     }
     return(true);
 
 }/*}}}*/
+bool Mangler::checkVoiceActivation(void) {/*{{{*/
+    if (Mangler::config["VoiceActivationEnabled"].toBool()) {
+        isTransmittingVA = true;
+        startTransmit();
+    } else {
+        isTransmittingVA = false;
+        if (! isTransmittingButton && ! isTransmittingMouse && ! isTransmittingKey) {
+            stopTransmit();
+        }
+    }
+    return true;
+}/*}}}*/
 bool Mangler::checkPushToTalkMouse(void) {/*{{{*/
     GdkWindow   *rootwin = gdk_get_default_root_window();
-    XDevice *dev = NULL;
     XDeviceInfo *xdev;
     XDeviceState *xds;
     XButtonState *xbs = NULL;
@@ -1764,20 +1792,27 @@ bool Mangler::checkPushToTalkMouse(void) {/*{{{*/
         return true;
     }
 
-    xdev = XListInputDevices(GDK_WINDOW_XDISPLAY(rootwin), &ndevices_return);
-    for (ctr = 0; ctr < ndevices_return; ctr++) {
-        Glib::ustring name = xdev[ctr].name;
-        if (config["MouseDeviceName"] == name && xdev[ctr].use == IsXExtensionPointer) {
-            break;
+    if (CurrentOpenMouse != config["MouseDeviceName"].toString()) {
+        if (dev) {
+            XCloseDevice(GDK_WINDOW_XDISPLAY(rootwin), dev);
         }
-    }
-    if (ctr == ndevices_return) {
-        return true;
-    }
-
-    dev = XOpenDevice(GDK_WINDOW_XDISPLAY(rootwin), xdev[ctr].id);
-    if (! dev) {
-        return true;
+        xdev = XListInputDevices(GDK_WINDOW_XDISPLAY(rootwin), &ndevices_return);
+        for (ctr = 0; ctr < ndevices_return; ctr++) {
+            Glib::ustring name = xdev[ctr].name;
+            if (config["MouseDeviceName"] == name && xdev[ctr].use == IsXExtensionPointer) {
+                break;
+            }
+        }
+        if (ctr == ndevices_return) {
+            XFreeDeviceList(xdev);
+            return true;
+        }
+        dev = XOpenDevice(GDK_WINDOW_XDISPLAY(rootwin), xdev[ctr].id);
+        XFreeDeviceList(xdev);
+        if (! dev) {
+            return true;
+        }
+        CurrentOpenMouse = config["MouseDeviceName"].toString();
     }
     xds = (XDeviceState *)XQueryDeviceState(GDK_WINDOW_XDISPLAY(rootwin), dev);
     for (ctr = 0, xic = xds->data; ctr < xds->num_classes; ctr++, xic += xic->length/2) {
@@ -1803,15 +1838,13 @@ bool Mangler::checkPushToTalkMouse(void) {/*{{{*/
         ptt_on = true;
     }
     XFreeDeviceState(xds);
-    XFreeDeviceList(xdev);
-    XCloseDevice(GDK_WINDOW_XDISPLAY(rootwin), dev);
 
     if (ptt_on) {
         isTransmittingMouse = true;
         startTransmit();
     } else {
         isTransmittingMouse = false;
-        if (! isTransmittingButton && ! isTransmittingKey) {
+        if (! isTransmittingButton && ! isTransmittingKey && ! isTransmittingVA) {
             stopTransmit();
         }
     }
@@ -2027,6 +2060,155 @@ ManglerError::ManglerError(uint32_t code, Glib::ustring message, Glib::ustring m
     this->module = module;
 }/*}}}*/
 
+std::string Mangler::stripMotdRtf(const char *input) {/*{{{*/
+    // commentary by x87bliss (Russ Kubes) for your reading pleasure
+
+    std::string motd; // I use std::string since the RTF in the MOTDs is not unicode
+
+    if (!input || strlen(input) < 5 || memcmp("{\\rtf", input, 5) != 0) { // if the motd is not RTF
+        motd = input;
+        return motd;
+    }
+
+    // Note this function only strips RTF markup to make RTF MOTDs human readable. It doesn't support any advanced interpretation of RTF markup.
+    size_t inputlen = strlen(input);
+    motd.reserve(inputlen); // allocate enough space, the resulting string will be smaller than input length
+    // rtf_status is what is the loop looking at, i.e. do we need to interpret controls
+    enum {RTF_TEXT, RTF_CONTROL, RTF_CONTROL_END, RTF_IGNORE, RTF_BIN} rtf_status = RTF_TEXT;
+
+    size_t ignorecount; // number of closing braces to ignore for "\*"
+    size_t controlpos; // stores the position of the first character of a control word
+
+    for (size_t pos = 0; pos < inputlen; ++pos) {
+        if (rtf_status == RTF_IGNORE) {
+            if (inputlen - pos > 4 && memcmp("\\bin", input + pos, 4) == 0 && input[pos + 4] >= '0' && input[pos + 4] <= '9') {
+                // Encountered some binary data that we have to ignore. We have to ignore this a special way since the data may contain special characters
+                pos += 4;
+                size_t binskip = 0; // how much data to skip
+                for (; input[pos] >= '0' && input[pos] <= '9'; ++pos) {
+                    binskip = (binskip * 10) + (input[pos] - '0');
+                }
+                pos += binskip;
+                continue; // every \binN has a space between it and its binary data, continue skips that too.
+            }
+            if (input[pos] == '{') {
+                ++ignorecount;
+            }
+            if (input[pos] == '}' && --ignorecount == 0) {
+                rtf_status = RTF_TEXT; // we can stop ignoring now
+            }
+            continue; // still ignoring, or ignore the ending brace;
+        }
+        if (rtf_status == RTF_CONTROL) {
+            if ((input[pos] >= 'a' && input[pos] <= 'z') || // valid characters in a control word are a-z, A-Z, 0-9, and - (for negative numbers)
+                (input[pos] >= 'A' && input[pos] <= 'Z') ||
+                (input[pos] >= '0' && input[pos] <= '9') ||
+                (input[pos] == '\'' && pos == controlpos) || // apostrophe is valid, but only as the first character of a control word
+                input[pos] == '-') {
+                continue;
+            } else {
+                rtf_status = RTF_CONTROL_END; // Any control word has ended
+            }
+        }
+        if (rtf_status == RTF_CONTROL_END) {
+            // note all RTF control words are case-sensitive. So memcmp can be used instead of stricmp
+            size_t controllen = pos - controlpos;
+            // check all exact matches first
+            if (controllen == 3 && input[controlpos] == '\'') { // 8-bit hex character
+                char hh = -1, h; // hh is the full interpreted hex character, h is a working value for each hex digit
+                h = input[controlpos + 1];
+                if (h >= '0' && h <= '9') {
+                    hh = h - '0'; // temporarily store the value and check for errors in the second digit
+                } else if (h >= 'a' && h <= 'f') {
+                    hh = h - 'a' + 10;
+                } else if (h >= 'A' && h <= 'F') {
+                    hh = h - 'A' + 10; // technically only lowercase letters are supported by RTF
+                }
+                h = input[controlpos + 2];
+                if (h >= '0' && h <= '9') {
+                    h = h - '0'; // temporarily store the value
+                } else if (h >= 'a' && h <= 'f') {
+                    h = h - 'a' + 10;
+                } else if (h >= 'A' && h <= 'F') {
+                    h = h - 'A' + 10; // technically only lowercase letters are supported by RTF
+                } else {
+                    h = -1;
+                }
+                if (hh >= 0 && h >= 0) { // both hex digits were valid
+                    hh = (hh * 16) + h; // convert each value to the whole character
+                    motd.append(1, hh);
+                }
+            } else if (controllen == 3 && memcmp("tab", input + controlpos, 3) == 0) {
+                motd.append(1, '\t'); // in case Mangler's motd window doesn't properly handle tabs, this can be changed to (4, ' ') for 4 spaces
+            } else if (controllen == 3 && memcmp("par", input + controlpos, 3) == 0) {
+                motd.append("\r\n");
+            } else if (controllen == 4 && (memcmp("line", input + controlpos, 4) == 0 ||
+                    memcmp("page", input + controlpos, 4) == 0 || memcmp("sect", input + controlpos, 4) == 0)) {
+                motd.append("\r\n");
+            } else if (controllen == 7 && (memcmp("fonttbl", input + controlpos, 7) == 0 || // nonvisible formatting table
+                    memcmp("filetbl", input + controlpos, 4) == 0)) { // sub-documents table
+                ignorecount = 1;
+                rtf_status = RTF_IGNORE; // we're going to ignore a table
+            } else if (controllen == 8 && memcmp("colortbl", input + controlpos, 8) == 0) { // nonvisible formatting table
+                ignorecount = 1;
+                rtf_status = RTF_IGNORE; // we're going to ignore a table
+            } else if (controllen == 10 && (memcmp("stylesheet", input + controlpos, 10) == 0 || // nonvisible formatting table
+                    memcmp("listtables", input + controlpos, 10) == 0)) { // stores formatting information for lists
+                ignorecount = 1;
+                rtf_status = RTF_IGNORE; // we're going to ignore a table
+            } else if (controllen == 6 && memcmp("revtbl", input + controlpos, 6) == 0) { // This table contains nonvisible information about revisions
+                ignorecount = 1;
+                rtf_status = RTF_IGNORE; // we're going to ignore a table
+            } else if (controllen == 4 && memcmp("info", input + controlpos, 4) == 0) { // The info table contains nonvisible metadata, like author etc..
+                ignorecount = 1;
+                rtf_status = RTF_IGNORE; // we're going to ignore a table
+            } else if (controllen > 3 && memcmp("bin", input + controlpos, 3) == 0 && input[controlpos + 3] >= '0' && input[controlpos + 3] <= '9') {
+                // Now start to look for partial matches
+                // We encountered some binary data that we need to skip
+                size_t binskip = 0; // how much data to skip
+                for (size_t bpos = controlpos + 3; input[bpos] >= '0' && input [bpos] <= '9'; ++bpos) {
+                    binskip = (binskip * 10) + (input[bpos] - '0');
+                }
+                pos += binskip;
+                rtf_status = RTF_TEXT;
+                continue;
+            }
+            if (input[pos] != ' ') {
+                --pos; // we need to reevaluate the delimiter if it wasn't a space
+            }
+            if (rtf_status != RTF_IGNORE) {
+                rtf_status = RTF_TEXT;
+            }
+            continue;
+        }
+        if (rtf_status == RTF_TEXT) {
+            if (input[pos] == '\\') {
+                // First check for "\{", "\}", "\\" and "\*", which each would break this function if not explicitly looked for right away
+                if (inputlen - pos < 2) {
+                    break; // we need at least 2 characters, probably a malformed RTF message.
+                }
+                ++pos; // increment it here once, so we don't have to add one for each check
+                if (input[pos] == '{' || input[pos] == '}' || input[pos] == '\\') {
+                    motd.append(1, input[pos]);
+                    continue;
+                } else if (input[pos] == '*') {
+                    ignorecount = 1;
+                    rtf_status = RTF_IGNORE;
+                    continue;
+                } else {
+                    controlpos = pos--; // the control word starts at the incremented pos, but we need to decrement it again to examine it
+                    rtf_status = RTF_CONTROL;
+                    continue;
+                }
+            } else if (input[pos] != '{' && input[pos] != '}' && // we're just ignoring groups since we're not formatting
+                    input[pos] != '\r' && input[pos] != '\n') { // ignore CRs and LFs in the RTF text
+                motd.append(1, input[pos]);
+            }
+        }
+    }
+    return motd;
+}/*}}}*/
+
 int
 main(int argc, char **argv) {
     Gtk::Main kit(argc, argv);
@@ -2070,6 +2252,7 @@ main(int argc, char **argv) {
     gdk_threads_enter();
     Gtk::Main::run(*mangler->manglerWindow);
     gdk_threads_leave();
+    delete mangler;
 
     exit(EXIT_SUCCESS);
     return 0;

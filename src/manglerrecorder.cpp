@@ -48,9 +48,6 @@ ManglerRecorder::ManglerRecorder(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
     menuitem->signal_activate().connect(sigc::mem_fun(this, &ManglerRecorder::saveas_activate_cb));
     builder->get_widget("recDelete", menuitem);
     menuitem->signal_activate().connect(sigc::mem_fun(this, &ManglerRecorder::delete_activate_cb));
-    builder->get_widget("recFlags", flagcheckitem);
-    flagcheckitem->signal_toggled().connect(sigc::mem_fun(this, &ManglerRecorder::flags_toggled_cb));
-    flagcheckitem->set_active(Mangler::config["RecordingFlagDishonor"].toBool());
 
     builder->get_widget("recPlayPause", button);
     button->signal_clicked().connect(sigc::mem_fun(this, &ManglerRecorder::playpause_clicked_cb));
@@ -95,7 +92,7 @@ ManglerRecorder::ManglerRecorder(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
     builder->get_widget("recInfoSave", button);
     button->signal_clicked().connect(sigc::mem_fun(this, &ManglerRecorder::recInfoDialog_save_clicked_cb));
 
-    recdir = mangler->config.confdir() + "/recordings";
+    recdir = ManglerConfig::confdir() + "/recordings";
     DIR *testdir;
     if ((testdir = opendir(recdir.c_str()))) {
         closedir(testdir);
@@ -111,7 +108,8 @@ ManglerRecorder::ManglerRecorder(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
     player = NULL;
 }/*}}}*/
 ManglerRecorder::~ManglerRecorder() {/*{{{*/
-    reset();
+    reset(true);
+    delete filedialog;
 }/*}}}*/
 
 void
@@ -150,10 +148,6 @@ ManglerRecorder::delete_activate_cb(void) {/*{{{*/
         reset();
         unlink(filename.c_str());
     }
-}/*}}}*/
-void
-ManglerRecorder::flags_toggled_cb(void) {/*{{{*/
-    Mangler::config["RecordingFlagDishonor"] = flagcheckitem->get_active();
 }/*}}}*/
 void
 ManglerRecorder::playpause_clicked_cb(void) {/*{{{*/
@@ -218,8 +212,7 @@ void
 ManglerRecorder::set(bool isRecording) {/*{{{*/
     reset();
     if (isRecording) {
-        bool dishonor = Mangler::config["RecordingFlagDishonor"].toBool();
-        if (v3_vrf_record_start(filename.c_str(), dishonor) != V3_OK) {
+        if (v3_vrf_record_start(filename.c_str()) != V3_OK) {
             mangler->errorDialog(c_to_ustring(_v3_error(NULL)));
             recordbutton->set_active(false);
             return;
@@ -288,8 +281,8 @@ ManglerRecorder::set(bool isRecording) {/*{{{*/
     }
 }/*}}}*/
 void
-ManglerRecorder::reset(void) {/*{{{*/
-    player = NULL;
+ManglerRecorder::reset(bool destroying) {/*{{{*/
+    player = (Glib::Thread*)destroying;
     isPlaying = false;
     if (isRecording) {
         v3_vrf_record_stop();
@@ -300,9 +293,15 @@ ManglerRecorder::reset(void) {/*{{{*/
         v3_vrf_destroy(vrfh);
         vrfh = NULL;
     }
-    fileentry->set_text("");
     recListModel->clear();
+    if (destroying) {
+        return;
+    }
+    for (int ctr = 0, cnt = recListTree->get_columns().size(); ctr < cnt; ctr++) {
+        recListTree->get_column(ctr)->queue_resize();
+    }
     recListTree->set_sensitive(false);
+    fileentry->set_text("");
     builder->get_widget("recType", label);
     label->set_text("N/A");
     builder->get_widget("recSize", label);
@@ -449,6 +448,7 @@ ManglerRecorder::play(void) {/*{{{*/
                 iter++;
             }
         }
+        double duration = 0;
         for (recIter = recData.begin(); recIter != recData.end() && recData.size();) {
             ManglerRecorderData *recd = recIter->second;
             if (player == self && recd->next > elapsed) {
@@ -475,7 +475,11 @@ ManglerRecorder::play(void) {/*{{{*/
                     label->set_text(c_to_ustring(v3_get_codec(vrfd->codec, vrfd->codecformat)->name));
                     gdk_threads_leave();
                 }
-                recd->next += (vrfd->length / (float)(vrfd->rate * sizeof(int16_t) * vrfd->channels)) * 1000.0;
+                duration += (vrfd->length / (float)(vrfd->rate * sizeof(int16_t) * vrfd->channels)) * 1000.0;
+                if (duration < 10) {
+                    continue;
+                }
+                recd->next += duration;
                 recIter++;
                 break;
               case V3_VRF_DATA_TEXT:
@@ -502,6 +506,7 @@ ManglerRecorder::play(void) {/*{{{*/
                 recIter = recData.begin();
                 break;
             }
+            duration = 0;
         }
         usleep(10000);
     }
@@ -523,13 +528,13 @@ ManglerRecorder::recInfoDialog_save_clicked_cb(void) {/*{{{*/
         v3_vrf_data vrfd;
         v3_vrf_data_init(&vrfd);
         builder->get_widget("recInfoByEntry", entry);
-        strncpy(vrfd.username, entry->get_text().c_str(), sizeof(vrfd.username));
+        strncpy(vrfd.username, ustring_to_c(entry->get_text()).c_str(), sizeof(vrfd.username));
         builder->get_widget("recInfoComment", textview);
-        strncpy(vrfd.comment, textview->get_buffer()->get_text().c_str(), sizeof(vrfd.comment));
+        strncpy(vrfd.comment, ustring_to_c(textview->get_buffer()->get_text()).c_str(), sizeof(vrfd.comment));
         builder->get_widget("recInfoURL", textview);
-        strncpy(vrfd.url, textview->get_buffer()->get_text().c_str(), sizeof(vrfd.url));
+        strncpy(vrfd.url, ustring_to_c(textview->get_buffer()->get_text()).c_str(), sizeof(vrfd.url));
         builder->get_widget("recInfoCopyright", textview);
-        strncpy(vrfd.copyright, textview->get_buffer()->get_text().c_str(), sizeof(vrfd.copyright));
+        strncpy(vrfd.copyright, ustring_to_c(textview->get_buffer()->get_text()).c_str(), sizeof(vrfd.copyright));
         if (v3_vrf_put_info(vrfh, &vrfd) != V3_OK) {
             mangler->errorDialog(c_to_ustring(_v3_error(NULL)));
         }

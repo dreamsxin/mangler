@@ -324,6 +324,7 @@ void ManglerSettings::applySettings(void) {/*{{{*/
     // Master Volume
     Mangler::config["MasterVolumeLevel"] = volumeAdjustment->get_value();
     v3_set_volume_master(Mangler::config["MasterVolumeLevel"].toInt());
+    mangler->setTooltip();
 
     // Notification Sounds
     builder->get_widget("notificationLoginLogoutCheckButton", checkbutton);

@@ -564,7 +564,6 @@ struct _v3_vrf {
     struct timeval  start;
     _v3_vrf_rec     queue;
 
-    uint8_t         honored;
     uint8_t         stopped;
 };
 
@@ -672,7 +671,6 @@ void                    _v3_unlock_server(void);
 int                     v3_queue_event(v3_event *ev);
 v3_event                *_v3_get_last_event(int *len);
 v3_event                *_v3_create_event(uint16_t event);
-uint8_t                 _v3_parse_filter(v3_sp_filter *f, char *value);
 
 void _v3_init_decoders(void);
 void _v3_destroy_decoder(_v3_decoders *decoder);

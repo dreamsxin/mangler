@@ -2,7 +2,7 @@ Source: mangler
 Section: net
 Priority: extra
 Maintainer: Eric Kilfoil <ekilfoil@gmail.com>
-Build-Depends: debhelper (>= 7), autotools-dev, libgsm1-dev, libspeex-dev, libgtkmm-2.4-dev, libpulse-dev, librsvg2-2, libasound-dev, libespeak-dev, libusb-dev, libg15daemon-client-dev, libg15-dev, libg15render-dev, libdbus-glib-1-dev, libxosd-dev, libcelt-dev
+Build-Depends: debhelper (>= 7), autotools-dev, libgsm1-dev, libspeex-dev, libgtkmm-2.4-dev, libpulse-dev, librsvg2-2, libasound-dev, libespeak-dev, libusb-dev, libg15daemon-client-dev, libg15-dev, libg15render-dev, libdbus-glib-1-dev, libxosd-dev, libcelt-dev, librsvg2-common
 Standards-Version: 3.8.0
 Homepage: http://www.mangler.org/
 

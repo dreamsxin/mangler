@@ -107,7 +107,7 @@ ManglerConfig::~ManglerConfig() {/*{{{*/
     save(); // might as well :)
 }/*}}}*/
 
-string ManglerConfig::confdir() const {/*{{{*/
+string ManglerConfig::confdir() {/*{{{*/
     string confdir = getenv("HOME");
     return confdir + "/" + CONFIG_DIRECTORY;
 }/*}}}*/
@@ -181,7 +181,7 @@ void ManglerConfig::ConvertOldConfig() {/*{{{*/
             } else if (serv_var == "persistent_comments") {
                 serv_var = "PersistentComments";
             } else if (serv_var == "motdhash") {
-                serv_var = "MOTDhash";
+                serv_var = "MotdHash";
             } else if (serv_var == "defaultchannelid") {
                 serv_var = "DefaultChannel";
             } else if (serv_var == "defaultchannel") {

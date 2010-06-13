@@ -268,19 +268,24 @@ void *jukebox_player(void *connptr) {
                         if (ev->data->chatmessage[8]) {
                             char *level = ev->data->chatmessage + 8;
                             int newpol = -1;
-                            if (strncmp(level, " off", 4)) {
-                                newpol = atoi(level);
-                                if (newpol > -1 && newpol < 61) politeness = newpol;
+                            if (strncmp(level, "off", 3) == 0) {
+                                politeness = -1;
                             } else {
-                                v3_send_chat_message("invalid politeness level");
-                                break;
+                                newpol = atoi(level);
+                                if (newpol > -1 && newpol < 61) {
+                                    politeness = newpol;
+                                }
                             }
-                        } else politeness = -1;
+                        } else {
+                            politeness = -1;
+                        }
                         if (politeness > -1) {
                             char chat_msg[50];
                             sprintf(chat_msg, "politeness is now %d seconds", politeness);
                             v3_send_chat_message(chat_msg);
-                        } else v3_send_chat_message("politeness is now off");
+                        } else {
+                            v3_send_chat_message("politeness is now off");
+                        }
                         break;
                     } else if (! stopped && strncmp(ev->data->chatmessage, "!volume ", 8) == 0) {
                         char *volume = ev->data->chatmessage + 8;
@@ -457,8 +462,8 @@ void *jukebox_player(void *connptr) {
             // figure out how much data we need to read in order to get the
             // proper amount of data to send after resampling
             bytestoread = bytestosend * ((float)musiclist[filenum]->rate / (float)codec->rate);
-            if (musiclist[filenum]->rate == 48000) { // this is a temporary hack to compensate for the speex resampler at 48->44.1khz
-                if (channels == 2 && bytestoread % sizeof(int16_t)) {
+            if (bytestoread % sizeof(int16_t)) { // this is a temporary hack to compensate for the speex resampler at 48->44.1khz
+                if (channels == 2) {
                     bytestoread += 7;
                 } else {
                     bytestoread += bytestoread % sizeof(int16_t);
@@ -844,7 +849,7 @@ uint32_t pcm_resample(int16_t *sendbuf, uint32_t bytestoread, uint32_t bytestose
         resampler = NULL;
     }
     if (!resampler) {
-        resampler = speex_resampler_init(channels, in_rate, out_rate, 10, &err);
+        resampler = speex_resampler_init(channels, in_rate, out_rate, SPEEX_RESAMPLER_QUALITY_DEFAULT, &err);
     }
     if (err) {
         fprintf(stderr, "resample error: %d: %s\n", err, speex_resampler_strerror(err));

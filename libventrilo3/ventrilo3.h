@@ -86,7 +86,8 @@
 #define V3_AUDIO_START              0x00
 #define V3_AUDIO_DATA               0x01
 #define V3_AUDIO_STOP               0x02
-#define V3_AUDIO_UNK                0x03
+#define V3_AUDIO_MUTE               0x03
+#define V3_AUDIO_START_LOGIN        0x04
 
 #define V3_PHANTOM_ADD              0x00
 #define V3_PHANTOM_REMOVE           0x01
@@ -251,6 +252,7 @@ enum _v3_events {
     V3_EVENT_LOGIN_COMPLETE,
     V3_EVENT_LOGIN_FAIL,
     V3_EVENT_USER_CHAN_MOVE,
+    V3_EVENT_CHAN_MOVE,
     V3_EVENT_CHAN_ADD,
     V3_EVENT_CHAN_MODIFY,
     V3_EVENT_CHAN_REMOVE,
@@ -258,6 +260,7 @@ enum _v3_events {
     V3_EVENT_ERROR_MSG,
     V3_EVENT_USER_TALK_START,
     V3_EVENT_USER_TALK_END,
+    V3_EVENT_USER_TALK_MUTE,
     V3_EVENT_PLAY_AUDIO,
     V3_EVENT_RECORD_UPDATE,
     V3_EVENT_DISPLAY_MOTD,
@@ -297,6 +300,7 @@ enum _v3_events {
     V3_EVENT_ADMIN_BAN,
     V3_EVENT_ADMIN_CHANNEL_BAN,
     V3_EVENT_ADMIN_GLOBAL_MUTE,
+    V3_EVENT_ADMIN_CHANNEL_MUTE,
     V3_EVENT_FORCE_CHAN_MOVE,
     V3_EVENT_USERLIST_OPEN,
     V3_EVENT_USERLIST_CLOSE,
@@ -426,7 +430,7 @@ union _v3_event_data {
     } rank;
     int16_t sample16[16384];
     uint8_t sample[32768];
-    char    motd[2048];
+    char    motd[32768];
     char    chatmessage[256];
     char    reason[128];
 };
@@ -720,9 +724,10 @@ void        v3_admin_login(char *password);
 void        v3_admin_logout(void);
 void        v3_admin_boot(int type, uint16_t user_id, char *reason);
 void        v3_admin_global_mute(uint16_t user_id);
+void        v3_admin_channel_mute(uint16_t user_id);
 void        v3_phantom_add(uint16_t channel_id);
 void        v3_phantom_remove(uint16_t channel_id);
-void        v3_force_channel_move(uint16_t user_id, uint16_t channel_id);
+void        v3_force_channel_move(uint16_t id, uint16_t channel_id);
 void        v3_userlist_open(void);
 void        v3_userlist_close(void);
 void        v3_userlist_remove(uint16_t account_id);
@@ -776,6 +781,7 @@ v3_user     *v3_get_user(uint16_t id);
 int         v3_channel_count(void);
 void        v3_free_channel(v3_channel *channel);
 v3_channel  *v3_get_channel(uint16_t id);
+int         v3_get_channel_sort(uint16_t id_left, uint16_t id_right);
 uint16_t    v3_get_channel_id(const char *path);
 char *      v3_get_channel_path(uint16_t channel_id);
 
@@ -840,7 +846,7 @@ int      v3_vrf_get_info(void *vrfh, v3_vrf_data *vrfd);
 int      v3_vrf_get_segment(void *vrfh, uint32_t id, v3_vrf_data *vrfd);
 int      v3_vrf_get_audio(void *vrfh, uint32_t id, v3_vrf_data *vrfd);
 int      v3_vrf_put_info(void *vrfh, const v3_vrf_data *vrfd);
-int      v3_vrf_record_start(const char *filename, uint8_t dishonor);
+int      v3_vrf_record_start(const char *filename);
 void     v3_vrf_record_stop(void);
 
 #endif // _VENTRILO3_H

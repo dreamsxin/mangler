@@ -35,33 +35,53 @@ extern "C" {
 
 class iniFile;
 
-class ManglerAdmin {
+class adminModelColumns : public Gtk::TreeModel::ColumnRecord {
     public:
+        adminModelColumns() { add(id); add(name); }
+        Gtk::TreeModelColumn<uint32_t>      id;
+        Gtk::TreeModelColumn<Glib::ustring> name;
+};
+
+class adminChannelStore : public Gtk::TreeStore {
+    public:
+        static Glib::RefPtr<adminChannelStore> create();
+        adminModelColumns                   c;
+
+    protected:
+        adminChannelStore() {
+            set_column_types(c);
+        }
+        virtual bool row_draggable_vfunc(const Gtk::TreeModel::Path& path) const;
+        virtual bool row_drop_possible_vfunc(const Gtk::TreeModel::Path& dest, const Gtk::SelectionData& selection_data) const;
+        virtual bool drag_data_received_vfunc(const Gtk::TreeModel::Path& dest, const Gtk::SelectionData& selection_data);
+};
+
+class ManglerAdmin {
+    friend class adminChannelStore;
+    public:
+        static Glib::ustring trimString(Glib::ustring s);
+
         ManglerAdmin(Glib::RefPtr<Gtk::Builder> builder);
         ~ManglerAdmin();
-        Gtk::Window         *adminWindow;
-        Gtk::Alignment      *ServerTab;
-        Gtk::Alignment      *ChannelsTab;
-        Gtk::Alignment      *UsersTab;
-        Gtk::Alignment      *RanksTab;
-        Gtk::HBox           *BansTab;
-        Gtk::Button         *UserAdd;
 
         bool isOpen;
         void show(void);
+        void hide(void);
+        void permsUpdated(bool refresh = false);
         void serverSettingsUpdated(v3_server_prop &prop);
         void serverSettingsSendDone(void);
         void channelUpdated(v3_channel *channel);
         void channelRemoved(uint32_t chanid);
         void channelRemoved(v3_channel *channel);
         void channelAdded(v3_channel *channel);
-        void channelSort(bool alphanumeric);
+        void channelSort(bool manual);
+        void channelResort(void);
         void clearChannels(void);
         void accountUpdated(v3_account *account);
         void accountAdded(v3_account *account);
         void accountRemoved(uint32_t acctid);
         void accountRemoved(v3_account *account);
-        static void trimString(Glib::ustring &s);
+        void clearUsers(void);
         void rankUpdated(v3_rank *rank);
         void rankAdded(v3_rank *rank);
         void rankRemoved(uint16_t rankid);
@@ -73,20 +93,25 @@ class ManglerAdmin {
 
     protected:
         Glib::RefPtr<Gtk::Builder>          builder;
+        Gtk::Window                         *adminWindow;
+        Gtk::Notebook                       *adminNotebook;
+        Gtk::Alignment                      *ServerTab;
+        Gtk::Alignment                      *ChannelsTab;
+        Gtk::Alignment                      *UsersTab;
+        Gtk::Alignment                      *RanksTab;
+        Gtk::HBox                           *BansTab;
+        Gtk::Button                         *UserAdd;
         Gtk::Statusbar                      *AdminStatusbar;
         guint                               StatusbarCount;
         time_t                              StatusbarTime;
-        iniFile                             *usertemplates;
+        Glib::ustring                       tmpldir;
+        Gtk::FileChooserDialog              *tmpldialog;
+        Gtk::FileFilter                     tpl_filter;
+        Gtk::FileFilter                     all_filter;
 
-        class adminModelColumns : public Gtk::TreeModel::ColumnRecord {
-            public:
-                adminModelColumns() { add(id); add(name); }
-                Gtk::TreeModelColumn<uint32_t>              id;
-                Gtk::TreeModelColumn<Glib::ustring>         name;
-        } adminRecord;
+        adminModelColumns                   adminRecord;
 
         /* server settings editor stuff */
-        bool                                SrvIsNotUpdating;
         Glib::RefPtr<Gtk::TreeStore>        SrvChatFilterModel;
         Glib::RefPtr<Gtk::TreeStore>        SrvChanOrderModel;
         Glib::RefPtr<Gtk::TreeStore>        SrvInactActionModel;
@@ -96,6 +121,8 @@ class ManglerAdmin {
         Glib::RefPtr<Gtk::TreeStore>        SrvSpamFilterCommentModel;
         Glib::RefPtr<Gtk::TreeStore>        SrvSpamFilterTTSModel;
         Glib::RefPtr<Gtk::TreeStore>        SrvSpamFilterWaveModel;
+        bool                                SrvEditorOpen;
+        bool                                SrvIsNotUpdating;
 
         /* channel editor stuff */
         adminModelColumns                   ChannelEditorColumns;
@@ -109,12 +136,14 @@ class ManglerAdmin {
         adminModelColumns                   ChannelVoiceColumns;
         Glib::RefPtr<Gtk::TreeStore>        ChannelVoiceModel;
         Gtk::TreeView                       *ChannelEditorTree;
+        Gtk::Button                         *ChannelUpdate;
         Gtk::VBox                           *ChannelEditor;
         Gtk::Button                         *ChannelRemove;
         Gtk::Button                         *ChannelAdd;
         uint32_t                            currentChannelID;
         uint32_t                            currentChannelParent;
-        bool                                channelsortAlphanumeric;
+        bool                                channelSortManual;
+        bool                                ChannelAdded;
 
         /* user editor stuff */
         class adminCheckModelColumns : public Gtk::TreeModel::ColumnRecord {
@@ -150,17 +179,19 @@ class ManglerAdmin {
         adminModelColumns                   UserDefaultChannelColumns;
         Glib::RefPtr<Gtk::TreeStore>        UserDefaultChannelModel;
 
-        Gtk::ComboBoxEntry                  *UserTemplate;
+        Gtk::ComboBox                       *UserTemplate;
         adminModelColumns                   UserTemplateColumns;
         Glib::RefPtr<Gtk::TreeStore>        UserTemplateModel;
 
-        Gtk::VBox                           *UserEditor;
         Gtk::Table                          *UserInfoSection;
         Gtk::VBox                           *UserNetworkSection;
         Gtk::VBox                           *UserTransmitSection;
         Gtk::VBox                           *UserDisplaySection;
         Gtk::VBox                           *UserAdminSection;
+        Gtk::Button                         *UserUpdate;
+        Gtk::VBox                           *UserEditor;
         Gtk::Button                         *UserRemove;
+        bool                                UserEditorOpen;
         uint32_t                            currentUserID;
 
         /* rank editor stuff */
@@ -177,6 +208,7 @@ class ManglerAdmin {
         Glib::RefPtr<Gtk::TreeStore>        RankEditorModel;
         Gtk::TreeView                       *RankEditorTree;
         Gtk::VBox                           *RankEditor;
+        bool                                RankEditorOpen;
         uint16_t                            currentRankID;
 
         /* ban editor stuff */
@@ -199,7 +231,7 @@ class ManglerAdmin {
         Glib::RefPtr<Gtk::TreeStore>        BanNetmaskModel;
         uint16_t                            BanNetmaskDefault;
         Gtk::VBox                           *BanEditor;
-        uint16_t                            currentBanID;
+        uint32_t                            currentBanIP;
 
         /* generic pointers and window pointer */
         Gtk::Widget         *widget;
@@ -225,8 +257,9 @@ class ManglerAdmin {
         bool getFromCheckbutton(const char *widgetName);
         uint32_t getFromCombobox(const char *widgetName, uint32_t deflt = 0);
         void setWidgetSensitive(const char *widgetName, bool widgetSens = true);
-        bool statusbarPop(void);
+        void queue_resize(Gtk::TreeView *treeview);
         void statusbarPush(Glib::ustring msg);
+        bool statusbarPop(void);
 
         /* server settings functions and callbacks */
         void ServerUpdate_clicked_cb(void);
@@ -234,11 +267,11 @@ class ManglerAdmin {
         /* channel editor functions and callbacks */
         Glib::ustring getChannelPathString(uint32_t id, Gtk::TreeModel::Children children);
         Gtk::TreeModel::Row getChannel(uint32_t id, Gtk::TreeModel::Children children, bool hasCheckbox = false);
-        void populateChannelEditor(v3_channel *channel);
+        void populateChannelEditor(const v3_channel *channel);
         int channelSortFunction(const Gtk::TreeModel::iterator &left, const Gtk::TreeModel::iterator &right);
         void ChannelTree_cursor_changed_cb(void);
-        void AddChannel_clicked_cb(void);
-        void RemoveChannel_clicked_cb(void);
+        void ChannelAdd_clicked_cb(void);
+        void ChannelRemove_clicked_cb(void);
         void ChannelUpdate_clicked_cb(void);
         void LoadCodecFormats(void);
         void ChannelProtMode_changed_cb(void);
@@ -246,7 +279,7 @@ class ManglerAdmin {
 
         /* user editor functions and callbacks */
         Gtk::TreeModel::Row getAccount(uint32_t id, Gtk::TreeModel::Children children);
-        void populateUserEditor(v3_account *account);
+        void populateUserEditor(const v3_account *account, bool isTemplate = false);
         void setAdminCheckTree(Gtk::TreeModel::Children children, uint16_t *chanids, int chan_count);
         void getAdminCheckTree(Gtk::TreeModel::Children children, std::vector<uint16_t> &chanids);
         void getAdminCheckTree(Gtk::TreeModel::Children children, uint16_t *&chanids, int &chan_count);
@@ -262,9 +295,10 @@ class ManglerAdmin {
         void UserChanAdminButton_toggled_cb(void);
         void UserChanAuthButton_toggled_cb(void);
         /* user editor 'profile' stuff */
-        void readUserTemplates(void);
+        void loadUserTemplates(void);
         void UserTemplate_changed_cb(void);
         void UserTemplateLoad_clicked_cb(void);
+        void UserTemplateDelete_clicked_cb(void);
         void UserTemplateSave_clicked_cb(void);
 
         /* rank editor functions and callbacks */
@@ -273,12 +307,14 @@ class ManglerAdmin {
         void RankAdd_clicked_cb(void);
         void RankRemove_clicked_cb(void);
         void RankUpdate_clicked_cb(void);
+        void clearRankEditor(void);
 
         /* ban editor functions and callbacks */
         void BanEditorTree_cursor_changed_cb(void);
         void BanAdd_clicked_cb(void);
         void BanRemove_clicked_cb(void);
         void BanUpdate_clicked_cb(void);
+        void clearBanEditor(void);
 };
 
 #endif

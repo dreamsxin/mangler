@@ -29,6 +29,7 @@
 #include <sys/types.h>
 #include <stdint.h>
 #include <iostream>
+#include <X11/extensions/XInput.h>
 #include "manglerconfig.h"
 
 class ManglerChannelTree;
@@ -67,9 +68,12 @@ class Mangler
 {
     public:
         Mangler(struct _cli_options *options);
+        ~Mangler();
+        void onDisconnectHandler(void);
         void startTransmit(void);
         void stopTransmit(void);
         void initialize(void);
+        bool nagscreenshown;
         Gtk::Window                         *manglerWindow;
         Glib::RefPtr<Gtk::Builder>          builder;
         Gtk::Button                         *button;
@@ -118,6 +122,7 @@ class Mangler
 
         bool                                isTransmitting;
         bool                                isTransmittingButton;
+        bool                                isTransmittingVA;
         bool                                isTransmittingKey;
         bool                                isTransmittingMouse;
         bool                                iconified;
@@ -127,6 +132,10 @@ class Mangler
         bool                                muteMic;
         bool                                motdAlways;
         bool                                wantAdminWindow;
+
+        Glib::ustring                       CurrentOpenMouse;
+        XDevice                             *dev; // the currently open mouse device pointer
+
 
         // Autoreconnect feature stuff - Need ID's to kill threads if needed
         bool                                wantDisconnect;
@@ -164,13 +173,15 @@ class Mangler
         Glib::ustring                       url;
         Glib::ustring                       integration_text;
 
-        Glib::Thread                        *networkThread;
+        //Glib::Thread                        *networkThread;
 
         Glib::ustring getPasswordEntry(Glib::ustring title = "Password", Glib::ustring prompt = "Password");
         bool getReasonEntry(Glib::ustring title = "Reason", Glib::ustring prompt = "Reason");
         uint32_t getActiveServer(void);
         void setActiveServer(uint32_t row_number);
         void errorDialog(Glib::ustring message);
+        void setTooltip(void);
+        std::string stripMotdRtf(const char *input); 
 
     protected:
         struct _cli_options *options;
@@ -191,7 +202,6 @@ class Mangler
                 bool acceptU2U = true,
                 bool acceptPrivateChat = true,
                 bool allowRecording = true);
-        void onDisconnectHandler(void);
         bool reconnectStatusHandler(void);
 
         // button signal handlers
@@ -217,11 +227,13 @@ class Mangler
         void motdMenuItem_activate_cb(void);
         void recorderMenuItem_activate_cb(void);
         void quitMenuItem_activate_cb(void);
-        void adminWindowMenuItem_activated_cb(void);
+        void adminLoginMenuItem_activate_cb(void);
+        void adminWindowMenuItem_activate_cb(void);
 
         bool getNetworkEvent(void);
         bool updateIntegration(void); // music player integration
         bool checkPushToTalkKeys(void);
+        bool checkVoiceActivation(void);
         bool checkPushToTalkMouse(void);
         bool updateXferAmounts(void);
 

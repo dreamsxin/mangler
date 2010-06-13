@@ -37,9 +37,9 @@
 
 using namespace std;
 
-ManglerChannelTree::ManglerChannelTree(Glib::RefPtr<Gtk::Builder> builder)/*{{{*/
-{
+ManglerChannelTree::ManglerChannelTree(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
     this->builder = builder;
+
     // Create the Channel Store
     channelStore = ManglerChannelStore::create();
 
@@ -72,7 +72,7 @@ ManglerChannelTree::ManglerChannelTree(Glib::RefPtr<Gtk::Builder> builder)/*{{{*
     channelView->enable_model_drag_source();
     channelView->enable_model_drag_dest();
 
-    // create our right click context menu for users and connect its signal
+    // create our right click context menu for users and connect it's signal
     builder->get_widget("userRightClickMenu", rcmenu_user);
     builder->get_widget("userSettings", menuitem);
     menuitem->signal_activate().connect(sigc::mem_fun(this, &ManglerChannelTree::userSettingsMenuItem_activate_cb));
@@ -88,6 +88,8 @@ ManglerChannelTree::ManglerChannelTree(Glib::RefPtr<Gtk::Builder> builder)/*{{{*
     menuitem->signal_activate().connect(sigc::mem_fun(this, &ManglerChannelTree::banUserMenuItem_activate_cb));
     builder->get_widget("muteUser", checkmenuitem);
     signalMute = checkmenuitem->signal_activate().connect(sigc::mem_fun(this, &ManglerChannelTree::muteUserMenuItem_activate_cb));
+    builder->get_widget("muteUserChannel", checkmenuitem);
+    signalChannelMute = checkmenuitem->signal_activate().connect(sigc::mem_fun(this, &ManglerChannelTree::muteUserChannelMenuItem_activate_cb));
     builder->get_widget("muteUserGlobal", checkmenuitem);
     signalGlobalMute = checkmenuitem->signal_activate().connect(sigc::mem_fun(this, &ManglerChannelTree::muteUserGlobalMenuItem_activate_cb));
     builder->get_widget("pageUser", menuitem);
@@ -102,23 +104,21 @@ ManglerChannelTree::ManglerChannelTree(Glib::RefPtr<Gtk::Builder> builder)/*{{{*
     builder->get_widget("setDefaultChannel", checkmenuitem);
     signalDefaultChannel = checkmenuitem->signal_activate().connect(sigc::mem_fun(this, &ManglerChannelTree::setDefaultChannelMenuItem_activate_cb));
 
-    /*
-     * We have to finish off our user settings window.  I can't find a way to
-     * do this in builder, so let's pack our volume adjustment manually
-     */
-    volumeAdjustment = new Gtk::Adjustment(79, 0, 148, 1, 10, 10);
-    volumevscale = new Gtk::VScale(*volumeAdjustment);
-    volumevscale->add_mark(138, Gtk::POS_LEFT, "200%");
-    volumevscale->add_mark(79, Gtk::POS_LEFT, "100%");
-    volumevscale->add_mark(0, Gtk::POS_LEFT, "0%");
-    volumevscale->set_inverted(true);
-    volumevscale->set_draw_value(false);
-    builder->get_widget("userSettingsVolumeAdjustVBox", vbox);
-    vbox->pack_start(*volumevscale);
+    // set up our user settings volume scale
+    builder->get_widget("volumevscale", volumevscale);
+    volumevscale->signal_format_value().connect(sigc::mem_fun(this, &ManglerChannelTree::volumevscale_format_value_cb));
+    volumeAdjustment = volumevscale->get_adjustment();
+    volumeAdjustment->set_step_increment(1);
+    volumeAdjustment->set_page_increment(10);
+    volumevscale->set_range(0, 148);
+    volumevscale->set_value(79);
+    volumevscale->add_mark(148, Gtk::POS_LEFT, "");
+    volumevscale->add_mark(79, Gtk::POS_LEFT, "");
+    volumevscale->add_mark(0, Gtk::POS_LEFT, "");
 }/*}}}*/
 
 /*
- *  The GTK cell renederer for the channel tree view
+ *  The GTK cell renderer for the channel tree view
  *
  *  This function sets the colors, weight, etc for each row in the tree
  */
@@ -298,6 +298,7 @@ ManglerChannelTree::addChannel(uint8_t protect_mode, uint32_t id, uint32_t paren
     channelRow[channelRecord.integration_text]  = "";
     channelRow[channelRecord.rank]              = "";
     channelRow[channelRecord.password]          = "";
+    queue_resize();
 }/*}}}*/
 
 /*
@@ -347,6 +348,7 @@ ManglerChannelTree::updateChannel(uint8_t protect_mode, uint32_t id, uint32_t pa
     channel[channelRecord.integration_text]  = "";
     channel[channelRecord.rank]              = "";
     channel[channelRecord.password]          = "";
+    queue_resize();
 }/*}}}*/
 
 void
@@ -371,16 +373,17 @@ ManglerChannelTree::refreshChannel(uint32_t id) {/*{{{*/
         displayName = displayName + " (" + comment + ")";
     }
     channel[channelRecord.displayName]       = displayName;
+    queue_resize();
 }/*}}}*/
 
 void
 ManglerChannelTree::refreshAllChannels(void) {/*{{{*/
     _refreshAllChannels(channelStore->children());
-    if (!sortAlphanumeric) {
-        channelStore->set_sort_func (0, sigc::mem_fun (*this, &ManglerChannelTree::sortFunction));
+    if (!sortManual) {
+        channelStore->set_sort_func(0, sigc::mem_fun(*this, &ManglerChannelTree::sortFunction));
         channelStore->set_sort_column(channelRecord.displayName, Gtk::SORT_ASCENDING);
     } else {
-        channelStore->set_sort_func (channelRecord.id, sigc::mem_fun (*this, &ManglerChannelTree::sortFunction));
+        channelStore->set_sort_func(channelRecord.id, sigc::mem_fun(*this, &ManglerChannelTree::sortFunction));
         channelStore->set_sort_column(channelRecord.id, Gtk::SORT_ASCENDING);
     }
 }/*}}}*/
@@ -400,30 +403,24 @@ ManglerChannelTree::sortFunction(const Gtk::TreeModel::iterator& a, const Gtk::T
         if (isUser_b) {
             return natsort(sortName_a, sortName_b);
         } else {
-            //A = User, B = Channel
+            // a = user, b = channel
             return -1;
         }
     } else {
         if (isUser_b) {
-            //A = Channel, B = User
+            // a = channel, b = user
             return 1;
         } else {
-            // Both are Channels
-            if (!sortAlphanumeric) {
-                //Sort alphabetical
+            // both are channels
+            if (!sortManual) {
+                // sort alphabetical
                 return natsort(sortName_a, sortName_b);
             } else {
-                //Sort manual
-                if ((*a)[channelRecord.id] > (*b)[channelRecord.id]) {
-                    return 1;
-                } else if ((*a)[channelRecord.id] < (*b)[channelRecord.id]) {
-                    return -1;
-                }
+                // sort manual
+                return v3_get_channel_sort((*a)[channelRecord.id], (*b)[channelRecord.id]);
             }
-            return 0;
         }
     }
-    fprintf(stderr, "sorting failed to find if one or both options were users or channels\n");
     return 0;
 }/*}}}*/
 
@@ -529,6 +526,7 @@ ManglerChannelTree::refreshUser(uint32_t id) {/*{{{*/
     user[channelRecord.displayName] = displayName;
     mangler->chat->updateUser(id);
     mangler->chat->chatUserTreeModelFilter->refilter();
+    queue_resize();
 }/*}}}*/
 
 void
@@ -569,6 +567,7 @@ ManglerChannelTree::removeUser(uint32_t id) {/*{{{*/
         return;
     }
     channelStore->erase(user);
+    queue_resize();
 }/*}}}*/
 
 /*
@@ -585,6 +584,7 @@ ManglerChannelTree::removeChannel(uint32_t id) {/*{{{*/
         return;
     }
     channelStore->erase(channel);
+    queue_resize();
 }/*}}}*/
 
 // Recursively search the channel store for a specific channel id and returns the row
@@ -661,6 +661,7 @@ ManglerChannelTree::updateLobby(Glib::ustring name, Glib::ustring comment, Glib:
     lobby[channelRecord.phonetic]          = phonetic;
     lobby[channelRecord.url]               = "";
     lobby[channelRecord.integration_text]  = "";
+    queue_resize();
 }/*}}}*/
 
 void
@@ -685,26 +686,35 @@ ManglerChannelTree::setUserIcon(uint16_t id, Glib::ustring color, bool updateLas
     }
 }/*}}}*/
 
-bool
+void
+ManglerChannelTree::queue_resize(void) {/*{{{*/
+    for (int ctr = 0, cnt = channelView->get_columns().size(); ctr < cnt; ctr++) {
+        channelView->get_column(ctr)->queue_resize();
+    }
+}/*}}}*/
+
+void
 ManglerChannelTree::expand_all(void) {/*{{{*/
     channelView->expand_all();
     channelView->show_all();
-    return false;
 }/*}}}*/
 
-bool
+void
 ManglerChannelTree::collapse_all(void) {/*{{{*/
     channelView->collapse_all();
-    return false;
 }/*}}}*/
 
 void
 ManglerChannelTree::clear(void) {/*{{{*/
     channelStore->clear();
+    queue_resize();
 }/*}}}*/
 
 void
 ManglerChannelTree::channelView_row_activated_cb(const Gtk::TreeModel::Path& path, Gtk::TreeViewColumn* column) {/*{{{*/
+    if (!v3_is_loggedin()) {
+        return;
+    }
     v3_channel *channel;
     Glib::ustring password;
     bool password_required = false;
@@ -731,12 +741,11 @@ ManglerChannelTree::channelView_row_activated_cb(const Gtk::TreeModel::Path& pat
         }
         if (id != 0) {
             channel = v3_get_channel(id);
-            const v3_permissions *perms = v3_get_permissions();
             if (! channel) {
                 fprintf(stderr, "failed to retrieve channel information for channel id %d\n", id);
                 return;
             }
-            if (!perms->srv_admin && (pw_cid = v3_channel_requires_password(channel->id))) {  // Channel is password protected
+            if (!mangler->isAdmin && (pw_cid = v3_channel_requires_password(channel->id))) { // channel is password protected
                 password_required = true;
                 password = getChannelSavedPassword(pw_cid);
                 // if we didn't find a saved password, prompt the user
@@ -786,10 +795,13 @@ ManglerChannelTree::channelView_buttonpress_event_cb(GdkEventButton* event) {/*{
             Glib::ustring comment = row[channelRecord.comment];
             Glib::ustring url = row[channelRecord.url];
             const v3_permissions *perms = v3_get_permissions();
-
             if (isUser) {
-                v3_user *user = v3_get_user(id);
+                v3_user *user;
+                if (!(user = v3_get_user(id))) {
+                    return;
+                }
                 bool isOurPhantom = user->real_user_id == v3_get_user_id();
+                bool isChanAdmin = v3_is_channel_admin(v3_get_user_channel(id));
                 builder->get_widget("removePhantom", menuitem);
                 if (isOurPhantom) {
                     // we clicked on one of our own phantoms
@@ -816,16 +828,25 @@ ManglerChannelTree::channelView_buttonpress_event_cb(GdkEventButton* event) {/*{
                     builder->get_widget("muteUser", checkmenuitem);
                     checkmenuitem->hide();
                     builder->get_widget("userRightClickMenuSeparator", menuitem);
-                    if ((perms->srv_admin || perms->mute_glbl) && !isOurPhantom) {
+                    if ((mangler->isAdmin || isChanAdmin) && !isOurPhantom) {
                         menuitem->show();
                     } else {
                         menuitem->hide();
+                    }
+                    builder->get_widget("muteUserChannel", checkmenuitem);
+                    signalChannelMute.block();
+                    checkmenuitem->set_active(user->channel_mute);
+                    signalChannelMute.unblock();
+                    if ((mangler->isAdmin || isChanAdmin) && user->channel && !isOurPhantom) {
+                        checkmenuitem->show();
+                    } else {
+                        checkmenuitem->hide();
                     }
                     builder->get_widget("muteUserGlobal", checkmenuitem);
                     signalGlobalMute.block();
                     checkmenuitem->set_active(user->global_mute);
                     signalGlobalMute.unblock();
-                    if ((perms->srv_admin || perms->mute_glbl) && !isOurPhantom) {
+                    if (mangler->isAdmin && !isOurPhantom) {
                         checkmenuitem->show();
                     } else {
                         checkmenuitem->hide();
@@ -863,28 +884,37 @@ ManglerChannelTree::channelView_buttonpress_event_cb(GdkEventButton* event) {/*{
                         checkmenuitem->hide();
                     }
                     builder->get_widget("userRightClickMenuSeparator", menuitem);
-                    if ((perms->srv_admin || perms->mute_glbl || perms->kick_user || perms->ban_user) && !isOurPhantom) {
+                    if ((mangler->isAdmin || isChanAdmin || perms->kick_user || perms->ban_user) && !isOurPhantom) {
                         menuitem->show();
                     } else {
                         menuitem->hide();
+                    }
+                    builder->get_widget("muteUserChannel", checkmenuitem);
+                    signalChannelMute.block();
+                    checkmenuitem->set_active(user->channel_mute);
+                    signalChannelMute.unblock();
+                    if ((mangler->isAdmin || isChanAdmin) && user->channel && !isOurPhantom) {
+                        checkmenuitem->show();
+                    } else {
+                        checkmenuitem->hide();
                     }
                     builder->get_widget("muteUserGlobal", checkmenuitem);
                     signalGlobalMute.block();
                     checkmenuitem->set_active(user->global_mute);
                     signalGlobalMute.unblock();
-                    if ((perms->srv_admin || perms->mute_glbl) && !isOurPhantom) {
+                    if (mangler->isAdmin && !isOurPhantom) {
                         checkmenuitem->show();
                     } else {
                         checkmenuitem->hide();
                     }
                     builder->get_widget("kickUser", menuitem);
-                    if ((perms->srv_admin || perms->kick_user) && !isOurPhantom) {
+                    if (perms->kick_user && !isOurPhantom) {
                         menuitem->show();
                     } else {
                         menuitem->hide();
                     }
                     builder->get_widget("banUser", menuitem);
-                    if ((perms->srv_admin || perms->ban_user) && !isOurPhantom) {
+                    if (perms->ban_user && !isOurPhantom) {
                         menuitem->show();
                     } else {
                         menuitem->hide();
@@ -897,7 +927,7 @@ ManglerChannelTree::channelView_buttonpress_event_cb(GdkEventButton* event) {/*{
                 menuitem->set_sensitive(!comment.empty());
                 builder->get_widget("channelRightClickMenuSeparator", menuitem);
                 builder->get_widget("setDefaultChannel", checkmenuitem);
-                if (mangler->connectedServerName.empty() || row[channelRecord.id] == 0) { // hide default channel on quick connects or lobby
+                if (mangler->connectedServerName.empty()) { // hide default channel on quick connects
                     menuitem->hide();
                     checkmenuitem->hide();
                 } else {
@@ -905,7 +935,11 @@ ManglerChannelTree::channelView_buttonpress_event_cb(GdkEventButton* event) {/*{
                     checkmenuitem->show();
                     iniSection &server(Mangler::config.servers[mangler->connectedServerName]);
                     signalDefaultChannel.block();
-                    checkmenuitem->set_active(server["DefaultChannel"].toULong() == row[channelRecord.id]);
+                    char *path = v3_get_channel_path(row[channelRecord.id]);
+                    checkmenuitem->set_active(server["DefaultChannel"].toUString() == (path ? c_to_ustring(path) : ""));
+                    if (path) {
+                        free(path);
+                    }
                     signalDefaultChannel.unblock();
                 }
                 rcmenu_channel->popup(event->button, event->time);
@@ -956,6 +990,7 @@ ManglerChannelTree::privateChatMenuItem_activate_cb(void) {/*{{{*/
         Glib::ustring name = row[channelRecord.name];
         //fprintf(stderr, "opening chat with %d\n", id);
         mangler->privateChatWindows[id] = new ManglerPrivChat(id);
+        mangler->privateChatWindows[id]->chatWindow->set_icon(mangler->icons["tray_icon"]);
         mangler->privateChatWindows[id]->addMessage("*** opened private chat with " + name);
         //fprintf(stderr, "opened chat window with %d\n", mangler->privateChatWindows[id]->remoteUserId);
     }
@@ -1048,6 +1083,17 @@ ManglerChannelTree::muteUserMenuItem_activate_cb(void) {/*{{{*/
 }/*}}}*/
 
 void
+ManglerChannelTree::muteUserChannelMenuItem_activate_cb(void) {/*{{{*/
+    Glib::RefPtr<Gtk::TreeSelection> sel = channelView->get_selection();
+    Gtk::TreeModel::iterator iter = sel->get_selected();
+    if (iter) {
+        Gtk::TreeModel::Row row = *iter;
+        uint16_t id = row[channelRecord.id];
+        v3_admin_channel_mute(id);
+    }
+}/*}}}*/
+
+void
 ManglerChannelTree::muteUserGlobalMenuItem_activate_cb(void) {/*{{{*/
     Glib::RefPtr<Gtk::TreeSelection> sel = channelView->get_selection();
     Gtk::TreeModel::iterator iter = sel->get_selected();
@@ -1078,7 +1124,11 @@ ManglerChannelTree::setDefaultChannelMenuItem_activate_cb(void) {/*{{{*/
         uint16_t id = row[channelRecord.id];
         if (mangler->connectedServerName.length()) {
             iniSection &server(Mangler::config.servers[mangler->connectedServerName]);
-            server["DefaultChannel"] = (server["DefaultChannel"] == id) ? 0 : id;
+            char *path = v3_get_channel_path(id);
+            server["DefaultChannel"] = (path && server["DefaultChannel"].toUString() != c_to_ustring(path)) ? c_to_ustring(path) : "";
+            if (path) {
+                free(path);
+            }
         }
     }
 }/*}}}*/
@@ -1090,7 +1140,7 @@ ManglerChannelTree::getUserChannelId(uint16_t userid) {/*{{{*/
         fprintf(stderr, "getUserChannelId: could not find user id %d\n", userid);
         return 0;
     }
-    return(user[channelRecord.parent_id]);
+    return user[channelRecord.parent_id];
 }/*}}}*/
 
 Glib::ustring
@@ -1118,13 +1168,18 @@ ManglerChannelTree::forgetChannelSavedPassword(uint16_t channel_id) {/*{{{*/
     setChannelSavedPassword(channel_id, "");
 }/*}}}*/
 
+Glib::ustring
+ManglerChannelTree::volumevscale_format_value_cb(double value) {/*{{{*/
+    return Glib::ustring::format((int)((value > 79) ? ((value-79)/69)*100+100 : (value/79)*100)) + "%  ";
+}/*}}}*/
+
 void
 ManglerChannelTree::volumeAdjustment_value_changed_cb(uint16_t id) {/*{{{*/
     if (! mangler->connectedServerName.empty()) {
         v3_user *u;
-        if ((u = v3_get_user(id)) != NULL) {
+        if ((u = v3_get_user(id))) {
             Mangler::config.UserVolume(mangler->connectedServerName, u->name) = volumeAdjustment->get_value();
-            Mangler::config.servers.save();
+            v3_free_user(u);
         }
     }
     v3_set_volume_user(id, (int)volumeAdjustment->get_value());
@@ -1202,12 +1257,12 @@ ManglerChannelStore::row_draggable_vfunc(const Gtk::TreeModel::Path& path) const
     const v3_permissions *perms = v3_get_permissions();
     ManglerChannelStore* unconstThis = const_cast<ManglerChannelStore*>(this);
     const_iterator iter = unconstThis->get_iter(path);
-    if (!iter)
+    if (!iter) {
         return Gtk::TreeStore::row_draggable_vfunc(path);
-
-    Row row = *iter;
-    if (row[c.isUser] && perms->move_user && (perms->srv_admin || v3_is_channel_admin(v3_get_user_channel(row[c.id]))))
+    }
+    if ((*iter)[c.isUser] && perms->move_user) {
         return true;
+    }
     return false;
 }/*}}}*/
 
@@ -1236,7 +1291,7 @@ ManglerChannelStore::drag_data_received_vfunc(const Gtk::TreeModel::Path& dest, 
     // because GTK allows you to drop things in places that don't really make
     // sense in terms of ventrilo, we need to modify the drop path to make sense
     // basically, if the path doesn't end in a 0, it's either in between users
-    // or in between channels.  Instead of adding to the parrent channel, tack
+    // or in between channels.  Instead of adding to the parent channel, tack
     // a 0 on to the end of the path and decrement the destination to give us
     // the previous channel/user
     Gtk::TreeModel::Path dest_parent = dest;
@@ -1270,55 +1325,53 @@ ManglerChannelStore::drag_data_received_vfunc(const Gtk::TreeModel::Path& dest, 
 
 void
 ManglerChannelTree::userSettingsWindow(Gtk::TreeModel::Row row) {/*{{{*/
-    int id = row[channelRecord.id];
-    // double clicked a user
+    uint16_t id = row[channelRecord.id];
+    // double clicked a user and is not ourself
     if (id == v3_get_user_id()) {
-        // clicked on ourself
-    } else {
-        v3_user *u;
-        uint16_t id = row[channelRecord.id];
-        Glib::ustring name = row[channelRecord.name];
-        Glib::ustring comment = row[channelRecord.comment];
-        Glib::ustring url = row[channelRecord.url];
-        bool accept_pages = false, accept_u2u = false, accept_chat = false, allow_recording = false;
-        if ((u = v3_get_user(id)) != NULL) {
-            accept_pages = u->accept_pages;
-            accept_u2u = u->accept_u2u;
-            accept_chat = u->accept_chat;
-            allow_recording = u->allow_recording;
-            v3_free_user(u);
-        }
+        return;
+    }
+    Glib::ustring name = row[channelRecord.name];
+    Glib::ustring comment = row[channelRecord.comment];
+    Glib::ustring url = row[channelRecord.url];
+    bool accept_pages = false, accept_u2u = false, accept_chat = false, allow_recording = false;
+    v3_user *u;
+    if ((u = v3_get_user(id))) {
+        accept_pages = u->accept_pages;
+        accept_u2u = u->accept_u2u;
+        accept_chat = u->accept_chat;
+        allow_recording = u->allow_recording;
+        v3_free_user(u);
+    }
 
-        // disconnect whatever was connected before and reconnect
-        volumeAdjustSignalConnection.disconnect();
-        volumeAdjustSignalConnection = volumeAdjustment->signal_value_changed().connect(
+    // disconnect whatever was connected before and reconnect
+    volumeAdjustSignalConnection.disconnect();
+    volumeAdjustSignalConnection = volumeAdjustment->signal_value_changed().connect(
             sigc::bind(sigc::mem_fun(this, &ManglerChannelTree::volumeAdjustment_value_changed_cb), id));
 
-        // set the value label
-        builder->get_widget("userSettingsNameValueLabel", label);
-        label->set_text(name);
-        builder->get_widget("userSettingsCommentValue", label);
-        label->set_text(comment);
-        builder->get_widget("userSettingsURLValue", linkbutton);
-        linkbutton->set_uri(url);
-        linkbutton->set_label(url);
-        builder->get_widget("userSettingsU2UValue", label);
-        label->set_text(accept_u2u ? "Yes" : "No");
-        builder->get_widget("userSettingsRecordValue", label);
-        label->set_text(allow_recording ? "Yes" : "No");
-        builder->get_widget("userSettingsPageValue", label);
-        label->set_text(accept_pages ? "Yes" : "No");
-        builder->get_widget("userSettingsChatValue", label);
-        label->set_text(accept_chat ? "Yes" : "No");
+    // set the value label
+    builder->get_widget("userSettingsNameValueLabel", label);
+    label->set_text(name);
+    builder->get_widget("userSettingsCommentValue", label);
+    label->set_text(comment);
+    builder->get_widget("userSettingsURLValue", linkbutton);
+    linkbutton->set_uri(url);
+    linkbutton->set_label(url);
+    builder->get_widget("userSettingsU2UValue", label);
+    label->set_text(accept_u2u ? "Yes" : "No");
+    builder->get_widget("userSettingsRecordValue", label);
+    label->set_text(allow_recording ? "Yes" : "No");
+    builder->get_widget("userSettingsPageValue", label);
+    label->set_text(accept_pages ? "Yes" : "No");
+    builder->get_widget("userSettingsChatValue", label);
+    label->set_text(accept_chat ? "Yes" : "No");
 
-        // set the current volume level for this user
-        volumeAdjustment->set_value(v3_get_volume_user(id));
+    // set the current volume level for this user
+    volumeAdjustment->set_value(v3_get_volume_user(id));
 
-        builder->get_widget("userSettingsWindow", window);
-        window->show_all();
-        window->queue_resize();
-        window->present();
-    }
+    builder->get_widget("userSettingsWindow", window);
+    window->show_all();
+    window->queue_resize();
+    window->present();
 }/*}}}*/
 
 /*

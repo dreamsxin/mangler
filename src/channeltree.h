@@ -102,6 +102,7 @@ class ManglerChannelTree
         Gtk::TreeView                       *channelView;
         Gtk::Menu                           *rcmenu_user;
         sigc::connection                    signalMute;
+        sigc::connection                    signalChannelMute;
         sigc::connection                    signalGlobalMute;
         Gtk::Menu                           *rcmenu_channel;
         sigc::connection                    signalDefaultChannel;
@@ -112,7 +113,7 @@ class ManglerChannelTree
         Gtk::Adjustment                     *volumeAdjustment;
         sigc::connection                    volumeAdjustSignalConnection;
         Gtk::VBox                           *vbox;
-        bool                                sortAlphanumeric;
+        bool                                sortManual;
         void addChannel(uint8_t protect_mode, uint32_t id, uint32_t parent_id, Glib::ustring name, Glib::ustring comment = "", Glib::ustring phonetic = "");
         void addUser(uint32_t id, uint32_t channel, Glib::ustring name, Glib::ustring comment = "", Glib::ustring phonetic = "", Glib::ustring url = "", Glib::ustring integration_text = "", bool guest = false, bool phantom = false, Glib::ustring rank = "");
         void updateLobby(Glib::ustring name, Glib::ustring comment = "", Glib::ustring phonetic = "");
@@ -139,10 +140,10 @@ class ManglerChannelTree
         void forgetChannelSavedPassword(uint16_t channel_id);
         bool isMuted(uint16_t userid);
         void muteUserToggle(uint16_t userid);
-        bool expand_all(void);
-        bool collapse_all(void);
+        void queue_resize(void);
+        void expand_all(void);
+        void collapse_all(void);
         void clear(void);
-        void setSort(bool);
 
         void channelView_row_activated_cb(const Gtk::TreeModel::Path& path, Gtk::TreeViewColumn* column);
         void channelView_columns_changed_cb(void);
@@ -156,10 +157,12 @@ class ManglerChannelTree
         void kickUserMenuItem_activate_cb(void);
         void banUserMenuItem_activate_cb(void);
         void muteUserMenuItem_activate_cb(void);
+        void muteUserChannelMenuItem_activate_cb(void);
         void muteUserGlobalMenuItem_activate_cb(void);
         void pageUserMenuItem_activate_cb(void);
         void setDefaultChannelMenuItem_activate_cb(void);
-        void volumeAdjustment_value_changed_cb(uint16_t);
+        Glib::ustring volumevscale_format_value_cb(double value);
+        void volumeAdjustment_value_changed_cb(uint16_t id);
         void userSettingsWindow(Gtk::TreeModel::Row row);
 };
 

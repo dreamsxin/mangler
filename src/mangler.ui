@@ -12,7 +12,6 @@
     <child>
       <object class="GtkVBox" id="vbox1">
         <property name="visible">True</property>
-        <property name="orientation">vertical</property>
         <property name="spacing">2</property>
         <child>
           <object class="GtkMenuBar" id="menubar1">
@@ -44,11 +43,15 @@
                       </object>
                     </child>
                     <child>
-                      <object class="GtkSeparatorMenuItem" id="adminSeparatorMenuItem"/>
+                      <object class="GtkSeparatorMenuItem" id="adminSeparatorMenuItem">
+                        <property name="visible">True</property>
+                      </object>
                     </child>
                     <child>
                       <object class="GtkImageMenuItem" id="adminLoginMenuItem">
                         <property name="label" translatable="yes">_Admin Login</property>
+                        <property name="visible">True</property>
+                        <property name="sensitive">False</property>
                         <property name="use_underline">True</property>
                         <property name="image">image7</property>
                         <property name="use_stock">False</property>
@@ -56,7 +59,9 @@
                     </child>
                     <child>
                       <object class="GtkImageMenuItem" id="adminWindowMenuItem">
-                        <property name="label" translatable="yes">_Admin Window</property>
+                        <property name="label" translatable="yes">Admin _Window</property>
+                        <property name="visible">True</property>
+                        <property name="sensitive">False</property>
                         <property name="use_underline">True</property>
                         <property name="image">image5</property>
                         <property name="use_stock">False</property>
@@ -209,11 +214,9 @@
             <child>
               <object class="GtkVBox" id="mainWindowButtonVBox">
                 <property name="visible">True</property>
-                <property name="orientation">vertical</property>
                 <child>
                   <object class="GtkVBox" id="vbox4">
                     <property name="visible">True</property>
-                    <property name="orientation">vertical</property>
                     <property name="spacing">10</property>
                     <child>
                       <object class="GtkButton" id="quickConnectButton">
@@ -378,12 +381,10 @@
             <child>
               <object class="GtkVBox" id="vbox3">
                 <property name="visible">True</property>
-                <property name="orientation">vertical</property>
                 <property name="spacing">3</property>
                 <child>
                   <object class="GtkVBox" id="serverTabContents">
                     <property name="visible">True</property>
-                    <property name="orientation">vertical</property>
                     <child>
                       <object class="GtkHBox" id="serverSelectHbox">
                         <property name="visible">True</property>
@@ -594,7 +595,6 @@
                         <child>
                           <object class="GtkVSeparator" id="vseparator2">
                             <property name="visible">True</property>
-                            <property name="orientation">vertical</property>
                           </object>
                           <packing>
                             <property name="expand">False</property>
@@ -683,7 +683,6 @@
     </child>
   </object>
   <object class="GtkWindow" id="serverListWindow">
-    <property name="border_width">5</property>
     <property name="title" translatable="yes">Mangler - Server List</property>
     <property name="type_hint">dialog</property>
     <property name="skip_taskbar_hint">True</property>
@@ -692,50 +691,47 @@
     <child>
       <object class="GtkHBox" id="hbox7">
         <property name="visible">True</property>
+        <property name="border_width">5</property>
         <property name="spacing">5</property>
         <child>
           <object class="GtkVBox" id="vbox101">
             <property name="visible">True</property>
-            <property name="orientation">vertical</property>
-            <property name="spacing">5</property>
             <child>
-              <object class="GtkButton" id="serverListNewButton">
-                <property name="label" translatable="yes">_New Server</property>
+              <object class="GtkButton" id="serverListAddButton">
+                <property name="label" translatable="yes">Add</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
-                <property name="tooltip_text" translatable="yes">Add a new server to the list</property>
                 <property name="use_underline">True</property>
                 <property name="focus_on_click">False</property>
               </object>
               <packing>
                 <property name="expand">False</property>
                 <property name="fill">False</property>
-                <property name="padding">10</property>
+                <property name="padding">5</property>
                 <property name="position">0</property>
               </packing>
             </child>
             <child>
-              <object class="GtkButton" id="serverListDeleteButton">
-                <property name="label" translatable="yes">_Delete Server</property>
+              <object class="GtkButton" id="serverListRemoveButton">
+                <property name="label" translatable="yes">Remove</property>
                 <property name="visible">True</property>
                 <property name="sensitive">False</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
-                <property name="tooltip_text" translatable="yes">Remove the currently selected server</property>
                 <property name="use_underline">True</property>
                 <property name="focus_on_click">False</property>
               </object>
               <packing>
                 <property name="expand">False</property>
                 <property name="fill">False</property>
-                <property name="padding">10</property>
+                <property name="padding">5</property>
                 <property name="position">1</property>
               </packing>
             </child>
             <child>
               <object class="GtkButton" id="serverListCloneButton">
-                <property name="label" translatable="yes">Clone _Server</property>
+                <property name="label" translatable="yes">Clone</property>
                 <property name="visible">True</property>
                 <property name="sensitive">False</property>
                 <property name="can_focus">True</property>
@@ -744,62 +740,30 @@
               </object>
               <packing>
                 <property name="expand">False</property>
-                <property name="padding">10</property>
+                <property name="padding">5</property>
                 <property name="position">2</property>
               </packing>
             </child>
             <child>
-              <object class="GtkButton" id="serverListSetDefaultButton">
-                <property name="label" translatable="yes">Se_t as Default</property>
-                <property name="can_focus">True</property>
-                <property name="receives_default">True</property>
-                <property name="use_underline">True</property>
-                <property name="focus_on_click">False</property>
-              </object>
-              <packing>
-                <property name="expand">False</property>
-                <property name="fill">False</property>
-                <property name="padding">10</property>
-                <property name="position">3</property>
-              </packing>
-            </child>
-            <child>
-              <object class="GtkAlignment" id="alignment2">
+              <object class="GtkAlignment" id="alignment10">
                 <property name="visible">True</property>
                 <child>
                   <placeholder/>
                 </child>
               </object>
               <packing>
-                <property name="position">4</property>
-              </packing>
-            </child>
-            <child>
-              <object class="GtkButton" id="serverListCloseButton">
-                <property name="label" translatable="yes">_Close</property>
-                <property name="visible">True</property>
-                <property name="can_focus">True</property>
-                <property name="receives_default">True</property>
-                <property name="use_underline">True</property>
-                <property name="focus_on_click">False</property>
-              </object>
-              <packing>
-                <property name="expand">False</property>
-                <property name="padding">5</property>
-                <property name="position">5</property>
+                <property name="position">3</property>
               </packing>
             </child>
           </object>
           <packing>
             <property name="expand">False</property>
-            <property name="padding">5</property>
             <property name="position">0</property>
           </packing>
         </child>
         <child>
           <object class="GtkVBox" id="vbox29">
             <property name="visible">True</property>
-            <property name="orientation">vertical</property>
             <property name="spacing">5</property>
             <child>
               <object class="GtkScrolledWindow" id="scrolledwindow2">
@@ -927,6 +891,7 @@
                         </child>
                         <child>
                           <object class="GtkLabel" id="serverListDefaultChannelLabel">
+                            <property name="visible">True</property>
                             <property name="xalign">1</property>
                             <property name="label" translatable="yes">Default Channel:</property>
                           </object>
@@ -938,11 +903,8 @@
                         </child>
                         <child>
                           <object class="GtkEntry" id="serverListDefaultChannelEntry">
-                            <property name="sensitive">False</property>
+                            <property name="visible">True</property>
                             <property name="can_focus">True</property>
-                            <property name="tooltip_text" translatable="yes">Please use the context menu while connected 
-to the server to set the default channel</property>
-                            <property name="max_length">30</property>
                             <property name="invisible_char">&#x25CF;</property>
                             <property name="activates_default">True</property>
                             <property name="width_chars">6</property>
@@ -1181,8 +1143,9 @@ to the server to set the default channel</property>
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkCheckButton" id="serverListPersistentChannelCheckButton">
-                            <property name="label" translatable="yes">Restore previous channel on reconnect</property>
+                          <object class="GtkCheckButton" id="serverListPersistentCommentsCheckButton">
+                            <property name="label" translatable="yes">Restore previous comment on reconnect</property>
+                            <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">False</property>
                             <property name="draw_indicator">True</property>
@@ -1195,9 +1158,8 @@ to the server to set the default channel</property>
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkCheckButton" id="serverListPersistentCommentsCheckButton">
-                            <property name="label" translatable="yes">Restore previous comment on reconnect</property>
-                            <property name="visible">True</property>
+                          <object class="GtkCheckButton" id="serverListPersistentChannelCheckButton">
+                            <property name="label" translatable="yes">Restore previous channel on reconnect</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">False</property>
                             <property name="draw_indicator">True</property>
@@ -1210,7 +1172,7 @@ to the server to set the default channel</property>
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkHBox" id="hbox10">
+                          <object class="GtkHBox" id="serverListCharsetHBox">
                             <property name="visible">True</property>
                             <property name="spacing">5</property>
                             <child>
@@ -1225,7 +1187,7 @@ to the server to set the default channel</property>
                             </child>
                             <child>
                               <object class="GtkComboBoxEntry" id="serverListCharsetComboBox">
-                                <property name="height_request">20</property>
+                                <property name="height_request">1</property>
                                 <property name="visible">True</property>
                                 <accessibility>
                                   <relation type="labelled-by" target="serverListCharsetLabel"/>
@@ -1271,7 +1233,7 @@ to the server to set the default channel</property>
                 <property name="visible">True</property>
                 <property name="spacing">5</property>
                 <child>
-                  <object class="GtkAlignment" id="alignment18">
+                  <object class="GtkAlignment" id="alignment2">
                     <property name="visible">True</property>
                     <child>
                       <placeholder/>
@@ -1282,25 +1244,8 @@ to the server to set the default channel</property>
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkButton" id="serverListServerClearButton">
-                    <property name="label" translatable="yes">Clear</property>
-                    <property name="width_request">100</property>
-                    <property name="sensitive">False</property>
-                    <property name="can_focus">True</property>
-                    <property name="receives_default">True</property>
-                    <property name="focus_on_click">False</property>
-                  </object>
-                  <packing>
-                    <property name="expand">False</property>
-                    <property name="fill">False</property>
-                    <property name="padding">10</property>
-                    <property name="position">1</property>
-                  </packing>
-                </child>
-                <child>
                   <object class="GtkButton" id="serverListServerUpdateButton">
                     <property name="label" translatable="yes">Update</property>
-                    <property name="width_request">100</property>
                     <property name="visible">True</property>
                     <property name="sensitive">False</property>
                     <property name="can_focus">True</property>
@@ -1311,13 +1256,26 @@ to the server to set the default channel</property>
                   </object>
                   <packing>
                     <property name="expand">False</property>
+                    <property name="position">1</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton" id="serverListCloseButton">
+                    <property name="label" translatable="yes">Close</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                    <property name="focus_on_click">False</property>
+                    <accelerator key="w" signal="activate" modifiers="GDK_CONTROL_MASK"/>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
                     <property name="position">2</property>
                   </packing>
                 </child>
               </object>
               <packing>
                 <property name="expand">False</property>
-                <property name="padding">5</property>
                 <property name="position">2</property>
               </packing>
             </child>
@@ -1338,7 +1296,7 @@ to the server to set the default channel</property>
     <property name="skip_pager_hint">True</property>
     <property name="transient_for">manglerWindow</property>
     <property name="program_name">Mangler</property>
-    <property name="version">1.2.0beta1</property>
+    <property name="version">1.2.0</property>
     <property name="copyright" translatable="yes">Copyright 2009-2010 by Eric Kilfoil</property>
     <property name="website">http://www.mangler.org</property>
     <property name="website_label" translatable="yes">http://www.mangler.org</property>
@@ -1349,14 +1307,13 @@ Mangler is distributed in the hope that it will be useful, but WITHOUT ANY WARRA
 You should have received a copy of the GNU General Public License along with Mangler.  If not, see &lt;http://www.gnu.org/licenses&gt;.</property>
     <property name="authors">Eric Kilfoil
 Daniel Sloof
-
 humbaba (anonymous)
 Haxar (anonymous)
 Felyza Wishbringer
 Bob Shaffer II
 
-With everyone else from Spux, without it
-which Mangler would not have been possible.
+Everyone else from Spux, without which
+Mangler would not have been possible.
 
 Specifically:
 - Michael Sierks
@@ -1371,7 +1328,6 @@ who figured out the encryption.
     <child internal-child="vbox">
       <object class="GtkVBox" id="dialog-vbox6">
         <property name="visible">True</property>
-        <property name="orientation">vertical</property>
         <property name="spacing">2</property>
         <child>
           <placeholder/>
@@ -1406,7 +1362,6 @@ who figured out the encryption.
     <child internal-child="vbox">
       <object class="GtkVBox" id="dialog-vbox8">
         <property name="visible">True</property>
-        <property name="orientation">vertical</property>
         <property name="spacing">2</property>
         <child internal-child="action_area">
           <object class="GtkHButtonBox" id="dialog-action_area8">
@@ -1440,7 +1395,6 @@ who figured out the encryption.
     <child internal-child="vbox">
       <object class="GtkVBox" id="dialog-vbox10">
         <property name="visible">True</property>
-        <property name="orientation">vertical</property>
         <property name="spacing">2</property>
         <child>
           <object class="GtkTable" id="table2">
@@ -1551,6 +1505,7 @@ who figured out the encryption.
               <object class="GtkEntry" id="qcUsername">
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
+                <property name="max_length">31</property>
                 <property name="invisible_char">&#x25CF;</property>
                 <property name="activates_default">True</property>
                 <accessibility>
@@ -1568,6 +1523,7 @@ who figured out the encryption.
               <object class="GtkEntry" id="qcPassword">
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
+                <property name="max_length">31</property>
                 <property name="visibility">False</property>
                 <property name="invisible_char">&#x25CF;</property>
                 <property name="activates_default">True</property>
@@ -1648,7 +1604,6 @@ who figured out the encryption.
     <child>
       <object class="GtkVBox" id="vbox104">
         <property name="visible">True</property>
-        <property name="orientation">vertical</property>
         <child>
           <object class="GtkNotebook" id="settingsNotebook">
             <property name="visible">True</property>
@@ -1663,7 +1618,6 @@ who figured out the encryption.
                 <child>
                   <object class="GtkVBox" id="settingsvbox1">
                     <property name="visible">True</property>
-                    <property name="orientation">vertical</property>
                     <child>
                       <object class="GtkCheckButton" id="settingsEnablePTTKeyCheckButton">
                         <property name="label" translatable="yes">Enable Keyboard Push to Talk</property>
@@ -1996,7 +1950,6 @@ who figured out the encryption.
                       <object class="GtkVBox" id="settingsOSD">
                         <property name="visible">True</property>
                         <property name="sensitive">False</property>
-                        <property name="orientation">vertical</property>
                         <child>
                           <object class="GtkHSeparator" id="settingsEnableOnScreenDisplaySeparator">
                             <property name="visible">True</property>
@@ -2321,7 +2274,6 @@ Notifications are the sound effects which are played when you login, logout, a u
                 <child>
                   <object class="GtkVBox" id="masterVolumeVbox">
                     <property name="visible">True</property>
-                    <property name="orientation">vertical</property>
                     <child>
                       <object class="GtkLabel" id="masterVolumeControlLabel">
                         <property name="visible">True</property>
@@ -2527,7 +2479,6 @@ Notifications are the sound effects which are played when you login, logout, a u
                 <child>
                   <object class="GtkVBox" id="vbox105">
                     <property name="visible">True</property>
-                    <property name="orientation">vertical</property>
                     <child>
                       <object class="GtkFrame" id="frame101">
                         <property name="visible">True</property>
@@ -2862,7 +2813,6 @@ These are useful for developers.</property>
               </object>
               <packing>
                 <property name="expand">False</property>
-                <property name="padding">2</property>
                 <property name="position">1</property>
               </packing>
             </child>
@@ -2889,7 +2839,6 @@ These are useful for developers.</property>
     <child internal-child="vbox">
       <object class="GtkVBox" id="dialog-vbox5">
         <property name="visible">True</property>
-        <property name="orientation">vertical</property>
         <property name="spacing">2</property>
         <child>
           <object class="GtkHBox" id="passwordHBox">
@@ -2910,6 +2859,7 @@ These are useful for developers.</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="has_focus">True</property>
+                <property name="max_length">31</property>
                 <property name="visibility">False</property>
                 <property name="invisible_char">&#x25CF;</property>
                 <property name="activates_default">True</property>
@@ -2978,11 +2928,11 @@ These are useful for developers.</property>
     </action-widgets>
   </object>
   <object class="GtkWindow" id="motdWindow">
-    <property name="width_request">375</property>
-    <property name="height_request">350</property>
     <property name="border_width">10</property>
     <property name="title" translatable="yes">Mangler - Message of the Day</property>
     <property name="window_position">center-on-parent</property>
+    <property name="default_width">375</property>
+    <property name="default_height">350</property>
     <property name="type_hint">dialog</property>
     <property name="skip_taskbar_hint">True</property>
     <property name="skip_pager_hint">True</property>
@@ -2990,7 +2940,6 @@ These are useful for developers.</property>
     <child>
       <object class="GtkVBox" id="motdvbox1">
         <property name="visible">True</property>
-        <property name="orientation">vertical</property>
         <property name="spacing">10</property>
         <child>
           <object class="GtkNotebook" id="motdNotebook">
@@ -3073,6 +3022,7 @@ These are useful for developers.</property>
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
                     <property name="receives_default">False</property>
+                    <property name="focus_on_click">False</property>
                     <property name="draw_indicator">True</property>
                   </object>
                   <packing>
@@ -3095,6 +3045,7 @@ These are useful for developers.</property>
                 <property name="has_default">True</property>
                 <property name="receives_default">True</property>
                 <property name="use_stock">True</property>
+                <accelerator key="w" signal="activate" modifiers="GDK_CONTROL_MASK"/>
               </object>
               <packing>
                 <property name="expand">False</property>
@@ -3126,7 +3077,6 @@ These are useful for developers.</property>
         <child>
           <object class="GtkVBox" id="vbox5">
             <property name="visible">True</property>
-            <property name="orientation">vertical</property>
             <child>
               <object class="GtkHBox" id="hbox2">
                 <property name="visible">True</property>
@@ -3174,7 +3124,6 @@ These are useful for developers.</property>
                 <child>
                   <object class="GtkVBox" id="userSettingsVolumeAdjustVBox">
                     <property name="visible">True</property>
-                    <property name="orientation">vertical</property>
                     <child>
                       <object class="GtkLabel" id="userSettingsVolumeLabel">
                         <property name="visible">True</property>
@@ -3186,6 +3135,18 @@ These are useful for developers.</property>
                         <property name="position">0</property>
                       </packing>
                     </child>
+                    <child>
+                      <object class="GtkVScale" id="volumevscale">
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <property name="inverted">True</property>
+                        <property name="digits">0</property>
+                        <property name="value_pos">left</property>
+                      </object>
+                      <packing>
+                        <property name="position">1</property>
+                      </packing>
+                    </child>
                   </object>
                   <packing>
                     <property name="expand">False</property>
@@ -3195,7 +3156,6 @@ These are useful for developers.</property>
                 <child>
                   <object class="GtkVSeparator" id="vseparator1">
                     <property name="visible">True</property>
-                    <property name="orientation">vertical</property>
                   </object>
                   <packing>
                     <property name="expand">False</property>
@@ -3467,7 +3427,6 @@ These are useful for developers.</property>
     <child internal-child="vbox">
       <object class="GtkVBox" id="dialog-vbox7">
         <property name="visible">True</property>
-        <property name="orientation">vertical</property>
         <property name="spacing">2</property>
         <child>
           <object class="GtkTable" id="table4">
@@ -3581,6 +3540,7 @@ These are useful for developers.</property>
             <property name="visible">True</property>
             <property name="can_focus">True</property>
             <property name="receives_default">False</property>
+            <property name="focus_on_click">False</property>
             <property name="active">True</property>
             <property name="draw_indicator">True</property>
           </object>
@@ -3654,26 +3614,25 @@ These are useful for developers.</property>
         <child>
           <object class="GtkVBox" id="chatVBox">
             <property name="visible">True</property>
-            <property name="orientation">vertical</property>
             <child>
               <object class="GtkHPaned" id="chatHPaned">
                 <property name="visible">True</property>
-                <property name="can_focus">True</property>
                 <property name="position">375</property>
                 <property name="position_set">True</property>
                 <child>
                   <object class="GtkScrolledWindow" id="chatBoxScrolledWindow">
                     <property name="visible">True</property>
-                    <property name="can_focus">True</property>
-                    <property name="hscrollbar_policy">never</property>
+                    <property name="can_focus">False</property>
+                    <property name="hscrollbar_policy">automatic</property>
                     <property name="vscrollbar_policy">automatic</property>
                     <property name="shadow_type">in</property>
                     <child>
                       <object class="GtkTextView" id="chatBox">
                         <property name="visible">True</property>
-                        <property name="can_focus">True</property>
                         <property name="editable">False</property>
                         <property name="wrap_mode">word-char</property>
+                        <property name="left_margin">2</property>
+                        <property name="right_margin">2</property>
                         <property name="cursor_visible">False</property>
                       </object>
                     </child>
@@ -3686,14 +3645,13 @@ These are useful for developers.</property>
                 <child>
                   <object class="GtkScrolledWindow" id="chatUserListScrolledWindow">
                     <property name="visible">True</property>
-                    <property name="can_focus">True</property>
+                    <property name="can_focus">False</property>
                     <property name="hscrollbar_policy">automatic</property>
                     <property name="vscrollbar_policy">automatic</property>
                     <property name="shadow_type">in</property>
                     <child>
                       <object class="GtkTreeView" id="chatUserListTreeView">
                         <property name="visible">True</property>
-                        <property name="can_focus">True</property>
                         <property name="headers_visible">False</property>
                         <property name="enable_search">False</property>
                       </object>
@@ -3718,7 +3676,7 @@ These are useful for developers.</property>
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
                     <property name="receives_default">False</property>
-                    <property name="relief">half</property>
+                    <property name="focus_on_click">False</property>
                     <property name="draw_indicator">True</property>
                   </object>
                   <packing>
@@ -3759,6 +3717,7 @@ These are useful for developers.</property>
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
                     <property name="receives_default">True</property>
+                    <property name="focus_on_click">False</property>
                   </object>
                   <packing>
                     <property name="expand">False</property>
@@ -3771,6 +3730,7 @@ These are useful for developers.</property>
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
                     <property name="receives_default">True</property>
+                    <property name="focus_on_click">False</property>
                     <accelerator key="q" signal="activate" modifiers="GDK_CONTROL_MASK"/>
                   </object>
                   <packing>
@@ -3784,6 +3744,7 @@ These are useful for developers.</property>
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
                     <property name="receives_default">True</property>
+                    <property name="focus_on_click">False</property>
                     <accelerator key="w" signal="activate" modifiers="GDK_CONTROL_MASK"/>
                   </object>
                   <packing>
@@ -3828,7 +3789,6 @@ These are useful for developers.</property>
     <child>
       <object class="GtkMenuItem" id="copyComment">
         <property name="visible">True</property>
-        <property name="tooltip_text" translatable="yes">Copy user's comment to clipboard</property>
         <property name="label" translatable="yes">Copy Co_mment</property>
         <property name="use_underline">True</property>
       </object>
@@ -3836,7 +3796,6 @@ These are useful for developers.</property>
     <child>
       <object class="GtkMenuItem" id="copyURL">
         <property name="visible">True</property>
-        <property name="tooltip_text" translatable="yes">Copy user's URL to clipboard</property>
         <property name="label" translatable="yes">Copy _URL</property>
         <property name="use_underline">True</property>
       </object>
@@ -3872,6 +3831,13 @@ These are useful for developers.</property>
     <child>
       <object class="GtkSeparatorMenuItem" id="userRightClickMenuSeparator">
         <property name="visible">True</property>
+      </object>
+    </child>
+    <child>
+      <object class="GtkCheckMenuItem" id="muteUserChannel">
+        <property name="visible">True</property>
+        <property name="label" translatable="yes">C_hannel Mute</property>
+        <property name="use_underline">True</property>
       </object>
     </child>
     <child>
@@ -3939,7 +3905,6 @@ These are useful for developers.</property>
     <child internal-child="vbox">
       <object class="GtkVBox" id="dialog-vbox11">
         <property name="visible">True</property>
-        <property name="orientation">vertical</property>
         <property name="spacing">2</property>
         <child>
           <object class="GtkHBox" id="reasonHBox">
@@ -3959,7 +3924,9 @@ These are useful for developers.</property>
               <object class="GtkEntry" id="reasonEntry">
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
+                <property name="max_length">127</property>
                 <property name="invisible_char">&#x25CF;</property>
+                <property name="activates_default">True</property>
                 <accessibility>
                   <relation type="labelled-by" target="reasonLabel"/>
                 </accessibility>
@@ -4025,21 +3992,17 @@ These are useful for developers.</property>
     </action-widgets>
   </object>
   <object class="GtkWindow" id="adminWindow">
-    <property name="border_width">2</property>
+    <property name="border_width">5</property>
     <property name="title" translatable="yes">Mangler - Admin Window</property>
     <property name="default_width">640</property>
     <property name="default_height">480</property>
     <child>
       <object class="GtkVBox" id="vbox2">
         <property name="visible">True</property>
-        <property name="orientation">vertical</property>
+        <property name="spacing">5</property>
         <child>
           <object class="GtkAlignment" id="adminAlignment">
             <property name="visible">True</property>
-            <property name="top_padding">5</property>
-            <property name="bottom_padding">5</property>
-            <property name="left_padding">5</property>
-            <property name="right_padding">5</property>
             <child>
               <object class="GtkNotebook" id="adminNotebook">
                 <property name="visible">True</property>
@@ -4051,7 +4014,6 @@ These are useful for developers.</property>
                     <child>
                       <object class="GtkVBox" id="ServerVBox">
                         <property name="visible">True</property>
-                        <property name="orientation">vertical</property>
                         <property name="spacing">4</property>
                         <child>
                           <object class="GtkScrolledWindow" id="scrolledwindow5">
@@ -4549,7 +4511,6 @@ These are useful for developers.</property>
                                             <child>
                                               <object class="GtkVSeparator" id="ServerSpamFilterSeparator">
                                                 <property name="visible">True</property>
-                                                <property name="orientation">vertical</property>
                                               </object>
                                               <packing>
                                                 <property name="expand">False</property>
@@ -4578,7 +4539,6 @@ These are useful for developers.</property>
                                             <child>
                                               <object class="GtkVSeparator" id="ServerSpamFilterSeparator2">
                                                 <property name="visible">True</property>
-                                                <property name="orientation">vertical</property>
                                               </object>
                                               <packing>
                                                 <property name="expand">False</property>
@@ -5129,7 +5089,6 @@ These are useful for developers.</property>
                         <child>
                           <object class="GtkVBox" id="vbox12">
                             <property name="visible">True</property>
-                            <property name="orientation">vertical</property>
                             <child>
                               <object class="GtkScrolledWindow" id="scrolledwindow1">
                                 <property name="visible">True</property>
@@ -5141,6 +5100,8 @@ These are useful for developers.</property>
                                   <object class="GtkTreeView" id="ChannelEditorTree">
                                     <property name="visible">True</property>
                                     <property name="can_focus">True</property>
+                                    <property name="enable_search">False</property>
+                                    <property name="enable_tree_lines">True</property>
                                   </object>
                                 </child>
                               </object>
@@ -5182,7 +5143,6 @@ These are useful for developers.</property>
                         <child>
                           <object class="GtkVBox" id="ChannelEditor">
                             <property name="visible">True</property>
-                            <property name="orientation">vertical</property>
                             <child>
                               <object class="GtkLabel" id="ChannelEditorLabel">
                                 <property name="visible">True</property>
@@ -5212,7 +5172,6 @@ These are useful for developers.</property>
                                       <object class="GtkVBox" id="vbox11">
                                         <property name="visible">True</property>
                                         <property name="border_width">5</property>
-                                        <property name="orientation">vertical</property>
                                         <child>
                                           <object class="GtkTable" id="ChannelTable">
                                             <property name="visible">True</property>
@@ -5501,6 +5460,7 @@ These are useful for developers.</property>
                                                 <property name="n_rows">3</property>
                                                 <property name="n_columns">2</property>
                                                 <property name="column_spacing">5</property>
+                                                <property name="row_spacing">2</property>
                                                 <child>
                                                   <object class="GtkSpinButton" id="TransmitLimit">
                                                     <property name="visible">True</property>
@@ -5826,7 +5786,6 @@ These are useful for developers.</property>
                         <child>
                           <object class="GtkVBox" id="vbox6">
                             <property name="visible">True</property>
-                            <property name="orientation">vertical</property>
                             <child>
                               <object class="GtkScrolledWindow" id="scrolledwindow3">
                                 <property name="visible">True</property>
@@ -5838,6 +5797,7 @@ These are useful for developers.</property>
                                   <object class="GtkTreeView" id="UserEditorTree">
                                     <property name="visible">True</property>
                                     <property name="can_focus">True</property>
+                                    <property name="enable_search">False</property>
                                   </object>
                                 </child>
                               </object>
@@ -5880,7 +5840,6 @@ These are useful for developers.</property>
                           <object class="GtkVBox" id="UserEditor">
                             <property name="visible">True</property>
                             <property name="sensitive">False</property>
-                            <property name="orientation">vertical</property>
                             <child>
                               <object class="GtkLabel" id="UserEditorLabel">
                                 <property name="visible">True</property>
@@ -5899,20 +5858,21 @@ These are useful for developers.</property>
                             </child>
                             <child>
                               <object class="GtkHBox" id="hbox11">
+                                <property name="visible">True</property>
                                 <property name="spacing">5</property>
                                 <child>
-                                  <object class="GtkLabel" id="label21">
+                                  <object class="GtkLabel" id="UserTemplateLabel">
                                     <property name="visible">True</property>
                                     <property name="label" translatable="yes">Template:</property>
                                   </object>
                                   <packing>
                                     <property name="expand">False</property>
-                                    <property name="padding">2</property>
                                     <property name="position">0</property>
                                   </packing>
                                 </child>
                                 <child>
-                                  <object class="GtkComboBoxEntry" id="UserTemplate">
+                                  <object class="GtkComboBox" id="UserTemplate">
+                                    <property name="height_request">1</property>
                                     <property name="visible">True</property>
                                   </object>
                                   <packing>
@@ -5932,8 +5892,8 @@ These are useful for developers.</property>
                                   </packing>
                                 </child>
                                 <child>
-                                  <object class="GtkButton" id="UserTemplateSave">
-                                    <property name="label" translatable="yes">Save</property>
+                                  <object class="GtkButton" id="UserTemplateDelete">
+                                    <property name="label" translatable="yes">Delete</property>
                                     <property name="visible">True</property>
                                     <property name="can_focus">True</property>
                                     <property name="receives_default">True</property>
@@ -5943,11 +5903,32 @@ These are useful for developers.</property>
                                     <property name="position">3</property>
                                   </packing>
                                 </child>
+                                <child>
+                                  <object class="GtkVSeparator" id="UserTemplateSeparator">
+                                    <property name="visible">True</property>
+                                  </object>
+                                  <packing>
+                                    <property name="expand">False</property>
+                                    <property name="position">4</property>
+                                  </packing>
+                                </child>
+                                <child>
+                                  <object class="GtkButton" id="UserTemplateSave">
+                                    <property name="label" translatable="yes">Save...</property>
+                                    <property name="visible">True</property>
+                                    <property name="can_focus">True</property>
+                                    <property name="receives_default">True</property>
+                                  </object>
+                                  <packing>
+                                    <property name="expand">False</property>
+                                    <property name="position">5</property>
+                                  </packing>
+                                </child>
                               </object>
                               <packing>
                                 <property name="expand">False</property>
                                 <property name="fill">False</property>
-                                <property name="padding">2</property>
+                                <property name="padding">3</property>
                                 <property name="position">1</property>
                               </packing>
                             </child>
@@ -5965,7 +5946,6 @@ These are useful for developers.</property>
                                       <object class="GtkVBox" id="UserEditorExpArea">
                                         <property name="visible">True</property>
                                         <property name="border_width">5</property>
-                                        <property name="orientation">vertical</property>
                                         <child>
                                           <object class="GtkToggleButton" id="UserInfoButton">
                                             <property name="label" translatable="yes">    Info</property>
@@ -6115,11 +6095,14 @@ These are useful for developers.</property>
                                                 <property name="can_focus">True</property>
                                                 <property name="hscrollbar_policy">automatic</property>
                                                 <property name="vscrollbar_policy">automatic</property>
+                                                <property name="shadow_type">in</property>
                                                 <child>
                                                   <object class="GtkTextView" id="UserNotes">
                                                     <property name="visible">True</property>
                                                     <property name="can_focus">True</property>
                                                     <property name="border_width">2</property>
+                                                    <property name="left_margin">2</property>
+                                                    <property name="right_margin">2</property>
                                                     <accessibility>
                                                       <relation type="labelled-by" target="UserNotesLabel"/>
                                                     </accessibility>
@@ -6168,7 +6151,6 @@ These are useful for developers.</property>
                                         </child>
                                         <child>
                                           <object class="GtkVBox" id="UserNetworkSection">
-                                            <property name="orientation">vertical</property>
                                             <child>
                                               <object class="GtkCheckButton" id="UserLocked">
                                                 <property name="label" translatable="yes">Account Locked</property>
@@ -6412,7 +6394,6 @@ These are useful for developers.</property>
                                         </child>
                                         <child>
                                           <object class="GtkVBox" id="UserTransmitSection">
-                                            <property name="orientation">vertical</property>
                                             <child>
                                               <object class="GtkCheckButton" id="UserBroadcast">
                                                 <property name="label" translatable="yes">Broadcast</property>
@@ -6640,7 +6621,6 @@ These are useful for developers.</property>
                                         </child>
                                         <child>
                                           <object class="GtkVBox" id="UserDisplaySection">
-                                            <property name="orientation">vertical</property>
                                             <child>
                                               <object class="GtkCheckButton" id="UserSeeGuests">
                                                 <property name="label" translatable="yes">See Guest Accounts</property>
@@ -6760,7 +6740,6 @@ These are useful for developers.</property>
                                         </child>
                                         <child>
                                           <object class="GtkVBox" id="UserAdminSection">
-                                            <property name="orientation">vertical</property>
                                             <child>
                                               <object class="GtkCheckButton" id="UserServerAdmin">
                                                 <property name="label" translatable="yes">Server Admin</property>
@@ -7087,7 +7066,6 @@ These are useful for developers.</property>
                         <child>
                           <object class="GtkVBox" id="vbox8">
                             <property name="visible">True</property>
-                            <property name="orientation">vertical</property>
                             <child>
                               <object class="GtkButton" id="RankAdd">
                                 <property name="label" translatable="yes">Add</property>
@@ -7136,7 +7114,6 @@ These are useful for developers.</property>
                         <child>
                           <object class="GtkVBox" id="vbox7">
                             <property name="visible">True</property>
-                            <property name="orientation">vertical</property>
                             <child>
                               <object class="GtkScrolledWindow" id="scrolledwindow4">
                                 <property name="visible">True</property>
@@ -7148,6 +7125,7 @@ These are useful for developers.</property>
                                   <object class="GtkTreeView" id="RankTree">
                                     <property name="visible">True</property>
                                     <property name="can_focus">True</property>
+                                    <property name="enable_search">False</property>
                                   </object>
                                 </child>
                               </object>
@@ -7158,7 +7136,6 @@ These are useful for developers.</property>
                             <child>
                               <object class="GtkVBox" id="RankEditor">
                                 <property name="visible">True</property>
-                                <property name="orientation">vertical</property>
                                 <child>
                                   <object class="GtkTable" id="RankTable">
                                     <property name="visible">True</property>
@@ -7192,6 +7169,7 @@ These are useful for developers.</property>
                                       <object class="GtkEntry" id="RankName">
                                         <property name="visible">True</property>
                                         <property name="can_focus">True</property>
+                                        <property name="max_length">15</property>
                                         <property name="invisible_char">&#x25CF;</property>
                                         <accessibility>
                                           <relation type="labelled-by" target="RankNameLabel"/>
@@ -7206,6 +7184,7 @@ These are useful for developers.</property>
                                       <object class="GtkEntry" id="RankDescription">
                                         <property name="visible">True</property>
                                         <property name="can_focus">True</property>
+                                        <property name="max_length">63</property>
                                         <property name="invisible_char">&#x25CF;</property>
                                         <accessibility>
                                           <relation type="labelled-by" target="RankDescriptionLabel"/>
@@ -7304,7 +7283,6 @@ These are useful for developers.</property>
                     <child>
                       <object class="GtkVBox" id="vbox13">
                         <property name="visible">True</property>
-                        <property name="orientation">vertical</property>
                         <child>
                           <object class="GtkButton" id="BanAdd">
                             <property name="label" translatable="yes">Add</property>
@@ -7353,7 +7331,6 @@ These are useful for developers.</property>
                     <child>
                       <object class="GtkVBox" id="vbox14">
                         <property name="visible">True</property>
-                        <property name="orientation">vertical</property>
                         <child>
                           <object class="GtkScrolledWindow" id="scrolledwindow10">
                             <property name="visible">True</property>
@@ -7365,6 +7342,7 @@ These are useful for developers.</property>
                               <object class="GtkTreeView" id="BanTree">
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
+                                <property name="enable_search">False</property>
                               </object>
                             </child>
                           </object>
@@ -7375,7 +7353,6 @@ These are useful for developers.</property>
                         <child>
                           <object class="GtkVBox" id="BanEditor">
                             <property name="visible">True</property>
-                            <property name="orientation">vertical</property>
                             <child>
                               <object class="GtkTable" id="BanTable">
                                 <property name="visible">True</property>
@@ -7423,6 +7400,7 @@ These are useful for developers.</property>
                                   <object class="GtkEntry" id="BanReason">
                                     <property name="visible">True</property>
                                     <property name="can_focus">True</property>
+                                    <property name="max_length">127</property>
                                     <property name="invisible_char">&#x25CF;</property>
                                     <accessibility>
                                       <relation type="labelled-by" target="BanReasonLabel"/>
@@ -7515,7 +7493,7 @@ These are useful for developers.</property>
         <child>
           <object class="GtkHBox" id="hbox18">
             <property name="visible">True</property>
-            <property name="spacing">2</property>
+            <property name="spacing">5</property>
             <child>
               <object class="GtkViewport" id="viewport1">
                 <property name="visible">True</property>
@@ -7538,6 +7516,8 @@ These are useful for developers.</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
+                <property name="focus_on_click">False</property>
+                <accelerator key="w" signal="activate" modifiers="GDK_CONTROL_MASK"/>
               </object>
               <packing>
                 <property name="expand">False</property>
@@ -7567,13 +7547,12 @@ These are useful for developers.</property>
         <child>
           <object class="GtkVBox" id="privChatVBox">
             <property name="visible">True</property>
-            <property name="orientation">vertical</property>
-            <property name="spacing">2</property>
+            <property name="spacing">3</property>
             <child>
               <object class="GtkScrolledWindow" id="privChatBoxScrolledWindow">
                 <property name="visible">True</property>
-                <property name="can_focus">True</property>
-                <property name="hscrollbar_policy">never</property>
+                <property name="can_focus">False</property>
+                <property name="hscrollbar_policy">automatic</property>
                 <property name="vscrollbar_policy">automatic</property>
                 <property name="shadow_type">in</property>
                 <child>
@@ -7582,6 +7561,8 @@ These are useful for developers.</property>
                     <property name="can_focus">True</property>
                     <property name="editable">False</property>
                     <property name="wrap_mode">word-char</property>
+                    <property name="left_margin">2</property>
+                    <property name="right_margin">2</property>
                     <property name="cursor_visible">False</property>
                   </object>
                 </child>
@@ -7612,7 +7593,7 @@ These are useful for developers.</property>
                   <object class="GtkButton" id="privSendChat">
                     <property name="label" translatable="yes">Send</property>
                     <property name="visible">True</property>
-                    <property name="can_focus">True</property>
+                    <property name="can_focus">False</property>
                     <property name="can_default">True</property>
                     <property name="has_default">True</property>
                     <property name="receives_default">True</property>
@@ -7629,6 +7610,7 @@ These are useful for developers.</property>
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
                     <property name="receives_default">True</property>
+                    <property name="focus_on_click">False</property>
                     <accelerator key="w" signal="activate" modifiers="GDK_CONTROL_MASK"/>
                   </object>
                   <packing>
@@ -7660,14 +7642,12 @@ These are useful for developers.</property>
     <child>
       <object class="GtkVBox" id="vbox9">
         <property name="visible">True</property>
-        <property name="orientation">vertical</property>
         <child>
           <object class="GtkHBox" id="hbox20">
             <property name="visible">True</property>
             <child>
               <object class="GtkVBox" id="vbox10">
                 <property name="visible">True</property>
-                <property name="orientation">vertical</property>
                 <child>
                   <object class="GtkAlignment" id="alignment19">
                     <property name="visible">True</property>
@@ -7753,6 +7733,8 @@ These are useful for developers.</property>
                 <property name="width_request">100</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
+                <property name="has_focus">True</property>
+                <property name="is_focus">True</property>
                 <property name="receives_default">True</property>
                 <property name="use_stock">True</property>
               </object>
@@ -7810,27 +7792,6 @@ These are useful for developers.</property>
     <property name="upper">65535</property>
     <property name="step_increment">1</property>
     <property name="page_increment">10</property>
-  </object>
-  <object class="GtkArrow" id="UserInfoArrow">
-    <property name="visible">True</property>
-  </object>
-  <object class="GtkArrow" id="UserNetworkArrow">
-    <property name="visible">True</property>
-  </object>
-  <object class="GtkArrow" id="UserTransmitArrow">
-    <property name="visible">True</property>
-  </object>
-  <object class="GtkArrow" id="UserDisplayArrow">
-    <property name="visible">True</property>
-  </object>
-  <object class="GtkArrow" id="UserAdminArrow">
-    <property name="visible">True</property>
-  </object>
-  <object class="GtkArrow" id="UserChanAdminArrow">
-    <property name="visible">True</property>
-  </object>
-  <object class="GtkArrow" id="UserChanAuthArrow">
-    <property name="visible">True</property>
   </object>
   <object class="GtkAdjustment" id="settingsOSDfontsizeAdjustment">
     <property name="value">8</property>
@@ -7895,7 +7856,6 @@ These are useful for developers.</property>
     <child>
       <object class="GtkVBox" id="recVBox1">
         <property name="visible">True</property>
-        <property name="orientation">vertical</property>
         <child>
           <object class="GtkMenuBar" id="recMenuBar">
             <property name="visible">True</property>
@@ -7985,25 +7945,6 @@ These are useful for developers.</property>
                 </child>
               </object>
             </child>
-            <child>
-              <object class="GtkMenuItem" id="recMiscMenuItem">
-                <property name="visible">True</property>
-                <property name="right_justified">True</property>
-                <property name="label" translatable="yes">...</property>
-                <child type="submenu">
-                  <object class="GtkMenu" id="recMiscMenu">
-                    <property name="visible">True</property>
-                    <child>
-                      <object class="GtkCheckMenuItem" id="recFlags">
-                        <property name="visible">True</property>
-                        <property name="label" translatable="yes">Dishonor Recording _Flags</property>
-                        <property name="use_underline">True</property>
-                      </object>
-                    </child>
-                  </object>
-                </child>
-              </object>
-            </child>
           </object>
           <packing>
             <property name="expand">False</property>
@@ -8019,7 +7960,6 @@ These are useful for developers.</property>
               <object class="GtkVBox" id="recTabContent">
                 <property name="visible">True</property>
                 <property name="border_width">2</property>
-                <property name="orientation">vertical</property>
                 <property name="spacing">4</property>
                 <child>
                   <object class="GtkHBox" id="recOpenHBox">
@@ -8042,6 +7982,7 @@ These are useful for developers.</property>
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
+                        <property name="focus_on_click">False</property>
                       </object>
                       <packing>
                         <property name="expand">False</property>
@@ -8286,6 +8227,7 @@ These are useful for developers.</property>
                     <property name="can_focus">True</property>
                     <property name="hscrollbar_policy">automatic</property>
                     <property name="vscrollbar_policy">automatic</property>
+                    <property name="shadow_type">in</property>
                     <child>
                       <object class="GtkTreeView" id="recListTree">
                         <property name="visible">True</property>
@@ -8335,6 +8277,7 @@ These are useful for developers.</property>
                                 <property name="can_focus">True</property>
                                 <property name="receives_default">True</property>
                                 <property name="use_stock">True</property>
+                                <property name="focus_on_click">False</property>
                                 <accelerator key="s" signal="activate" modifiers="GDK_CONTROL_MASK"/>
                               </object>
                               <packing>
@@ -8344,7 +8287,6 @@ These are useful for developers.</property>
                             <child>
                               <object class="GtkVSeparator" id="recVSeparator1">
                                 <property name="visible">True</property>
-                                <property name="orientation">vertical</property>
                               </object>
                               <packing>
                                 <property name="expand">False</property>
@@ -8369,7 +8311,6 @@ These are useful for developers.</property>
                             <child>
                               <object class="GtkVSeparator" id="recVSeparator2">
                                 <property name="visible">True</property>
-                                <property name="orientation">vertical</property>
                               </object>
                               <packing>
                                 <property name="expand">False</property>
@@ -8384,6 +8325,7 @@ These are useful for developers.</property>
                                 <property name="can_focus">True</property>
                                 <property name="receives_default">True</property>
                                 <property name="use_underline">True</property>
+                                <property name="focus_on_click">False</property>
                                 <accelerator key="i" signal="activate" modifiers="GDK_CONTROL_MASK"/>
                               </object>
                               <packing>
@@ -8430,12 +8372,10 @@ These are useful for developers.</property>
     <child internal-child="vbox">
       <object class="GtkVBox" id="dialog-vbox12">
         <property name="visible">True</property>
-        <property name="orientation">vertical</property>
         <property name="spacing">2</property>
         <child>
           <object class="GtkVBox" id="recInfoVBox1">
             <property name="visible">True</property>
-            <property name="orientation">vertical</property>
             <property name="spacing">5</property>
             <child>
               <object class="GtkHBox" id="recInfoByHBox">
@@ -8455,6 +8395,7 @@ These are useful for developers.</property>
                   <object class="GtkEntry" id="recInfoByEntry">
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
+                    <property name="max_length">127</property>
                     <property name="invisible_char">&#x25CF;</property>
                     <accessibility>
                       <relation type="labelled-by" target="recInfoByLabel"/>
@@ -8486,10 +8427,13 @@ These are useful for developers.</property>
                         <property name="can_focus">True</property>
                         <property name="hscrollbar_policy">automatic</property>
                         <property name="vscrollbar_policy">automatic</property>
+                        <property name="shadow_type">in</property>
                         <child>
                           <object class="GtkTextView" id="recInfoComment">
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
+                            <property name="left_margin">2</property>
+                            <property name="right_margin">2</property>
                             <property name="accepts_tab">False</property>
                             <accessibility>
                               <relation type="labelled-by" target="recInfoCommentLabel"/>
@@ -8531,10 +8475,13 @@ These are useful for developers.</property>
                         <property name="can_focus">True</property>
                         <property name="hscrollbar_policy">automatic</property>
                         <property name="vscrollbar_policy">automatic</property>
+                        <property name="shadow_type">in</property>
                         <child>
                           <object class="GtkTextView" id="recInfoURL">
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
+                            <property name="left_margin">2</property>
+                            <property name="right_margin">2</property>
                             <property name="accepts_tab">False</property>
                             <accessibility>
                               <relation type="labelled-by" target="recInfoURLLabel"/>
@@ -8576,10 +8523,13 @@ These are useful for developers.</property>
                         <property name="can_focus">True</property>
                         <property name="hscrollbar_policy">automatic</property>
                         <property name="vscrollbar_policy">automatic</property>
+                        <property name="shadow_type">in</property>
                         <child>
                           <object class="GtkTextView" id="recInfoCopyright">
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
+                            <property name="left_margin">2</property>
+                            <property name="right_margin">2</property>
                             <property name="accepts_tab">False</property>
                             <accessibility>
                               <relation type="labelled-by" target="recInfoCopyrightLabel"/>
@@ -8621,7 +8571,7 @@ These are useful for developers.</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
                 <property name="use_stock">True</property>
-                <accelerator key="c" signal="activate" modifiers="GDK_CONTROL_MASK"/>
+                <accelerator key="w" signal="activate" modifiers="GDK_CONTROL_MASK"/>
               </object>
               <packing>
                 <property name="expand">False</property>
@@ -8753,5 +8703,75 @@ These are useful for developers.</property>
     <property name="upper">4</property>
     <property name="step_increment">1</property>
     <property name="page_increment">1</property>
+  </object>
+  <object class="GtkArrow" id="UserInfoArrow">
+    <property name="visible">True</property>
+  </object>
+  <object class="GtkArrow" id="UserNetworkArrow">
+    <property name="visible">True</property>
+  </object>
+  <object class="GtkArrow" id="UserTransmitArrow">
+    <property name="visible">True</property>
+  </object>
+  <object class="GtkArrow" id="UserDisplayArrow">
+    <property name="visible">True</property>
+  </object>
+  <object class="GtkArrow" id="UserAdminArrow">
+    <property name="visible">True</property>
+  </object>
+  <object class="GtkArrow" id="UserChanAdminArrow">
+    <property name="visible">True</property>
+  </object>
+  <object class="GtkArrow" id="UserChanAuthArrow">
+    <property name="visible">True</property>
+  </object>
+  <object class="GtkMessageDialog" id="deprecatedDialog">
+    <property name="border_width">5</property>
+    <property name="title" translatable="yes">Deprecated</property>
+    <property name="type_hint">normal</property>
+    <property name="skip_taskbar_hint">True</property>
+    <property name="has_separator">False</property>
+    <property name="message_type">warning</property>
+    <property name="text" translatable="yes">Mangler developer snapshots have been deprecated.   
+There will be no future updates to this SVN tag.  You
+should remove this version and install the stable
+version or build from SVN for the latest revision.
+</property>
+    <child internal-child="vbox">
+      <object class="GtkVBox" id="dialog-vbox13">
+        <property name="visible">True</property>
+        <property name="spacing">2</property>
+        <child internal-child="action_area">
+          <object class="GtkHButtonBox" id="dialog-action_area13">
+            <property name="visible">True</property>
+            <property name="layout_style">end</property>
+            <child>
+              <placeholder/>
+            </child>
+            <child>
+              <object class="GtkButton" id="deprecatedButton">
+                <property name="label" translatable="yes">OK</property>
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="receives_default">True</property>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">False</property>
+                <property name="position">1</property>
+              </packing>
+            </child>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="pack_type">end</property>
+            <property name="position">0</property>
+          </packing>
+        </child>
+      </object>
+    </child>
+    <action-widgets>
+      <action-widget response="0">deprecatedButton</action-widget>
+    </action-widgets>
   </object>
 </interface>
