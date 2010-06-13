@@ -1304,7 +1304,7 @@
     <property name="skip_pager_hint">True</property>
     <property name="transient_for">manglerWindow</property>
     <property name="program_name">Mangler</property>
-    <property name="version">1.2.0beta1</property>
+    <property name="version">1.2.0</property>
     <property name="copyright" translatable="yes">Copyright 2009-2010 by Eric Kilfoil</property>
     <property name="website">http://www.mangler.org</property>
     <property name="website_label" translatable="yes">http://www.mangler.org</property>
@@ -1315,14 +1315,13 @@ Mangler is distributed in the hope that it will be useful, but WITHOUT ANY WARRA
 You should have received a copy of the GNU General Public License along with Mangler.  If not, see &lt;http://www.gnu.org/licenses&gt;.</property>
     <property name="authors">Eric Kilfoil
 Daniel Sloof
-
 humbaba (anonymous)
 Haxar (anonymous)
 Felyza Wishbringer
 Bob Shaffer II
 
-With everyone else from Spux, without it
-which Mangler would not have been possible.
+Everyone else from Spux, without which
+Mangler would not have been possible.
 
 Specifically:
 - Michael Sierks
