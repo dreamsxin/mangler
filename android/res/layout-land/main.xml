@@ -6,28 +6,32 @@
 	android:layout_height="fill_parent"
 	android:gravity="center_horizontal" android:background="@drawable/background">
 
-	<ImageView
-		android:id="@+id/main_landscape_logo"
-		android:layout_width="wrap_content"
-		android:layout_height="wrap_content"
-		android:src="@drawable/mangler_logo_big"
-		android:scaleType="fitXY" />
+	<LinearLayout android:layout_height="fill_parent" 
+	android:layout_width="0dp" 
+	android:layout_weight=".6" 
+	android:gravity="center_vertical|center_horizontal">
+	
+		<ImageView 
+		android:layout_width="wrap_content" 
+		android:layout_height="wrap_content" 
+		android:src="@drawable/mangler_logo_big" 
+		android:scaleType="fitXY" android:adjustViewBounds="true"/>
+		
+	</LinearLayout>
+	
 	<LinearLayout
-		xmlns:android="http://schemas.android.com/apk/res/android"
 		android:orientation="vertical"
-		android:layout_width="fill_parent"
 		android:layout_height="fill_parent"
-		android:gravity="center"
-		android:background="#f2f2f2">
+		android:gravity="center_vertical|center_horizontal" 
+		android:layout_width="0dp" 
+		android:layout_weight=".4">
+		
 		<Button android:id="@+id/ServerListButton"
 			android:text="@string/server_list"
 			android:layout_width="wrap_content"
 			android:layout_height="wrap_content"
-			android:width="200dp"
-			android:layout_marginBottom="25dp" />
+			android:width="200dp"/>
 
-		
 	</LinearLayout>
-
-
+	
 </LinearLayout>
