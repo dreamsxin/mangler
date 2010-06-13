@@ -1,7 +1,7 @@
 # norootforbuild
 
 Name:		mangler
-Version:	1.2.0beta2
+Version:	1.2.0
 Release:	1
 Summary:	Mangler is a Ventrilo compatible client for Linux
 
