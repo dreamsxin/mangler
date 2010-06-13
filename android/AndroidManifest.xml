@@ -14,9 +14,7 @@
 		<activity android:name="ServerEdit" android:label="@string/server_edit"></activity>
 
 		<activity android:name="ServerView" 
-			android:label="@string/server_view" 
-			android:configChanges="keyboardHidden|orientation" 
-			android:screenOrientation="portrait">
+			android:label="@string/server_view">
 		</activity>
 
 <service android:name="EventService"></service>

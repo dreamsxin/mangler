@@ -43,6 +43,8 @@ import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageSwitcher;
+import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.ScrollView;
 import android.widget.SimpleAdapter;
@@ -70,6 +72,8 @@ public class ServerView extends TabActivity {
 	// List adapters.
 	private SimpleAdapter channelAdapter;
 	private SimpleAdapter userAdapter;
+	
+	private ImageSwitcher transmitImage;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -106,9 +110,6 @@ public class ServerView extends TabActivity {
         // Control listeners.
 	    ((EditText)findViewById(R.id.message)).setOnKeyListener(onChatMessageEnter);
 	    ((Button)findViewById(R.id.talkButton)).setOnClickListener(onTalkPress);
-
-        // Start receiving packets.
-    	startRecvThread();
     }
     
     @Override
@@ -152,19 +153,6 @@ public class ServerView extends TabActivity {
         		return false;
         }
         return true;
-    }
-
-    private void startRecvThread() {
-    	Runnable recvRunnable = new Runnable() {
-    		public void run() {
-    			while(true) {
-    				if(!VentriloInterface.recv()) {
-    					break;
-    				}
-    			}
-    		}
-    	};
-    	(new Thread(recvRunnable)).start();
     }
 
 	private BroadcastReceiver chatReceiver = new BroadcastReceiver() {
@@ -247,9 +235,11 @@ public class ServerView extends TabActivity {
 			if (!Recorder.recorder.recording()) {
 				Recorder.recorder.start();
 				((Button)findViewById(R.id.talkButton)).setText(R.string.stop_talk);
+				((ImageView)findViewById(R.id.transmitStatus)).setImageResource(R.drawable.transmit_on);
 			} else {
 				Recorder.recorder.stop();
 				((Button)findViewById(R.id.talkButton)).setText(R.string.start_talk);
+				((ImageView)findViewById(R.id.transmitStatus)).setImageResource(R.drawable.transmit_off);
 			}
 		}
 	};

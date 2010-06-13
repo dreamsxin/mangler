@@ -174,6 +174,8 @@ public class ServerList extends ListActivity {
 		        		servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_PASSWORD)),
 		        		servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_PHONETIC)))) {
 		        	dialog.dismiss();
+		            // Start receiving packets.
+		        	startRecvThread();
 		        	startActivityForResult(new Intent(ServerList.this, ServerView.class), ACTIVITY_CONNECT);
 		        }
 		        else {
@@ -184,6 +186,19 @@ public class ServerList extends ListActivity {
 		        dialog.dismiss();
 		    }
     	}).start();
+    }
+    
+    private void startRecvThread() {
+    	Runnable recvRunnable = new Runnable() {
+    		public void run() {
+    			while(true) {
+    				if(!VentriloInterface.recv()) {
+    					break;
+    				}
+    			}
+    		}
+    	};
+    	(new Thread(recvRunnable)).start();
     }
 
 	private BroadcastReceiver notificationReceiver = new BroadcastReceiver() {

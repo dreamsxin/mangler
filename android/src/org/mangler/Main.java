@@ -52,8 +52,8 @@ public class Main extends Activity {
         	setContentView(R.layout.main_portrait);
         	ImageView logo = (ImageView) findViewById(R.id.main_portrait_logo);
         	logo.setAdjustViewBounds(true);
-        	logo.setMaxHeight((int) (screenHeight/2.5));
-        	logo.setMaxWidth((int) (screenHeight/2.5));
+        	logo.setMaxHeight((int) (screenHeight/2));
+        	logo.setMaxWidth((int) (screenHeight/2));
         	logo.setPadding(0, screenHeight/25, 0, screenHeight/25);
         } else {
         	isPortrait = false;
