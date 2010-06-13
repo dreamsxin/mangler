@@ -22,6 +22,8 @@
 
 package org.mangler;
 
+import com.nullwire.trace.ExceptionHandler;
+
 import android.app.ListActivity;
 import android.app.ProgressDialog;
 import android.content.BroadcastReceiver;
@@ -63,6 +65,9 @@ public class ServerList extends ListActivity {
     	super.onCreate(savedInstanceState);
         setContentView(R.layout.server_list);
 
+        // Send crash reports to server
+        //ExceptionHandler.register(this, "http://www.mangler.org/errors/upload.php"); 
+        
         // Volume controls.
         setVolumeControlStream(AudioManager.STREAM_MUSIC);
 

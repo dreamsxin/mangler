@@ -24,6 +24,8 @@ package org.mangler;
 
 import java.util.HashMap;
 
+import com.nullwire.trace.ExceptionHandler;
+
 import android.app.AlertDialog;
 import android.app.TabActivity;
 import android.content.BroadcastReceiver;
@@ -80,6 +82,9 @@ public class ServerView extends TabActivity {
     	super.onCreate(savedInstanceState);
         setContentView(R.layout.server_view);
 
+        // Send crash reports to server
+        //ExceptionHandler.register(this, "http://www.mangler.org/errors/upload.php");
+        
         // Volume controls.
         setVolumeControlStream(AudioManager.STREAM_MUSIC);
 
