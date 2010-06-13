@@ -27,7 +27,7 @@ $ unzip android-ndk-r4-windows.zip
 
 - Now, from the NDK's root directory, build the native library:
 $ cd android-ndk-r4-windows
-$ ./ndk-build -C /cygdrive/c/mangler/trunk/android LIBPATH=/cygdrive/c/mangler/trunk/libventrilo3
+$ ./ndk-build -C /cygdrive/c/mangler/android LIBPATH=/cygdrive/c/mangler/libventrilo3
 
 You're done!
 
