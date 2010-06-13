@@ -66,14 +66,14 @@ public class ServerList extends ListActivity {
         setContentView(R.layout.server_list);
 
         // Send crash reports to server
-        //ExceptionHandler.register(this, "http://www.mangler.org/errors/upload.php"); 
-        
+        ExceptionHandler.register(this, "http://www.mangler.org/errors/upload.php");
+
         // Volume controls.
         setVolumeControlStream(AudioManager.STREAM_MUSIC);
 
         // Notification broadcast receiver.
         registerReceiver(notificationReceiver, new IntentFilter(SERVERLIST_NOTIFICATION));
-        
+
         dbHelper = new ManglerDBAdapter(this);
         dbHelper.open();
     	fillData();
@@ -83,10 +83,10 @@ public class ServerList extends ListActivity {
     @Override
     protected void onDestroy() {
     	super.onDestroy();
-    	
+
     	// Unregister notification broadcase receiver.
         unregisterReceiver(notificationReceiver);
-    	
+
         dbHelper.close();
     }
 
@@ -104,7 +104,7 @@ public class ServerList extends ListActivity {
         {
         	temp.setVisibility(TextView.VISIBLE);
         }
-        
+
         // Display simple cursor adapter
         SimpleCursorAdapter servers = new SimpleCursorAdapter(this, R.layout.server_row, serverCursor, new String[]{ManglerDBAdapter.KEY_SERVERNAME}, new int[]{R.id.srowtext});
         setListAdapter(servers);
@@ -192,7 +192,7 @@ public class ServerList extends ListActivity {
 		    }
     	}).start();
     }
-    
+
     private void startRecvThread() {
     	Runnable recvRunnable = new Runnable() {
     		public void run() {

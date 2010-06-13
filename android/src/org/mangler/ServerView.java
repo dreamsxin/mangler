@@ -73,7 +73,7 @@ public class ServerView extends TabActivity {
 	// List adapters.
 	private SimpleAdapter channelAdapter;
 	private SimpleAdapter userAdapter;
-	
+
 	// State variables.
 	private boolean userInChat = false;
 
@@ -83,8 +83,8 @@ public class ServerView extends TabActivity {
         setContentView(R.layout.server_view);
 
         // Send crash reports to server
-        //ExceptionHandler.register(this, "http://www.mangler.org/errors/upload.php");
-        
+        ExceptionHandler.register(this, "http://www.mangler.org/errors/upload.php");
+
         // Volume controls.
         setVolumeControlStream(AudioManager.STREAM_MUSIC);
 
@@ -111,11 +111,11 @@ public class ServerView extends TabActivity {
         registerReceiver(chatReceiver, new IntentFilter(CHATVIEW_ACTION));
         registerReceiver(channelReceiver, new IntentFilter(CHANNELLIST_ACTION));
         registerReceiver(userReceiver, new IntentFilter(USERLIST_ACTION));
-	    
+
         // Control listeners.
 	    ((EditText)findViewById(R.id.message)).setOnKeyListener(onChatMessageEnter);
 	    ((Button)findViewById(R.id.talkButton)).setOnClickListener(onTalkPress);
-	    
+
 	    // Restore state.
 	    if(savedInstanceState != null) {
 	    	userInChat = savedInstanceState.getBoolean("chatopen");
@@ -130,11 +130,11 @@ public class ServerView extends TabActivity {
     	outState.putBoolean("chatopen", userInChat);
     	super.onSaveInstanceState(outState);
     }
-    
+
     @Override
     public void onDestroy() {
     	super.onDestroy();
-    	
+
     	// Unregister receivers.
 		unregisterReceiver(chatReceiver);
         unregisterReceiver(channelReceiver);
