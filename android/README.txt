@@ -29,6 +29,8 @@ $ unzip android-ndk-r4-windows.zip
 $ cd android-ndk-r4-windows
 $ ./ndk-build -C /cygdrive/c/mangler/android LIBPATH=/cygdrive/c/mangler/libventrilo3
 
+- Finally, in Eclipse, import the project by specifying the android/ directory of the checked out trunk though "File -> Import -> General/Existing Projects...".
+
 You're done!
 
 Note:
