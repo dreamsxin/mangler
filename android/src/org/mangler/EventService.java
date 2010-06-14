@@ -92,6 +92,7 @@ public class EventService extends Service {
 	    			    sendBroadcast(broadcastIntent);
 	    				break;
 
+	    			case VentriloEvents.V3_EVENT_CHAN_MOVE:
 	    			case VentriloEvents.V3_EVENT_USER_CHAN_MOVE:
     					if (data.user.id == VentriloInterface.getuserid()) {
     						int channel_rate = VentriloInterface.getchannelrate(data.channel.id);
