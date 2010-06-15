@@ -31,7 +31,7 @@
 				<ImageView android:id="@+id/transmitStatus" android:layout_height="30px" android:layout_width="30px" android:src="@drawable/transmit_off" android:layout_marginTop="-15dp" android:layout_marginBottom="15dp"></ImageView><Button android:height="100px" 
 					android:layout_height="wrap_content" 
 					android:layout_width="wrap_content" 
-					android:width="200px" android:id="@+id/talkButton" android:text="@string/start_talk"/>
+					android:width="200px" android:id="@+id/talkButton" android:text="@string/push_to_talk"/>
 			
 			
 </LinearLayout>

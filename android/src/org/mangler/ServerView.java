@@ -36,9 +36,11 @@ import android.os.Bundle;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.View.OnKeyListener;
+import android.view.View.OnTouchListener;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
 import android.widget.Button;
@@ -119,7 +121,7 @@ public class ServerView extends TabActivity {
 
         // Control listeners.
 	    ((EditText)findViewById(R.id.message)).setOnKeyListener(onChatMessageEnter);
-	    ((Button)findViewById(R.id.talkButton)).setOnClickListener(onTalkPress);
+	    ((Button)findViewById(R.id.talkButton)).setOnTouchListener(onTalkPress);
 
 	    // Restore state.
 	    if(savedInstanceState != null) {
@@ -297,7 +299,7 @@ public class ServerView extends TabActivity {
 		}
 	};
 
-	private OnClickListener onTalkPress = new OnClickListener() {
+	/*private OnClickListener onTalkPress = new OnClickListener() {
 		public void onClick(View v) {
 			if (!Recorder.recording()) {
 				if (!Recorder.start()) {
@@ -313,6 +315,29 @@ public class ServerView extends TabActivity {
 				((Button)findViewById(R.id.talkButton)).setText(R.string.start_talk);
 				((ImageView)findViewById(R.id.transmitStatus)).setImageResource(R.drawable.transmit_off);
 			}
+		}
+	};*/
+	
+	private OnTouchListener onTalkPress = new OnTouchListener() {
+		public boolean onTouch(View v, MotionEvent m) {
+			switch (m.getAction()) {
+				case MotionEvent.ACTION_DOWN:
+					if (!Recorder.recording()) {
+						if (!Recorder.start()) {
+							Intent broadcastIntent = new Intent(ServerView.NOTIFY_ACTION);
+		    				broadcastIntent.putExtra("message", "Unsupported recording rate for hardware: " + Integer.toString(Recorder.rate()) + "Hz");
+		    			    sendBroadcast(broadcastIntent);
+		    			    return true;
+						}
+						((ImageView)findViewById(R.id.transmitStatus)).setImageResource(R.drawable.transmit_on);
+					}
+					break;
+				case MotionEvent.ACTION_UP:
+					Recorder.stop();
+					((ImageView)findViewById(R.id.transmitStatus)).setImageResource(R.drawable.transmit_off);
+					break;
+			}
+			return true;
 		}
 	};
 

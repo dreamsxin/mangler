@@ -22,4 +22,5 @@
 <string name="start_talk">Start Talking</string>
 <string name="stop_talk">Stop Talking</string>
 <string name="chat_view">Chat View</string>
+<string name="push_to_talk">Push to Talk</string>
 </resources>
