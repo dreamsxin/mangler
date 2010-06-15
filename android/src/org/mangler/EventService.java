@@ -99,6 +99,17 @@ public class EventService extends Service {
     						Player.clear();
     						Recorder.recorder.stop();
     						Recorder.recorder = new Recorder(channel_rate);
+    						String message;
+    						if (data.channel.id == 0) {
+    							message = "Changed to Lobby";
+    						} else {
+    							VentriloEventData channelData = new VentriloEventData();
+        						VentriloInterface.getchannel(channelData, data.channel.id);
+        						message = "Changed to " + StringFromBytes(channelData.text.name);
+    						}
+    	    				broadcastIntent = new Intent(ServerView.NOTIFY_ACTION);
+    	    				broadcastIntent.putExtra("message", message);
+    	    			    sendBroadcast(broadcastIntent);
     					} else {
     						Player.close(data.user.id);
     					}

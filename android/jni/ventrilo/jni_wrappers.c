@@ -133,6 +133,10 @@ JNIEXPORT void JNICALL Java_org_mangler_VentriloInterface_stopaudio() {
 	v3_stop_audio();
 }
 
+JNIEXPORT void JNICALL Java_org_mangler_VentriloInterface_setuservolume(JNIEnv* env, jobject obj, jshort id, jint level) {
+        v3_set_volume_user(id, level);
+}
+
 JNIEXPORT jint JNICALL Java_org_mangler_VentriloInterface_usercount() {
 	return v3_user_count();
 }

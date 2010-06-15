@@ -24,8 +24,6 @@ package org.mangler;
 
 import java.util.HashMap;
 
-import com.nullwire.trace.ExceptionHandler;
-
 import android.app.AlertDialog;
 import android.app.TabActivity;
 import android.content.BroadcastReceiver;
@@ -51,7 +49,11 @@ import android.widget.ScrollView;
 import android.widget.SimpleAdapter;
 import android.widget.TabHost;
 import android.widget.TextView;
+import android.widget.Toast;
 import android.widget.AdapterView.OnItemClickListener;
+import android.widget.AdapterView.OnItemLongClickListener;
+
+import com.nullwire.trace.ExceptionHandler;
 
 public class ServerView extends TabActivity {
 
@@ -59,6 +61,7 @@ public class ServerView extends TabActivity {
 	public static final String CHANNELLIST_ACTION = "org.mangler.ChannelListAction";
 	public static final String USERLIST_ACTION 	  = "org.mangler.UserListAction";
 	public static final String CHATVIEW_ACTION	  = "org.mangler.ChatViewAction";
+	public static final String NOTIFY_ACTION	  = "org.mangler.NotifyAction";
 
 	// Events.
 	public static final int EVENT_CHAT_JOIN	  = 1;
@@ -69,7 +72,7 @@ public class ServerView extends TabActivity {
 	private final int OPTION_JOIN_CHAT  = 1;
 	private final int OPTION_LEAVE_CHAT = 2;
 	private final int OPTION_DISCONNECT = 3;
-
+	
 	// List adapters.
 	private SimpleAdapter channelAdapter;
 	private SimpleAdapter userAdapter;
@@ -106,11 +109,13 @@ public class ServerView extends TabActivity {
 	    // List item clicks.
 	    ((ListView)findViewById(R.id.channelList)).setOnItemClickListener(onListClick);
 	    ((ListView)findViewById(R.id.userList)).setOnItemClickListener(onListClick);
+	    ((ListView)findViewById(R.id.userList)).setOnItemLongClickListener(onLongListClick);
 
 	    // Register receivers.
         registerReceiver(chatReceiver, new IntentFilter(CHATVIEW_ACTION));
         registerReceiver(channelReceiver, new IntentFilter(CHANNELLIST_ACTION));
         registerReceiver(userReceiver, new IntentFilter(USERLIST_ACTION));
+        registerReceiver(notifyReceiver, new IntentFilter(NOTIFY_ACTION));
 
         // Control listeners.
 	    ((EditText)findViewById(R.id.message)).setOnKeyListener(onChatMessageEnter);
@@ -139,6 +144,7 @@ public class ServerView extends TabActivity {
 		unregisterReceiver(chatReceiver);
         unregisterReceiver(channelReceiver);
         unregisterReceiver(userReceiver);
+        unregisterReceiver(notifyReceiver);
     }
 
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -213,6 +219,13 @@ public class ServerView extends TabActivity {
 			channelAdapter.notifyDataSetChanged();
 		}
 	};
+	
+	private BroadcastReceiver notifyReceiver = new BroadcastReceiver() {
+		public void onReceive(Context context, Intent intent) {
+			String message = intent.getExtras().getString("message");
+			Toast.makeText(context, message, Toast.LENGTH_SHORT).show();
+		}
+	};
 
 	private void changeChannel(final short channelid) {
 		if(VentriloInterface.getuserchannel(VentriloInterface.getuserid()) != channelid) {
@@ -247,6 +260,33 @@ public class ServerView extends TabActivity {
 		public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
 			short channelid = (Short)((HashMap<String, Object>)(parent.getItemAtPosition(position))).get("channelid");
 			changeChannel(channelid);
+		}
+	};
+	
+	private void setUserVolume(short id) {
+		final CharSequence[] items = {"5 - Loudest", "4", "3", "2", "1 - Muted"};
+		final short userid = id;
+		AlertDialog.Builder alert = new AlertDialog.Builder(this);
+		alert.setTitle("Set User Volume Level");
+		alert.setItems(items, new DialogInterface.OnClickListener() {
+			public void onClick(DialogInterface dialog, int item) {
+				short[] levelList = { 0, 0, 39, 79, 118, 148 };
+				int level = levelList[Integer.parseInt(items[item].toString().substring(0, 1))];
+				Toast.makeText(getApplicationContext(), userid + " - " + level, Toast.LENGTH_SHORT).show();
+				VentriloInterface.setuservolume(userid, level);
+				
+			}
+		});		
+		alert.show();
+	
+	}
+	
+	private OnItemLongClickListener onLongListClick = new OnItemLongClickListener() {
+		@SuppressWarnings("unchecked")
+		public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
+			short userid = (Short)((HashMap<String, Object>)(parent.getItemAtPosition(position))).get("userid");
+			setUserVolume(userid);
+			return true;
 		}
 	};
 

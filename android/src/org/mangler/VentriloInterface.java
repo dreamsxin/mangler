@@ -52,4 +52,5 @@ public class VentriloInterface {
 	public static native void 		startaudio(short type);
 	public static native void 		stopaudio();
 	public static native int 		usercount();
+	public static native void 		setuservolume(short id, int level);
 }
