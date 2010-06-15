@@ -137,6 +137,10 @@ JNIEXPORT void JNICALL Java_org_mangler_VentriloInterface_setuservolume(JNIEnv* 
         v3_set_volume_user(id, level);
 }
 
+JNIEXPORT void JNICALL Java_org_mangler_VentriloInterface_setxmitvolume(JNIEnv* env, jobject obj, jint level) {
+        v3_set_volume_xmit(level);
+}
+
 JNIEXPORT jint JNICALL Java_org_mangler_VentriloInterface_usercount() {
 	return v3_user_count();
 }

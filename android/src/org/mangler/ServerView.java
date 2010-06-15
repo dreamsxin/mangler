@@ -267,13 +267,20 @@ public class ServerView extends TabActivity {
 		final CharSequence[] items = {"5 - Loudest", "4", "3", "2", "1 - Muted"};
 		final short userid = id;
 		AlertDialog.Builder alert = new AlertDialog.Builder(this);
-		alert.setTitle("Set User Volume Level");
+		if (id == VentriloInterface.getuserid()) {
+			alert.setTitle("Set Transmit Level");
+		} else {
+			alert.setTitle("Set User Volume Level");
+		}
 		alert.setItems(items, new DialogInterface.OnClickListener() {
 			public void onClick(DialogInterface dialog, int item) {
 				short[] levelList = { 0, 0, 39, 79, 118, 148 };
 				int level = levelList[Integer.parseInt(items[item].toString().substring(0, 1))];
-				Toast.makeText(getApplicationContext(), userid + " - " + level, Toast.LENGTH_SHORT).show();
-				VentriloInterface.setuservolume(userid, level);
+				if (userid == VentriloInterface.getuserid()) {
+					VentriloInterface.setxmitvolume(level);
+				} else {
+					VentriloInterface.setuservolume(userid, level);
+				} 
 				
 			}
 		});		

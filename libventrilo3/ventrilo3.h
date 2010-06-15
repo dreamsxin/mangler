@@ -801,6 +801,7 @@ void        v3_free_account(v3_account *account);
 // Audio DSP functions
 void v3_set_volume_master(int level);
 void v3_set_volume_user(uint16_t id, int level);
+void v3_set_volume_xmit(int level);
 void v3_set_volume_luser(int level);
 uint8_t v3_get_volume_user(uint16_t id);
 uint8_t v3_get_volume_luser(void);

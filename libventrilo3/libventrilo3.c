@@ -722,6 +722,21 @@ _v3_recv(int block) {/*{{{*/
                             uint16_t datalen      = 0;
                             uint16_t framecount   = 0;
                             uint8_t celtfragsize  = 0;
+                            if (_v3_xmit_volume != 79) {
+                                register float tmpsample = 0;
+                                static const int16_t maxsample = 0x7fff;
+                                static const int16_t minsample = 0x7fff + 1;
+                                int ctr;
+                                float multiplier = tan(_v3_xmit_volume/100.0);
+                                _v3_debug(V3_DEBUG_INFO, "outbound: amplifying to level %d (%3.10f multiplier)", _v3_xmit_volume, multiplier);
+                                for (ctr = 0; ctr < ev.pcm.length / 2; ctr++) {
+                                    tmpsample = ev.data->sample16[ctr];
+                                    tmpsample *= multiplier;
+                                    ev.data->sample16[ctr] = (tmpsample > maxsample)
+                                        ? maxsample
+                                        : ((tmpsample < minsample) ? minsample : tmpsample);
+                                }
+                            }
                             if ((data = _v3_audio_encode(
                                             /* pcm input */
                                             (void *)&ev.data->sample,
@@ -7354,6 +7369,14 @@ v3_set_volume_user(uint16_t id, int level) {/*{{{*/
 void
 v3_set_volume_luser(int level) {/*{{{*/
     v3_set_volume_user(v3_get_user_id(), level);
+}/*}}}*/
+
+void
+v3_set_volume_xmit(int level) {/*{{{*/
+    if (level < 0 || level > 148) {
+        return;
+    }
+    _v3_xmit_volume = level;
 }/*}}}*/
 
 uint8_t

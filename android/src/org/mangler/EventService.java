@@ -95,7 +95,7 @@ public class EventService extends Service {
 	    			case VentriloEvents.V3_EVENT_CHAN_MOVE:
 	    			case VentriloEvents.V3_EVENT_USER_CHAN_MOVE:
     					if (data.user.id == VentriloInterface.getuserid()) {
-    						Player.clear();
+   							Player.clear();
     						Recorder.rate(VentriloInterface.getchannelrate(data.channel.id));
     						String message;
     						if (data.channel.id == 0) {

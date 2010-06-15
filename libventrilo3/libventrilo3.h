@@ -445,6 +445,7 @@ _v3_decoders v3_decoders[65535];
 
 uint8_t _v3_user_volumes[65535];
 uint8_t _v3_master_volume = 79;
+uint8_t _v3_xmit_volume;
 
 // TODO: it's too messy to have this here. move into new lv3 repo.
 /*{{{*/
