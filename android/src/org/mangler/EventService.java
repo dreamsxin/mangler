@@ -95,10 +95,8 @@ public class EventService extends Service {
 	    			case VentriloEvents.V3_EVENT_CHAN_MOVE:
 	    			case VentriloEvents.V3_EVENT_USER_CHAN_MOVE:
     					if (data.user.id == VentriloInterface.getuserid()) {
-    						int channel_rate = VentriloInterface.getchannelrate(data.channel.id);
     						Player.clear();
-    						Recorder.recorder.stop();
-    						Recorder.recorder = new Recorder(channel_rate);
+    						Recorder.rate(VentriloInterface.getchannelrate(data.channel.id));
     						String message;
     						if (data.channel.id == 0) {
     							message = "Changed to Lobby";
@@ -133,8 +131,7 @@ public class EventService extends Service {
 	    				break;
 
 	    			case VentriloEvents.V3_EVENT_LOGIN_COMPLETE:
-	    				int lobby_rate = VentriloInterface.getchannelrate((short)0);
-	    				Recorder.recorder = new Recorder(lobby_rate);
+	    				Recorder.rate(VentriloInterface.getchannelrate(VentriloInterface.getuserchannel(VentriloInterface.getuserid())));
 	    				break;
 
 	    			case VentriloEvents.V3_EVENT_PLAY_AUDIO:
@@ -157,6 +154,7 @@ public class EventService extends Service {
 	    		}
 	    	}
 	    	Player.clear();
+	    	Recorder.stop();
 		}
     };
 

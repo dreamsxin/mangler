@@ -236,7 +236,7 @@ public class ServerView extends TabActivity {
 					.setTitle("Channel is password protected")
 					.setMessage("Please insert a password to join this channel.")
 					.setView(input)
-					.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+					.setPositiveButton("OK", new DialogInterface.OnClickListener() {
 						public void onClick(DialogInterface dialog, int whichButton) {
 							VentriloInterface.changechannel(channelid, input.getText().toString());
 						}
@@ -292,12 +292,17 @@ public class ServerView extends TabActivity {
 
 	private OnClickListener onTalkPress = new OnClickListener() {
 		public void onClick(View v) {
-			if (!Recorder.recorder.recording()) {
-				Recorder.recorder.start();
+			if (!Recorder.recording()) {
+				if (!Recorder.start()) {
+					Intent broadcastIntent = new Intent(ServerView.NOTIFY_ACTION);
+    				broadcastIntent.putExtra("message", "Unsupported recording rate for hardware: " + Integer.toString(Recorder.rate()) + "Hz");
+    			    sendBroadcast(broadcastIntent);
+    			    return;
+				}
 				((Button)findViewById(R.id.talkButton)).setText(R.string.stop_talk);
 				((ImageView)findViewById(R.id.transmitStatus)).setImageResource(R.drawable.transmit_on);
 			} else {
-				Recorder.recorder.stop();
+				Recorder.stop();
 				((Button)findViewById(R.id.talkButton)).setText(R.string.start_talk);
 				((ImageView)findViewById(R.id.transmitStatus)).setImageResource(R.drawable.transmit_off);
 			}
@@ -315,7 +320,7 @@ public class ServerView extends TabActivity {
 				message.setText("");
 
 				// Hide keyboard.
-	           ((InputMethodManager)getSystemService(INPUT_METHOD_SERVICE)).hideSoftInputFromWindow(message.getWindowToken(), 0);
+				((InputMethodManager)getSystemService(INPUT_METHOD_SERVICE)).hideSoftInputFromWindow(message.getWindowToken(), 0);
 				return true;
 			}
 			return false;
