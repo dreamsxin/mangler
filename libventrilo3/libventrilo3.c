@@ -7251,12 +7251,7 @@ v3_send_audio(uint16_t send_type, uint32_t rate, uint8_t *pcm, uint32_t length, 
             }
             in_rate = rate;
             out_rate = codec->rate;
-            resampler = speex_resampler_init(channels, in_rate, out_rate, 10, &err);
-        }
-        if (length > v3_pcmlength_for_rate(rate)) {
-            _v3_error("sample size is %d but a sample of %d size was supplied.", outsamples, insamples);
-            _v3_func_leave("v3_send_audio");
-            return 0;
+            resampler = speex_resampler_init(channels, in_rate, out_rate, SPEEX_RESAMPLER_QUALITY_MIN, &err);
         }
         if (err) {
             _v3_error("resampler initialization error: %d: %s", err, speex_resampler_strerror(err));

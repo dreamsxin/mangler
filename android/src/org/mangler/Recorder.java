@@ -29,7 +29,8 @@ import android.os.Build;
 
 public class Recorder {
 
-	private static boolean is_recording = false;
+	private static Thread thread = null;
+	private static boolean stop = false;
 	private static int rate = 0;
 
 	private static class RecordThread implements Runnable {
@@ -45,8 +46,9 @@ public class Recorder {
 						audiorecord.stop();
 						audiorecord.release();
 					}
-					if ((rate = rate()) <= 0 || (pcmlen = VentriloInterface.pcmlengthforrate(rate)) <= 0 || buffer() <= 0) {
+					if (stop || (rate = rate()) <= 0 || (pcmlen = VentriloInterface.pcmlengthforrate(rate)) <= 0 || buffer() <= 0) {
 						VentriloInterface.stopaudio();
+						thread = null;
 						return;
 					}
 					try {
@@ -61,21 +63,36 @@ public class Recorder {
 					catch (IllegalArgumentException e) {
 						throw e;
 					}
+					if (audiorecord.getState() == AudioRecord.STATE_UNINITIALIZED && rate() != 8000) {
+						rate(8000);
+						audiorecord.release();
+						audiorecord = null;
+						continue;
+					}
+					try {
+						audiorecord.startRecording();
+					}
+					catch (IllegalStateException e) {
+						VentriloInterface.stopaudio();
+						audiorecord.release();
+						thread = null;
+						return;
+					}
 					buf = new byte[pcmlen];
-					audiorecord.startRecording();
 				}
 		        for (int offset = 0, read = 0; offset < pcmlen; offset += read) {
-		        	if (!recording()) {
+		        	if (stop) {
 		        		VentriloInterface.stopaudio();
 		        		audiorecord.stop();
 		        		audiorecord.release();
+		        		thread = null;
 		        		return;
 		        	}
-		        	if ((read = audiorecord.read(buf, offset, pcmlen - offset)) < 0) {
+		        	if (!stop && (read = audiorecord.read(buf, offset, pcmlen - offset)) < 0) {
 		        		throw new RuntimeException("AudioRecord read failed: " + Integer.toString(read));
 		        	}
 		        }
-		        if (rate == rate()) {
+		        if (!stop && rate == rate()) {
 		        	VentriloInterface.sendaudio(buf, pcmlen, rate);
 		        }
 			}
@@ -86,20 +103,16 @@ public class Recorder {
 		return AudioRecord.getMinBufferSize(rate, AudioFormat.CHANNEL_CONFIGURATION_MONO, AudioFormat.ENCODING_PCM_16BIT);
 	}
 
-	private static void recording(final boolean recording) {
-		is_recording = recording;
-	}
-
 	public static void rate(final int _rate) {
 		rate = Build.PRODUCT.equals("sdk") ? 8000 : _rate;
 	}
 
-	public static boolean recording() {
-		return is_recording;
-	}
-
 	public static int rate() {
 		return rate;
+	}
+
+	public static boolean recording() {
+		return thread != null;
 	}
 
 	public static boolean start() {
@@ -109,16 +122,13 @@ public class Recorder {
 		if (buffer() <= 0) {
 			return false;
 		}
-		recording(true);
-		(new Thread(new RecordThread())).start();
+		stop = false;
+		(thread = new Thread(new RecordThread())).start();
 		return true;
 	}
 
 	public static void stop() {
-		if (!recording()) {
-			return;
-		}
-		recording(false);
+		stop = true;
 	}
 
 }
