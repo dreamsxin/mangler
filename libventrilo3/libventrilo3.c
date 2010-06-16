@@ -1365,7 +1365,7 @@ v3_message_waiting(int block) {/*{{{*/
      */
     if (block) {
         _v3_next_timestamp(&tv, &v3_server.last_timestamp);
-        _v3_debug(V3_DEBUG_INFO, "outbound timestamp pending in %d.%d seconds", tv.tv_sec, tv.tv_usec);
+        //_v3_debug(V3_DEBUG_INFO, "outbound timestamp pending in %d.%d seconds", tv.tv_sec, tv.tv_usec);
     } else {
         tv.tv_sec  = 0;
         tv.tv_usec = 0;
@@ -1376,7 +1376,7 @@ v3_message_waiting(int block) {/*{{{*/
             return false;
         }
         _v3_next_timestamp(&tv, &v3_server.last_timestamp);
-        _v3_debug(V3_DEBUG_INFO, "outbound timestamp pending in %d.%d seconds", tv.tv_sec, tv.tv_usec);
+        //_v3_debug(V3_DEBUG_INFO, "outbound timestamp pending in %d.%d seconds", tv.tv_sec, tv.tv_usec);
         if (ret == 0 && block) {
             _v3_net_message *m;
             FD_ZERO(&rset);
