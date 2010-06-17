@@ -37,6 +37,7 @@ public class Recorder {
 		public void run() {
 			AudioRecord audiorecord = null;
 			byte[] buf = null;
+			int buffer = 0;
 			int rate = 0;
 			int pcmlen = 0;
 			VentriloInterface.startaudio((short)0);
@@ -46,29 +47,18 @@ public class Recorder {
 						audiorecord.stop();
 						audiorecord.release();
 					}
-					if (stop || (rate = rate()) <= 0 || (pcmlen = VentriloInterface.pcmlengthforrate(rate)) <= 0 || buffer() <= 0) {
+					if (stop || (buffer = buffer()) <= 0 || (rate = rate()) <= 0 || (pcmlen = VentriloInterface.pcmlengthforrate(rate)) <= 0) {
 						VentriloInterface.stopaudio();
 						thread = null;
 						return;
 					}
-					try {
-						audiorecord = new AudioRecord(
-							MediaRecorder.AudioSource.MIC,
-							rate,
-							AudioFormat.CHANNEL_CONFIGURATION_MONO,
-							AudioFormat.ENCODING_PCM_16BIT,
-							buffer()
-						);
-					}
-					catch (IllegalArgumentException e) {
-						throw e;
-					}
-					if (audiorecord.getState() == AudioRecord.STATE_UNINITIALIZED && rate() != 8000) {
-						rate(8000);
-						audiorecord.release();
-						audiorecord = null;
-						continue;
-					}
+					audiorecord = new AudioRecord(
+						MediaRecorder.AudioSource.MIC,
+						rate,
+						AudioFormat.CHANNEL_CONFIGURATION_MONO,
+						AudioFormat.ENCODING_PCM_16BIT,
+						buffer
+					);
 					try {
 						audiorecord.startRecording();
 					}
@@ -100,7 +90,14 @@ public class Recorder {
 	}
 
 	private static int buffer() {
-		return AudioRecord.getMinBufferSize(rate, AudioFormat.CHANNEL_CONFIGURATION_MONO, AudioFormat.ENCODING_PCM_16BIT);
+		int buffer;
+		for (final int rate : new int[] { Recorder.rate, 44100, 32000, 22050, 16000, 11025, 8000 }) {
+			if ((buffer = AudioRecord.getMinBufferSize(rate, AudioFormat.CHANNEL_CONFIGURATION_MONO, AudioFormat.ENCODING_PCM_16BIT)) > 0) {
+				rate(rate);
+				return buffer;
+			}
+		}
+		return 0;
 	}
 
 	public static void rate(final int _rate) {

@@ -7260,7 +7260,7 @@ v3_send_audio(uint16_t send_type, uint32_t rate, uint8_t *pcm, uint32_t length, 
             }
             in_rate = rate;
             out_rate = codec->rate;
-            resampler = speex_resampler_init(channels, in_rate, out_rate, SPEEX_RESAMPLER_QUALITY_MIN, &err);
+            resampler = speex_resampler_init(channels, in_rate, out_rate, SPEEX_RESAMPLER_QUALITY_VOIP, &err);
         }
         if (err) {
             _v3_error("resampler initialization error: %d: %s", err, speex_resampler_strerror(err));
