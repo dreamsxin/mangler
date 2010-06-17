@@ -1012,9 +1012,9 @@ _v3_get_0x4a(_v3_net_message *msg) {/*{{{*/
     _v3_debug(V3_DEBUG_PACKET_PARSE, "error_id......: %d", m->error_id);
     _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown 1.....: %d", m->unknown_1);
     _v3_debug(V3_DEBUG_PACKET_PARSE, "count.........: %d", m->count);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "start_id......: %d", m->start_id);
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "end_id........: %d", m->end_id);
     _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown 2.....: %d", m->unknown_2);
-    _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown 3.....: %d", m->unknown_3);
-    _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown 4.....: %d", m->unknown_4);
     if (m->error_id != 0) {
         _v3_func_leave("_v3_get_0x4a");
         return true;
@@ -1079,6 +1079,9 @@ _v3_put_0x4a(uint8_t subtype, v3_account *account, v3_account *account2) {/*{{{*
             m->len = sizeof(_v3_msg_0x4a);
             mc = malloc(m->len);
             memset(mc, 0, m->len);
+            if (subtype == V3_USERLIST_OPEN && account) {
+                mc->start_id = account->perms.account_id;
+            }
             break;
         case V3_USERLIST_ADD:
         case V3_USERLIST_MODIFY:

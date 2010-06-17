@@ -4254,6 +4254,15 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                 }
                 switch (m->subtype) {
                     case V3_USERLIST_OPEN:
+                        if (!m->count && m->end_id) {
+                            v3_account a;
+                            memset(&a, 0, sizeof(v3_account));
+                            a.perms.account_id = m->end_id;
+                            _v3_net_message *response = _v3_put_0x4a(V3_USERLIST_OPEN, &a, NULL);
+                            _v3_send(response);
+                            _v3_destroy_packet(response);
+                            break;
+                        }
                     case V3_USERLIST_MODIFY:
                     case V3_USERLIST_ADD:
                         {

@@ -193,9 +193,9 @@ typedef struct _v3_net_message_0x4a {/*{{{*/
     uint16_t error_id;          // 6
     uint16_t unknown_1;         // 8
     uint16_t count;             // 10
-    uint16_t unknown_2;         // 12
-    uint16_t unknown_3;         // 14
-    uint32_t unknown_4;         // 16
+    uint16_t start_id;          // 12
+    uint16_t end_id;            // 14
+    uint32_t unknown_2;         // 16
 } __attribute__ ((__packed__)) _v3_msg_0x4a;
 typedef struct _v3_net_message_0x4a_account {
     _v3_msg_0x4a header;        // 0
