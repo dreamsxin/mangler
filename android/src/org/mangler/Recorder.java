@@ -90,12 +90,23 @@ public class Recorder {
 	}
 
 	private static int buffer() {
-		int buffer;
-		for (final int rate : new int[] { Recorder.rate, 44100, 32000, 22050, 16000, 11025, 8000 }) {
-			if ((buffer = AudioRecord.getMinBufferSize(rate, AudioFormat.CHANNEL_CONFIGURATION_MONO, AudioFormat.ENCODING_PCM_16BIT)) > 0) {
-				rate(rate);
-				return buffer;
+		final int[] rates = { 8000, 11025, 16000, 22050, 32000, 44100 };
+		for (int pos = 0; pos < rates.length; pos++) {
+			if (rates[pos] != rate()) {
+				continue;
 			}
+			for (int ctr = 0, buffer = 0; (ctr < 0) ? pos+ctr >= 0 : pos+ctr <= rates.length;) {
+				if (pos+ctr == rates.length) {
+					ctr = -1;
+					continue;
+				}
+				if ((buffer = AudioRecord.getMinBufferSize(rates[pos+ctr], AudioFormat.CHANNEL_CONFIGURATION_MONO, AudioFormat.ENCODING_PCM_16BIT)) > 0) {
+					rate(rates[pos+ctr]);
+					return buffer;
+				}
+				ctr += (ctr < 0) ? -1 : 1;
+			}
+			break;
 		}
 		return 0;
 	}
