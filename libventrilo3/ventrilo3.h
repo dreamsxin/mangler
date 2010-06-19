@@ -242,6 +242,7 @@ typedef struct _v3_permissions v3_permissions;
 
 /*
  * Define event types to be used by the caller's event handler.
+ * IF YOU CHANGE THIS, PLEASE CHANGE IT IN android/src/org/mangler/VentriloEvents.java TOO.
  */
 enum _v3_events {
     // inbound or outbound event types

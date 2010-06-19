@@ -54,12 +54,17 @@ public class VentriloEvents {
 	public static final int V3_EVENT_PRIVATE_CHAT_END 			= 29;
 	public static final int V3_EVENT_PRIVATE_CHAT_AWAY 			= 30;
 	public static final int V3_EVENT_PRIVATE_CHAT_BACK 			= 31;
-	public static final int V3_EVENT_USERLIST_ADD 				= 32;
-	public static final int V3_EVENT_USERLIST_MODIFY 			= 33;
-	public static final int V3_EVENT_USERLIST_REMOVE 			= 34;
-	public static final int V3_EVENT_USERLIST_CHANGE_OWNER 		= 35;
-	public static final int V3_EVENT_USER_GLOBAL_MUTE_CHANGED 	= 36;
-	public static final int V3_EVENT_USER_CHANNEL_MUTE_CHANGED 	= 37;
-	public static final int V3_EVENT_PERMS_UPDATED 				= 38;
-	public static final int V3_EVENT_USER_RANK_CHANGE 			= 39;
+    public static final int V3_EVENT_TEXT_TO_SPEECH_MESSAGE		= 32;
+    public static final int V3_EVENT_PLAY_WAVE_FILE_MESSAGE		= 33;
+	public static final int V3_EVENT_USERLIST_ADD 				= 34;
+	public static final int V3_EVENT_USERLIST_MODIFY 			= 35;
+	public static final int V3_EVENT_USERLIST_REMOVE 			= 36;
+	public static final int V3_EVENT_USERLIST_CHANGE_OWNER 		= 37;
+	public static final int V3_EVENT_USER_GLOBAL_MUTE_CHANGED 	= 38;
+	public static final int V3_EVENT_USER_CHANNEL_MUTE_CHANGED 	= 39;
+	public static final int V3_EVENT_PERMS_UPDATED 				= 40;
+	public static final int V3_EVENT_USER_RANK_CHANGE 			= 41;
+	public static final int V3_EVENT_SRV_PROP_RECV				= 42;
+	public static final int V3_EVENT_SRV_PROP_SENT				= 43;
+	public static final int V3_EVENT_ADMIN_BAN_LIST				= 44;
 }
