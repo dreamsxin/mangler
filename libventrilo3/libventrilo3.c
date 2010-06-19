@@ -1997,6 +1997,40 @@ _v3_unlock_server(void) {/*{{{*/
     pthread_mutex_unlock(server_mutex);
 }/*}}}*/
 
+#if HAVE_SPEEX_DSP
+void
+_v3_lock_audioq(void) {/*{{{*/
+    // TODO: PTHREAD: check if threads are enabled, possibly use semaphores as a compile time option
+    if (audioq_mutex == NULL) {
+        pthread_mutexattr_t mta;
+        pthread_mutexattr_init(&mta);
+        pthread_mutexattr_settype(&mta, PTHREAD_MUTEX_RECURSIVE);
+
+        _v3_debug(V3_DEBUG_MUTEX, "initializing audioq mutex");
+        audioq_mutex = malloc(sizeof(pthread_mutex_t));
+        pthread_mutex_init(audioq_mutex, &mta);
+    }
+    _v3_debug(V3_DEBUG_MUTEX, "locking audioq");
+    pthread_mutex_lock(audioq_mutex);
+}/*}}}*/
+
+void
+_v3_unlock_audioq(void) {/*{{{*/
+    // TODO: PTHREAD: check if threads are enabled, possibly use semaphores as a compile time option
+    if (audioq_mutex == NULL) {
+        pthread_mutexattr_t mta;
+        pthread_mutexattr_init(&mta);
+        pthread_mutexattr_settype(&mta, PTHREAD_MUTEX_RECURSIVE);
+
+        _v3_debug(V3_DEBUG_MUTEX, "initializing audioq mutex");
+        audioq_mutex = malloc(sizeof(pthread_mutex_t));
+        pthread_mutex_init(audioq_mutex, &mta);
+    }
+    _v3_debug(V3_DEBUG_MUTEX, "unlocking audioq");
+    pthread_mutex_unlock(audioq_mutex);
+}/*}}}*/
+#endif
+
 void
 _v3_init_decoders(void) {/*{{{*/
     _v3_func_enter("_v3_init_decoders");
@@ -5342,7 +5376,7 @@ v3_login(char *server, char *username, char *password, char *phonetic) {/*{{{*/
      * Create the outbound event queue.
      */
     if (pipe(v3_server.evpipe)) {
-        _v3_error("could not create outbound event queue: %s", strerror(errno));
+        _v3_error("failed to create outbound event queue: %s", strerror(errno));
         free(srvname);
         _v3_func_leave("v3_login");
         return false;
@@ -5353,7 +5387,7 @@ v3_login(char *server, char *username, char *password, char *phonetic) {/*{{{*/
             flags |= O_NONBLOCK;
             fcntl(v3_server.evpipe[ctr], F_SETFL, flags);
         } else {
-            _v3_error("could not set non-blocking mode for outbound event queue: %s", strerror(errno));
+            _v3_error("failed to set non-blocking mode for outbound event queue: %s", strerror(errno));
             close(v3_server.evpipe[0]);
             close(v3_server.evpipe[1]);
             free(srvname);
@@ -7175,6 +7209,39 @@ v3_start_audio(uint16_t send_type) {/*{{{*/
     _v3_func_leave("v3_start_audio");
 }/*}}}*/
 
+int
+v3_max_pcm_frames(const v3_codec *codec) {/*{{{*/
+    _v3_func_enter("v3_max_pcm_frames");
+
+    if (!codec) {
+        _v3_func_leave("v3_max_pcm_frames");
+        return 0;
+    }
+    switch (codec->codec) {
+      case 0:
+        switch (codec->format) {
+          case 0:
+            return 3;
+          case 1:
+            return 4;
+          case 2:
+            return 7;
+          case 3:
+            return 15;
+        }
+        break;
+      case 1:
+        return 15;
+      case 2:
+        return 7;
+      case 3:
+        return 6;
+    }
+
+    _v3_func_leave("v3_max_pcm_frames");
+    return 0;
+}/*}}}*/
+
 uint32_t
 v3_pcmlength_for_rate(uint32_t rate) {/*{{{*/
     const v3_codec *codec;
@@ -7186,35 +7253,10 @@ v3_pcmlength_for_rate(uint32_t rate) {/*{{{*/
     }
     codec = v3_get_channel_codec(v3_get_user_channel(v3_get_user_id()));
     if (codec) {
-        uint32_t bytestosend = codec->pcmframesize;
-        switch (codec->codec) {
-          case 0:
-            switch (codec->format) {
-              case 0:
-                bytestosend *= 3;
-                break;
-              case 1:
-                bytestosend *= 4;
-                break;
-              case 2:
-                bytestosend *= 7;
-                break;
-              case 3:
-                bytestosend *= 15;
-                break;
-            }
-            break;
-          case 1:
-            bytestosend *= 15;
-            break;
-          case 2:
-            bytestosend *= 7;
-            break;
-          case 3:
-            bytestosend *= 6;
-            break;
+        uint32_t bytestosend = codec->pcmframesize * v3_max_pcm_frames(codec);
+        if (rate) {
+            bytestosend *= ((float)rate / (float)codec->rate);
         }
-        bytestosend *= ((float)rate / (float)codec->rate);
         _v3_func_leave("v3_pcmlength_for_rate");
         return bytestosend + bytestosend % 2;
     }
@@ -7222,6 +7264,24 @@ v3_pcmlength_for_rate(uint32_t rate) {/*{{{*/
     _v3_func_leave("v3_pcmlength_for_rate");
     return 0;
 }/*}}}*/
+
+#if HAVE_SPEEX_DSP
+int
+_v3_nonblock(int pipefd[2]) {
+    int ctr, flags;
+
+    for (ctr = 0; ctr < 2; ctr++) {
+        if ((flags = fcntl(pipefd[ctr], F_GETFL, 0)) >= 0) {
+            flags |= O_NONBLOCK;
+            fcntl(pipefd[ctr], F_SETFL, flags);
+        } else {
+            return true;
+        }
+    }
+
+    return false;
+}
+#endif
 
 uint32_t
 v3_send_audio(uint16_t send_type, uint32_t rate, uint8_t *pcm, uint32_t length, uint8_t stereo) {/*{{{*/
@@ -7234,56 +7294,115 @@ v3_send_audio(uint16_t send_type, uint32_t rate, uint8_t *pcm, uint32_t length, 
         return 0;
     }
     memset(&ev, 0, sizeof(v3_event));
-    ev.data = malloc(sizeof(v3_event_data));
-    memset(ev.data, 0, sizeof(v3_event_data));
     ev.type = V3_EVENT_PLAY_AUDIO;
-    ev.pcm.send_type = send_type;
-    ev.pcm.rate = rate;
-    ev.pcm.length = length;
-    ev.pcm.channels = stereo ? 2 : 1;
+    ev.pcm.channels = (stereo) ? 2 : 1;
 
     codec = v3_get_channel_codec(v3_get_user_channel(v3_get_user_id()));
-    if (send_type == V3_AUDIO_SENDTYPE_U2CCUR && codec->rate != rate) {
+    if (rate != codec->rate) {
 #if HAVE_SPEEX_DSP
-        static void *resampler = NULL;
-        static uint32_t in_rate = 0;
-        static uint32_t out_rate = 0;
-        static int err = 0;
-        uint8_t channels = stereo ? 2 : 1;
+        uint8_t buf[0xffff];
         uint32_t insamples = length;
-        uint32_t outsamples = v3_pcmlength_for_rate(codec->rate);
+        uint32_t outsamples = sizeof(buf);
+        uint32_t framesize = codec->pcmframesize * ev.pcm.channels;
+        uint8_t maxframes = v3_max_pcm_frames(codec);
+        int err = 0;
 
-        if (!resampler || rate != in_rate || codec->rate != out_rate) {
-            if (resampler) {
-                speex_resampler_destroy(resampler);
-                resampler = NULL;
+        _v3_lock_audioq();
+        if (!_v3_resampler || rate != _v3_in_rate || codec->rate != _v3_out_rate || ev.pcm.channels != _v3_channels) {
+            if (_v3_resampler) {
+                speex_resampler_destroy(_v3_resampler);
+                _v3_resampler = NULL;
             }
-            in_rate = rate;
-            out_rate = codec->rate;
-            resampler = speex_resampler_init(channels, in_rate, out_rate, SPEEX_RESAMPLER_QUALITY_VOIP, &err);
+            _v3_in_rate = rate;
+            _v3_out_rate = codec->rate;
+            _v3_channels = ev.pcm.channels;
+            if (_v3_pcm_pipe[0] >= 0 && _v3_pcm_pipe[1] >= 0) {
+                close(_v3_pcm_pipe[0]);
+                close(_v3_pcm_pipe[1]);
+                _v3_pcm_pipe[0] = -1;
+                _v3_pcm_pipe[1] = -1;
+                _v3_pcm_write = 0;
+            }
+            _v3_resampler = speex_resampler_init(
+                    _v3_channels,
+                    _v3_in_rate,
+                    _v3_out_rate,
+                    SPEEX_RESAMPLER_QUALITY_VOIP,
+                    &err);
         }
-        if (err) {
-            _v3_error("resampler initialization error: %d: %s", err, speex_resampler_strerror(err));
+        insamples /= sizeof(int16_t) * _v3_channels;
+        outsamples /= sizeof(int16_t) * _v3_channels;
+        if (err || (err = speex_resampler_process_interleaved_int(
+                _v3_resampler,
+                (void *)pcm,
+                &insamples,
+                (void *)buf,
+                &outsamples))) {
+            _v3_error("resampler error: %i: %s", err, speex_resampler_strerror(err));
+            _v3_unlock_audioq();
             _v3_func_leave("v3_send_audio");
             return 0;
         }
-        insamples  /= sizeof(int16_t) * channels;
-        outsamples /= sizeof(int16_t) * channels;
-        err = speex_resampler_process_interleaved_int(resampler, (void *)pcm, &insamples, (void *)ev.data->sample, &outsamples);
-        if (err) {
-            _v3_error("resampling error: %d: %s", err, speex_resampler_strerror(err));
-            _v3_func_leave("v3_send_audio");
-            return 0;
+        outsamples *= sizeof(int16_t) * _v3_channels;
+        ev.pcm.rate = _v3_out_rate;
+        while (((!_v3_pcm_write) ? outsamples : _v3_pcm_write) / framesize >= maxframes) {
+            ev.pcm.length = maxframes * framesize;
+            ev.data = malloc(sizeof(v3_event_data));
+            memset(ev.data, 0, sizeof(v3_event_data));
+            if (!_v3_pcm_write) {
+                memcpy(ev.data->sample, buf, ev.pcm.length);
+                memmove(buf, buf + ev.pcm.length, sizeof(buf) - ev.pcm.length);
+                outsamples -= ev.pcm.length;
+            } else if (read(_v3_pcm_pipe[0], ev.data->sample, ev.pcm.length) < 0) {
+                _v3_error("failed to read from pcm queue: %s", strerror(errno));
+                close(_v3_pcm_pipe[0]);
+                close(_v3_pcm_pipe[1]);
+                _v3_pcm_pipe[0] = -1;
+                _v3_pcm_pipe[1] = -1;
+                _v3_pcm_write = 0;
+                _v3_unlock_audioq();
+                free(ev.data);
+                _v3_func_leave("v3_send_audio");
+                return 0;
+            } else {
+                _v3_pcm_write -= ev.pcm.length;
+            }
+            _v3_evpipe_write(v3_server.evpipe[1], &ev);
         }
-        //speex_resampler_destroy(resampler);
-        ev.pcm.length = outsamples * sizeof(int16_t) * channels;
-#else
-        //_v3_error("sample rate (%d) did not match codec rate (%d) and speex dsp was not found.", rate, codec->rate);
+        if (outsamples) {
+            if ((_v3_pcm_pipe[0] < 0 && _v3_pcm_pipe[1] < 0 &&
+                pipe(_v3_pcm_pipe) && _v3_nonblock(_v3_pcm_pipe)) ||
+                write(_v3_pcm_pipe[1], buf, outsamples) < 0) {
+                if (_v3_pcm_pipe[0] < 0 && _v3_pcm_pipe[1] < 0) {
+                    _v3_error("failed to create pcm queue: %s", strerror(errno));
+                } else {
+                    _v3_error("failed to write to pcm queue: %s", strerror(errno));
+                    close(_v3_pcm_pipe[0]);
+                    close(_v3_pcm_pipe[1]);
+                    _v3_pcm_pipe[0] = -1;
+                    _v3_pcm_pipe[1] = -1;
+                    _v3_pcm_write = 0;
+                }
+                _v3_unlock_audioq();
+                _v3_func_leave("v3_send_audio");
+                return 0;
+            }
+            _v3_pcm_write += outsamples;
+        }
+        _v3_unlock_audioq();
+
         _v3_func_leave("v3_send_audio");
-        return codec->rate; // this is still needed for mangleraudio
+        return rate;
+#else
+        _v3_func_leave("v3_send_audio");
+        return codec->rate;
 #endif
     } else {
-        memcpy(ev.data->sample, pcm, length);
+        ev.data = malloc(sizeof(v3_event_data));
+        memset(ev.data, 0, sizeof(v3_event_data));
+        ev.pcm.rate = rate;
+        ev.pcm.length = length;
+        memcpy(ev.data->sample, pcm, ev.pcm.length);
     }
 
     _v3_evpipe_write(v3_server.evpipe[1], &ev);
@@ -7295,16 +7414,46 @@ void
 v3_stop_audio(void) {/*{{{*/
     v3_event ev;
 
-    _v3_func_enter("v3_start_audio");
+    _v3_func_enter("v3_stop_audio");
+#if HAVE_SPEEX_DSP
+    _v3_lock_audioq();
+    if (_v3_pcm_pipe[0] >= 0 && _v3_pcm_pipe[1] >= 0) {
+        const v3_codec *codec = v3_get_channel_codec(v3_get_user_channel(v3_get_user_id()));
+        uint8_t buf[0xffff];
+        memset(buf, 0, sizeof(buf));
+        if (_v3_out_rate == codec->rate && _v3_pcm_write && _v3_pcm_write <= sizeof(buf) &&
+            read(_v3_pcm_pipe[0], buf, _v3_pcm_write) > 0) {
+            v3_send_audio(
+                    V3_AUDIO_SENDTYPE_U2CCUR,
+                    _v3_out_rate,
+                    buf,
+                    v3_max_pcm_frames(codec) * codec->pcmframesize * _v3_channels,
+                    (_v3_channels == 2));
+        }
+        if (_v3_resampler) {
+            speex_resampler_destroy(_v3_resampler);
+            _v3_resampler = NULL;
+        }
+        _v3_in_rate = 0;
+        _v3_out_rate = 0;
+        _v3_channels = 0;
+        close(_v3_pcm_pipe[0]);
+        close(_v3_pcm_pipe[1]);
+        _v3_pcm_pipe[0] = -1;
+        _v3_pcm_pipe[1] = -1;
+        _v3_pcm_write = 0;
+    }
+    _v3_unlock_audioq();
+#endif
     if (!v3_is_loggedin()) {
-        _v3_func_leave("v3_start_audio");
+        _v3_func_leave("v3_stop_audio");
         return;
     }
     memset(&ev, 0, sizeof(v3_event));
     ev.type = V3_EVENT_USER_TALK_END;
 
     _v3_evpipe_write(v3_server.evpipe[1], &ev);
-    _v3_func_leave("v3_start_audio");
+    _v3_func_leave("v3_stop_audio");
 }/*}}}*/
 
 void

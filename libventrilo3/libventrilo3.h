@@ -379,6 +379,17 @@ pthread_cond_t          *eventq_cond = NULL;
 
 v3_event                *_v3_eventq = NULL;
 
+#if HAVE_SPEEX_DSP
+pthread_mutex_t         *audioq_mutex = NULL;
+
+void                    *_v3_resampler = NULL;
+uint32_t                _v3_in_rate = 0;
+uint32_t                _v3_out_rate = 0;
+uint8_t                 _v3_channels = 0;
+int                     _v3_pcm_pipe[2] = { -1, -1 };
+uint32_t                _v3_pcm_write = 0;
+#endif
+
 v3_codec v3_codecs[] = {
 #if HAVE_GSM
     { 0, 0, 640, 8000, -1, "GSM 6.10 8kHz" },
@@ -673,6 +684,11 @@ int                     v3_queue_event(v3_event *ev);
 v3_event                *_v3_get_last_event(int *len);
 v3_event                *_v3_create_event(uint16_t event);
 
+#if HAVE_SPEEX_DSP
+void _v3_lock_audioq(void);
+void _v3_unlock_audioq(void);
+int  _v3_nonblock(int pipefd[2]);
+#endif
 void _v3_init_decoders(void);
 void _v3_destroy_decoder(_v3_decoders *decoder);
 void _v3_destroy_decoders(void);
