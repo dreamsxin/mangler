@@ -92,7 +92,6 @@ public class EventService extends Service {
 	    			    sendBroadcast(broadcastIntent);
 	    				break;
 
-	    			case VentriloEvents.V3_EVENT_CHAN_MOVE:
 	    			case VentriloEvents.V3_EVENT_USER_CHAN_MOVE:
     					if (data.user.id == VentriloInterface.getuserid()) {
    							Player.clear();
@@ -140,6 +139,8 @@ public class EventService extends Service {
 
 	    			case VentriloEvents.V3_EVENT_USER_TALK_END:
 	    			case VentriloEvents.V3_EVENT_USER_TALK_MUTE:
+	    			case VentriloEvents.V3_EVENT_USER_GLOBAL_MUTE_CHANGED:
+	    			case VentriloEvents.V3_EVENT_USER_CHANNEL_MUTE_CHANGED:
 	    				Player.close(data.user.id);
 	    				break;
 
