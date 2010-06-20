@@ -54,14 +54,14 @@ public class EventService extends Service {
     	running = false;
     }
 
+    public static String StringFromBytes(byte[] bytes) {
+    	return new String(bytes, 0, (new String(bytes).indexOf(0)));
+    }
+
     private Runnable eventRunnable = new Runnable() {
 
     	private Intent broadcastIntent;
     	private VentriloEventData data = new VentriloEventData();
-
-        private String StringFromBytes(byte[] bytes) {
-        	return new String(bytes, 0, (new String(bytes).indexOf(0)));
-        }
 
 		public void run() {
 	    	while (running) {

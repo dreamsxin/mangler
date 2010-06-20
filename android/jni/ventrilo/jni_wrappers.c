@@ -201,6 +201,13 @@ JNIEXPORT void JNICALL Java_org_mangler_VentriloInterface_sendaudio(JNIEnv* env,
 	release_byte_array(env, pcm, data);
 }
 
+JNIEXPORT void JNICALL Java_org_mangler_VentriloInterface_error(JNIEnv* env, jobject obj, jobject eventdata) {
+	jclass  event_class = get_class(env, eventdata);
+	jobject error = get_object(env, eventdata, event_class, "error", "Lorg/mangler/VentriloEventData$_error;");
+	jclass  error_class = get_class(env, error);
+	set_byte_array(env, error, error_class, "message", _v3_error(NULL), 512);
+}
+
 JNIEXPORT void JNICALL Java_org_mangler_VentriloInterface_getuser(JNIEnv* env, jobject obj, jobject eventdata, jshort userid) {
 	v3_user *u = v3_get_user(userid);
 	if(u) {
@@ -215,7 +222,6 @@ JNIEXPORT void JNICALL Java_org_mangler_VentriloInterface_getuser(JNIEnv* env, j
 		v3_free_user(u);
 	}
 }
-
 
 JNIEXPORT void JNICALL Java_org_mangler_VentriloInterface_getchannel(JNIEnv* env, jobject obj, jobject eventdata, jshort channelid) {
 	v3_channel *c = v3_get_channel(channelid);

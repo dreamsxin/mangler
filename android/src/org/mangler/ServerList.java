@@ -96,14 +96,7 @@ public class ServerList extends ListActivity {
         startManagingCursor(serverCursor);
 
         TextView temp = (TextView)findViewById(R.id.emptyServerList);
-        if (serverCursor.getCount() > 0)
-        {
-            temp.setVisibility(TextView.GONE);
-        }
-        else
-        {
-        	temp.setVisibility(TextView.VISIBLE);
-        }
+        temp.setVisibility((serverCursor.getCount() > 0) ? TextView.GONE : TextView.VISIBLE);
 
         // Display simple cursor adapter
         SimpleCursorAdapter servers = new SimpleCursorAdapter(this, R.layout.server_row, serverCursor, new String[]{ManglerDBAdapter.KEY_SERVERNAME}, new int[]{R.id.srowtext});
@@ -171,10 +164,10 @@ public class ServerList extends ListActivity {
         // Add lobby.
         ChannelList.addChannel((short)0, "Lobby");
 
-        new Thread(new Runnable(){
-        	public void run(){
-		        if(VentriloInterface.login(
-		        		servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_HOSTNAME)) + ":" + Integer.toString( servers.getInt(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_PORTNUMBER))),
+        new Thread(new Runnable() {
+        	public void run() {
+		        if (VentriloInterface.login(
+		        		servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_HOSTNAME)) + ":" + Integer.toString(servers.getInt(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_PORTNUMBER))),
 		        		servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_USERNAME)),
 		        		servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_PASSWORD)),
 		        		servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_PHONETIC)))) {
@@ -182,13 +175,14 @@ public class ServerList extends ListActivity {
 		            // Start receiving packets.
 		        	startRecvThread();
 		        	startActivityForResult(new Intent(ServerList.this, ServerView.class), ACTIVITY_CONNECT);
-		        }
-		        else {
+		        } else {
+		        	dialog.dismiss();
+		        	VentriloEventData data = new VentriloEventData();
+		        	VentriloInterface.error(data);
 		        	Intent broadcastIntent = new Intent(ServerList.SERVERLIST_NOTIFICATION);
-		        	broadcastIntent.putExtra("notification", "Connection to server failed.");
+		        	broadcastIntent.putExtra("notification", "Connection to server failed:\n" + EventService.StringFromBytes(data.error.message));
 		        	sendBroadcast(broadcastIntent);
 		        }
-		        dialog.dismiss();
 		    }
     	}).start();
     }
@@ -204,7 +198,7 @@ public class ServerList extends ListActivity {
 
 	private BroadcastReceiver notificationReceiver = new BroadcastReceiver() {
 		public void onReceive(Context context, Intent intent) {
-			Toast.makeText(ServerList.this, intent.getStringExtra("notification"), Toast.LENGTH_SHORT).show();
+			Toast.makeText(ServerList.this, intent.getStringExtra("notification"), Toast.LENGTH_LONG).show();
 		}
 	};
 
