@@ -1321,6 +1321,20 @@ _v3_get_0x52(_v3_net_message *msg) {/*{{{*/
                 _v3_func_leave("_v3_get_0x52");
                 return true;
             }
+        case V3_AUDIO_QUEUE_AVAIL:
+            {
+                _v3_debug(V3_DEBUG_PACKET_PARSE, "user %d has the floor", m->user_id);
+                msg->contents = m;
+                _v3_func_leave("_v3_get_0x52");
+                return true;
+            }
+        case V3_AUDIO_QUEUE_TAKEN:
+            {
+                _v3_debug(V3_DEBUG_PACKET_PARSE, "user %d doesn't have the floor", m->user_id);
+                msg->contents = m;
+                _v3_func_leave("_v3_get_0x52");
+                return true;
+            }
     }
     _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown 0x52 subtype %02x", m->subtype);
     free(m);

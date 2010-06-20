@@ -4809,6 +4809,7 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                                 _v3_func_leave("_v3_process_message");
                                 return ret;
                             }
+                            _v3_debug(V3_DEBUG_EVENT, "queueing pcm msg length %d", ev->pcm.length);
                             // don't waste resources if we don't need to deal with it
                             static const int16_t maxsample = 0x7fff;
                             static const int16_t minsample = 0x7fff + 1;
@@ -4839,9 +4840,17 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                             }
                         }
                         break;
+                    case V3_AUDIO_QUEUE_AVAIL:
+                    case V3_AUDIO_QUEUE_TAKEN:
+                        {
+                            v3_free_event(ev);
+                            ev = NULL;
+                        }
+                        break;
                 }
-                _v3_debug(V3_DEBUG_EVENT, "queueing pcm msg length %d", ev->pcm.length);
-                v3_queue_event(ev);
+                if (ev) {
+                    v3_queue_event(ev);
+                }
                 _v3_destroy_0x52(msg);
             }
             _v3_destroy_packet(msg);

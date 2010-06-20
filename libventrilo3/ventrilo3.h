@@ -88,6 +88,8 @@
 #define V3_AUDIO_STOP               0x02
 #define V3_AUDIO_MUTE               0x03
 #define V3_AUDIO_START_LOGIN        0x04
+#define V3_AUDIO_QUEUE_AVAIL        0x05
+#define V3_AUDIO_QUEUE_TAKEN        0x06
 
 #define V3_PHANTOM_ADD              0x00
 #define V3_PHANTOM_REMOVE           0x01
@@ -242,7 +244,6 @@ typedef struct _v3_permissions v3_permissions;
 
 /*
  * Define event types to be used by the caller's event handler.
- * IF YOU CHANGE THIS, PLEASE CHANGE IT IN android/src/org/mangler/VentriloEvents.java TOO.
  */
 enum _v3_events {
     // inbound or outbound event types

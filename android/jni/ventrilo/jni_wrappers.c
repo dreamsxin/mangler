@@ -65,8 +65,11 @@ inline void set_byte_array(JNIEnv* env, jobject parent_obj, jclass parent_cls, c
 }
 
 JNIEXPORT jboolean JNICALL Java_org_mangler_VentriloInterface_recv() {
-	_v3_net_message *msg = _v3_recv(V3_BLOCK);
-	return msg && _v3_process_message(msg) == V3_OK;
+	_v3_net_message *msg;
+	if ((msg = _v3_recv(V3_BLOCK))) {
+		_v3_process_message(msg);
+	}
+	return msg && v3_is_loggedin();
 }
 
 JNIEXPORT jint JNICALL Java_org_mangler_VentriloInterface_pcmlengthforrate(JNIEnv* env, jobject obj, jint rate) {
@@ -134,11 +137,11 @@ JNIEXPORT void JNICALL Java_org_mangler_VentriloInterface_stopaudio() {
 }
 
 JNIEXPORT void JNICALL Java_org_mangler_VentriloInterface_setuservolume(JNIEnv* env, jobject obj, jshort id, jint level) {
-        v3_set_volume_user(id, level);
+	v3_set_volume_user(id, level);
 }
 
 JNIEXPORT void JNICALL Java_org_mangler_VentriloInterface_setxmitvolume(JNIEnv* env, jobject obj, jint level) {
-        v3_set_volume_xmit(level);
+	v3_set_volume_xmit(level);
 }
 
 JNIEXPORT jint JNICALL Java_org_mangler_VentriloInterface_usercount() {

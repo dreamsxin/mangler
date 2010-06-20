@@ -54,8 +54,8 @@ public class VentriloEvents {
 	public static final int V3_EVENT_PRIVATE_CHAT_END 			= 29;
 	public static final int V3_EVENT_PRIVATE_CHAT_AWAY 			= 30;
 	public static final int V3_EVENT_PRIVATE_CHAT_BACK 			= 31;
-    public static final int V3_EVENT_TEXT_TO_SPEECH_MESSAGE		= 32;
-    public static final int V3_EVENT_PLAY_WAVE_FILE_MESSAGE		= 33;
+	public static final int V3_EVENT_TEXT_TO_SPEECH_MESSAGE		= 32;
+	public static final int V3_EVENT_PLAY_WAVE_FILE_MESSAGE		= 33;
 	public static final int V3_EVENT_USERLIST_ADD 				= 34;
 	public static final int V3_EVENT_USERLIST_MODIFY 			= 35;
 	public static final int V3_EVENT_USERLIST_REMOVE 			= 36;

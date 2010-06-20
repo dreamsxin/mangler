@@ -196,11 +196,7 @@ public class ServerList extends ListActivity {
     private void startRecvThread() {
     	Runnable recvRunnable = new Runnable() {
     		public void run() {
-    			while(true) {
-    				if(!VentriloInterface.recv()) {
-    					break;
-    				}
-    			}
+    			while (VentriloInterface.recv());
     		}
     	};
     	(new Thread(recvRunnable)).start();
