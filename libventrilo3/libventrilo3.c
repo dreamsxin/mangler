@@ -7233,20 +7233,27 @@ v3_max_pcm_frames(const v3_codec *codec) {/*{{{*/
         switch (codec->format) {
           case 0:
             frames = 3;
+            break;
           case 1:
             frames = 4;
+            break;
           case 2:
             frames = 7;
+            break;
           case 3:
             frames = 15;
+            break;
         }
         break;
       case 1:
         frames = 15;
+        break;
       case 2:
         frames = 7;
+        break;
       case 3:
         frames = 6;
+        break;
     }
 
     _v3_func_leave("v3_max_pcm_frames");
