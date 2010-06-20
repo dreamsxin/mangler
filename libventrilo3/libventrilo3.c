@@ -7220,6 +7220,8 @@ v3_start_audio(uint16_t send_type) {/*{{{*/
 
 int
 v3_max_pcm_frames(const v3_codec *codec) {/*{{{*/
+    uint32_t frames = 0;
+
     _v3_func_enter("v3_max_pcm_frames");
 
     if (!codec) {
@@ -7230,25 +7232,25 @@ v3_max_pcm_frames(const v3_codec *codec) {/*{{{*/
       case 0:
         switch (codec->format) {
           case 0:
-            return 3;
+            frames = 3;
           case 1:
-            return 4;
+            frames = 4;
           case 2:
-            return 7;
+            frames = 7;
           case 3:
-            return 15;
+            frames = 15;
         }
         break;
       case 1:
-        return 15;
+        frames = 15;
       case 2:
-        return 7;
+        frames = 7;
       case 3:
-        return 6;
+        frames = 6;
     }
 
     _v3_func_leave("v3_max_pcm_frames");
-    return 0;
+    return frames;
 }/*}}}*/
 
 uint32_t
