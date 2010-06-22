@@ -7271,12 +7271,13 @@ v3_pcmlength_for_rate(uint32_t rate) {/*{{{*/
     }
     codec = v3_get_channel_codec(v3_get_user_channel(v3_get_user_id()));
     if (codec) {
-        uint32_t bytestosend = codec->pcmframesize * v3_max_pcm_frames(codec);
+        uint32_t pcmlen = v3_max_pcm_frames(codec) * codec->pcmframesize;
         if (rate) {
-            bytestosend *= ((float)rate / (float)codec->rate);
+            pcmlen *= (float)rate / (float)codec->rate;
+            pcmlen += pcmlen % sizeof(int16_t);
         }
         _v3_func_leave("v3_pcmlength_for_rate");
-        return bytestosend + bytestosend % 2;
+        return pcmlen;
     }
 
     _v3_func_leave("v3_pcmlength_for_rate");
@@ -7316,9 +7317,9 @@ v3_send_audio(uint16_t send_type, uint32_t rate, uint8_t *pcm, uint32_t length, 
     ev.pcm.channels = (stereo) ? 2 : 1;
 
     codec = v3_get_channel_codec(v3_get_user_channel(v3_get_user_id()));
-    if (rate != codec->rate) {
 #if HAVE_SPEEX_DSP
-        uint8_t buf[0xffff];
+    if (rate != codec->rate || length % (codec->pcmframesize * ev.pcm.channels)) {
+        uint8_t buf[1 << 16];
         uint32_t insamples = length;
         uint32_t outsamples = sizeof(buf);
         uint32_t framesize = codec->pcmframesize * ev.pcm.channels;
@@ -7363,7 +7364,7 @@ v3_send_audio(uint16_t send_type, uint32_t rate, uint8_t *pcm, uint32_t length, 
         }
         outsamples *= sizeof(int16_t) * _v3_channels;
         ev.pcm.rate = _v3_out_rate;
-        while (((!_v3_pcm_write) ? outsamples : _v3_pcm_write) / framesize >= maxframes) {
+        while ((!_v3_pcm_write ? outsamples : _v3_pcm_write) / framesize >= maxframes) {
             ev.pcm.length = maxframes * framesize;
             ev.data = malloc(sizeof(v3_event_data));
             memset(ev.data, 0, sizeof(v3_event_data));
@@ -7411,17 +7412,18 @@ v3_send_audio(uint16_t send_type, uint32_t rate, uint8_t *pcm, uint32_t length, 
 
         _v3_func_leave("v3_send_audio");
         return rate;
+    }
 #else
+    if (rate != codec->rate) {
         _v3_func_leave("v3_send_audio");
         return codec->rate;
-#endif
-    } else {
-        ev.data = malloc(sizeof(v3_event_data));
-        memset(ev.data, 0, sizeof(v3_event_data));
-        ev.pcm.rate = rate;
-        ev.pcm.length = length;
-        memcpy(ev.data->sample, pcm, ev.pcm.length);
     }
+#endif
+    ev.data = malloc(sizeof(v3_event_data));
+    memset(ev.data, 0, sizeof(v3_event_data));
+    ev.pcm.rate = rate;
+    ev.pcm.length = length;
+    memcpy(ev.data->sample, pcm, ev.pcm.length);
 
     _v3_evpipe_write(v3_server.evpipe[1], &ev);
     _v3_func_leave("v3_send_audio");

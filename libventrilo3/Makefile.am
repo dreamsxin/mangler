@@ -20,9 +20,9 @@ INCLUDES = $(speex_CFLAGS) $(celt_CFLAGS)
 #noinst_PROGRAMS = lv3_test
 
 dev:
-	gcc -pthread -Wall -Wextra -g -c -I../ -o libventrilo3.o libventrilo3.c
-	gcc -pthread -Wall -Wextra -g -c -I../ -o ventrilo3_handshake.o ventrilo3_handshake.c
-	gcc -pthread -Wall -Wextra -g -c -I../ -o libventrilo3_message.o libventrilo3_message.c
+	gcc -pthread -Wall -DHAVE_SPEEX_DSP -g -c -I../ -o libventrilo3.o libventrilo3.c
+	gcc -pthread -Wall -g -c -I../ -o ventrilo3_handshake.o ventrilo3_handshake.c
+	gcc -pthread -Wall -g -c -I../ -o libventrilo3_message.o libventrilo3_message.c
 	ar rvs libventrilo3.a libventrilo3.o ventrilo3_handshake.o libventrilo3_message.o
-	gcc -Wall -Wextra -g -o lv3_test -I../ -pthread lv3_test.c -L. libventrilo3.a $(pulse_LIBS) $(speex_LIBS) $(celt_LIBS) $(LIBS)
+#	gcc -pthread -Wall -g -I../ -o lv3_test lv3_test.c -L. libventrilo3.a $(pulse_LIBS) $(speex_LIBS) $(celt_LIBS) $(LIBS)
 
