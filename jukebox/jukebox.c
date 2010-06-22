@@ -722,12 +722,16 @@ char *id3strdup(mpg123_string *inlines) {
 #if HAVE_FLAC
 flac_dec_write
 flac_write(const flac_dec *dec, const flac_frame_t *frame, const flac_int32_t *const buf[], void *data) {
-    (void)data;
+    musicfile *musicfile = data;
     uint8_t channels = flac_dec_get_channels(dec);
     uint32_t ctr;
 
+    if (!channels || !musicfile->rate || !musicfile->channels) {
+        fprintf(stderr, "error: flac_write: flac metadata not found\n");
+        return FLAC_DEC_WRITE_ABORT;
+    }
     if (frame->header.blocksize * channels > sizeof(fld.buf)) {
-        fprintf(stderr, "error: blocksize * channels %i > buffer %lu bytes\n", frame->header.blocksize * channels, sizeof(fld.buf));
+        fprintf(stderr, "error: flac_write: blocksize * channels %i > buffer %lu bytes\n", frame->header.blocksize * channels, sizeof(fld.buf));
         return FLAC_DEC_WRITE_ABORT;
     }
     for (ctr = 0, fld.len = 0; ctr < frame->header.blocksize * channels; ctr++) {
@@ -797,21 +801,21 @@ void *open_file(musicfile *musicfile, const v3_codec *codec) {
     }
     */
     if (err != MPG123_OK) {
-        fprintf(stderr, "error: trouble with mpg123: %s\n", mpg123_plain_strerror(err));
+        fprintf(stderr, "error: mpg123_init: trouble with mpg123: %s\n", mpg123_plain_strerror(err));
         return NULL;
     }
     //if ((mh = mpg123_new(NULL, &err)) == NULL) {
     if (!(musicfile->mh = mpg123_parnew(mp, NULL, &err))) {
-        fprintf(stderr, "error: could not create mpg123 handle\n");
+        fprintf(stderr, "error: mpg123_parnew: could not create mpg123 handle\n");
         return NULL;
     }
     if (mpg123_open(musicfile->mh, musicfile->path) != MPG123_OK) {
-        fprintf(stderr, "error: could not open %s\n", musicfile->path);
+        fprintf(stderr, "error: mpg123_open: could not open %s\n", musicfile->path);
         close_file(musicfile);
         return NULL;
     }
     if (mpg123_getformat(musicfile->mh, &rate, &channels, &encoding) != MPG123_OK) {
-        fprintf(stderr, "error: could not get format\n");
+        fprintf(stderr, "error: mpg123_getformat: could not get format\n");
         close_file(musicfile);
         return NULL;
     }
@@ -823,7 +827,7 @@ void *open_file(musicfile *musicfile, const v3_codec *codec) {
     }
     */
     if (encoding != MPG123_ENC_SIGNED_16) {
-        fprintf(stderr, "error: unknown encoding: 0x%02x\n", encoding);
+        fprintf(stderr, "error: mpg123_getformat: unknown encoding: 0x%02x\n", encoding);
         close_file(musicfile);
         return NULL;
     }
