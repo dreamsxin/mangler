@@ -110,6 +110,8 @@
 # define flac_int32_t                   FLAC__int32
 # define flac_metadata_t                FLAC__StreamMetadata
 
+# define FLAC_METADATA_STREAMINFO       FLAC__METADATA_TYPE_STREAMINFO
+
 typedef struct {
     int16_t  buf[1 << 15];
     uint32_t len;
@@ -346,24 +348,23 @@ void *jukebox_player(void *connptr) {
                                 if (debug) {
                                     fprintf(stderr, "found %s in %s\n", searchspec, musiclist[filenum]->path);
                                 }
-                                if (!(musicfile = open_file(musiclist[filenum], codec))) {
+                                if ((musicfile = open_file(musiclist[filenum], codec))) {
+                                    send_now_playing(filenum);
+                                    playing = true;
+                                    stopped = false;
+                                    v3_start_audio(V3_AUDIO_SENDTYPE_U2CCUR);
+                                    break;
+                                } else {
                                     if (debug) {
                                         fprintf(stderr, "could not open: %s\n", musiclist[filenum]->path);
                                     }
-                                    continue;
-                                } else {
-                                    break;
+                                    attempts = 20;
                                 }
                             }
                             if (attempts > 20) {
                                 // give up and just pick a random song
-                                v3_send_chat_message("Apparently something matched, but it doesn't appear to be a song... so I fail.  Here's something else");
-                                playing = false;
-                            } else {
-                                send_now_playing(filenum);
-                                playing = true;
+                                v3_send_chat_message("Apparently something matched but it didn't appear to be a song, so I fail.  Here's something else...");
                                 stopped = false;
-                                v3_start_audio(V3_AUDIO_SENDTYPE_U2CCUR);
                             }
                         }
                     } else if (! stopped && strcmp(ev->data->chatmessage, "!next") == 0) {
@@ -722,14 +723,10 @@ char *id3strdup(mpg123_string *inlines) {
 #if HAVE_FLAC
 flac_dec_write
 flac_write(const flac_dec *dec, const flac_frame_t *frame, const flac_int32_t *const buf[], void *data) {
-    musicfile *musicfile = data;
+    (void)data;
     uint8_t channels = flac_dec_get_channels(dec);
     uint32_t ctr;
 
-    if (!channels || !musicfile->rate || !musicfile->channels) {
-        fprintf(stderr, "error: flac_write: flac metadata not found\n");
-        return FLAC_DEC_WRITE_ABORT;
-    }
     if (frame->header.blocksize * channels > sizeof(fld.buf)) {
         fprintf(stderr, "error: flac_write: blocksize * channels %i > buffer %lu bytes\n", frame->header.blocksize * channels, sizeof(fld.buf));
         return FLAC_DEC_WRITE_ABORT;
@@ -749,8 +746,10 @@ flac_metadata(const flac_dec *dec, const flac_metadata_t *metadata, void *data) 
     (void)dec;
     musicfile *musicfile = data;
 
-    musicfile->rate = metadata->data.stream_info.sample_rate;
-    musicfile->channels = metadata->data.stream_info.channels;
+    if (metadata->type == FLAC_METADATA_STREAMINFO) {
+        musicfile->rate = metadata->data.stream_info.sample_rate;
+        musicfile->channels = metadata->data.stream_info.channels;
+    }
 }
 
 void
@@ -781,6 +780,11 @@ void *open_file(musicfile *musicfile, const v3_codec *codec) {
         }
         if (!flac_dec_process_metadata(musicfile->mh)) {
             fprintf(stderr, "error: flac_dec_process_metadata: %s\n", flac_dec_get_state_string(musicfile->mh));
+            close_file(musicfile);
+            return NULL;
+        }
+        if (!musicfile->channels || !musicfile->rate) {
+            fprintf(stderr, "error: flac_dec_process_metadata: flac metadata not found\n");
             close_file(musicfile);
             return NULL;
         }
