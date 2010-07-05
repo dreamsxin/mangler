@@ -80,10 +80,6 @@ JNIEXPORT void JNICALL Java_org_mangler_VentriloInterface_joinchat() {
 	v3_join_chat();
 }
 
-JNIEXPORT void JNICALL Java_org_mangler_VentriloInterface_setuservolume(jchar id, jchar level) {
-	v3_set_volume_user(id, level);
-}
-
 JNIEXPORT void JNICALL Java_org_mangler_VentriloInterface_leavechat() {
 	v3_leave_chat();
 }
