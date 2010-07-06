@@ -121,13 +121,15 @@ public class ServerView extends TabActivity {
         // Control listeners.
 	    ((EditText)findViewById(R.id.message)).setOnKeyListener(onChatMessageEnter);
 	    ((Button)findViewById(R.id.talkButton)).setOnTouchListener(onTalkPress);
-
+    
 	    // Restore state.
 	    if(savedInstanceState != null) {
 	    	userInChat = savedInstanceState.getBoolean("chatopen");
 	    	((TextView)findViewById(R.id.messages)).setText(savedInstanceState.getString("chatmessages"));
-	    	((EditText)findViewById(R.id.message)).setEnabled(userInChat);
+	    	((EditText)findViewById(R.id.message)).setEnabled(userInChat);	
 	    }
+	
+	    ((EditText)findViewById(R.id.message)).setVisibility(userInChat ? TextView.VISIBLE : TextView.GONE);
     }
 
     @Override
@@ -161,13 +163,19 @@ public class ServerView extends TabActivity {
     	final EditText message = (EditText)findViewById(R.id.message);
         switch(item.getItemId()) {
         	case OPTION_JOIN_CHAT:
-        		VentriloInterface.joinchat();
-        		message.setEnabled(true);
+        		if (!userInChat) {
+        			VentriloInterface.joinchat();
+        			message.setEnabled(true);
+                	message.setVisibility(TextView.VISIBLE);
+        		}
         		break;
 
         	case OPTION_LEAVE_CHAT:
-        		VentriloInterface.leavechat();
-        		message.setEnabled(false);
+        		if (userInChat) {
+        			VentriloInterface.leavechat();
+        			message.setEnabled(false);
+                	message.setVisibility(TextView.GONE);
+        		}
         		break;
 
         	case OPTION_DISCONNECT:
@@ -286,7 +294,6 @@ public class ServerView extends TabActivity {
 			}
 		});		
 		alert.show();
-	
 	}
 	
 	private OnItemLongClickListener onLongListClick = new OnItemLongClickListener() {

@@ -23,4 +23,7 @@
 <string name="stop_talk">Stop Talking</string>
 <string name="chat_view">Chat View</string>
 <string name="push_to_talk">Push to Talk</string>
+<string name="eula_title">Privacy Notice</string>
+<string name="eula_accept">Accept</string>
+<string name="eula_refuse">Refuse</string>
 </resources>

@@ -39,6 +39,9 @@ public class Main extends Activity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        
+        Eula.show(this);
+        
         setContentView(R.layout.main);
 
         // Volume controls.
