@@ -64,7 +64,7 @@ inline void set_byte_array(JNIEnv* env, jobject parent_obj, jclass parent_cls, c
 	(*env)->SetByteArrayRegion(env, (*env)->GetObjectField(env, parent_obj, (*env)->GetFieldID(env, parent_cls, name, "[B")), 0, sz, data);	
 }
 
-JNIEXPORT jboolean JNICALL Java_org_mangler_VentriloInterface_recv() {
+JNIEXPORT jboolean JNICALL Java_org_mangler_android_VentriloInterface_recv() {
 	_v3_net_message *msg;
 	if ((msg = _v3_recv(V3_BLOCK))) {
 		_v3_process_message(msg);
@@ -72,95 +72,95 @@ JNIEXPORT jboolean JNICALL Java_org_mangler_VentriloInterface_recv() {
 	return msg && v3_is_loggedin();
 }
 
-JNIEXPORT jint JNICALL Java_org_mangler_VentriloInterface_pcmlengthforrate(JNIEnv* env, jobject obj, jint rate) {
+JNIEXPORT jint JNICALL Java_org_mangler_android_VentriloInterface_pcmlengthforrate(JNIEnv* env, jobject obj, jint rate) {
 	return v3_pcmlength_for_rate(rate);
 }
 
-JNIEXPORT void JNICALL Java_org_mangler_VentriloInterface_joinchat() {
+JNIEXPORT void JNICALL Java_org_mangler_android_VentriloInterface_joinchat() {
 	v3_join_chat();
 }
 
-JNIEXPORT void JNICALL Java_org_mangler_VentriloInterface_leavechat() {
+JNIEXPORT void JNICALL Java_org_mangler_android_VentriloInterface_leavechat() {
 	v3_leave_chat();
 }
 
-JNIEXPORT void JNICALL Java_org_mangler_VentriloInterface_logout() {
+JNIEXPORT void JNICALL Java_org_mangler_android_VentriloInterface_logout() {
 	v3_logout();
 }
 
-JNIEXPORT void JNICALL Java_org_mangler_VentriloInterface_phantomadd(JNIEnv* env, jobject obj, jchar channelid) {
+JNIEXPORT void JNICALL Java_org_mangler_android_VentriloInterface_phantomadd(JNIEnv* env, jobject obj, jchar channelid) {
 	v3_phantom_add(channelid);
 }
 
-JNIEXPORT void JNICALL Java_org_mangler_VentriloInterface_phantomremove(JNIEnv* env, jobject obj, jchar channelid) {
+JNIEXPORT void JNICALL Java_org_mangler_android_VentriloInterface_phantomremove(JNIEnv* env, jobject obj, jchar channelid) {
 	v3_phantom_remove(channelid);
 }
 
-JNIEXPORT jboolean JNICALL Java_org_mangler_VentriloInterface_isloggedin() {
+JNIEXPORT jboolean JNICALL Java_org_mangler_android_VentriloInterface_isloggedin() {
 	return v3_is_loggedin() != 0;
 }
 
-JNIEXPORT jchar JNICALL Java_org_mangler_VentriloInterface_getuserid() {
+JNIEXPORT jchar JNICALL Java_org_mangler_android_VentriloInterface_getuserid() {
 	return v3_get_user_id();
 }
 
-JNIEXPORT jboolean JNICALL Java_org_mangler_VentriloInterface_messagewaiting(JNIEnv* env, jobject obj, jboolean block) {
+JNIEXPORT jboolean JNICALL Java_org_mangler_android_VentriloInterface_messagewaiting(JNIEnv* env, jobject obj, jboolean block) {
 	return v3_message_waiting(block) != 0;
 }
 
-JNIEXPORT jint JNICALL Java_org_mangler_VentriloInterface_getmaxclients() {
+JNIEXPORT jint JNICALL Java_org_mangler_android_VentriloInterface_getmaxclients() {
 	return v3_get_max_clients();
 }
 
-JNIEXPORT void JNICALL Java_org_mangler_VentriloInterface_clearevents() {
+JNIEXPORT void JNICALL Java_org_mangler_android_VentriloInterface_clearevents() {
 	v3_clear_events();
 }
 
-JNIEXPORT jint JNICALL Java_org_mangler_VentriloInterface_getcodecrate(JNIEnv* env, jobject obj, jchar codec, jchar format) {
+JNIEXPORT jint JNICALL Java_org_mangler_android_VentriloInterface_getcodecrate(JNIEnv* env, jobject obj, jchar codec, jchar format) {
 	return v3_get_codec_rate(codec, format);
 }
 
-JNIEXPORT jchar JNICALL Java_org_mangler_VentriloInterface_getuserchannel(JNIEnv* env, jobject obj, jchar id) {
+JNIEXPORT jchar JNICALL Java_org_mangler_android_VentriloInterface_getuserchannel(JNIEnv* env, jobject obj, jchar id) {
 	return v3_get_user_channel(id);
 }
 
-JNIEXPORT jboolean JNICALL Java_org_mangler_VentriloInterface_channelrequirespassword(JNIEnv* env, jobject obj, jchar channelid) {
+JNIEXPORT jboolean JNICALL Java_org_mangler_android_VentriloInterface_channelrequirespassword(JNIEnv* env, jobject obj, jchar channelid) {
 	return v3_channel_requires_password(channelid) != 0;
 }
 
-JNIEXPORT void JNICALL Java_org_mangler_VentriloInterface_startaudio(JNIEnv* env, jobject obj, jchar sendtype) {
+JNIEXPORT void JNICALL Java_org_mangler_android_VentriloInterface_startaudio(JNIEnv* env, jobject obj, jchar sendtype) {
 	v3_start_audio(sendtype);
 }
 
-JNIEXPORT void JNICALL Java_org_mangler_VentriloInterface_stopaudio() {
+JNIEXPORT void JNICALL Java_org_mangler_android_VentriloInterface_stopaudio() {
 	v3_stop_audio();
 }
 
-JNIEXPORT void JNICALL Java_org_mangler_VentriloInterface_setuservolume(JNIEnv* env, jobject obj, jshort id, jint level) {
+JNIEXPORT void JNICALL Java_org_mangler_android_VentriloInterface_setuservolume(JNIEnv* env, jobject obj, jshort id, jint level) {
 	v3_set_volume_user(id, level);
 }
 
-JNIEXPORT void JNICALL Java_org_mangler_VentriloInterface_setxmitvolume(JNIEnv* env, jobject obj, jint level) {
+JNIEXPORT void JNICALL Java_org_mangler_android_VentriloInterface_setxmitvolume(JNIEnv* env, jobject obj, jint level) {
 	v3_set_volume_xmit(level);
 }
 
-JNIEXPORT jint JNICALL Java_org_mangler_VentriloInterface_usercount() {
+JNIEXPORT jint JNICALL Java_org_mangler_android_VentriloInterface_usercount() {
 	return v3_user_count();
 }
 
-JNIEXPORT jint JNICALL Java_org_mangler_VentriloInterface_channelcount() {
+JNIEXPORT jint JNICALL Java_org_mangler_android_VentriloInterface_channelcount() {
 	return v3_channel_count();
 }
 
-JNIEXPORT int JNICALL Java_org_mangler_VentriloInterface_debuglevel(JNIEnv* env, jobject obj, jint level) {
+JNIEXPORT int JNICALL Java_org_mangler_android_VentriloInterface_debuglevel(JNIEnv* env, jobject obj, jint level) {
 	return v3_debuglevel(level);
 }
 
-JNIEXPORT int JNICALL Java_org_mangler_VentriloInterface_getchannelrate(JNIEnv* env, jobject obj, jchar channelid) {
+JNIEXPORT int JNICALL Java_org_mangler_android_VentriloInterface_getchannelrate(JNIEnv* env, jobject obj, jchar channelid) {
 	return v3_get_channel_codec(channelid)->rate;
 }
 
-JNIEXPORT jboolean JNICALL Java_org_mangler_VentriloInterface_login(JNIEnv* env, jobject obj, jstring server, jstring username, jstring password, jstring phonetic) {
+JNIEXPORT jboolean JNICALL Java_org_mangler_android_VentriloInterface_login(JNIEnv* env, jobject obj, jstring server, jstring username, jstring password, jstring phonetic) {
 	char* _server = get_string(env, server);
 	char* _username = get_string(env, username);
 	char* _password = get_string(env, password);
@@ -173,19 +173,19 @@ JNIEXPORT jboolean JNICALL Java_org_mangler_VentriloInterface_login(JNIEnv* env,
 	return ret;
 }
 
-JNIEXPORT void JNICALL Java_org_mangler_VentriloInterface_sendchatmessage(JNIEnv* env, jobject obj, jstring message) {
+JNIEXPORT void JNICALL Java_org_mangler_android_VentriloInterface_sendchatmessage(JNIEnv* env, jobject obj, jstring message) {
 	char* _message = get_string(env, message);
 	v3_send_chat_message(_message);
 	release_string(env, message, _message);
 }
 
-JNIEXPORT void JNICALL Java_org_mangler_VentriloInterface_changechannel(JNIEnv* env, jobject obj, jchar channelid, jstring password) {
+JNIEXPORT void JNICALL Java_org_mangler_android_VentriloInterface_changechannel(JNIEnv* env, jobject obj, jchar channelid, jstring password) {
 	char* _password = get_string(env, password);
 	v3_change_channel(channelid, _password);
 	release_string(env, password, _password);
 }
 
-JNIEXPORT void JNICALL Java_org_mangler_VentriloInterface_settext(JNIEnv* env, jobject obj, jstring comment, jstring url, jstring integrationtext, jboolean silent) {
+JNIEXPORT void JNICALL Java_org_mangler_android_VentriloInterface_settext(JNIEnv* env, jobject obj, jstring comment, jstring url, jstring integrationtext, jboolean silent) {
 	char* _comment = get_string(env, comment);
 	char* _url = get_string(env, url);
 	char* _integrationtext = get_string(env, integrationtext);
@@ -195,24 +195,24 @@ JNIEXPORT void JNICALL Java_org_mangler_VentriloInterface_settext(JNIEnv* env, j
 	release_string(env, integrationtext, _integrationtext);
 }
 
-JNIEXPORT void JNICALL Java_org_mangler_VentriloInterface_sendaudio(JNIEnv* env, jobject obj, jbyteArray pcm, jint size, jint rate) {
+JNIEXPORT void JNICALL Java_org_mangler_android_VentriloInterface_sendaudio(JNIEnv* env, jobject obj, jbyteArray pcm, jint size, jint rate) {
 	jbyte *data = get_byte_array(env, pcm);
 	v3_send_audio(V3_AUDIO_SENDTYPE_U2CCUR, rate, data, size, 0);
 	release_byte_array(env, pcm, data);
 }
 
-JNIEXPORT void JNICALL Java_org_mangler_VentriloInterface_error(JNIEnv* env, jobject obj, jobject eventdata) {
+JNIEXPORT void JNICALL Java_org_mangler_android_VentriloInterface_error(JNIEnv* env, jobject obj, jobject eventdata) {
 	jclass  event_class = get_class(env, eventdata);
-	jobject error = get_object(env, eventdata, event_class, "error", "Lorg/mangler/VentriloEventData$_error;");
+	jobject error = get_object(env, eventdata, event_class, "error", "Lorg/mangler/android/VentriloEventData$_error;");
 	jclass  error_class = get_class(env, error);
 	set_byte_array(env, error, error_class, "message", _v3_error(NULL), 512);
 }
 
-JNIEXPORT void JNICALL Java_org_mangler_VentriloInterface_getuser(JNIEnv* env, jobject obj, jobject eventdata, jshort userid) {
+JNIEXPORT void JNICALL Java_org_mangler_android_VentriloInterface_getuser(JNIEnv* env, jobject obj, jobject eventdata, jshort userid) {
 	v3_user *u = v3_get_user(userid);
 	if(u) {
 		jclass  event_class = get_class(env, eventdata);
-		jobject text = get_object(env, eventdata, event_class, "text", "Lorg/mangler/VentriloEventData$_text;");
+		jobject text = get_object(env, eventdata, event_class, "text", "Lorg/mangler/android/VentriloEventData$_text;");
 		jclass  text_class = get_class(env, text);
 		set_byte_array(env, text, text_class, "name", u->name, 32);
 		set_byte_array(env, text, text_class, "phonetic", u->phonetic, 32);
@@ -223,15 +223,15 @@ JNIEXPORT void JNICALL Java_org_mangler_VentriloInterface_getuser(JNIEnv* env, j
 	}
 }
 
-JNIEXPORT void JNICALL Java_org_mangler_VentriloInterface_getchannel(JNIEnv* env, jobject obj, jobject eventdata, jshort channelid) {
+JNIEXPORT void JNICALL Java_org_mangler_android_VentriloInterface_getchannel(JNIEnv* env, jobject obj, jobject eventdata, jshort channelid) {
 	v3_channel *c = v3_get_channel(channelid);
 	if(c) {
 		jclass  event_class = get_class(env, eventdata);
-		jobject data = get_object(env, eventdata, event_class, "data", "Lorg/mangler/VentriloEventData$_data;");
+		jobject data = get_object(env, eventdata, event_class, "data", "Lorg/mangler/android/VentriloEventData$_data;");
 		jclass  data_class = get_class(env, data);
-		jobject channel = get_object(env, data, data_class, "channel", "Lorg/mangler/VentriloEventData$_data$_channel;");
+		jobject channel = get_object(env, data, data_class, "channel", "Lorg/mangler/android/VentriloEventData$_data$_channel;");
 		jclass  channel_class = get_class(env, channel);
-		jobject text = get_object(env, eventdata, event_class, "text", "Lorg/mangler/VentriloEventData$_text;");
+		jobject text = get_object(env, eventdata, event_class, "text", "Lorg/mangler/android/VentriloEventData$_text;");
 		jclass  text_class = get_class(env, text);
 		set_short(env, channel, channel_class, "parent", c->parent);
 		set_short(env, channel, channel_class, "channel_codec", c->channel_codec);
@@ -244,7 +244,7 @@ JNIEXPORT void JNICALL Java_org_mangler_VentriloInterface_getchannel(JNIEnv* env
 	}
 }
 
-JNIEXPORT void JNICALL Java_org_mangler_VentriloInterface_getevent(JNIEnv* env, jobject obj, jobject eventdata) {
+JNIEXPORT void JNICALL Java_org_mangler_android_VentriloInterface_getevent(JNIEnv* env, jobject obj, jobject eventdata) {
 	v3_event *ev = v3_get_event(V3_BLOCK);
 	if(ev != NULL) {
 		jclass event_class = get_class(env, eventdata);
@@ -253,7 +253,7 @@ JNIEXPORT void JNICALL Java_org_mangler_VentriloInterface_getevent(JNIEnv* env, 
 			case V3_EVENT_PLAY_AUDIO:
 				{
 					// PCM data.
-					jobject pcm = get_object(env, eventdata, event_class, "pcm", "Lorg/mangler/VentriloEventData$_pcm;");
+					jobject pcm = get_object(env, eventdata, event_class, "pcm", "Lorg/mangler/android/VentriloEventData$_pcm;");
 					jclass	pcm_class = get_class(env, pcm);
 					set_int	 (env, pcm, pcm_class, "length", ev->pcm.length);
 					set_int	 (env, pcm, pcm_class, "rate", ev->pcm.rate);
@@ -261,12 +261,12 @@ JNIEXPORT void JNICALL Java_org_mangler_VentriloInterface_getevent(JNIEnv* env, 
 					set_byte (env, pcm, pcm_class, "channels", ev->pcm.channels);
 					
 					// User ID.
-					jobject user = get_object(env, eventdata, event_class, "user", "Lorg/mangler/VentriloEventData$_user;");
+					jobject user = get_object(env, eventdata, event_class, "user", "Lorg/mangler/android/VentriloEventData$_user;");
 					jclass  user_class = get_class(env, user);
 					set_short(env, user, user_class, "id", ev->user.id);
 					
 					// Sample.
-					jobject data = get_object(env, eventdata, event_class, "data", "Lorg/mangler/VentriloEventData$_data;");
+					jobject data = get_object(env, eventdata, event_class, "data", "Lorg/mangler/android/VentriloEventData$_data;");
 					jclass  data_class = get_class(env, data);
 					set_byte_array(env, data, data_class, "sample", ev->data->sample, ev->pcm.length);
 				}
@@ -292,7 +292,7 @@ JNIEXPORT void JNICALL Java_org_mangler_VentriloInterface_getevent(JNIEnv* env, 
 			case V3_EVENT_USER_RANK_CHANGE:
 				{
 					// User ID.
-					jobject user = get_object(env, eventdata, event_class, "user", "Lorg/mangler/VentriloEventData$_user;");
+					jobject user = get_object(env, eventdata, event_class, "user", "Lorg/mangler/android/VentriloEventData$_user;");
 					jclass  user_class = get_class(env, user);
 					set_short(env, user, user_class, "id", ev->user.id);
 				}
@@ -303,12 +303,12 @@ JNIEXPORT void JNICALL Java_org_mangler_VentriloInterface_getevent(JNIEnv* env, 
 			case V3_EVENT_CHAN_REMOVE:
 				{
 					// User ID.
-					jobject user = get_object(env, eventdata, event_class, "user", "Lorg/mangler/VentriloEventData$_user;");
+					jobject user = get_object(env, eventdata, event_class, "user", "Lorg/mangler/android/VentriloEventData$_user;");
 					jclass  user_class = get_class(env, user);
 					set_short(env, user, user_class, "id", ev->user.id);
 					
 					// Channel ID.
-					jobject channel = get_object(env, eventdata, event_class, "channel", "Lorg/mangler/VentriloEventData$_channel;");
+					jobject channel = get_object(env, eventdata, event_class, "channel", "Lorg/mangler/android/VentriloEventData$_channel;");
 					jclass  channel_class = get_class(env, channel);
 					set_short(env, channel, channel_class, "id", ev->channel.id);
 				}
@@ -318,12 +318,12 @@ JNIEXPORT void JNICALL Java_org_mangler_VentriloInterface_getevent(JNIEnv* env, 
 			case V3_EVENT_USER_LOGIN:
 				{
 					// User ID.
-					jobject user = get_object(env, eventdata, event_class, "user", "Lorg/mangler/VentriloEventData$_user;");
+					jobject user = get_object(env, eventdata, event_class, "user", "Lorg/mangler/android/VentriloEventData$_user;");
 					jclass  user_class = get_class(env, user);
 					set_short(env, user, user_class, "id", ev->user.id);
 					
 					// Channel ID.
-					jobject channel = get_object(env, eventdata, event_class, "channel", "Lorg/mangler/VentriloEventData$_channel;");
+					jobject channel = get_object(env, eventdata, event_class, "channel", "Lorg/mangler/android/VentriloEventData$_channel;");
 					jclass  channel_class = get_class(env, channel);
 					set_short(env, channel, channel_class, "id", ev->channel.id);
 				}
@@ -332,7 +332,7 @@ JNIEXPORT void JNICALL Java_org_mangler_VentriloInterface_getevent(JNIEnv* env, 
 			case V3_EVENT_STATUS:
 				{
 					// Status message & percentage.
-					jobject status = get_object(env, eventdata, event_class, "status", "Lorg/mangler/VentriloEventData$_status;");
+					jobject status = get_object(env, eventdata, event_class, "status", "Lorg/mangler/android/VentriloEventData$_status;");
 					jclass  status_class = get_class(env, status);
 					set_byte(env, status, status_class, "percent", ev->status.percent);
 					set_byte_array(env, status, status_class, "message", ev->status.message, sizeof(ev->status.message));
@@ -353,13 +353,13 @@ JNIEXPORT void JNICALL Java_org_mangler_VentriloInterface_getevent(JNIEnv* env, 
 			case V3_EVENT_PRIVATE_CHAT_MESSAGE:
 				{
 					// User IDs.
-					jobject user = get_object(env, eventdata, event_class, "user", "Lorg/mangler/VentriloEventData$_user;");
+					jobject user = get_object(env, eventdata, event_class, "user", "Lorg/mangler/android/VentriloEventData$_user;");
 					jclass  user_class = get_class(env, user);
 					set_short(env, user, user_class, "privchat_user1", ev->user.privchat_user1);
 					set_short(env, user, user_class, "privchat_user2", ev->user.privchat_user2);
 					
 					// Chat message.
-					jobject data = get_object(env, eventdata, event_class, "data", "Lorg/mangler/VentriloEventData$_data;");
+					jobject data = get_object(env, eventdata, event_class, "data", "Lorg/mangler/android/VentriloEventData$_data;");
 					jclass  data_class = get_class(env, data);
 					set_byte_array(env, data, data_class, "chatmessage", ev->data->chatmessage, sizeof(ev->data->chatmessage));
 				}
@@ -369,9 +369,9 @@ JNIEXPORT void JNICALL Java_org_mangler_VentriloInterface_getevent(JNIEnv* env, 
 			case V3_EVENT_USERLIST_MODIFY:
 				{
 					// Account fields.
-					jobject data = get_object(env, eventdata, event_class, "data", "Lorg/mangler/VentriloEventData$_data;");
+					jobject data = get_object(env, eventdata, event_class, "data", "Lorg/mangler/android/VentriloEventData$_data;");
 					jclass  data_class = get_class(env, data);
-					jobject account = get_object(env, data, data_class, "account", "Lorg/mangler/VentriloEventData$_data$_account;");
+					jobject account = get_object(env, data, data_class, "account", "Lorg/mangler/android/VentriloEventData$_data$_account;");
 					jclass  account_class = get_class(env, account);
 					set_byte_array(env, account, account_class, "username", ev->data->account.username, sizeof(ev->data->account.username));
 				}
@@ -381,7 +381,7 @@ JNIEXPORT void JNICALL Java_org_mangler_VentriloInterface_getevent(JNIEnv* env, 
 			case V3_EVENT_CHAN_MODIFY:
 				{
 					// Channel id.
-					jobject channel = get_object(env, eventdata, event_class, "channel", "Lorg/mangler/VentriloEventData$_channel;");
+					jobject channel = get_object(env, eventdata, event_class, "channel", "Lorg/mangler/android/VentriloEventData$_channel;");
 					jclass  channel_class = get_class(env, channel);
 					set_short(env, channel, channel_class, "id", ev->channel.id);
 				}
@@ -390,7 +390,7 @@ JNIEXPORT void JNICALL Java_org_mangler_VentriloInterface_getevent(JNIEnv* env, 
 			case V3_EVENT_DISPLAY_MOTD:
 				{
 					// MOTD.
-					jobject data = get_object(env, eventdata, event_class, "data", "Lorg/mangler/VentriloEventData$_data;");
+					jobject data = get_object(env, eventdata, event_class, "data", "Lorg/mangler/android/VentriloEventData$_data;");
 					jclass  data_class = get_class(env, data);
 					set_byte_array(env, data, data_class, "motd", ev->data->motd, sizeof(ev->data->motd));
 				}
@@ -399,12 +399,12 @@ JNIEXPORT void JNICALL Java_org_mangler_VentriloInterface_getevent(JNIEnv* env, 
 			case V3_EVENT_CHAN_BADPASS:
 				{
 					// Channel ID.
-					jobject channel = get_object(env, eventdata, event_class, "channel", "Lorg/mangler/VentriloEventData$_channel;");
+					jobject channel = get_object(env, eventdata, event_class, "channel", "Lorg/mangler/android/VentriloEventData$_channel;");
 					jclass  channel_class = get_class(env, channel);
 					set_short(env, channel, channel_class, "id", ev->channel.id);
 					
 					// Error message.
-					jobject error = get_object(env, eventdata, event_class, "error", "Lorg/mangler/VentriloEventData$_error;");
+					jobject error = get_object(env, eventdata, event_class, "error", "Lorg/mangler/android/VentriloEventData$_error;");
 					jclass  error_class = get_class(env, error);
 					set_byte_array(env, error, error_class, "message", ev->error.message, sizeof(ev->error.message));
 				}
@@ -414,7 +414,7 @@ JNIEXPORT void JNICALL Java_org_mangler_VentriloInterface_getevent(JNIEnv* env, 
 			case V3_EVENT_ERROR_MSG:
 				{
 					// Error message & disconnect flag.
-					jobject error = get_object(env, eventdata, event_class, "error", "Lorg/mangler/VentriloEventData$_error;");
+					jobject error = get_object(env, eventdata, event_class, "error", "Lorg/mangler/android/VentriloEventData$_error;");
 					jclass  error_class = get_class(env, error);
 					set_byte_array(env, error, error_class, "message", ev->error.message, sizeof(ev->error.message));
 					set_bool(env, error, error_class, "disconnected", ev->error.disconnected != 0);	
@@ -424,13 +424,13 @@ JNIEXPORT void JNICALL Java_org_mangler_VentriloInterface_getevent(JNIEnv* env, 
 			case V3_EVENT_USER_TALK_START:
 				{
 					// PCM data.
-					jobject pcm = get_object(env, eventdata, event_class, "pcm", "Lorg/mangler/VentriloEventData$_pcm;");
+					jobject pcm = get_object(env, eventdata, event_class, "pcm", "Lorg/mangler/android/VentriloEventData$_pcm;");
 					jclass  pcm_class = get_class(env, pcm);
 					set_int  (env, pcm, pcm_class, "rate", ev->pcm.rate);
 					set_short(env, pcm, pcm_class, "send_type", ev->pcm.send_type);
 					
 					// User ID.
-					jobject user = get_object(env, eventdata, event_class, "user", "Lorg/mangler/VentriloEventData$_user;");
+					jobject user = get_object(env, eventdata, event_class, "user", "Lorg/mangler/android/VentriloEventData$_user;");
 					jclass  user_class = get_class(env, user);
 					set_short(env, user, user_class, "id", ev->user.id);
 				}
@@ -439,12 +439,12 @@ JNIEXPORT void JNICALL Java_org_mangler_VentriloInterface_getevent(JNIEnv* env, 
 			case V3_EVENT_CHAT_MESSAGE:
 				{
 					// User ID.
-					jobject user = get_object(env, eventdata, event_class, "user", "Lorg/mangler/VentriloEventData$_user;");
+					jobject user = get_object(env, eventdata, event_class, "user", "Lorg/mangler/android/VentriloEventData$_user;");
 					jclass  user_class = get_class(env, user);
 					set_short(env, user,user_class, "id", ev->user.id);
 					
 					// Chat message.
-					jobject data = get_object(env, eventdata, event_class, "data", "Lorg/mangler/VentriloEventData$_data;");
+					jobject data = get_object(env, eventdata, event_class, "data", "Lorg/mangler/android/VentriloEventData$_data;");
 					jclass  data_class = get_class(env, data);
 					set_byte_array(env, data, data_class, "chatmessage", ev->data->chatmessage, sizeof(ev->data->chatmessage));
 				}
@@ -453,9 +453,9 @@ JNIEXPORT void JNICALL Java_org_mangler_VentriloInterface_getevent(JNIEnv* env, 
 			case V3_EVENT_USERLIST_REMOVE:
 				{
 					// Account ID.
-					jobject data = get_object(env, eventdata, event_class, "data", "Lorg/mangler/VentriloEventData$_data;");
+					jobject data = get_object(env, eventdata, event_class, "data", "Lorg/mangler/android/VentriloEventData$_data;");
 					jclass  data_class = get_class(env, data);
-					jobject account = get_object(env, data, data_class, "account", "Lorg/mangler/VentriloEventData$_data$_account;");
+					jobject account = get_object(env, data, data_class, "account", "Lorg/mangler/android/VentriloEventData$_data$_account;");
 					jclass  account_class = get_class(env, account);
 					set_short(env, account, account_class, "id", ev->account.id);
 				}
@@ -464,9 +464,9 @@ JNIEXPORT void JNICALL Java_org_mangler_VentriloInterface_getevent(JNIEnv* env, 
 			case V3_EVENT_USERLIST_CHANGE_OWNER:
 				{
 					// Account IDs.
-					jobject data = get_object(env, eventdata, event_class, "data", "Lorg/mangler/VentriloEventData$_data;");
+					jobject data = get_object(env, eventdata, event_class, "data", "Lorg/mangler/android/VentriloEventData$_data;");
 					jclass  data_class = get_class(env, data);
-					jobject account = get_object(env, data, data_class, "account", "Lorg/mangler/VentriloEventData$_data$_account;");
+					jobject account = get_object(env, data, data_class, "account", "Lorg/mangler/android/VentriloEventData$_data$_account;");
 					jclass  account_class = get_class(env, account);
 					set_short(env, account, account_class, "id", ev->account.id);
 					set_short(env, account, account_class, "id2", ev->account.id2);
