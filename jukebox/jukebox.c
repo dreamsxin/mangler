@@ -155,6 +155,7 @@ int debug = 0;
 int should_exit = false;
 musicfile **musiclist;
 int musicfile_count = 0;
+int pathelem_count = 0;
 int disable_stereo = false;
 
 // prototypes
@@ -171,6 +172,7 @@ int get_random_number(int min, int max);
 void send_now_playing(int filenum);
 int select_channel(void);
 void shuffle_musiclist(void);
+char *strip_pathelem(char *src);
 
 void ctrl_c(int signum) {
     fprintf(stderr, "disconnecting... ");
@@ -491,9 +493,24 @@ void send_now_playing(int filenum) {
         v3_set_text("", "", msgbuf, true);
     } else {
         v3_set_text("", "", "", true);
-        strncat(msgbuf, musicfile->path, 254);
+        strncat(msgbuf, strip_pathelem(musicfile->path), 254);
     }
     v3_send_chat_message(msgbuf);
+}
+
+char *strip_pathelem(char *src) {
+    int pathelem = 0;
+    char *p;
+
+    for (p = src; p != NULL; p++) {
+        if (*p == '/') {
+            pathelem++;
+        }
+        if (pathelem == pathelem_count+1) {
+            return p;
+        }
+    }
+    return src;
 }
 
 void read_playlist_file(char *path) {
@@ -1004,6 +1021,7 @@ int select_channel(void) {
 int
 main(int argc, char **argv) {
     int opt;
+    int ctr;
     pthread_t player;
     struct _conninfo conninfo;
     int shuffle = true;
@@ -1061,6 +1079,11 @@ main(int argc, char **argv) {
         usage(argv);
     }
     conninfo.path = argv[argc-1];
+    for (ctr = 0; ctr < strlen(conninfo.path); ctr++) {
+        if (conninfo.path[ctr] == '/') {
+            pathelem_count++;
+        }
+    }
     fprintf(stderr, "server: %s\nusername: %s\nmedia path: %s\n", conninfo.server, conninfo.username, conninfo.path);
     scan_media_path(conninfo.path);
     fprintf(stderr, "found %d files in music path\n", musicfile_count);
