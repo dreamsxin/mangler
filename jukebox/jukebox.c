@@ -805,17 +805,17 @@ void *open_file(musicfile *musicfile, const v3_codec *codec) {
         if (flac_metadata_get_tags(musicfile->path, &tags)) {
             for (ctr = 0; ctr < tags->data.vorbis_comment.num_comments; ctr++) {
                 comment = tags->data.vorbis_comment.comments[ctr].entry;
-                if (!strncmp(comment, vorbis_artist, sizeof(vorbis_artist) - 1)) {
+                if (!strncasecmp(comment, vorbis_artist, sizeof(vorbis_artist) - 1)) {
                     if (musicfile->artist) {
                         free(musicfile->artist);
                     }
                     musicfile->artist = strdup(comment + sizeof(vorbis_artist) - 1);
-                } else if (!strncmp(comment, vorbis_title, sizeof(vorbis_title) - 1)) {
+                } else if (!strncasecmp(comment, vorbis_title, sizeof(vorbis_title) - 1)) {
                     if (musicfile->title) {
                         free(musicfile->title);
                     }
                     musicfile->title = strdup(comment + sizeof(vorbis_title) - 1);
-                } else if (!strncmp(comment, vorbis_album, sizeof(vorbis_album) - 1)) {
+                } else if (!strncasecmp(comment, vorbis_album, sizeof(vorbis_album) - 1)) {
                     if (musicfile->album) {
                         free(musicfile->album);
                     }
