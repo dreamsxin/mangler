@@ -82,6 +82,7 @@
 # warning "FLAC support enabled."
 
 # include <FLAC/stream_decoder.h>
+# include <FLAC/metadata.h>
 
 # define flac_dec_init                  FLAC__stream_decoder_new
 # define flac_dec_destroy               FLAC__stream_decoder_delete
@@ -110,7 +111,11 @@
 # define flac_int32_t                   FLAC__int32
 # define flac_metadata_t                FLAC__StreamMetadata
 
+# define flac_metadata_get_tags         FLAC__metadata_get_tags
+# define flac_metadata_destroy          FLAC__metadata_object_delete
+
 # define FLAC_METADATA_STREAMINFO       FLAC__METADATA_TYPE_STREAMINFO
+# define FLAC_METADATA_VORBIS_COMMENT   FLAC__METADATA_TYPE_VORBIS_COMMENT
 
 typedef struct {
     int16_t  buf[1 << 15];
@@ -771,6 +776,13 @@ void *open_file(musicfile *musicfile, const v3_codec *codec) {
 
 #if HAVE_FLAC
     if (musicfile->flac) {
+        static const char vorbis_artist[] = "ARTIST=";
+        static const char vorbis_title[] = "TITLE=";
+        static const char vorbis_album[] = "ALBUM=";
+        flac_metadata_t *tags;
+        void *comment;
+        uint32_t ctr;
+
         if (!(musicfile->mh = flac_dec_init())) {
             fprintf(stderr, "error: flac_dec_init: init failed\n");
             return NULL;
@@ -789,6 +801,28 @@ void *open_file(musicfile *musicfile, const v3_codec *codec) {
             fprintf(stderr, "error: flac_dec_process_metadata: flac metadata not found\n");
             close_file(musicfile);
             return NULL;
+        }
+        if (flac_metadata_get_tags(musicfile->path, &tags)) {
+            for (ctr = 0; ctr < tags->data.vorbis_comment.num_comments; ctr++) {
+                comment = tags->data.vorbis_comment.comments[ctr].entry;
+                if (!strncmp(comment, vorbis_artist, sizeof(vorbis_artist) - 1)) {
+                    if (musicfile->artist) {
+                        free(musicfile->artist);
+                    }
+                    musicfile->artist = strdup(comment + sizeof(vorbis_artist) - 1);
+                } else if (!strncmp(comment, vorbis_title, sizeof(vorbis_title) - 1)) {
+                    if (musicfile->title) {
+                        free(musicfile->title);
+                    }
+                    musicfile->title = strdup(comment + sizeof(vorbis_title) - 1);
+                } else if (!strncmp(comment, vorbis_album, sizeof(vorbis_album) - 1)) {
+                    if (musicfile->album) {
+                        free(musicfile->album);
+                    }
+                    musicfile->album = strdup(comment + sizeof(vorbis_album) - 1);
+                }
+            }
+            flac_metadata_destroy(tags);
         }
 
         return musicfile;
