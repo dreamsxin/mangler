@@ -32,24 +32,27 @@ public class Recorder {
 	private static Thread thread = null; // limited to only one recording thread
 	private static boolean stop = false; // stop flag
 	private static int rate = 0; // current or overridden rate for current channel
+	private static int buflen;
 
 	private static class RecordThread implements Runnable {
 		public void run() {
 			AudioRecord audiorecord = null;
 			byte[] buf = null; // send buffer
-			int buflen = 0; // send buffer size
 
 			// argument not needed; send method is hardcoded
 			VentriloInterface.startaudio((short)0);
-			// get the maximum buffer size for the current channel
-			// argument not needed; resampler uses a send buffer
-			buflen = VentriloInterface.pcmlengthforrate(0);
+			// Find out if the minimum buffer length is smaller
+			// than the amount of data we need to send.  If so,
+			// adjust buflen (set from buffer()) accordingly
+			if (buflen < VentriloInterface.pcmlengthforrate(0)) {
+				buflen = VentriloInterface.pcmlengthforrate(0);
+			}
 			audiorecord = new AudioRecord(
 					MediaRecorder.AudioSource.MIC,
 					rate,
 					AudioFormat.CHANNEL_CONFIGURATION_MONO,
 					AudioFormat.ENCODING_PCM_16BIT,
-					buflen * 2
+					buflen
 			);
 			try {
 				audiorecord.startRecording();
@@ -103,7 +106,6 @@ public class Recorder {
 						if (rates[ctr] != rate()) {
 							rate(rates[ctr]);
 						}
-						// this value is ignored
 						return buffer;
 					}
 				}
@@ -134,6 +136,10 @@ public class Recorder {
 	public static int rate() {
 		return rate;
 	}
+	
+	public static int buflen() {
+		return buflen;
+	}
 
 	public static boolean recording() {
 		// if a recording thread is running, we can't instantiate another one
@@ -145,7 +151,7 @@ public class Recorder {
 			return true;
 		}
 		// find a supported rate
-		if ((buffer() <= 0)) {
+		if ((buflen = buffer()) <= 0) {
 			return false;
 		}
 		stop = false;

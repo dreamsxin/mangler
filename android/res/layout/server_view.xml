@@ -28,12 +28,27 @@
 			    android:layout_height="fill_parent" 
 			    android:gravity="center_vertical|center_horizontal">
 				
-				<ImageView android:id="@+id/transmitStatus" android:layout_height="30px" android:layout_width="30px" android:src="@drawable/transmit_off" android:layout_marginTop="-15dp" android:layout_marginBottom="15dp"></ImageView><Button android:height="100px" 
+				<TextView android:text="Last Xmit Info\n\nChannel Rate: N/A\nRecord Rate: N/A\nMin Buffer Size: N/A\n"
+					android:textColor="#000000"
+					android:id="@+id/recorderInfo"
+					android:layout_width="fill_parent"
+					android:layout_height="wrap_content"
+					android:gravity="top|left" />
+				<ImageView android:id="@+id/transmitStatus"
+					android:layout_height="30px"
+					android:layout_width="30px"
+					android:src="@drawable/transmit_off"
+					android:layout_marginTop="15dp"
+					android:layout_marginBottom="15dp"/>
+				<Button android:height="100px" 
 					android:layout_height="wrap_content" 
 					android:layout_width="wrap_content" 
-					android:width="200px" android:id="@+id/talkButton" android:text="@string/push_to_talk"/>
+					android:width="200px"
+					android:id="@+id/talkButton"
+					android:text="@string/push_to_talk"/>
 			
 			
+
 </LinearLayout>
 		
 			<LinearLayout android:layout_width="wrap_content" 

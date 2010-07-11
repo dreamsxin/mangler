@@ -341,6 +341,11 @@ public class ServerView extends TabActivity {
 		    			    return true;
 						}
 						((ImageView)findViewById(R.id.transmitStatus)).setImageResource(R.drawable.transmit_on);
+						((TextView)findViewById(R.id.recorderInfo)).setText(
+								"Last Xmit Info\n\n" +
+								"Channel Rate: " + VentriloInterface.getchannelrate(VentriloInterface.getuserchannel(VentriloInterface.getuserid())) + "\n" +
+								"Record Rate: " + Recorder.rate() + "\n" +
+								"Min Buffer Size: " + Recorder.buflen() + "\n");
 					}
 					break;
 				case MotionEvent.ACTION_UP:
