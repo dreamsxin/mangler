@@ -102,7 +102,7 @@ public class ServerView extends TabActivity {
 
         // Create adapters.
 	    channelAdapter 	= new SimpleAdapter(this, ChannelList.data, R.layout.channel_row, new String[] { "channelname", "passworded" }, new int[] { R.id.crowtext, R.id.crowpass } );
-	    userAdapter 	= new SimpleAdapter(this, UserList.data, R.layout.user_row, new String[] { "username", "channelname" }, new int[] { R.id.urowtext, R.id.urowid } );
+	    userAdapter 	= new SimpleAdapter(this, UserList.data, R.layout.user_row, new String[] { "userstatus", "username", "channelname" }, new int[] { R.id.urowimg, R.id.urowtext, R.id.urowid } );
 
 	    // Set adapters.
 	    ((ListView)findViewById(R.id.channelList)).setAdapter(channelAdapter);

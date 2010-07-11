@@ -136,13 +136,22 @@ public class EventService extends Service {
 
 	    			case VentriloEvents.V3_EVENT_PLAY_AUDIO:
 	    				Player.write(data.user.id, data.pcm.rate, data.pcm.channels, data.data.sample, data.pcm.length);
+	    				UserList.updateStatus(data.user.id, R.drawable.transmit_on);
+	    				sendBroadcast(new Intent(ServerView.USERLIST_ACTION));
 	    				break;
 
+	    			case VentriloEvents.V3_EVENT_USER_TALK_START:
+	    				UserList.updateStatus(data.user.id, R.drawable.transmit_init);
+	    				sendBroadcast(new Intent(ServerView.USERLIST_ACTION));
+	    				break;
+	    				
 	    			case VentriloEvents.V3_EVENT_USER_TALK_END:
 	    			case VentriloEvents.V3_EVENT_USER_TALK_MUTE:
 	    			case VentriloEvents.V3_EVENT_USER_GLOBAL_MUTE_CHANGED:
 	    			case VentriloEvents.V3_EVENT_USER_CHANNEL_MUTE_CHANGED:
 	    				Player.close(data.user.id);
+	    				UserList.updateStatus(data.user.id, R.drawable.transmit_off);
+	    				sendBroadcast(new Intent(ServerView.USERLIST_ACTION));
 	    				break;
 
 	    			case VentriloEvents.V3_EVENT_CHAN_ADD:

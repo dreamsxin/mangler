@@ -45,11 +45,22 @@ public class UserList {
 	
 	public static void addUser(short userid, String username, short channelid) {
 		HashMap<String, Object> user = new HashMap<String, Object>();
+		user.put("userstatus", R.drawable.transmit_off);
 		user.put("userid", userid);
 		user.put("username", username);
 		user.put("channelid", channelid);
 		user.put("channelname", ChannelList.getChannel(channelid).get("channelname"));
 		data.add(user);
+	}
+	
+	public static void updateStatus(short userid, int status) {
+		for(Iterator<HashMap<String, Object>> iterator = data.iterator(); iterator.hasNext(); ) {
+			HashMap<String, Object> data = iterator.next();
+			if((Short)data.get("userid") == userid) {
+				data.put("userstatus", status);
+				return;
+			}
+		}
 	}
 	
 	public static void changeChannel(short userid, short channelid) {

@@ -3,24 +3,36 @@
 	xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
-    android:orientation="vertical"
+    android:orientation="horizontal"
     android:padding="10dp" 
     android:gravity="center_vertical">
+    
+	<ImageView android:id="@+id/urowimg"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"/>
 
-    <TextView android:id="@+id/urowtext"
-        android:textSize="18sp"
-        android:textStyle="bold"
-        android:typeface="sans"
-        android:height="30dp"
-        android:layout_width="fill_parent"
-        android:layout_height="fill_parent"
-        android:textColor="#770077" />
-
-    <TextView android:id="@+id/urowid"
-        android:textSize="12sp"
-        android:typeface="sans"
-        android:layout_width="fill_parent"
-        android:layout_height="fill_parent"
-        android:textColor="#770077" />
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingLeft="10dp">
+	
+	    <TextView android:id="@+id/urowtext"
+	        android:textSize="18sp"
+	        android:textStyle="bold"
+	        android:typeface="sans"
+	        android:height="30dp"
+	        android:layout_width="fill_parent"
+	        android:layout_height="fill_parent"
+	        android:textColor="#770077" />
+	
+	    <TextView android:id="@+id/urowid"
+	        android:textSize="12sp"
+	        android:typeface="sans"
+	        android:layout_width="fill_parent"
+	        android:layout_height="fill_parent"
+	        android:textColor="#770077" />
+        
+	</LinearLayout>
 
 </LinearLayout>
