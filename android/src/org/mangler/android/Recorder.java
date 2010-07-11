@@ -29,84 +29,100 @@ import android.os.Build;
 
 public class Recorder {
 
-	private static Thread thread = null;
-	private static boolean stop = false;
-	private static int rate = 0;
+	private static Thread thread = null; // limited to only one recording thread
+	private static boolean stop = false; // stop flag
+	private static int rate = 0; // current or overridden rate for current channel
 
 	private static class RecordThread implements Runnable {
 		public void run() {
 			AudioRecord audiorecord = null;
-			byte[] buf = null;
-			int buffer = 0;
-			int rate = 0;
-			int pcmlen = 0;
+			byte[] buf = null; // send buffer
+			int buflen = 0; // send buffer size
+
+			// argument not needed; send method is hardcoded
 			VentriloInterface.startaudio((short)0);
+			// get the maximum buffer size for the current channel
+			// argument not needed; resampler uses a send buffer
+			buflen = VentriloInterface.pcmlengthforrate(0);
+			audiorecord = new AudioRecord(
+					MediaRecorder.AudioSource.MIC,
+					rate,
+					AudioFormat.CHANNEL_CONFIGURATION_MONO,
+					AudioFormat.ENCODING_PCM_16BIT,
+					buflen * 2
+			);
+			try {
+				audiorecord.startRecording();
+			}
+			catch (IllegalStateException e) {
+				VentriloInterface.stopaudio();
+				audiorecord.release();
+				thread = null;
+				return;
+			}
+			buf = new byte[buflen];
 			for (;;) {
-				if (audiorecord == null || rate != rate()) {
-					if (audiorecord != null) {
-						audiorecord.stop();
-						audiorecord.release();
-					}
-					if (stop || (buffer = buffer()) <= 0 || (rate = rate()) <= 0 || (pcmlen = VentriloInterface.pcmlengthforrate(rate)) <= 0) {
-						VentriloInterface.stopaudio();
-						thread = null;
-						return;
-					}
-					audiorecord = new AudioRecord(
-						MediaRecorder.AudioSource.MIC,
-						rate,
-						AudioFormat.CHANNEL_CONFIGURATION_MONO,
-						AudioFormat.ENCODING_PCM_16BIT,
-						buffer
-					);
-					try {
-						audiorecord.startRecording();
-					}
-					catch (IllegalStateException e) {
-						VentriloInterface.stopaudio();
-						audiorecord.release();
-						thread = null;
-						return;
-					}
-					buf = new byte[pcmlen];
-				}
-		        for (int offset = 0, read = 0; offset < pcmlen; offset += read) {
+		        for (int offset = 0, read = 0; offset < buflen; offset += read) {
+	        		// if stop flag is set, exit now
 		        	if (stop) {
 		        		VentriloInterface.stopaudio();
 		        		audiorecord.stop();
 		        		audiorecord.release();
+		        		// a new recording thread can now be instantiated
 		        		thread = null;
 		        		return;
 		        	}
-		        	if (!stop && (read = audiorecord.read(buf, offset, pcmlen - offset)) < 0) {
+		        	if (!stop && (read = audiorecord.read(buf, offset, buflen - offset)) < 0) {
 		        		throw new RuntimeException("AudioRecord read failed: " + Integer.toString(read));
 		        	}
 		        }
-		        if (!stop && rate == rate()) {
-		        	VentriloInterface.sendaudio(buf, pcmlen, rate);
+		        if (!stop) {
+		        	VentriloInterface.sendaudio(buf, buflen, rate);
 		        }
 			}
 		}
 	}
 
 	private static int buffer() {
+		// all rates used by the protocol
 		final int[] rates = { 8000, 11025, 16000, 22050, 32000, 44100 };
-		for (int pos = 0; pos < rates.length; pos++) {
-			if (rates[pos] != rate()) {
-				continue;
-			}
-			for (int ctr = 0, buffer = 0; (ctr < 0) ? pos+ctr >= 0 : pos+ctr <= rates.length;) {
-				if (pos+ctr == rates.length) {
-					ctr = -1;
-					continue;
+
+		for (int cur = 0; cur < rates.length; cur++) {
+			// find the current rate in the rates array
+			if (rates[cur] == rate()) {
+				int buffer = 0;
+				// try current and higher rates
+				for (int ctr = cur; ctr < rates.length; ctr++) {
+					buffer = AudioRecord.getMinBufferSize(
+							rates[ctr],
+							AudioFormat.CHANNEL_CONFIGURATION_MONO,
+							AudioFormat.ENCODING_PCM_16BIT);
+					if (buffer > 0) {
+						// found a supported rate
+						// override if it is not the channel rate and use the resampler
+						if (rates[ctr] != rate()) {
+							rate(rates[ctr]);
+						}
+						// this value is ignored
+						return buffer;
+					}
 				}
-				if ((buffer = AudioRecord.getMinBufferSize(rates[pos+ctr], AudioFormat.CHANNEL_CONFIGURATION_MONO, AudioFormat.ENCODING_PCM_16BIT)) > 0) {
-					rate(rates[pos+ctr]);
-					return buffer;
+				// else try lower rates than current
+				for (int ctr = cur - 1; ctr >= 0; ctr--) {
+					buffer = AudioRecord.getMinBufferSize(
+							rates[ctr],
+							AudioFormat.CHANNEL_CONFIGURATION_MONO,
+							AudioFormat.ENCODING_PCM_16BIT);
+					if (buffer > 0) {
+						if (rates[ctr] != rate()) {
+							rate(rates[ctr]);
+						}
+						return buffer;
+					}
 				}
-				ctr += (ctr < 0) ? -1 : 1;
+				// else break and return 0
+				break;
 			}
-			break;
 		}
 		return 0;
 	}
@@ -120,6 +136,7 @@ public class Recorder {
 	}
 
 	public static boolean recording() {
+		// if a recording thread is running, we can't instantiate another one
 		return thread != null;
 	}
 
@@ -127,7 +144,8 @@ public class Recorder {
 		if (recording() || rate <= 0) {
 			return true;
 		}
-		if (buffer() <= 0) {
+		// find a supported rate
+		if ((buffer() <= 0)) {
 			return false;
 		}
 		stop = false;
