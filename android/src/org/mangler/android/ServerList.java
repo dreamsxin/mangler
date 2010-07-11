@@ -30,6 +30,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.res.Configuration;
 import android.database.Cursor;
 import android.media.AudioManager;
 import android.os.Bundle;
@@ -162,7 +163,7 @@ public class ServerList extends ListActivity {
         ChannelList.clear();
 
         // Add lobby.
-        ChannelList.addChannel((short)0, "Lobby");
+        ChannelList.addChannel((short)0, "Lobby", false);
 
         new Thread(new Runnable() {
         	public void run() {

@@ -31,6 +31,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.res.Configuration;
 import android.media.AudioManager;
 import android.os.Bundle;
 import android.view.KeyEvent;
@@ -100,7 +101,7 @@ public class ServerView extends TabActivity {
     	tabhost.addTab(tabhost.newTabSpec("chat").setContent(R.id.chatView).setIndicator("Chat"));
 
         // Create adapters.
-	    channelAdapter 	= new SimpleAdapter(this, ChannelList.data, R.layout.channel_row, new String[] { "channelname" }, new int[] { R.id.crowtext } );
+	    channelAdapter 	= new SimpleAdapter(this, ChannelList.data, R.layout.channel_row, new String[] { "channelname", "passworded" }, new int[] { R.id.crowtext, R.id.crowpass } );
 	    userAdapter 	= new SimpleAdapter(this, UserList.data, R.layout.user_row, new String[] { "username", "channelname" }, new int[] { R.id.urowtext, R.id.urowid } );
 
 	    // Set adapters.
@@ -126,7 +127,7 @@ public class ServerView extends TabActivity {
 	    if(savedInstanceState != null) {
 	    	userInChat = savedInstanceState.getBoolean("chatopen");
 	    	((TextView)findViewById(R.id.messages)).setText(savedInstanceState.getString("chatmessages"));
-	    	((EditText)findViewById(R.id.message)).setEnabled(userInChat);	
+	    	((EditText)findViewById(R.id.message)).setEnabled(userInChat);
 	    }
 	
 	    ((EditText)findViewById(R.id.message)).setVisibility(userInChat ? TextView.VISIBLE : TextView.GONE);
@@ -143,6 +144,10 @@ public class ServerView extends TabActivity {
     public void onDestroy() {
     	super.onDestroy();
 
+    	if (Recorder.recording()) {			
+    		Recorder.stop();
+    	}
+    	
     	// Unregister receivers.
 		unregisterReceiver(chatReceiver);
         unregisterReceiver(channelReceiver);

@@ -147,7 +147,7 @@ public class EventService extends Service {
 
 	    			case VentriloEvents.V3_EVENT_CHAN_ADD:
 	    				VentriloInterface.getchannel(data, data.channel.id);
-	    				ChannelList.addChannel(data.channel.id, StringFromBytes(data.text.name));
+	    				ChannelList.addChannel(data.channel.id, StringFromBytes(data.text.name), VentriloInterface.channelrequirespassword(data.channel.id));
 	    			    sendBroadcast(new Intent(ServerView.CHANNELLIST_ACTION));
 	    				break;
 
