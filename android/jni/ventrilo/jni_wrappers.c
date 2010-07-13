@@ -165,6 +165,7 @@ JNIEXPORT jboolean JNICALL Java_org_mangler_android_VentriloInterface_login(JNIE
 	char* _username = get_string(env, username);
 	char* _password = get_string(env, password);
 	char* _phonetic = get_string(env, phonetic);
+	v3_get_event(V3_NONBLOCK);
 	jint ret = v3_login(_server, _username, _password, _phonetic);
 	release_string(env, server, _server);
 	release_string(env, username, _username);
