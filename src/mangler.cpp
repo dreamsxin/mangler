@@ -858,8 +858,8 @@ void Mangler::startTransmit(void) {/*{{{*/
     if ((codec = v3_get_channel_codec(user->channel))) {
         //fprintf(stderr, "channel %d codec rate: %d at sample size %d\n", user->channel, codec->rate, codec->pcmframesize);
         v3_free_user(user);
-        channelTree->setUserIcon(v3_get_user_id(), "green");
-        statusIcon->set(icons["tray_icon_green"]);
+        channelTree->setUserIcon(v3_get_user_id(), "orange");
+        statusIcon->set(icons["tray_icon_yellow"]);
         inputAudio = new ManglerAudio(AUDIO_INPUT, codec->rate, 1, codec->pcmframesize);
     }
 }/*}}}*/
