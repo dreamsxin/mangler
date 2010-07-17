@@ -31,9 +31,10 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.res.Configuration;
+import android.content.SharedPreferences;
 import android.media.AudioManager;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -74,6 +75,7 @@ public class ServerView extends TabActivity {
 	private final int OPTION_JOIN_CHAT  = 1;
 	private final int OPTION_LEAVE_CHAT = 2;
 	private final int OPTION_DISCONNECT = 3;
+	private final int OPTION_SETTINGS = 4;
 	
 	// List adapters.
 	private SimpleAdapter channelAdapter;
@@ -159,6 +161,7 @@ public class ServerView extends TabActivity {
     	 // Create our menu buttons.
     	menu.add(0, OPTION_JOIN_CHAT, 0, "Join chat").setIcon(R.drawable.menu_join_chat);
         menu.add(0, OPTION_LEAVE_CHAT, 0, "Leave chat").setIcon(R.drawable.menu_leave_chat);
+        menu.add(0, OPTION_SETTINGS, 0, "Settings").setIcon(R.drawable.menu_settings);
         menu.add(0, OPTION_DISCONNECT, 0, "Disconnect").setIcon(R.drawable.menu_disconnect);
         return true;
     }
@@ -186,6 +189,11 @@ public class ServerView extends TabActivity {
         	case OPTION_DISCONNECT:
         		VentriloInterface.logout();
         		finish();
+        		return true;
+        		
+        	case OPTION_SETTINGS:
+				Intent intent = new Intent(ServerView.this, Settings.class);
+				startActivity(intent);
         		return true;
 
         	default:
@@ -310,27 +318,11 @@ public class ServerView extends TabActivity {
 		}
 	};
 
-	/*private OnClickListener onTalkPress = new OnClickListener() {
-		public void onClick(View v) {
-			if (!Recorder.recording()) {
-				if (!Recorder.start()) {
-					Intent broadcastIntent = new Intent(ServerView.NOTIFY_ACTION);
-    				broadcastIntent.putExtra("message", "Unsupported recording rate for hardware: " + Integer.toString(Recorder.rate()) + "Hz");
-    			    sendBroadcast(broadcastIntent);
-    			    return;
-				}
-				((Button)findViewById(R.id.talkButton)).setText(R.string.stop_talk);
-				((ImageView)findViewById(R.id.transmitStatus)).setImageResource(R.drawable.transmit_on);
-			} else {
-				Recorder.stop();
-				((Button)findViewById(R.id.talkButton)).setText(R.string.start_talk);
-				((ImageView)findViewById(R.id.transmitStatus)).setImageResource(R.drawable.transmit_off);
-			}
-		}
-	};*/
-	
+
 	private OnTouchListener onTalkPress = new OnTouchListener() {
 		public boolean onTouch(View v, MotionEvent m) {
+			boolean ptt_toggle = PreferenceManager.getDefaultSharedPreferences(getBaseContext()).getBoolean("ptt_toggle", false);;
+			
 			switch (m.getAction()) {
 				case MotionEvent.ACTION_DOWN:
 					if (!Recorder.recording()) {
@@ -345,12 +337,18 @@ public class ServerView extends TabActivity {
 								"Last Xmit Info\n\n" +
 								"Channel Rate: " + VentriloInterface.getchannelrate(VentriloInterface.getuserchannel(VentriloInterface.getuserid())) + "\n" +
 								"Record Rate: " + Recorder.rate() + "\n" +
-								"Min Buffer Size: " + Recorder.buflen() + "\n");
+								"Min Buffer Size: " + Recorder.buflen() + "\n" +
+								"PTT Toggle: " + ptt_toggle + "\n");
+					} else if (ptt_toggle) {
+						Recorder.stop();
+						((ImageView)findViewById(R.id.transmitStatus)).setImageResource(R.drawable.transmit_off);
 					}
 					break;
 				case MotionEvent.ACTION_UP:
-					Recorder.stop();
-					((ImageView)findViewById(R.id.transmitStatus)).setImageResource(R.drawable.transmit_off);
+					if (! ptt_toggle) {
+						Recorder.stop();
+						((ImageView)findViewById(R.id.transmitStatus)).setImageResource(R.drawable.transmit_off);
+					}
 					break;
 			}
 			return true;
