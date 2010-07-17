@@ -2,13 +2,12 @@
 <TabHost xmlns:android="http://schemas.android.com/apk/res/android"
 		android:id="@android:id/tabhost"
 		android:layout_width="fill_parent"
-		android:layout_height="fill_parent"
-		android:background="#f2f2f2">
+		android:layout_height="fill_parent">
 		
 	<LinearLayout android:layout_width="fill_parent" 
 		android:layout_height="fill_parent" 
-		android:padding="5dp" 
-		android:background="@drawable/background" android:orientation="horizontal">
+		android:padding="5dp"
+		android:orientation="horizontal">
 		
 		<LinearLayout android:orientation="vertical"
 		android:layout_height="fill_parent" 
@@ -17,8 +16,7 @@
 		
 		<TabWidget android:id="@android:id/tabs" 
 			android:layout_width="fill_parent" 
-			android:layout_height="wrap_content"
-			android:background="#550055" />
+			android:layout_height="wrap_content"/>
 			
 		<FrameLayout android:layout_width="fill_parent" 
 			android:layout_height="fill_parent" 
@@ -33,7 +31,6 @@
 			    android:gravity="center_vertical|center_horizontal">
 				
 				<TextView android:text="Last Xmit Info\n\nChannel Rate: N/A\nRecord Rate: N/A\nMin Buffer Size: N/A\n"
-					android:textColor="#000000"
 					android:id="@+id/recorderInfo"
 					android:layout_width="fill_parent"
 					android:layout_height="wrap_content"
@@ -54,7 +51,7 @@
 				
 				<ListView android:layout_width="fill_parent"
 			       	android:layout_height="fill_parent" 
-			       	android:isScrollContainer="true" android:id="@+id/channelList" android:cacheColorHint="#00000000" android:divider="@drawable/list_divider" android:dividerHeight="1px"></ListView>
+			       	android:isScrollContainer="true" android:id="@+id/channelList" android:cacheColorHint="#00000000"></ListView>
 			       	 
 			</LinearLayout>
 			
@@ -65,7 +62,7 @@
 				
 			    <ListView android:layout_width="fill_parent"
 			       	android:layout_height="fill_parent" 
-			       	android:isScrollContainer="true" android:id="@+id/userList" android:cacheColorHint="#00000000" android:divider="@drawable/list_divider" android:dividerHeight="1px"></ListView>
+			       	android:isScrollContainer="true" android:id="@+id/userList" android:cacheColorHint="#00000000"></ListView>
 				
 			</LinearLayout>
 
@@ -85,8 +82,7 @@
 						<TextView android:id="@+id/messages" 
 							android:text="* Press menu to join or leave the chat room." 
 							android:layout_height="wrap_content" 
-							android:layout_width="wrap_content"
-							android:textColor="#770077" />
+							android:layout_width="wrap_content"/>
 						
 				</ScrollView>
 				

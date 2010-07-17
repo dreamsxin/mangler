@@ -47,7 +47,9 @@ public class EventService extends Service {
     @Override
     public void onCreate() {
     	running = true;
-    	(new Thread(eventRunnable)).start();
+    	Thread t = new Thread(eventRunnable);
+        t.setPriority(10);
+        t.start();
     }
 
     @Override

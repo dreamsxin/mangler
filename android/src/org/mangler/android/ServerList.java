@@ -22,15 +22,12 @@
 
 package org.mangler.android;
 
-import com.nullwire.trace.ExceptionHandler;
-
 import android.app.ListActivity;
 import android.app.ProgressDialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.res.Configuration;
 import android.database.Cursor;
 import android.media.AudioManager;
 import android.os.Bundle;
@@ -44,6 +41,8 @@ import android.widget.SimpleCursorAdapter;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.AdapterView.AdapterContextMenuInfo;
+
+import com.nullwire.trace.ExceptionHandler;
 
 public class ServerList extends ListActivity {
 
@@ -165,7 +164,8 @@ public class ServerList extends ListActivity {
         // Add lobby.
         ChannelList.addChannel((short)0, "Lobby", false);
 
-        new Thread(new Runnable() {
+        
+        Thread t = new Thread(new Runnable() {
         	public void run() {
 		        if (VentriloInterface.login(
 		        		servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_HOSTNAME)) + ":" + Integer.toString(servers.getInt(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_PORTNUMBER))),
@@ -185,7 +185,9 @@ public class ServerList extends ListActivity {
 		        	sendBroadcast(broadcastIntent);
 		        }
 		    }
-    	}).start();
+    	});
+        t.setPriority(10);
+        t.start();
     }
 
     private void startRecvThread() {

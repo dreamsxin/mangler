@@ -8,6 +8,5 @@
     android:gravity="center_vertical"
     android:textSize="18sp" 
     android:textStyle="bold" 
-    android:textColor="#770077"
     android:typeface="sans">
 </TextView>

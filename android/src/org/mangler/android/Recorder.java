@@ -39,14 +39,15 @@ public class Recorder {
 			AudioRecord audiorecord = null;
 			byte[] buf = null; // send buffer
 
+			if (buflen < VentriloInterface.pcmlengthforrate(rate())) {
+				buflen = VentriloInterface.pcmlengthforrate(rate());
+			}
 			// argument not needed; send method is hardcoded
 			VentriloInterface.startaudio((short)0);
 			// Find out if the minimum buffer length is smaller
 			// than the amount of data we need to send.  If so,
 			// adjust buflen (set from buffer()) accordingly
-			if (buflen < VentriloInterface.pcmlengthforrate(rate())) {
-				buflen = VentriloInterface.pcmlengthforrate(rate());
-			}
+
 			audiorecord = new AudioRecord(
 					MediaRecorder.AudioSource.MIC,
 					rate,

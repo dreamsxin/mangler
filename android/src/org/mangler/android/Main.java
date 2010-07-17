@@ -63,6 +63,12 @@ public class Main extends Activity {
 				startActivity(intent);
 			}
         });
+        ((Button)findViewById(R.id.SettingsButton)).setOnClickListener(new OnClickListener() {
+			public void onClick(View v) {
+				Intent intent = new Intent(Main.this, Settings.class);
+				startActivity(intent);
+			}
+        });
     }
     
     @Override

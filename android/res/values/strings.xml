@@ -26,4 +26,5 @@
 <string name="eula_title">Privacy Notice</string>
 <string name="eula_accept">Accept</string>
 <string name="eula_refuse">Refuse</string>
+<string name="ptt_button_type">Set Push-To-Talk as Toggle</string>
 </resources>
