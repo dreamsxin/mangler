@@ -31,7 +31,6 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.SharedPreferences;
 import android.media.AudioManager;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
@@ -133,6 +132,7 @@ public class ServerView extends TabActivity {
 	    }
 	
 	    ((EditText)findViewById(R.id.message)).setVisibility(userInChat ? TextView.VISIBLE : TextView.GONE);
+
     }
 
     @Override
@@ -321,11 +321,13 @@ public class ServerView extends TabActivity {
 
 	private OnTouchListener onTalkPress = new OnTouchListener() {
 		public boolean onTouch(View v, MotionEvent m) {
-			boolean ptt_toggle = PreferenceManager.getDefaultSharedPreferences(getBaseContext()).getBoolean("ptt_toggle", false);;
+			boolean ptt_toggle = PreferenceManager.getDefaultSharedPreferences(getBaseContext()).getBoolean("ptt_toggle", false);
 			
 			switch (m.getAction()) {
 				case MotionEvent.ACTION_DOWN:
 					if (!Recorder.recording()) {
+						boolean force_8khz = PreferenceManager.getDefaultSharedPreferences(getBaseContext()).getBoolean("force_8khz", false);
+						Recorder.setForce_8khz(force_8khz);
 						if (!Recorder.start()) {
 							Intent broadcastIntent = new Intent(ServerView.NOTIFY_ACTION);
 		    				broadcastIntent.putExtra("message", "Unsupported recording rate for hardware: " + Integer.toString(Recorder.rate()) + "Hz");
@@ -333,13 +335,13 @@ public class ServerView extends TabActivity {
 		    			    return true;
 						}
 						((ImageView)findViewById(R.id.transmitStatus)).setImageResource(R.drawable.transmit_on);
+					} else if (ptt_toggle) {
 						((TextView)findViewById(R.id.recorderInfo)).setText(
 								"Last Xmit Info\n\n" +
 								"Channel Rate: " + VentriloInterface.getchannelrate(VentriloInterface.getuserchannel(VentriloInterface.getuserid())) + "\n" +
 								"Record Rate: " + Recorder.rate() + "\n" +
-								"Min Buffer Size: " + Recorder.buflen() + "\n" +
+								"Buffer Size: " + Recorder.buflen() + "\n" +
 								"PTT Toggle: " + ptt_toggle + "\n");
-					} else if (ptt_toggle) {
 						Recorder.stop();
 						((ImageView)findViewById(R.id.transmitStatus)).setImageResource(R.drawable.transmit_off);
 					}

@@ -26,6 +26,7 @@ import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
 import android.os.Build;
+import android.util.Log;
 
 public class Recorder {
 
@@ -33,15 +34,20 @@ public class Recorder {
 	private static boolean stop = false; // stop flag
 	private static int rate = 0; // current or overridden rate for current channel
 	private static int buflen;
+	private static boolean force_8khz;
 
+	
 	private static class RecordThread implements Runnable {
 		public void run() {
 			AudioRecord audiorecord = null;
 			byte[] buf = null; // send buffer
-
+			
+			Log.e("recorder", "lv3 says " + VentriloInterface.pcmlengthforrate(rate()) + " for rate " + rate());
 			if (buflen < VentriloInterface.pcmlengthforrate(rate())) {
 				buflen = VentriloInterface.pcmlengthforrate(rate());
 			}
+			Log.e("recorder", "buflen is " + buflen);
+			
 			// argument not needed; send method is hardcoded
 			VentriloInterface.startaudio((short)0);
 			// Find out if the minimum buffer length is smaller
@@ -49,7 +55,7 @@ public class Recorder {
 			// adjust buflen (set from buffer()) accordingly
 
 			audiorecord = new AudioRecord(
-					MediaRecorder.AudioSource.MIC,
+					MediaRecorder.AudioSource.DEFAULT,
 					rate,
 					AudioFormat.CHANNEL_CONFIGURATION_MONO,
 					AudioFormat.ENCODING_PCM_16BIT,
@@ -89,8 +95,14 @@ public class Recorder {
 
 	private static int buffer() {
 		// all rates used by the protocol
+		if (isForce_8khz()) {
+			rate(8000);
+			return(AudioRecord.getMinBufferSize(
+					8000,
+					AudioFormat.CHANNEL_CONFIGURATION_MONO,
+					AudioFormat.ENCODING_PCM_16BIT));
+		}
 		final int[] rates = { 8000, 11025, 16000, 22050, 32000, 44100 };
-
 		for (int cur = 0; cur < rates.length; cur++) {
 			// find the current rate in the rates array
 			if (rates[cur] == rate()) {
@@ -162,6 +174,15 @@ public class Recorder {
 
 	public static void stop() {
 		stop = true;
+	}
+
+	public static void setForce_8khz(boolean force_8khz) {
+		Log.e("recorder", "forcing 8khz: " + force_8khz);
+		Recorder.force_8khz = force_8khz;
+	}
+
+	public static boolean isForce_8khz() {
+		return force_8khz;
 	}
 
 }

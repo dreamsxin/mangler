@@ -1,4 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
-	<CheckBoxPreference android:key="ptt_toggle" android:title="@string/ptt_button_type"></CheckBoxPreference>
+	<CheckBoxPreference
+		android:key="ptt_toggle"
+		android:summary="Whether the push to talk button is a toggle button or touch sensitive"
+		android:title="@string/ptt_button_type"/>
+	<CheckBoxPreference
+		android:key="force_8khz"
+		android:summary="Force 8kHz transmit.  Use if transmit sound quality is poor or normal transmitting does not work."
+		android:title="@string/force_8khz"/>
 </PreferenceScreen>
