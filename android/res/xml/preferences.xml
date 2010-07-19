@@ -8,4 +8,8 @@
 		android:key="force_8khz"
 		android:summary="Force 8kHz transmit.  Use if transmit sound quality is poor or normal transmitting does not work."
 		android:title="@string/force_8khz"/>
+	<CheckBoxPreference
+		android:key="enable_tts"
+		android:summary="Enable audible notifications when a user joins/leaves the channel"
+		android:title="@string/enable_tts"/>
 </PreferenceScreen>

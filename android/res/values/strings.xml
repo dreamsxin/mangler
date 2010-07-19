@@ -29,4 +29,5 @@
 <string name="ptt_button_type">Set Push-To-Talk as Toggle</string>
 
 <string name="force_8khz">Force 8kHz Transmit</string>
+<string name="enable_tts">Enable Text-to-Speech</string>
 </resources>
