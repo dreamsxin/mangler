@@ -73,5 +73,16 @@ public class UserList {
 			}
 		}
 	}
+	
+	public static short getChannel(short userid) {
+		for(Iterator<HashMap<String, Object>> iterator = data.iterator(); iterator.hasNext(); ) {
+			HashMap<String, Object> data = iterator.next();
+			if((Short)data.get("userid") == userid) {
+				short channelid = (Short)data.get("channelid");
+				return (short)channelid;
+			}
+		}
+		return -1;
+	}
 
 }

@@ -3,10 +3,25 @@
       package="org.mangler.android"
       android:versionCode="1"
       android:versionName="1.0">
-    
+    <application android:label="@string/app_name" android:icon="@drawable/mangler_logo" android:debuggable="true">
+        <activity android:label="@string/app_name" android:name="Main">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+                <activity android:name="ServerList" android:label="@string/server_list"></activity>
+                <activity android:name="ServerEdit" android:label="@string/server_edit"></activity>
+
+                <activity android:name="ServerView"
+                        android:label="@string/server_view">
+                </activity>
+                <service android:name="EventService"></service>
+                <activity android:name="Settings"></activity>
+        </application>
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
-	<uses-sdk android:minSdkVersion="3" android:targetSdkVersion="4"/>
+        <uses-sdk android:minSdkVersion="3" android:targetSdkVersion="4"/>
 <uses-permission android:name="android.permission.RAISED_THREAD_PRIORITY"></uses-permission>
-</manifest> 
+</manifest>
