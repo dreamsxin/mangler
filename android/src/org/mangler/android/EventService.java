@@ -60,6 +60,19 @@ public class EventService extends Service {
     public static String StringFromBytes(byte[] bytes) {
     	return new String(bytes, 0, (new String(bytes).indexOf(0)));
     }
+    
+    private String getPhonetic(short userid) {
+    	String username = "unknown";
+		VentriloEventData userRet = new VentriloEventData();
+		VentriloInterface.getuser(userRet, userid);
+		String phonetic = StringFromBytes(userRet.text.phonetic);
+		if (phonetic.length() > 0) {
+			username = phonetic;
+		} else {
+			username = StringFromBytes(userRet.text.name);
+		}
+    	return username;
+    }
 
     private Runnable eventRunnable = new Runnable() {
 
@@ -113,25 +126,13 @@ public class EventService extends Service {
     					} else {
     	    				if (data.channel.id == VentriloInterface.getuserchannel(VentriloInterface.getuserid())) {
     	    					broadcastIntent = new Intent(ServerView.TTS_NOTIFY_ACTION);
-    	    					VentriloEventData userRet = new VentriloEventData();
-    	    					VentriloInterface.getuser(userRet, data.user.id);
-    	    					String username = StringFromBytes(userRet.text.name);
-    	    					String phonetic = StringFromBytes(userRet.text.phonetic);
-    	    					if (phonetic.length() > 0) {
-    	    						username = phonetic;
-    	    					}
-    	    					broadcastIntent.putExtra("message", username + " has joined the channel.");
+    	    					String phonetic = getPhonetic(data.user.id);
+    	    					broadcastIntent.putExtra("message", phonetic + " has joined the channel.");
     	    					sendBroadcast(broadcastIntent);
     	    				} else if (UserList.getChannel(data.user.id) == VentriloInterface.getuserchannel(VentriloInterface.getuserid())) {
     	    					broadcastIntent = new Intent(ServerView.TTS_NOTIFY_ACTION);
-    	    					VentriloEventData userRet = new VentriloEventData();
-    	    					VentriloInterface.getuser(userRet, data.user.id);
-    	    					String username = StringFromBytes(userRet.text.name);
-    	    					String phonetic = StringFromBytes(userRet.text.phonetic);
-    	    					if (phonetic.length() > 0) {
-    	    						username = phonetic;
-    	    					}
-    	    					broadcastIntent.putExtra("message", username + " has left the channel.");
+    	    					String phonetic = getPhonetic(data.user.id);
+    	    					broadcastIntent.putExtra("message", phonetic+ " has left the channel.");
     	    					sendBroadcast(broadcastIntent);
     	    				}
     						Player.close(data.user.id);
@@ -146,6 +147,10 @@ public class EventService extends Service {
 		    				String username = StringFromBytes(data.text.name);
 		    				UserList.addUser(data.user.id, username, data.channel.id);
 		    			    sendBroadcast(new Intent(ServerView.USERLIST_ACTION));
+	    					broadcastIntent = new Intent(ServerView.TTS_NOTIFY_ACTION);
+	    					String phonetic = getPhonetic(data.user.id);
+	    					broadcastIntent.putExtra("message", phonetic + " has logged in.");
+	    					sendBroadcast(broadcastIntent);
 	    				}
 	    				break;
 
@@ -153,6 +158,11 @@ public class EventService extends Service {
 	    				Player.close(data.user.id);
 	    				UserList.delUser(data.user.id);
 	    			    sendBroadcast(new Intent(ServerView.USERLIST_ACTION));
+	    			    // the phonetic isn't available after the user logged out :/
+    					String phonetic = StringFromBytes(data.text.name);
+    					broadcastIntent = new Intent(ServerView.TTS_NOTIFY_ACTION);
+    					broadcastIntent.putExtra("message", phonetic + " has logged out.");
+    					sendBroadcast(broadcastIntent);
 	    				break;
 
 	    			case VentriloEvents.V3_EVENT_LOGIN_COMPLETE:
