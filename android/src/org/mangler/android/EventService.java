@@ -111,6 +111,18 @@ public class EventService extends Service {
     	    				broadcastIntent.putExtra("message", message);
     	    			    sendBroadcast(broadcastIntent);
     					} else {
+    	    				if (data.channel.id == VentriloInterface.getuserchannel(VentriloInterface.getuserid())) {
+    	    					broadcastIntent = new Intent(ServerView.TTS_NOTIFY_ACTION);
+    	    					VentriloEventData userRet = new VentriloEventData();
+    	    					VentriloInterface.getuser(userRet, data.user.id);
+    	    					String username = StringFromBytes(userRet.text.name);
+    	    					String phonetic = StringFromBytes(userRet.text.phonetic);
+    	    					if (phonetic.length() > 0) {
+    	    						username = phonetic;
+    	    					}
+    	    					broadcastIntent.putExtra("message", username + " has joined the channel.");
+    	    					sendBroadcast(broadcastIntent);
+    	    				}
     						Player.close(data.user.id);
     					}
     					UserList.changeChannel(data.user.id, data.channel.id);

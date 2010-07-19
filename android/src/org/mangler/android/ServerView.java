@@ -25,9 +25,6 @@ package org.mangler.android;
 import java.util.HashMap;
 
 import android.app.AlertDialog;
-import android.app.Notification;
-import android.app.NotificationManager;
-import android.app.PendingIntent;
 import android.app.TabActivity;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -37,6 +34,7 @@ import android.content.IntentFilter;
 import android.media.AudioManager;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+import android.speech.tts.TextToSpeech;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -67,6 +65,7 @@ public class ServerView extends TabActivity {
 	public static final String USERLIST_ACTION 	  = "org.mangler.android.UserListAction";
 	public static final String CHATVIEW_ACTION	  = "org.mangler.android.ChatViewAction";
 	public static final String NOTIFY_ACTION	  = "org.mangler.android.NotifyAction";
+	public static final String TTS_NOTIFY_ACTION  = "org.mangler.android.TtsNotifyAction";
 
 	// Events.
 	public static final int EVENT_CHAT_JOIN	  = 1;
@@ -82,6 +81,10 @@ public class ServerView extends TabActivity {
 	// List adapters.
 	private SimpleAdapter channelAdapter;
 	private SimpleAdapter userAdapter;
+	
+	// Text to Speech
+	TextToSpeech tts;
+	boolean ttsInitialized = false;
 
 	// State variables.
 	private boolean userInChat = false;
@@ -96,6 +99,9 @@ public class ServerView extends TabActivity {
         
         // Volume controls.
         setVolumeControlStream(AudioManager.STREAM_MUSIC);
+        
+        // Text to speech init
+        tts = new TextToSpeech(this, null);
 
         // Add tabs.
         TabHost tabhost = getTabHost();
@@ -122,6 +128,8 @@ public class ServerView extends TabActivity {
         registerReceiver(channelReceiver, new IntentFilter(CHANNELLIST_ACTION));
         registerReceiver(userReceiver, new IntentFilter(USERLIST_ACTION));
         registerReceiver(notifyReceiver, new IntentFilter(NOTIFY_ACTION));
+        registerReceiver(ttsNotifyReceiver, new IntentFilter(TTS_NOTIFY_ACTION));
+
 
         // Control listeners.
 	    ((EditText)findViewById(R.id.message)).setOnKeyListener(onChatMessageEnter);
@@ -158,7 +166,9 @@ public class ServerView extends TabActivity {
         unregisterReceiver(channelReceiver);
         unregisterReceiver(userReceiver);
         unregisterReceiver(notifyReceiver);
+        unregisterReceiver(ttsNotifyReceiver);
     }
+    
 
     public boolean onCreateOptionsMenu(Menu menu) {
     	 // Create our menu buttons.
@@ -249,6 +259,13 @@ public class ServerView extends TabActivity {
 		public void onReceive(Context context, Intent intent) {
 			String message = intent.getExtras().getString("message");
 			Toast.makeText(context, message, Toast.LENGTH_SHORT).show();
+		}
+	};
+	
+	private BroadcastReceiver ttsNotifyReceiver = new BroadcastReceiver() {
+		public void onReceive(Context context, Intent intent) {
+			String message = intent.getExtras().getString("message");
+			tts.speak(message, TextToSpeech.QUEUE_ADD, null);
 		}
 	};
 
@@ -343,14 +360,18 @@ public class ServerView extends TabActivity {
 								"Last Xmit Info\n\n" +
 								"Channel Rate: " + VentriloInterface.getchannelrate(VentriloInterface.getuserchannel(VentriloInterface.getuserid())) + "\n" +
 								"Record Rate: " + Recorder.rate() + "\n" +
-								"Buffer Size: " + Recorder.buflen() + "\n" +
-								"PTT Toggle: " + ptt_toggle + "\n");
+								"Buffer Size: " + Recorder.buflen() + "\n");
 						Recorder.stop();
 						((ImageView)findViewById(R.id.transmitStatus)).setImageResource(R.drawable.transmit_off);
 					}
 					break;
 				case MotionEvent.ACTION_UP:
 					if (! ptt_toggle) {
+						((TextView)findViewById(R.id.recorderInfo)).setText(
+								"Last Xmit Info\n\n" +
+								"Channel Rate: " + VentriloInterface.getchannelrate(VentriloInterface.getuserchannel(VentriloInterface.getuserid())) + "\n" +
+								"Record Rate: " + Recorder.rate() + "\n" +
+								"Buffer Size: " + Recorder.buflen() + "\n");
 						Recorder.stop();
 						((ImageView)findViewById(R.id.transmitStatus)).setImageResource(R.drawable.transmit_off);
 					}

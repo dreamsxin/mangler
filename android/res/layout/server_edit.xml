@@ -8,7 +8,7 @@
 		android:layout_height="wrap_content" 
 		android:layout_width="fill_parent" 
 		android:padding="15dp">
-	    	
+		
 		<TextView 
 			android:text="@string/server_name"
 			android:layout_width="wrap_content"
@@ -16,8 +16,8 @@
 		
 		<EditText android:id="@+id/editServer" 
 			android:layout_height="wrap_content" 
-			android:layout_width="fill_parent" />
-	
+			android:layout_width="fill_parent"/>
+		
 		<TextView 
 			android:text="@string/hostname"
 			android:layout_width="wrap_content"
@@ -25,8 +25,9 @@
 			
 		<EditText android:id="@+id/editHost" 
 			android:layout_width="fill_parent"
-			android:layout_height="wrap_content" />
-			
+			android:layout_height="wrap_content"
+			android:inputType="textUri"/>
+		
 		<TextView 
 			android:text="@string/port_number"
 			android:layout_width="wrap_content"
@@ -45,8 +46,9 @@
 		<EditText android:id="@+id/editPass" 
 			android:layout_width="fill_parent"
 			android:layout_height="wrap_content" 
-			android:inputType="textPassword"/>
-			
+			android:inputType="textPassword"
+			android:maxLength="31"/>
+		
 		<TextView 
 			android:text="@string/user_name"
 			android:layout_width="wrap_content"
@@ -54,8 +56,9 @@
 		
 		<EditText android:id="@+id/editUser" 
 			android:layout_width="fill_parent"
-			android:layout_height="wrap_content" />
-			
+			android:layout_height="wrap_content"
+			android:maxLength="31"/>
+		
 		<TextView 
 			android:text="@string/phonetic"
 			android:layout_width="wrap_content"
@@ -63,13 +66,15 @@
 		
 		<EditText android:id="@+id/editPhonetic" 
 			android:layout_width="fill_parent"
-			android:layout_height="wrap_content" android:maxLength="31"/>
+			android:layout_height="wrap_content"
+			android:maxLength="31"
+			android:inputType="textPhonetic"/>
 		
 		<Button android:id="@+id/editSave" 
 			android:text="@string/save"
 			android:layout_width="wrap_content"
 			android:layout_height="wrap_content" 
 			android:width="100px"/>
-			
+		
 	</LinearLayout>
 </ScrollView>
