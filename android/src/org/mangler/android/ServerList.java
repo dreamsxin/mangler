@@ -23,6 +23,9 @@
 package org.mangler.android;
 
 import android.app.ListActivity;
+import android.app.Notification;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.app.ProgressDialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -58,6 +61,10 @@ public class ServerList extends ListActivity {
     private static final String SERVERLIST_NOTIFICATION = "org.mangler.android.ServerListNotification";
 
 	private ManglerDBAdapter dbHelper;
+	
+	// Notifications
+	private NotificationManager notificationManager;
+	private static final int ONGOING_NOTIFICATION = 1;
 
     /** Called when the activity is first created. */
     @Override
@@ -67,7 +74,9 @@ public class ServerList extends ListActivity {
 
         // Send crash reports to server
         ExceptionHandler.register(this, "http://www.mangler.org/errors/upload.php");
-
+        
+        notificationManager = (NotificationManager)getSystemService(NOTIFICATION_SERVICE);
+        
         // Volume controls.
         setVolumeControlStream(AudioManager.STREAM_MUSIC);
 
@@ -163,7 +172,6 @@ public class ServerList extends ListActivity {
 
         // Add lobby.
         ChannelList.addChannel((short)0, "Lobby", false);
-
         
         Thread t = new Thread(new Runnable() {
         	public void run() {
@@ -175,7 +183,15 @@ public class ServerList extends ListActivity {
 		        	dialog.dismiss();
 		            // Start receiving packets.
 		        	startRecvThread();
+		        	
 		        	startActivityForResult(new Intent(ServerList.this, ServerView.class), ACTIVITY_CONNECT);
+		        	
+		            Intent notificationIntent = new Intent(ServerList.this, ServerView.class);
+		            notificationIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+		            Notification notification = new Notification(R.drawable.notification, "Connected to server", System.currentTimeMillis());
+		        	notification.setLatestEventInfo(getApplicationContext(), "Mangler", "Connected to " + servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_SERVERNAME)), PendingIntent.getActivity(ServerList.this, 0, notificationIntent, 0));
+		            notification.flags = Notification.FLAG_ONGOING_EVENT;
+		        	notificationManager.notify(ONGOING_NOTIFICATION, notification);
 		        } else {
 		        	dialog.dismiss();
 		        	VentriloEventData data = new VentriloEventData();
@@ -212,7 +228,9 @@ public class ServerList extends ListActivity {
         if (requestCode == ACTIVITY_CONNECT) {
         	VentriloInterface.logout();
         }
-
+        
+        notificationManager.cancelAll();
+        
         fillData();
     }
 }
