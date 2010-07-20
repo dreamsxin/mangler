@@ -1,4 +1,6 @@
 /*
+ * Copyright 2010 Daniel Sloof <daniel@danslo.org>
+ *
  * This file is part of Mangler.
  *
  * $LastChangedDate: 2010-06-18 23:17:29 +0200 (Fri, 18 Jun 2010) $

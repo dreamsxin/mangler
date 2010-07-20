@@ -1,3 +1,27 @@
+/*
+ * Copyright 2010 Daniel Sloof <daniel@danslo.org>
+ *
+ * This file is part of Mangler.
+ *
+ * $LastChangedDate: 2010-07-06 17:50:28 +0200 (Tue, 06 Jul 2010) $
+ * $Revision: 958 $
+ * $LastChangedBy: killy $
+ * $URL: http://svn.mangler.org/mangler/trunk/android/src/org/mangler/Main.java $
+ *
+ * Mangler is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Mangler is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Mangler.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package org.mangler.android;
 
 import android.os.Bundle;
