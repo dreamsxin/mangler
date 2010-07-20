@@ -103,7 +103,7 @@ public class ServerView extends TabActivity {
         setVolumeControlStream(AudioManager.STREAM_MUSIC);
         
         // Text to speech init
-        tts = new TextToSpeech(this, null);
+		tts = new TextToSpeech(this, null);
 
         // Add tabs.
         TabHost tabhost = getTabHost();
@@ -154,6 +154,24 @@ public class ServerView extends TabActivity {
     	outState.putBoolean("chatopen", userInChat);
     	super.onSaveInstanceState(outState);
     }
+    
+	@Override
+	public boolean onKeyDown(int keyCode, KeyEvent event) {
+		if (keyCode == KeyEvent.KEYCODE_CAMERA) {
+			startPtt();
+			return true;
+		}
+		return super.onKeyDown(keyCode, event);
+	}
+
+	@Override
+	public boolean onKeyUp(int keyCode, KeyEvent event) {
+		if (keyCode == KeyEvent.KEYCODE_CAMERA) {
+			stopPtt();
+			return true;
+		}
+		return super.onKeyDown(keyCode, event);
+	}
 
     @Override
     public void onDestroy() {
@@ -342,8 +360,7 @@ public class ServerView extends TabActivity {
 			return true;
 		}
 	};
-
-
+	
 	private OnTouchListener onTalkPress = new OnTouchListener() {
 		public boolean onTouch(View v, MotionEvent m) {
 			boolean ptt_toggle = PreferenceManager.getDefaultSharedPreferences(getBaseContext()).getBoolean("ptt_toggle", false);
@@ -351,40 +368,42 @@ public class ServerView extends TabActivity {
 			switch (m.getAction()) {
 				case MotionEvent.ACTION_DOWN:
 					if (!Recorder.recording()) {
-						boolean force_8khz = PreferenceManager.getDefaultSharedPreferences(getBaseContext()).getBoolean("force_8khz", false);
-						Recorder.setForce_8khz(force_8khz);
-						if (!Recorder.start()) {
-							Intent broadcastIntent = new Intent(ServerView.NOTIFY_ACTION);
-		    				broadcastIntent.putExtra("message", "Unsupported recording rate for hardware: " + Integer.toString(Recorder.rate()) + "Hz");
-		    			    sendBroadcast(broadcastIntent);
-		    			    return true;
-						}
-						((ImageView)findViewById(R.id.transmitStatus)).setImageResource(R.drawable.transmit_on);
+						startPtt();
 					} else if (ptt_toggle) {
-						((TextView)findViewById(R.id.recorderInfo)).setText(
-								"Last Xmit Info\n\n" +
-								"Channel Rate: " + VentriloInterface.getchannelrate(VentriloInterface.getuserchannel(VentriloInterface.getuserid())) + "\n" +
-								"Record Rate: " + Recorder.rate() + "\n" +
-								"Buffer Size: " + Recorder.buflen() + "\n");
-						Recorder.stop();
-						((ImageView)findViewById(R.id.transmitStatus)).setImageResource(R.drawable.transmit_off);
+						stopPtt();
 					}
 					break;
 				case MotionEvent.ACTION_UP:
 					if (! ptt_toggle) {
-						((TextView)findViewById(R.id.recorderInfo)).setText(
-								"Last Xmit Info\n\n" +
-								"Channel Rate: " + VentriloInterface.getchannelrate(VentriloInterface.getuserchannel(VentriloInterface.getuserid())) + "\n" +
-								"Record Rate: " + Recorder.rate() + "\n" +
-								"Buffer Size: " + Recorder.buflen() + "\n");
-						Recorder.stop();
-						((ImageView)findViewById(R.id.transmitStatus)).setImageResource(R.drawable.transmit_off);
+						stopPtt();
 					}
 					break;
 			}
 			return true;
 		}
 	};
+	
+	private void startPtt() {
+		boolean force_8khz = PreferenceManager.getDefaultSharedPreferences(getBaseContext()).getBoolean("force_8khz", false);
+		Recorder.setForce_8khz(force_8khz);
+		if (!Recorder.start()) {
+			Intent broadcastIntent = new Intent(ServerView.NOTIFY_ACTION);
+			broadcastIntent.putExtra("message", "Unsupported recording rate for hardware: " + Integer.toString(Recorder.rate()) + "Hz");
+		    sendBroadcast(broadcastIntent);
+		    return;
+		}
+		((ImageView)findViewById(R.id.transmitStatus)).setImageResource(R.drawable.transmit_on);
+	}
+	
+	private void stopPtt() {
+		((TextView)findViewById(R.id.recorderInfo)).setText(
+				"Last Xmit Info\n\n" +
+				"Channel Rate: " + VentriloInterface.getchannelrate(VentriloInterface.getuserchannel(VentriloInterface.getuserid())) + "\n" +
+				"Record Rate: " + Recorder.rate() + "\n" +
+				"Buffer Size: " + Recorder.buflen() + "\n");
+		Recorder.stop();
+		((ImageView)findViewById(R.id.transmitStatus)).setImageResource(R.drawable.transmit_off);
+	}
 
 	private OnKeyListener onChatMessageEnter = new OnKeyListener() {
 		public boolean onKey(View v, int keyCode, KeyEvent event) {
