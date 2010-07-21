@@ -190,7 +190,7 @@ public class ServerView extends TabActivity {
 			startPtt();
 			return true;
 		}
-		return super.onKeyDown(keyCode, event);
+		return false;
 	}
 
 	@Override
@@ -199,7 +199,7 @@ public class ServerView extends TabActivity {
 			stopPtt();
 			return true;
 		}
-		return super.onKeyDown(keyCode, event);
+		return false;
 	}
 
     @Override
