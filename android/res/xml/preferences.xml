@@ -6,10 +6,14 @@
 		android:title="@string/ptt_button_type"/>
 	<CheckBoxPreference
 		android:key="force_8khz"
-		android:summary="Force 8kHz transmit.  Use if transmit sound quality is poor or normal transmitting does not work."
+		android:summary="Use if transmit sound quality is poor or normal transmitting does not work."
 		android:title="@string/force_8khz"/>
 	<CheckBoxPreference
 		android:key="enable_tts"
 		android:summary="Enable audible notifications when a user joins/leaves the channel"
 		android:title="@string/enable_tts"/>
+	<CheckBoxPreference
+		android:key="prevent_sleep"
+		android:summary="Prevent the phone from going into sleep mode while connected to a server. WILL DRAIN BATTERY."
+		android:title="@string/prevent_sleep"/>
 </PreferenceScreen>

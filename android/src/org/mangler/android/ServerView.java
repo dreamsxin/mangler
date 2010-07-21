@@ -35,6 +35,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.media.AudioManager;
 import android.os.Bundle;
+import android.os.PowerManager;
 import android.preference.PreferenceManager;
 import android.speech.tts.TextToSpeech;
 import android.view.KeyEvent;
@@ -85,11 +86,13 @@ public class ServerView extends TabActivity {
 	private SimpleAdapter userAdapter;
 	
 	// Text to Speech
-	TextToSpeech tts;
-	boolean ttsInitialized = false;
+	TextToSpeech tts = null;
 
 	// State variables.
 	private boolean userInChat = false;
+	
+	// WakeLock
+	private PowerManager.WakeLock wl;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -103,7 +106,9 @@ public class ServerView extends TabActivity {
         setVolumeControlStream(AudioManager.STREAM_MUSIC);
         
         // Text to speech init
-		tts = new TextToSpeech(this, null);
+        if (tts == null) {
+        	tts = new TextToSpeech(this, null);
+        }
 
         // Add tabs.
         TabHost tabhost = getTabHost();
@@ -145,7 +150,31 @@ public class ServerView extends TabActivity {
 	    }
 	
 	    ((EditText)findViewById(R.id.message)).setVisibility(userInChat ? TextView.VISIBLE : TextView.GONE);
-
+	    
+	    // Get a wakelock to prevent sleeping and register an onchange preference callback
+	    PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
+	    wl = pm.newWakeLock(PowerManager.SCREEN_DIM_WAKE_LOCK, "Mangler");
+		boolean prevent_sleep = PreferenceManager.getDefaultSharedPreferences(getBaseContext()).getBoolean("prevent_sleep", false);
+		if (prevent_sleep) {
+			if (!wl.isHeld()) {
+				wl.acquire();
+			}
+		}
+    }
+    
+    @Override
+    protected void onResume() {
+		boolean prevent_sleep = PreferenceManager.getDefaultSharedPreferences(getBaseContext()).getBoolean("prevent_sleep", false);
+    	super.onResume();
+		if (prevent_sleep) {
+			if (!wl.isHeld()) {
+				wl.acquire();
+			}
+		} else {
+			if (wl.isHeld()) {
+				wl.release();
+			}
+		}
     }
 
     @Override
@@ -180,6 +209,12 @@ public class ServerView extends TabActivity {
     	if (Recorder.recording()) {			
     		Recorder.stop();
     	}
+    	
+    	// release a wakelock if we have one
+    	if (wl.isHeld()) {
+    		wl.release();
+    	}
+		tts.shutdown();
     	
     	// Unregister receivers.
 		unregisterReceiver(chatReceiver);
