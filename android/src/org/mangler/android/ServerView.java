@@ -244,7 +244,8 @@ public class ServerView extends TabActivity {
         		if (!userInChat) {
         			VentriloInterface.joinchat();
         			message.setEnabled(true);
-                	message.setVisibility(TextView.VISIBLE);
+        			message.setVisibility(TextView.VISIBLE);
+        			userInChat = true;
         		}
         		break;
 
@@ -252,7 +253,8 @@ public class ServerView extends TabActivity {
         		if (userInChat) {
         			VentriloInterface.leavechat();
         			message.setEnabled(false);
-                	message.setVisibility(TextView.GONE);
+        			message.setVisibility(TextView.GONE);
+        			userInChat = false;
         		}
         		break;
 
@@ -269,7 +271,6 @@ public class ServerView extends TabActivity {
         	default:
         		return false;
         }
-        userInChat = !userInChat;
         return true;
     }
 
