@@ -190,7 +190,7 @@ public class ServerView extends TabActivity {
 			startPtt();
 			return true;
 		}
-		return false;
+		return super.onKeyDown(keyCode, event);
 	}
 
 	@Override
@@ -199,7 +199,7 @@ public class ServerView extends TabActivity {
 			stopPtt();
 			return true;
 		}
-		return false;
+		return super.onKeyUp(keyCode, event);
 	}
 
     @Override
@@ -214,7 +214,9 @@ public class ServerView extends TabActivity {
     	if (wl.isHeld()) {
     		wl.release();
     	}
-		tts.shutdown();
+    	if (tts != null) {
+    		tts.shutdown();
+    	}
     	
     	// Unregister receivers.
 		unregisterReceiver(chatReceiver);
