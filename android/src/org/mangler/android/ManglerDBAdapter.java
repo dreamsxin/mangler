@@ -45,6 +45,7 @@ public class ManglerDBAdapter {
     public static final String KEY_VOLUME_SERVERID = "_server_id";
     public static final String KEY_VOLUME_USERNAME = "username";
     public static final String KEY_VOLUME_LEVEL = "level";
+    public static final String KEY_VOLUME_KEY = "level";
 
     public static final String KEY_PASSWORD_SERVERID = "_server_id";
     public static final String KEY_PASSWORD_CHANNEL = "channel";
@@ -58,14 +59,13 @@ public class ManglerDBAdapter {
     // SQL string for creating database
     private static final String DATABASE_CREATE =
         "create table servers (_id integer primary key autoincrement, servername text not null, hostname text not null, portnumber integer not null, password text not null, username text not null, phonetic text not null);" +
-        "create table volume (_server_id integer, username text not null, level integer not null);" +
-    	"create table password (_server_id integer, channel text not null, channel text not null);";
+        "create table volume (_server_id integer, username text not null, level integer not null,primary key (_server_id,username));" +
+    	"create table password (_server_id integer, channel int not null, channel text not null,primary key (_server_id,channel));";
 
     private static final String DATABASE_NAME = "manglerdata";
     private static final String DATABASE_SERVER_TABLE = "servers";
     private static final String DATABASE_VOLUME_TABLE = "volume";
     private static final String DATABASE_PASSWORD_TABLE = "password";
-
 
     private static final int DATABASE_VERSION = 3;
 
@@ -92,8 +92,8 @@ public class ManglerDBAdapter {
             	onCreate(db);
             }
             if (oldVersion < 3) {
-            	db.execSQL("create table volume (_server_id integer, username text not null, level integer not null);");
-        		db.execSQL("create table password (_server_id integer, channel text not null, channel text not null);");
+            	db.execSQL("create table volume (_server_id integer not null, username varchar(32) not null, level integer not null, primary key (_server_id,username));");
+        		db.execSQL("create table password (_server_id integer not null, channel integer not null, channel text not null, primary key (_server_id,channel));");
             }
         }
     }
@@ -235,5 +235,60 @@ public class ManglerDBAdapter {
         args.put(KEY_SERVERS_PHONETIC, phonetic);
 
         return db.update(DATABASE_SERVER_TABLE, args, KEY_SERVERS_ROWID + "=" + rowId, null) > 0;
+    }
+    
+    public boolean setVolume(int serverid, String username, int level) {
+        ContentValues args = new ContentValues();
+        args.put(KEY_VOLUME_SERVERID, serverid);
+        args.put(KEY_VOLUME_USERNAME, username);
+        args.put(KEY_VOLUME_LEVEL, level);
+        return db.replace(DATABASE_VOLUME_TABLE, KEY_VOLUME_SERVERID, args) >= 0 ? true : false;
+    }
+    
+    public int getVolume(int serverid, String username) {
+    	int level = 79;
+    	
+        Cursor cursor =
+        	db.query(true,
+        		DATABASE_VOLUME_TABLE,
+        		new String[] {
+        				KEY_VOLUME_LEVEL
+        			},
+        			KEY_VOLUME_SERVERID + "=" + serverid + " and " + KEY_VOLUME_USERNAME + "='" + username + "'",
+        			null, null, null, null, null);
+		if (cursor != null) {
+			cursor.moveToFirst();
+			level = cursor.getInt(cursor.getColumnIndexOrThrow(ManglerDBAdapter.KEY_VOLUME_LEVEL));
+		}
+		
+		return level;
+	}
+    
+    public boolean setPassword(int serverid, int channelid, String password) {
+        ContentValues args = new ContentValues();
+        args.put(KEY_PASSWORD_SERVERID, serverid);
+        args.put(KEY_PASSWORD_CHANNEL, channelid);
+        args.put(KEY_PASSWORD_PASSWORD, password);
+
+        return db.replace(DATABASE_PASSWORD_TABLE, KEY_PASSWORD_SERVERID, args) >= 0 ? true : false;
+    }
+    
+    public String getPassword(int serverid, int channelid) {
+    	String password = "";
+    	
+        Cursor cursor =
+        	db.query(true,
+        		DATABASE_VOLUME_TABLE,
+        		new String[] {
+        				KEY_PASSWORD_PASSWORD
+        			},
+        			KEY_PASSWORD_SERVERID + "=" + serverid + " and " + KEY_PASSWORD_CHANNEL + "=" + channelid,
+        			null, null, null, null, null);
+		if (cursor != null) {
+			cursor.moveToFirst();
+			password = cursor.getString(cursor.getColumnIndexOrThrow(ManglerDBAdapter.KEY_PASSWORD_PASSWORD));
+		}
+		
+		return password;
     }
 }
