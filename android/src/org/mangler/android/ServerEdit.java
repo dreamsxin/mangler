@@ -73,7 +73,7 @@ public class ServerEdit extends Activity{
         //if (rowID == null) {
         	Bundle extras = getIntent().getExtras();
         	if (extras != null) {
-        		rowID = extras.getLong(ManglerDBAdapter.KEY_ROWID);
+        		rowID = extras.getLong(ManglerDBAdapter.KEY_SERVERS_ROWID);
         	}
         //}
 
@@ -98,12 +98,12 @@ public class ServerEdit extends Activity{
         if (rowID != null) {
             Cursor servers = dbHelper.fetchServer(rowID);
             startManagingCursor(servers);
-            serverText.setText(servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_SERVERNAME)));
-            hostText.setText(servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_HOSTNAME)));
-            portText.setText(((Integer)servers.getInt(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_PORTNUMBER))).toString());
-            passText.setText(servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_PASSWORD)));
-            userText.setText(servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_USERNAME)));
-            phoneticText.setText(servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_PHONETIC)));
+            serverText.setText(servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_SERVERS_SERVERNAME)));
+            hostText.setText(servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_SERVERS_HOSTNAME)));
+            portText.setText(((Integer)servers.getInt(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_SERVERS_PORTNUMBER))).toString());
+            passText.setText(servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_SERVERS_PASSWORD)));
+            userText.setText(servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_SERVERS_USERNAME)));
+            phoneticText.setText(servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_SERVERS_PHONETIC)));
         }
     }
 

@@ -77,7 +77,6 @@ public class ServerView extends TabActivity {
 
 	// Menu options.
 	private final int OPTION_JOIN_CHAT  = 1;
-	private final int OPTION_LEAVE_CHAT = 2;
 	private final int OPTION_DISCONNECT = 3;
 	private final int OPTION_SETTINGS = 4;
 	
@@ -230,7 +229,6 @@ public class ServerView extends TabActivity {
     public boolean onCreateOptionsMenu(Menu menu) {
     	 // Create our menu buttons.
     	menu.add(0, OPTION_JOIN_CHAT, 0, "Join chat").setIcon(R.drawable.menu_join_chat);
-        menu.add(0, OPTION_LEAVE_CHAT, 0, "Leave chat").setIcon(R.drawable.menu_leave_chat);
         menu.add(0, OPTION_SETTINGS, 0, "Settings").setIcon(R.drawable.menu_settings);
         menu.add(0, OPTION_DISCONNECT, 0, "Disconnect").setIcon(R.drawable.menu_disconnect);
         return true;
@@ -246,15 +244,15 @@ public class ServerView extends TabActivity {
         			message.setEnabled(true);
         			message.setVisibility(TextView.VISIBLE);
         			userInChat = true;
-        		}
-        		break;
-
-        	case OPTION_LEAVE_CHAT:
-        		if (userInChat) {
+        			item.setIcon(R.drawable.menu_leave_chat);
+        			item.setTitle("Leave chat");
+        		} else {
         			VentriloInterface.leavechat();
         			message.setEnabled(false);
         			message.setVisibility(TextView.GONE);
         			userInChat = false;
+        			item.setIcon(R.drawable.menu_join_chat);
+        			item.setTitle("Join chat");
         		}
         		break;
 

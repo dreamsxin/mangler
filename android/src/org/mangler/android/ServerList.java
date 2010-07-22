@@ -110,7 +110,7 @@ public class ServerList extends ListActivity {
         temp.setVisibility((serverCursor.getCount() > 0) ? TextView.GONE : TextView.VISIBLE);
 
         // Display simple cursor adapter
-        SimpleCursorAdapter servers = new SimpleCursorAdapter(this, R.layout.server_row, serverCursor, new String[]{ManglerDBAdapter.KEY_SERVERNAME}, new int[]{R.id.srowtext});
+        SimpleCursorAdapter servers = new SimpleCursorAdapter(this, R.layout.server_row, serverCursor, new String[]{ManglerDBAdapter.KEY_SERVERS_SERVERNAME}, new int[]{R.id.srowtext});
         setListAdapter(servers);
     }
 
@@ -143,7 +143,7 @@ public class ServerList extends ListActivity {
 		switch(item.getItemId()) {
 			case EDIT_ID:
 		        Intent i = new Intent(this, ServerEdit.class);
-		        i.putExtra(ManglerDBAdapter.KEY_ROWID, info.id);
+		        i.putExtra(ManglerDBAdapter.KEY_SERVERS_ROWID, info.id);
 		        startActivityForResult(i, ACTIVITY_EDIT);
 		        fillData();
 		        return true;
@@ -178,10 +178,10 @@ public class ServerList extends ListActivity {
         Thread t = new Thread(new Runnable() {
         	public void run() {
 		        if (VentriloInterface.login(
-		        		servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_HOSTNAME)) + ":" + Integer.toString(servers.getInt(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_PORTNUMBER))),
-		        		servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_USERNAME)),
-		        		servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_PASSWORD)),
-		        		servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_PHONETIC)))) {
+		        		servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_SERVERS_HOSTNAME)) + ":" + Integer.toString(servers.getInt(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_SERVERS_PORTNUMBER))),
+		        		servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_SERVERS_USERNAME)),
+		        		servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_SERVERS_PASSWORD)),
+		        		servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_SERVERS_PHONETIC)))) {
 		        	dialog.dismiss();
 		            // Start receiving packets.
 		        	startRecvThread();
@@ -191,7 +191,7 @@ public class ServerList extends ListActivity {
 		            Intent notificationIntent = new Intent(ServerList.this, ServerView.class);
 		            notificationIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
 		            Notification notification = new Notification(R.drawable.notification, "Connected to server", System.currentTimeMillis());
-		        	notification.setLatestEventInfo(getApplicationContext(), "Mangler", "Connected to " + servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_SERVERNAME)), PendingIntent.getActivity(ServerList.this, 0, notificationIntent, 0));
+		        	notification.setLatestEventInfo(getApplicationContext(), "Mangler", "Connected to " + servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_SERVERS_SERVERNAME)), PendingIntent.getActivity(ServerList.this, 0, notificationIntent, 0));
 		            notification.flags = Notification.FLAG_ONGOING_EVENT;
 		        	notificationManager.notify(ONGOING_NOTIFICATION, notification);
 		        } else {
