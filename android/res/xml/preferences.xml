@@ -16,4 +16,8 @@
 		android:key="prevent_sleep"
 		android:summary="Prevent the phone from going into sleep mode while connected to a server. WILL DRAIN BATTERY."
 		android:title="@string/prevent_sleep"/>
+	<CheckBoxPreference
+		android:key="fullscreen"
+		android:summary="Hide the status bar and title bar to increase visible space."
+		android:title="@string/fullscreen"/>
 </PreferenceScreen>

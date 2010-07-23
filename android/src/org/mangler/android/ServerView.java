@@ -45,6 +45,8 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.Window;
+import android.view.WindowManager;
 import android.view.View.OnKeyListener;
 import android.view.View.OnTouchListener;
 import android.view.inputmethod.InputMethodManager;
@@ -56,6 +58,7 @@ import android.widget.ListView;
 import android.widget.ScrollView;
 import android.widget.SimpleAdapter;
 import android.widget.TabHost;
+import android.widget.TabWidget;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.AdapterView.OnItemClickListener;
@@ -105,6 +108,11 @@ public class ServerView extends TabActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
     	super.onCreate(savedInstanceState);
+		boolean fullscreen = PreferenceManager.getDefaultSharedPreferences(getBaseContext()).getBoolean("fullscreen", false);
+		if (fullscreen) {
+			getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
+			requestWindowFeature(Window.FEATURE_NO_TITLE);
+		}
         setContentView(R.layout.server_view);
         
         // Get the server id that we're connected to and set up the database adapter
@@ -172,6 +180,8 @@ public class ServerView extends TabActivity {
 				wl.acquire();
 			}
 		}
+		
+
 		
 		// Set our xmit volume level
 		VentriloEventData userRet = new VentriloEventData();
@@ -264,7 +274,7 @@ public class ServerView extends TabActivity {
     public boolean onCreateOptionsMenu(Menu menu) {
     	 // Create our menu buttons.
     	menu.add(0, OPTION_JOIN_CHAT, 0, "Join chat").setIcon(R.drawable.menu_join_chat);
-        menu.add(0, OPTION_HIDE_TABS, 0, "Hide tabs").setIcon(R.drawable.menu_settings);
+        menu.add(0, OPTION_HIDE_TABS, 0, "Hide tabs").setIcon(R.drawable.menu_hide_tabs);
         menu.add(0, OPTION_SETTINGS, 0, "Settings").setIcon(R.drawable.menu_settings);
         menu.add(0, OPTION_DISCONNECT, 0, "Disconnect").setIcon(R.drawable.menu_disconnect);
         return true;
@@ -273,6 +283,7 @@ public class ServerView extends TabActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
     	// Handle menu buttons.
     	final EditText message = (EditText)findViewById(R.id.message);
+    	final TabWidget tabWidget = (TabWidget)findViewById(android.R.id.tabs);
         switch(item.getItemId()) {
         	case OPTION_JOIN_CHAT:
         		if (!userInChat) {
@@ -295,14 +306,16 @@ public class ServerView extends TabActivity {
         	case OPTION_HIDE_TABS:
         		if (tabsHidden) {
         			tabsHidden = false;
-        			item.setIcon(R.drawable.menu_leave_chat);
+        			item.setIcon(R.drawable.menu_hide_tabs);
         			item.setTitle("Hide tabs");
-        			// do whatever tab stuff here that shows the tabs
+        			tabWidget.setEnabled(true);
+        			tabWidget.setVisibility(TextView.VISIBLE);
         		} else {
         			tabsHidden = true;
-        			item.setIcon(R.drawable.menu_join_chat);
+        			item.setIcon(R.drawable.menu_show_tabs);
         			item.setTitle("Show tabs");
-        			// do whatever tab stuff here that hides the tabs
+        			tabWidget.setEnabled(false);
+        			tabWidget.setVisibility(TextView.GONE);
         		}
         		break;
 
