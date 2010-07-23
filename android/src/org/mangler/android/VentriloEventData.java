@@ -28,6 +28,7 @@ public class VentriloEventData {
 
 	public short type;
 	public int ping;
+	public int flags;
 	
 	public class _status {
 		public byte percent;

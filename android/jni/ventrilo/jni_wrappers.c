@@ -329,6 +329,9 @@ JNIEXPORT void JNICALL Java_org_mangler_android_VentriloInterface_getevent(JNIEn
 					jobject channel = get_object(env, eventdata, event_class, "channel", "Lorg/mangler/android/VentriloEventData$_channel;");
 					jclass  channel_class = get_class(env, channel);
 					set_short(env, channel, channel_class, "id", ev->channel.id);
+					
+					// Flags.
+					set_int(env, eventdata, event_class, "flags", ev->flags);
 				}
 				break;
 				
@@ -365,6 +368,9 @@ JNIEXPORT void JNICALL Java_org_mangler_android_VentriloInterface_getevent(JNIEn
 					jobject data = get_object(env, eventdata, event_class, "data", "Lorg/mangler/android/VentriloEventData$_data;");
 					jclass  data_class = get_class(env, data);
 					set_byte_array(env, data, data_class, "chatmessage", ev->data->chatmessage, sizeof(ev->data->chatmessage));
+					
+					// Flags.
+					set_int(env, eventdata, event_class, "flags", ev->flags);
 				}
 				break;
 				
@@ -396,6 +402,9 @@ JNIEXPORT void JNICALL Java_org_mangler_android_VentriloInterface_getevent(JNIEn
 					jobject data = get_object(env, eventdata, event_class, "data", "Lorg/mangler/android/VentriloEventData$_data;");
 					jclass  data_class = get_class(env, data);
 					set_byte_array(env, data, data_class, "motd", ev->data->motd, sizeof(ev->data->motd));
+					
+					// Flags.
+					set_int(env, eventdata, event_class, "flags", ev->flags);
 				}
 				break;
 				
