@@ -360,7 +360,7 @@ public class ServerView extends TabActivity {
 	};
 	
 	private BroadcastReceiver ttsNotifyReceiver = new BroadcastReceiver() {
-		public void onReceive(Context context, Intent intent) {
+		public void onReceive(Context context, Intent intent) {			
 			boolean enable_tts = PreferenceManager.getDefaultSharedPreferences(getBaseContext()).getBoolean("enable_tts", false);
 			if (enable_tts) {
 				String message = intent.getExtras().getString("message");

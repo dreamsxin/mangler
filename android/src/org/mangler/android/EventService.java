@@ -145,6 +145,7 @@ public class EventService extends Service {
 
 	    			case VentriloEvents.V3_EVENT_USER_LOGIN:
 	    				if (data.user.id != 0) {
+	    					int flags = data.flags;
 		    				VentriloInterface.getuser(data, data.user.id);
 		    				String username = StringFromBytes(data.text.name);
 		    				Log.e("mangler", "got user login event for " + username);
@@ -153,10 +154,14 @@ public class EventService extends Service {
 		    				broadcastIntent.putExtra("username", username);
 	    			    	broadcastIntent.putExtra("id", (int)data.user.id);
 		    			    sendBroadcast(broadcastIntent);
-	    					broadcastIntent = new Intent(ServerView.TTS_NOTIFY_ACTION);
-	    					String phonetic = getPhonetic(data.user.id);
-	    					broadcastIntent.putExtra("message", phonetic + " has logged in.");
-	    					sendBroadcast(broadcastIntent);
+		    			    // user was added from userlist sent at login (existing user)
+		    			    // from lv3: #define V3_LOGIN_FLAGS_EXISTING (1 << 0)
+		    			    if ((flags & (1 << 0)) == 0) {
+		    			    	broadcastIntent = new Intent(ServerView.TTS_NOTIFY_ACTION);
+	    						String phonetic = getPhonetic(data.user.id);
+	    						broadcastIntent.putExtra("message", phonetic + " has logged in.");
+	    						sendBroadcast(broadcastIntent);
+		    			    }
 	    				}
 	    				break;
 
