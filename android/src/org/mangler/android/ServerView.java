@@ -371,8 +371,11 @@ public class ServerView extends TabActivity {
 
 	private void changeChannel(final short channelid) {
 		if(VentriloInterface.getuserchannel(VentriloInterface.getuserid()) != channelid) {
-			if(VentriloInterface.channelrequirespassword(channelid) > 0) {
+			final int protectedby;
+			if((protectedby = VentriloInterface.channelrequirespassword(channelid)) > 0) {
+				final String password = dbHelper.getPassword(serverid, protectedby);
 				final EditText input = new EditText(this);
+				input.setText(password);
 				// Create dialog box for password.
 				AlertDialog.Builder alert = new AlertDialog.Builder(this)
 					.setTitle("Channel is password protected")
@@ -380,6 +383,9 @@ public class ServerView extends TabActivity {
 					.setView(input)
 					.setPositiveButton("OK", new DialogInterface.OnClickListener() {
 						public void onClick(DialogInterface dialog, int whichButton) {
+							if (input.getText().toString() != password) {
+								dbHelper.setPassword(serverid, protectedby, input.getText().toString());
+							}
 							VentriloInterface.changechannel(channelid, input.getText().toString());
 						}
 					})

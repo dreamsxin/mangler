@@ -286,17 +286,22 @@ public class ManglerDBAdapter {
     	
         Cursor cursor =
         	db.query(true,
-        		DATABASE_VOLUME_TABLE,
+        		DATABASE_PASSWORD_TABLE,
         		new String[] {
         				KEY_PASSWORD_PASSWORD
         			},
         			KEY_PASSWORD_SERVERID + "=" + serverid + " and " + KEY_PASSWORD_CHANNEL + "=" + channelid,
         			null, null, null, null, null);
 		if (cursor != null) {
-			cursor.moveToFirst();
-			password = cursor.getString(cursor.getColumnIndexOrThrow(ManglerDBAdapter.KEY_PASSWORD_PASSWORD));
+			try {
+				cursor.moveToFirst();
+				password = cursor.getString(cursor.getColumnIndexOrThrow(ManglerDBAdapter.KEY_PASSWORD_PASSWORD));
+			} catch (Exception e) {
+				Log.d("mangler", "no password found in database");
+				return "";
+			}
 		}
-		
+		Log.d("mangler", "password '" + password + "' found in database");
 		return password;
     }
 }

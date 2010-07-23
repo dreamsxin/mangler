@@ -142,7 +142,7 @@ public class EventService extends Service {
     					UserList.changeChannel(data.user.id, data.channel.id);
     					sendBroadcast(new Intent(ServerView.USERLIST_ACTION));
 	    				break;
-
+	    				
 	    			case VentriloEvents.V3_EVENT_USER_LOGIN:
 	    				if (data.user.id != 0) {
 	    					int flags = data.flags;
@@ -154,6 +154,7 @@ public class EventService extends Service {
 		    				broadcastIntent.putExtra("username", username);
 	    			    	broadcastIntent.putExtra("id", (int)data.user.id);
 		    			    sendBroadcast(broadcastIntent);
+		    			    Log.d("mangler", "user login event flags: " + flags);
 		    			    // user was added from userlist sent at login (existing user)
 		    			    // from lv3: #define V3_LOGIN_FLAGS_EXISTING (1 << 0)
 		    			    if ((flags & (1 << 0)) == 0) {
