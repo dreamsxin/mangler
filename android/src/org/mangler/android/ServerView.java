@@ -38,6 +38,7 @@ import android.os.Bundle;
 import android.os.PowerManager;
 import android.preference.PreferenceManager;
 import android.speech.tts.TextToSpeech;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -62,13 +63,19 @@ import android.widget.AdapterView.OnItemLongClickListener;
 import com.nullwire.trace.ExceptionHandler;
 
 public class ServerView extends TabActivity {
+	// Server ID that we're connected to
+	private static int serverid;
+
+	// Database connection
+	private ManglerDBAdapter dbHelper;
 
 	// Actions.
-	public static final String CHANNELLIST_ACTION = "org.mangler.android.ChannelListAction";
-	public static final String USERLIST_ACTION 	  = "org.mangler.android.UserListAction";
-	public static final String CHATVIEW_ACTION	  = "org.mangler.android.ChatViewAction";
-	public static final String NOTIFY_ACTION	  = "org.mangler.android.NotifyAction";
-	public static final String TTS_NOTIFY_ACTION  = "org.mangler.android.TtsNotifyAction";
+	public static final String CHANNELLIST_ACTION		= "org.mangler.android.ChannelListAction";
+	public static final String USERLIST_ACTION			= "org.mangler.android.UserListAction";
+	public static final String CHATVIEW_ACTION			= "org.mangler.android.ChatViewAction";
+	public static final String NOTIFY_ACTION			= "org.mangler.android.NotifyAction";
+	public static final String TTS_NOTIFY_ACTION		= "org.mangler.android.TtsNotifyAction";
+	public static final String LOGIN_COMPLETE_ACTION	= "org.mangler.android.LoginCompleteAction";
 
 	// Events.
 	public static final int EVENT_CHAT_JOIN	  = 1;
@@ -97,6 +104,11 @@ public class ServerView extends TabActivity {
     public void onCreate(Bundle savedInstanceState) {
     	super.onCreate(savedInstanceState);
         setContentView(R.layout.server_view);
+        
+        // Get the server id that we're connected to and set up the database adapter
+        serverid = getIntent().getIntExtra("serverid", 0);
+        dbHelper = new ManglerDBAdapter(this);
+        dbHelper.open();
         
         // Send crash reports to server
         ExceptionHandler.register(this, "http://www.mangler.org/errors/upload.php");
@@ -135,6 +147,7 @@ public class ServerView extends TabActivity {
         registerReceiver(userReceiver, new IntentFilter(USERLIST_ACTION));
         registerReceiver(notifyReceiver, new IntentFilter(NOTIFY_ACTION));
         registerReceiver(ttsNotifyReceiver, new IntentFilter(TTS_NOTIFY_ACTION));
+        registerReceiver(loginCompleteReceiver, new IntentFilter(LOGIN_COMPLETE_ACTION));
 
 
         // Control listeners.
@@ -159,6 +172,13 @@ public class ServerView extends TabActivity {
 				wl.acquire();
 			}
 		}
+		
+		// Set our xmit volume level
+		VentriloEventData userRet = new VentriloEventData();
+		VentriloInterface.getuser(userRet, VentriloInterface.getuserid());
+		int level = dbHelper.getVolume(serverid, new String(userRet.text.name, 0, (new String(userRet.text.name).indexOf(0))));
+		Log.e("mangler", "setting xmit volume to " + level);
+		VentriloInterface.setxmitvolume(level);
     }
     
     @Override
@@ -217,12 +237,15 @@ public class ServerView extends TabActivity {
     		tts.shutdown();
     	}
     	
+    	dbHelper.close();
+    	
     	// Unregister receivers.
 		unregisterReceiver(chatReceiver);
         unregisterReceiver(channelReceiver);
         unregisterReceiver(userReceiver);
         unregisterReceiver(notifyReceiver);
         unregisterReceiver(ttsNotifyReceiver);
+        unregisterReceiver(loginCompleteReceiver);
     }
     
 
@@ -298,13 +321,26 @@ public class ServerView extends TabActivity {
 			});
 		}
 	};
-
+	
 	private BroadcastReceiver userReceiver = new BroadcastReceiver() {
 		public void onReceive(Context context, Intent intent) {
+			String username = intent.getStringExtra("username");
+			int id = intent.getIntExtra("id", 0);
+			if (username != null) {
+				int level = dbHelper.getVolume(serverid, username);
+				VentriloInterface.setuservolume((short)id, level);
+				Log.e("mangler", "setting " + username + " (id: " + id + ") to volume " + level);
+			}
 			userAdapter.notifyDataSetChanged();
 		}
 	};
 
+	private BroadcastReceiver loginCompleteReceiver = new BroadcastReceiver() {
+		public void onReceive(Context context, Intent intent) {
+			// loop through all connected users and set their volume from the database
+		}
+	};
+	
 	private BroadcastReceiver channelReceiver = new BroadcastReceiver() {
 		public void onReceive(Context context, Intent intent) {
 			channelAdapter.notifyDataSetChanged();
@@ -373,13 +409,20 @@ public class ServerView extends TabActivity {
 		} else {
 			alert.setTitle("Set User Volume Level");
 		}
+		VentriloEventData evdata = new VentriloEventData();
+		VentriloInterface.getuser(evdata, id);
+		final String username = new String(evdata.text.name, 0, (new String(evdata.text.name).indexOf(0)));
 		alert.setItems(items, new DialogInterface.OnClickListener() {
 			public void onClick(DialogInterface dialog, int item) {
 				short[] levelList = { 0, 0, 39, 79, 118, 148 };
 				int level = levelList[Integer.parseInt(items[item].toString().substring(0, 1))];
 				if (userid == VentriloInterface.getuserid()) {
+					Log.d("mangler", "setting xmit volume for me (" + username + ") to volume level " + level);
+					dbHelper.setVolume(serverid, username, level);
 					VentriloInterface.setxmitvolume(level);
 				} else {
+					Log.d("mangler", "setting volume for " + username + " to volume level " + level);
+					dbHelper.setVolume(serverid, username, level);
 					VentriloInterface.setuservolume(userid, level);
 				} 
 				
@@ -396,7 +439,7 @@ public class ServerView extends TabActivity {
 			return true;
 		}
 	};
-	
+
 	private OnTouchListener onTalkPress = new OnTouchListener() {
 		public boolean onTouch(View v, MotionEvent m) {
 			boolean ptt_toggle = PreferenceManager.getDefaultSharedPreferences(getBaseContext()).getBoolean("ptt_toggle", false);

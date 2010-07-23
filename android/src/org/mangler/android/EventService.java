@@ -147,8 +147,12 @@ public class EventService extends Service {
 	    				if (data.user.id != 0) {
 		    				VentriloInterface.getuser(data, data.user.id);
 		    				String username = StringFromBytes(data.text.name);
+		    				Log.e("mangler", "got user login event for " + username);
 		    				UserList.addUser(data.user.id, username, data.channel.id);
-		    			    sendBroadcast(new Intent(ServerView.USERLIST_ACTION));
+		    				broadcastIntent =  new Intent(ServerView.USERLIST_ACTION);
+		    				broadcastIntent.putExtra("username", username);
+	    			    	broadcastIntent.putExtra("id", (int)data.user.id);
+		    			    sendBroadcast(broadcastIntent);
 	    					broadcastIntent = new Intent(ServerView.TTS_NOTIFY_ACTION);
 	    					String phonetic = getPhonetic(data.user.id);
 	    					broadcastIntent.putExtra("message", phonetic + " has logged in.");
@@ -169,6 +173,8 @@ public class EventService extends Service {
 
 	    			case VentriloEvents.V3_EVENT_LOGIN_COMPLETE:
 	    				Recorder.rate(VentriloInterface.getchannelrate(VentriloInterface.getuserchannel(VentriloInterface.getuserid())));
+    					broadcastIntent = new Intent(ServerView.LOGIN_COMPLETE_ACTION);
+    					sendBroadcast(broadcastIntent);
 	    				break;
 
 	    			case VentriloEvents.V3_EVENT_PLAY_AUDIO:

@@ -182,11 +182,12 @@ public class ServerList extends ListActivity {
 		        		servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_SERVERS_USERNAME)),
 		        		servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_SERVERS_PASSWORD)),
 		        		servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_SERVERS_PHONETIC)))) {
+		        	int serverid = servers.getInt(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_SERVERS_ROWID));
 		        	dialog.dismiss();
 		            // Start receiving packets.
 		        	startRecvThread();
 		        	
-		        	startActivityForResult(new Intent(ServerList.this, ServerView.class), ACTIVITY_CONNECT);
+		        	startActivityForResult(new Intent(ServerList.this, ServerView.class).putExtra("serverid", serverid), ACTIVITY_CONNECT);
 		        	
 		            Intent notificationIntent = new Intent(ServerList.this, ServerView.class);
 		            notificationIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);

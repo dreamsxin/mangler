@@ -45,7 +45,6 @@ public class ManglerDBAdapter {
     public static final String KEY_VOLUME_SERVERID = "_server_id";
     public static final String KEY_VOLUME_USERNAME = "username";
     public static final String KEY_VOLUME_LEVEL = "level";
-    public static final String KEY_VOLUME_KEY = "level";
 
     public static final String KEY_PASSWORD_SERVERID = "_server_id";
     public static final String KEY_PASSWORD_CHANNEL = "channel";
@@ -60,7 +59,7 @@ public class ManglerDBAdapter {
     private static final String DATABASE_CREATE =
         "create table servers (_id integer primary key autoincrement, servername text not null, hostname text not null, portnumber integer not null, password text not null, username text not null, phonetic text not null);" +
         "create table volume (_server_id integer, username text not null, level integer not null,primary key (_server_id,username));" +
-    	"create table password (_server_id integer, channel int not null, channel text not null,primary key (_server_id,channel));";
+    	"create table password (_server_id integer, channel int not null, password text not null,primary key (_server_id,channel));";
 
     private static final String DATABASE_NAME = "manglerdata";
     private static final String DATABASE_SERVER_TABLE = "servers";
@@ -93,7 +92,7 @@ public class ManglerDBAdapter {
             }
             if (oldVersion < 3) {
             	db.execSQL("create table volume (_server_id integer not null, username varchar(32) not null, level integer not null, primary key (_server_id,username));");
-        		db.execSQL("create table password (_server_id integer not null, channel integer not null, channel text not null, primary key (_server_id,channel));");
+        		db.execSQL("create table password (_server_id integer not null, channel integer not null, password text not null, primary key (_server_id,channel));");
             }
         }
     }
@@ -248,6 +247,7 @@ public class ManglerDBAdapter {
     public int getVolume(int serverid, String username) {
     	int level = 79;
     	
+    	Log.d("mangler",KEY_VOLUME_SERVERID + "=" + serverid + " and " + KEY_VOLUME_USERNAME + "='" + username + "'"); 
         Cursor cursor =
         	db.query(true,
         		DATABASE_VOLUME_TABLE,
@@ -257,8 +257,13 @@ public class ManglerDBAdapter {
         			KEY_VOLUME_SERVERID + "=" + serverid + " and " + KEY_VOLUME_USERNAME + "='" + username + "'",
         			null, null, null, null, null);
 		if (cursor != null) {
-			cursor.moveToFirst();
-			level = cursor.getInt(cursor.getColumnIndexOrThrow(ManglerDBAdapter.KEY_VOLUME_LEVEL));
+			try {
+				cursor.moveToFirst();
+				level = cursor.getInt(cursor.getColumnIndexOrThrow(ManglerDBAdapter.KEY_VOLUME_LEVEL));
+			} catch (Exception e) {
+				e.printStackTrace();
+				return level;
+			}
 		}
 		
 		return level;
