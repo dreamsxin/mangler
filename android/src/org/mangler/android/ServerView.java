@@ -371,7 +371,7 @@ public class ServerView extends TabActivity {
 
 	private void changeChannel(final short channelid) {
 		if(VentriloInterface.getuserchannel(VentriloInterface.getuserid()) != channelid) {
-			if(VentriloInterface.channelrequirespassword(channelid)) {
+			if(VentriloInterface.channelrequirespassword(channelid) > 0) {
 				final EditText input = new EditText(this);
 				// Create dialog box for password.
 				AlertDialog.Builder alert = new AlertDialog.Builder(this)

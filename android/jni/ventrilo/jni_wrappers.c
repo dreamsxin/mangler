@@ -126,8 +126,8 @@ JNIEXPORT jchar JNICALL Java_org_mangler_android_VentriloInterface_getuserchanne
 	return v3_get_user_channel(id);
 }
 
-JNIEXPORT jboolean JNICALL Java_org_mangler_android_VentriloInterface_channelrequirespassword(JNIEnv* env, jobject obj, jchar channelid) {
-	return v3_channel_requires_password(channelid) != 0;
+JNIEXPORT jint JNICALL Java_org_mangler_android_VentriloInterface_channelrequirespassword(JNIEnv* env, jobject obj, jchar channelid) {
+	return v3_channel_requires_password(channelid);
 }
 
 JNIEXPORT void JNICALL Java_org_mangler_android_VentriloInterface_startaudio(JNIEnv* env, jobject obj, jchar sendtype) {

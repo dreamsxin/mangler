@@ -27,7 +27,7 @@ package org.mangler.android;
 public class VentriloInterface {
 	public static native void 		changechannel(short channelid, String password);
 	public static native int 		channelcount();
-	public static native boolean	channelrequirespassword(short channelid);
+	public static native int		channelrequirespassword(short channelid);
 	public static native void 		clearevents();
 	public static native int  		debuglevel(int level);
 	public static native void		error(VentriloEventData data);
