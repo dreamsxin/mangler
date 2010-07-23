@@ -25,6 +25,7 @@
 package org.mangler.android;
 
 import java.util.HashMap;
+import java.util.Iterator;
 
 import android.app.AlertDialog;
 import android.app.TabActivity;
@@ -75,7 +76,6 @@ public class ServerView extends TabActivity {
 	public static final String CHATVIEW_ACTION			= "org.mangler.android.ChatViewAction";
 	public static final String NOTIFY_ACTION			= "org.mangler.android.NotifyAction";
 	public static final String TTS_NOTIFY_ACTION		= "org.mangler.android.TtsNotifyAction";
-	public static final String LOGIN_COMPLETE_ACTION	= "org.mangler.android.LoginCompleteAction";
 
 	// Events.
 	public static final int EVENT_CHAT_JOIN	  = 1;
@@ -147,8 +147,6 @@ public class ServerView extends TabActivity {
         registerReceiver(userReceiver, new IntentFilter(USERLIST_ACTION));
         registerReceiver(notifyReceiver, new IntentFilter(NOTIFY_ACTION));
         registerReceiver(ttsNotifyReceiver, new IntentFilter(TTS_NOTIFY_ACTION));
-        registerReceiver(loginCompleteReceiver, new IntentFilter(LOGIN_COMPLETE_ACTION));
-
 
         // Control listeners.
 	    ((EditText)findViewById(R.id.message)).setOnKeyListener(onChatMessageEnter);
@@ -179,6 +177,19 @@ public class ServerView extends TabActivity {
 		int level = dbHelper.getVolume(serverid, new String(userRet.text.name, 0, (new String(userRet.text.name).indexOf(0))));
 		Log.e("mangler", "setting xmit volume to " + level);
 		VentriloInterface.setxmitvolume(level);
+		
+		// Set everyone else's volume
+		Log.e("mangler", "running tasks after login");
+		// loop through all connected users and set their volume from the database
+		for (Iterator<HashMap<String, Object>> iterator = UserList.data.iterator(); iterator.hasNext();) {
+			short userid = (Short)iterator.next().get("userid");
+			VentriloEventData evdata = new VentriloEventData();
+			VentriloInterface.getuser(evdata, userid);
+			String username = new String(evdata.text.name, 0, (new String(evdata.text.name).indexOf(0)));
+			level = dbHelper.getVolume(serverid, new String(evdata.text.name, 0, (new String(evdata.text.name).indexOf(0))));
+			VentriloInterface.setuservolume((short) userid, level);
+			Log.e("mangler", "setting " + username + " (id: " + userid + ") to volume " + level);
+		}
     }
     
     @Override
@@ -245,7 +256,6 @@ public class ServerView extends TabActivity {
         unregisterReceiver(userReceiver);
         unregisterReceiver(notifyReceiver);
         unregisterReceiver(ttsNotifyReceiver);
-        unregisterReceiver(loginCompleteReceiver);
     }
     
 
@@ -335,11 +345,6 @@ public class ServerView extends TabActivity {
 		}
 	};
 
-	private BroadcastReceiver loginCompleteReceiver = new BroadcastReceiver() {
-		public void onReceive(Context context, Intent intent) {
-			// loop through all connected users and set their volume from the database
-		}
-	};
 	
 	private BroadcastReceiver channelReceiver = new BroadcastReceiver() {
 		public void onReceive(Context context, Intent intent) {

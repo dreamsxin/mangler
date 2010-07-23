@@ -261,7 +261,6 @@ public class ManglerDBAdapter {
 				cursor.moveToFirst();
 				level = cursor.getInt(cursor.getColumnIndexOrThrow(ManglerDBAdapter.KEY_VOLUME_LEVEL));
 			} catch (Exception e) {
-				e.printStackTrace();
 				return level;
 			}
 		}

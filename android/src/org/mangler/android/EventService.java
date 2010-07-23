@@ -173,8 +173,6 @@ public class EventService extends Service {
 
 	    			case VentriloEvents.V3_EVENT_LOGIN_COMPLETE:
 	    				Recorder.rate(VentriloInterface.getchannelrate(VentriloInterface.getuserchannel(VentriloInterface.getuserid())));
-    					broadcastIntent = new Intent(ServerView.LOGIN_COMPLETE_ACTION);
-    					sendBroadcast(broadcastIntent);
 	    				break;
 
 	    			case VentriloEvents.V3_EVENT_PLAY_AUDIO:
