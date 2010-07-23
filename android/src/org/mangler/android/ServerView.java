@@ -513,6 +513,8 @@ public class ServerView extends TabActivity {
 		    return;
 		}
 		((ImageView)findViewById(R.id.transmitStatus)).setImageResource(R.drawable.transmit_on);
+		UserList.updateStatus(VentriloInterface.getuserid(), R.drawable.transmit_on);
+		userAdapter.notifyDataSetChanged();
 	}
 	
 	private void stopPtt() {
@@ -523,6 +525,8 @@ public class ServerView extends TabActivity {
 				"Buffer Size: " + Recorder.buflen() + "\n");
 		Recorder.stop();
 		((ImageView)findViewById(R.id.transmitStatus)).setImageResource(R.drawable.transmit_off);
+		UserList.updateStatus(VentriloInterface.getuserid(), R.drawable.transmit_off);
+		userAdapter.notifyDataSetChanged();
 	}
 
 	private OnKeyListener onChatMessageEnter = new OnKeyListener() {
