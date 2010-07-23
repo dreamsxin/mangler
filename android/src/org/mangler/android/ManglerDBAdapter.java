@@ -56,10 +56,9 @@ public class ManglerDBAdapter {
     private SQLiteDatabase db;
     
     // SQL string for creating database
-    private static final String DATABASE_CREATE =
-        "create table servers (_id integer primary key autoincrement, servername text not null, hostname text not null, portnumber integer not null, password text not null, username text not null, phonetic text not null);" +
-        "create table volume (_server_id integer, username text not null, level integer not null,primary key (_server_id,username));" +
-    	"create table password (_server_id integer, channel int not null, password text not null,primary key (_server_id,channel));";
+    private static final String DATABASE_SERVERS_CREATE = "create table servers (_id integer primary key autoincrement, servername text not null, hostname text not null, portnumber integer not null, password text not null, username text not null, phonetic text not null);";
+    private static final String DATABASE_VOLUME_CREATE = "create table volume (_server_id integer, username text not null, level integer not null,primary key (_server_id,username));";
+    private static final String DATABASE_PASSWORD_CREATE = "create table password (_server_id integer, channel int not null, password text not null,primary key (_server_id,channel));";
 
     private static final String DATABASE_NAME = "manglerdata";
     private static final String DATABASE_SERVER_TABLE = "servers";
@@ -78,8 +77,13 @@ public class ManglerDBAdapter {
 
         @Override
         public void onCreate(SQLiteDatabase db) {
-
-            db.execSQL(DATABASE_CREATE);
+        	try {
+        		db.execSQL(DATABASE_SERVERS_CREATE);
+        		db.execSQL(DATABASE_VOLUME_CREATE);
+        		db.execSQL(DATABASE_PASSWORD_CREATE);
+        	} catch (Exception e) {
+        		e.printStackTrace();
+        	}
         }
 
         @Override
