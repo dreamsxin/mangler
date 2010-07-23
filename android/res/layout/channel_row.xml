@@ -7,17 +7,12 @@
     android:gravity="center_vertical">
 
     <TextView android:id="@+id/crowtext"
-        android:textSize="18sp"
+        android:textSize="14sp"
         android:textStyle="bold"
         android:typeface="sans"
-        android:height="30dp"
         android:layout_width="fill_parent"
-        android:layout_height="fill_parent"/>
-
-	<TextView android:id="@+id/crowpass"
-        android:textSize="12sp"
-        android:typeface="sans"
-        android:layout_width="fill_parent"
-        android:layout_height="fill_parent"/>
+        android:layout_height="fill_parent"
+        android:ellipsize="end"
+        android:singleLine="true"/>
 
 </LinearLayout>

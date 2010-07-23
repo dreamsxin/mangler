@@ -84,6 +84,7 @@ public class ServerView extends TabActivity {
 
 	// Menu options.
 	private final int OPTION_JOIN_CHAT  = 1;
+	private final int OPTION_HIDE_TABS  = 2;
 	private final int OPTION_DISCONNECT = 3;
 	private final int OPTION_SETTINGS = 4;
 	
@@ -96,6 +97,7 @@ public class ServerView extends TabActivity {
 
 	// State variables.
 	private boolean userInChat = false;
+	private boolean tabsHidden = false;
 	
 	// WakeLock
 	private PowerManager.WakeLock wl;
@@ -129,7 +131,7 @@ public class ServerView extends TabActivity {
     	tabhost.addTab(tabhost.newTabSpec("chat").setContent(R.id.chatView).setIndicator("Chat"));
 
         // Create adapters.
-	    channelAdapter 	= new SimpleAdapter(this, ChannelList.data, R.layout.channel_row, new String[] { "channelname", "passworded" }, new int[] { R.id.crowtext, R.id.crowpass } );
+	    channelAdapter 	= new SimpleAdapter(this, ChannelList.data, R.layout.channel_row, new String[] { "channelname" }, new int[] { R.id.crowtext } );
 	    userAdapter 	= new SimpleAdapter(this, UserList.data, R.layout.user_row, new String[] { "userstatus", "username", "channelname" }, new int[] { R.id.urowimg, R.id.urowtext, R.id.urowid } );
 
 	    // Set adapters.
@@ -262,6 +264,7 @@ public class ServerView extends TabActivity {
     public boolean onCreateOptionsMenu(Menu menu) {
     	 // Create our menu buttons.
     	menu.add(0, OPTION_JOIN_CHAT, 0, "Join chat").setIcon(R.drawable.menu_join_chat);
+        menu.add(0, OPTION_HIDE_TABS, 0, "Hide tabs").setIcon(R.drawable.menu_settings);
         menu.add(0, OPTION_SETTINGS, 0, "Settings").setIcon(R.drawable.menu_settings);
         menu.add(0, OPTION_DISCONNECT, 0, "Disconnect").setIcon(R.drawable.menu_disconnect);
         return true;
@@ -286,6 +289,20 @@ public class ServerView extends TabActivity {
         			userInChat = false;
         			item.setIcon(R.drawable.menu_join_chat);
         			item.setTitle("Join chat");
+        		}
+        		break;
+        		
+        	case OPTION_HIDE_TABS:
+        		if (tabsHidden) {
+        			tabsHidden = false;
+        			item.setIcon(R.drawable.menu_leave_chat);
+        			item.setTitle("Hide tabs");
+        			// do whatever tab stuff here that shows the tabs
+        		} else {
+        			tabsHidden = true;
+        			item.setIcon(R.drawable.menu_join_chat);
+        			item.setTitle("Show tabs");
+        			// do whatever tab stuff here that hides the tabs
         		}
         		break;
 

@@ -28,16 +28,70 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.ListIterator;
 
+import android.util.Log;
+
 public class ChannelList {
 
 	public static ArrayList<HashMap<String, Object>> data = new ArrayList<HashMap<String, Object>>();
 	
-	public static void addChannel(short channelid, String channelname, int passworded) {
+	public static void addChannel(short channelid, String channelname, int passworded, short parentid) {
 		HashMap<String, Object> channel = new HashMap<String, Object>();
+		if (channelid == 0) {
+			parentid = -1;
+		}
 		channel.put("channelid", channelid);
+		for (int ctr = 0; ctr < getDepth(parentid)+1 && channelid != 0; ctr++) {
+			channelname = "    " + channelname;
+		}
 		channel.put("channelname", channelname);
 		channel.put("passworded", passworded);
-		data.add(channel);
+		channel.put("parentid", parentid);
+		Log.d("mangler", "adding channel at location " + getLocation(parentid));
+		if (channelid == 0) {
+			data.add(channel);
+		} else {
+			data.add(getLocation(parentid)+getChildCount(parentid)+1, channel);
+		}
+	}
+	
+	private static int getDepth(short channelid) {
+		int depth = 0;
+		short p;
+		while ((p = getParentId(channelid)) >= 0) {
+			channelid = p;
+			depth++;
+		}
+		return depth;
+	}
+	
+	private static int getChildCount(short channelid) {
+		int childcount = 0;
+		for(ListIterator<HashMap<String, Object>> iterator = data.listIterator(); iterator.hasNext(); ) {
+			if(((Short)iterator.next().get("parentid")).equals(channelid)) {	
+				childcount++;
+			}
+		}
+		return childcount;
+	}
+	
+	private static int getLocation(short channelid) {
+		int ctr = 0;
+		for(ListIterator<HashMap<String, Object>> iterator = data.listIterator(); iterator.hasNext(); ) {
+			if(((Short)iterator.next().get("channelid")).equals(channelid)) {
+				return ctr;
+			}
+			ctr++;
+		}
+		return ctr;
+	}
+	
+	private static short getParentId(short channelid) {
+		for(ListIterator<HashMap<String, Object>> iterator = data.listIterator(); iterator.hasNext(); ) {
+			if(((Short)iterator.next().get("channelid")).equals(channelid)) {	
+				return (short)Integer.parseInt(iterator.previous().get("parentid").toString());
+			}
+		}
+		return -1;
 	}
 	
 	public static HashMap<String, Object> getChannel(short channelid) {
