@@ -181,8 +181,6 @@ public class ServerView extends TabActivity {
 			}
 		}
 		
-
-		
 		// Set our xmit volume level
 		VentriloEventData userRet = new VentriloEventData();
 		VentriloInterface.getuser(userRet, VentriloInterface.getuserid());
@@ -274,7 +272,14 @@ public class ServerView extends TabActivity {
     public boolean onCreateOptionsMenu(Menu menu) {
     	 // Create our menu buttons.
     	menu.add(0, OPTION_JOIN_CHAT, 0, "Join chat").setIcon(R.drawable.menu_join_chat);
-        menu.add(0, OPTION_HIDE_TABS, 0, "Hide tabs").setIcon(R.drawable.menu_hide_tabs);
+    	if (tabsHidden) {
+    		menu.add(0, OPTION_HIDE_TABS, 0, "Hide tabs").setIcon(R.drawable.menu_show_tabs);
+        	final TabWidget tabWidget = (TabWidget)findViewById(android.R.id.tabs);
+			tabWidget.setEnabled(false);
+			tabWidget.setVisibility(TextView.GONE);
+    	} else {
+    		menu.add(0, OPTION_HIDE_TABS, 0, "Hide tabs").setIcon(R.drawable.menu_hide_tabs);
+    	}
         menu.add(0, OPTION_SETTINGS, 0, "Settings").setIcon(R.drawable.menu_settings);
         menu.add(0, OPTION_DISCONNECT, 0, "Disconnect").setIcon(R.drawable.menu_disconnect);
         return true;

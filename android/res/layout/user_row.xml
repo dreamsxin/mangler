@@ -10,27 +10,25 @@
 	<ImageView android:id="@+id/urowimg"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"/>
-
-    <LinearLayout
+	
+    <TextView android:id="@+id/urowtext"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:typeface="sans"
+        android:height="30dp"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:paddingLeft="10dp">
+        android:paddingLeft="10dp"/>
 	
-	    <TextView android:id="@+id/urowtext"
-	        android:textSize="18sp"
-	        android:textStyle="bold"
-	        android:typeface="sans"
-	        android:height="30dp"
-	        android:layout_width="fill_parent"
-	        android:layout_height="fill_parent"/>
-	
-	    <TextView android:id="@+id/urowid"
-	        android:textSize="12sp"
-	        android:typeface="sans"
-	        android:layout_width="fill_parent"
-	        android:layout_height="fill_parent"/>
+    <TextView android:id="@+id/urowid"
+        android:textSize="12sp"
+        android:typeface="sans"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:paddingLeft="10dp"
+        android:gravity="center_vertical"
+        android:singleLine="true"
+        android:ellipsize="end"/>
         
-	</LinearLayout>
 
 </LinearLayout>
