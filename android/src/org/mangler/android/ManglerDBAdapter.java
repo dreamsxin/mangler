@@ -258,8 +258,11 @@ public class ManglerDBAdapter {
         		new String[] {
         				KEY_VOLUME_LEVEL
         			},
-        			KEY_VOLUME_SERVERID + "=" + serverid + " and " + KEY_VOLUME_USERNAME + "='" + username + "'",
-        			null, null, null, null, null);
+        		KEY_VOLUME_SERVERID + "=" + serverid + " and " + KEY_VOLUME_USERNAME + "=?",
+        		new String [] {
+        			username
+        		}
+        		, null, null, null, null);
 		if (cursor != null) {
 			try {
 				cursor.moveToFirst();

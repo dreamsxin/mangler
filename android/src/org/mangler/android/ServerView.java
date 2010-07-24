@@ -268,7 +268,6 @@ public class ServerView extends TabActivity {
         unregisterReceiver(ttsNotifyReceiver);
     }
     
-
     public boolean onCreateOptionsMenu(Menu menu) {
     	 // Create our menu buttons.
     	menu.add(0, OPTION_JOIN_CHAT, 0, "Join chat").setIcon(R.drawable.menu_join_chat);
