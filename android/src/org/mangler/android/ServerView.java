@@ -139,7 +139,7 @@ public class ServerView extends TabActivity {
     	tabhost.addTab(tabhost.newTabSpec("chat").setContent(R.id.chatView).setIndicator("Chat"));
 
         // Create adapters.
-	    channelAdapter 	= new SimpleAdapter(this, ChannelList.data, R.layout.channel_row, new String[] { "channelname" }, new int[] { R.id.crowtext } );
+	    channelAdapter 	= new SimpleAdapter(this, ChannelList.data, R.layout.channel_row, new String[] { "indent", "xmitstatus", "name" }, new int[] { R.id.indent, R.id.crowimg, R.id.crowtext } );
 	    userAdapter 	= new SimpleAdapter(this, UserList.data, R.layout.user_row, new String[] { "userstatus", "username", "channelname" }, new int[] { R.id.urowimg, R.id.urowtext, R.id.urowid } );
 
 	    // Set adapters.
@@ -187,19 +187,6 @@ public class ServerView extends TabActivity {
 		int level = dbHelper.getVolume(serverid, new String(userRet.text.name, 0, (new String(userRet.text.name).indexOf(0))));
 		Log.e("mangler", "setting xmit volume to " + level);
 		VentriloInterface.setxmitvolume(level);
-		
-		// Set everyone else's volume
-		Log.e("mangler", "running tasks after login");
-		// loop through all connected users and set their volume from the database
-		for (Iterator<HashMap<String, Object>> iterator = UserList.data.iterator(); iterator.hasNext();) {
-			short userid = (Short)iterator.next().get("userid");
-			VentriloEventData evdata = new VentriloEventData();
-			VentriloInterface.getuser(evdata, userid);
-			String username = new String(evdata.text.name, 0, (new String(evdata.text.name).indexOf(0)));
-			level = dbHelper.getVolume(serverid, new String(evdata.text.name, 0, (new String(evdata.text.name).indexOf(0))));
-			VentriloInterface.setuservolume((short) userid, level);
-			Log.e("mangler", "setting " + username + " (id: " + userid + ") to volume " + level);
-		}
     }
     
     @Override
@@ -268,7 +255,11 @@ public class ServerView extends TabActivity {
         unregisterReceiver(ttsNotifyReceiver);
     }
     
-    public boolean onCreateOptionsMenu(Menu menu) {
+
+    @Override
+    public boolean onPrepareOptionsMenu(Menu menu) {
+    	super.onPrepareOptionsMenu(menu);
+    	Log.d("mangler", "onCreateOptionsMenu");
     	 // Create our menu buttons.
     	menu.add(0, OPTION_JOIN_CHAT, 0, "Join chat").setIcon(R.drawable.menu_join_chat);
     	if (tabsHidden) {
@@ -440,7 +431,13 @@ public class ServerView extends TabActivity {
 	private OnItemClickListener onListClick = new OnItemClickListener() {
 		@SuppressWarnings("unchecked")
 		public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-			short channelid = (Short)((HashMap<String, Object>)(parent.getItemAtPosition(position))).get("channelid");
+			short channelid = 0;
+			int type = (Integer)((HashMap<String, Object>)(parent.getItemAtPosition(position))).get("type");
+			if (type == ChannelList.CHANNEL) {
+				channelid = (Short)((HashMap<String, Object>)(parent.getItemAtPosition(position))).get("id");
+			} else {
+				channelid = (Short)((HashMap<String, Object>)(parent.getItemAtPosition(position))).get("parentid");
+			}
 			changeChannel(channelid);
 		}
 	};
@@ -519,6 +516,8 @@ public class ServerView extends TabActivity {
 		((ImageView)findViewById(R.id.transmitStatus)).setImageResource(R.drawable.transmit_on);
 		UserList.updateStatus(VentriloInterface.getuserid(), R.drawable.transmit_on);
 		userAdapter.notifyDataSetChanged();
+		ChannelList.updateStatus(VentriloInterface.getuserid(), R.drawable.xmit_on);
+		channelAdapter.notifyDataSetChanged();
 	}
 	
 	private void stopPtt() {
@@ -531,6 +530,8 @@ public class ServerView extends TabActivity {
 		((ImageView)findViewById(R.id.transmitStatus)).setImageResource(R.drawable.transmit_off);
 		UserList.updateStatus(VentriloInterface.getuserid(), R.drawable.transmit_off);
 		userAdapter.notifyDataSetChanged();
+		ChannelList.updateStatus(VentriloInterface.getuserid(), R.drawable.xmit_off);
+		channelAdapter.notifyDataSetChanged();
 	}
 
 	private OnKeyListener onChatMessageEnter = new OnKeyListener() {

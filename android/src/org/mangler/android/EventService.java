@@ -140,7 +140,11 @@ public class EventService extends Service {
     						Player.close(data.user.id);
     					}
     					UserList.changeChannel(data.user.id, data.channel.id);
+    					ChannelList.remove(data.user.id);
+	    				VentriloInterface.getuser(data, data.user.id);
+    					ChannelList.add(data.user.id, StringFromBytes(data.text.name), 0, ChannelList.USER, data.channel.id);
     					sendBroadcast(new Intent(ServerView.USERLIST_ACTION));
+	    			    sendBroadcast(new Intent(ServerView.CHANNELLIST_ACTION));
 	    				break;
 	    				
 	    			case VentriloEvents.V3_EVENT_USER_LOGIN:
@@ -149,11 +153,19 @@ public class EventService extends Service {
 		    				VentriloInterface.getuser(data, data.user.id);
 		    				String username = StringFromBytes(data.text.name);
 		    				Log.e("mangler", "got user login event for " + username);
+		    				ChannelList.add(
+		    						data.user.id,
+		    						StringFromBytes(data.text.name),
+		    						0,
+		    						ChannelList.USER,
+		    						data.channel.id
+		    						);
 		    				UserList.addUser(data.user.id, username, data.channel.id);
 		    				broadcastIntent =  new Intent(ServerView.USERLIST_ACTION);
 		    				broadcastIntent.putExtra("username", username);
 	    			    	broadcastIntent.putExtra("id", (int)data.user.id);
 		    			    sendBroadcast(broadcastIntent);
+		    			    sendBroadcast(new Intent(ServerView.CHANNELLIST_ACTION));
 		    			    Log.d("mangler", "user login event flags: " + flags);
 		    			    // user was added from userlist sent at login (existing user)
 		    			    // from lv3: #define V3_LOGIN_FLAGS_EXISTING (1 << 0)
@@ -185,11 +197,15 @@ public class EventService extends Service {
 	    				Player.write(data.user.id, data.pcm.rate, data.pcm.channels, data.data.sample, data.pcm.length);
 	    				UserList.updateStatus(data.user.id, R.drawable.transmit_on);
 	    				sendBroadcast(new Intent(ServerView.USERLIST_ACTION));
+	    				ChannelList.updateStatus(data.user.id, R.drawable.xmit_on);
+	    				sendBroadcast(new Intent(ServerView.CHANNELLIST_ACTION));
 	    				break;
 
 	    			case VentriloEvents.V3_EVENT_USER_TALK_START:
 	    				UserList.updateStatus(data.user.id, R.drawable.transmit_init);
 	    				sendBroadcast(new Intent(ServerView.USERLIST_ACTION));
+	    				ChannelList.updateStatus(data.user.id, R.drawable.xmit_init);
+	    				sendBroadcast(new Intent(ServerView.CHANNELLIST_ACTION));
 	    				break;
 	    				
 	    			case VentriloEvents.V3_EVENT_USER_TALK_END:
@@ -199,14 +215,17 @@ public class EventService extends Service {
 	    				Player.close(data.user.id);
 	    				UserList.updateStatus(data.user.id, R.drawable.transmit_off);
 	    				sendBroadcast(new Intent(ServerView.USERLIST_ACTION));
+	    				ChannelList.updateStatus(data.user.id, R.drawable.xmit_off);
+	    				sendBroadcast(new Intent(ServerView.CHANNELLIST_ACTION));
 	    				break;
 
 	    			case VentriloEvents.V3_EVENT_CHAN_ADD:
 	    				VentriloInterface.getchannel(data, data.channel.id);
-	    				ChannelList.addChannel(
+	    				ChannelList.add(
 	    						data.channel.id,
 	    						StringFromBytes(data.text.name),
 	    						VentriloInterface.channelrequirespassword(data.channel.id),
+	    						ChannelList.CHANNEL,
 	    						data.data.channel.parent
 	    						);
 	    			    sendBroadcast(new Intent(ServerView.CHANNELLIST_ACTION));

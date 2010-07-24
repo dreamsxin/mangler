@@ -173,7 +173,7 @@ public class ServerList extends ListActivity {
         ChannelList.clear();
 
         // Add lobby.
-        ChannelList.addChannel((short)0, "Lobby", 0, (short)0);
+        ChannelList.add((short)0, "Lobby", 0, ChannelList.CHANNEL, (short)0);
         
         Thread t = new Thread(new Runnable() {
         	public void run() {

@@ -26,31 +26,47 @@ package org.mangler.android;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.ListIterator;
 
 import android.util.Log;
 
 public class ChannelList {
+	
+	static int USER = 1;
+	static int CHANNEL = 2;
 
 	public static ArrayList<HashMap<String, Object>> data = new ArrayList<HashMap<String, Object>>();
 	
-	public static void addChannel(short channelid, String channelname, int passworded, short parentid) {
-		HashMap<String, Object> channel = new HashMap<String, Object>();
-		if (channelid == 0) {
+	public static void add(short id, String name, int passworded, int type, short parentid) {
+		HashMap<String, Object> entity = new HashMap<String, Object>();
+		String indent = "";
+		if (id == 0) {
 			parentid = -1;
 		}
-		channel.put("channelid", channelid);
-		for (int ctr = 0; ctr < getDepth(parentid)+1 && channelid != 0; ctr++) {
-			channelname = "    " + channelname;
+		entity.put("id", id);
+		for (int ctr = 0; ctr < getDepth(parentid)+1 && id != 0; ctr++) {
+			indent = "    " + indent;
 		}
-		channel.put("channelname", channelname);
-		channel.put("passworded", passworded);
-		channel.put("parentid", parentid);
-		Log.d("mangler", "adding channel at location " + getLocation(parentid));
-		if (channelid == 0) {
-			data.add(channel);
+		if (type == USER) {
+			entity.put("xmitstatus", R.drawable.xmit_off);
 		} else {
-			data.add(getLocation(parentid)+getChildCount(parentid)+1, channel);
+			entity.put("xmitstatus", R.drawable.xmit_clear);
+		}
+		entity.put("name", name);
+		entity.put("indent", indent);
+		entity.put("type", type);
+		entity.put("passworded", passworded);
+		entity.put("parentid", parentid);
+		Log.d("mangler", "adding entity id " + id + " (" + name + ") at location " + getLocation(parentid));
+		if (id == 0) {
+			data.add(entity);
+		} else {
+			if (type == USER) {
+				data.add(getLocation(parentid)+1, entity);
+			} else {
+				data.add(getLocation(parentid)+getChildCount(parentid)+1, entity);
+			}
 		}
 	}
 	
@@ -74,10 +90,11 @@ public class ChannelList {
 		return childcount;
 	}
 	
-	private static int getLocation(short channelid) {
+	private static int getLocation(short id) {
 		int ctr = 0;
 		for(ListIterator<HashMap<String, Object>> iterator = data.listIterator(); iterator.hasNext(); ) {
-			if(((Short)iterator.next().get("channelid")).equals(channelid)) {
+			short listid =  ((Short)iterator.next().get("id"));
+			if(listid == id) {
 				return ctr;
 			}
 			ctr++;
@@ -87,7 +104,7 @@ public class ChannelList {
 	
 	private static short getParentId(short channelid) {
 		for(ListIterator<HashMap<String, Object>> iterator = data.listIterator(); iterator.hasNext(); ) {
-			if(((Short)iterator.next().get("channelid")).equals(channelid)) {	
+			if(((Short)iterator.next().get("id")).equals(channelid)) {	
 				return (short)Integer.parseInt(iterator.previous().get("parentid").toString());
 			}
 		}
@@ -96,15 +113,30 @@ public class ChannelList {
 	
 	public static HashMap<String, Object> getChannel(short channelid) {
 		for(ListIterator<HashMap<String, Object>> iterator = data.listIterator(); iterator.hasNext(); ) {
-			if(((Short)iterator.next().get("channelid")).equals(channelid)) {
+			if(((Short)iterator.next().get("id")).equals(channelid)) {
 				return data.get(iterator.previousIndex());
 			}
 		}
 		return null;
 	}
 	
+	public static void remove(short id) {
+		Log.d("mangler", "removing entity with id " + id + " at location " + getLocation(id));
+		data.remove(getLocation(id));
+	}
+	
 	public static void clear() {
 		data.clear();
+	}
+	
+	public static void updateStatus(short id, int status) {
+		for(Iterator<HashMap<String, Object>> iterator = data.iterator(); iterator.hasNext(); ) {
+			HashMap<String, Object> data = iterator.next();
+			if((Short)data.get("id") == id) {
+				data.put("xmitstatus", status);
+				return;
+			}
+		}
 	}
 
 }

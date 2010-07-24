@@ -51,7 +51,7 @@ public class UserList {
 		user.put("userid", userid);
 		user.put("username", username);
 		user.put("channelid", channelid);
-		user.put("channelname", ChannelList.getChannel(channelid).get("channelname").toString().trim());
+		user.put("channelname", ChannelList.getChannel(channelid).get("name").toString().trim());
 		data.add(user);
 	}
 	
@@ -70,7 +70,7 @@ public class UserList {
 			HashMap<String, Object> data = iterator.next();
 			if((Short)data.get("userid") == userid) {
 				data.put("channelid", channelid);
-				data.put("channelname", ChannelList.getChannel(channelid).get("channelname").toString().trim());
+				data.put("channelname", ChannelList.getChannel(channelid).get("name").toString().trim());
 				return;
 			}
 		}
