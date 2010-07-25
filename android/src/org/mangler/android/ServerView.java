@@ -25,7 +25,6 @@
 package org.mangler.android;
 
 import java.util.HashMap;
-import java.util.Iterator;
 
 import android.app.AlertDialog;
 import android.app.TabActivity;
@@ -39,6 +38,7 @@ import android.os.Bundle;
 import android.os.PowerManager;
 import android.preference.PreferenceManager;
 import android.util.Log;
+import android.view.ContextMenu;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -46,6 +46,7 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
+import android.view.ContextMenu.ContextMenuInfo;
 import android.view.View.OnKeyListener;
 import android.view.View.OnTouchListener;
 import android.view.inputmethod.InputMethodManager;
@@ -60,8 +61,8 @@ import android.widget.TabHost;
 import android.widget.TabWidget;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.widget.AdapterView.AdapterContextMenuInfo;
 import android.widget.AdapterView.OnItemClickListener;
-import android.widget.AdapterView.OnItemLongClickListener;
 
 import com.nullwire.trace.ExceptionHandler;
 
@@ -90,6 +91,15 @@ public class ServerView extends TabActivity {
 	private final int OPTION_HIDE_TABS  = 2;
 	private final int OPTION_DISCONNECT = 3;
 	private final int OPTION_SETTINGS = 4;
+	
+	// Context menu options (does java not have enums?)
+	private final int CM_OPTION_VOLUME = 1;
+	private final int CM_OPTION_COMMENT = 2;
+	private final int CM_OPTION_SEND_PAGE = 3;
+	private final int CM_OPTION_KICK= 4;
+	private final int CM_OPTION_BAN = 6;
+	private final int CM_OPTION_MUTE = 7;
+	private final int CM_OPTION_GLOBAL_MUTE= 7;
 	
 	// List adapters.
 	private SimpleAdapter channelAdapter;
@@ -148,7 +158,6 @@ public class ServerView extends TabActivity {
 
 	    // List item clicks.
 	    ((ListView)findViewById(R.id.channelList)).setOnItemClickListener(onListClick);
-	    ((ListView)findViewById(R.id.channelList)).setOnItemLongClickListener(onLongListClick);
 
 	    // Register receivers.
         registerReceiver(chatReceiver, new IntentFilter(CHATVIEW_ACTION));
@@ -180,6 +189,8 @@ public class ServerView extends TabActivity {
 				wl.acquire();
 			}
 		}
+		
+		registerForContextMenu(((ListView)findViewById(R.id.channelList)));
     }
     
     @Override
@@ -480,17 +491,103 @@ public class ServerView extends TabActivity {
 		alert.show();
 	}
 	
-	private OnItemLongClickListener onLongListClick = new OnItemLongClickListener() {
-		@SuppressWarnings("unchecked")
-		public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
-			int type = (Integer)((HashMap<String, Object>)(parent.getItemAtPosition(position))).get("type");
-			if (type == ChannelList.USER) {
-				short userid = (Short)((HashMap<String, Object>)(parent.getItemAtPosition(position))).get("id");
-				setUserVolume(userid);
+	@Override
+	public void onCreateContextMenu(ContextMenu menu, View v, ContextMenuInfo menuInfo) {
+		super.onCreateContextMenu(menu, v, menuInfo);
+		AdapterContextMenuInfo cmi = (AdapterContextMenuInfo) menuInfo;
+		short id = Short.parseShort(ChannelList.data.get(cmi.position).get("id").toString());
+		int type = Integer.parseInt(ChannelList.data.get(cmi.position).get("type").toString());
+		String name = ChannelList.data.get(cmi.position).get("name").toString();
+		if (type == ChannelList.USER) {
+			if (id != VentriloInterface.getuserid()) {
+				// create the menu for other users
+				int itempos = 1;
+				boolean serveradmin = VentriloInterface.getpermission("serveradmin");
+				Log.d("mangler", "am i a server admin? " + serveradmin);
+				menu.setHeaderTitle(name);
+				menu.add(0, CM_OPTION_VOLUME, itempos++, "Set Volume");
+				menu.add(0, CM_OPTION_COMMENT, itempos++, "View Comment/URL");
+				menu.add(0, CM_OPTION_MUTE, itempos++, "Mute");
+				if (serveradmin || VentriloInterface.getpermission("sendpage")) {
+					menu.add(0, CM_OPTION_SEND_PAGE, itempos++, "Send Page");
+				}
+				if (serveradmin || VentriloInterface.getpermission("kickuser")) {
+					menu.add(0, CM_OPTION_KICK, itempos++, "Kick");
+				}
+				if (serveradmin || VentriloInterface.getpermission("banuser")) {
+					menu.add(0, CM_OPTION_BAN, itempos++, "Ban");
+				}
+				if (serveradmin) {
+					menu.add(0, CM_OPTION_GLOBAL_MUTE, itempos++, "Global Mute");
+				}
+			} else {
+				// create menu for our own options
+				int itempos = 1;
+
+				menu.add(0, CM_OPTION_VOLUME, itempos++, "Set Transmit Level");
+				menu.add(0, CM_OPTION_COMMENT, itempos++, "Set Comment/URL");
 			}
-			return true;
 		}
-	};
+	}
+	
+	@Override
+	public boolean onContextItemSelected(MenuItem item) {
+		AdapterContextMenuInfo cmi = (AdapterContextMenuInfo) item.getMenuInfo();
+		short id = Short.parseShort(ChannelList.data.get(cmi.position).get("id").toString());
+		switch (item.getItemId()) {
+			case CM_OPTION_VOLUME:
+				setUserVolume(id);
+				break;
+			case CM_OPTION_KICK:
+				kickUser(id);
+				break;
+			case CM_OPTION_BAN:
+				banUser(id);
+				break;
+		}
+		return super.onContextItemSelected(item);
+	}
+
+	private void kickUser(short id) {
+		final EditText input = new EditText(this);
+		final short userid = id;
+		// Create dialog box for password.
+		AlertDialog.Builder alert = new AlertDialog.Builder(this)
+			.setTitle("Kick Reason")
+			.setMessage("Please enter a reason for kicking this user")
+			.setView(input)
+			.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+				public void onClick(DialogInterface dialog, int whichButton) {
+					VentriloInterface.kick(userid, input.getText().toString());
+				}
+			})
+			.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+				public void onClick(DialogInterface dialog, int whichButton) {
+				}
+			});
+		alert.show();
+	}
+
+	private void banUser(short id) {
+		final EditText input = new EditText(this);
+		final short userid = id;
+		// Create dialog box for password.
+		AlertDialog.Builder alert = new AlertDialog.Builder(this)
+			.setTitle("Ban Reason")
+			.setMessage("Please enter a reason for banning this user (note: you cannot unban users from this interface)")
+			.setView(input)
+			.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+				public void onClick(DialogInterface dialog, int whichButton) {
+					VentriloInterface.ban(userid, input.getText().toString());
+				}
+			})
+			.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+				public void onClick(DialogInterface dialog, int whichButton) {
+				}
+			});
+		alert.show();
+	}
+
 
 	private OnTouchListener onTalkPress = new OnTouchListener() {
 		public boolean onTouch(View v, MotionEvent m) {

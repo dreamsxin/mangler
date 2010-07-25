@@ -57,4 +57,7 @@ public class VentriloInterface {
 	public static native void 		startaudio(short type);
 	public static native void 		stopaudio();
 	public static native int 		usercount();
+	public static native boolean	getpermission(String permissionName);
+	public static native void		kick(short userid, String reason);
+	public static native void		ban(short userid, String reason);
 }

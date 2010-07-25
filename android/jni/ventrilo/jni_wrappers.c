@@ -162,6 +162,45 @@ JNIEXPORT int JNICALL Java_org_mangler_android_VentriloInterface_getchannelrate(
 	return v3_get_channel_codec(channelid)->rate;
 }
 
+JNIEXPORT jboolean JNICALL Java_org_mangler_android_VentriloInterface_getpermission(JNIEnv* env, jobject obj, jstring permname) {
+	const v3_permissions *perms = v3_get_permissions();
+	char *_permname = get_string(env, permname);
+	int permval = 0;
+	if (strcmp(_permname, "kickuser") == 0) {
+		permval = perms->kick_user; 
+	}
+	if (strcmp(_permname, "banuser") == 0) {
+		permval =  perms->ban_user; 
+	}
+	if (strcmp(_permname, "sendpage") == 0) {
+		permval =  perms->send_page; 
+	}
+	if (strcmp(_permname, "addphantom") == 0) {
+		permval =  perms->add_phantom; 
+	}
+	if (strcmp(_permname, "serveradmin") == 0) {
+		permval =  perms->srv_admin; 
+	}
+	if (strcmp(_permname, "moveuser") == 0) {
+		permval =  perms->move_user; 
+	}
+	release_string(env, permname, _permname);
+	return permval;
+}
+
+JNIEXPORT void JNICALL Java_org_mangler_android_VentriloInterface_kick(JNIEnv* env, jobject obj, jshort userid, jstring reason) {
+	char *_reason = get_string(env, reason);
+	v3_admin_boot(V3_BOOT_KICK, userid, _reason);
+	return;
+}
+
+JNIEXPORT void JNICALL Java_org_mangler_android_VentriloInterface_ban(JNIEnv* env, jobject obj, jshort userid, jstring reason) {
+	char *_reason = get_string(env, reason);
+	v3_admin_boot(V3_BOOT_BAN, userid, _reason);
+	return;
+}
+
+
 JNIEXPORT jboolean JNICALL Java_org_mangler_android_VentriloInterface_login(JNIEnv* env, jobject obj, jstring server, jstring username, jstring password, jstring phonetic) {
 	char* _server = get_string(env, server);
 	char* _username = get_string(env, username);
