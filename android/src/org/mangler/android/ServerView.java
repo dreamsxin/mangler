@@ -149,7 +149,7 @@ public class ServerView extends TabActivity {
 	    // List item clicks.
 	    ((ListView)findViewById(R.id.channelList)).setOnItemClickListener(onListClick);
 	    ((ListView)findViewById(R.id.userList)).setOnItemClickListener(onListClick);
-	    ((ListView)findViewById(R.id.userList)).setOnItemLongClickListener(onLongListClick);
+	    ((ListView)findViewById(R.id.channelList)).setOnItemLongClickListener(onLongListClick);
 
 	    // Register receivers.
         registerReceiver(chatReceiver, new IntentFilter(CHATVIEW_ACTION));
@@ -476,8 +476,11 @@ public class ServerView extends TabActivity {
 	private OnItemLongClickListener onLongListClick = new OnItemLongClickListener() {
 		@SuppressWarnings("unchecked")
 		public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
-			short userid = (Short)((HashMap<String, Object>)(parent.getItemAtPosition(position))).get("userid");
-			setUserVolume(userid);
+			int type = (Integer)((HashMap<String, Object>)(parent.getItemAtPosition(position))).get("type");
+			if (type == ChannelList.USER) {
+				short userid = (Short)((HashMap<String, Object>)(parent.getItemAtPosition(position))).get("id");
+				setUserVolume(userid);
+			}
 			return true;
 		}
 	};

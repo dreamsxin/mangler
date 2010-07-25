@@ -182,6 +182,8 @@ public class EventService extends Service {
 	    				Player.close(data.user.id);
 	    				UserList.delUser(data.user.id);
 	    			    sendBroadcast(new Intent(ServerView.USERLIST_ACTION));
+	    				ChannelList.remove(data.user.id);
+	    			    sendBroadcast(new Intent(ServerView.CHANNELLIST_ACTION));
 	    			    // the phonetic isn't available after the user logged out :/
     					String phonetic = StringFromBytes(data.text.name);
     					broadcastIntent = new Intent(ServerView.TTS_NOTIFY_ACTION);

@@ -267,7 +267,9 @@ public class ManglerDBAdapter {
 			try {
 				cursor.moveToFirst();
 				level = cursor.getInt(cursor.getColumnIndexOrThrow(ManglerDBAdapter.KEY_VOLUME_LEVEL));
+				cursor.close();
 			} catch (Exception e) {
+				cursor.close();
 				return level;
 			}
 		}
@@ -299,7 +301,9 @@ public class ManglerDBAdapter {
 			try {
 				cursor.moveToFirst();
 				password = cursor.getString(cursor.getColumnIndexOrThrow(ManglerDBAdapter.KEY_PASSWORD_PASSWORD));
+				cursor.close();
 			} catch (Exception e) {
+				cursor.close();
 				Log.d("mangler", "no password found in database");
 				return "";
 			}
