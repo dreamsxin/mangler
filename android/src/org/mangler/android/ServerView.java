@@ -148,7 +148,6 @@ public class ServerView extends TabActivity {
 
 	    // List item clicks.
 	    ((ListView)findViewById(R.id.channelList)).setOnItemClickListener(onListClick);
-	    ((ListView)findViewById(R.id.userList)).setOnItemClickListener(onListClick);
 	    ((ListView)findViewById(R.id.channelList)).setOnItemLongClickListener(onLongListClick);
 
 	    // Register receivers.
