@@ -12,7 +12,7 @@
 		<LinearLayout android:orientation="vertical"
 		android:layout_height="fill_parent" 
 		android:layout_width="0dp" 
-		android:layout_weight=".8" >
+		android:layout_weight=".85" >
 		
 		<TabWidget android:id="@android:id/tabs" 
 			android:layout_width="fill_parent" 
@@ -99,7 +99,7 @@
 
 		<Button 
 		android:layout_width="0dp"
-		android:layout_weight=".2" 
+		android:layout_weight=".15" 
 		android:layout_height="fill_parent" 
 		android:id="@+id/talkButton"
 		android:text="@string/push_to_talk"/>
