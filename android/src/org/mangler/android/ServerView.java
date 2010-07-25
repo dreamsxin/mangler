@@ -132,10 +132,10 @@ public class ServerView extends TabActivity {
         
         // Add tabs.
         TabHost tabhost = getTabHost();
-        tabhost.addTab(tabhost.newTabSpec("talk").setContent(R.id.talkView).setIndicator("Talk"));
         tabhost.addTab(tabhost.newTabSpec("channel").setContent(R.id.channelView).setIndicator("Channels"));
         tabhost.addTab(tabhost.newTabSpec("user").setContent(R.id.userView).setIndicator("Users"));
     	tabhost.addTab(tabhost.newTabSpec("chat").setContent(R.id.chatView).setIndicator("Chat"));
+        tabhost.addTab(tabhost.newTabSpec("talk").setContent(R.id.talkView).setIndicator("Debug"));
 
         // Create adapters.
 	    channelAdapter 	= new SimpleAdapter(this, ChannelList.data, R.layout.channel_row, new String[] { "indent", "xmitstatus", "name" }, new int[] { R.id.indent, R.id.crowimg, R.id.crowtext } );
