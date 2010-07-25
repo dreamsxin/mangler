@@ -149,7 +149,7 @@ public class ServerView extends TabActivity {
         tabhost.addTab(tabhost.newTabSpec("talk").setContent(R.id.talkView).setIndicator("Debug"));
 
         // Create adapters.
-	    channelAdapter 	= new SimpleAdapter(this, ChannelList.data, R.layout.channel_row, new String[] { "indent", "xmitstatus", "name" }, new int[] { R.id.indent, R.id.crowimg, R.id.crowtext } );
+	    channelAdapter 	= new SimpleAdapter(this, ChannelList.data, R.layout.channel_row, new String[] { "indent", "xmitStatus", "name" }, new int[] { R.id.indent, R.id.crowimg, R.id.crowtext } );
 	    userAdapter 	= new SimpleAdapter(this, UserList.data, R.layout.user_row, new String[] { "userstatus", "username", "channelname" }, new int[] { R.id.urowimg, R.id.urowtext, R.id.urowid } );
 
 	    // Set adapters.
@@ -505,27 +505,34 @@ public class ServerView extends TabActivity {
 				boolean serveradmin = VentriloInterface.getpermission("serveradmin");
 				Log.d("mangler", "am i a server admin? " + serveradmin);
 				menu.setHeaderTitle(name);
-				menu.add(0, CM_OPTION_VOLUME, itempos++, "Set Volume");
-				menu.add(0, CM_OPTION_COMMENT, itempos++, "View Comment/URL");
-				menu.add(0, CM_OPTION_MUTE, itempos++, "Mute");
+				menu.add(Menu.NONE, CM_OPTION_VOLUME, itempos++, "Set Volume");
+				if (ChannelList.data.get(cmi.position).get("comment").toString() != "" ||
+					ChannelList.data.get(cmi.position).get("url").toString() != "") {
+					menu.add(Menu.NONE, CM_OPTION_COMMENT, itempos++, "View Comment/URL");
+				}
+				if (dbHelper.getVolume(serverid, name) == 0) {
+					menu.add(Menu.NONE, CM_OPTION_MUTE, itempos++, "Unmute");
+				} else {
+					menu.add(Menu.NONE, CM_OPTION_MUTE, itempos++, "Mute");
+				}
 				if (serveradmin || VentriloInterface.getpermission("sendpage")) {
-					menu.add(0, CM_OPTION_SEND_PAGE, itempos++, "Send Page");
+					menu.add(Menu.NONE, CM_OPTION_SEND_PAGE, itempos++, "Send Page");
 				}
 				if (serveradmin || VentriloInterface.getpermission("kickuser")) {
-					menu.add(0, CM_OPTION_KICK, itempos++, "Kick");
+					menu.add(Menu.NONE, CM_OPTION_KICK, itempos++, "Kick");
 				}
 				if (serveradmin || VentriloInterface.getpermission("banuser")) {
-					menu.add(0, CM_OPTION_BAN, itempos++, "Ban");
+					menu.add(Menu.NONE, CM_OPTION_BAN, itempos++, "Ban");
 				}
 				if (serveradmin) {
-					menu.add(0, CM_OPTION_GLOBAL_MUTE, itempos++, "Global Mute");
+					menu.add(Menu.NONE, CM_OPTION_GLOBAL_MUTE, itempos++, "Global Mute");
 				}
 			} else {
 				// create menu for our own options
 				int itempos = 1;
 
-				menu.add(0, CM_OPTION_VOLUME, itempos++, "Set Transmit Level");
-				menu.add(0, CM_OPTION_COMMENT, itempos++, "Set Comment/URL");
+				menu.add(Menu.NONE, CM_OPTION_VOLUME, itempos++, "Set Transmit Level");
+				menu.add(Menu.NONE, CM_OPTION_COMMENT, itempos++, "Set Comment/URL");
 			}
 		}
 	}
@@ -543,6 +550,13 @@ public class ServerView extends TabActivity {
 				break;
 			case CM_OPTION_BAN:
 				banUser(id);
+				break;
+			case CM_OPTION_COMMENT:
+				if (id == VentriloInterface.getuserid()) {
+					//setComment();
+				} else {
+					viewComment(id);
+				}
 				break;
 		}
 		return super.onContextItemSelected(item);
@@ -587,7 +601,10 @@ public class ServerView extends TabActivity {
 			});
 		alert.show();
 	}
-
+	
+	private void viewComment(short id) {
+		
+	}
 
 	private OnTouchListener onTalkPress = new OnTouchListener() {
 		public boolean onTouch(View v, MotionEvent m) {

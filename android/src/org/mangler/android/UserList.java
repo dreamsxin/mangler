@@ -53,7 +53,7 @@ public class UserList {
 			user.put("userid", userid);
 			user.put("username", username);
 			user.put("channelid", channelid);
-			user.put("channelname", ChannelList.getChannel(channelid).get("name").toString().trim());
+			user.put("channelname", ChannelList.get(channelid).get("name").toString().trim());
 			data.add(user);
 	}
 	

@@ -143,9 +143,10 @@ public class EventService extends Service {
     	    				}
     						Player.close(data.user.id);
     					}
-	    				VentriloInterface.getuser(data, data.user.id);
-    					ChannelList.remove(data.user.id);
-    					ChannelList.add(data.user.id, StringFromBytes(data.text.name), 0, ChannelList.USER, data.channel.id);
+    					ChannelListEntity entity = new ChannelListEntity(ChannelList.get(data.user.id));
+    					entity.parentid = data.channel.id;
+    					ChannelList.remove(entity.id);
+    					ChannelList.add(entity);
     					sendBroadcast(new Intent(ServerView.USERLIST_ACTION));
 	    			    sendBroadcast(new Intent(ServerView.CHANNELLIST_ACTION));
 	    				break;
@@ -156,14 +157,8 @@ public class EventService extends Service {
 		    				VentriloInterface.getuser(data, data.user.id);
 		    				String username = StringFromBytes(data.text.name);
 		    				Log.e("mangler", "got user login event for " + username);
-		    				ChannelList.add(
-		    						data.user.id,
-		    						StringFromBytes(data.text.name),
-		    						0,
-		    						ChannelList.USER,
-		    						data.channel.id
-		    						);
-		    				if (data.channel.id == 0) {
+		    				ChannelList.add(new ChannelListEntity(ChannelList.USER, data.user.id));
+		    				if (data.channel.id == VentriloInterface.getuserchannel(VentriloInterface.getuserid())) {
 		    					UserList.addUser(data.user.id, username, data.channel.id);
 		    				}
 		    				broadcastIntent =  new Intent(ServerView.USERLIST_ACTION);
@@ -230,13 +225,7 @@ public class EventService extends Service {
 
 	    			case VentriloEvents.V3_EVENT_CHAN_ADD:
 	    				VentriloInterface.getchannel(data, data.channel.id);
-	    				ChannelList.add(
-	    						data.channel.id,
-	    						StringFromBytes(data.text.name),
-	    						VentriloInterface.channelrequirespassword(data.channel.id),
-	    						ChannelList.CHANNEL,
-	    						data.data.channel.parent
-	    						);
+	    				ChannelList.add(new ChannelListEntity(ChannelList.CHANNEL, data.channel.id));
 	    			    sendBroadcast(new Intent(ServerView.CHANNELLIST_ACTION));
 	    				break;
 

@@ -33,39 +33,33 @@ import android.util.Log;
 
 public class ChannelList {
 	
-	static int USER = 1;
-	static int CHANNEL = 2;
+	static final int USER = 1;
+	static final int CHANNEL = 2;
 
 	public static ArrayList<HashMap<String, Object>> data = new ArrayList<HashMap<String, Object>>();
 	
-	public static void add(short id, String name, int passworded, int type, short parentid) {
-		HashMap<String, Object> entity = new HashMap<String, Object>();
+	public static void add(ChannelListEntity entity) {
 		String indent = "";
-		if (id == 0) {
-			parentid = -1;
+		if (entity.id == 0) {
+			entity.parentid = -1;
 		}
-		entity.put("id", id);
-		for (int ctr = 0; ctr < getDepth(parentid)+1 && id != 0; ctr++) {
+		for (int ctr = 0; ctr < getDepth(entity.parentid)+1 && entity.id != 0; ctr++) {
 			indent = "    " + indent;
 		}
-		if (type == USER) {
-			entity.put("xmitstatus", R.drawable.xmit_off);
+		if (entity.type == USER) {
+			entity.xmitStatus = R.drawable.xmit_off;
 		} else {
-			entity.put("xmitstatus", R.drawable.xmit_clear);
+			entity.xmitStatus = R.drawable.xmit_clear;
 		}
-		entity.put("name", name);
-		entity.put("indent", indent);
-		entity.put("type", type);
-		entity.put("passworded", passworded);
-		entity.put("parentid", parentid);
-		Log.d("mangler", "adding entity id " + id + " (" + name + ") at location " + getLocation(parentid));
-		if (id == 0) {
-			data.add(entity);
+		entity.indent = indent;
+		Log.d("mangler", "adding entity id " + entity.id + " (" + entity.name + ") at location " + getLocation(entity.parentid));
+		if (entity.id == 0) {
+			data.add(entity.toHashMap());
 		} else {
-			if (type == USER) {
-				data.add(getLocation(parentid)+1, entity);
+			if (entity.type == USER) {
+				data.add(getLocation(entity.parentid)+1, entity.toHashMap());
 			} else {
-				data.add(getLocation(parentid)+getChildCount(parentid)+1, entity);
+				data.add(getLocation(entity.parentid)+getChildCount(entity.parentid)+1, entity.toHashMap());
 			}
 		}
 	}
@@ -111,9 +105,9 @@ public class ChannelList {
 		return -1;
 	}
 	
-	public static HashMap<String, Object> getChannel(short channelid) {
+	public static HashMap<String, Object> get(short id) {
 		for(ListIterator<HashMap<String, Object>> iterator = data.listIterator(); iterator.hasNext(); ) {
-			if(((Short)iterator.next().get("id")).equals(channelid)) {
+			if(((Short)iterator.next().get("id")).equals(id)) {
 				return data.get(iterator.previousIndex());
 			}
 		}
@@ -133,7 +127,7 @@ public class ChannelList {
 		for(Iterator<HashMap<String, Object>> iterator = data.iterator(); iterator.hasNext(); ) {
 			HashMap<String, Object> data = iterator.next();
 			if((Short)data.get("id") == id) {
-				data.put("xmitstatus", status);
+				data.put("xmitStatus", status);
 				return;
 			}
 		}
