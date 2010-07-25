@@ -28,13 +28,15 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 
+import android.util.Log;
+
 public class UserList {
 	
 	public static ArrayList<HashMap<String, Object>> data = new ArrayList<HashMap<String, Object>>();
 	
 	public static void delUser(short userid) {
-		for(Iterator<HashMap<String, Object>> iterator = data.iterator(); iterator.hasNext(); ) {
-			if(((Short)iterator.next().get("userid")).equals(userid)) {
+		for (Iterator<HashMap<String, Object>> iterator = data.iterator(); iterator.hasNext();) {
+			if (((Short) iterator.next().get("userid")).equals(userid)) {
 				iterator.remove();
 				return;
 			}
@@ -46,42 +48,31 @@ public class UserList {
 	}
 	
 	public static void addUser(short userid, String username, short channelid) {
-		HashMap<String, Object> user = new HashMap<String, Object>();
-		user.put("userstatus", R.drawable.transmit_off);
-		user.put("userid", userid);
-		user.put("username", username);
-		user.put("channelid", channelid);
-		user.put("channelname", ChannelList.getChannel(channelid).get("name").toString().trim());
-		data.add(user);
+			HashMap<String, Object> user = new HashMap<String, Object>();
+			user.put("userstatus", R.drawable.transmit_off);
+			user.put("userid", userid);
+			user.put("username", username);
+			user.put("channelid", channelid);
+			user.put("channelname", ChannelList.getChannel(channelid).get("name").toString().trim());
+			data.add(user);
 	}
 	
 	public static void updateStatus(short userid, int status) {
-		for(Iterator<HashMap<String, Object>> iterator = data.iterator(); iterator.hasNext(); ) {
+		for (Iterator<HashMap<String, Object>> iterator = data.iterator(); iterator.hasNext();) {
 			HashMap<String, Object> data = iterator.next();
-			if((Short)data.get("userid") == userid) {
+			if ((Short) data.get("userid") == userid) {
 				data.put("userstatus", status);
 				return;
 			}
 		}
 	}
 	
-	public static void changeChannel(short userid, short channelid) {
-		for(Iterator<HashMap<String, Object>> iterator = data.iterator(); iterator.hasNext(); ) {
-			HashMap<String, Object> data = iterator.next();
-			if((Short)data.get("userid") == userid) {
-				data.put("channelid", channelid);
-				data.put("channelname", ChannelList.getChannel(channelid).get("name").toString().trim());
-				return;
-			}
-		}
-	}
-	
 	public static short getChannel(short userid) {
-		for(Iterator<HashMap<String, Object>> iterator = data.iterator(); iterator.hasNext(); ) {
+		for (Iterator<HashMap<String, Object>> iterator = data.iterator(); iterator.hasNext();) {
 			HashMap<String, Object> data = iterator.next();
-			if((Short)data.get("userid") == userid) {
-				short channelid = (Short)data.get("channelid");
-				return (short)channelid;
+			if ((Short) data.get("userid") == userid) {
+				short channelid = (Short) data.get("channelid");
+				return (short) channelid;
 			}
 		}
 		return -1;

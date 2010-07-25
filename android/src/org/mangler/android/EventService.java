@@ -131,16 +131,19 @@ public class EventService extends Service {
     	    					String phonetic = getPhonetic(data.user.id);
     	    					broadcastIntent.putExtra("message", phonetic + " has joined the channel.");
     	    					sendBroadcast(broadcastIntent);
+    	    					UserList.addUser(data.user.id, StringFromBytes(data.text.name), data.channel.id);
+    	    					sendBroadcast(new Intent(ServerView.USERLIST_ACTION));
+    	    					ChannelList.remove(data.user.id);
     	    				} else if (UserList.getChannel(data.user.id) == VentriloInterface.getuserchannel(VentriloInterface.getuserid())) {
     	    					broadcastIntent = new Intent(ServerView.TTS_NOTIFY_ACTION);
     	    					String phonetic = getPhonetic(data.user.id);
     	    					broadcastIntent.putExtra("message", phonetic+ " has left the channel.");
     	    					sendBroadcast(broadcastIntent);
+    	    					UserList.delUser(data.user.id);
+    	    					sendBroadcast(new Intent(ServerView.USERLIST_ACTION));
     	    				}
     						Player.close(data.user.id);
     					}
-    					UserList.changeChannel(data.user.id, data.channel.id);
-    					ChannelList.remove(data.user.id);
 	    				VentriloInterface.getuser(data, data.user.id);
     					ChannelList.add(data.user.id, StringFromBytes(data.text.name), 0, ChannelList.USER, data.channel.id);
     					sendBroadcast(new Intent(ServerView.USERLIST_ACTION));
@@ -160,7 +163,9 @@ public class EventService extends Service {
 		    						ChannelList.USER,
 		    						data.channel.id
 		    						);
-		    				UserList.addUser(data.user.id, username, data.channel.id);
+		    				if (data.channel.id == 0) {
+		    					UserList.addUser(data.user.id, username, data.channel.id);
+		    				}
 		    				broadcastIntent =  new Intent(ServerView.USERLIST_ACTION);
 		    				broadcastIntent.putExtra("username", username);
 	    			    	broadcastIntent.putExtra("id", (int)data.user.id);
