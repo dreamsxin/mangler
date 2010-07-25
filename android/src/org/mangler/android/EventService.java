@@ -133,7 +133,6 @@ public class EventService extends Service {
     	    					sendBroadcast(broadcastIntent);
     	    					UserList.addUser(data.user.id, StringFromBytes(data.text.name), data.channel.id);
     	    					sendBroadcast(new Intent(ServerView.USERLIST_ACTION));
-    	    					ChannelList.remove(data.user.id);
     	    				} else if (UserList.getChannel(data.user.id) == VentriloInterface.getuserchannel(VentriloInterface.getuserid())) {
     	    					broadcastIntent = new Intent(ServerView.TTS_NOTIFY_ACTION);
     	    					String phonetic = getPhonetic(data.user.id);
@@ -145,6 +144,7 @@ public class EventService extends Service {
     						Player.close(data.user.id);
     					}
 	    				VentriloInterface.getuser(data, data.user.id);
+    					ChannelList.remove(data.user.id);
     					ChannelList.add(data.user.id, StringFromBytes(data.text.name), 0, ChannelList.USER, data.channel.id);
     					sendBroadcast(new Intent(ServerView.USERLIST_ACTION));
 	    			    sendBroadcast(new Intent(ServerView.CHANNELLIST_ACTION));

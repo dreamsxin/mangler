@@ -23,27 +23,6 @@
 			android:padding="5dp" 
 			android:id="@android:id/tabcontent">
 		
-			<LinearLayout android:id="@+id/talkView"
-				xmlns:android="http://schemas.android.com/apk/res/android"
-			    android:orientation="vertical"
-			    android:layout_width="fill_parent"
-			    android:layout_height="fill_parent" 
-			    android:gravity="center_vertical|center_horizontal">
-				
-				<TextView android:text="Last Xmit Info\n\nChannel Rate: N/A\nRecord Rate: N/A\nMin Buffer Size: N/A\n"
-					android:id="@+id/recorderInfo"
-					android:layout_width="fill_parent"
-					android:layout_height="wrap_content"
-					android:gravity="top|left" />
-				<ImageView android:id="@+id/transmitStatus"
-					android:layout_height="30px"
-					android:layout_width="30px"
-					android:src="@drawable/transmit_off"
-					android:layout_marginTop="15dp"
-					android:layout_marginBottom="15dp"/>
-					
-			</LinearLayout>
-		
 			<LinearLayout android:layout_width="wrap_content" 
 				android:layout_height="wrap_content" 
 				android:id="@+id/channelView"
@@ -91,6 +70,27 @@
 					android:layout_width="fill_parent" 
 					android:enabled="false" android:imeOptions="actionSend"/>
 
+			</LinearLayout>
+					
+			<LinearLayout android:id="@+id/talkView"
+				xmlns:android="http://schemas.android.com/apk/res/android"
+			    android:orientation="vertical"
+			    android:layout_width="fill_parent"
+			    android:layout_height="fill_parent" 
+			    android:gravity="center_vertical|center_horizontal">
+				
+				<TextView android:text="Last Xmit Info\n\nChannel Rate: N/A\nRecord Rate: N/A\nMin Buffer Size: N/A\n"
+					android:id="@+id/recorderInfo"
+					android:layout_width="fill_parent"
+					android:layout_height="wrap_content"
+					android:gravity="top|left" />
+				<ImageView android:id="@+id/transmitStatus"
+					android:layout_height="30px"
+					android:layout_width="30px"
+					android:src="@drawable/transmit_off"
+					android:layout_marginTop="15dp"
+					android:layout_marginBottom="15dp"/>
+					
 			</LinearLayout>
 			
 		</FrameLayout>
