@@ -3,6 +3,10 @@ package org.mangler.android;
 import java.util.HashMap;
 
 public class ChannelListEntity {
+	
+	static final int USER = 1;
+	static final int CHANNEL = 2;
+	
 	public short id;
 	public String name = "";
 	public String phonetic = "";
@@ -19,13 +23,13 @@ public class ChannelListEntity {
 	}
 	
 	public ChannelListEntity(HashMap<String, Object> entity) {
+		type = Integer.parseInt(entity.get("type").toString());
 		id = Short.parseShort(entity.get("id").toString());
 		name = entity.get("name").toString();
 		phonetic = entity.get("phonetic").toString();
-		comment = entity.get("comment").toString();
 		url = entity.get("url").toString();
+		comment = entity.get("comment").toString();
 		indent = entity.get("indent").toString();
-		type = Integer.parseInt(entity.get("type").toString());
 		passwordProtected = Integer.parseInt(entity.get("passwordProtected").toString());
 		parentid = Short.parseShort(entity.get("parentid").toString());
 		xmitStatus = Integer.parseInt(entity.get("xmitStatus").toString());
@@ -34,21 +38,22 @@ public class ChannelListEntity {
 	public ChannelListEntity(int type, short id) {
 		VentriloEventData data = new VentriloEventData();
 		switch (type) {
-			case ChannelList.USER:
+			case USER:
 				VentriloInterface.getuser(data, id);
+				this.type = type;
 				this.id = id;
 				name = stringFromBytes(data.text.name);
+				phonetic = stringFromBytes(data.text.phonetic);
 				comment = stringFromBytes(data.text.comment);
 				url = stringFromBytes(data.text.url);
-				this.type = type;
 				parentid = VentriloInterface.getuserchannel(id);
 				break;
-			case ChannelList.CHANNEL:
+			case CHANNEL:
 				VentriloInterface.getchannel(data, id);
+				this.type = type;
 				this.id = id;
 				name = stringFromBytes(data.text.name);
 				comment = stringFromBytes(data.text.comment);
-				this.type = type;
 				parentid = data.data.channel.parent;
 				passwordProtected = VentriloInterface.channelrequirespassword(id);
 				break;
@@ -60,13 +65,14 @@ public class ChannelListEntity {
 	}
 
 	public HashMap<String, Object> toHashMap() {
-		HashMap<String, Object> entity = new HashMap<String, Object>();;
+		HashMap<String, Object> entity = new HashMap<String, Object>();
+		entity.put("type", type);
 		entity.put("id", id);
 		entity.put("name", name);
+		entity.put("phonetic", phonetic);
 		entity.put("comment", comment);
 		entity.put("url", url);
 		entity.put("indent", indent);
-		entity.put("type", type);
 		entity.put("passwordProtected", passwordProtected);
 		entity.put("parentid", parentid);
 		entity.put("xmitStatus", xmitStatus);

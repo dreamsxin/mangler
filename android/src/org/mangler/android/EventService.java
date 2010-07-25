@@ -154,16 +154,15 @@ public class EventService extends Service {
 	    			case VentriloEvents.V3_EVENT_USER_LOGIN:
 	    				if (data.user.id != 0) {
 	    					int flags = data.flags;
-		    				VentriloInterface.getuser(data, data.user.id);
-		    				String username = StringFromBytes(data.text.name);
-		    				Log.e("mangler", "got user login event for " + username);
-		    				ChannelList.add(new ChannelListEntity(ChannelList.USER, data.user.id));
-		    				if (data.channel.id == VentriloInterface.getuserchannel(VentriloInterface.getuserid())) {
-		    					UserList.addUser(data.user.id, username, data.channel.id);
+	    					entity = new ChannelListEntity(ChannelListEntity.USER, data.user.id);
+		    				Log.e("mangler", "got user login event for " + entity.name);
+		    				ChannelList.add(entity);
+		    				if (entity.parentid == VentriloInterface.getuserchannel(VentriloInterface.getuserid())) {
+		    					UserList.addUser(entity.id, entity.name, entity.parentid);
 		    				}
 		    				broadcastIntent =  new Intent(ServerView.USERLIST_ACTION);
-		    				broadcastIntent.putExtra("username", username);
-	    			    	broadcastIntent.putExtra("id", (int)data.user.id);
+		    				broadcastIntent.putExtra("username", entity.name);
+	    			    	broadcastIntent.putExtra("id", entity.id);
 		    			    sendBroadcast(broadcastIntent);
 		    			    sendBroadcast(new Intent(ServerView.CHANNELLIST_ACTION));
 		    			    Log.d("mangler", "user login event flags: " + flags);
