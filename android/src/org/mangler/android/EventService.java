@@ -223,9 +223,10 @@ public class EventService extends Service {
 	    				break;
 
 	    			case VentriloEvents.V3_EVENT_CHAN_ADD:
-	    				VentriloInterface.getchannel(data, data.channel.id);
-	    				ChannelList.add(new ChannelListEntity(ChannelList.CHANNEL, data.channel.id));
-	    			    sendBroadcast(new Intent(ServerView.CHANNELLIST_ACTION));
+	    				entity = new ChannelListEntity(ChannelListEntity.CHANNEL, data.channel.id);
+	    				ChannelList.add(entity);
+	    			    sendBroadcast(new Intent(ServerView.CHANNELLIST_ACTION)
+	    			    	.putStringArrayListExtra("entity", entity.serialize()));
 	    				break;
 
 	    			default:

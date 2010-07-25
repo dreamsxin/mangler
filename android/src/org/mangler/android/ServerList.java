@@ -25,14 +25,7 @@
 package org.mangler.android;
 
 import android.app.ListActivity;
-import android.app.Notification;
-import android.app.NotificationManager;
-import android.app.PendingIntent;
-import android.app.ProgressDialog;
-import android.content.BroadcastReceiver;
-import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.database.Cursor;
 import android.media.AudioManager;
 import android.os.Bundle;
@@ -44,7 +37,6 @@ import android.view.ContextMenu.ContextMenuInfo;
 import android.widget.ListView;
 import android.widget.SimpleCursorAdapter;
 import android.widget.TextView;
-import android.widget.Toast;
 import android.widget.AdapterView.AdapterContextMenuInfo;
 
 import com.nullwire.trace.ExceptionHandler;
@@ -60,13 +52,9 @@ public class ServerList extends ListActivity {
 	private static final int CLONE_ID = Menu.FIRST + 2;
     private static final int DELETE_ID = Menu.FIRST + 3;
 
-    private static final String SERVERLIST_NOTIFICATION = "org.mangler.android.ServerListNotification";
-
 	private ManglerDBAdapter dbHelper;
 	
-	// Notifications
-	private NotificationManager notificationManager;
-	private static final int ONGOING_NOTIFICATION = 1;
+
 
     /** Called when the activity is first created. */
     @Override
@@ -77,13 +65,9 @@ public class ServerList extends ListActivity {
         // Send crash reports to server
         ExceptionHandler.register(this, "http://www.mangler.org/errors/upload.php");
         
-        notificationManager = (NotificationManager)getSystemService(NOTIFICATION_SERVICE);
         
         // Volume controls.
         setVolumeControlStream(AudioManager.STREAM_MUSIC);
-
-        // Notification broadcast receiver.
-        registerReceiver(notificationReceiver, new IntentFilter(SERVERLIST_NOTIFICATION));
 
         dbHelper = new ManglerDBAdapter(this);
         dbHelper.open();
@@ -94,9 +78,6 @@ public class ServerList extends ListActivity {
     @Override
     protected void onDestroy() {
     	super.onDestroy();
-
-    	// Unregister notification broadcase receiver.
-        unregisterReceiver(notificationReceiver);
 
         dbHelper.close();
     }
@@ -159,75 +140,13 @@ public class ServerList extends ListActivity {
 		return super.onContextItemSelected(item);
 	}
 
-    @Override
-    protected void onListItemClick(ListView l, View v, int position, long id) {
-        super.onListItemClick(l, v, position, id);
+	@Override
+	protected void onListItemClick(ListView l, View v, int position, long id) {
+		super.onListItemClick(l, v, position, id);
+		startActivityForResult(new Intent(ServerList.this, ServerView.class).putExtra("serverid", (int)id), ACTIVITY_CONNECT);
 
-        final ProgressDialog dialog = ProgressDialog.show(this, "", "Connecting. Please wait...", true);
+	}
 
-        final Cursor servers = dbHelper.fetchServer(id);
-        startManagingCursor(servers);
-
-        // Get rid of any data from previous connections.
-        UserList.clear();
-        ChannelList.clear();
-
-        // Add lobby.
-        ChannelListEntity entity = new ChannelListEntity();
-        entity.id = 0;
-        entity.name = "Lobby";
-        entity.type = ChannelList.CHANNEL;
-        entity.parentid = 0;
-        ChannelList.add(entity);
-        
-        Thread t = new Thread(new Runnable() {
-        	public void run() {
-		        if (VentriloInterface.login(
-		        		servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_SERVERS_HOSTNAME)) + ":" + Integer.toString(servers.getInt(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_SERVERS_PORTNUMBER))),
-		        		servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_SERVERS_USERNAME)),
-		        		servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_SERVERS_PASSWORD)),
-		        		servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_SERVERS_PHONETIC)))) {
-		        	int serverid = servers.getInt(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_SERVERS_ROWID));
-		        	dialog.dismiss();
-		            // Start receiving packets.
-		        	startRecvThread();
-		        	
-		        	startActivityForResult(new Intent(ServerList.this, ServerView.class).putExtra("serverid", serverid), ACTIVITY_CONNECT);
-		        	
-		            Intent notificationIntent = new Intent(ServerList.this, ServerView.class);
-		            notificationIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-		            Notification notification = new Notification(R.drawable.notification, "Connected to server", System.currentTimeMillis());
-		        	notification.setLatestEventInfo(getApplicationContext(), "Mangler", "Connected to " + servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_SERVERS_SERVERNAME)), PendingIntent.getActivity(ServerList.this, 0, notificationIntent, 0));
-		            notification.flags = Notification.FLAG_ONGOING_EVENT;
-		        	notificationManager.notify(ONGOING_NOTIFICATION, notification);
-		        } else {
-		        	dialog.dismiss();
-		        	VentriloEventData data = new VentriloEventData();
-		        	VentriloInterface.error(data);
-		        	Intent broadcastIntent = new Intent(ServerList.SERVERLIST_NOTIFICATION);
-		        	broadcastIntent.putExtra("notification", "Connection to server failed:\n" + EventService.StringFromBytes(data.error.message));
-		        	sendBroadcast(broadcastIntent);
-		        }
-		    }
-    	});
-        t.setPriority(10);
-        t.start();
-    }
-
-    private void startRecvThread() {
-    	Runnable recvRunnable = new Runnable() {
-    		public void run() {
-    			while (VentriloInterface.recv());
-    		}
-    	};
-    	(new Thread(recvRunnable)).start();
-    }
-
-	private BroadcastReceiver notificationReceiver = new BroadcastReceiver() {
-		public void onReceive(Context context, Intent intent) {
-			Toast.makeText(ServerList.this, intent.getStringExtra("notification"), Toast.LENGTH_LONG).show();
-		}
-	};
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent intent) {
@@ -236,9 +155,6 @@ public class ServerList extends ListActivity {
         if (requestCode == ACTIVITY_CONNECT) {
         	VentriloInterface.logout();
         }
-        
-        notificationManager.cancelAll();
-        
         fillData();
     }
 }

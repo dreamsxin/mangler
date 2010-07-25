@@ -1,5 +1,6 @@
 package org.mangler.android;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 
 public class ChannelListEntity {
@@ -17,10 +18,7 @@ public class ChannelListEntity {
 	public int passwordProtected = 0;
 	public short parentid = 0;
 	public int xmitStatus = R.drawable.transmit_off;
-	
-	public static String stringFromBytes(byte[] bytes) {
-    	return new String(bytes, 0, (new String(bytes).indexOf(0)));
-	}
+
 	
 	public ChannelListEntity(HashMap<String, Object> entity) {
 		type = Integer.parseInt(entity.get("type").toString());
@@ -58,10 +56,26 @@ public class ChannelListEntity {
 				passwordProtected = VentriloInterface.channelrequirespassword(id);
 				break;
 		}
-		
+	}
+	
+	public ChannelListEntity(ArrayList<String> a) {
+		type = Integer.parseInt(a.get(0));
+		id = Short.parseShort(a.get(1));
+		name = a.get(2);
+		phonetic = a.get(3);
+		url = a.get(4);
+		comment = a.get(5);
+		indent = a.get(6);
+		passwordProtected = Integer.parseInt(a.get(7));
+		parentid = Short.parseShort(a.get(8));
+		xmitStatus = Integer.parseInt(a.get(9));
 	}
 	
 	public ChannelListEntity() {
+	}
+	
+	public static String stringFromBytes(byte[] bytes) {
+		return new String(bytes, 0, (new String(bytes).indexOf(0)));
 	}
 
 	public HashMap<String, Object> toHashMap() {
@@ -77,5 +91,20 @@ public class ChannelListEntity {
 		entity.put("parentid", parentid);
 		entity.put("xmitStatus", xmitStatus);
 		return entity;
+	}
+	
+	public ArrayList<String> serialize() {
+		ArrayList<String> a = new ArrayList<String>();
+		a.add(String.valueOf(type));
+		a.add(String.valueOf(id));
+		a.add(name);
+		a.add(phonetic);
+		a.add(url);
+		a.add(comment);
+		a.add(indent);
+		a.add(String.valueOf(passwordProtected));
+		a.add(String.valueOf(parentid));
+		a.add(String.valueOf(xmitStatus));
+		return a;
 	}
 }

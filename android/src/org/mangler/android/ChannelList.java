@@ -32,9 +32,6 @@ import java.util.ListIterator;
 import android.util.Log;
 
 public class ChannelList {
-	
-	static final int USER = 1;
-	static final int CHANNEL = 2;
 
 	public static ArrayList<HashMap<String, Object>> data = new ArrayList<HashMap<String, Object>>();
 	
@@ -46,7 +43,7 @@ public class ChannelList {
 		for (int ctr = 0; ctr < getDepth(entity.parentid)+1 && entity.id != 0; ctr++) {
 			indent = "    " + indent;
 		}
-		if (entity.type == USER) {
+		if (entity.type == ChannelListEntity.USER) {
 			entity.xmitStatus = R.drawable.xmit_off;
 		} else {
 			entity.xmitStatus = R.drawable.xmit_clear;
@@ -56,7 +53,7 @@ public class ChannelList {
 		if (entity.id == 0) {
 			data.add(entity.toHashMap());
 		} else {
-			if (entity.type == USER) {
+			if (entity.type == ChannelListEntity.USER) {
 				data.add(getLocation(entity.parentid)+1, entity.toHashMap());
 			} else {
 				data.add(getLocation(entity.parentid)+getChildCount(entity.parentid)+1, entity.toHashMap());

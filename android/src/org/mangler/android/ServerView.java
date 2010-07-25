@@ -27,12 +27,17 @@ package org.mangler.android;
 import java.util.HashMap;
 
 import android.app.AlertDialog;
+import android.app.Notification;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
+import android.app.ProgressDialog;
 import android.app.TabActivity;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.database.Cursor;
 import android.media.AudioManager;
 import android.os.Bundle;
 import android.os.PowerManager;
@@ -115,6 +120,10 @@ public class ServerView extends TabActivity {
 	// WakeLock
 	private PowerManager.WakeLock wl;
 	
+	// Notifications
+	private NotificationManager notificationManager;
+	private static final int ONGOING_NOTIFICATION = 1;
+	
     @Override
     public void onCreate(Bundle savedInstanceState) {
     	super.onCreate(savedInstanceState);
@@ -126,7 +135,9 @@ public class ServerView extends TabActivity {
         setContentView(R.layout.server_view);
         
         // Get the server id that we're connected to and set up the database adapter
-        serverid = getIntent().getIntExtra("serverid", 0);
+        serverid = getIntent().getExtras().getInt("serverid", 0);
+        Log.e("mangler", "got server id " + serverid);
+        
         dbHelper = new ManglerDBAdapter(this);
         dbHelper.open();
         
@@ -191,7 +202,13 @@ public class ServerView extends TabActivity {
 		}
 		
 		registerForContextMenu(((ListView)findViewById(R.id.channelList)));
-    }
+		
+		notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+
+		if (! VentriloInterface.isloggedin()) {
+			connectToServer();
+		}
+	}
     
     @Override
     protected void onResume() {
@@ -236,6 +253,8 @@ public class ServerView extends TabActivity {
     @Override
     public void onDestroy() {
     	super.onDestroy();
+    	
+        notificationManager.cancelAll();
 
     	if (Recorder.recording()) {			
     		Recorder.stop();
@@ -363,7 +382,7 @@ public class ServerView extends TabActivity {
 	private BroadcastReceiver userReceiver = new BroadcastReceiver() {
 		public void onReceive(Context context, Intent intent) {
 			String username = intent.getStringExtra("username");
-			int id = intent.getIntExtra("id", 0);
+			short  id = intent.getShortExtra("id", (short)0);
 			if (username != null) {
 				int level = dbHelper.getVolume(serverid, username);
 				VentriloInterface.setuservolume((short)id, level);
@@ -451,7 +470,7 @@ public class ServerView extends TabActivity {
 		public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
 			short channelid = 0;
 			int type = (Integer)((HashMap<String, Object>)(parent.getItemAtPosition(position))).get("type");
-			if (type == ChannelList.CHANNEL) {
+			if (type == ChannelListEntity.CHANNEL) {
 				channelid = (Short)((HashMap<String, Object>)(parent.getItemAtPosition(position))).get("id");
 			} else {
 				channelid = (Short)((HashMap<String, Object>)(parent.getItemAtPosition(position))).get("parentid");
@@ -495,22 +514,21 @@ public class ServerView extends TabActivity {
 	public void onCreateContextMenu(ContextMenu menu, View v, ContextMenuInfo menuInfo) {
 		super.onCreateContextMenu(menu, v, menuInfo);
 		AdapterContextMenuInfo cmi = (AdapterContextMenuInfo) menuInfo;
-		short id = Short.parseShort(ChannelList.data.get(cmi.position).get("id").toString());
-		int type = Integer.parseInt(ChannelList.data.get(cmi.position).get("type").toString());
-		String name = ChannelList.data.get(cmi.position).get("name").toString();
-		if (type == ChannelList.USER) {
-			if (id != VentriloInterface.getuserid()) {
+		
+		ChannelListEntity entity = new ChannelListEntity(ChannelList.data.get(cmi.position));
+		
+		if (entity.type == ChannelListEntity.USER) {
+			if (entity.id != VentriloInterface.getuserid()) {
 				// create the menu for other users
 				int itempos = 1;
 				boolean serveradmin = VentriloInterface.getpermission("serveradmin");
 				Log.d("mangler", "am i a server admin? " + serveradmin);
-				menu.setHeaderTitle(name);
+				menu.setHeaderTitle(entity.name);
 				menu.add(Menu.NONE, CM_OPTION_VOLUME, itempos++, "Set Volume");
-				if (ChannelList.data.get(cmi.position).get("comment").toString() != "" ||
-					ChannelList.data.get(cmi.position).get("url").toString() != "") {
-					menu.add(Menu.NONE, CM_OPTION_COMMENT, itempos++, "View Comment/URL");
+				if (entity.comment != "" ||	entity.url != "") {
+					menu.add(Menu.NONE, CM_OPTION_COMMENT, itempos++, "View Comment/URL").setEnabled(false);
 				}
-				if (dbHelper.getVolume(serverid, name) == 0) {
+				if (dbHelper.getVolume(serverid, entity.name) == 0) {
 					menu.add(Menu.NONE, CM_OPTION_MUTE, itempos++, "Unmute");
 				} else {
 					menu.add(Menu.NONE, CM_OPTION_MUTE, itempos++, "Mute");
@@ -675,4 +693,69 @@ public class ServerView extends TabActivity {
 			return false;
 		}
 	};
+	
+	private void connectToServer() {
+		final ProgressDialog dialog = ProgressDialog.show(this, "", "Connecting. Please wait...", true);
+
+		final Cursor servers = dbHelper.fetchServer(serverid);
+		startManagingCursor(servers);
+		final String hostname = servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_SERVERS_HOSTNAME));
+		final String port = Integer.toString(servers.getInt(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_SERVERS_PORTNUMBER)));
+		final String username = servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_SERVERS_USERNAME));
+		final String password = servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_SERVERS_PASSWORD));
+		final String phonetic = servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_SERVERS_PHONETIC));
+		
+		
+		// Get rid of any data from previous connections.
+		UserList.clear();
+		ChannelList.clear();
+
+		// Add lobby.
+		ChannelListEntity entity = new ChannelListEntity();
+		entity.id = 0;
+		entity.name = "Lobby";
+		entity.type = ChannelListEntity.CHANNEL;
+		entity.parentid = 0;
+		ChannelList.add(entity);
+
+		Thread t = new Thread(new Runnable() {
+			public void run() {
+				if (VentriloInterface.login(
+						hostname + ":" + port, 
+						username, 
+						password, 
+						phonetic)) {
+					dialog.dismiss();
+					// Start receiving packets.
+					startRecvThread();
+
+					Intent notificationIntent = new Intent(ServerView.this, ServerView.class);
+					notificationIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+					Notification notification = new Notification(R.drawable.notification, "Connected to server", System.currentTimeMillis());
+					notification.setLatestEventInfo(getApplicationContext(), "Mangler", "Connected to " + servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_SERVERS_SERVERNAME)), PendingIntent.getActivity(ServerView.this, 0, notificationIntent, 0));
+					notification.flags = Notification.FLAG_ONGOING_EVENT;
+					notificationManager.notify(ONGOING_NOTIFICATION, notification);
+				} else {
+					dialog.dismiss();
+					VentriloEventData data = new VentriloEventData();
+					VentriloInterface.error(data);
+					Intent broadcastIntent = new Intent(NOTIFY_ACTION);
+					broadcastIntent.putExtra("notification", "Connection to server failed:\n" + EventService.StringFromBytes(data.error.message));
+					sendBroadcast(broadcastIntent);
+				}
+			}
+		});
+		t.setPriority(10);
+		t.start();
+	}
+
+	private void startRecvThread() {
+		Runnable recvRunnable = new Runnable() {
+			public void run() {
+				while (VentriloInterface.recv())
+					;
+			}
+		};
+		(new Thread(recvRunnable)).start();
+	}
 }

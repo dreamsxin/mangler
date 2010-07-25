@@ -28,8 +28,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 
-import android.util.Log;
-
 public class UserList {
 	
 	public static ArrayList<HashMap<String, Object>> data = new ArrayList<HashMap<String, Object>>();
