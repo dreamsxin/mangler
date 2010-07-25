@@ -197,6 +197,8 @@ public class EventService extends Service {
 	    				break;
 
 	    			case VentriloEvents.V3_EVENT_LOGIN_COMPLETE:
+	    				Log.e("mangler", "sending login complete");
+	    				sendBroadcast(new Intent(ServerView.LOGIN_COMPLETE_ACTION));
 	    				Recorder.rate(VentriloInterface.getchannelrate(VentriloInterface.getuserchannel(VentriloInterface.getuserid())));
 	    				break;
 

@@ -78,6 +78,7 @@ public class ServerView extends TabActivity {
 	public static final String CHATVIEW_ACTION			= "org.mangler.android.ChatViewAction";
 	public static final String NOTIFY_ACTION			= "org.mangler.android.NotifyAction";
 	public static final String TTS_NOTIFY_ACTION		= "org.mangler.android.TtsNotifyAction";
+	public static final String LOGIN_COMPLETE_ACTION	= "org.mangler.android.LoginCompleteAction";
 
 	// Events.
 	public static final int EVENT_CHAT_JOIN	  = 1;
@@ -156,6 +157,7 @@ public class ServerView extends TabActivity {
         registerReceiver(userReceiver, new IntentFilter(USERLIST_ACTION));
         registerReceiver(notifyReceiver, new IntentFilter(NOTIFY_ACTION));
         registerReceiver(ttsNotifyReceiver, new IntentFilter(TTS_NOTIFY_ACTION));
+        registerReceiver(loginCompleteReceiver, new IntentFilter(LOGIN_COMPLETE_ACTION));
 
         // Control listeners.
 	    ((EditText)findViewById(R.id.message)).setOnKeyListener(onChatMessageEnter);
@@ -179,13 +181,6 @@ public class ServerView extends TabActivity {
 				wl.acquire();
 			}
 		}
-		
-		// Set our xmit volume level
-		VentriloEventData userRet = new VentriloEventData();
-		VentriloInterface.getuser(userRet, VentriloInterface.getuserid());
-		int level = dbHelper.getVolume(serverid, new String(userRet.text.name, 0, (new String(userRet.text.name).indexOf(0))));
-		Log.e("mangler", "setting xmit volume to " + level);
-		VentriloInterface.setxmitvolume(level);
     }
     
     @Override
@@ -253,6 +248,7 @@ public class ServerView extends TabActivity {
         unregisterReceiver(userReceiver);
         unregisterReceiver(notifyReceiver);
         unregisterReceiver(ttsNotifyReceiver);
+        unregisterReceiver(loginCompleteReceiver);
     }
     
 
@@ -391,6 +387,18 @@ public class ServerView extends TabActivity {
 					ttsWrapper.speak(message);
 				}
 			}
+		}
+	};
+
+	private BroadcastReceiver loginCompleteReceiver = new BroadcastReceiver() {
+		public void onReceive(Context context, Intent intent) {			
+			Log.e("mangler", "received login complete");
+			// Set our xmit volume level
+			VentriloEventData userRet = new VentriloEventData();
+			VentriloInterface.getuser(userRet, VentriloInterface.getuserid());
+			int level = dbHelper.getVolume(serverid, new String(userRet.text.name, 0, (new String(userRet.text.name).indexOf(0))));
+			Log.e("mangler", "setting xmit volume to  " + level);
+			VentriloInterface.setxmitvolume(level);
 		}
 	};
 

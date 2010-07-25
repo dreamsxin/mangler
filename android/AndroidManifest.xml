@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
 	package="org.mangler.android"
-	android:versionCode="107"
-	android:versionName="1.0alpha7">
+	android:versionCode="108"
+	android:versionName="1.0alpha8">
 		<application
 			android:label="@string/app_name"
 			android:icon="@drawable/mangler_logo"
-			android:debuggable="true">
+			android:debuggable="false">
 
 				<activity android:label="@string/app_name" android:name="Main">
 						<intent-filter>
