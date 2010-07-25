@@ -38,7 +38,6 @@ import android.media.AudioManager;
 import android.os.Bundle;
 import android.os.PowerManager;
 import android.preference.PreferenceManager;
-import android.speech.tts.TextToSpeech;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.Menu;
@@ -96,7 +95,7 @@ public class ServerView extends TabActivity {
 	private SimpleAdapter userAdapter;
 	
 	// Text to Speech
-	TextToSpeech tts = null;
+	TTSWrapper ttsWrapper = null;
 
 	// State variables.
 	private boolean userInChat = false;
@@ -104,7 +103,7 @@ public class ServerView extends TabActivity {
 	
 	// WakeLock
 	private PowerManager.WakeLock wl;
-
+	
     @Override
     public void onCreate(Bundle savedInstanceState) {
     	super.onCreate(savedInstanceState);
@@ -126,11 +125,11 @@ public class ServerView extends TabActivity {
         // Volume controls.
         setVolumeControlStream(AudioManager.STREAM_MUSIC);
         
-        // Text to speech init
-        if (tts == null) {
-        	tts = new TextToSpeech(this, null);
+        // Text to speech init     
+        if (ttsWrapper == null) {
+        	ttsWrapper = TTSWrapper.getInstance(this);
         }
-
+        
         // Add tabs.
         TabHost tabhost = getTabHost();
         tabhost.addTab(tabhost.newTabSpec("talk").setContent(R.id.talkView).setIndicator("Talk"));
@@ -241,8 +240,9 @@ public class ServerView extends TabActivity {
     	if (wl.isHeld()) {
     		wl.release();
     	}
-    	if (tts != null) {
-    		tts.shutdown();
+    	    	
+    	if (ttsWrapper != null) {
+    		ttsWrapper.shutdown();
     	}
     	
     	dbHelper.close();
@@ -389,7 +389,10 @@ public class ServerView extends TabActivity {
 			boolean enable_tts = PreferenceManager.getDefaultSharedPreferences(getBaseContext()).getBoolean("enable_tts", false);
 			if (enable_tts) {
 				String message = intent.getExtras().getString("message");
-				tts.speak(message, TextToSpeech.QUEUE_ADD, null);
+				
+				if (ttsWrapper != null) {
+					ttsWrapper.speak(message);
+				}
 			}
 		}
 	};
