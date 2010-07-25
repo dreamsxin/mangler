@@ -25,6 +25,7 @@
 package org.mangler.android;
 
 import android.app.ListActivity;
+import android.app.NotificationManager;
 import android.content.Intent;
 import android.database.Cursor;
 import android.media.AudioManager;
@@ -54,6 +55,7 @@ public class ServerList extends ListActivity {
 
 	private ManglerDBAdapter dbHelper;
 	
+	private NotificationManager notificationManager;
 
 
     /** Called when the activity is first created. */
@@ -65,7 +67,6 @@ public class ServerList extends ListActivity {
         // Send crash reports to server
         ExceptionHandler.register(this, "http://www.mangler.org/errors/upload.php");
         
-        
         // Volume controls.
         setVolumeControlStream(AudioManager.STREAM_MUSIC);
 
@@ -73,6 +74,8 @@ public class ServerList extends ListActivity {
         dbHelper.open();
     	fillData();
         registerForContextMenu(getListView());
+		notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+        notificationManager.cancelAll();
     }
 
     @Override

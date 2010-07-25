@@ -73,7 +73,7 @@ import com.nullwire.trace.ExceptionHandler;
 
 public class ServerView extends TabActivity {
 	// Server ID that we're connected to
-	private static int serverid;
+	private static int serverid = -1;
 
 	// Database connection
 	private ManglerDBAdapter dbHelper;
@@ -135,7 +135,9 @@ public class ServerView extends TabActivity {
         setContentView(R.layout.server_view);
         
         // Get the server id that we're connected to and set up the database adapter
-        serverid = getIntent().getExtras().getInt("serverid", 0);
+        if (serverid < 0) {
+        	serverid = getIntent().getExtras().getInt("serverid", 0);
+        }
         Log.e("mangler", "got server id " + serverid);
         
         dbHelper = new ManglerDBAdapter(this);
@@ -229,6 +231,7 @@ public class ServerView extends TabActivity {
     protected void onSaveInstanceState(Bundle outState) {
     	outState.putString("chatmessages", ((TextView)findViewById(R.id.messages)).getText().toString());
     	outState.putBoolean("chatopen", userInChat);
+    	outState.putInt("serverid", serverid);
     	super.onSaveInstanceState(outState);
     }
     
@@ -254,8 +257,6 @@ public class ServerView extends TabActivity {
     public void onDestroy() {
     	super.onDestroy();
     	
-        notificationManager.cancelAll();
-
     	if (Recorder.recording()) {			
     		Recorder.stop();
     	}
