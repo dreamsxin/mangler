@@ -3,10 +3,10 @@
  *
  * This file is part of Mangler.
  *
- * $LastChangedDate: 2010-06-18 23:17:29 +0200 (Fri, 18 Jun 2010) $
- * $Revision: 945 $
- * $LastChangedBy: Haxar $
- * $URL: http://svn.mangler.org/mangler/trunk/android/src/org/mangler/Recorder.java $
+ * $LastChangedDate$
+ * $Revision$
+ * $LastChangedBy$
+ * $URL$
  *
  * Mangler is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by

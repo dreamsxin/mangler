@@ -3,10 +3,10 @@
  *
  * This file is part of Mangler.
  *
- * $LastChangedDate: 2010-06-20 07:49:37 +0200 (Sun, 20 Jun 2010) $
- * $Revision: 950 $
- * $LastChangedBy: Haxar $
- * $URL: http://svn.mangler.org/mangler/trunk/android/src/org/mangler/EventService.java $
+ * $LastChangedDate$
+ * $Revision$
+ * $LastChangedBy$
+ * $URL$
  *
  * Mangler is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -138,155 +138,7 @@ public class EventService extends Service {
     						talkState.put(data.user.id, OFF);
     					}
     					break;
-    					
-	    			case VentriloEvents.V3_EVENT_CHAT_JOIN:
-						ChannelListEntity entity = new ChannelListEntity(ChannelListEntity.USER, data.user.id);
-						break;
 						
-    				/*
-    				 * All of this UI stuff needs to be moved into ServerView
-    				 *
-	    			case VentriloEvents.V3_EVENT_CHAT_MESSAGE:
-	    				VentriloInterface.getuser(data, data.user.id);
-	    				broadcastIntent = new Intent(ServerView.CHATVIEW_ACTION);
-	    				broadcastIntent.putExtra("event", ServerView.EVENT_CHAT_MSG);
-	    				broadcastIntent.putExtra("username", StringFromBytes(data.text.name));
-	    				broadcastIntent.putExtra("message", StringFromBytes(data.data.chatmessage));
-	    			    sendBroadcast(broadcastIntent);
-	    				break;
-
-	    			case VentriloEvents.V3_EVENT_CHAT_JOIN:
-	    				VentriloInterface.getuser(data, data.user.id);
-	    				broadcastIntent = new Intent(ServerView.CHATVIEW_ACTION);
-	    				broadcastIntent.putExtra("event", ServerView.EVENT_CHAT_JOIN);
-	    				broadcastIntent.putExtra("username", StringFromBytes(data.text.name));
-	    			    sendBroadcast(broadcastIntent);
-	    				break;
-
-	    			case VentriloEvents.V3_EVENT_CHAT_LEAVE:
-	    				VentriloInterface.getuser(data, data.user.id);
-	    				broadcastIntent = new Intent(ServerView.CHATVIEW_ACTION);
-	    				broadcastIntent.putExtra("event", ServerView.EVENT_CHAT_LEAVE);
-	    				broadcastIntent.putExtra("username", StringFromBytes(data.text.name));
-	    			    sendBroadcast(broadcastIntent);
-	    				break;
-
-	    			case VentriloEvents.V3_EVENT_USER_CHAN_MOVE:
-    					if (data.user.id == VentriloInterface.getuserid()) {
-   							Player.clear();
-    						Recorder.rate(VentriloInterface.getchannelrate(data.channel.id));
-    						String message;
-    						if (data.channel.id == 0) {
-    							message = "Changed to Lobby";
-    						} else {
-    							VentriloEventData channelData = new VentriloEventData();
-        						VentriloInterface.getchannel(channelData, data.channel.id);
-        						message = "Changed to " + StringFromBytes(channelData.text.name);
-    						}
-    	    				broadcastIntent = new Intent(ServerView.NOTIFY_ACTION);
-    	    				broadcastIntent.putExtra("message", message);
-    	    			    sendBroadcast(broadcastIntent);
-    					} else {
-    	    				if (data.channel.id == VentriloInterface.getuserchannel(VentriloInterface.getuserid())) {
-    	    					broadcastIntent = new Intent(ServerView.TTS_NOTIFY_ACTION);
-    	    					String phonetic = getPhonetic(data.user.id);
-    	    					broadcastIntent.putExtra("message", phonetic + " has joined the channel.");
-    	    					sendBroadcast(broadcastIntent);
-    	    					UserList.addUser(data.user.id, StringFromBytes(data.text.name), data.channel.id);
-    	    					sendBroadcast(new Intent(ServerView.USERLIST_ACTION));
-    	    				} else if (UserList.getChannel(data.user.id) == VentriloInterface.getuserchannel(VentriloInterface.getuserid())) {
-    	    					broadcastIntent = new Intent(ServerView.TTS_NOTIFY_ACTION);
-    	    					String phonetic = getPhonetic(data.user.id);
-    	    					broadcastIntent.putExtra("message", phonetic+ " has left the channel.");
-    	    					sendBroadcast(broadcastIntent);
-    	    					UserList.delUser(data.user.id);
-    	    					sendBroadcast(new Intent(ServerView.USERLIST_ACTION));
-    	    				}
-    						Player.close(data.user.id);
-    					}
-    					ChannelListEntity entity = new ChannelListEntity(ChannelList.get(data.user.id));
-    					entity.parentid = data.channel.id;
-    					ChannelList.remove(entity.id);
-    					ChannelList.add(entity);
-    					sendBroadcast(new Intent(ServerView.USERLIST_ACTION));
-	    			    sendBroadcast(new Intent(ServerView.CHANNELLIST_ACTION));
-	    				break;
-	    				
-	    			case VentriloEvents.V3_EVENT_USER_LOGIN:
-	    				if (data.user.id != 0) {
-	    					int flags = data.flags;
-	    					entity = new ChannelListEntity(ChannelListEntity.USER, data.user.id);
-		    				Log.e("mangler", "got user login event for " + entity.name);
-		    				ChannelList.add(entity);
-		    				if (entity.parentid == VentriloInterface.getuserchannel(VentriloInterface.getuserid())) {
-		    					UserList.addUser(entity.id, entity.name, entity.parentid);
-		    				}
-		    				broadcastIntent =  new Intent(ServerView.USERLIST_ACTION);
-		    				broadcastIntent.putExtra("username", entity.name);
-	    			    	broadcastIntent.putExtra("id", entity.id);
-		    			    sendBroadcast(broadcastIntent);
-		    			    sendBroadcast(new Intent(ServerView.CHANNELLIST_ACTION));
-		    			    Log.d("mangler", "user login event flags: " + flags);
-		    			    // user was added from userlist sent at login (existing user)
-		    			    // from lv3: #define V3_LOGIN_FLAGS_EXISTING (1 << 0)
-		    			    if ((flags & (1 << 0)) == 0) {
-		    			    	broadcastIntent = new Intent(ServerView.TTS_NOTIFY_ACTION);
-	    						String phonetic = getPhonetic(data.user.id);
-	    						broadcastIntent.putExtra("message", phonetic + " has logged in.");
-	    						sendBroadcast(broadcastIntent);
-		    			    }
-	    				}
-	    				break;
-
-
-	    				UserList.delUser(data.user.id);
-	    			    sendBroadcast(new Intent(ServerView.USERLIST_ACTION));
-	    				ChannelList.remove(data.user.id);
-	    			    sendBroadcast(new Intent(ServerView.CHANNELLIST_ACTION)
-	    			    	.putExtra("id", data.user.id)
-	    			    	.putExtra("action", ServerView.EVENT_USER_LOGIN)
-	    			    );
-	    			    // the phonetic isn't available after the user logged out :/
-    					String phonetic = StringFromBytes(data.text.name);
-    					broadcastIntent = new Intent(ServerView.TTS_NOTIFY_ACTION);
-    					broadcastIntent.putExtra("message", phonetic + " has logged out.");
-    					sendBroadcast(broadcastIntent);
-	    				break;
-
-
-	    				break;
-
-
-	    				UserList.updateStatus(data.user.id, R.drawable.transmit_on);
-	    				sendBroadcast(new Intent(ServerView.USERLIST_ACTION));
-	    				ChannelList.updateStatus(data.user.id, R.drawable.xmit_on);
-	    				sendBroadcast(new Intent(ServerView.CHANNELLIST_ACTION));
-	    				break;
-
-	    			case VentriloEvents.V3_EVENT_USER_TALK_START:
-	    				UserList.updateStatus(data.user.id, R.drawable.transmit_init);
-	    				sendBroadcast(new Intent(ServerView.USERLIST_ACTION));
-	    				ChannelList.updateStatus(data.user.id, R.drawable.xmit_init);
-	    				sendBroadcast(new Intent(ServerView.CHANNELLIST_ACTION));
-	    				break;
-	    				
-
-	    				UserList.updateStatus(data.user.id, R.drawable.transmit_off);
-	    				sendBroadcast(new Intent(ServerView.USERLIST_ACTION));
-	    				ChannelList.updateStatus(data.user.id, R.drawable.xmit_off);
-	    				sendBroadcast(new Intent(ServerView.CHANNELLIST_ACTION));
-	    				break;
-
-	    			case VentriloEvents.V3_EVENT_CHAN_ADD:
-	    				entity = new ChannelListEntity(ChannelListEntity.CHANNEL, data.channel.id);
-	    				ChannelList.add(entity);
-	    			    sendBroadcast(new Intent(ServerView.CHANNELLIST_ACTION)
-	    			    	.putStringArrayListExtra("entity", entity.serialize()));
-	    				break;
-
-	    			default:
-	    				Log.w("mangler", "Unhandled event type: " + Integer.toString(data.type));
-	    				*/
 	    		}
 	    		if (forwardToUI) {
 	    			// delete these massive elements before queuing.  The UI should not need them

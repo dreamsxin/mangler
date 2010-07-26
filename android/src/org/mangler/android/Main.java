@@ -3,10 +3,10 @@
  *
  * This file is part of Mangler.
  *
- * $LastChangedDate: 2010-07-06 17:50:28 +0200 (Tue, 06 Jul 2010) $
- * $Revision: 958 $
- * $LastChangedBy: killy $
- * $URL: http://svn.mangler.org/mangler/trunk/android/src/org/mangler/Main.java $
+ * $LastChangedDate$
+ * $Revision$
+ * $LastChangedBy$
+ * $URL$
  *
  * Mangler is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -80,7 +80,7 @@ public class Main extends Activity {
     	unbindService(serviceconnection);
     }
     
-	public final ServiceConnection serviceconnection = new ServiceConnection() {
+	private final ServiceConnection serviceconnection = new ServiceConnection() {
 		public void onServiceConnected(ComponentName className, IBinder service) {
 			// eventservice = ((EventService.EventBinder)service).getService();
 		}

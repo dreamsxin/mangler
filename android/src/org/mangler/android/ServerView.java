@@ -3,10 +3,10 @@
  *
  * This file is part of Mangler.
  *
- * $LastChangedDate: 2010-07-06 17:50:28 +0200 (Tue, 06 Jul 2010) $
- * $Revision: 958 $
- * $LastChangedBy: killy $
- * $URL: http://svn.mangler.org/mangler/trunk/android/src/org/mangler/ServerView.java $
+ * $LastChangedDate$
+ * $Revision$
+ * $LastChangedBy$
+ * $URL$
  *
  * Mangler is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -74,6 +74,7 @@ import com.nullwire.trace.ExceptionHandler;
 public class ServerView extends TabActivity {
 	// Server ID that we're connected to
 	private static int serverid = -1;
+	public String servername = "Server View";
 
 	// Database connection
 	private ManglerDBAdapter dbHelper;
@@ -175,6 +176,8 @@ public class ServerView extends TabActivity {
     
 	    // Restore state.
 	    if(savedInstanceState != null) {
+	    	servername = savedInstanceState.getString("servername");
+	    	this.setTitle(servername + " - Ping: checking");
 	    	userInChat = savedInstanceState.getBoolean("chatopen");
 	    	chatMessages.setText(savedInstanceState.getString("chatmessages"));
 	    	((EditText)findViewById(R.id.message)).setEnabled(userInChat);
@@ -221,6 +224,7 @@ public class ServerView extends TabActivity {
 
     @Override
     protected void onSaveInstanceState(Bundle outState) {
+    	outState.putString("servername", servername);
     	outState.putString("chatmessages", ((TextView)findViewById(R.id.messages)).getText().toString());
     	outState.putBoolean("chatopen", userInChat);
     	outState.putInt("serverid", serverid);
@@ -713,12 +717,15 @@ public class ServerView extends TabActivity {
 
 		final Cursor servers = dbHelper.fetchServer(serverid);
 		startManagingCursor(servers);
+		final String servername = servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_SERVERS_SERVERNAME));
+		this.servername = servername;
 		final String hostname = servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_SERVERS_HOSTNAME));
 		final String port = Integer.toString(servers.getInt(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_SERVERS_PORTNUMBER)));
 		final String username = servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_SERVERS_USERNAME));
 		final String password = servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_SERVERS_PASSWORD));
 		final String phonetic = servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_SERVERS_PHONETIC));
 		
+		this.setTitle(servername + " - Ping: checking");
 		
 		// Get rid of any data from previous connections.
 		UserList.clear();

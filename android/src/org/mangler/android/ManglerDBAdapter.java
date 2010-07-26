@@ -3,10 +3,10 @@
  *
  * This file is part of Mangler.
  *
- * $LastChangedDate: 2010-06-13 00:25:11 +0200 (Sun, 13 Jun 2010) $
- * $Revision: 918 $
- * $LastChangedBy: ekilfoil $
- * $URL: http://svn.mangler.org/mangler/trunk/android/src/org/mangler/ManglerDBAdapter.java $
+ * $LastChangedDate$
+ * $Revision$
+ * $LastChangedBy$
+ * $URL$
  *
  * Mangler is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by

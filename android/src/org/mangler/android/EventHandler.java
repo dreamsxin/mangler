@@ -3,10 +3,10 @@
  *
  * This file is part of Mangler.
  *
- * $LastChangedDate: 2010-06-20 07:49:37 +0200 (Sun, 20 Jun 2010) $
- * $Revision: 950 $
- * $LastChangedBy: Haxar $
- * $URL: http://svn.mangler.org/mangler/trunk/android/src/org/mangler/EventService.java $
+ * $LastChangedDate$
+ * $Revision$
+ * $LastChangedBy$
+ * $URL$
  *
  * Mangler is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -53,7 +53,7 @@ public class EventHandler {
 					
 				case VentriloEvents.V3_EVENT_CHAT_LEAVE:
 					entity = new ChannelListEntity(ChannelListEntity.USER, data.user.id);
-					sv.addChatUser(entity.name);
+					sv.removeChatUser(entity.name);
 					break;
 					
 				case VentriloEvents.V3_EVENT_CHAN_ADD:
@@ -135,60 +135,17 @@ public class EventHandler {
 					ChannelList.updateStatus(data.user.id, R.drawable.xmit_off);
 					sv.notifyAdaptersDataSetChanged();
 					break;
-
-
+					
+				case VentriloEvents.V3_EVENT_PING:
+					if (data.ping < 65535) {
+						sv.setTitle(sv.servername + " - Ping: " + data.ping + "ms");
+					}
+					break;
+					
 				default:
 					Log.d("mangler", "Unhandled event type: " + Integer.toString(data.type));
 					break;
-			
-			
-			/*
-
-
-
-			case VentriloEvents.V3_EVENT_LOGIN_COMPLETE:
-				Log.e("mangler", "sending login complete");
-				sendBroadcast(new Intent(ServerView.LOGIN_COMPLETE_ACTION));
-				Recorder.rate(VentriloInterface.getchannelrate(VentriloInterface.getuserchannel(VentriloInterface.getuserid())));
-				break;
-
-			case VentriloEvents.V3_EVENT_PLAY_AUDIO:
-				Player.write(data.user.id, data.pcm.rate, data.pcm.channels, data.data.sample, data.pcm.length);
-				UserList.updateStatus(data.user.id, R.drawable.transmit_on);
-				sendBroadcast(new Intent(ServerView.USERLIST_ACTION));
-				ChannelList.updateStatus(data.user.id, R.drawable.xmit_on);
-				sendBroadcast(new Intent(ServerView.CHANNELLIST_ACTION));
-				break;
-
-			case VentriloEvents.V3_EVENT_USER_TALK_START:
-				UserList.updateStatus(data.user.id, R.drawable.transmit_init);
-				sendBroadcast(new Intent(ServerView.USERLIST_ACTION));
-				ChannelList.updateStatus(data.user.id, R.drawable.xmit_init);
-				sendBroadcast(new Intent(ServerView.CHANNELLIST_ACTION));
-				break;
-
-			case VentriloEvents.V3_EVENT_USER_TALK_END:
-			case VentriloEvents.V3_EVENT_USER_TALK_MUTE:
-			case VentriloEvents.V3_EVENT_USER_GLOBAL_MUTE_CHANGED:
-			case VentriloEvents.V3_EVENT_USER_CHANNEL_MUTE_CHANGED:
-				Player.close(data.user.id);
-				UserList.updateStatus(data.user.id, R.drawable.transmit_off);
-				sendBroadcast(new Intent(ServerView.USERLIST_ACTION));
-				ChannelList.updateStatus(data.user.id, R.drawable.xmit_off);
-				sendBroadcast(new Intent(ServerView.CHANNELLIST_ACTION));
-				break;
-
-			case VentriloEvents.V3_EVENT_CHAN_ADD:
-				entity = new ChannelListEntity(ChannelListEntity.CHANNEL, data.channel.id);
-				ChannelList.add(entity);
-				sendBroadcast(new Intent(ServerView.CHANNELLIST_ACTION).putStringArrayListExtra("entity", entity.serialize()));
-				break;
-
-			default:
-				Log.w("mangler", "Unhandled event type: " + Integer.toString(data.type));
-			*/
 			}
-			
 		}
 	}
 }
