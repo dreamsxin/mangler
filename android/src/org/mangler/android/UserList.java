@@ -27,6 +27,7 @@ package org.mangler.android;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.ListIterator;
 
 public class UserList {
 	
@@ -45,14 +46,24 @@ public class UserList {
 		data.clear();
 	}
 	
-	public static void addUser(short userid, String username, short channelid) {
+	public static void addUser(ChannelListEntity entity) {
 			HashMap<String, Object> user = new HashMap<String, Object>();
 			user.put("userstatus", R.drawable.transmit_off);
-			user.put("userid", userid);
-			user.put("username", username);
-			user.put("channelid", channelid);
-			user.put("channelname", ChannelList.get(channelid).get("name").toString().trim());
+			user.put("userid", entity.id);
+			user.put("username", entity.name);
+			user.put("channelid", entity.parentid);
+			user.put("channelname", ChannelList.get(entity.parentid).get("name").toString().trim());
 			data.add(user);
+	}
+	
+	public static void populate(short channelid) {
+		clear();
+		for(ListIterator<HashMap<String, Object>> iterator = ChannelList.data.listIterator(); iterator.hasNext(); ) {
+			ChannelListEntity entity = new ChannelListEntity(iterator.next());
+			if(entity.parentid == channelid) {	
+				addUser(entity);
+			}
+		}
 	}
 	
 	public static void updateStatus(short userid, int status) {

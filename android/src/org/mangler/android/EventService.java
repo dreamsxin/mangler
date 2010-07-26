@@ -49,100 +49,94 @@ public class EventService extends Service {
 		return binder;
 	}
 
-    @Override
-    public void onCreate() {
-    	eventQueue = new ConcurrentLinkedQueue<VentriloEventData>();
-    	running = true;
-    	Thread t = new Thread(eventRunnable);
-        t.setPriority(10);
-        t.start();
-    }
+	@Override
+	public void onCreate() {
+		eventQueue = new ConcurrentLinkedQueue<VentriloEventData>();
+		running = true;
+		Thread t = new Thread(eventRunnable);
+		t.setPriority(10);
+		t.start();
+	}
 
-    @Override
-    public void onDestroy() {
-    	running = false;
-    }
+	@Override
+	public void onDestroy() {
+		running = false;
+	}
 
-    public static String StringFromBytes(byte[] bytes) {
-    	return new String(bytes, 0, (new String(bytes).indexOf(0)));
-    }
-    
+	public static String StringFromBytes(byte[] bytes) {
+		return new String(bytes, 0, (new String(bytes).indexOf(0)));
+	}
 
-    private Runnable eventRunnable = new Runnable() {
-
-    	
+	private Runnable eventRunnable = new Runnable() {
 
 		public void run() {
 			boolean forwardToUI = true;
-    		final int INIT = 0;
-    		final int ON = 1;
-    		final int OFF = 2;
-    		HashMap<Short, Integer> talkState = new HashMap<Short, Integer>();
-	    	while (running) {
-	    		forwardToUI = true;
-	    		
-	    		VentriloEventData data = new VentriloEventData();
-	    		VentriloInterface.getevent(data);
+			final int INIT = 0;
+			final int ON = 1;
+			final int OFF = 2;
+			HashMap<Short, Integer> talkState = new HashMap<Short, Integer>();
+			while (running) {
+				forwardToUI = true;
 
-	    		switch (data.type) {
-    				case VentriloEvents.V3_EVENT_USER_LOGOUT:
-    					Player.close(data.user.id);
-    					talkState.put(data.user.id, OFF);
-    					break;
-    					
-	    			case VentriloEvents.V3_EVENT_LOGIN_COMPLETE:
-	    				Recorder.rate(VentriloInterface.getchannelrate(VentriloInterface.getuserchannel(VentriloInterface.getuserid())));
-    					break;
-    					
-	    			case VentriloEvents.V3_EVENT_USER_TALK_START:
-	    				talkState.put(data.user.id, INIT);
-	    				break;
-	    				
-	    			case VentriloEvents.V3_EVENT_PLAY_AUDIO:
-	    				Player.write(data.user.id, data.pcm.rate, data.pcm.channels, data.data.sample, data.pcm.length);
-	    				// Only forward the first play audio event to the UI
-	    				if (talkState.get(data.user.id) == OFF) {
-		    				talkState.put(data.user.id, ON);
-	    					forwardToUI = false;
-	    				}
-	    				break;
-	    				
-	    			case VentriloEvents.V3_EVENT_USER_TALK_END:
-	    			case VentriloEvents.V3_EVENT_USER_TALK_MUTE:
-	    			case VentriloEvents.V3_EVENT_USER_GLOBAL_MUTE_CHANGED:
-	    			case VentriloEvents.V3_EVENT_USER_CHANNEL_MUTE_CHANGED:
-	    				Player.close(data.user.id);
-    					talkState.put(data.user.id, OFF);
-	    				break;
-	    				
-	    			case VentriloEvents.V3_EVENT_USER_CHAN_MOVE:
-    					if (data.user.id == VentriloInterface.getuserid()) {
-   							Player.clear();
-    						Recorder.rate(VentriloInterface.getchannelrate(data.channel.id));
-    						talkState.put(data.user.id, OFF);
-    					} else {
-    						Player.close(data.user.id);
-    						talkState.put(data.user.id, OFF);
-    					}
-    					break;
-						
-	    		}
-	    		if (forwardToUI) {
-	    			// delete these massive elements before queuing.  The UI should not need them
-	    			//data.data.sample = null;
-	    			//data.data.motd = null;
-	    			
-	    			eventQueue.add(data);
-    				sendBroadcast(new Intent(ServerView.EVENT_ACTION));
-	    		}
-	    	}
-	    	Player.clear();
-	    	Recorder.stop();
+				VentriloEventData data = new VentriloEventData();
+				VentriloInterface.getevent(data);
+
+				// Process audio packets here and let everything else queue up
+				// for the UI thread
+				switch (data.type) {
+					case VentriloEvents.V3_EVENT_USER_LOGOUT:
+						Player.close(data.user.id);
+						talkState.put(data.user.id, OFF);
+						break;
+
+					case VentriloEvents.V3_EVENT_LOGIN_COMPLETE:
+						Recorder.rate(VentriloInterface.getchannelrate(VentriloInterface.getuserchannel(VentriloInterface.getuserid())));
+						break;
+
+					case VentriloEvents.V3_EVENT_USER_TALK_START:
+						talkState.put(data.user.id, INIT);
+						break;
+
+					case VentriloEvents.V3_EVENT_PLAY_AUDIO:
+						Player.write(data.user.id, data.pcm.rate, data.pcm.channels, data.data.sample, data.pcm.length);
+						// Only forward the first play audio event to the UI
+						if (talkState.get(data.user.id) != ON) {
+							talkState.put(data.user.id, ON);
+						} else {
+						forwardToUI = false;
+						}
+						break;
+
+					case VentriloEvents.V3_EVENT_USER_TALK_END:
+					case VentriloEvents.V3_EVENT_USER_TALK_MUTE:
+					case VentriloEvents.V3_EVENT_USER_GLOBAL_MUTE_CHANGED:
+					case VentriloEvents.V3_EVENT_USER_CHANNEL_MUTE_CHANGED:
+						Player.close(data.user.id);
+						talkState.put(data.user.id, OFF);
+						break;
+
+					case VentriloEvents.V3_EVENT_USER_CHAN_MOVE:
+						if (data.user.id == VentriloInterface.getuserid()) {
+							Player.clear();
+							Recorder.rate(VentriloInterface.getchannelrate(data.channel.id));
+							talkState.put(data.user.id, OFF);
+						} else {
+							Player.close(data.user.id);
+							talkState.put(data.user.id, OFF);
+						}
+						break;
+				}
+				if (forwardToUI) {
+					eventQueue.add(data);
+					sendBroadcast(new Intent(ServerView.EVENT_ACTION));
+				}
+			}
+			Player.clear();
+			Recorder.stop();
 		}
-    };
-    
-    public static VentriloEventData getNext() {
-    	return eventQueue.poll();
-    }
+	};
 
+	public static VentriloEventData getNext() {
+		return eventQueue.poll();
+	}
 }

@@ -67,7 +67,7 @@ public class EventHandler {
 						entity = new ChannelListEntity(ChannelListEntity.USER, data.user.id);
 						ChannelList.add(entity);
 						if (entity.parentid == VentriloInterface.getuserchannel(VentriloInterface.getuserid())) {
-							UserList.addUser(entity.id, entity.name, entity.parentid);
+							UserList.addUser(entity);
 						}
 						sv.notifyAdaptersDataSetChanged();
 						// user was added from userlist sent at login (existing user)
@@ -81,10 +81,11 @@ public class EventHandler {
 				case VentriloEvents.V3_EVENT_USER_CHAN_MOVE:
 					entity = new ChannelListEntity(ChannelListEntity.USER, data.user.id);
 					if (entity.id == VentriloInterface.getuserid()) {
+						UserList.populate(entity.parentid);
+						UserList.addUser(entity);
 						Player.clear();
 						Recorder.rate(VentriloInterface.getchannelrate(data.channel.id));
 						if (data.channel.id == 0) {
-							UserList.addUser(data.user.id, entity.name, data.channel.id);
 							Toast.makeText(sv, "Changed to Lobby", Toast.LENGTH_SHORT).show();
 						} else {
 							entity = new ChannelListEntity(ChannelListEntity.CHANNEL, data.channel.id);
@@ -93,7 +94,7 @@ public class EventHandler {
 					} else {
 						if (data.channel.id == VentriloInterface.getuserchannel(VentriloInterface.getuserid())) {
 							sv.ttsWrapper.speak((entity.phonetic != "" ? entity.phonetic : entity.name) + " has joined the channel");
-							UserList.addUser(data.user.id, entity.name, data.channel.id);
+							UserList.addUser(entity);
 						} else if (UserList.getChannel(data.user.id) == VentriloInterface.getuserchannel(VentriloInterface.getuserid())) {
 							sv.ttsWrapper.speak((entity.phonetic != "" ? entity.phonetic : entity.name) + " has left the channel");
 							UserList.delUser(data.user.id);
