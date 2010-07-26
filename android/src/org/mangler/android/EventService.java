@@ -24,6 +24,9 @@
 
 package org.mangler.android;
 
+import java.util.HashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
+
 import android.app.Service;
 import android.content.Intent;
 import android.os.Binder;
@@ -34,6 +37,7 @@ public class EventService extends Service {
 
 	private final IBinder binder = new EventBinder();
 	private boolean running = false;
+	private static ConcurrentLinkedQueue<VentriloEventData> eventQueue;
 
 	public class EventBinder extends Binder {
 		EventService getService() {
@@ -48,6 +52,7 @@ public class EventService extends Service {
 
     @Override
     public void onCreate() {
+    	eventQueue = new ConcurrentLinkedQueue<VentriloEventData>();
     	running = true;
     	Thread t = new Thread(eventRunnable);
         t.setPriority(10);
@@ -78,13 +83,69 @@ public class EventService extends Service {
 
     private Runnable eventRunnable = new Runnable() {
 
-    	private Intent broadcastIntent;
-    	private VentriloEventData data = new VentriloEventData();
+    	
 
 		public void run() {
+			boolean forwardToUI = true;
+    		final int INIT = 0;
+    		final int ON = 1;
+    		final int OFF = 2;
+    		HashMap<Short, Integer> talkState = new HashMap<Short, Integer>();
 	    	while (running) {
+	    		forwardToUI = true;
+	    		
+	    		VentriloEventData data = new VentriloEventData();
 	    		VentriloInterface.getevent(data);
+
 	    		switch (data.type) {
+    				case VentriloEvents.V3_EVENT_USER_LOGOUT:
+    					Player.close(data.user.id);
+    					talkState.put(data.user.id, OFF);
+    					break;
+    					
+	    			case VentriloEvents.V3_EVENT_LOGIN_COMPLETE:
+	    				Recorder.rate(VentriloInterface.getchannelrate(VentriloInterface.getuserchannel(VentriloInterface.getuserid())));
+    					break;
+    					
+	    			case VentriloEvents.V3_EVENT_USER_TALK_START:
+	    				talkState.put(data.user.id, INIT);
+	    				break;
+	    				
+	    			case VentriloEvents.V3_EVENT_PLAY_AUDIO:
+	    				Player.write(data.user.id, data.pcm.rate, data.pcm.channels, data.data.sample, data.pcm.length);
+	    				// Only forward the first play audio event to the UI
+	    				if (talkState.get(data.user.id) == OFF) {
+		    				talkState.put(data.user.id, ON);
+	    					forwardToUI = false;
+	    				}
+	    				break;
+	    				
+	    			case VentriloEvents.V3_EVENT_USER_TALK_END:
+	    			case VentriloEvents.V3_EVENT_USER_TALK_MUTE:
+	    			case VentriloEvents.V3_EVENT_USER_GLOBAL_MUTE_CHANGED:
+	    			case VentriloEvents.V3_EVENT_USER_CHANNEL_MUTE_CHANGED:
+	    				Player.close(data.user.id);
+    					talkState.put(data.user.id, OFF);
+	    				break;
+	    				
+	    			case VentriloEvents.V3_EVENT_USER_CHAN_MOVE:
+    					if (data.user.id == VentriloInterface.getuserid()) {
+   							Player.clear();
+    						Recorder.rate(VentriloInterface.getchannelrate(data.channel.id));
+    						talkState.put(data.user.id, OFF);
+    					} else {
+    						Player.close(data.user.id);
+    						talkState.put(data.user.id, OFF);
+    					}
+    					break;
+    					
+	    			case VentriloEvents.V3_EVENT_CHAT_JOIN:
+						ChannelListEntity entity = new ChannelListEntity(ChannelListEntity.USER, data.user.id);
+						break;
+						
+    				/*
+    				 * All of this UI stuff needs to be moved into ServerView
+    				 *
 	    			case VentriloEvents.V3_EVENT_CHAT_MESSAGE:
 	    				VentriloInterface.getuser(data, data.user.id);
 	    				broadcastIntent = new Intent(ServerView.CHATVIEW_ACTION);
@@ -177,12 +238,14 @@ public class EventService extends Service {
 	    				}
 	    				break;
 
-	    			case VentriloEvents.V3_EVENT_USER_LOGOUT:
-	    				Player.close(data.user.id);
+
 	    				UserList.delUser(data.user.id);
 	    			    sendBroadcast(new Intent(ServerView.USERLIST_ACTION));
 	    				ChannelList.remove(data.user.id);
-	    			    sendBroadcast(new Intent(ServerView.CHANNELLIST_ACTION));
+	    			    sendBroadcast(new Intent(ServerView.CHANNELLIST_ACTION)
+	    			    	.putExtra("id", data.user.id)
+	    			    	.putExtra("action", ServerView.EVENT_USER_LOGIN)
+	    			    );
 	    			    // the phonetic isn't available after the user logged out :/
     					String phonetic = StringFromBytes(data.text.name);
     					broadcastIntent = new Intent(ServerView.TTS_NOTIFY_ACTION);
@@ -190,14 +253,10 @@ public class EventService extends Service {
     					sendBroadcast(broadcastIntent);
 	    				break;
 
-	    			case VentriloEvents.V3_EVENT_LOGIN_COMPLETE:
-	    				Log.e("mangler", "sending login complete");
-	    				sendBroadcast(new Intent(ServerView.LOGIN_COMPLETE_ACTION));
-	    				Recorder.rate(VentriloInterface.getchannelrate(VentriloInterface.getuserchannel(VentriloInterface.getuserid())));
+
 	    				break;
 
-	    			case VentriloEvents.V3_EVENT_PLAY_AUDIO:
-	    				Player.write(data.user.id, data.pcm.rate, data.pcm.channels, data.data.sample, data.pcm.length);
+
 	    				UserList.updateStatus(data.user.id, R.drawable.transmit_on);
 	    				sendBroadcast(new Intent(ServerView.USERLIST_ACTION));
 	    				ChannelList.updateStatus(data.user.id, R.drawable.xmit_on);
@@ -211,11 +270,7 @@ public class EventService extends Service {
 	    				sendBroadcast(new Intent(ServerView.CHANNELLIST_ACTION));
 	    				break;
 	    				
-	    			case VentriloEvents.V3_EVENT_USER_TALK_END:
-	    			case VentriloEvents.V3_EVENT_USER_TALK_MUTE:
-	    			case VentriloEvents.V3_EVENT_USER_GLOBAL_MUTE_CHANGED:
-	    			case VentriloEvents.V3_EVENT_USER_CHANNEL_MUTE_CHANGED:
-	    				Player.close(data.user.id);
+
 	    				UserList.updateStatus(data.user.id, R.drawable.transmit_off);
 	    				sendBroadcast(new Intent(ServerView.USERLIST_ACTION));
 	    				ChannelList.updateStatus(data.user.id, R.drawable.xmit_off);
@@ -231,11 +286,24 @@ public class EventService extends Service {
 
 	    			default:
 	    				Log.w("mangler", "Unhandled event type: " + Integer.toString(data.type));
+	    				*/
+	    		}
+	    		if (forwardToUI) {
+	    			// delete these massive elements before queuing.  The UI should not need them
+	    			//data.data.sample = null;
+	    			//data.data.motd = null;
+	    			
+	    			eventQueue.add(data);
+    				sendBroadcast(new Intent(ServerView.EVENT_ACTION));
 	    		}
 	    	}
 	    	Player.clear();
 	    	Recorder.stop();
 		}
     };
+    
+    public static VentriloEventData getNext() {
+    	return eventQueue.poll();
+    }
 
 }

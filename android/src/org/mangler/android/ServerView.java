@@ -79,17 +79,7 @@ public class ServerView extends TabActivity {
 	private ManglerDBAdapter dbHelper;
 
 	// Actions.
-	public static final String CHANNELLIST_ACTION		= "org.mangler.android.ChannelListAction";
-	public static final String USERLIST_ACTION			= "org.mangler.android.UserListAction";
-	public static final String CHATVIEW_ACTION			= "org.mangler.android.ChatViewAction";
-	public static final String NOTIFY_ACTION			= "org.mangler.android.NotifyAction";
-	public static final String TTS_NOTIFY_ACTION		= "org.mangler.android.TtsNotifyAction";
-	public static final String LOGIN_COMPLETE_ACTION	= "org.mangler.android.LoginCompleteAction";
-
-	// Events.
-	public static final int EVENT_CHAT_JOIN	  = 1;
-	public static final int EVENT_CHAT_LEAVE  = 2;
-	public static final int EVENT_CHAT_MSG	  = 3;
+	public static final String EVENT_ACTION				= "org.mangler.android.EventAction";
 
 	// Menu options.
 	private final int OPTION_JOIN_CHAT  = 1;
@@ -109,6 +99,8 @@ public class ServerView extends TabActivity {
 	// List adapters.
 	private SimpleAdapter channelAdapter;
 	private SimpleAdapter userAdapter;
+	
+	EventHandler eventHandler = null;
 	
 	// Text to Speech
 	TTSWrapper ttsWrapper = null;
@@ -138,7 +130,6 @@ public class ServerView extends TabActivity {
         if (serverid < 0) {
         	serverid = getIntent().getExtras().getInt("serverid", 0);
         }
-        Log.e("mangler", "got server id " + serverid);
         
         dbHelper = new ManglerDBAdapter(this);
         dbHelper.open();
@@ -153,6 +144,9 @@ public class ServerView extends TabActivity {
         if (ttsWrapper == null) {
         	ttsWrapper = TTSWrapper.getInstance(this);
         }
+        
+        // Chat TextView
+        TextView chatMessages = (TextView)findViewById(R.id.messages);
         
         // Add tabs.
         TabHost tabhost = getTabHost();
@@ -173,12 +167,7 @@ public class ServerView extends TabActivity {
 	    ((ListView)findViewById(R.id.channelList)).setOnItemClickListener(onListClick);
 
 	    // Register receivers.
-        registerReceiver(chatReceiver, new IntentFilter(CHATVIEW_ACTION));
-        registerReceiver(channelReceiver, new IntentFilter(CHANNELLIST_ACTION));
-        registerReceiver(userReceiver, new IntentFilter(USERLIST_ACTION));
-        registerReceiver(notifyReceiver, new IntentFilter(NOTIFY_ACTION));
-        registerReceiver(ttsNotifyReceiver, new IntentFilter(TTS_NOTIFY_ACTION));
-        registerReceiver(loginCompleteReceiver, new IntentFilter(LOGIN_COMPLETE_ACTION));
+        registerReceiver(eventReceiver, new IntentFilter(EVENT_ACTION));
 
         // Control listeners.
 	    ((EditText)findViewById(R.id.message)).setOnKeyListener(onChatMessageEnter);
@@ -187,9 +176,11 @@ public class ServerView extends TabActivity {
 	    // Restore state.
 	    if(savedInstanceState != null) {
 	    	userInChat = savedInstanceState.getBoolean("chatopen");
-	    	((TextView)findViewById(R.id.messages)).setText(savedInstanceState.getString("chatmessages"));
+	    	chatMessages.setText(savedInstanceState.getString("chatmessages"));
 	    	((EditText)findViewById(R.id.message)).setEnabled(userInChat);
 	    }
+	    
+	    eventHandler = new EventHandler(this);
 	
 	    ((EditText)findViewById(R.id.message)).setVisibility(userInChat ? TextView.VISIBLE : TextView.GONE);
 	    
@@ -210,6 +201,7 @@ public class ServerView extends TabActivity {
 		if (! VentriloInterface.isloggedin()) {
 			connectToServer();
 		}
+		eventHandler.process();
 	}
     
     @Override
@@ -273,12 +265,7 @@ public class ServerView extends TabActivity {
     	dbHelper.close();
     	
     	// Unregister receivers.
-		unregisterReceiver(chatReceiver);
-        unregisterReceiver(channelReceiver);
-        unregisterReceiver(userReceiver);
-        unregisterReceiver(notifyReceiver);
-        unregisterReceiver(ttsNotifyReceiver);
-        unregisterReceiver(loginCompleteReceiver);
+        unregisterReceiver(eventReceiver);
     }
     
 
@@ -353,19 +340,40 @@ public class ServerView extends TabActivity {
         return true;
     }
 
+	public void addChatMessage(String username, String message) {
+		final TextView messages = (TextView)findViewById(R.id.messages);
+		messages.append("\n" + username  + ": " + message);
+	}
+	
+	public void addChatUser(String username) {
+		final TextView messages = (TextView)findViewById(R.id.messages);
+		messages.append("\n* " + username + " has joined the chat.");
+	}
+	
+	public void removeChatUser(String username) {
+		final TextView messages = (TextView)findViewById(R.id.messages);
+		messages.append("\n* " + username + " has left the chat.");
+	}
+	
+	public void notifyAdaptersDataSetChanged() {
+		userAdapter.notifyDataSetChanged();
+		channelAdapter.notifyDataSetChanged();
+	}
+	
+    /*
 	private BroadcastReceiver chatReceiver = new BroadcastReceiver() {
 		public void onReceive(Context context, Intent intent) {
 			final TextView messages = (TextView)findViewById(R.id.messages);
 			switch(intent.getIntExtra("event", -1)) {
-				case EVENT_CHAT_JOIN:
+				case VentriloEvents.V3_EVENT_CHAT_JOIN:
 					messages.append("\n* " + intent.getStringExtra("username") + " has joined the chat.");
 					break;
 
-				case EVENT_CHAT_LEAVE:
+				case VentriloEvents.V3_EVENT_CHAT_LEAVE:
 					messages.append("\n* " + intent.getStringExtra("username") + " has left the chat.");
 					break;
 
-			 	case EVENT_CHAT_MSG:
+			 	case VentriloEvents.V3_EVENT_CHAT_MESSAGE:
 			 		messages.append("\n" + intent.getStringExtra("username") + ": " + intent.getStringExtra("message"));
 			 		break;
 			 }
@@ -431,7 +439,14 @@ public class ServerView extends TabActivity {
 			VentriloInterface.setxmitvolume(level);
 		}
 	};
-
+	*/
+	
+	private BroadcastReceiver eventReceiver = new BroadcastReceiver() {
+		public void onReceive(Context context, Intent intent) {
+			eventHandler.process();
+		}
+	};
+	
 	private void changeChannel(final short channelid) {
 		if(VentriloInterface.getuserchannel(VentriloInterface.getuserid()) != channelid) {
 			final int protectedby;
@@ -651,10 +666,8 @@ public class ServerView extends TabActivity {
 		boolean force_8khz = PreferenceManager.getDefaultSharedPreferences(getBaseContext()).getBoolean("force_8khz", false);
 		Recorder.setForce_8khz(force_8khz);
 		if (!Recorder.start()) {
-			Intent broadcastIntent = new Intent(ServerView.NOTIFY_ACTION);
-			broadcastIntent.putExtra("message", "Unsupported recording rate for hardware: " + Integer.toString(Recorder.rate()) + "Hz");
-		    sendBroadcast(broadcastIntent);
-		    return;
+			Toast.makeText(this, "Unsupported recording rate for hardware: " + Integer.toString(Recorder.rate()) + "Hz", Toast.LENGTH_SHORT).show();
+			return;
 		}
 		((ImageView)findViewById(R.id.transmitStatus)).setImageResource(R.drawable.transmit_on);
 		UserList.updateStatus(VentriloInterface.getuserid(), R.drawable.transmit_on);
@@ -740,9 +753,7 @@ public class ServerView extends TabActivity {
 					dialog.dismiss();
 					VentriloEventData data = new VentriloEventData();
 					VentriloInterface.error(data);
-					Intent broadcastIntent = new Intent(NOTIFY_ACTION);
-					broadcastIntent.putExtra("notification", "Connection to server failed:\n" + EventService.StringFromBytes(data.error.message));
-					sendBroadcast(broadcastIntent);
+					Toast.makeText(ServerView.this, "Connection to server failed:\n" + EventService.StringFromBytes(data.error.message), Toast.LENGTH_SHORT).show();
 				}
 			}
 		});

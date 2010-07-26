@@ -80,7 +80,7 @@ public class Main extends Activity {
     	unbindService(serviceconnection);
     }
     
-	final ServiceConnection serviceconnection = new ServiceConnection() {
+	public final ServiceConnection serviceconnection = new ServiceConnection() {
 		public void onServiceConnected(ComponentName className, IBinder service) {
 			// eventservice = ((EventService.EventBinder)service).getService();
 		}
