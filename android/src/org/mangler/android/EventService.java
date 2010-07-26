@@ -31,7 +31,6 @@ import android.app.Service;
 import android.content.Intent;
 import android.os.Binder;
 import android.os.IBinder;
-import android.util.Log;
 
 public class EventService extends Service {
 
@@ -68,18 +67,6 @@ public class EventService extends Service {
     	return new String(bytes, 0, (new String(bytes).indexOf(0)));
     }
     
-    private String getPhonetic(short userid) {
-    	String username = "unknown";
-		VentriloEventData userRet = new VentriloEventData();
-		VentriloInterface.getuser(userRet, userid);
-		String phonetic = StringFromBytes(userRet.text.phonetic);
-		if (phonetic.length() > 0) {
-			username = phonetic;
-		} else {
-			username = StringFromBytes(userRet.text.name);
-		}
-    	return username;
-    }
 
     private Runnable eventRunnable = new Runnable() {
 
