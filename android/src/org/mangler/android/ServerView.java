@@ -74,7 +74,7 @@ public class ServerView extends TabActivity {
 	// Server ID that we're connected to
 	private static int serverid = -1;
 	public String servername = "Server View";
-
+	
 	// Database connection
 	private ManglerDBAdapter dbHelper;
 
@@ -127,9 +127,7 @@ public class ServerView extends TabActivity {
         setContentView(R.layout.server_view);
         
         // Get the server id that we're connected to and set up the database adapter
-        if (serverid < 0) {
-        	serverid = getIntent().getExtras().getInt("serverid", 0);
-        }
+        serverid = getIntent().getIntExtra("serverid", 0);
         
         dbHelper = new ManglerDBAdapter(this);
         dbHelper.open();
@@ -226,7 +224,6 @@ public class ServerView extends TabActivity {
     	outState.putString("servername", servername);
     	outState.putString("chatmessages", ((TextView)findViewById(R.id.messages)).getText().toString());
     	outState.putBoolean("chatopen", userInChat);
-    	outState.putInt("serverid", serverid);
     	super.onSaveInstanceState(outState);
     }
     
