@@ -93,6 +93,7 @@ public class EventHandler {
 					} else {
 						if (data.channel.id == VentriloInterface.getuserchannel(VentriloInterface.getuserid())) {
 							sv.ttsWrapper.speak((entity.phonetic != "" ? entity.phonetic : entity.name) + " has joined the channel");
+							UserList.addUser(data.user.id, entity.name, data.channel.id);
 						} else if (UserList.getChannel(data.user.id) == VentriloInterface.getuserchannel(VentriloInterface.getuserid())) {
 							sv.ttsWrapper.speak((entity.phonetic != "" ? entity.phonetic : entity.name) + " has left the channel");
 							UserList.delUser(data.user.id);
