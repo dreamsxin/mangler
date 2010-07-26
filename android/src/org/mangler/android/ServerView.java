@@ -363,86 +363,6 @@ public class ServerView extends TabActivity {
 		channelAdapter.notifyDataSetChanged();
 	}
 	
-    /*
-	private BroadcastReceiver chatReceiver = new BroadcastReceiver() {
-		public void onReceive(Context context, Intent intent) {
-			final TextView messages = (TextView)findViewById(R.id.messages);
-			switch(intent.getIntExtra("event", -1)) {
-				case VentriloEvents.V3_EVENT_CHAT_JOIN:
-					messages.append("\n* " + intent.getStringExtra("username") + " has joined the chat.");
-					break;
-
-				case VentriloEvents.V3_EVENT_CHAT_LEAVE:
-					messages.append("\n* " + intent.getStringExtra("username") + " has left the chat.");
-					break;
-
-			 	case VentriloEvents.V3_EVENT_CHAT_MESSAGE:
-			 		messages.append("\n" + intent.getStringExtra("username") + ": " + intent.getStringExtra("message"));
-			 		break;
-			 }
-
-			// Scroll to bottom.
-			final ScrollView chatscroll = (ScrollView)findViewById(R.id.chatScroll);
-			chatscroll.post(new Runnable() {
-				public void run() {
-					chatscroll.fullScroll(ScrollView.FOCUS_DOWN);
-				}
-			});
-		}
-	};
-	
-	private BroadcastReceiver userReceiver = new BroadcastReceiver() {
-		public void onReceive(Context context, Intent intent) {
-			String username = intent.getStringExtra("username");
-			short  id = intent.getShortExtra("id", (short)0);
-			if (username != null) {
-				int level = dbHelper.getVolume(serverid, username);
-				VentriloInterface.setuservolume((short)id, level);
-				Log.e("mangler", "setting " + username + " (id: " + id + ") to volume " + level);
-			}
-			userAdapter.notifyDataSetChanged();
-		}
-	};
-
-	
-	private BroadcastReceiver channelReceiver = new BroadcastReceiver() {
-		public void onReceive(Context context, Intent intent) {
-			channelAdapter.notifyDataSetChanged();
-		}
-	};
-	
-	private BroadcastReceiver notifyReceiver = new BroadcastReceiver() {
-		public void onReceive(Context context, Intent intent) {
-			String message = intent.getExtras().getString("message");
-			Toast.makeText(context, message, Toast.LENGTH_SHORT).show();
-		}
-	};
-	
-	private BroadcastReceiver ttsNotifyReceiver = new BroadcastReceiver() {
-		public void onReceive(Context context, Intent intent) {			
-			boolean enable_tts = PreferenceManager.getDefaultSharedPreferences(getBaseContext()).getBoolean("enable_tts", false);
-			if (enable_tts) {
-				String message = intent.getExtras().getString("message");
-				
-				if (ttsWrapper != null) {
-					ttsWrapper.speak(message);
-				}
-			}
-		}
-	};
-
-	private BroadcastReceiver loginCompleteReceiver = new BroadcastReceiver() {
-		public void onReceive(Context context, Intent intent) {			
-			Log.e("mangler", "received login complete");
-			// Set our xmit volume level
-			VentriloEventData userRet = new VentriloEventData();
-			VentriloInterface.getuser(userRet, VentriloInterface.getuserid());
-			int level = dbHelper.getVolume(serverid, new String(userRet.text.name, 0, (new String(userRet.text.name).indexOf(0))));
-			Log.e("mangler", "setting xmit volume to  " + level);
-			VentriloInterface.setxmitvolume(level);
-		}
-	};
-	*/
 	
 	private BroadcastReceiver eventReceiver = new BroadcastReceiver() {
 		public void onReceive(Context context, Intent intent) {
@@ -512,7 +432,7 @@ public class ServerView extends TabActivity {
 		final String username = new String(evdata.text.name, 0, (new String(evdata.text.name).indexOf(0)));
 		alert.setItems(items, new DialogInterface.OnClickListener() {
 			public void onClick(DialogInterface dialog, int item) {
-				short[] levelList = { 0, 0, 39, 79, 118, 148 };
+				short[] levelList = { 0, 0, 10, 79, 118, 148 };
 				int level = levelList[Integer.parseInt(items[item].toString().substring(0, 1))];
 				if (userid == VentriloInterface.getuserid()) {
 					Log.d("mangler", "setting xmit volume for me (" + username + ") to volume level " + level);
