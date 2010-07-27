@@ -87,6 +87,7 @@ public class ServerView extends TabActivity {
 	private final int OPTION_HIDE_TABS  = 2;
 	private final int OPTION_DISCONNECT = 3;
 	private final int OPTION_SETTINGS = 4;
+	private final int OPTION_ADMIN_LOGIN = 5;
 	
 	// Context menu options (does java not have enums?)
 	private final int CM_OPTION_VOLUME = 1;
@@ -115,7 +116,7 @@ public class ServerView extends TabActivity {
 	// State variables.
 	private boolean userInChat = false;
 	private boolean tabsHidden = false;
-	
+	private boolean isAdmin = false;
 	// WakeLock
 	private PowerManager.WakeLock wl;
 	
@@ -182,7 +183,7 @@ public class ServerView extends TabActivity {
 	    // Restore state.
 	    if(savedInstanceState != null) {
 	    	servername = savedInstanceState.getString("servername");
-	    	this.setTitle(servername + " - Ping: checking");
+	    	this.setTitle((isAdmin ? "[A] " : "") + servername + " - Ping: checking");
 	    	userInChat = savedInstanceState.getBoolean("chatopen");
 	    	chatMessages.setText(savedInstanceState.getString("chatmessages"));
 	    	((EditText)findViewById(R.id.message)).setEnabled(userInChat);
@@ -208,6 +209,8 @@ public class ServerView extends TabActivity {
 
 		if (! VentriloInterface.isloggedin()) {
 			connectToServer();
+		} else {
+			isAdmin = VentriloInterface.getpermission("serveradmin");
 		}
 		eventHandler.process();
 		notifyAdaptersDataSetChanged();
@@ -281,16 +284,19 @@ public class ServerView extends TabActivity {
 
     public boolean onCreateOptionsMenu(Menu menu) {
     	 // Create our menu buttons.
-    	menu.add(0, OPTION_JOIN_CHAT, 0, "Join chat").setIcon(R.drawable.menu_join_chat);
     	if (tabsHidden) {
-    		menu.add(0, OPTION_HIDE_TABS, 0, "Hide tabs").setIcon(R.drawable.menu_show_tabs);
+    		menu.add(0, OPTION_HIDE_TABS, 0, "Show Tabs").setIcon(R.drawable.menu_show_tabs);
         	final TabWidget tabWidget = (TabWidget)findViewById(android.R.id.tabs);
 			tabWidget.setEnabled(false);
 			tabWidget.setVisibility(TextView.GONE);
     	} else {
-    		menu.add(0, OPTION_HIDE_TABS, 0, "Hide tabs").setIcon(R.drawable.menu_hide_tabs);
+    		menu.add(0, OPTION_HIDE_TABS, 0, "Hide Tabs").setIcon(R.drawable.menu_hide_tabs);
     	}
         menu.add(0, OPTION_SETTINGS, 0, "Settings").setIcon(R.drawable.menu_settings);
+    	menu.add(0, OPTION_JOIN_CHAT, 0, "Join Chat").setIcon(R.drawable.menu_join_chat);
+    	if (! isAdmin) {
+    		menu.add(0, OPTION_ADMIN_LOGIN, 0, "Admin Login").setIcon(R.drawable.menu_admin_login);
+    	}
         menu.add(0, OPTION_DISCONNECT, 0, "Disconnect").setIcon(R.drawable.menu_disconnect);
         return true;
     }
@@ -322,18 +328,41 @@ public class ServerView extends TabActivity {
         		if (tabsHidden) {
         			tabsHidden = false;
         			item.setIcon(R.drawable.menu_hide_tabs);
-        			item.setTitle("Hide tabs");
+        			item.setTitle("Hide Tabs");
         			tabWidget.setEnabled(true);
         			tabWidget.setVisibility(TextView.VISIBLE);
         		} else {
         			tabsHidden = true;
         			item.setIcon(R.drawable.menu_show_tabs);
-        			item.setTitle("Show tabs");
+        			item.setTitle("Show Tabs");
         			tabWidget.setEnabled(false);
         			tabWidget.setVisibility(TextView.GONE);
         		}
         		break;
-
+        		
+        	case OPTION_ADMIN_LOGIN:
+        		final MenuItem fitem = item;
+				final EditText input = new EditText(this);
+				AlertDialog.Builder alert = new AlertDialog.Builder(this)
+				.setTitle("Admin Password")
+				.setMessage("Please enter the server's admin password")
+				.setView(input)
+				.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+					public void onClick(DialogInterface dialog, int whichButton) {
+						VentriloInterface.adminlogin(input.getText().toString());
+						// we get booted if this fails, so assume success
+						setIsAdmin(true);
+						fitem.setVisible(false);
+					}
+				})
+				.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+					public void onClick(DialogInterface dialog, int whichButton) {
+						// No password entered.
+					}
+				});
+				alert.show();
+        		break;
+        		
         	case OPTION_DISCONNECT:
         		VentriloInterface.logout();
         		finish();
@@ -350,6 +379,13 @@ public class ServerView extends TabActivity {
         return true;
     }
 
+	public void setIsAdmin(boolean isAdmin) {
+		this.isAdmin = isAdmin;
+	}
+	
+	public boolean getIsAdmin() {
+		return isAdmin;
+	}
 	public void addChatMessage(String username, String message) {
 		final TextView messages = (TextView)findViewById(R.id.messages);
 		messages.append("\n" + username  + ": " + message);

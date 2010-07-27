@@ -141,7 +141,7 @@ public class EventHandler {
 					
 				case VentriloEvents.V3_EVENT_PING:
 					if (data.ping < 65535) {
-						sv.setTitle(sv.servername + " - Ping: " + data.ping + "ms");
+						sv.setTitle((sv.getIsAdmin() ? "[A] " : "") + sv.servername + " - Ping: " + data.ping + "ms");
 					}
 					break;
 					
@@ -159,6 +159,16 @@ public class EventHandler {
 				case VentriloEvents.V3_EVENT_USER_PAGE:
 					entity = new ChannelListEntity(ChannelListEntity.USER, data.user.id);
 					sv.tts(sv.TTS_PAGE, "You have been paged by " + (entity.phonetic != "" ? entity.phonetic : entity.name));
+					break;
+					
+				case VentriloEvents.V3_EVENT_LOGIN_COMPLETE:
+				case VentriloEvents.V3_EVENT_PERMS_UPDATED:
+					if (VentriloInterface.getpermission("serveradmin")) {
+						sv.setTitle((sv.getIsAdmin() ? "[A] " : "") + sv.servername + " - Ping: " + data.ping + "ms");
+						sv.setIsAdmin(true);
+					} else {
+						sv.setIsAdmin(false);
+					}
 					break;
 					
 				case VentriloEvents.V3_EVENT_DISCONNECT:

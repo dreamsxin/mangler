@@ -240,6 +240,12 @@ JNIEXPORT void JNICALL Java_org_mangler_android_VentriloInterface_sendchatmessag
 	release_string(env, message, _message);
 }
 
+JNIEXPORT void JNICALL Java_org_mangler_android_VentriloInterface_adminlogin(JNIEnv* env, jobject obj, jstring password) {
+	char* _password = get_string(env, password);
+	v3_admin_login(_password);
+	release_string(env, password, _password);
+}
+
 JNIEXPORT void JNICALL Java_org_mangler_android_VentriloInterface_changechannel(JNIEnv* env, jobject obj, jchar channelid, jstring password) {
 	char* _password = get_string(env, password);
 	v3_change_channel(channelid, _password);

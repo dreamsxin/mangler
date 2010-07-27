@@ -63,4 +63,5 @@ public class VentriloInterface {
 	public static native void		forcechannelmove(short userid, short channelid);
 	public static native void		sendpage(short userid);
 	public static native void		globalmute(short userid);
+	public static native void		adminlogin(String password);
 }
