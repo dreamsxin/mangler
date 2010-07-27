@@ -25,13 +25,9 @@
 package org.mangler.android;
 
 import android.app.Activity;
-import android.content.ComponentName;
-import android.content.Context;
 import android.content.Intent;
-import android.content.ServiceConnection;
 import android.media.AudioManager;
 import android.os.Bundle;
-import android.os.IBinder;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
@@ -54,8 +50,6 @@ public class Main extends Activity {
         // Volume controls.
         setVolumeControlStream(AudioManager.STREAM_MUSIC);
     	
-    	bindService(new Intent(this, EventService.class), serviceconnection, Context.BIND_AUTO_CREATE);
-    	
     	// Set debug level.
     	VentriloInterface.debuglevel(VentriloDebugLevels.V3_DEBUG_INFO);
         
@@ -72,21 +66,5 @@ public class Main extends Activity {
 			}
         });
     }
-    
-    @Override
-    public void onDestroy() {
-    	super.onDestroy();
-    	
-    	unbindService(serviceconnection);
-    }
-    
-	private final ServiceConnection serviceconnection = new ServiceConnection() {
-		public void onServiceConnected(ComponentName className, IBinder service) {
-			// eventservice = ((EventService.EventBinder)service).getService();
-		}
-		
-		public void onServiceDisconnected(ComponentName arg0) {
-			// eventservice = null;
-		}
-	};
+
 }

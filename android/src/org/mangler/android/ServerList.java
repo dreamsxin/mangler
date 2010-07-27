@@ -26,10 +26,14 @@ package org.mangler.android;
 
 import android.app.ListActivity;
 import android.app.NotificationManager;
+import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.database.Cursor;
 import android.media.AudioManager;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.view.ContextMenu;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -70,6 +74,9 @@ public class ServerList extends ListActivity {
         // Volume controls.
         setVolumeControlStream(AudioManager.STREAM_MUSIC);
 
+        bindService(new Intent(this, EventService.class), serviceconnection, Context.BIND_AUTO_CREATE);
+    	
+
         dbHelper = new ManglerDBAdapter(this);
         dbHelper.open();
     	fillData();
@@ -78,12 +85,12 @@ public class ServerList extends ListActivity {
         notificationManager.cancelAll();
     }
 
-    @Override
-    protected void onDestroy() {
-    	super.onDestroy();
-
-        dbHelper.close();
-    }
+	@Override
+	protected void onDestroy() {
+		super.onDestroy();
+		unbindService(serviceconnection);
+		dbHelper.close();
+	}
 
     // Populate listview with entries from database
     private void fillData() {
@@ -162,4 +169,15 @@ public class ServerList extends ListActivity {
         notificationManager.cancelAll();
         fillData();
     }
+    
+    
+	private final ServiceConnection serviceconnection = new ServiceConnection() {
+		public void onServiceConnected(ComponentName className, IBinder service) {
+			// eventservice = ((EventService.EventBinder)service).getService();
+		}
+		
+		public void onServiceDisconnected(ComponentName arg0) {
+			// eventservice = null;
+		}
+	};
 }

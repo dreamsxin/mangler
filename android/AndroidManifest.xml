@@ -6,7 +6,7 @@
 		<application
 			android:label="@string/app_name"
 			android:icon="@drawable/mangler_logo"
-			android:debuggable="true">
+			android:debuggable="false">
 
 				<activity android:label="@string/app_name" android:name="Main">
 						<intent-filter>
