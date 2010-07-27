@@ -117,6 +117,7 @@ public class ServerView extends TabActivity {
 	private boolean userInChat = false;
 	private boolean tabsHidden = false;
 	private boolean isAdmin = false;
+	public int ping = 0;
 	// WakeLock
 	private PowerManager.WakeLock wl;
 	
@@ -182,8 +183,9 @@ public class ServerView extends TabActivity {
     
 	    // Restore state.
 	    if(savedInstanceState != null) {
+	    	ping = savedInstanceState.getInt("ping");
 	    	servername = savedInstanceState.getString("servername");
-	    	this.setTitle((isAdmin ? "[A] " : "") + servername + " - Ping: checking");
+	    	this.setTitle();
 	    	userInChat = savedInstanceState.getBoolean("chatopen");
 	    	chatMessages.setText(savedInstanceState.getString("chatmessages"));
 	    	((EditText)findViewById(R.id.message)).setEnabled(userInChat);
@@ -233,6 +235,7 @@ public class ServerView extends TabActivity {
 
     @Override
     protected void onSaveInstanceState(Bundle outState) {
+    	outState.putInt("ping", ping);
     	outState.putString("servername", servername);
     	outState.putString("chatmessages", ((TextView)findViewById(R.id.messages)).getText().toString());
     	outState.putBoolean("chatopen", userInChat);
@@ -281,6 +284,11 @@ public class ServerView extends TabActivity {
         unregisterReceiver(notifyReceiver);
     }
     
+	// I probably should name this function something else, but not sure what to
+	// name it
+    public void setTitle() {
+		setTitle((isAdmin ? "[A] " : "") + servername + " - Ping: " + ((ping < 65535 && ping > 0) ? ping + "ms" : "checking..."));
+    }
 
     public boolean onCreateOptionsMenu(Menu menu) {
     	 // Create our menu buttons.
@@ -744,7 +752,7 @@ public class ServerView extends TabActivity {
 		final String password = servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_SERVERS_PASSWORD));
 		final String phonetic = servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_SERVERS_PHONETIC));
 		
-		this.setTitle(servername + " - Ping: checking");
+		this.setTitle();
 		
 		// Get rid of any data from previous connections.
 		UserList.clear();

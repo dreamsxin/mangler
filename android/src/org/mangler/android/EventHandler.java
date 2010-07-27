@@ -140,9 +140,8 @@ public class EventHandler {
 					break;
 					
 				case VentriloEvents.V3_EVENT_PING:
-					if (data.ping < 65535) {
-						sv.setTitle((sv.getIsAdmin() ? "[A] " : "") + sv.servername + " - Ping: " + data.ping + "ms");
-					}
+					sv.ping = data.ping;
+					sv.setTitle();
 					break;
 					
 				case VentriloEvents.V3_EVENT_USER_MODIFY:
@@ -164,7 +163,7 @@ public class EventHandler {
 				case VentriloEvents.V3_EVENT_LOGIN_COMPLETE:
 				case VentriloEvents.V3_EVENT_PERMS_UPDATED:
 					if (VentriloInterface.getpermission("serveradmin")) {
-						sv.setTitle((sv.getIsAdmin() ? "[A] " : "") + sv.servername + " - Ping: " + data.ping + "ms");
+						sv.setTitle();
 						sv.setIsAdmin(true);
 					} else {
 						sv.setIsAdmin(false);
