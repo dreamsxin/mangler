@@ -363,10 +363,12 @@ public class ServerView extends TabActivity {
 		ChannelListEntity entity = new ChannelListEntity(
 				ChannelListEntity.CHANNEL,
 				VentriloInterface.getuserchannel(VentriloInterface.getuserid()));
-		((TextView)findViewById(R.id.userViewHeader)).setText(
-				"" + UserList.data.size() + " Users | " +
-				(entity.id == 0 ? "Lobby" : entity.name)
-				);
+		if (findViewById(R.id.userViewHeader) != null) {
+			((TextView)findViewById(R.id.userViewHeader)).setText(
+					"" + UserList.data.size() + " Users | " +
+					(entity.id == 0 ? "Lobby" : entity.name)
+					);
+		}
 		userAdapter.notifyDataSetChanged();
 		channelAdapter.notifyDataSetChanged();
 	}
@@ -477,9 +479,10 @@ public class ServerView extends TabActivity {
 				boolean serveradmin = VentriloInterface.getpermission("serveradmin");
 				Log.d("mangler", "am i a server admin? " + serveradmin);
 				menu.setHeaderTitle(entity.name);
+				
 				menu.add(Menu.NONE, CM_OPTION_VOLUME, itempos++, "Set Volume");
 				if (entity.comment != "" ||	entity.url != "") {
-					menu.add(Menu.NONE, CM_OPTION_COMMENT, itempos++, "View Comment/URL").setVisible(false);
+					menu.add(Menu.NONE, CM_OPTION_COMMENT, itempos++, "View Comment/URL");
 				}
 				if (dbHelper.getVolume(serverid, entity.name) == 0) {
 					menu.add(Menu.NONE, CM_OPTION_MUTE, itempos++, "Unmute");
@@ -607,7 +610,11 @@ public class ServerView extends TabActivity {
 	}
 	
 	private void viewComment(short id) {
-		
+		ChannelListEntity entity = new ChannelListEntity(ChannelListEntity.USER, id);
+		AlertDialog.Builder alert = new AlertDialog.Builder(this)
+		.setTitle(entity.name)
+		.setMessage("Comment: " + entity.comment + "\n" + "URL: " + entity.url);
+		alert.show();
 	}
 
 	private OnTouchListener onTalkPress = new OnTouchListener() {
