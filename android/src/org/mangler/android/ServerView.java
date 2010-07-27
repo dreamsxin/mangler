@@ -511,7 +511,7 @@ public class ServerView extends TabActivity {
 				int itempos = 1;
 
 				menu.add(Menu.NONE, CM_OPTION_VOLUME, itempos++, "Set Transmit Level");
-				menu.add(Menu.NONE, CM_OPTION_COMMENT, itempos++, "Set Comment/URL");
+				menu.add(Menu.NONE, CM_OPTION_COMMENT, itempos++, "Set Comment/URL").setVisible(false);
 			}
 		}
 	}
