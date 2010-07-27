@@ -23,6 +23,8 @@
  */
 package org.mangler.android;
 
+import java.util.HashMap;
+
 import android.util.Log;
 import android.widget.Toast;
 
@@ -73,9 +75,15 @@ public class EventHandler {
 						// user was added from userlist sent at login (existing user)
 						// from lv3: #define V3_LOGIN_FLAGS_EXISTING (1 << 0)
 						if ((flags & (1 << 0)) == 0) {
-							sv.tts(sv.TTS_LOGIN, (entity.phonetic != "" ? entity.phonetic : entity.name) + " has logged in");
+							sv.tts(sv.TTS_LOGIN, (entity.phonetic.length() > 0 ? entity.phonetic : entity.name) + " has logged in");
 						}
 						sv.setUserVolumeFromDatabase(entity);
+					} else {
+						// there should probably be a replace() function somewhere
+						entity = new ChannelListEntity(ChannelListEntity.USER, (short)0);
+						HashMap<String, Object> lobby = ChannelList.get(ChannelListEntity.CHANNEL, (short)0);
+						lobby.put("name", entity.name);
+						lobby.put("comment", entity.comment);
 					}
 					break;
 					
@@ -94,10 +102,10 @@ public class EventHandler {
 						}
 					} else {
 						if (entity.inMyChannel()) {
-							sv.tts(sv.TTS_CHANNEL, (entity.phonetic != "" ? entity.phonetic : entity.name) + " has joined the channel");
+							sv.tts(sv.TTS_CHANNEL, (entity.phonetic.length() > 0 ? entity.phonetic : entity.name) + " has joined the channel");
 							UserList.addUser(entity);
 						} else if (UserList.getChannel(data.user.id) == VentriloInterface.getuserchannel(VentriloInterface.getuserid())) {
-							sv.tts(sv.TTS_CHANNEL, (entity.phonetic != "" ? entity.phonetic : entity.name) + " has left the channel");
+							sv.tts(sv.TTS_CHANNEL, (entity.phonetic.length() > 0 ? entity.phonetic : entity.name) + " has left the channel");
 							UserList.delUser(data.user.id);
 						}
 						Player.close(data.user.id);
@@ -114,7 +122,7 @@ public class EventHandler {
 					Player.close(data.user.id);
 					UserList.delUser(data.user.id);
 					ChannelList.remove(data.user.id);
-					sv.tts(sv.TTS_LOGIN, (entity.phonetic != "" ? entity.phonetic : entity.name) + " has logged out");
+					sv.tts(sv.TTS_LOGIN, (entity.phonetic.length() > 0 ? entity.phonetic : entity.name) + " has logged out");
 					sv.notifyAdaptersDataSetChanged();
 					break;
 					
@@ -157,7 +165,7 @@ public class EventHandler {
 					
 				case VentriloEvents.V3_EVENT_USER_PAGE:
 					entity = new ChannelListEntity(ChannelListEntity.USER, data.user.id);
-					sv.tts(sv.TTS_PAGE, "You have been paged by " + (entity.phonetic != "" ? entity.phonetic : entity.name));
+					sv.tts(sv.TTS_PAGE, "You have been paged by " + (entity.phonetic.length() > 0 ? entity.phonetic : entity.name));
 					break;
 					
 				case VentriloEvents.V3_EVENT_LOGIN_COMPLETE:

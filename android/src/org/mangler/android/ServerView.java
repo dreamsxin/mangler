@@ -39,6 +39,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.database.Cursor;
 import android.media.AudioManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.PowerManager;
 import android.preference.PreferenceManager;
@@ -71,6 +72,14 @@ import android.widget.AdapterView.OnItemClickListener;
 import com.nullwire.trace.ExceptionHandler;
 
 public class ServerView extends TabActivity {
+	
+	static {
+		// Let's try loading the library here too... maybe this will fix the
+		// unsatisfied link problems? Maybe the phone is killing the Main
+		// Activity and unloading the library?
+		System.loadLibrary("ventrilo_interface");
+	}
+	
 	// Server ID that we're connected to
 	private static int serverid = -1;
 	public String servername = "Server View";
@@ -160,7 +169,7 @@ public class ServerView extends TabActivity {
         tabhost.addTab(tabhost.newTabSpec("channel").setContent(R.id.channelView).setIndicator("Channels"));
         tabhost.addTab(tabhost.newTabSpec("user").setContent(R.id.userView).setIndicator("Users"));
     	tabhost.addTab(tabhost.newTabSpec("chat").setContent(R.id.chatView).setIndicator("Chat"));
-        tabhost.addTab(tabhost.newTabSpec("talk").setContent(R.id.talkView).setIndicator("Debug"));
+        //tabhost.addTab(tabhost.newTabSpec("talk").setContent(R.id.talkView).setIndicator("Debug"));
 
         // Create adapters.
 	    channelAdapter 	= new SimpleAdapter(this, ChannelList.data, R.layout.channel_row, new String[] { "indent", "xmitStatus", "name" }, new int[] { R.id.indent, R.id.crowimg, R.id.crowtext } );
@@ -810,7 +819,8 @@ public class ServerView extends TabActivity {
 	public void tts(String ttsType, String text) {
 		boolean enable_tts = PreferenceManager.getDefaultSharedPreferences(getBaseContext()).getBoolean("enable_tts" + ttsType, false);
 		Log.e("mangler", "enable tts: " + enable_tts);
-		if (enable_tts) {
+		// TTS is only available on 1.6 and higher
+		if (enable_tts && Build.VERSION.SDK_INT > 3) {
 			ttsWrapper.speak(text);
 		}
 	}

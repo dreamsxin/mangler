@@ -51,6 +51,7 @@ public class ChannelList {
 		entity.indent = indent;
 		Log.d("mangler", "adding entity id " + entity.id + " (" + entity.name + ") at location " + getLocation(entity.parentid));
 		if (entity.id == 0) {
+			entity.type = ChannelListEntity.CHANNEL;
 			data.add(entity.toHashMap());
 		} else {
 			if (entity.type == ChannelListEntity.USER) {
