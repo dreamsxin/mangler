@@ -205,6 +205,7 @@ public class ServerView extends TabActivity {
 			connectToServer();
 		}
 		eventHandler.process();
+		notifyAdaptersDataSetChanged();
 	}
     
     @Override
