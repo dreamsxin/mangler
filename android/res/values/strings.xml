@@ -29,7 +29,9 @@
 <string name="ptt_button_type">Set Push-To-Talk as Toggle</string>
 
 <string name="force_8khz">Force 8kHz Transmit</string>
-<string name="enable_tts">Enable Text-to-Speech</string>
+<string name="enable_tts">Enable Text-to-Speech</string><string name="enable_ttsChannel">TTS Channel Join/Leave</string><string name="enable_ttsLogin">TTS Login/Logout</string>
 <string name="prevent_sleep">Prevent Sleep Mode</string>
 <string name="fullscreen">Fullscreen Mode</string>
+<string name="ttsPreferenceCategoryTitle">Text-To-Speech</string>
+<string name="enable_ttsPage">TTS Pages</string>
 </resources>

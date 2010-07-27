@@ -9,10 +9,6 @@
 		android:summary="Use if transmit sound quality is poor or normal transmitting does not work."
 		android:title="@string/force_8khz"/>
 	<CheckBoxPreference
-		android:key="enable_tts"
-		android:summary="Enable audible notifications when a user joins/leaves the channel"
-		android:title="@string/enable_tts"/>
-	<CheckBoxPreference
 		android:key="prevent_sleep"
 		android:summary="Prevent the phone from going into sleep mode while connected to a server. WILL DRAIN BATTERY."
 		android:title="@string/prevent_sleep"/>
@@ -20,4 +16,20 @@
 		android:key="fullscreen"
 		android:summary="Hide the status bar and title bar to increase visible space."
 		android:title="@string/fullscreen"/>
+	<PreferenceCategory
+		android:title="@string/ttsPreferenceCategoryTitle">
+		<CheckBoxPreference
+			android:key="enable_ttsLogin"
+			android:summary="Audible notification when a user logs in or out"
+			android:title="@string/enable_ttsLogin"/>
+		<CheckBoxPreference
+			android:key="enable_ttsChannel"
+			android:summary="Audible notification when a user joins/leaves your channel"
+			android:title="@string/enable_ttsChannel"/>
+		<CheckBoxPreference
+			android:key="enable_ttsPage"
+			android:summary="Audible notification when a user sends you a page."
+			android:title="@string/enable_ttsPage"
+			android:defaultValue="true"/>
+	</PreferenceCategory>
 </PreferenceScreen>

@@ -106,6 +106,11 @@ public class ServerView extends TabActivity {
 	
 	// Text to Speech
 	TTSWrapper ttsWrapper = null;
+	
+	// Text to Speech Message types
+	public final String TTS_CHANNEL = "Channel";
+	public final String TTS_LOGIN   = "Login";
+	public final String TTS_PAGE    = "Page";
 
 	// State variables.
 	private boolean userInChat = false;
@@ -754,9 +759,9 @@ public class ServerView extends TabActivity {
 
 	}
 	
-	public void tts(String text) {
-		boolean enable_tts = PreferenceManager.getDefaultSharedPreferences(getBaseContext()).getBoolean("enable_tts", false);
-		Log.e("mangler", "enable tts" + enable_tts);
+	public void tts(String ttsType, String text) {
+		boolean enable_tts = PreferenceManager.getDefaultSharedPreferences(getBaseContext()).getBoolean("enable_tts" + ttsType, false);
+		Log.e("mangler", "enable tts: " + enable_tts);
 		if (enable_tts) {
 			ttsWrapper.speak(text);
 		}

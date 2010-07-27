@@ -222,6 +222,10 @@ JNIEXPORT jboolean JNICALL Java_org_mangler_android_VentriloInterface_login(JNIE
 	char* _password = get_string(env, password);
 	char* _phonetic = get_string(env, phonetic);
 	v3_get_event(V3_NONBLOCK);
+	v3_set_server_opts(V3_USER_ACCEPT_PAGES, 1);
+	v3_set_server_opts(V3_USER_ACCEPT_U2U,   1);
+	v3_set_server_opts(V3_USER_ACCEPT_CHAT,  0);
+	v3_set_server_opts(V3_USER_ALLOW_RECORD, 1);
 	jint ret = v3_login(_server, _username, _password, _phonetic);
 	release_string(env, server, _server);
 	release_string(env, username, _username);
@@ -536,6 +540,14 @@ JNIEXPORT void JNICALL Java_org_mangler_android_VentriloInterface_getevent(JNIEn
 					jclass  account_class = get_class(env, account);
 					set_short(env, account, account_class, "id", ev->account.id);
 					set_short(env, account, account_class, "id2", ev->account.id2);
+				}
+				break;
+			case V3_EVENT_USER_PAGE:
+				{
+					// User ID.
+					jobject user = get_object(env, eventdata, event_class, "user", "Lorg/mangler/android/VentriloEventData$_user;");
+					jclass  user_class = get_class(env, user);
+					set_short(env, user, user_class, "id", ev->user.id);
 				}
 				break;
 		}

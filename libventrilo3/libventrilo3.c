@@ -1535,18 +1535,17 @@ _v3_update_user(v3_user *user) {/*{{{*/
             if (u->id == user->id) {
                 v3_user tmpuser;
                 memcpy(&tmpuser, u, sizeof(v3_user));
-                // Users cannot change their name
+                // Users cannot change their name or phonetic
                 //free(u->name);
-                free(u->phonetic);
+                //free(u->phonetic);
                 free(u->comment);
                 free(u->integration_text);
                 free(u->url);
                 memcpy(u, user, sizeof(v3_user));
-                // Users cannot change their name
-                //u->name             = strdup(user->name);
+                // Users cannot change their name or phonetic
                 u->name             = tmpuser.name;
                 u->comment          = strdup(user->comment);
-                u->phonetic         = strdup(user->phonetic);
+                u->phonetic         = tmpuser.phonetic;
                 u->integration_text = strdup(user->integration_text);
                 u->url              = strdup(user->url);
                 u->guest            = user->bitfield & 0x400 ? 1 : 0;
