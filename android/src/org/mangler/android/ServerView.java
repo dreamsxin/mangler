@@ -80,6 +80,7 @@ public class ServerView extends TabActivity {
 
 	// Actions.
 	public static final String EVENT_ACTION				= "org.mangler.android.EventAction";
+	public static final String NOTIFY_ACTION			= "org.mangler.android.NotifyAction";
 
 	// Menu options.
 	private final int OPTION_JOIN_CHAT  = 1;
@@ -155,7 +156,7 @@ public class ServerView extends TabActivity {
 
         // Create adapters.
 	    channelAdapter 	= new SimpleAdapter(this, ChannelList.data, R.layout.channel_row, new String[] { "indent", "xmitStatus", "name" }, new int[] { R.id.indent, R.id.crowimg, R.id.crowtext } );
-	    userAdapter 	= new SimpleAdapter(this, UserList.data, R.layout.user_row, new String[] { "userstatus", "username", "channelname" }, new int[] { R.id.urowimg, R.id.urowtext, R.id.urowid } );
+	    userAdapter 	= new SimpleAdapter(this, UserList.data, R.layout.user_row, new String[] { "userstatus", "username", "comment" }, new int[] { R.id.urowimg, R.id.urowtext, R.id.urowid } );
 
 	    // Set adapters.
 	    ((ListView)findViewById(R.id.channelList)).setAdapter(channelAdapter);
@@ -166,6 +167,7 @@ public class ServerView extends TabActivity {
 
 	    // Register receivers.
         registerReceiver(eventReceiver, new IntentFilter(EVENT_ACTION));
+        registerReceiver(notifyReceiver, new IntentFilter(NOTIFY_ACTION));
 
         // Control listeners.
 	    ((EditText)findViewById(R.id.message)).setOnKeyListener(onChatMessageEnter);
@@ -356,6 +358,13 @@ public class ServerView extends TabActivity {
 	}
 	
 	public void notifyAdaptersDataSetChanged() {
+		ChannelListEntity entity = new ChannelListEntity(
+				ChannelListEntity.CHANNEL,
+				VentriloInterface.getuserchannel(VentriloInterface.getuserid()));
+		((TextView)findViewById(R.id.userViewHeader)).setText(
+				"" + UserList.data.size() + " Users | " +
+				(entity.id == 0 ? "Lobby" : entity.name)
+				);
 		userAdapter.notifyDataSetChanged();
 		channelAdapter.notifyDataSetChanged();
 	}
@@ -364,6 +373,13 @@ public class ServerView extends TabActivity {
 	private BroadcastReceiver eventReceiver = new BroadcastReceiver() {
 		public void onReceive(Context context, Intent intent) {
 			eventHandler.process();
+		}
+	};
+	
+	
+	private BroadcastReceiver notifyReceiver = new BroadcastReceiver() {
+		public void onReceive(Context context, Intent intent) {
+			Toast.makeText(ServerView.this, intent.getStringExtra("message"), Toast.LENGTH_SHORT).show();
 		}
 	};
 	
@@ -589,8 +605,8 @@ public class ServerView extends TabActivity {
 			Toast.makeText(this, "Unsupported recording rate for hardware: " + Integer.toString(Recorder.rate()) + "Hz", Toast.LENGTH_SHORT).show();
 			return;
 		}
-		((ImageView)findViewById(R.id.transmitStatus)).setImageResource(R.drawable.transmit_on);
-		UserList.updateStatus(VentriloInterface.getuserid(), R.drawable.transmit_on);
+		((ImageView)findViewById(R.id.transmitStatus)).setImageResource(R.drawable.xmit_on);
+		UserList.updateStatus(VentriloInterface.getuserid(), R.drawable.xmit_on);
 		userAdapter.notifyDataSetChanged();
 		ChannelList.updateStatus(VentriloInterface.getuserid(), R.drawable.xmit_on);
 		channelAdapter.notifyDataSetChanged();
@@ -603,8 +619,8 @@ public class ServerView extends TabActivity {
 				"Record Rate: " + Recorder.rate() + "\n" +
 				"Buffer Size: " + Recorder.buflen() + "\n");
 		Recorder.stop();
-		((ImageView)findViewById(R.id.transmitStatus)).setImageResource(R.drawable.transmit_off);
-		UserList.updateStatus(VentriloInterface.getuserid(), R.drawable.transmit_off);
+		((ImageView)findViewById(R.id.transmitStatus)).setImageResource(R.drawable.xmit_off);
+		UserList.updateStatus(VentriloInterface.getuserid(), R.drawable.xmit_off);
 		userAdapter.notifyDataSetChanged();
 		ChannelList.updateStatus(VentriloInterface.getuserid(), R.drawable.xmit_off);
 		channelAdapter.notifyDataSetChanged();
@@ -676,7 +692,8 @@ public class ServerView extends TabActivity {
 					dialog.dismiss();
 					VentriloEventData data = new VentriloEventData();
 					VentriloInterface.error(data);
-					Toast.makeText(ServerView.this, "Connection to server failed:\n" + EventService.StringFromBytes(data.error.message), Toast.LENGTH_SHORT).show();
+					sendBroadcast(new Intent(ServerView.NOTIFY_ACTION)
+						.putExtra("message", "Connection to server failed:\n" + EventService.StringFromBytes(data.error.message)));
 				}
 			}
 		});

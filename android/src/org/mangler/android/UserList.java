@@ -48,11 +48,11 @@ public class UserList {
 	
 	public static void addUser(ChannelListEntity entity) {
 			HashMap<String, Object> user = new HashMap<String, Object>();
-			user.put("userstatus", R.drawable.transmit_off);
+			user.put("userstatus", R.drawable.xmit_off);
 			user.put("userid", entity.id);
 			user.put("username", entity.name);
 			user.put("channelid", entity.parentid);
-			user.put("channelname", ChannelList.get(entity.parentid).get("name").toString().trim());
+			user.put("comment", entity.comment.length() > 0 ? "(" + entity.comment + ")" : "");
 			data.add(user);
 	}
 	
@@ -60,7 +60,7 @@ public class UserList {
 		clear();
 		for(ListIterator<HashMap<String, Object>> iterator = ChannelList.data.listIterator(); iterator.hasNext(); ) {
 			ChannelListEntity entity = new ChannelListEntity(iterator.next());
-			if(entity.parentid == channelid) {	
+			if(entity.type == ChannelListEntity.USER && entity.parentid == channelid) {	
 				addUser(entity);
 			}
 		}

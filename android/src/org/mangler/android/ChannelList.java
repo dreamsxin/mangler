@@ -102,9 +102,10 @@ public class ChannelList {
 		return -1;
 	}
 	
-	public static HashMap<String, Object> get(short id) {
+	public static HashMap<String, Object> get(int type, short id) {
 		for(ListIterator<HashMap<String, Object>> iterator = data.listIterator(); iterator.hasNext(); ) {
-			if(((Short)iterator.next().get("id")).equals(id)) {
+			HashMap<String, Object> entity = iterator.next();
+			if ((Integer)entity.get("type") == type && (Short)entity.get("id") == id) {
 				return data.get(iterator.previousIndex());
 			}
 		}

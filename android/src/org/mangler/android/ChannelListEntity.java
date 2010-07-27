@@ -40,7 +40,7 @@ public class ChannelListEntity {
 	public int type = -1;
 	public int passwordProtected = 0;
 	public short parentid = 0;
-	public int xmitStatus = R.drawable.transmit_off;
+	public int xmitStatus = R.drawable.xmit_off;
 
 	
 	public ChannelListEntity(HashMap<String, Object> entity) {
@@ -129,5 +129,13 @@ public class ChannelListEntity {
 		a.add(String.valueOf(parentid));
 		a.add(String.valueOf(xmitStatus));
 		return a;
+	}
+	
+	public boolean inMyChannel() {
+		short channelid = VentriloInterface.getuserchannel(VentriloInterface.getuserid());
+		if (parentid == channelid) {
+			return true;
+		}
+		return false;
 	}
 }

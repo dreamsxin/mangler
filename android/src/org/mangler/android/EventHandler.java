@@ -66,7 +66,7 @@ public class EventHandler {
 						int flags = data.flags;
 						entity = new ChannelListEntity(ChannelListEntity.USER, data.user.id);
 						ChannelList.add(entity);
-						if (entity.parentid == VentriloInterface.getuserchannel(VentriloInterface.getuserid())) {
+						if (entity.inMyChannel()) {
 							UserList.addUser(entity);
 						}
 						sv.notifyAdaptersDataSetChanged();
@@ -92,7 +92,7 @@ public class EventHandler {
 							Toast.makeText(sv, "Changed to " + entity.name, Toast.LENGTH_SHORT).show();
 						}
 					} else {
-						if (data.channel.id == VentriloInterface.getuserchannel(VentriloInterface.getuserid())) {
+						if (entity.inMyChannel()) {
 							sv.ttsWrapper.speak((entity.phonetic != "" ? entity.phonetic : entity.name) + " has joined the channel");
 							UserList.addUser(entity);
 						} else if (UserList.getChannel(data.user.id) == VentriloInterface.getuserchannel(VentriloInterface.getuserid())) {
@@ -101,7 +101,7 @@ public class EventHandler {
 						}
 						Player.close(data.user.id);
 					}
-					entity = new ChannelListEntity(ChannelList.get(data.user.id));
+					entity = new ChannelListEntity(ChannelList.get(ChannelListEntity.USER, data.user.id));
 					entity.parentid = data.channel.id;
 					ChannelList.remove(entity.id);
 					ChannelList.add(entity);
@@ -109,7 +109,7 @@ public class EventHandler {
 					break;
 					
 				case VentriloEvents.V3_EVENT_USER_LOGOUT:
-					entity = new ChannelListEntity(ChannelList.get(data.user.id));
+					entity = new ChannelListEntity(ChannelList.get(ChannelListEntity.USER, data.user.id));
 					Player.close(data.user.id);
 					UserList.delUser(data.user.id);
 					ChannelList.remove(data.user.id);
@@ -118,13 +118,13 @@ public class EventHandler {
 					break;
 					
 				case VentriloEvents.V3_EVENT_PLAY_AUDIO:
-					UserList.updateStatus(data.user.id, R.drawable.transmit_on);
+					UserList.updateStatus(data.user.id, R.drawable.xmit_on);
 					ChannelList.updateStatus(data.user.id, R.drawable.xmit_on);
 					sv.notifyAdaptersDataSetChanged();
 					break;
 					
 				case VentriloEvents.V3_EVENT_USER_TALK_START:
-					UserList.updateStatus(data.user.id, R.drawable.transmit_init);
+					UserList.updateStatus(data.user.id, R.drawable.xmit_init);
 					ChannelList.updateStatus(data.user.id, R.drawable.xmit_init);
 					sv.notifyAdaptersDataSetChanged();
 					break;
@@ -133,7 +133,7 @@ public class EventHandler {
 				case VentriloEvents.V3_EVENT_USER_TALK_MUTE:
 				case VentriloEvents.V3_EVENT_USER_GLOBAL_MUTE_CHANGED:
 				case VentriloEvents.V3_EVENT_USER_CHANNEL_MUTE_CHANGED:
-					UserList.updateStatus(data.user.id, R.drawable.transmit_off);
+					UserList.updateStatus(data.user.id, R.drawable.xmit_off);
 					ChannelList.updateStatus(data.user.id, R.drawable.xmit_off);
 					sv.notifyAdaptersDataSetChanged();
 					break;
@@ -142,6 +142,21 @@ public class EventHandler {
 					if (data.ping < 65535) {
 						sv.setTitle(sv.servername + " - Ping: " + data.ping + "ms");
 					}
+					break;
+					
+				case VentriloEvents.V3_EVENT_USER_MODIFY:
+					entity = new ChannelListEntity(ChannelListEntity.USER, data.user.id);
+					ChannelList.remove(entity.id);
+					ChannelList.add(entity);
+					if (entity.inMyChannel()) {
+						UserList.delUser(entity.id);
+						UserList.addUser(entity);
+					}
+					sv.notifyAdaptersDataSetChanged();
+					break;
+					
+				case VentriloEvents.V3_EVENT_DISCONNECT:
+					sv.finish();
 					break;
 					
 				default:
