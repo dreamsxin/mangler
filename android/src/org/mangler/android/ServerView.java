@@ -95,7 +95,8 @@ public class ServerView extends TabActivity {
 	private final int CM_OPTION_KICK= 4;
 	private final int CM_OPTION_BAN = 6;
 	private final int CM_OPTION_MUTE = 7;
-	private final int CM_OPTION_GLOBAL_MUTE= 7;
+	private final int CM_OPTION_GLOBAL_MUTE= 8;
+	private final int CM_OPTION_MOVE_USER = 9;
 	
 	// List adapters.
 	private SimpleAdapter channelAdapter;
@@ -268,6 +269,7 @@ public class ServerView extends TabActivity {
     	
     	// Unregister receivers.
         unregisterReceiver(eventReceiver);
+        unregisterReceiver(notifyReceiver);
     }
     
 
@@ -376,7 +378,6 @@ public class ServerView extends TabActivity {
 		}
 	};
 	
-	
 	private BroadcastReceiver notifyReceiver = new BroadcastReceiver() {
 		public void onReceive(Context context, Intent intent) {
 			Toast.makeText(ServerView.this, intent.getStringExtra("message"), Toast.LENGTH_SHORT).show();
@@ -432,7 +433,7 @@ public class ServerView extends TabActivity {
 	};
 	
 	private void setUserVolume(short id) {
-		final CharSequence[] items = {"5 - Loudest", "4", "3", "2", "1 - Muted"};
+		final CharSequence[] items = {"5 - Loudest", "4", "3", "2", "1"};
 		final short userid = id;
 		AlertDialog.Builder alert = new AlertDialog.Builder(this);
 		if (id == VentriloInterface.getuserid()) {
@@ -445,7 +446,7 @@ public class ServerView extends TabActivity {
 		final String username = new String(evdata.text.name, 0, (new String(evdata.text.name).indexOf(0)));
 		alert.setItems(items, new DialogInterface.OnClickListener() {
 			public void onClick(DialogInterface dialog, int item) {
-				short[] levelList = { 0, 0, 10, 79, 118, 148 };
+				short[] levelList = { 0, 5, 10, 79, 118, 148 };
 				int level = levelList[Integer.parseInt(items[item].toString().substring(0, 1))];
 				if (userid == VentriloInterface.getuserid()) {
 					Log.d("mangler", "setting xmit volume for me (" + username + ") to volume level " + level);
@@ -478,7 +479,7 @@ public class ServerView extends TabActivity {
 				menu.setHeaderTitle(entity.name);
 				menu.add(Menu.NONE, CM_OPTION_VOLUME, itempos++, "Set Volume");
 				if (entity.comment != "" ||	entity.url != "") {
-					menu.add(Menu.NONE, CM_OPTION_COMMENT, itempos++, "View Comment/URL").setEnabled(false);
+					menu.add(Menu.NONE, CM_OPTION_COMMENT, itempos++, "View Comment/URL").setVisible(false);
 				}
 				if (dbHelper.getVolume(serverid, entity.name) == 0) {
 					menu.add(Menu.NONE, CM_OPTION_MUTE, itempos++, "Unmute");
@@ -487,6 +488,11 @@ public class ServerView extends TabActivity {
 				}
 				if (serveradmin || VentriloInterface.getpermission("sendpage")) {
 					menu.add(Menu.NONE, CM_OPTION_SEND_PAGE, itempos++, "Send Page");
+				}
+				if (!entity.inMyChannel()) {
+					if (serveradmin || VentriloInterface.getpermission("moveuser")) {
+						menu.add(Menu.NONE, CM_OPTION_MOVE_USER, itempos++, "Move User to Your Channel");
+					}
 				}
 				if (serveradmin || VentriloInterface.getpermission("kickuser")) {
 					menu.add(Menu.NONE, CM_OPTION_KICK, itempos++, "Kick");
@@ -510,10 +516,33 @@ public class ServerView extends TabActivity {
 	@Override
 	public boolean onContextItemSelected(MenuItem item) {
 		AdapterContextMenuInfo cmi = (AdapterContextMenuInfo) item.getMenuInfo();
+
 		short id = Short.parseShort(ChannelList.data.get(cmi.position).get("id").toString());
+		ChannelListEntity entity = new ChannelListEntity(ChannelListEntity.USER, id); 
 		switch (item.getItemId()) {
 			case CM_OPTION_VOLUME:
 				setUserVolume(id);
+				break;
+			case CM_OPTION_MUTE:
+				if ((dbHelper.getVolume(serverid, entity.name)) == 0) {
+					dbHelper.setVolume(serverid, entity.name, 79);
+					VentriloInterface.setuservolume(entity.id, 79);
+				} else {
+					dbHelper.setVolume(serverid, entity.name, 0);
+					VentriloInterface.setuservolume(entity.id, 0);
+				}
+				break;
+			case CM_OPTION_GLOBAL_MUTE:
+				VentriloInterface.globalmute(entity.id);
+				break;
+			case CM_OPTION_SEND_PAGE:
+				VentriloInterface.sendpage(entity.id);
+				break;
+			case CM_OPTION_MOVE_USER:
+				Log.e("mangler", "moving user" + entity.id + " to channel " + VentriloInterface.getuserchannel(VentriloInterface.getuserid()));
+				if (!entity.inMyChannel()) {
+					VentriloInterface.forcechannelmove(entity.id, VentriloInterface.getuserchannel(VentriloInterface.getuserid()));
+				}
 				break;
 			case CM_OPTION_KICK:
 				kickUser(id);
@@ -570,6 +599,11 @@ public class ServerView extends TabActivity {
 				}
 			});
 		alert.show();
+	}
+
+	public void setUserVolumeFromDatabase(ChannelListEntity entity) {
+		int level = dbHelper.getVolume(serverid, entity.name);
+		VentriloInterface.setuservolume(entity.id, level);
 	}
 	
 	private void viewComment(short id) {

@@ -188,6 +188,21 @@ JNIEXPORT jboolean JNICALL Java_org_mangler_android_VentriloInterface_getpermiss
 	return permval;
 }
 
+JNIEXPORT void  JNICALL Java_org_mangler_android_VentriloInterface_forcechannelmove(JNIEnv* env, jobject obj, jshort userid, jshort channelid) {
+	v3_force_channel_move(userid, channelid);
+	return;
+}
+
+JNIEXPORT void  JNICALL Java_org_mangler_android_VentriloInterface_sendpage(JNIEnv* env, jobject obj, jshort userid) {
+	v3_send_user_page(userid);
+	return;
+}
+
+JNIEXPORT void  JNICALL Java_org_mangler_android_VentriloInterface_globalmute(JNIEnv* env, jobject obj, jshort userid) {
+	v3_admin_global_mute(userid);
+	return;
+}
+
 JNIEXPORT void JNICALL Java_org_mangler_android_VentriloInterface_kick(JNIEnv* env, jobject obj, jshort userid, jstring reason) {
 	char *_reason = get_string(env, reason);
 	v3_admin_boot(V3_BOOT_KICK, userid, _reason);

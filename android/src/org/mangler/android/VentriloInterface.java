@@ -60,4 +60,7 @@ public class VentriloInterface {
 	public static native boolean	getpermission(String permissionName);
 	public static native void		kick(short userid, String reason);
 	public static native void		ban(short userid, String reason);
+	public static native void		forcechannelmove(short userid, short channelid);
+	public static native void		sendpage(short userid);
+	public static native void		globalmute(short userid);
 }

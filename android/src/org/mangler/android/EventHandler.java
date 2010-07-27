@@ -75,6 +75,7 @@ public class EventHandler {
 						if ((flags & (1 << 0)) == 0) {
 							sv.ttsWrapper.speak((entity.phonetic != "" ? entity.phonetic : entity.name) + " has logged in");
 						}
+						sv.setUserVolumeFromDatabase(entity);
 					}
 					break;
 					
