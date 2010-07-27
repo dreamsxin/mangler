@@ -751,5 +751,14 @@ public class ServerView extends TabActivity {
 			}
 		};
 		(new Thread(recvRunnable)).start();
+
+	}
+	
+	public void tts(String text) {
+		boolean enable_tts = PreferenceManager.getDefaultSharedPreferences(getBaseContext()).getBoolean("enable_tts", false);
+		Log.e("mangler", "enable tts" + enable_tts);
+		if (enable_tts) {
+			ttsWrapper.speak(text);
+		}
 	}
 }

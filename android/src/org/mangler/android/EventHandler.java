@@ -73,7 +73,7 @@ public class EventHandler {
 						// user was added from userlist sent at login (existing user)
 						// from lv3: #define V3_LOGIN_FLAGS_EXISTING (1 << 0)
 						if ((flags & (1 << 0)) == 0) {
-							sv.ttsWrapper.speak((entity.phonetic != "" ? entity.phonetic : entity.name) + " has logged in");
+							sv.tts((entity.phonetic != "" ? entity.phonetic : entity.name) + " has logged in");
 						}
 						sv.setUserVolumeFromDatabase(entity);
 					}
@@ -94,10 +94,10 @@ public class EventHandler {
 						}
 					} else {
 						if (entity.inMyChannel()) {
-							sv.ttsWrapper.speak((entity.phonetic != "" ? entity.phonetic : entity.name) + " has joined the channel");
+							sv.tts((entity.phonetic != "" ? entity.phonetic : entity.name) + " has joined the channel");
 							UserList.addUser(entity);
 						} else if (UserList.getChannel(data.user.id) == VentriloInterface.getuserchannel(VentriloInterface.getuserid())) {
-							sv.ttsWrapper.speak((entity.phonetic != "" ? entity.phonetic : entity.name) + " has left the channel");
+							sv.tts((entity.phonetic != "" ? entity.phonetic : entity.name) + " has left the channel");
 							UserList.delUser(data.user.id);
 						}
 						Player.close(data.user.id);
@@ -114,7 +114,7 @@ public class EventHandler {
 					Player.close(data.user.id);
 					UserList.delUser(data.user.id);
 					ChannelList.remove(data.user.id);
-					sv.ttsWrapper.speak((entity.phonetic != "" ? entity.phonetic : entity.name) + " has logged out");
+					sv.tts((entity.phonetic != "" ? entity.phonetic : entity.name) + " has logged out");
 					sv.notifyAdaptersDataSetChanged();
 					break;
 					
