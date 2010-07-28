@@ -920,7 +920,7 @@ public class ServerView extends TabActivity {
 		boolean enable_tts = PreferenceManager.getDefaultSharedPreferences(getBaseContext()).getBoolean("enable_tts" + ttsType, false);
 		Log.e("mangler", "enable tts: " + enable_tts);
 		// TTS is only available on 1.6 and higher
-		if (enable_tts && Build.VERSION.SDK_INT > 3) {
+		if (enable_tts) {
 			ttsWrapper.speak(text);
 		}
 	}
