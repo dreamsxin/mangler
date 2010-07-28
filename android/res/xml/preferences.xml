@@ -2,7 +2,7 @@
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
 	<CheckBoxPreference
 		android:key="ptt_toggle"
-		android:summary="Whether the push to talk button is a toggle button or touch sensitive"
+		android:summary="Whether the Push-to-Talk button is a toggle button or touch sensitive"
 		android:title="@string/ptt_button_type"/>
 	<CheckBoxPreference
 		android:key="trackball_ptt"

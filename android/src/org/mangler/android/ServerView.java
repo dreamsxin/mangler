@@ -551,6 +551,9 @@ public class ServerView extends TabActivity {
 				if (progress >= 67 && progress <= 81) {
 					seekBar.setProgress(74);
 					percent.setText("100%");
+				} else if (progress >= 148) {
+					seekBar.setProgress(158);
+					percent.setText("200%");
 				} else
 					percent.setText((progress * 200) / seekBar.getMax() + "%");
 			}
