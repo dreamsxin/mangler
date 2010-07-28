@@ -24,6 +24,7 @@
 
 package org.mangler.android;
 
+import android.media.AudioManager;
 import android.os.Bundle;
 import android.preference.PreferenceActivity;
 
@@ -31,6 +32,10 @@ public class Settings extends PreferenceActivity {
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+		
+		// Volume controls.
+        setVolumeControlStream(AudioManager.STREAM_MUSIC);
+        
 		addPreferencesFromResource(R.xml.preferences);
 	}
 }
