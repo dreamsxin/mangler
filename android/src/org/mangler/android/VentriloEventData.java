@@ -114,7 +114,7 @@ public class VentriloEventData {
 		_rank rank = new _rank();
 		
 		public byte[] sample		= new byte[32768];
-		public byte[] motd			= new byte[32768];
+		//public byte[] motd			= new byte[32768];
 		public byte[] chatmessage	= new byte[256];
 		public byte[] reason		= new byte[128];
 	}

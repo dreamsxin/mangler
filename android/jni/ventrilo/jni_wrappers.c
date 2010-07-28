@@ -462,6 +462,7 @@ JNIEXPORT void JNICALL Java_org_mangler_android_VentriloInterface_getevent(JNIEn
 				
 			case V3_EVENT_DISPLAY_MOTD:
 				{
+					/* don't deal with any MOTD events here because they're useless
 					// MOTD.
 					jobject data = get_object(env, eventdata, event_class, "data", "Lorg/mangler/android/VentriloEventData$_data;");
 					jclass  data_class = get_class(env, data);
@@ -469,6 +470,7 @@ JNIEXPORT void JNICALL Java_org_mangler_android_VentriloInterface_getevent(JNIEn
 					
 					// Flags.
 					set_int(env, eventdata, event_class, "flags", ev->flags);
+					*/
 				}
 				break;
 				
