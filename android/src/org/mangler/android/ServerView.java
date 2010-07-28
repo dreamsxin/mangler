@@ -110,6 +110,7 @@ public class ServerView extends TabActivity {
 	private final int CM_OPTION_MUTE = 7;
 	private final int CM_OPTION_GLOBAL_MUTE= 8;
 	private final int CM_OPTION_MOVE_USER = 9;
+	private final int CM_OPTION_URL = 10;
 	
 	// List adapters.
 	private SimpleAdapter channelAdapter;
@@ -594,7 +595,8 @@ public class ServerView extends TabActivity {
 				int itempos = 1;
 
 				menu.add(Menu.NONE, CM_OPTION_VOLUME, itempos++, "Set Transmit Level");
-				menu.add(Menu.NONE, CM_OPTION_COMMENT, itempos++, "Set Comment/URL").setVisible(false);
+				menu.add(Menu.NONE, CM_OPTION_COMMENT, itempos++, "Set Comment");
+				menu.add(Menu.NONE, CM_OPTION_URL, itempos++, "Set URL");
 			}
 		}
 	}
@@ -638,9 +640,46 @@ public class ServerView extends TabActivity {
 				break;
 			case CM_OPTION_COMMENT:
 				if (id == VentriloInterface.getuserid()) {
-					//setComment();
+					final ChannelListEntity fentity = entity;
+					final EditText input = new EditText(this);
+					input.setText(entity.comment);
+					AlertDialog.Builder alert = new AlertDialog.Builder(this)
+					.setTitle("Comment")
+					.setMessage("Enter your comment:")
+					.setView(input)
+					.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+						public void onClick(DialogInterface dialog, int whichButton) {
+							VentriloInterface.settext(input.getText().toString(), fentity.url, "", true);
+						}
+					})
+					.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+						public void onClick(DialogInterface dialog, int whichButton) {
+						}
+					});
+					alert.show();
 				} else {
 					viewComment(id);
+				}
+				break;
+			case CM_OPTION_URL:
+				if (id == VentriloInterface.getuserid()) {
+					final ChannelListEntity fentity = entity;
+					final EditText input = new EditText(this);
+					input.setText(entity.url);
+					AlertDialog.Builder alert = new AlertDialog.Builder(this)
+					.setTitle("URL")
+					.setMessage("Enter a URL:")
+					.setView(input)
+					.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+						public void onClick(DialogInterface dialog, int whichButton) {
+							VentriloInterface.settext(fentity.comment, input.getText().toString(), "", true);
+						}
+					})
+					.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+						public void onClick(DialogInterface dialog, int whichButton) {
+						}
+					});
+					alert.show();
 				}
 				break;
 		}
