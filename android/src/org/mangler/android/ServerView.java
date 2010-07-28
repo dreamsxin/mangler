@@ -698,7 +698,11 @@ public class ServerView extends TabActivity {
 				if (id == VentriloInterface.getuserid()) {
 					final ChannelListEntity fentity = entity;
 					final EditText input = new EditText(this);
-					input.setText(entity.url);
+					if (entity.url.length() == 0) {
+						input.setText("http://");
+					} else {
+						input.setText(entity.url);
+					}
 					AlertDialog.Builder alert = new AlertDialog.Builder(this)
 					.setTitle("URL")
 					.setMessage("Enter a URL:")
