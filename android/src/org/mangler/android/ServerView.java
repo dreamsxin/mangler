@@ -146,10 +146,25 @@ public class ServerView extends TabActivity {
 			getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
 			requestWindowFeature(Window.FEATURE_NO_TITLE);
 		}
-        setContentView(R.layout.server_view);
-        
-        // Get the server id that we're connected to and set up the database adapter
-        serverid = getIntent().getIntExtra("serverid", 0);
+		setContentView(R.layout.server_view);
+
+		// Chat TextView
+		TextView chatMessages = (TextView) findViewById(R.id.messages);
+		
+		// Get the server id that we're connected to and set up the database
+		// adapter
+		serverid = getIntent().getIntExtra("serverid", 0);
+
+		// Restore state.
+		if (savedInstanceState != null) {
+			ping = savedInstanceState.getInt("ping");
+			serverid = savedInstanceState.getInt("serverid");
+			servername = savedInstanceState.getString("servername");
+			this.setTitle();
+			userInChat = savedInstanceState.getBoolean("chatopen");
+			chatMessages.setText(savedInstanceState.getString("chatmessages"));
+			((EditText) findViewById(R.id.message)).setEnabled(userInChat);
+		}
         
         dbHelper = new ManglerDBAdapter(this);
         dbHelper.open();
@@ -164,9 +179,6 @@ public class ServerView extends TabActivity {
         if (ttsWrapper == null) {
         	ttsWrapper = TTSWrapper.getInstance(this);
         }
-        
-        // Chat TextView
-        TextView chatMessages = (TextView)findViewById(R.id.messages);
         
         // Add tabs.
         TabHost tabhost = getTabHost();
@@ -193,17 +205,19 @@ public class ServerView extends TabActivity {
         // Control listeners.
 	    ((EditText)findViewById(R.id.message)).setOnKeyListener(onChatMessageEnter);
 	    ((Button)findViewById(R.id.talkButton)).setOnTouchListener(onTalkPress);
-    
-	    // Restore state.
-	    if(savedInstanceState != null) {
-	    	ping = savedInstanceState.getInt("ping");
-	    	servername = savedInstanceState.getString("servername");
-	    	this.setTitle();
-	    	userInChat = savedInstanceState.getBoolean("chatopen");
-	    	chatMessages.setText(savedInstanceState.getString("chatmessages"));
-	    	((EditText)findViewById(R.id.message)).setEnabled(userInChat);
-	    }
 	    
+
+		// Restore state.
+		if (savedInstanceState != null) {
+			ping = savedInstanceState.getInt("ping");
+			serverid = savedInstanceState.getInt("serverid");
+			servername = savedInstanceState.getString("servername");
+			this.setTitle();
+			userInChat = savedInstanceState.getBoolean("chatopen");
+			chatMessages.setText(savedInstanceState.getString("chatmessages"));
+			((EditText) findViewById(R.id.message)).setEnabled(userInChat);
+		}
+		
 	    eventHandler = new EventHandler(this);
 	
 	    ((EditText)findViewById(R.id.message)).setVisibility(userInChat ? TextView.VISIBLE : TextView.GONE);
@@ -248,6 +262,7 @@ public class ServerView extends TabActivity {
 
     @Override
     protected void onSaveInstanceState(Bundle outState) {
+    	outState.putInt("serverid", serverid);
     	outState.putInt("ping", ping);
     	outState.putString("servername", servername);
     	outState.putString("chatmessages", ((TextView)findViewById(R.id.messages)).getText().toString());
@@ -271,6 +286,18 @@ public class ServerView extends TabActivity {
 			return true;
 		}
 		return super.onKeyUp(keyCode, event);
+	}
+	
+	public boolean onTrackballEvent(MotionEvent event) {
+		switch (event.getAction()) {
+			case MotionEvent.ACTION_DOWN:
+				startPtt();
+				return true;
+			case MotionEvent.ACTION_UP:
+				stopPtt();
+				return true;
+		}
+		return false;
 	}
 
     @Override
