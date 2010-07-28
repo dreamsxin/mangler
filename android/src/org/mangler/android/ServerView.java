@@ -233,7 +233,8 @@ public class ServerView extends TabActivity {
 		}
 		
 		registerForContextMenu(((ListView)findViewById(R.id.channelList)));
-		
+		registerForContextMenu(((ListView)findViewById(R.id.userList)));
+
 		notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
 
 		if (! VentriloInterface.isloggedin()) {
@@ -586,8 +587,16 @@ public class ServerView extends TabActivity {
 	public void onCreateContextMenu(ContextMenu menu, View v, ContextMenuInfo menuInfo) {
 		super.onCreateContextMenu(menu, v, menuInfo);
 		AdapterContextMenuInfo cmi = (AdapterContextMenuInfo) menuInfo;
+		int clposition = cmi.position;
+		int groupId = 0;
 		
-		ChannelListEntity entity = new ChannelListEntity(ChannelList.data.get(cmi.position));
+		if (v.getId() == R.id.userList) {
+			groupId = 1;
+			HashMap<String, Object> user = UserList.data.get(cmi.position);
+			clposition = UserList.getChannelListLocation(Short.parseShort(user.get("userid").toString()));
+		}
+		
+		ChannelListEntity entity = new ChannelListEntity(ChannelList.data.get(clposition));
 		
 		if (entity.type == ChannelListEntity.USER) {
 			if (entity.id != VentriloInterface.getuserid()) {
@@ -597,39 +606,39 @@ public class ServerView extends TabActivity {
 				Log.d("mangler", "am i a server admin? " + serveradmin);
 				menu.setHeaderTitle(entity.name);
 				
-				menu.add(Menu.NONE, CM_OPTION_VOLUME, itempos++, "Set Volume");
+				menu.add(groupId, CM_OPTION_VOLUME, itempos++, "Set Volume");
 				if (entity.comment != "" ||	entity.url != "") {
-					menu.add(Menu.NONE, CM_OPTION_COMMENT, itempos++, "View Comment/URL");
+					menu.add(groupId, CM_OPTION_COMMENT, itempos++, "View Comment/URL");
 				}
 				if (dbHelper.getVolume(serverid, entity.name) == 0) {
-					menu.add(Menu.NONE, CM_OPTION_MUTE, itempos++, "Unmute");
+					menu.add(groupId, CM_OPTION_MUTE, itempos++, "Unmute");
 				} else {
-					menu.add(Menu.NONE, CM_OPTION_MUTE, itempos++, "Mute");
+					menu.add(groupId, CM_OPTION_MUTE, itempos++, "Mute");
 				}
 				if (serveradmin || VentriloInterface.getpermission("sendpage")) {
-					menu.add(Menu.NONE, CM_OPTION_SEND_PAGE, itempos++, "Send Page");
+					menu.add(groupId, CM_OPTION_SEND_PAGE, itempos++, "Send Page");
 				}
 				if (!entity.inMyChannel()) {
 					if (serveradmin || VentriloInterface.getpermission("moveuser")) {
-						menu.add(Menu.NONE, CM_OPTION_MOVE_USER, itempos++, "Move User to Your Channel");
+						menu.add(groupId, CM_OPTION_MOVE_USER, itempos++, "Move User to Your Channel");
 					}
 				}
 				if (serveradmin || VentriloInterface.getpermission("kickuser")) {
-					menu.add(Menu.NONE, CM_OPTION_KICK, itempos++, "Kick");
+					menu.add(groupId, CM_OPTION_KICK, itempos++, "Kick");
 				}
 				if (serveradmin || VentriloInterface.getpermission("banuser")) {
-					menu.add(Menu.NONE, CM_OPTION_BAN, itempos++, "Ban");
+					menu.add(groupId, CM_OPTION_BAN, itempos++, "Ban");
 				}
 				if (serveradmin) {
-					menu.add(Menu.NONE, CM_OPTION_GLOBAL_MUTE, itempos++, "Global Mute");
+					menu.add(groupId, CM_OPTION_GLOBAL_MUTE, itempos++, "Global Mute");
 				}
 			} else {
 				// create menu for our own options
 				int itempos = 1;
 
-				menu.add(Menu.NONE, CM_OPTION_VOLUME, itempos++, "Set Transmit Level");
-				menu.add(Menu.NONE, CM_OPTION_COMMENT, itempos++, "Set Comment");
-				menu.add(Menu.NONE, CM_OPTION_URL, itempos++, "Set URL");
+				menu.add(groupId, CM_OPTION_VOLUME, itempos++, "Set Transmit Level");
+				menu.add(groupId, CM_OPTION_COMMENT, itempos++, "Set Comment");
+				menu.add(groupId, CM_OPTION_URL, itempos++, "Set URL");
 			}
 		}
 	}
@@ -637,8 +646,14 @@ public class ServerView extends TabActivity {
 	@Override
 	public boolean onContextItemSelected(MenuItem item) {
 		AdapterContextMenuInfo cmi = (AdapterContextMenuInfo) item.getMenuInfo();
+		int clposition = cmi.position;
 
-		short id = Short.parseShort(ChannelList.data.get(cmi.position).get("id").toString());
+		// see if the item was clicked from the user list
+		if (item.getGroupId() == 1) {
+			HashMap<String, Object> user = UserList.data.get(cmi.position);
+			clposition = UserList.getChannelListLocation(Short.parseShort(user.get("userid").toString()));
+		}
+		short id = Short.parseShort(ChannelList.data.get(clposition).get("id").toString());
 		ChannelListEntity entity = new ChannelListEntity(ChannelListEntity.USER, id); 
 		switch (item.getItemId()) {
 			case CM_OPTION_VOLUME:
@@ -919,8 +934,9 @@ public class ServerView extends TabActivity {
 	public void tts(String ttsType, String text) {
 		boolean enable_tts = PreferenceManager.getDefaultSharedPreferences(getBaseContext()).getBoolean("enable_tts" + ttsType, false);
 		Log.e("mangler", "enable tts: " + enable_tts);
-		// TTS is only available on 1.6 and higher
-		if (enable_tts) {
+		// TTS is only available on 1.6 and higher and Build.VERSION.SDK_INT
+		// isn't available in 1.5 :/
+		if (enable_tts && Build.VERSION.RELEASE != "1.5") {
 			ttsWrapper.speak(text);
 		}
 	}

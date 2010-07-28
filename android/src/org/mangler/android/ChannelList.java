@@ -82,7 +82,7 @@ public class ChannelList {
 		return childcount;
 	}
 	
-	private static int getLocation(short id) {
+	public static int getLocation(short id) {
 		int ctr = 0;
 		for(ListIterator<HashMap<String, Object>> iterator = data.listIterator(); iterator.hasNext(); ) {
 			short listid =  ((Short)iterator.next().get("id"));

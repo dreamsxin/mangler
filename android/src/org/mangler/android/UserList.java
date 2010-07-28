@@ -86,5 +86,14 @@ public class UserList {
 		}
 		return -1;
 	}
-
+	
+	public static int getChannelListLocation(short userid) {
+		for (Iterator<HashMap<String, Object>> iterator = data.iterator(); iterator.hasNext();) {
+			short id = (Short) iterator.next().get("userid");
+			if (id == userid) {
+				return ChannelList.getLocation(id);
+			}
+		}
+		return 0;
+	}
 }
