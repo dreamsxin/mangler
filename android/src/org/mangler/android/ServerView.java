@@ -46,6 +46,7 @@ import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.ContextMenu;
 import android.view.KeyEvent;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
@@ -61,6 +62,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.ListView;
+import android.widget.SeekBar;
 import android.widget.SimpleAdapter;
 import android.widget.TabHost;
 import android.widget.TabWidget;
@@ -68,6 +70,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.AdapterView.AdapterContextMenuInfo;
 import android.widget.AdapterView.OnItemClickListener;
+import android.widget.SeekBar.OnSeekBarChangeListener;
 
 import com.nullwire.trace.ExceptionHandler;
 
@@ -494,33 +497,54 @@ public class ServerView extends TabActivity {
 	};
 	
 	private void setUserVolume(short id) {
-		final CharSequence[] items = {"5 - Loudest", "4", "3", "2", "1"};
-		final short userid = id;
+		final ChannelListEntity entity = new ChannelListEntity(ChannelListEntity.USER, id);
+		LayoutInflater inflater = (LayoutInflater) this.getSystemService(LAYOUT_INFLATER_SERVICE);
+		final View layout = inflater.inflate(R.layout.volume, null);
 		AlertDialog.Builder alert = new AlertDialog.Builder(this);
+		final TextView percent = (TextView) layout.findViewById(R.id.VolumeLevel);
+		final SeekBar seek = (SeekBar) layout.findViewById(R.id.VolumeBar);
+		seek.setMax(158);
+		int level = dbHelper.getVolume(serverid, entity.name);
+		level = level < 148 ? level : 158; // hack for volume oddities
 		if (id == VentriloInterface.getuserid()) {
-			alert.setTitle("Set Transmit Level");
+			alert.setTitle("Set Transmit Volume");
+			seek.setProgress(level);
 		} else {
-			alert.setTitle("Set User Volume Level");
+			alert.setTitle("Set Volume for " + entity.name);
+			seek.setProgress(level);
 		}
-		VentriloEventData evdata = new VentriloEventData();
-		VentriloInterface.getuser(evdata, id);
-		final String username = new String(evdata.text.name, 0, (new String(evdata.text.name).indexOf(0)));
-		alert.setItems(items, new DialogInterface.OnClickListener() {
-			public void onClick(DialogInterface dialog, int item) {
-				short[] levelList = { 0, 5, 10, 79, 118, 148 };
-				int level = levelList[Integer.parseInt(items[item].toString().substring(0, 1))];
-				if (userid == VentriloInterface.getuserid()) {
-					Log.d("mangler", "setting xmit volume for me (" + username + ") to volume level " + level);
-					dbHelper.setVolume(serverid, username, level);
-					VentriloInterface.setxmitvolume(level);
-				} else {
-					Log.d("mangler", "setting volume for " + username + " to volume level " + level);
-					dbHelper.setVolume(serverid, username, level);
-					VentriloInterface.setuservolume(userid, level);
-				} 
-				
+		percent.setText((seek.getProgress() * 200) / seek.getMax() + "%");
+		seek.setOnSeekBarChangeListener(new OnSeekBarChangeListener() {
+			public void onProgressChanged(SeekBar seekBar, int progress,
+					boolean fromUser) {
+				if (progress >= 67 && progress <= 81) {
+					seekBar.setProgress(74);
+					percent.setText("100%");
+				} else
+					percent.setText((progress * 200) / seekBar.getMax() + "%");
 			}
-		});		
+			public void onStartTrackingTouch(SeekBar seekBar) {
+			}
+			public void onStopTrackingTouch(SeekBar seekBar) {
+			}
+		});
+		alert.setView(layout)
+		.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+			public void onClick(DialogInterface dialog, int which) {
+				int level = seek.getProgress() > 148 ? 148 : seek.getProgress();
+				if (entity.id == VentriloInterface.getuserid()) {
+					VentriloInterface.setxmitvolume(level);
+					dbHelper.setVolume(serverid, entity.name, level);
+				} else {
+					VentriloInterface.setuservolume(entity.id, level);
+					dbHelper.setVolume(serverid, entity.name, level);
+				}
+			}
+		}).setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+			public void onClick(DialogInterface dialog, int which) {
+				return;
+			}
+		});
 		alert.show();
 	}
 	
