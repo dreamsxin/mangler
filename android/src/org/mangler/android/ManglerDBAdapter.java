@@ -65,7 +65,7 @@ public class ManglerDBAdapter {
     private static final String DATABASE_VOLUME_TABLE = "volume";
     private static final String DATABASE_PASSWORD_TABLE = "password";
 
-    private static final int DATABASE_VERSION = 3;
+    private static final int DATABASE_VERSION = 4;
 
     private final Context context;
 
@@ -95,8 +95,13 @@ public class ManglerDBAdapter {
             	onCreate(db);
             }
             if (oldVersion < 3) {
-            	db.execSQL("create table volume (_server_id integer not null, username varchar(32) not null, level integer not null, primary key (_server_id,username));");
-        		db.execSQL("create table password (_server_id integer not null, channel integer not null, password text not null, primary key (_server_id,channel));");
+            	db.execSQL(DATABASE_VOLUME_CREATE);
+        		db.execSQL(DATABASE_PASSWORD_CREATE);
+            }
+            if (oldVersion < 4) {
+            	db.execSQL("UPDATE " + DATABASE_VOLUME_TABLE +
+            			" SET " + KEY_VOLUME_LEVEL + "=79 " +
+            			" WHERE " + KEY_VOLUME_LEVEL + "=74;");
             }
         }
     }
