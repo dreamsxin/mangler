@@ -181,7 +181,8 @@ public class ManglerDBAdapter {
      * @return true if deleted, false otherwise
      */
     public boolean deleteServer(long rowId) {
-
+    	db.delete(DATABASE_VOLUME_TABLE, KEY_VOLUME_SERVERID + "=" + rowId, null);
+    	db.delete(DATABASE_PASSWORD_TABLE, KEY_PASSWORD_SERVERID + "=" + rowId, null);
         return db.delete(DATABASE_SERVER_TABLE, KEY_SERVERS_ROWID + "=" + rowId, null) > 0;
     }
     
