@@ -289,15 +289,18 @@ public class ServerView extends TabActivity {
 	}
 	
 	public boolean onTrackballEvent(MotionEvent event) {
-		switch (event.getAction()) {
-			case MotionEvent.ACTION_DOWN:
-				startPtt();
-				return true;
-			case MotionEvent.ACTION_UP:
-				stopPtt();
-				return true;
+		boolean trackball_ptt = PreferenceManager.getDefaultSharedPreferences(getBaseContext()).getBoolean("trackball_ptt", false);
+		if (trackball_ptt) {
+			switch (event.getAction()) {
+				case MotionEvent.ACTION_DOWN:
+					startPtt();
+					return true;
+				case MotionEvent.ACTION_UP:
+					stopPtt();
+					return true;
+			}
 		}
-		return false;
+		return super.onTrackballEvent(event);
 	}
 
     @Override

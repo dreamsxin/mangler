@@ -26,7 +26,7 @@
 <string name="eula_title">Privacy Notice</string>
 <string name="eula_accept">Accept</string>
 <string name="eula_refuse">Refuse</string>
-<string name="ptt_button_type">Set Push-To-Talk as Toggle</string>
+<string name="ptt_button_type">Push-To-Talk as Toggle</string>
 
 <string name="force_8khz">Force 8kHz Transmit</string>
 <string name="enable_tts">Enable Text-to-Speech</string><string name="enable_ttsChannel">TTS Channel Join/Leave</string><string name="enable_ttsLogin">TTS Login/Logout</string>
@@ -34,4 +34,5 @@
 <string name="fullscreen">Fullscreen Mode</string>
 <string name="ttsPreferenceCategoryTitle">Text-To-Speech</string>
 <string name="enable_ttsPage">TTS Pages</string>
+<string name="trackball_ptt">Trackball Push-to-Talk</string>
 </resources>
