@@ -242,6 +242,10 @@ public class ServerView extends TabActivity {
 		} else {
 			isAdmin = VentriloInterface.getpermission("serveradmin");
 		}
+		int level = PreferenceManager.getDefaultSharedPreferences(getBaseContext()).getInt("xmitvolume", 79);
+		VentriloInterface.setxmitvolume(level);
+		Log.e("mangler", "login setting xmit level to " + level);
+		
 		eventHandler.process();
 		notifyAdaptersDataSetChanged();
 	}
@@ -570,6 +574,7 @@ public class ServerView extends TabActivity {
 				if (entity.id == VentriloInterface.getuserid()) {
 					VentriloInterface.setxmitvolume(level);
 					dbHelper.setVolume(serverid, entity.name, level);
+					PreferenceManager.getDefaultSharedPreferences(getBaseContext()).edit().putInt("xmitvolume", level);
 				} else {
 					VentriloInterface.setuservolume(entity.id, level);
 					dbHelper.setVolume(serverid, entity.name, level);

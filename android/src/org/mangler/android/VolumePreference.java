@@ -41,7 +41,7 @@ public class VolumePreference extends DialogPreference implements OnSeekBarChang
 
     public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
     	if (progress >= 67 && progress <= 81) {
-			seekBar.setProgress(74);
+			seekBar.setProgress(79);
 		} else if (progress >= 148) {
 			seekBar.setProgress(158);
 		}
