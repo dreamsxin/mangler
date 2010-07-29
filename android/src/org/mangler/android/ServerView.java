@@ -544,6 +544,7 @@ public class ServerView extends TabActivity {
 		level = level < 148 ? level : 158; // hack for volume oddities
 		if (id == VentriloInterface.getuserid()) {
 			alert.setTitle("Set Transmit Volume");
+			level = PreferenceManager.getDefaultSharedPreferences(getBaseContext()).getInt("xmitvolume", 79);
 			seek.setProgress(level);
 		} else {
 			alert.setTitle("Set Volume for " + entity.name);
