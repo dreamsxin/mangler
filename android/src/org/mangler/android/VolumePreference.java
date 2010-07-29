@@ -3,6 +3,7 @@ package org.mangler.android;
 import android.content.Context;
 import android.preference.DialogPreference;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.View;
 import android.widget.SeekBar;
 import android.widget.SeekBar.OnSeekBarChangeListener;
@@ -30,6 +31,7 @@ public class VolumePreference extends DialogPreference implements OnSeekBarChang
         seek.setMax(158);
         
         level = getPersistedInt(79);
+        level = level > 148 ? 158 : level;
         
         seek.setProgress(level);
         
@@ -50,6 +52,8 @@ public class VolumePreference extends DialogPreference implements OnSeekBarChang
     
     public void onDialogClosed(boolean positiveResult) {
     	if (positiveResult) {
+    		level  = level > 148 ? 148 : level;
+    		VentriloInterface.setxmitvolume(level);
     		persistInt(level);
     	}
     }

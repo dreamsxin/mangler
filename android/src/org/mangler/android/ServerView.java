@@ -641,8 +641,9 @@ public class ServerView extends TabActivity {
 			} else {
 				// create menu for our own options
 				int itempos = 1;
-
-				menu.add(groupId, CM_OPTION_VOLUME, itempos++, "Set Transmit Level");
+				
+				// this is done in the settings menu now
+				//menu.add(groupId, CM_OPTION_VOLUME, itempos++, "Set Transmit Level");
 				menu.add(groupId, CM_OPTION_COMMENT, itempos++, "Set Comment");
 				menu.add(groupId, CM_OPTION_URL, itempos++, "Set URL");
 			}

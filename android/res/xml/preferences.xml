@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
 	<org.mangler.android.VolumePreference
-	    android:key="mic_volume"
+	    android:key="xmitvolume"
 	    android:summary="Set microphone input volume level"
 	    android:title="@string/mic_vol_set"/>
 	<CheckBoxPreference
