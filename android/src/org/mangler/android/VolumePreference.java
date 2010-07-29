@@ -31,7 +31,7 @@ public class VolumePreference extends DialogPreference implements OnSeekBarChang
         seek.setMax(158);
         
         level = getPersistedInt(79);
-        level = level > 148 ? 158 : level;
+        level = level == 148 ? 158 : level;
         
         seek.setProgress(level);
         
