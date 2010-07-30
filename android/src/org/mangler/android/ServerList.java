@@ -218,14 +218,14 @@ public class ServerList extends ListActivity {
 						username, 
 						password, 
 						phonetic)) {
-					dialog.dismiss();
 					
 					// Start receiving packets.
 					startRecvThread();
 					
-					Intent serverView = new Intent(ServerList.this, ServerView.class);
-					serverView.putExtra("serverid", serverid);
-					serverView.putExtra("servername", servername);
+					Intent serverView = new Intent(ServerList.this, ServerView.class)
+					.putExtra("serverid", serverid)
+					.putExtra("servername", servername);
+					
 					startActivityForResult(serverView, ACTIVITY_CONNECT);
 
 					Intent notificationIntent = new Intent(ServerList.this, ServerView.class);
@@ -234,6 +234,9 @@ public class ServerList extends ListActivity {
 					notification.setLatestEventInfo(getApplicationContext(), "Mangler", "Connected to " + servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_SERVERS_SERVERNAME)), PendingIntent.getActivity(ServerList.this, 0, notificationIntent, 0));
 					notification.flags = Notification.FLAG_ONGOING_EVENT;
 					notificationManager.notify(ONGOING_NOTIFICATION, notification);
+					
+					dialog.dismiss();
+					
 				} else {
 					dialog.dismiss();
 					VentriloEventData data = new VentriloEventData();
