@@ -145,9 +145,9 @@ public class ServerView extends TabActivity {
 		// Chat TextView
 		TextView chatMessages = (TextView) findViewById(R.id.messages);
 		
-		// Get the server id that we're connected to and set up the database
-		// adapter
+		// Get the server id and name that we're connected to
 		serverid = getIntent().getIntExtra("serverid", 0);
+		servername = getIntent().getStringExtra("servername");
 
 		// Restore state.
 		if (savedInstanceState != null) {
@@ -160,6 +160,7 @@ public class ServerView extends TabActivity {
 			((EditText) findViewById(R.id.message)).setEnabled(userInChat);
 		}
         
+		// Set up database adapter
         dbHelper = new ManglerDBAdapter(this);
         dbHelper.open();
         
@@ -302,7 +303,7 @@ public class ServerView extends TabActivity {
     	super.onDestroy();
     	
     	if (Recorder.recording()) {			
-    		Recorder.stop();
+    		stopPtt();
     	}
     	
     	// release a wakelock if we have one
