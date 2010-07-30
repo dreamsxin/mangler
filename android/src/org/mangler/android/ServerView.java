@@ -349,7 +349,11 @@ public class ServerView extends TabActivity {
     		menu.add(0, OPTION_HIDE_TABS, 0, "Hide Tabs").setIcon(R.drawable.menu_hide_tabs);
     	}
         menu.add(0, OPTION_SETTINGS, 0, "Settings").setIcon(R.drawable.menu_settings);
-    	menu.add(0, OPTION_JOIN_CHAT, 0, "Join Chat").setIcon(R.drawable.menu_join_chat);
+        if (!userInChat) {
+        	menu.add(0, OPTION_JOIN_CHAT, 0, "Join Chat").setIcon(R.drawable.menu_join_chat);
+        } else {
+        	menu.add(0, OPTION_JOIN_CHAT, 0, "Leave Chat").setIcon(R.drawable.menu_leave_chat);
+        }
     	if (! isAdmin) {
     		menu.add(0, OPTION_ADMIN_LOGIN, 0, "Admin Login").setIcon(R.drawable.menu_admin_login);
     	}
