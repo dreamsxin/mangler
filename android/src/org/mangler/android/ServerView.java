@@ -134,9 +134,7 @@ public class ServerView extends TabActivity {
 	// WakeLock
 	private PowerManager.WakeLock wl;
 	
-	// Notifications
-	private NotificationManager notificationManager;
-	private static final int ONGOING_NOTIFICATION = 1;
+	
 	
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -235,13 +233,8 @@ public class ServerView extends TabActivity {
 		registerForContextMenu(((ListView)findViewById(R.id.channelList)));
 		registerForContextMenu(((ListView)findViewById(R.id.userList)));
 
-		notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-
-		if (! VentriloInterface.isloggedin()) {
-			connectToServer();
-		} else {
-			isAdmin = VentriloInterface.getpermission("serveradmin");
-		}
+		isAdmin = VentriloInterface.getpermission("serveradmin");
+		
 		int level = PreferenceManager.getDefaultSharedPreferences(getBaseContext()).getInt("xmitvolume", 79);
 		VentriloInterface.setxmitvolume(level);
 		Log.e("mangler", "login setting xmit level to " + level);
@@ -873,74 +866,6 @@ public class ServerView extends TabActivity {
 			return false;
 		}
 	};
-	
-	private void connectToServer() {
-		final ProgressDialog dialog = ProgressDialog.show(this, "", "Connecting. Please wait...", true);
-
-		final Cursor servers = dbHelper.fetchServer(serverid);
-		startManagingCursor(servers);
-		final String servername = servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_SERVERS_SERVERNAME));
-		this.servername = servername;
-		final String hostname = servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_SERVERS_HOSTNAME));
-		final String port = Integer.toString(servers.getInt(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_SERVERS_PORTNUMBER)));
-		final String username = servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_SERVERS_USERNAME));
-		final String password = servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_SERVERS_PASSWORD));
-		final String phonetic = servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_SERVERS_PHONETIC));
-		
-		this.setTitle();
-		
-		// Get rid of any data from previous connections.
-		UserList.clear();
-		ChannelList.clear();
-
-		// Add lobby.
-		ChannelListEntity entity = new ChannelListEntity();
-		entity.id = 0;
-		entity.name = "Lobby";
-		entity.type = ChannelListEntity.CHANNEL;
-		entity.parentid = 0;
-		ChannelList.add(entity);
-
-		Thread t = new Thread(new Runnable() {
-			public void run() {
-				if (VentriloInterface.login(
-						hostname + ":" + port, 
-						username, 
-						password, 
-						phonetic)) {
-					dialog.dismiss();
-					// Start receiving packets.
-					startRecvThread();
-
-					Intent notificationIntent = new Intent(ServerView.this, ServerView.class);
-					notificationIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-					Notification notification = new Notification(R.drawable.notification, "Connected to server", System.currentTimeMillis());
-					notification.setLatestEventInfo(getApplicationContext(), "Mangler", "Connected to " + servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_SERVERS_SERVERNAME)), PendingIntent.getActivity(ServerView.this, 0, notificationIntent, 0));
-					notification.flags = Notification.FLAG_ONGOING_EVENT;
-					notificationManager.notify(ONGOING_NOTIFICATION, notification);
-				} else {
-					dialog.dismiss();
-					VentriloEventData data = new VentriloEventData();
-					VentriloInterface.error(data);
-					sendBroadcast(new Intent(ServerView.NOTIFY_ACTION)
-						.putExtra("message", "Connection to server failed:\n" + EventService.StringFromBytes(data.error.message)));
-				}
-			}
-		});
-		t.setPriority(10);
-		t.start();
-	}
-
-	private void startRecvThread() {
-		Runnable recvRunnable = new Runnable() {
-			public void run() {
-				while (VentriloInterface.recv())
-					;
-			}
-		};
-		(new Thread(recvRunnable)).start();
-
-	}
 	
 	public void tts(String ttsType, String text) {
 		boolean enable_tts = PreferenceManager.getDefaultSharedPreferences(getBaseContext()).getBoolean("enable_tts" + ttsType, false);
