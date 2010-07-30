@@ -38,6 +38,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.PowerManager;
 import android.preference.PreferenceManager;
+import android.text.InputType;
 import android.util.Log;
 import android.view.ContextMenu;
 import android.view.KeyEvent;
@@ -391,6 +392,7 @@ public class ServerView extends TabActivity {
         	case OPTION_ADMIN_LOGIN:
         		final MenuItem fitem = item;
 				final EditText input = new EditText(this);
+				input.setInputType(InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD);
 				AlertDialog.Builder alert = new AlertDialog.Builder(this)
 				.setTitle("Admin Password")
 				.setMessage("Please enter the server's admin password")
@@ -482,6 +484,7 @@ public class ServerView extends TabActivity {
 			if((protectedby = VentriloInterface.channelrequirespassword(channelid)) > 0) {
 				final String password = dbHelper.getPassword(serverid, protectedby);
 				final EditText input = new EditText(this);
+				input.setInputType(InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD);
 				input.setText(password);
 				// Create dialog box for password.
 				AlertDialog.Builder alert = new AlertDialog.Builder(this)
