@@ -130,7 +130,7 @@ public class EventService extends Service {
 				if (forwardToUI) {
 					while (eventQueue.size() > 100) {
 						try {
-							this.wait(1000);
+							this.wait(10);
 						} catch (Exception e) { }
 					}
 					eventQueue.add(data);
