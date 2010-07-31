@@ -36,4 +36,5 @@
 <string name="enable_ttsPage">TTS Pages</string>
 <string name="trackball_ptt">Trackball Push-to-Talk</string>
 <string name="mic_vol_set">Microphone Volume</string>
+<string name="cancel">Cancel</string>
 </resources>

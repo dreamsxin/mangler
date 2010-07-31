@@ -146,9 +146,12 @@ public class ServerView extends TabActivity {
 		TextView chatMessages = (TextView) findViewById(R.id.messages);
 		
 		// Get the server id and name that we're connected to
-		serverid = getIntent().getIntExtra("serverid", 0);
-		servername = getIntent().getStringExtra("servername");
-
+		Bundle extras = getIntent().getExtras();
+    	if (extras != null) {
+    		serverid = getIntent().getIntExtra("serverid", 0);
+    		servername = getIntent().getStringExtra("servername");
+    	}
+    	
 		// Restore state.
 		if (savedInstanceState != null) {
 			ping = savedInstanceState.getInt("ping");
