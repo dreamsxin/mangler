@@ -41,7 +41,7 @@ public class EventHandler {
 		
 		while ((data = EventService.getNext()) != null) {
 			ChannelListEntity entity;
-			Log.d("mangler", "EventHandler: processing event type " + data.type);
+			//Log.d("mangler", "EventHandler: processing event type " + data.type);
 			switch (data.type) {
 				case VentriloEvents.V3_EVENT_CHAT_MESSAGE:
 					entity = new ChannelListEntity(ChannelListEntity.USER, data.user.id);

@@ -31,7 +31,6 @@ import android.app.Service;
 import android.content.Intent;
 import android.os.Binder;
 import android.os.IBinder;
-import android.util.Log;
 
 public class EventService extends Service {
 
@@ -62,6 +61,7 @@ public class EventService extends Service {
 	@Override
 	public void onDestroy() {
 		running = false;
+		eventQueue = null;
 	}
 
 	public static String StringFromBytes(byte[] bytes) {
@@ -128,7 +128,9 @@ public class EventService extends Service {
 						break;
 				}
 				if (forwardToUI) {
-					while (eventQueue.size() > 100) {
+					// In order to conserve memory, let the consumer catch up
+					// before putting too many objects in the event queue
+					while (eventQueue.size() > 25) {
 						try {
 							this.wait(10);
 						} catch (Exception e) { }
@@ -143,7 +145,7 @@ public class EventService extends Service {
 	};
 
 	public static VentriloEventData getNext() {
-		Log.d("mangler", "event queue size: " + eventQueue.size());
+		//Log.d("mangler", "event queue size: " + eventQueue.size());
 		return eventQueue.poll();
 	}
 }
