@@ -29,8 +29,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.ListIterator;
 
-import android.util.Log;
-
 public class ChannelList {
 
 	public static ArrayList<HashMap<String, Object>> data = new ArrayList<HashMap<String, Object>>();
@@ -49,7 +47,7 @@ public class ChannelList {
 			entity.xmitStatus = R.drawable.xmit_clear;
 		}
 		entity.indent = indent;
-		Log.d("mangler", "adding entity id " + entity.id + " (" + entity.name + ") at location " + getLocation(entity.parentid));
+		//Log.d("mangler", "adding entity id " + entity.id + " (" + entity.name + ") at location " + getLocation(entity.parentid));
 		if (entity.id == 0) {
 			entity.type = ChannelListEntity.CHANNEL;
 			data.add(entity.toHashMap());
@@ -114,7 +112,7 @@ public class ChannelList {
 	}
 	
 	public static void remove(short id) {
-		Log.d("mangler", "removing entity with id " + id + " at location " + getLocation(id));
+		//Log.d("mangler", "removing entity with id " + id + " at location " + getLocation(id));
 		data.remove(getLocation(id));
 	}
 	

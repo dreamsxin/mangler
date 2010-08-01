@@ -63,6 +63,7 @@ public class ServerEdit extends Activity{
         phoneticText = (EditText)findViewById(R.id.editPhonetic);
 
         Button saveButton = (Button)findViewById(R.id.editSave);
+        Button cancelButton = (Button)findViewById(R.id.editCancel);
 
         rowID = null;
 
@@ -82,6 +83,13 @@ public class ServerEdit extends Activity{
         saveButton.setOnClickListener(new View.OnClickListener() {
         	public void onClick(View view) {
         		saveState();
+        		setResult(RESULT_OK);
+        		finish();
+        	}
+		});
+        
+        cancelButton.setOnClickListener(new View.OnClickListener() {
+        	public void onClick(View view) {
         		setResult(RESULT_OK);
         		finish();
         	}

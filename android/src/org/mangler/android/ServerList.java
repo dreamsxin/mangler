@@ -25,10 +25,15 @@
 package org.mangler.android;
 
 import android.app.ListActivity;
+import android.app.Notification;
 import android.app.NotificationManager;
+import android.app.PendingIntent;
+import android.app.ProgressDialog;
+import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.database.Cursor;
 import android.media.AudioManager;
@@ -42,6 +47,7 @@ import android.view.ContextMenu.ContextMenuInfo;
 import android.widget.ListView;
 import android.widget.SimpleCursorAdapter;
 import android.widget.TextView;
+import android.widget.Toast;
 import android.widget.AdapterView.AdapterContextMenuInfo;
 
 import com.nullwire.trace.ExceptionHandler;
@@ -57,11 +63,14 @@ public class ServerList extends ListActivity {
 	private static final int CLONE_ID = Menu.FIRST + 2;
     private static final int DELETE_ID = Menu.FIRST + 3;
 
+    public static final String NOTIFY_ACTION = "org.mangler.android.NotifyAction";
+
 	private ManglerDBAdapter dbHelper;
 	
+	// Notifications
 	private NotificationManager notificationManager;
-
-
+	private static final int ONGOING_NOTIFICATION = 1;
+	
     /** Called when the activity is first created. */
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -74,21 +83,28 @@ public class ServerList extends ListActivity {
         // Volume controls.
         setVolumeControlStream(AudioManager.STREAM_MUSIC);
 
+        // Notification broadcast receiver.
+        registerReceiver(notificationReceiver, new IntentFilter(NOTIFY_ACTION));
+
         bindService(new Intent(this, EventService.class), serviceconnection, Context.BIND_AUTO_CREATE);
     	
-
         dbHelper = new ManglerDBAdapter(this);
         dbHelper.open();
     	fillData();
         registerForContextMenu(getListView());
-		notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-        notificationManager.cancelAll();
+        
+        notificationManager = (NotificationManager)getSystemService(NOTIFICATION_SERVICE);
     }
 
 	@Override
 	protected void onDestroy() {
 		super.onDestroy();
+		
+		// Unregister notification broadcase receiver.
+        unregisterReceiver(notificationReceiver);
+        
 		unbindService(serviceconnection);
+		
 		dbHelper.close();
 	}
 
@@ -153,8 +169,7 @@ public class ServerList extends ListActivity {
 	@Override
 	protected void onListItemClick(ListView l, View v, int position, long id) {
 		super.onListItemClick(l, v, position, id);
-		startActivityForResult(new Intent(ServerList.this, ServerView.class).putExtra("serverid", (int)id), ACTIVITY_CONNECT);
-
+		connectToServer(id);
 	}
 
 
@@ -165,11 +180,91 @@ public class ServerList extends ListActivity {
         if (requestCode == ACTIVITY_CONNECT) {
         	VentriloInterface.logout();
         }
-        notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+        
         notificationManager.cancelAll();
         fillData();
     }
     
+	private void connectToServer(long id) {
+		final ProgressDialog dialog = ProgressDialog.show(this, "", "Connecting. Please wait...", true);
+
+		final Cursor servers = dbHelper.fetchServer(id);
+		startManagingCursor(servers);
+		
+		final int serverid = (int)id;
+		final String servername = servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_SERVERS_SERVERNAME));
+		final String hostname = servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_SERVERS_HOSTNAME));
+		final String port = Integer.toString(servers.getInt(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_SERVERS_PORTNUMBER)));
+		final String username = servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_SERVERS_USERNAME));
+		final String password = servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_SERVERS_PASSWORD));
+		final String phonetic = servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_SERVERS_PHONETIC));
+		
+		// Get rid of any data from previous connections.
+		UserList.clear();
+		ChannelList.clear();
+
+		// Add lobby.
+		ChannelListEntity entity = new ChannelListEntity();
+		entity.id = 0;
+		entity.name = "Lobby";
+		entity.type = ChannelListEntity.CHANNEL;
+		entity.parentid = 0;
+		ChannelList.add(entity);
+
+		Thread t = new Thread(new Runnable() {
+			public void run() {
+				if (VentriloInterface.login(
+						hostname + ":" + port, 
+						username, 
+						password, 
+						phonetic)) {
+					
+					// Start receiving packets.
+					startRecvThread();
+					
+					Intent serverView = new Intent(ServerList.this, ServerView.class)
+					.putExtra("serverid", serverid)
+					.putExtra("servername", servername);
+					
+					startActivityForResult(serverView, ACTIVITY_CONNECT);
+
+					Intent notificationIntent = new Intent(ServerList.this, ServerView.class);
+					notificationIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+					Notification notification = new Notification(R.drawable.notification, "Connected to server", System.currentTimeMillis());
+					notification.setLatestEventInfo(getApplicationContext(), "Mangler", "Connected to " + servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_SERVERS_SERVERNAME)), PendingIntent.getActivity(ServerList.this, 0, notificationIntent, 0));
+					notification.flags = Notification.FLAG_ONGOING_EVENT;
+					notificationManager.notify(ONGOING_NOTIFICATION, notification);
+					
+					dialog.dismiss();
+					
+				} else {
+					dialog.dismiss();
+					VentriloEventData data = new VentriloEventData();
+					VentriloInterface.error(data);
+					sendBroadcast(new Intent(ServerList.NOTIFY_ACTION)
+						.putExtra("notification", "Connection to server failed:\n" + EventService.StringFromBytes(data.error.message)));
+				}
+			}
+		});
+		t.setPriority(10);
+		t.start();
+	}
+	
+	private void startRecvThread() {
+		Runnable recvRunnable = new Runnable() {
+			public void run() {
+				while (VentriloInterface.recv())
+					;
+			}
+		};
+		(new Thread(recvRunnable)).start();
+	}
+	
+	private BroadcastReceiver notificationReceiver = new BroadcastReceiver() {
+		public void onReceive(Context context, Intent intent) {
+			Toast.makeText(ServerList.this, intent.getStringExtra("notification"), Toast.LENGTH_LONG).show();
+		}
+	};
     
 	private final ServiceConnection serviceconnection = new ServiceConnection() {
 		public void onServiceConnected(ComponentName className, IBinder service) {
