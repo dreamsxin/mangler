@@ -179,6 +179,7 @@ public class EventHandler {
 					break;
 					
 				case VentriloEvents.V3_EVENT_DISCONNECT:
+					EventService.clearEvents();
 					sv.finish();
 					break;
 					

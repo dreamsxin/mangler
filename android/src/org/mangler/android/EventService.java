@@ -148,4 +148,8 @@ public class EventService extends Service {
 		//Log.d("mangler", "event queue size: " + eventQueue.size());
 		return eventQueue.poll();
 	}
+	
+	public static void clearEvents() {
+		eventQueue.clear();
+	}
 }

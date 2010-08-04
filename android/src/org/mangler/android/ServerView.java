@@ -222,7 +222,7 @@ public class ServerView extends TabActivity {
 	    
 	    // Get a wakelock to prevent sleeping and register an onchange preference callback
 	    PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
-	    wl = pm.newWakeLock(PowerManager.SCREEN_DIM_WAKE_LOCK, "Mangler");
+	    wl = pm.newWakeLock(PowerManager.SCREEN_DIM_WAKE_LOCK|PowerManager.ON_AFTER_RELEASE, "Mangler");
 		boolean prevent_sleep = PreferenceManager.getDefaultSharedPreferences(getBaseContext()).getBoolean("prevent_sleep", false);
 		if (prevent_sleep) {
 			if (!wl.isHeld()) {
