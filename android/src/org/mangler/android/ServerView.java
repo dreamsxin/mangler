@@ -270,35 +270,33 @@ public class ServerView extends TabActivity {
     
 	@Override
 	public boolean onKeyDown(int keyCode, KeyEvent event) {
-		if (keyCode == KeyEvent.KEYCODE_CAMERA) {
-			startPtt();
-			return true;
+		boolean ptt_toggle = PreferenceManager.getDefaultSharedPreferences(getBaseContext()).getBoolean("ptt_toggle", false);
+		
+		if (PreferenceManager.getDefaultSharedPreferences(getBaseContext()).getBoolean("custom_ptt", false)) {
+			if (keyCode == PreferenceManager.getDefaultSharedPreferences(getBaseContext()).getInt("ptt_key", KeyEvent.KEYCODE_CAMERA)) {
+				if (!Recorder.recording()) {
+					startPtt();
+				} else if (ptt_toggle) {
+					stopPtt();
+				}
+				return true;
+			}
 		}
 		return super.onKeyDown(keyCode, event);
 	}
 
 	@Override
 	public boolean onKeyUp(int keyCode, KeyEvent event) {
-		if (keyCode == KeyEvent.KEYCODE_CAMERA) {
-			stopPtt();
-			return true;
-		}
-		return super.onKeyUp(keyCode, event);
-	}
-	
-	public boolean onTrackballEvent(MotionEvent event) {
-		boolean trackball_ptt = PreferenceManager.getDefaultSharedPreferences(getBaseContext()).getBoolean("trackball_ptt", false);
-		if (trackball_ptt) {
-			switch (event.getAction()) {
-				case MotionEvent.ACTION_DOWN:
-					startPtt();
-					return true;
-				case MotionEvent.ACTION_UP:
+		boolean ptt_toggle = PreferenceManager.getDefaultSharedPreferences(getBaseContext()).getBoolean("ptt_toggle", false);
+		if (PreferenceManager.getDefaultSharedPreferences(getBaseContext()).getBoolean("custom_ptt", false)) {
+			if (keyCode == PreferenceManager.getDefaultSharedPreferences(getBaseContext()).getInt("ptt_key", KeyEvent.KEYCODE_CAMERA)) {
+				if (!ptt_toggle) {
 					stopPtt();
 					return true;
+				}
 			}
 		}
-		return super.onTrackballEvent(event);
+		return super.onKeyUp(keyCode, event);
 	}
 
     @Override

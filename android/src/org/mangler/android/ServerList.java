@@ -188,16 +188,16 @@ public class ServerList extends ListActivity {
 	private void connectToServer(long id) {
 		final ProgressDialog dialog = ProgressDialog.show(this, "", "Connecting. Please wait...", true);
 
-		final Cursor servers = dbHelper.fetchServer(id);
-		startManagingCursor(servers);
+		Cursor server = dbHelper.fetchServer(id);
+		startManagingCursor(server);
 		
 		final int serverid = (int)id;
-		final String servername = servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_SERVERS_SERVERNAME));
-		final String hostname = servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_SERVERS_HOSTNAME));
-		final String port = Integer.toString(servers.getInt(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_SERVERS_PORTNUMBER)));
-		final String username = servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_SERVERS_USERNAME));
-		final String password = servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_SERVERS_PASSWORD));
-		final String phonetic = servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_SERVERS_PHONETIC));
+		final String servername = server.getString(server.getColumnIndexOrThrow(ManglerDBAdapter.KEY_SERVERS_SERVERNAME));
+		final String hostname = server.getString(server.getColumnIndexOrThrow(ManglerDBAdapter.KEY_SERVERS_HOSTNAME));
+		final String port = Integer.toString(server.getInt(server.getColumnIndexOrThrow(ManglerDBAdapter.KEY_SERVERS_PORTNUMBER)));
+		final String username = server.getString(server.getColumnIndexOrThrow(ManglerDBAdapter.KEY_SERVERS_USERNAME));
+		final String password = server.getString(server.getColumnIndexOrThrow(ManglerDBAdapter.KEY_SERVERS_PASSWORD));
+		final String phonetic = server.getString(server.getColumnIndexOrThrow(ManglerDBAdapter.KEY_SERVERS_PHONETIC));
 		
 		// Get rid of any data from previous connections.
 		UserList.clear();
@@ -228,10 +228,10 @@ public class ServerList extends ListActivity {
 					
 					startActivityForResult(serverView, ACTIVITY_CONNECT);
 
-					Intent notificationIntent = new Intent(ServerList.this, ServerView.class);
-					notificationIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+					//Intent notificationIntent = new Intent(ServerList.this, ServerView.class);
+					serverView.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
 					Notification notification = new Notification(R.drawable.notification, "Connected to server", System.currentTimeMillis());
-					notification.setLatestEventInfo(getApplicationContext(), "Mangler", "Connected to " + servers.getString(servers.getColumnIndexOrThrow(ManglerDBAdapter.KEY_SERVERS_SERVERNAME)), PendingIntent.getActivity(ServerList.this, 0, notificationIntent, 0));
+					notification.setLatestEventInfo(getApplicationContext(), "Mangler", "Connected to " + servername, PendingIntent.getActivity(ServerList.this, 0, serverView, 0));
 					notification.flags = Notification.FLAG_ONGOING_EVENT;
 					notificationManager.notify(ONGOING_NOTIFICATION, notification);
 					

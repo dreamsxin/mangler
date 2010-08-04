@@ -5,25 +5,34 @@
 	    android:summary="Set microphone input volume level"
 	    android:title="@string/mic_vol_set"/>
 	<CheckBoxPreference
-		android:key="ptt_toggle"
-		android:summary="Whether the Push-to-Talk button is a toggle button or touch sensitive"
-		android:title="@string/ptt_button_type"/>
-	<CheckBoxPreference
-		android:key="trackball_ptt"
-		android:summary="Override the trackball button so it acts as a Push-to-Talk button"
-		android:title="@string/trackball_ptt"/>
-	<CheckBoxPreference
-		android:key="force_8khz"
-		android:summary="Use if transmit sound quality is poor or normal transmitting does not work."
-		android:title="@string/force_8khz"/>
+		android:key="fullscreen"
+		android:summary="Hide the status bar and title bar to increase visible space."
+		android:title="@string/fullscreen"/>
 	<CheckBoxPreference
 		android:key="prevent_sleep"
 		android:summary="Prevent the phone from going into sleep mode while connected to a server. WILL DRAIN BATTERY."
 		android:title="@string/prevent_sleep"/>
 	<CheckBoxPreference
-		android:key="fullscreen"
-		android:summary="Hide the status bar and title bar to increase visible space."
-		android:title="@string/fullscreen"/>
+		android:key="force_8khz"
+		android:summary="Use if transmit sound quality is poor or normal transmitting does not work."
+		android:title="@string/force_8khz"/>		
+	
+	<PreferenceCategory
+		android:title="@string/pttPreferenceCategoryTitle">>
+		<CheckBoxPreference 
+			android:key="ptt_toggle" 
+			android:summary="Whether the Push-to-Talk button is a toggle button or touch sensitive" 
+			android:title="@string/ptt_button_type" />
+		<CheckBoxPreference 
+			android:key="custom_ptt" 
+			android:summary="Enable custom PTT key" 
+			android:title="@string/custom_ptt" />
+		<org.mangler.android.PTTKeyPreference
+		    android:key="ptt_key"
+		    android:summary="Set a custom PTT key"
+		    android:title="@string/set_ptt" />
+	</PreferenceCategory>
+	
 	<PreferenceCategory
 		android:title="@string/ttsPreferenceCategoryTitle">
 		<CheckBoxPreference
@@ -40,4 +49,5 @@
 			android:title="@string/enable_ttsPage"
 			android:defaultValue="true"/>
 	</PreferenceCategory>
+	
 </PreferenceScreen>

@@ -3,7 +3,9 @@ package org.mangler.android;
 import android.content.Context;
 import android.preference.DialogPreference;
 import android.util.AttributeSet;
+import android.view.Gravity;
 import android.view.View;
+import android.widget.LinearLayout;
 import android.widget.SeekBar;
 import android.widget.SeekBar.OnSeekBarChangeListener;
 
@@ -25,6 +27,11 @@ public class VolumePreference extends DialogPreference implements OnSeekBarChang
 
     @Override
     protected View onCreateDialogView() {
+    	LinearLayout view = new LinearLayout(this.getContext());
+    	view.setOrientation(LinearLayout.VERTICAL);
+    	view.setGravity(Gravity.CENTER_HORIZONTAL);
+    	view.setPadding(10, 10, 10, 10);
+    	
         SeekBar seek = new SeekBar(getContext());
         
         seek.setMax(158);
@@ -34,10 +41,11 @@ public class VolumePreference extends DialogPreference implements OnSeekBarChang
         
         seek.setProgress(level);
         
-        seek.setPadding(10, 10, 10, 10);
         seek.setOnSeekBarChangeListener(this);
 
-        return seek;
+        view.addView(seek);
+        
+        return view;
     }
 
     public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
