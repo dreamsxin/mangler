@@ -71,10 +71,9 @@ public class PTTKeyPreference extends DialogPreference implements OnKeyListener 
     	}
     }
 
-	public boolean onKey(DialogInterface d, int keyCode, KeyEvent event) {
-		currentKeyCode = keyCode;
-    	
+	public boolean onKey(DialogInterface d, int keyCode, KeyEvent event) {  	
 		if (event.getAction() == KeyEvent.ACTION_DOWN) {
+			currentKeyCode = keyCode;
 			currentKeyTextView.setText("PTT Key: " + (keyMap.isPrintingKey(currentKeyCode) ? Character.toString(keyMap.getDisplayLabel(currentKeyCode)) : currentKeyCode));
 		}
 		

@@ -273,12 +273,17 @@ public class ServerView extends TabActivity {
 		boolean ptt_toggle = PreferenceManager.getDefaultSharedPreferences(getBaseContext()).getBoolean("ptt_toggle", false);
 		
 		if (PreferenceManager.getDefaultSharedPreferences(getBaseContext()).getBoolean("custom_ptt", false)) {
-			if (keyCode == PreferenceManager.getDefaultSharedPreferences(getBaseContext()).getInt("ptt_key", KeyEvent.KEYCODE_CAMERA)) {
+			int pttCode = PreferenceManager.getDefaultSharedPreferences(getBaseContext()).getInt("ptt_key", KeyEvent.KEYCODE_CAMERA);
+			
+			if (keyCode == pttCode) {
 				if (!Recorder.recording()) {
 					startPtt();
 				} else if (ptt_toggle) {
 					stopPtt();
 				}
+				return true;
+			}
+			if (keyCode == KeyEvent.KEYCODE_CAMERA && pttCode == KeyEvent.KEYCODE_FOCUS) {
 				return true;
 			}
 		}

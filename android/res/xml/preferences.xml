@@ -30,7 +30,8 @@
 		<org.mangler.android.PTTKeyPreference
 		    android:key="ptt_key"
 		    android:summary="Set a custom PTT key"
-		    android:title="@string/set_ptt" />
+		    android:title="@string/set_ptt" 
+		    android:dependency="custom_ptt" />
 	</PreferenceCategory>
 	
 	<PreferenceCategory
