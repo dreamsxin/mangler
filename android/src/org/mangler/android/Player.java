@@ -101,5 +101,11 @@ public class Player {
 		}
 		audiotrack.write(sample, 0, length);
 	}
+	
+	public static void setVolume(final float volume) {
+		for (AudioTrack audiotrack : audiotracks.values()) {
+			audiotrack.setStereoVolume(volume, volume);
+		}
+	}
 
 }

@@ -824,6 +824,7 @@ public class ServerView extends TabActivity {
 			Toast.makeText(this, "Unsupported recording rate for hardware: " + Integer.toString(Recorder.rate()) + "Hz", Toast.LENGTH_SHORT).show();
 			return;
 		}
+		Player.setVolume(0.2f);
 	    Button pttButton = ((Button)findViewById(R.id.talkButton));
 	    pttButton.setPressed(true);
 		((ImageView)findViewById(R.id.transmitStatus)).setImageResource(R.drawable.xmit_on);
@@ -842,6 +843,7 @@ public class ServerView extends TabActivity {
 		Button pttButton = ((Button)findViewById(R.id.talkButton));
 		pttButton.setPressed(false);
 		Recorder.stop();
+		Player.setVolume(1.0f);
 		((ImageView)findViewById(R.id.transmitStatus)).setImageResource(R.drawable.xmit_off);
 		UserList.updateStatus(VentriloInterface.getuserid(), R.drawable.xmit_off);
 		userAdapter.notifyDataSetChanged();
