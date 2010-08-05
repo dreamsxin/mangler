@@ -6,7 +6,7 @@
  * $LastChangedBy$
  * $URL$
  *
- * Copyright 2009-2010 Eric Kilfoil
+ * Copyright 2009-2010 Eric Connell
  *
  * This file is part of Mangler.
  *

@@ -6,7 +6,7 @@
  * $LastChangedBy: Haxar $
  * $URL: http://svn.mangler.org/mangler/trunk/sounds/bin2h.c $
  *
- * Copyright 2009-2010 Eric Kilfoil
+ * Copyright 2009-2010 Eric Connell
  *
  * This file is part of Mangler.
  *

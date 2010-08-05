@@ -1305,7 +1305,7 @@
     <property name="transient_for">manglerWindow</property>
     <property name="program_name">Mangler</property>
     <property name="version">1.2.0</property>
-    <property name="copyright" translatable="yes">Copyright 2009-2010 by Eric Kilfoil</property>
+    <property name="copyright" translatable="yes">Copyright 2009-2010 by Eric Connell</property>
     <property name="website">http://www.mangler.org</property>
     <property name="website_label" translatable="yes">http://www.mangler.org</property>
     <property name="license" translatable="yes">Mangler is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
@@ -1313,7 +1313,7 @@
 Mangler is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License along with Mangler.  If not, see &lt;http://www.gnu.org/licenses&gt;.</property>
-    <property name="authors">Eric Kilfoil
+    <property name="authors">Eric Connell
 Daniel Sloof
 humbaba (anonymous)
 Haxar (anonymous)
