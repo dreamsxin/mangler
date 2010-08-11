@@ -62,7 +62,7 @@ libventrilo3/codec-test/parec.c
 --------------------------------------------------------------------------
 
 The following files are licensed under the GNU General Public License version 
-2.0:
+2.0 or higher:
 
 libventrilo3/ventrilo3_handshake.c 
 libventrilo3/ventrilo3_algo.h 
