@@ -36,9 +36,9 @@ mangler_SOURCES = \
 	manglerg15.cpp manglerg15.h \
 	inilib.cpp inilib.h
 
-mangler_LDADD = @top_srcdir@/libventrilo3/libventrilo3.la $(gtkmm_LIBS) $(gthread_LIBS) $(pulse_LIBS) $(alsa_LIBS) $(dbus_LIBS)
+mangler_LDADD = @top_srcdir@/libventrilo3/libventrilo3.la $(gtkmm_LIBS) $(gthread_LIBS) $(pulse_LIBS) $(alsa_LIBS) $(dbus_LIBS) $(xi_LIBS) $(x11_LIBS)
 
-INCLUDES = -I@top_srcdir@/libventrilo3/ -I@top_srcdir@/icons/ -I@top_srcdir@/sounds/ $(gtkmm_CFLAGS) $(gthread_CFLAGS) $(pulse_CFLAGS) $(alsa_CFLAGS) $(oss_CFLAGS) $(dbus_CFLAGS)
+INCLUDES = -I@top_srcdir@/libventrilo3/ -I@top_srcdir@/icons/ -I@top_srcdir@/sounds/ $(gtkmm_CFLAGS) $(gthread_CFLAGS) $(pulse_CFLAGS) $(alsa_CFLAGS) $(oss_CFLAGS) $(dbus_CFLAGS) $(xi_CFLAGS) $(x11_CFLAGS)
 
 dev:
 	cd ../libventrilo3 && make dev

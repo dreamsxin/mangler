@@ -126,6 +126,14 @@ else
 	echo "Disabled optional eSpeak support."
 fi
 
+PKG_CHECK_MODULES(x11, x11) 
+AC_SUBST(x11_CFLAGS) 
+AC_SUBST(x11_LIBS) 
+
+PKG_CHECK_MODULES(xi, xi) 
+AC_SUBST(xi_CFLAGS) 
+AC_SUBST(xi_LIBS) 
+
 PKG_CHECK_MODULES(gtk, gtk+-2.0 >= 2.16.0)
 
 if test "$enable_dbus" != "no" ; then
