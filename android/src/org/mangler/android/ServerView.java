@@ -37,6 +37,7 @@ import android.media.AudioManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.PowerManager;
+import android.os.Vibrator;
 import android.preference.PreferenceManager;
 import android.text.InputType;
 import android.util.Log;
@@ -829,6 +830,11 @@ public class ServerView extends TabActivity {
 			Toast.makeText(this, "Unsupported recording rate for hardware: " + Integer.toString(Recorder.rate()) + "Hz", Toast.LENGTH_SHORT).show();
 			return;
 		}
+		boolean ptt_vibrate = PreferenceManager.getDefaultSharedPreferences(getBaseContext()).getBoolean("ptt_vibrate", false);
+		if (ptt_vibrate) {
+			Vibrator v = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
+			v.vibrate(50);
+		}
 		Player.setVolume(0.2f);
 	    Button pttButton = ((Button)findViewById(R.id.talkButton));
 	    pttButton.setPressed(true);
@@ -845,6 +851,11 @@ public class ServerView extends TabActivity {
 				"Channel Rate: " + VentriloInterface.getchannelrate(VentriloInterface.getuserchannel(VentriloInterface.getuserid())) + "\n" +
 				"Record Rate: " + Recorder.rate() + "\n" +
 				"Buffer Size: " + Recorder.buflen() + "\n");
+		boolean ptt_vibrate = PreferenceManager.getDefaultSharedPreferences(getBaseContext()).getBoolean("ptt_vibrate", false);
+		if (ptt_vibrate) {
+			Vibrator v = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
+			v.vibrate(50);
+		}
 		Button pttButton = ((Button)findViewById(R.id.talkButton));
 		pttButton.setPressed(false);
 		Recorder.stop();

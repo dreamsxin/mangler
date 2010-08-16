@@ -28,10 +28,14 @@
 			android:summary="Enable custom PTT key" 
 			android:title="@string/custom_ptt" />
 		<org.mangler.android.PTTKeyPreference
-		    android:key="ptt_key"
-		    android:summary="Set a custom PTT key"
-		    android:title="@string/set_ptt" 
-		    android:dependency="custom_ptt" />
+			android:key="ptt_key"
+			android:summary="Set a custom PTT key"
+			android:title="@string/set_ptt" 
+			android:dependency="custom_ptt" />
+		<CheckBoxPreference 
+			android:key="ptt_vibrate" 
+			android:summary="Vibrate when PTT is activated and deactivated" 
+			android:title="@string/ptt_vibrate" />
 	</PreferenceCategory>
 	
 	<PreferenceCategory
