@@ -28,11 +28,14 @@ import android.app.Activity;
 import android.content.Intent;
 import android.media.AudioManager;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
 
 public class Main extends Activity {
+	
+	public static String characterEncoding = "ISO-8859-1";
 
 	static {
     	// Load native library.
@@ -43,6 +46,7 @@ public class Main extends Activity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         
+		Main.characterEncoding = PreferenceManager.getDefaultSharedPreferences(getBaseContext()).getString("charset", "ISO-8859-1");
         Eula.show(this);
         
         setContentView(R.layout.main);

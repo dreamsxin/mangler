@@ -42,4 +42,5 @@
 
 <string name="pttPreferenceCategoryTitle">Push-To-Talk</string>
 <string name="ptt_vibrate">Vibrate on PTT</string>
+<string name="charset">Character Encoding</string>
 </resources>

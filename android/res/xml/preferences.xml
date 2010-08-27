@@ -15,7 +15,13 @@
 	<CheckBoxPreference
 		android:key="force_8khz"
 		android:summary="Use if transmit sound quality is poor or normal transmitting does not work."
-		android:title="@string/force_8khz"/>		
+		android:title="@string/force_8khz"/>
+	<ListPreference
+		android:key="charset"
+		android:entries="@array/charsetNames"
+		android:entryValues="@array/charsetValues"
+		android:summary="Changing the character encoding requires re-connecting to the server to take effect." 
+		android:title="@string/charset"/>
 	
 	<PreferenceCategory
 		android:title="@string/pttPreferenceCategoryTitle">>

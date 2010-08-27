@@ -23,8 +23,11 @@
  */
 package org.mangler.android;
 
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.HashMap;
+
+import android.preference.PreferenceManager;
 
 public class ChannelListEntity {
 	
@@ -41,7 +44,6 @@ public class ChannelListEntity {
 	public int passwordProtected = 0;
 	public short parentid = 0;
 	public int xmitStatus = R.drawable.xmit_off;
-
 	
 	public ChannelListEntity(HashMap<String, Object> entity) {
 		type = Integer.parseInt(entity.get("type").toString());
@@ -54,6 +56,7 @@ public class ChannelListEntity {
 		passwordProtected = Integer.parseInt(entity.get("passwordProtected").toString());
 		parentid = Short.parseShort(entity.get("parentid").toString());
 		xmitStatus = Integer.parseInt(entity.get("xmitStatus").toString());
+
 	}
 	
 	public ChannelListEntity(int type, short id) {
@@ -98,7 +101,12 @@ public class ChannelListEntity {
 	}
 	
 	public static String stringFromBytes(byte[] bytes) {
-		return new String(bytes, 0, (new String(bytes).indexOf(0)));
+		try {
+			return new String(bytes, 0, (new String(bytes).indexOf(0)), Main.characterEncoding);
+		} catch (UnsupportedEncodingException e) {
+			e.printStackTrace();
+			return new String(bytes, 0, (new String(bytes).indexOf(0)));
+		}
 	}
 
 	public HashMap<String, Object> toHashMap() {
