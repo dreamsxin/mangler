@@ -747,6 +747,7 @@ ac_subst_vars='am__EXEEXT_FALSE
 am__EXEEXT_TRUE
 LTLIBOBJS
 LIBOBJS
+SUBDIR_LIST
 gthread_LIBS
 gthread_CFLAGS
 oss_CFLAGS
@@ -912,6 +913,7 @@ enable_xosd
 enable_g15
 enable_espeak
 enable_dbus
+enable_ui
 with_pulseaudio
 with_alsa
 with_oss
@@ -1586,6 +1588,7 @@ Optional Features:
   --disable-g15           disable Logitech G15 keyboard support
   --disable-espeak        disable eSpeak text to speech support
   --disable-dbus          disable dbus support for rhythmbox/amarok
+  --disable-ui            disable building of the UI (libventrilo3 only)
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -5522,13 +5525,13 @@ if test "${lt_cv_nm_interface+set}" = set; then :
 else
   lt_cv_nm_interface="BSD nm"
   echo "int some_variable = 0;" > conftest.$ac_ext
-  (eval echo "\"\$as_me:5525: $ac_compile\"" >&5)
+  (eval echo "\"\$as_me:5528: $ac_compile\"" >&5)
   (eval "$ac_compile" 2>conftest.err)
   cat conftest.err >&5
-  (eval echo "\"\$as_me:5528: $NM \\\"conftest.$ac_objext\\\"\"" >&5)
+  (eval echo "\"\$as_me:5531: $NM \\\"conftest.$ac_objext\\\"\"" >&5)
   (eval "$NM \"conftest.$ac_objext\"" 2>conftest.err > conftest.out)
   cat conftest.err >&5
-  (eval echo "\"\$as_me:5531: output\"" >&5)
+  (eval echo "\"\$as_me:5534: output\"" >&5)
   cat conftest.out >&5
   if $GREP 'External.*some_variable' conftest.out > /dev/null; then
     lt_cv_nm_interface="MS dumpbin"
@@ -6723,7 +6726,7 @@ ia64-*-hpux*)
   ;;
 *-*-irix6*)
   # Find out which ABI we are using.
-  echo '#line 6726 "configure"' > conftest.$ac_ext
+  echo '#line 6729 "configure"' > conftest.$ac_ext
   if { { eval echo "\"\$as_me\":${as_lineno-$LINENO}: \"$ac_compile\""; } >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -8643,11 +8646,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:8646: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:8649: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:8650: \$? = $ac_status" >&5
+   echo "$as_me:8653: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -8982,11 +8985,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:8985: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:8988: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:8989: \$? = $ac_status" >&5
+   echo "$as_me:8992: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -9087,11 +9090,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:9090: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:9093: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:9094: \$? = $ac_status" >&5
+   echo "$as_me:9097: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -9142,11 +9145,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:9145: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:9148: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:9149: \$? = $ac_status" >&5
+   echo "$as_me:9152: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -11522,7 +11525,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<_LT_EOF
-#line 11525 "configure"
+#line 11528 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -11618,7 +11621,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<_LT_EOF
-#line 11621 "configure"
+#line 11624 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -13574,11 +13577,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:13577: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:13580: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:13581: \$? = $ac_status" >&5
+   echo "$as_me:13584: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -13673,11 +13676,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:13676: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:13679: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:13680: \$? = $ac_status" >&5
+   echo "$as_me:13683: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -13725,11 +13728,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:13728: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:13731: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:13732: \$? = $ac_status" >&5
+   echo "$as_me:13735: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -15489,6 +15492,11 @@ if test "${enable_dbus+set}" = set; then :
   enableval=$enable_dbus; disable_dbus=yes
 fi
 
+# Check whether --enable-ui was given.
+if test "${enable_ui+set}" = set; then :
+  enableval=$enable_ui; disable_ui=yes
+fi
+
 
 if test "$enable_gsm" != "no" ; then
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for gsm_create in -lgsm" >&5
@@ -15773,8 +15781,9 @@ else
 	echo "Disabled optional CELT support."
 fi
 
-if test "$enable_xosd" != "no" ; then
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for xosd_create in -lxosd" >&5
+if test "$disable_ui" != "yes" ; then
+	if test "$enable_xosd" != "no" ; then
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for xosd_create in -lxosd" >&5
 $as_echo_n "checking for xosd_create in -lxosd... " >&6; }
 if test "${ac_cv_lib_xosd_xosd_create+set}" = set; then :
   $as_echo_n "(cached) " >&6
@@ -15815,21 +15824,21 @@ if test "x$ac_cv_lib_xosd_xosd_create" = x""yes; then :
 
 $as_echo "#define HAVE_XOSD 1" >>confdefs.h
 
-		LIBS="-lxosd $LIBS"
-		echo "Enabled optional XOSD support."
+			LIBS="-lxosd $LIBS"
+			echo "Enabled optional XOSD support."
 
 else
 
-		echo "Optional XOSD support is not enabled."
+			echo "Optional XOSD support is not enabled."
 
 fi
 
-else
-	echo "Disabled optional XOSD support."
-fi
+	else
+		echo "Disabled optional XOSD support."
+	fi
 
-if test "$enable_g15" != "no" ; then
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for new_g15_screen in -lg15daemon_client" >&5
+	if test "$enable_g15" != "no" ; then
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for new_g15_screen in -lg15daemon_client" >&5
 $as_echo_n "checking for new_g15_screen in -lg15daemon_client... " >&6; }
 if test "${ac_cv_lib_g15daemon_client_new_g15_screen+set}" = set; then :
   $as_echo_n "(cached) " >&6
@@ -15867,7 +15876,7 @@ fi
 $as_echo "$ac_cv_lib_g15daemon_client_new_g15_screen" >&6; }
 if test "x$ac_cv_lib_g15daemon_client_new_g15_screen" = x""yes; then :
 
-		{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for g15r_clearScreen in -lg15render" >&5
+			{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for g15r_clearScreen in -lg15render" >&5
 $as_echo_n "checking for g15r_clearScreen in -lg15render... " >&6; }
 if test "${ac_cv_lib_g15render_g15r_clearScreen+set}" = set; then :
   $as_echo_n "(cached) " >&6
@@ -15908,24 +15917,24 @@ if test "x$ac_cv_lib_g15render_g15r_clearScreen" = x""yes; then :
 
 $as_echo "#define HAVE_G15 1" >>confdefs.h
 
-			LIBS="-lg15daemon_client -lg15render $LIBS"
-			echo "Enabled optional Logitech G15 support."
+				LIBS="-lg15daemon_client -lg15render $LIBS"
+				echo "Enabled optional Logitech G15 support."
 
 fi
 
 
 else
 
-		echo "Optional Logitech G15 support is not enabled."
+			echo "Optional Logitech G15 support is not enabled."
 
 fi
 
-else
-	echo "Disabled optional Logitech G15 support."
-fi
+	else
+		echo "Disabled optional Logitech G15 support."
+	fi
 
-if test "$enable_espeak" != "no" ; then
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for espeak_Initialize in -lespeak" >&5
+	if test "$enable_espeak" != "no" ; then
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for espeak_Initialize in -lespeak" >&5
 $as_echo_n "checking for espeak_Initialize in -lespeak... " >&6; }
 if test "${ac_cv_lib_espeak_espeak_Initialize+set}" = set; then :
   $as_echo_n "(cached) " >&6
@@ -15966,18 +15975,18 @@ if test "x$ac_cv_lib_espeak_espeak_Initialize" = x""yes; then :
 
 $as_echo "#define HAVE_ESPEAK 1" >>confdefs.h
 
-		LIBS="-lespeak $LIBS"
-		echo "Enabled optional eSpeak support."
+			LIBS="-lespeak $LIBS"
+			echo "Enabled optional eSpeak support."
 
 else
 
-		echo "Optional eSpeak support is not enabled."
+			echo "Optional eSpeak support is not enabled."
 
 fi
 
-else
-	echo "Disabled optional eSpeak support."
-fi
+	else
+		echo "Disabled optional eSpeak support."
+	fi
 
 
 pkg_failed=no
@@ -16256,7 +16265,7 @@ $as_echo "yes" >&6; }
 	:
 fi
 
-if test "$enable_dbus" != "no" ; then
+	if test "$enable_dbus" != "no" ; then
 
 pkg_failed=no
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for dbus" >&5
@@ -16332,7 +16341,7 @@ $as_echo "#define HAVE_DBUS 1" >>confdefs.h
 fi
 
 
-fi
+	fi
 
 
 pkg_failed=no
@@ -16454,7 +16463,7 @@ else
 fi
 
 
-if test "x$with_pulseaudio" != xno; then :
+	if test "x$with_pulseaudio" != xno; then :
 
 
 pkg_failed=no
@@ -16518,13 +16527,13 @@ fi
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 
-			echo "warning: PulseAudio development libraries or headers were not found."
-			echo "         PulseAudio support is disabled."
+				echo "warning: PulseAudio development libraries or headers were not found."
+				echo "         PulseAudio support is disabled."
 
 elif test $pkg_failed = untried; then
 
-			echo "warning: PulseAudio development libraries or headers were not found."
-			echo "         PulseAudio support is disabled."
+				echo "warning: PulseAudio development libraries or headers were not found."
+				echo "         PulseAudio support is disabled."
 
 else
 	pulse_CFLAGS=$pkg_cv_pulse_CFLAGS
@@ -16544,7 +16553,7 @@ else
   :
 
 fi
-if test "x$with_alsa" != xno; then :
+	if test "x$with_alsa" != xno; then :
 
 
 pkg_failed=no
@@ -16608,13 +16617,13 @@ fi
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 
-			echo "warning: ALSA development libraries or headers were not found."
-			echo "         ALSA support is disabled."
+				echo "warning: ALSA development libraries or headers were not found."
+				echo "         ALSA support is disabled."
 
 elif test $pkg_failed = untried; then
 
-			echo "warning: ALSA development libraries or headers were not found."
-			echo "         ALSA support is disabled."
+				echo "warning: ALSA development libraries or headers were not found."
+				echo "         ALSA support is disabled."
 
 else
 	alsa_CFLAGS=$pkg_cv_alsa_CFLAGS
@@ -16635,21 +16644,21 @@ else
   :
 
 fi
-if test "x$with_oss" != xno; then :
+	if test "x$with_oss" != xno; then :
 
-		if test -r /usr/lib/oss/include/sys/soundcard.h; then :
+			if test -r /usr/lib/oss/include/sys/soundcard.h; then :
 
-				echo "Found OSSv4 include file in /usr/lib/oss/include/sys/soundcard.h";
-				oss_CFLAGS="-I/usr/lib/oss/include"
+					echo "Found OSSv4 include file in /usr/lib/oss/include/sys/soundcard.h";
+					oss_CFLAGS="-I/usr/lib/oss/include"
 
-				# We can't perform any real checks on OSSv4 because their include file is in a retarded location.
+					# We can't perform any real checks on OSSv4 because their include file is in a retarded location.
 
 $as_echo "#define HAVE_OSS 1" >>confdefs.h
 
 
 else
 
-				ac_fn_c_check_header_mongrel "$LINENO" "sys/soundcard.h" "ac_cv_header_sys_soundcard_h" "$ac_includes_default"
+					ac_fn_c_check_header_mongrel "$LINENO" "sys/soundcard.h" "ac_cv_header_sys_soundcard_h" "$ac_includes_default"
 if test "x$ac_cv_header_sys_soundcard_h" = x""yes; then :
 
 
@@ -16658,8 +16667,8 @@ $as_echo "#define HAVE_OSS 1" >>confdefs.h
 
 else
 
-					echo "warning: OSS required headers were not found."
-					echo "         OSS support is disabled."
+						echo "warning: OSS required headers were not found."
+						echo "         OSS support is disabled."
 
 fi
 
@@ -16856,6 +16865,12 @@ else
 $as_echo "yes" >&6; }
 	:
 fi
+	SUBDIR_LIST="libventrilo3 icons sounds src"
+else
+	SUBDIR_LIST="libventrilo3"
+fi
+
+
 
 # Checks for typedefs, structures, and compiler characteristics.
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdbool.h that conforms to C99" >&5

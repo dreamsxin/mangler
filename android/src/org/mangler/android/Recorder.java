@@ -57,7 +57,7 @@ public class Recorder {
 			// adjust buflen (set from buffer()) accordingly
 
 			audiorecord = new AudioRecord(
-					MediaRecorder.AudioSource.DEFAULT,
+					MediaRecorder.AudioSource.MIC,
 					rate,
 					AudioFormat.CHANNEL_CONFIGURATION_MONO,
 					AudioFormat.ENCODING_PCM_16BIT,

@@ -34,6 +34,12 @@ import android.os.IBinder;
 
 public class EventService extends Service {
 
+	static {
+		// Let's try loading the library here too... maybe this will fix the
+		// unsatisfied link problems? Maybe the phone is killing the Main
+		// Activity and unloading the library?
+		System.loadLibrary("ventrilo_interface");
+	}
 	private final IBinder binder = new EventBinder();
 	private boolean running = false;
 	private static ConcurrentLinkedQueue<VentriloEventData> eventQueue;
