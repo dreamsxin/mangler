@@ -948,6 +948,9 @@ int get_pcm_frame(musicfile *musicfile, int channels, int16_t *buf, int *pcmread
     int err;
     int ctr;
 
+    if (musicfile->channels == 1) {
+        channels = 1;
+    }
 #if HAVE_VORBIS
     if (musicfile->vorbis) {
         int ret;
