@@ -209,6 +209,7 @@ void *jukebox_player(void *connptr) {
     int playing = false;
     int stopped = true;
     int filenum = -1;
+    int playonce = false;
     int16_t sendbuf[16384];
     v3_event *ev;
     const v3_codec *codec;
@@ -273,6 +274,7 @@ void *jukebox_player(void *connptr) {
                         v3_send_chat_message("!next -- play a new random track");
                         v3_send_chat_message("!move -- move to your channel");
                         v3_send_chat_message("!play [song/artist/file name] -- search for a song by filename and play the first random match");
+                        v3_send_chat_message("!playonce [song/artist/file name] -- play a single file and stop");
                         v3_send_chat_message("!playonly [song/artist/file name] -- don't play anything that doesn't match the given string");
                         v3_send_chat_message("!vol [0-100] -- set the volume to the specified level: ex: !vol 50");
                         v3_send_chat_message("!polite [off|0-60] -- pauses playing when audio is received for the specified duration");
@@ -320,13 +322,21 @@ void *jukebox_player(void *connptr) {
                         char chat_msg[64];
                         snprintf(chat_msg, 63, "volume is now %d%%", vol);
                         v3_send_chat_message(chat_msg);
-                    } else if (strncmp(ev->data->chatmessage, "!play ", 6) == 0 || strncmp(ev->data->chatmessage, "!playonly ", 10) == 0) {
+                    } else if (
+                            strncmp(ev->data->chatmessage, "!play ", 6) == 0
+                            || strncmp(ev->data->chatmessage, "!playonly ", 10) == 0
+                            || strncmp(ev->data->chatmessage, "!playonce ", 10) == 0
+                        ) {
                         char *searchspec;
                         int ctr;
                         int found = false;
                         if (strncmp(ev->data->chatmessage, "!playonly ", 10) == 0) {
                             strncpy(playonly, ev->data->chatmessage + 10, 64);
                             searchspec = playonly;
+                        } else if (strncmp(ev->data->chatmessage, "!playonce ", 10) == 0) {
+                            playonce = true;
+                            searchspec = ev->data->chatmessage + 10;
+                            playonly[0] = 0;
                         } else {
                             searchspec = ev->data->chatmessage + 6;
                             playonly[0] = 0;
@@ -384,6 +394,7 @@ void *jukebox_player(void *connptr) {
                                 // give up and just pick a random song
                                 v3_send_chat_message("Apparently something matched but it didn't appear to be a song, so I fail.  Here's something else...");
                                 stopped = false;
+                                playonce = false;
                             }
                         }
                     } else if (! stopped && strcmp(ev->data->chatmessage, "!next") == 0) {
@@ -475,6 +486,10 @@ void *jukebox_player(void *connptr) {
                     v3_stop_audio();
                     close_file(musicfile);
                     musicfile = NULL;
+                }
+                if (playonce) {
+                    stopped = true;
+                    playonce = false;
                 }
                 playing = false;
             }
