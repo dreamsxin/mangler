@@ -1,3 +1,11 @@
+mangler (1.2.1) stable; urgency=low Sun, 19 Sep 2010 19:26:04 -0700
+  * make the config file save atomic to prevent trashing it if we crash
+  * fixed a bug that prevented displaying all users in the account editor
+  * jukebox has flac, ogg, and mono, and resampling support
+  * add libXi checks into configure for distros that don't like it
+    automatically with GTK
+  * added configure option to only build libventrilo3
+
 mangler (1.2.0) stable; urgency=low Sun, 13 Jun 2010 12:20:22 -0700
   * fixed some potential buffer overflows in packet processing
   * added a proper destructor in a futile attempt to close ticket #154 (which

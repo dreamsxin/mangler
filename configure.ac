@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.63])
-AC_INIT([mangler], [1.2.0], [eric@ypass.net])
+AC_INIT([mangler], [1.2.1], [eric@ypass.net])
 AM_INIT_AUTOMAKE
 AM_MAINTAINER_MODE([disable])
 

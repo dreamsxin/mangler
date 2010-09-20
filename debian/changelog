@@ -1,5 +1,12 @@
-mangler (1.2.0) stable; urgency=low
+mangler (1.2.1) stable; urgency=low Sun, 19 Sep 2010 19:26:04 -0700
+  * make the config file save atomic to prevent trashing it if we crash
+  * fixed a bug that prevented displaying all users in the account editor
+  * jukebox has flac, ogg, and mono, and resampling support
+  * add libXi checks into configure for distros that don't like it
+    automatically with GTK
+  * added configure option to only build libventrilo3
 
+mangler (1.2.0) stable; urgency=low Sun, 13 Jun 2010 12:20:22 -0700
   * fixed some potential buffer overflows in packet processing
   * added a proper destructor in a futile attempt to close ticket #154 (which
     sadly remains open)
@@ -18,9 +25,7 @@ mangler (1.2.0) stable; urgency=low
   * voice activation automatically starts transmit without requiring any type
     of PTT.  This should make it more obvious how VA works.
 
- -- eric kilfoil <ekilfoil@gmail.com>  Sun, 13 Jun 2010 12:20:22 -0700
-
-mangler (1.2.0beta1-1) unstable; urgency=low
+mangler (1.2.0beta1) unstable; urgency=low
 
   * libventrilo3 should compile on a mac
   * added admin API functions and UI for:
@@ -83,3 +88,4 @@ mangler (1.0.0) stable; urgency=low
   * Initial release
 
  -- eric kilfoil <ekilfoil@gmail.com>  Tue, 01 Dec 2009 06:43:59 -0700
+

@@ -1304,7 +1304,7 @@
     <property name="skip_pager_hint">True</property>
     <property name="transient_for">manglerWindow</property>
     <property name="program_name">Mangler</property>
-    <property name="version">1.2.0</property>
+    <property name="version">1.2.1</property>
     <property name="copyright" translatable="yes">Copyright 2009-2010 by Eric Connell</property>
     <property name="website">http://www.mangler.org</property>
     <property name="website_label" translatable="yes">http://www.mangler.org</property>
