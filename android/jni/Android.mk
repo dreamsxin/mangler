@@ -44,7 +44,7 @@ include $(CLEAR_VARS)
 LOCAL_PATH				:= $(LIBPATH)
 LOCAL_MODULE    		:= libventrilo3
 LOCAL_SRC_FILES 		:= libventrilo3.c libventrilo3_message.c ventrilo3_handshake.c
-LOCAL_CFLAGS			:= -DANDROID -D__EMX__ -I$(ROOT)/gsm/inc -I$(ROOT)/speex/include -I$(ROOT)/celt/inc -DHAVE_GSM -DHAVE_GSM_H -DHAVE_SPEEX -DHAVE_SPEEX_DSP=1 -DHAVE_CELT -O3
+LOCAL_CFLAGS			:= -DANDROID -D__EMX__ -I$(ROOT)/gsm/inc -I$(ROOT)/speex/include -I$(ROOT)/celt/inc -DHAVE_GSM -DHAVE_GSM_H -DHAVE_SPEEX -DHAVE_SPEEX_DSP=1 -DHAVE_CELT -DNO_AUTOMAKE -O3
 include $(BUILD_STATIC_LIBRARY)
 
 # Build library interface

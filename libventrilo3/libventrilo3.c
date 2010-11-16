@@ -24,10 +24,12 @@
  * along with Mangler.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#ifndef NO_AUTOMAKE
+#include "config.h"
+#endif
+
 #ifdef ANDROID
 #include <android/log.h>
-#else
-#include "config.h"
 #endif
 
 #include <unistd.h>
