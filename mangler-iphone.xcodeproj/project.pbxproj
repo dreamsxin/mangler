@@ -7,13 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		920189B91292BF5C004712AA /* libventrilo3_message.c in Sources */ = {isa = PBXBuildFile; fileRef = 920189B21292BF5C004712AA /* libventrilo3_message.c */; };
-		920189BA1292BF5C004712AA /* libventrilo3_message.h in Headers */ = {isa = PBXBuildFile; fileRef = 920189B31292BF5C004712AA /* libventrilo3_message.h */; };
-		920189BB1292BF5C004712AA /* libventrilo3.c in Sources */ = {isa = PBXBuildFile; fileRef = 920189B41292BF5C004712AA /* libventrilo3.c */; };
-		920189BC1292BF5C004712AA /* libventrilo3.h in Headers */ = {isa = PBXBuildFile; fileRef = 920189B51292BF5C004712AA /* libventrilo3.h */; };
-		920189BD1292BF5C004712AA /* ventrilo_algo.h in Headers */ = {isa = PBXBuildFile; fileRef = 920189B61292BF5C004712AA /* ventrilo_algo.h */; };
-		920189BE1292BF5C004712AA /* ventrilo3_handshake.c in Sources */ = {isa = PBXBuildFile; fileRef = 920189B71292BF5C004712AA /* ventrilo3_handshake.c */; };
-		920189BF1292BF5C004712AA /* ventrilo3.h in Headers */ = {isa = PBXBuildFile; fileRef = 920189B81292BF5C004712AA /* ventrilo3.h */; };
 		92018BA71292C128004712AA /* add.c in Sources */ = {isa = PBXBuildFile; fileRef = 92018A4F1292C0C4004712AA /* add.c */; };
 		92018BA81292C128004712AA /* code.c in Sources */ = {isa = PBXBuildFile; fileRef = 92018A501292C0C4004712AA /* code.c */; };
 		92018BA91292C128004712AA /* debug.c in Sources */ = {isa = PBXBuildFile; fileRef = 92018A511292C0C4004712AA /* debug.c */; };
@@ -97,6 +90,13 @@
 		921F6A631292E15F00134DEA /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 921F696D1292E10D00134DEA /* Foundation.framework */; };
 		921F6A641292E15F00134DEA /* SystemConfiguration.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 921F696F1292E10D00134DEA /* SystemConfiguration.framework */; };
 		921F6A651292E15F00134DEA /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 921F69711292E10D00134DEA /* UIKit.framework */; settings = {ATTRIBUTES = (Weak, ); }; };
+		926688331293F3B30097BBAD /* libventrilo3_message.c in Sources */ = {isa = PBXBuildFile; fileRef = 920189B21292BF5C004712AA /* libventrilo3_message.c */; };
+		926688341293F3B30097BBAD /* libventrilo3_message.h in Headers */ = {isa = PBXBuildFile; fileRef = 920189B31292BF5C004712AA /* libventrilo3_message.h */; };
+		926688351293F3B30097BBAD /* libventrilo3.c in Sources */ = {isa = PBXBuildFile; fileRef = 920189B41292BF5C004712AA /* libventrilo3.c */; };
+		926688361293F3B30097BBAD /* libventrilo3.h in Headers */ = {isa = PBXBuildFile; fileRef = 920189B51292BF5C004712AA /* libventrilo3.h */; };
+		926688371293F3B30097BBAD /* ventrilo_algo.h in Headers */ = {isa = PBXBuildFile; fileRef = 920189B61292BF5C004712AA /* ventrilo_algo.h */; };
+		926688381293F3B30097BBAD /* ventrilo3_handshake.c in Sources */ = {isa = PBXBuildFile; fileRef = 920189B71292BF5C004712AA /* ventrilo3_handshake.c */; };
+		926688391293F3B30097BBAD /* ventrilo3.h in Headers */ = {isa = PBXBuildFile; fileRef = 920189B81292BF5C004712AA /* ventrilo3.h */; };
 		92C528901292D51C00CDA2B0 /* Binds.caf in Resources */ = {isa = PBXBuildFile; fileRef = 92C528831292D51C00CDA2B0 /* Binds.caf */; };
 		92C528911292D51C00CDA2B0 /* Channel.caf in Resources */ = {isa = PBXBuildFile; fileRef = 92C528841292D51C00CDA2B0 /* Channel.caf */; };
 		92C528921292D51C00CDA2B0 /* ChannelJoin.caf in Resources */ = {isa = PBXBuildFile; fileRef = 92C528851292D51C00CDA2B0 /* ChannelJoin.caf */; };
@@ -190,13 +190,13 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		920189B21292BF5C004712AA /* libventrilo3_message.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = libventrilo3_message.c; path = ../mangler/trunk/libventrilo3/libventrilo3_message.c; sourceTree = SOURCE_ROOT; };
-		920189B31292BF5C004712AA /* libventrilo3_message.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = libventrilo3_message.h; path = ../mangler/trunk/libventrilo3/libventrilo3_message.h; sourceTree = SOURCE_ROOT; };
-		920189B41292BF5C004712AA /* libventrilo3.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = libventrilo3.c; path = ../mangler/trunk/libventrilo3/libventrilo3.c; sourceTree = SOURCE_ROOT; };
-		920189B51292BF5C004712AA /* libventrilo3.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = libventrilo3.h; path = ../mangler/trunk/libventrilo3/libventrilo3.h; sourceTree = SOURCE_ROOT; };
-		920189B61292BF5C004712AA /* ventrilo_algo.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ventrilo_algo.h; path = ../mangler/trunk/libventrilo3/ventrilo_algo.h; sourceTree = SOURCE_ROOT; };
-		920189B71292BF5C004712AA /* ventrilo3_handshake.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = ventrilo3_handshake.c; path = ../mangler/trunk/libventrilo3/ventrilo3_handshake.c; sourceTree = SOURCE_ROOT; };
-		920189B81292BF5C004712AA /* ventrilo3.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ventrilo3.h; path = ../mangler/trunk/libventrilo3/ventrilo3.h; sourceTree = SOURCE_ROOT; };
+		920189B21292BF5C004712AA /* libventrilo3_message.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = libventrilo3_message.c; path = ../../trunk/libventrilo3/libventrilo3_message.c; sourceTree = SOURCE_ROOT; };
+		920189B31292BF5C004712AA /* libventrilo3_message.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = libventrilo3_message.h; path = ../../trunk/libventrilo3/libventrilo3_message.h; sourceTree = SOURCE_ROOT; };
+		920189B41292BF5C004712AA /* libventrilo3.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = libventrilo3.c; path = ../../trunk/libventrilo3/libventrilo3.c; sourceTree = SOURCE_ROOT; };
+		920189B51292BF5C004712AA /* libventrilo3.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = libventrilo3.h; path = ../../trunk/libventrilo3/libventrilo3.h; sourceTree = SOURCE_ROOT; };
+		920189B61292BF5C004712AA /* ventrilo_algo.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ventrilo_algo.h; path = ../../trunk/libventrilo3/ventrilo_algo.h; sourceTree = SOURCE_ROOT; };
+		920189B71292BF5C004712AA /* ventrilo3_handshake.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = ventrilo3_handshake.c; path = ../../trunk/libventrilo3/ventrilo3_handshake.c; sourceTree = SOURCE_ROOT; };
+		920189B81292BF5C004712AA /* ventrilo3.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ventrilo3.h; path = ../../trunk/libventrilo3/ventrilo3.h; sourceTree = SOURCE_ROOT; };
 		920189CB1292C0C3004712AA /* acinclude.m4 */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = acinclude.m4; sourceTree = "<group>"; };
 		920189CC1292C0C3004712AA /* aclocal.m4 */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = aclocal.m4; sourceTree = "<group>"; };
 		920189CD1292C0C3004712AA /* AUTHORS */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = AUTHORS; sourceTree = "<group>"; };
@@ -633,7 +633,7 @@
 		921F67F61292D88300134DEA /* ServerViewController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = ServerViewController.xib; path = res/ServerViewController.xib; sourceTree = "<group>"; };
 		921F67F71292D88300134DEA /* SettingsViewController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = SettingsViewController.xib; path = res/SettingsViewController.xib; sourceTree = "<group>"; };
 		921F67F81292D88300134DEA /* UserViewController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = UserViewController.xib; path = res/UserViewController.xib; sourceTree = "<group>"; };
-		921F681D1292DB2100134DEA /* mangler_iphone-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "mangler_iphone-Info.plist"; sourceTree = "<group>"; };
+		921F681D1292DB2100134DEA /* mangler-iphone-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "mangler-iphone-Info.plist"; sourceTree = "<group>"; };
 		921F682C1292DC9700134DEA /* Constants.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Constants.h; sourceTree = "<group>"; };
 		921F69691292E10D00134DEA /* AudioToolbox.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AudioToolbox.framework; path = System/Library/Frameworks/AudioToolbox.framework; sourceTree = SDKROOT; };
 		921F696B1292E10D00134DEA /* CoreGraphics.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreGraphics.framework; path = System/Library/Frameworks/CoreGraphics.framework; sourceTree = SDKROOT; };
@@ -680,7 +680,7 @@
 		92C528C01292D5D300CDA2B0 /* Support-Button.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "Support-Button.png"; sourceTree = "<group>"; };
 		92EA71FC1292991000D26C63 /* mangler-iphone.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "mangler-iphone.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		92EA7276129299EF00D26C63 /* main.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
-		92EA7277129299EF00D26C63 /* mangler_iphone_Prefix.pch */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = mangler_iphone_Prefix.pch; sourceTree = "<group>"; };
+		92EA7277129299EF00D26C63 /* mangler-iphone-Prefix.pch */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "mangler-iphone-Prefix.pch"; sourceTree = "<group>"; };
 		92EA73C512929ECB00D26C63 /* libgsm.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libgsm.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		92EA744C12929FF500D26C63 /* libspeex.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libspeex.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		92EA763C1292A64200D26C63 /* libcelt.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libcelt.a; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -857,7 +857,7 @@
 			isa = PBXGroup;
 			children = (
 				92EA7276129299EF00D26C63 /* main.m */,
-				92EA7277129299EF00D26C63 /* mangler_iphone_Prefix.pch */,
+				92EA7277129299EF00D26C63 /* mangler-iphone-Prefix.pch */,
 			);
 			name = "Other Sources";
 			sourceTree = "<group>";
@@ -865,7 +865,7 @@
 		29B97317FDCFA39411CA2CEA /* Resources */ = {
 			isa = PBXGroup;
 			children = (
-				921F681D1292DB2100134DEA /* mangler_iphone-Info.plist */,
+				921F681D1292DB2100134DEA /* mangler-iphone-Info.plist */,
 				921F67F11292D88300134DEA /* AboutViewController.xib */,
 				921F67F21292D88300134DEA /* AddServerViewController.xib */,
 				921F67F31292D88300134DEA /* MainViewController.xib */,
@@ -901,7 +901,8 @@
 				920189B81292BF5C004712AA /* ventrilo3.h */,
 			);
 			name = libventrilo3;
-			sourceTree = "<group>";
+			path = ../../trunk/libventrilo3;
+			sourceTree = SOURCE_ROOT;
 		};
 		920189CA1292C0C3004712AA /* celt */ = {
 			isa = PBXGroup;
@@ -1793,10 +1794,10 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				920189BA1292BF5C004712AA /* libventrilo3_message.h in Headers */,
-				920189BC1292BF5C004712AA /* libventrilo3.h in Headers */,
-				920189BD1292BF5C004712AA /* ventrilo_algo.h in Headers */,
-				920189BF1292BF5C004712AA /* ventrilo3.h in Headers */,
+				926688341293F3B30097BBAD /* libventrilo3_message.h in Headers */,
+				926688361293F3B30097BBAD /* libventrilo3.h in Headers */,
+				926688371293F3B30097BBAD /* ventrilo_algo.h in Headers */,
+				926688391293F3B30097BBAD /* ventrilo3.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2096,9 +2097,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				920189B91292BF5C004712AA /* libventrilo3_message.c in Sources */,
-				920189BB1292BF5C004712AA /* libventrilo3.c in Sources */,
-				920189BE1292BF5C004712AA /* ventrilo3_handshake.c in Sources */,
+				926688331293F3B30097BBAD /* libventrilo3_message.c in Sources */,
+				926688351293F3B30097BBAD /* libventrilo3.c in Sources */,
+				926688381293F3B30097BBAD /* ventrilo3_handshake.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2137,6 +2138,7 @@
 				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "mangler-iphone-Prefix.pch";
+				HEADER_SEARCH_PATHS = ../../trunk/libventrilo3;
 				INFOPLIST_FILE = "mangler-iphone-Info.plist";
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
@@ -2154,6 +2156,7 @@
 				COPY_PHASE_STRIP = YES;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "mangler-iphone-Prefix.pch";
+				HEADER_SEARCH_PATHS = ../../trunk/libventrilo3;
 				INFOPLIST_FILE = "mangler-iphone-Info.plist";
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
