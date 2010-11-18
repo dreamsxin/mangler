@@ -100,36 +100,36 @@ void rioInterruptionListener(void* inUserData, UInt32 interruptionState)
 	 */
 	NSBundle *mainBundle = [NSBundle mainBundle];
 	self.soundEffects = [[NSMutableDictionary alloc] initWithCapacity:0];
-	SoundEffect *connectSound = [[SoundEffect alloc] initWithContentsOfFile:[mainBundle pathForResource:@"connect" ofType:@"caf"]];
-	SoundEffect *disconnectSound = [[SoundEffect alloc] initWithContentsOfFile:[mainBundle pathForResource:@"disconnect" ofType:@"caf"]];
-	SoundEffect *channelSound = [[SoundEffect alloc] initWithContentsOfFile:[mainBundle pathForResource:@"Channel" ofType:@"caf"]];
-	SoundEffect *channelJoinSound = [[SoundEffect alloc] initWithContentsOfFile:[mainBundle pathForResource:@"ChannelJoin" ofType:@"caf"]];
-	SoundEffect *channelLeaveSound = [[SoundEffect alloc] initWithContentsOfFile:[mainBundle pathForResource:@"ChannelLeave" ofType:@"caf"]];
-	SoundEffect *userConnectSound = [[SoundEffect alloc] initWithContentsOfFile:[mainBundle pathForResource:@"UserConnect" ofType:@"caf"]];
-	SoundEffect *userDisconnectSound = [[SoundEffect alloc] initWithContentsOfFile:[mainBundle pathForResource:@"UserDisconnect" ofType:@"caf"]];
-	SoundEffect *micKeyDownSound = [[SoundEffect alloc] initWithContentsOfFile:[mainBundle pathForResource:@"MicKeyDown" ofType:@"caf"]];
-	SoundEffect *micKeyUpSound = [[SoundEffect alloc] initWithContentsOfFile:[mainBundle pathForResource:@"MicKeyUp" ofType:@"caf"]];
+	SoundEffect *connectSound = [[SoundEffect alloc] initWithContentsOfFile:[mainBundle pathForResource:@"login" ofType:@"caf"]];
+	SoundEffect *disconnectSound = [[SoundEffect alloc] initWithContentsOfFile:[mainBundle pathForResource:@"logout" ofType:@"caf"]];
+	/*SoundEffect *channelSound = [[SoundEffect alloc] initWithContentsOfFile:[mainBundle pathForResource:@"Channel" ofType:@"caf"]];*/
+	SoundEffect *channelJoinSound = [[SoundEffect alloc] initWithContentsOfFile:[mainBundle pathForResource:@"channelenter" ofType:@"caf"]];
+	SoundEffect *channelLeaveSound = [[SoundEffect alloc] initWithContentsOfFile:[mainBundle pathForResource:@"channelleave" ofType:@"caf"]];
+	/*SoundEffect *userConnectSound = [[SoundEffect alloc] initWithContentsOfFile:[mainBundle pathForResource:@"UserConnect" ofType:@"caf"]];
+	SoundEffect *userDisconnectSound = [[SoundEffect alloc] initWithContentsOfFile:[mainBundle pathForResource:@"UserDisconnect" ofType:@"caf"]];*/
+	SoundEffect *micKeyDownSound = [[SoundEffect alloc] initWithContentsOfFile:[mainBundle pathForResource:@"talkstart" ofType:@"caf"]];
+	SoundEffect *micKeyUpSound = [[SoundEffect alloc] initWithContentsOfFile:[mainBundle pathForResource:@"talkend" ofType:@"caf"]];
 	
 	/*
 		All of our sound effects are added to a dictionary for easy code re-use on playing back specific sounds.
 	 */
 	[self.soundEffects setObject:connectSound forKey:@"connect"];
 	[self.soundEffects setObject:disconnectSound forKey:@"disconnect"];
-	[self.soundEffects setObject:channelSound forKey:@"Channel"];
+	/*[self.soundEffects setObject:channelSound forKey:@"Channel"];*/
 	[self.soundEffects setObject:channelJoinSound forKey:@"ChannelJoin"];
 	[self.soundEffects setObject:channelLeaveSound forKey:@"ChannelLeave"];
-	[self.soundEffects setObject:userConnectSound forKey:@"UserConnect"];
-	[self.soundEffects setObject:userDisconnectSound forKey:@"UserDisconnect"];
+	/*[self.soundEffects setObject:userConnectSound forKey:@"UserConnect"];
+	[self.soundEffects setObject:userDisconnectSound forKey:@"UserDisconnect"];*/
 	[self.soundEffects setObject:micKeyDownSound forKey:@"MicKeyDown"];
 	[self.soundEffects setObject:micKeyUpSound forKey:@"MicKeyUp"];
 	
 	[connectSound release];
 	[disconnectSound release];
-	[channelSound release];
+	/*[channelSound release];*/
 	[channelJoinSound release];
 	[channelLeaveSound release];
-	[userConnectSound release];
-	[userDisconnectSound release];
+	/*[userConnectSound release];
+	[userDisconnectSound release];*/
 	[micKeyDownSound release];
 	[micKeyUpSound release];
 	

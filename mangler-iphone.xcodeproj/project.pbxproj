@@ -97,19 +97,12 @@
 		926688371293F3B30097BBAD /* ventrilo_algo.h in Headers */ = {isa = PBXBuildFile; fileRef = 920189B61292BF5C004712AA /* ventrilo_algo.h */; };
 		926688381293F3B30097BBAD /* ventrilo3_handshake.c in Sources */ = {isa = PBXBuildFile; fileRef = 920189B71292BF5C004712AA /* ventrilo3_handshake.c */; };
 		926688391293F3B30097BBAD /* ventrilo3.h in Headers */ = {isa = PBXBuildFile; fileRef = 920189B81292BF5C004712AA /* ventrilo3.h */; };
-		92C528901292D51C00CDA2B0 /* Binds.caf in Resources */ = {isa = PBXBuildFile; fileRef = 92C528831292D51C00CDA2B0 /* Binds.caf */; };
-		92C528911292D51C00CDA2B0 /* Channel.caf in Resources */ = {isa = PBXBuildFile; fileRef = 92C528841292D51C00CDA2B0 /* Channel.caf */; };
-		92C528921292D51C00CDA2B0 /* ChannelJoin.caf in Resources */ = {isa = PBXBuildFile; fileRef = 92C528851292D51C00CDA2B0 /* ChannelJoin.caf */; };
-		92C528931292D51C00CDA2B0 /* ChannelLeave.caf in Resources */ = {isa = PBXBuildFile; fileRef = 92C528861292D51C00CDA2B0 /* ChannelLeave.caf */; };
-		92C528941292D51C00CDA2B0 /* connect.caf in Resources */ = {isa = PBXBuildFile; fileRef = 92C528871292D51C00CDA2B0 /* connect.caf */; };
-		92C528951292D51C00CDA2B0 /* disconnect.caf in Resources */ = {isa = PBXBuildFile; fileRef = 92C528881292D51C00CDA2B0 /* disconnect.caf */; };
-		92C528961292D51C00CDA2B0 /* MicKeyDown.caf in Resources */ = {isa = PBXBuildFile; fileRef = 92C528891292D51C00CDA2B0 /* MicKeyDown.caf */; };
-		92C528971292D51C00CDA2B0 /* MicKeyUp.caf in Resources */ = {isa = PBXBuildFile; fileRef = 92C5288A1292D51C00CDA2B0 /* MicKeyUp.caf */; };
-		92C528981292D51C00CDA2B0 /* missing.caf in Resources */ = {isa = PBXBuildFile; fileRef = 92C5288B1292D51C00CDA2B0 /* missing.caf */; };
-		92C528991292D51C00CDA2B0 /* MuteMic.caf in Resources */ = {isa = PBXBuildFile; fileRef = 92C5288C1292D51C00CDA2B0 /* MuteMic.caf */; };
-		92C5289A1292D51C00CDA2B0 /* MuteSound.caf in Resources */ = {isa = PBXBuildFile; fileRef = 92C5288D1292D51C00CDA2B0 /* MuteSound.caf */; };
-		92C5289B1292D51C00CDA2B0 /* UserConnect.caf in Resources */ = {isa = PBXBuildFile; fileRef = 92C5288E1292D51C00CDA2B0 /* UserConnect.caf */; };
-		92C5289C1292D51C00CDA2B0 /* UserDisconnect.caf in Resources */ = {isa = PBXBuildFile; fileRef = 92C5288F1292D51C00CDA2B0 /* UserDisconnect.caf */; };
+		926F7D451295C7E900C7046E /* channelenter.caf in Resources */ = {isa = PBXBuildFile; fileRef = 926F7D3F1295C7E900C7046E /* channelenter.caf */; };
+		926F7D461295C7E900C7046E /* channelleave.caf in Resources */ = {isa = PBXBuildFile; fileRef = 926F7D401295C7E900C7046E /* channelleave.caf */; };
+		926F7D471295C7E900C7046E /* login.caf in Resources */ = {isa = PBXBuildFile; fileRef = 926F7D411295C7E900C7046E /* login.caf */; };
+		926F7D481295C7E900C7046E /* logout.caf in Resources */ = {isa = PBXBuildFile; fileRef = 926F7D421295C7E900C7046E /* logout.caf */; };
+		926F7D491295C7E900C7046E /* talkend.caf in Resources */ = {isa = PBXBuildFile; fileRef = 926F7D431295C7E900C7046E /* talkend.caf */; };
+		926F7D4A1295C7E900C7046E /* talkstart.caf in Resources */ = {isa = PBXBuildFile; fileRef = 926F7D441295C7E900C7046E /* talkstart.caf */; };
 		92C528C11292D5D300CDA2B0 /* About.png in Resources */ = {isa = PBXBuildFile; fileRef = 92C528A81292D5D200CDA2B0 /* About.png */; };
 		92C528C21292D5D300CDA2B0 /* channel_icon.png in Resources */ = {isa = PBXBuildFile; fileRef = 92C528A91292D5D200CDA2B0 /* channel_icon.png */; };
 		92C528C31292D5D300CDA2B0 /* disconnect.png in Resources */ = {isa = PBXBuildFile; fileRef = 92C528AA1292D5D200CDA2B0 /* disconnect.png */; };
@@ -640,19 +633,12 @@
 		921F696D1292E10D00134DEA /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
 		921F696F1292E10D00134DEA /* SystemConfiguration.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SystemConfiguration.framework; path = System/Library/Frameworks/SystemConfiguration.framework; sourceTree = SDKROOT; };
 		921F69711292E10D00134DEA /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = System/Library/Frameworks/UIKit.framework; sourceTree = SDKROOT; };
-		92C528831292D51C00CDA2B0 /* Binds.caf */ = {isa = PBXFileReference; lastKnownFileType = file; path = Binds.caf; sourceTree = "<group>"; };
-		92C528841292D51C00CDA2B0 /* Channel.caf */ = {isa = PBXFileReference; lastKnownFileType = file; path = Channel.caf; sourceTree = "<group>"; };
-		92C528851292D51C00CDA2B0 /* ChannelJoin.caf */ = {isa = PBXFileReference; lastKnownFileType = file; path = ChannelJoin.caf; sourceTree = "<group>"; };
-		92C528861292D51C00CDA2B0 /* ChannelLeave.caf */ = {isa = PBXFileReference; lastKnownFileType = file; path = ChannelLeave.caf; sourceTree = "<group>"; };
-		92C528871292D51C00CDA2B0 /* connect.caf */ = {isa = PBXFileReference; lastKnownFileType = file; path = connect.caf; sourceTree = "<group>"; };
-		92C528881292D51C00CDA2B0 /* disconnect.caf */ = {isa = PBXFileReference; lastKnownFileType = file; path = disconnect.caf; sourceTree = "<group>"; };
-		92C528891292D51C00CDA2B0 /* MicKeyDown.caf */ = {isa = PBXFileReference; lastKnownFileType = file; path = MicKeyDown.caf; sourceTree = "<group>"; };
-		92C5288A1292D51C00CDA2B0 /* MicKeyUp.caf */ = {isa = PBXFileReference; lastKnownFileType = file; path = MicKeyUp.caf; sourceTree = "<group>"; };
-		92C5288B1292D51C00CDA2B0 /* missing.caf */ = {isa = PBXFileReference; lastKnownFileType = file; path = missing.caf; sourceTree = "<group>"; };
-		92C5288C1292D51C00CDA2B0 /* MuteMic.caf */ = {isa = PBXFileReference; lastKnownFileType = file; path = MuteMic.caf; sourceTree = "<group>"; };
-		92C5288D1292D51C00CDA2B0 /* MuteSound.caf */ = {isa = PBXFileReference; lastKnownFileType = file; path = MuteSound.caf; sourceTree = "<group>"; };
-		92C5288E1292D51C00CDA2B0 /* UserConnect.caf */ = {isa = PBXFileReference; lastKnownFileType = file; path = UserConnect.caf; sourceTree = "<group>"; };
-		92C5288F1292D51C00CDA2B0 /* UserDisconnect.caf */ = {isa = PBXFileReference; lastKnownFileType = file; path = UserDisconnect.caf; sourceTree = "<group>"; };
+		926F7D3F1295C7E900C7046E /* channelenter.caf */ = {isa = PBXFileReference; lastKnownFileType = file; path = channelenter.caf; sourceTree = "<group>"; };
+		926F7D401295C7E900C7046E /* channelleave.caf */ = {isa = PBXFileReference; lastKnownFileType = file; path = channelleave.caf; sourceTree = "<group>"; };
+		926F7D411295C7E900C7046E /* login.caf */ = {isa = PBXFileReference; lastKnownFileType = file; path = login.caf; sourceTree = "<group>"; };
+		926F7D421295C7E900C7046E /* logout.caf */ = {isa = PBXFileReference; lastKnownFileType = file; path = logout.caf; sourceTree = "<group>"; };
+		926F7D431295C7E900C7046E /* talkend.caf */ = {isa = PBXFileReference; lastKnownFileType = file; path = talkend.caf; sourceTree = "<group>"; };
+		926F7D441295C7E900C7046E /* talkstart.caf */ = {isa = PBXFileReference; lastKnownFileType = file; path = talkstart.caf; sourceTree = "<group>"; };
 		92C528A81292D5D200CDA2B0 /* About.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = About.png; sourceTree = "<group>"; };
 		92C528A91292D5D200CDA2B0 /* channel_icon.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = channel_icon.png; sourceTree = "<group>"; };
 		92C528AA1292D5D200CDA2B0 /* disconnect.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = disconnect.png; sourceTree = "<group>"; };
@@ -1717,19 +1703,12 @@
 		92C528821292D51C00CDA2B0 /* sounds */ = {
 			isa = PBXGroup;
 			children = (
-				92C528831292D51C00CDA2B0 /* Binds.caf */,
-				92C528841292D51C00CDA2B0 /* Channel.caf */,
-				92C528851292D51C00CDA2B0 /* ChannelJoin.caf */,
-				92C528861292D51C00CDA2B0 /* ChannelLeave.caf */,
-				92C528871292D51C00CDA2B0 /* connect.caf */,
-				92C528881292D51C00CDA2B0 /* disconnect.caf */,
-				92C528891292D51C00CDA2B0 /* MicKeyDown.caf */,
-				92C5288A1292D51C00CDA2B0 /* MicKeyUp.caf */,
-				92C5288B1292D51C00CDA2B0 /* missing.caf */,
-				92C5288C1292D51C00CDA2B0 /* MuteMic.caf */,
-				92C5288D1292D51C00CDA2B0 /* MuteSound.caf */,
-				92C5288E1292D51C00CDA2B0 /* UserConnect.caf */,
-				92C5288F1292D51C00CDA2B0 /* UserDisconnect.caf */,
+				926F7D3F1295C7E900C7046E /* channelenter.caf */,
+				926F7D401295C7E900C7046E /* channelleave.caf */,
+				926F7D411295C7E900C7046E /* login.caf */,
+				926F7D421295C7E900C7046E /* logout.caf */,
+				926F7D431295C7E900C7046E /* talkend.caf */,
+				926F7D441295C7E900C7046E /* talkstart.caf */,
 			);
 			path = sounds;
 			sourceTree = "<group>";
@@ -1926,19 +1905,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				92C528901292D51C00CDA2B0 /* Binds.caf in Resources */,
-				92C528911292D51C00CDA2B0 /* Channel.caf in Resources */,
-				92C528921292D51C00CDA2B0 /* ChannelJoin.caf in Resources */,
-				92C528931292D51C00CDA2B0 /* ChannelLeave.caf in Resources */,
-				92C528941292D51C00CDA2B0 /* connect.caf in Resources */,
-				92C528951292D51C00CDA2B0 /* disconnect.caf in Resources */,
-				92C528961292D51C00CDA2B0 /* MicKeyDown.caf in Resources */,
-				92C528971292D51C00CDA2B0 /* MicKeyUp.caf in Resources */,
-				92C528981292D51C00CDA2B0 /* missing.caf in Resources */,
-				92C528991292D51C00CDA2B0 /* MuteMic.caf in Resources */,
-				92C5289A1292D51C00CDA2B0 /* MuteSound.caf in Resources */,
-				92C5289B1292D51C00CDA2B0 /* UserConnect.caf in Resources */,
-				92C5289C1292D51C00CDA2B0 /* UserDisconnect.caf in Resources */,
 				92C528C11292D5D300CDA2B0 /* About.png in Resources */,
 				92C528C21292D5D300CDA2B0 /* channel_icon.png in Resources */,
 				92C528C31292D5D300CDA2B0 /* disconnect.png in Resources */,
@@ -1971,6 +1937,12 @@
 				921F67FE1292D88300134DEA /* ServerViewController.xib in Resources */,
 				921F67FF1292D88300134DEA /* SettingsViewController.xib in Resources */,
 				921F68001292D88300134DEA /* UserViewController.xib in Resources */,
+				926F7D451295C7E900C7046E /* channelenter.caf in Resources */,
+				926F7D461295C7E900C7046E /* channelleave.caf in Resources */,
+				926F7D471295C7E900C7046E /* login.caf in Resources */,
+				926F7D481295C7E900C7046E /* logout.caf in Resources */,
+				926F7D491295C7E900C7046E /* talkend.caf in Resources */,
+				926F7D4A1295C7E900C7046E /* talkstart.caf in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
