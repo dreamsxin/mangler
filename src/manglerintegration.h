@@ -32,13 +32,13 @@
 # include "mpd/client.h"
 #endif
 
+#include <glib.h>
+#include <gtkmm.h>
 #ifdef HAVE_DBUS
 # include <dbus/dbus.h>
 # include <dbus/dbus-glib.h>
 # include <dbus/dbus-glib-lowlevel.h>
 #endif
-#include <glib.h>
-#include <gtkmm.h>
 #include <string.h>
 #include <string>
 
