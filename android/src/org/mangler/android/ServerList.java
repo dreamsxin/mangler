@@ -35,6 +35,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
+import android.content.pm.ActivityInfo;
 import android.database.Cursor;
 import android.media.AudioManager;
 import android.os.Bundle;
@@ -169,6 +170,9 @@ public class ServerList extends ListActivity {
 	@Override
 	protected void onListItemClick(ListView l, View v, int position, long id) {
 		super.onListItemClick(l, v, position, id);
+		
+		/* Prevent orientation changes during connection. */
+		setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_NOSENSOR);
 		connectToServer(id);
 	}
 
@@ -244,6 +248,8 @@ public class ServerList extends ListActivity {
 					sendBroadcast(new Intent(ServerList.NOTIFY_ACTION)
 						.putExtra("notification", "Connection to server failed:\n" + EventService.StringFromBytes(data.error.message)));
 				}
+				/* Allow changing orientation after connection again. */
+				setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR);
 			}
 		});
 		t.setPriority(10);
