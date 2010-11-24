@@ -28,8 +28,7 @@ import java.lang.reflect.Constructor;
 import android.content.Context;
 
 public abstract class TTSWrapper {
-    @SuppressWarnings("unchecked")
-	public static TTSWrapper getInstance(Context context) {
+    public static TTSWrapper getInstance(Context context) {
         try {
             @SuppressWarnings("unused")
 			Class tts = Class.forName("android.speech.tts.TextToSpeech");

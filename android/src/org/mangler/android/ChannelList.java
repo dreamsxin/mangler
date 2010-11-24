@@ -52,11 +52,16 @@ public class ChannelList {
 			entity.type = ChannelListEntity.CHANNEL;
 			data.add(entity.toHashMap());
 		} else {
+			int location;
 			if (entity.type == ChannelListEntity.USER) {
-				data.add(getLocation(entity.parentid)+1, entity.toHashMap());
+				location = getLocation(entity.parentid) + 1;
 			} else {
-				data.add(getLocation(entity.parentid)+getChildCount(entity.parentid)+1, entity.toHashMap());
+				location = getLocation(entity.parentid) + getChildCount(entity.parentid) + 1;
 			}
+			while(location > data.size()) {
+				data.add(null);
+			}
+			data.add(location, entity.toHashMap());
 		}
 	}
 	

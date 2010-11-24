@@ -27,8 +27,6 @@ import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import android.preference.PreferenceManager;
-
 public class ChannelListEntity {
 	
 	static final int USER = 1;
