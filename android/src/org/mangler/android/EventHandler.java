@@ -43,6 +43,10 @@ public class EventHandler {
 			ChannelListEntity entity;
 			//Log.d("mangler", "EventHandler: processing event type " + data.type);
 			switch (data.type) {
+				case VentriloEvents.V3_EVENT_ERROR_MSG:
+					Toast.makeText(sv, ChannelListEntity.stringFromBytes(data.error.message), Toast.LENGTH_SHORT).show();
+					break;
+					
 				case VentriloEvents.V3_EVENT_CHAT_MESSAGE:
 					entity = new ChannelListEntity(ChannelListEntity.USER, data.user.id);
 					sv.addChatMessage(entity.name, ChannelListEntity.stringFromBytes(data.data.chatmessage));
