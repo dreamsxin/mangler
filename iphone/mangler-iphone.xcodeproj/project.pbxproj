@@ -887,7 +887,7 @@
 				920189B81292BF5C004712AA /* ventrilo3.h */,
 			);
 			name = libventrilo3;
-			path = ../../trunk/libventrilo3;
+			path = ../libventrilo3;
 			sourceTree = SOURCE_ROOT;
 		};
 		920189CA1292C0C3004712AA /* celt */ = {
