@@ -77,7 +77,6 @@
 		92018CE61292C766004712AA /* libcelt.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 92EA763C1292A64200D26C63 /* libcelt.a */; };
 		92018CE71292C766004712AA /* libgsm.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 92EA73C512929ECB00D26C63 /* libgsm.a */; };
 		92018CE81292C766004712AA /* libspeex.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 92EA744C12929FF500D26C63 /* libspeex.a */; };
-		92018CF21292C7EC004712AA /* libventrilo3.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 92EA770E1292A75300D26C63 /* libventrilo3.a */; };
 		921F67F91292D88300134DEA /* AboutViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = 921F67F11292D88300134DEA /* AboutViewController.xib */; };
 		921F67FA1292D88300134DEA /* AddServerViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = 921F67F21292D88300134DEA /* AddServerViewController.xib */; };
 		921F67FB1292D88300134DEA /* MainViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = 921F67F31292D88300134DEA /* MainViewController.xib */; };
@@ -85,11 +84,13 @@
 		921F67FE1292D88300134DEA /* ServerViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = 921F67F61292D88300134DEA /* ServerViewController.xib */; };
 		921F67FF1292D88300134DEA /* SettingsViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = 921F67F71292D88300134DEA /* SettingsViewController.xib */; };
 		921F68001292D88300134DEA /* UserViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = 921F67F81292D88300134DEA /* UserViewController.xib */; };
-		921F6A611292E15F00134DEA /* AudioToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 921F69691292E10D00134DEA /* AudioToolbox.framework */; };
-		921F6A621292E15F00134DEA /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 921F696B1292E10D00134DEA /* CoreGraphics.framework */; };
-		921F6A631292E15F00134DEA /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 921F696D1292E10D00134DEA /* Foundation.framework */; };
-		921F6A641292E15F00134DEA /* SystemConfiguration.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 921F696F1292E10D00134DEA /* SystemConfiguration.framework */; };
-		921F6A651292E15F00134DEA /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 921F69711292E10D00134DEA /* UIKit.framework */; settings = {ATTRIBUTES = (Weak, ); }; };
+		9232AB36129E72BC0095FED9 /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9232AB35129E72BC0095FED9 /* CoreFoundation.framework */; };
+		9232AB61129E72E60095FED9 /* libventrilo3.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 92EA770E1292A75300D26C63 /* libventrilo3.a */; };
+		9232AB65129E730D0095FED9 /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9232AB64129E730D0095FED9 /* UIKit.framework */; settings = {ATTRIBUTES = (Required, ); }; };
+		9232ABBE129E734D0095FED9 /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9232ABBD129E734D0095FED9 /* CoreGraphics.framework */; };
+		9232AC48129E74C20095FED9 /* SystemConfiguration.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9232AC47129E74C20095FED9 /* SystemConfiguration.framework */; };
+		9232AC5D129E74E90095FED9 /* AudioToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9232AC5C129E74E90095FED9 /* AudioToolbox.framework */; };
+		9232ACAB129E76620095FED9 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9232ACAA129E76620095FED9 /* Foundation.framework */; };
 		926688331293F3B30097BBAD /* libventrilo3_message.c in Sources */ = {isa = PBXBuildFile; fileRef = 920189B21292BF5C004712AA /* libventrilo3_message.c */; };
 		926688341293F3B30097BBAD /* libventrilo3_message.h in Headers */ = {isa = PBXBuildFile; fileRef = 920189B31292BF5C004712AA /* libventrilo3_message.h */; };
 		926688351293F3B30097BBAD /* libventrilo3.c in Sources */ = {isa = PBXBuildFile; fileRef = 920189B41292BF5C004712AA /* libventrilo3.c */; };
@@ -152,12 +153,12 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
-		92EA77411292A79900D26C63 /* PBXContainerItemProxy */ = {
+		9232AB2F129E725C0095FED9 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 29B97313FDCFA39411CA2CEA /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = 92EA770D1292A75300D26C63;
-			remoteInfo = libventrilo3;
+			remoteGlobalIDString = 92EA770D1292A75300D26C63 /* ventrilo */;
+			remoteInfo = ventrilo;
 		};
 		92EA77491292A7CA00D26C63 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -628,11 +629,12 @@
 		921F67F81292D88300134DEA /* UserViewController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = UserViewController.xib; path = res/UserViewController.xib; sourceTree = "<group>"; };
 		921F681D1292DB2100134DEA /* mangler-iphone-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "mangler-iphone-Info.plist"; sourceTree = "<group>"; };
 		921F682C1292DC9700134DEA /* Constants.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Constants.h; sourceTree = "<group>"; };
-		921F69691292E10D00134DEA /* AudioToolbox.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AudioToolbox.framework; path = System/Library/Frameworks/AudioToolbox.framework; sourceTree = SDKROOT; };
-		921F696B1292E10D00134DEA /* CoreGraphics.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreGraphics.framework; path = System/Library/Frameworks/CoreGraphics.framework; sourceTree = SDKROOT; };
-		921F696D1292E10D00134DEA /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
-		921F696F1292E10D00134DEA /* SystemConfiguration.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SystemConfiguration.framework; path = System/Library/Frameworks/SystemConfiguration.framework; sourceTree = SDKROOT; };
-		921F69711292E10D00134DEA /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = System/Library/Frameworks/UIKit.framework; sourceTree = SDKROOT; };
+		9232AB35129E72BC0095FED9 /* CoreFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreFoundation.framework; path = System/Library/Frameworks/CoreFoundation.framework; sourceTree = SDKROOT; };
+		9232AB64129E730D0095FED9 /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = System/Library/Frameworks/UIKit.framework; sourceTree = SDKROOT; };
+		9232ABBD129E734D0095FED9 /* CoreGraphics.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreGraphics.framework; path = System/Library/Frameworks/CoreGraphics.framework; sourceTree = SDKROOT; };
+		9232AC47129E74C20095FED9 /* SystemConfiguration.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SystemConfiguration.framework; path = System/Library/Frameworks/SystemConfiguration.framework; sourceTree = SDKROOT; };
+		9232AC5C129E74E90095FED9 /* AudioToolbox.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AudioToolbox.framework; path = System/Library/Frameworks/AudioToolbox.framework; sourceTree = SDKROOT; };
+		9232ACAA129E76620095FED9 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
 		926F7D3F1295C7E900C7046E /* channelenter.caf */ = {isa = PBXFileReference; lastKnownFileType = file; path = channelenter.caf; sourceTree = "<group>"; };
 		926F7D401295C7E900C7046E /* channelleave.caf */ = {isa = PBXFileReference; lastKnownFileType = file; path = channelleave.caf; sourceTree = "<group>"; };
 		926F7D411295C7E900C7046E /* login.caf */ = {isa = PBXFileReference; lastKnownFileType = file; path = login.caf; sourceTree = "<group>"; };
@@ -718,12 +720,13 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				921F6A611292E15F00134DEA /* AudioToolbox.framework in Frameworks */,
-				921F6A621292E15F00134DEA /* CoreGraphics.framework in Frameworks */,
-				921F6A631292E15F00134DEA /* Foundation.framework in Frameworks */,
-				921F6A641292E15F00134DEA /* SystemConfiguration.framework in Frameworks */,
-				921F6A651292E15F00134DEA /* UIKit.framework in Frameworks */,
-				92018CF21292C7EC004712AA /* libventrilo3.a in Frameworks */,
+				9232AB61129E72E60095FED9 /* libventrilo3.a in Frameworks */,
+				9232AB36129E72BC0095FED9 /* CoreFoundation.framework in Frameworks */,
+				9232AB65129E730D0095FED9 /* UIKit.framework in Frameworks */,
+				9232ABBE129E734D0095FED9 /* CoreGraphics.framework in Frameworks */,
+				9232AC48129E74C20095FED9 /* SystemConfiguration.framework in Frameworks */,
+				9232AC5D129E74E90095FED9 /* AudioToolbox.framework in Frameworks */,
+				9232ACAB129E76620095FED9 /* Foundation.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -866,11 +869,12 @@
 		29B97323FDCFA39411CA2CEA /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
-				921F69691292E10D00134DEA /* AudioToolbox.framework */,
-				921F696B1292E10D00134DEA /* CoreGraphics.framework */,
-				921F696D1292E10D00134DEA /* Foundation.framework */,
-				921F696F1292E10D00134DEA /* SystemConfiguration.framework */,
-				921F69711292E10D00134DEA /* UIKit.framework */,
+				9232ACAA129E76620095FED9 /* Foundation.framework */,
+				9232AC47129E74C20095FED9 /* SystemConfiguration.framework */,
+				9232AB64129E730D0095FED9 /* UIKit.framework */,
+				9232AB35129E72BC0095FED9 /* CoreFoundation.framework */,
+				9232ABBD129E734D0095FED9 /* CoreGraphics.framework */,
+				9232AC5C129E74E90095FED9 /* AudioToolbox.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -1794,7 +1798,7 @@
 			buildRules = (
 			);
 			dependencies = (
-				92EA77421292A79900D26C63 /* PBXTargetDependency */,
+				9232AB30129E725C0095FED9 /* PBXTargetDependency */,
 			);
 			name = "mangler-iphone";
 			productName = "mangler-iphone";
@@ -2078,10 +2082,10 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
-		92EA77421292A79900D26C63 /* PBXTargetDependency */ = {
+		9232AB30129E725C0095FED9 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 92EA770D1292A75300D26C63 /* ventrilo */;
-			targetProxy = 92EA77411292A79900D26C63 /* PBXContainerItemProxy */;
+			targetProxy = 9232AB2F129E725C0095FED9 /* PBXContainerItemProxy */;
 		};
 		92EA774A1292A7CA00D26C63 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
@@ -2110,7 +2114,7 @@
 				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "mangler-iphone-Prefix.pch";
-				HEADER_SEARCH_PATHS = ../../trunk/libventrilo3;
+				HEADER_SEARCH_PATHS = ../libventrilo3;
 				INFOPLIST_FILE = "mangler-iphone-Info.plist";
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
@@ -2128,7 +2132,7 @@
 				COPY_PHASE_STRIP = YES;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "mangler-iphone-Prefix.pch";
-				HEADER_SEARCH_PATHS = ../../trunk/libventrilo3;
+				HEADER_SEARCH_PATHS = ../libventrilo3;
 				INFOPLIST_FILE = "mangler-iphone-Info.plist";
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
@@ -2160,6 +2164,8 @@
 				COPY_PHASE_STRIP = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				HEADER_SEARCH_PATHS = gsm/inc;
+				OTHER_CFLAGS = "-DWAV49";
 				PREBINDING = NO;
 				PRODUCT_NAME = gsm;
 				ZERO_LINK = NO;
@@ -2191,6 +2197,12 @@
 				COPY_PHASE_STRIP = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				HEADER_SEARCH_PATHS = speex/include;
+				OTHER_CFLAGS = (
+					"-DEXPORT=''",
+					"-DFIXED_POINT",
+					"-D__EMX__",
+				);
 				PREBINDING = NO;
 				PRODUCT_NAME = speex;
 				ZERO_LINK = NO;
@@ -2225,6 +2237,15 @@
 				COPY_PHASE_STRIP = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				HEADER_SEARCH_PATHS = celt/inc;
+				OTHER_CFLAGS = (
+					"-Drestrict=''",
+					"-D__EMX__",
+					"-DFIXED_POINT",
+					"-DHAVE_LRINTF",
+					"-DHAVE_LRINT",
+					"-DDOUBLE_PRECISION",
+				);
 				PREBINDING = NO;
 				PRODUCT_NAME = celt;
 				ZERO_LINK = NO;
@@ -2238,6 +2259,7 @@
 				COPY_PHASE_STRIP = NO;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_OPTIMIZATION_LEVEL = 0;
+				ONLY_ACTIVE_ARCH = NO;
 				OTHER_CFLAGS = (
 					"-D__EMX__",
 					"-DHAVE_GSM",
@@ -2249,19 +2271,30 @@
 				);
 				PREBINDING = NO;
 				PRODUCT_NAME = ventrilo3;
-				USER_HEADER_SEARCH_PATHS = "celt/inc speex/include gsm/inc";
+				USER_HEADER_SEARCH_PATHS = "gsm/inc celt/inc speex/include";
 			};
 			name = Debug;
 		};
 		92EA77101292A75400D26C63 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_SEARCH_USER_PATHS = NO;
+				ALWAYS_SEARCH_USER_PATHS = YES;
 				COPY_PHASE_STRIP = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				ONLY_ACTIVE_ARCH = NO;
+				OTHER_CFLAGS = (
+					"-D__EMX__",
+					"-DHAVE_GSM",
+					"-DHAVE_GSM_H",
+					"-DHAVE_SPEEX",
+					"-DHAVE_SPEEX_DSP=1",
+					"-DHAVE_CELT",
+					"-DNO_AUTOMAKE",
+				);
 				PREBINDING = NO;
-				PRODUCT_NAME = libventrilo3;
+				PRODUCT_NAME = ventrilo3;
+				USER_HEADER_SEARCH_PATHS = "gsm/inc celt/inc speex/include";
 				ZERO_LINK = NO;
 			};
 			name = Release;
@@ -2270,16 +2303,17 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
-				CODE_SIGN_IDENTITY = "iPhone Developer";
-				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				CODE_SIGN_IDENTITY = "Don't Code Sign";
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "Don't Code Sign";
 				GCC_C_LANGUAGE_STANDARD = c99;
+				GCC_VERSION = 4.2;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				INFOPLIST_FILE = "";
+				INFOPLIST_FILE = "mangler-iphone-Info.plist";
 				PREBINDING = NO;
 				PROVISIONING_PROFILE = "";
 				"PROVISIONING_PROFILE[sdk=iphoneos*]" = "";
-				SDKROOT = iphonesimulator4.1;
+				SDKROOT = iphoneos4.1;
 				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Debug;
@@ -2288,12 +2322,17 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
-				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				CODE_SIGN_IDENTITY = "Don't Code Sign";
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "Don't Code Sign";
 				GCC_C_LANGUAGE_STANDARD = c99;
+				GCC_VERSION = 4.2;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
+				INFOPLIST_FILE = "mangler-iphone-Info.plist";
 				PREBINDING = NO;
-				SDKROOT = iphonesimulator4.1;
+				PROVISIONING_PROFILE = "";
+				"PROVISIONING_PROFILE[sdk=iphoneos*]" = "";
+				SDKROOT = iphoneos4.1;
 			};
 			name = Release;
 		};

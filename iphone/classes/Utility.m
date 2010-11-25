@@ -24,13 +24,18 @@
 
 + (UIImage *)scale:(UIImage *)image toSize:(CGSize)size
 {
-	if (UIGraphicsBeginImageContextWithOptions!=NULL) {
-		UIGraphicsBeginImageContextWithOptions(size,NO,0.0);
-	}
-	else {
+	/*
+	 * For some reason, just weakly linking against UIKit and checking for NULL on 
+	 * UIGraphicsBeginImageContextWithOptions does not work. This is the workaround:
+	 */
+	char majorVersion = [[[UIDevice currentDevice] systemVersion] characterAtIndex: 0];
+	if (majorVersion == '2' || majorVersion == '3') {
 		UIGraphicsBeginImageContext(size);
 	}
-
+	else {
+		UIGraphicsBeginImageContextWithOptions(size, NO, 0.0);
+	}
+	
     [image drawInRect:CGRectMake(0, 0, size.width, size.height)];
     UIImage *scaledImage = UIGraphicsGetImageFromCurrentImageContext();
     UIGraphicsEndImageContext();
