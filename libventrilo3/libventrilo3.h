@@ -37,6 +37,8 @@
 #include <stdarg.h>
 #include <string.h>
 #include <time.h>
+
+#ifndef _WIN32
 #include <sys/time.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -44,6 +46,13 @@
 #include <netdb.h>
 #include <sys/select.h>
 #include <errno.h>
+#else
+#include <winsock2.h>
+#include <windows.h>
+#include <pthread.h>
+
+#define SHUT_WR SD_SEND 
+#endif
 
 #define true  1
 #define false 0
@@ -686,6 +695,11 @@ void                    _v3_unlock_server(void);
 int                     v3_queue_event(v3_event *ev);
 v3_event                *_v3_get_last_event(int *len);
 v3_event                *_v3_create_event(uint16_t event);
+
+#ifdef _WIN32
+// TODO: May want to move these function definitions to a windows specific header file.
+int 					mingw_inet_aton(const char *cp, struct in_addr *addr);
+#endif
 
 #if HAVE_SPEEX_DSP
 void _v3_lock_audioq(void);

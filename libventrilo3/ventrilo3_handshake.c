@@ -23,10 +23,10 @@
 #include <stdint.h>
 #include <time.h>
 
-#ifdef WIN32
+#ifdef _WIN32
     #include <winsock.h>
 
-    #define close   closesocket
+    #define close closesocket
 #else
     #include <unistd.h>
     #include <sys/socket.h>

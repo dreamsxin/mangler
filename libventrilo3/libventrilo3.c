@@ -32,11 +32,21 @@
 #include <android/log.h>
 #endif
 
-#include <unistd.h>
+#include <math.h>
 #include <fcntl.h>
+
+#ifndef _WIN32
+#include <unistd.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <math.h>
+#else
+#include <windows.h>
+#include <pthread.h>
+
+#define fsync 		_commit
+#define inet_aton 	mingw_inet_aton
+#define pipe(fds) 	_pipe(fds, 5000, _O_BINARY)
+#endif
 
 #if HAVE_SPEEX_DSP
 # include <speex/speex_resampler.h>
@@ -61,8 +71,6 @@
 #include "ventrilo3.h"
 #include "libventrilo3.h"
 #include "libventrilo3_message.h"
-
-extern int h_errno;
 
 #define true  1
 #define false 0
@@ -2104,8 +2112,7 @@ _v3_audio_encode(
         _v3_func_leave("_v3_audio_encode");
         return NULL;
     }
-    int ctr;
-
+	
     channels = (channels == 2) ? 2 : 1;
     switch (codec->codec) {
 #if HAVE_GSM
@@ -2115,6 +2122,7 @@ _v3_audio_encode(
         uint16_t frame_count = pcmlen / 640;
         uint16_t gsmdatabuf  = frame_count * 65;
         uint8_t *gsmdata     = NULL;
+		uint32_t ctr;
 
         _v3_debug(V3_DEBUG_INFO, "encoding %d bytes of PCM to GSM @ %lu", pcmlen, codec->rate);
         if (channels > 1) {
@@ -2132,6 +2140,7 @@ _v3_audio_encode(
         _v3_debug(V3_DEBUG_MEMORY, "allocating %lu bytes for %d gsm frames", gsmdatabuf, frame_count);
         gsmdata = malloc(gsmdatabuf);
         memset(gsmdata, 0, gsmdatabuf);
+		
         for (ctr = 0; ctr < frame_count; ctr++) {
             _v3_debug(V3_DEBUG_INFO, "encoding gsm frame %d", ctr+1);
             gsm_encode(gsmenc, (void *)sample+(ctr*640), gsmdata+(ctr*65));
@@ -2163,6 +2172,7 @@ _v3_audio_encode(
         uint16_t celtdatabuf     = frame_count * celt_frag_size;
         uint8_t *celtdata        = NULL;
         uint8_t *celtdataptr     = NULL;
+		uint32_t ctr;
 
         _v3_debug(V3_DEBUG_INFO, "encoding %d bytes of PCM to CELT @ %lu", pcmlen, codec->rate);
         if (!celtmode || !celtenc || channels != last_chan) {
@@ -2241,6 +2251,7 @@ _v3_audio_encode(
         uint8_t *spxdata         = NULL;
         uint16_t spxdatalen      = 0;
         uint16_t *spxhead        = NULL;
+		uint32_t ctr;
         SpeexBits bits;
 
         _v3_debug(V3_DEBUG_INFO, "encoding %d bytes of PCM to SPEEX @ %lu", pcmlen, codec->rate);
@@ -3575,7 +3586,13 @@ v3_vrf_record_start(const char *filename) {/*{{{*/
         _v3_func_leave("v3_vrf_record_start");
         return V3_FAILURE;
     }
-    if ((vrfh->file = open(filename, O_RDWR | O_CREAT | O_EXCL, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH)) < 0) {
+    if ((vrfh->file = open(filename, 
+#ifndef _WIN32
+		O_RDWR | O_CREAT | O_EXCL, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH
+#else
+		O_RDWR | O_CREAT | O_TRUNC
+#endif
+		)) < 0) {
         _v3_error("%s: create file for writing failed: %s", filename, strerror(errno));
         v3_vrf_destroy(vrfh);
         _v3_func_leave("v3_vrf_record_start");
@@ -5391,6 +5408,8 @@ v3_login(char *server, char *username, char *password, char *phonetic) {/*{{{*/
         _v3_func_leave("v3_login");
         return false;
     }
+	
+#ifndef _WIN32
     int ctr, flags;
     for (ctr = 0; ctr < 2; ctr++) {
         if ((flags = fcntl(v3_server.evpipe[ctr], F_GETFL, 0)) >= 0) {
@@ -5405,7 +5424,10 @@ v3_login(char *server, char *username, char *password, char *phonetic) {/*{{{*/
             return false;
         }
     }
-
+#else
+	// TODO: Support non-blocking mode in windows.
+#endif
+	
     /*
      * Initialize the server and user structures.
      */
@@ -7563,3 +7585,98 @@ v3_get_volume_luser(void) {/*{{{*/
     return v3_get_volume_user(v3_get_user_id());
 }/*}}}*/
 
+#ifdef _WIN32
+// TODO: May want to move these windows(mingw) specific function bodies to a seperate module.
+int
+mingw_inet_aton(const char *cp, struct in_addr *addr)
+{
+    register unsigned int val;
+    register int base, n;
+    register char c;
+    unsigned int parts[4];
+    register unsigned int *pp = parts;
+
+    c = *cp;
+    while(1) {
+        /*
+         * Collect number up to ``.''.
+         * Values are specified as for C:
+         * 0x=hex, 0=octal, isdigit=decimal.
+         */
+        if(!isdigit(c))
+            return (0);
+        val = 0; base = 10;
+        if(c == '0') {
+            c = *++cp;
+            if(c == 'x' || c == 'X')
+                base = 16, c = *++cp;
+            else
+                base = 8;
+        }
+        while(1) {
+            if(isascii(c) && isdigit(c)) {
+                val = (val * base) + (c - '0');
+                c = *++cp;
+            } else if(base == 16 && isascii(c) && isxdigit(c)) {
+                val = (val << 4) |
+                    (c + 10 - (islower(c) ? 'a' : 'A'));
+                c = *++cp;
+            } else
+                break;
+        }
+        if(c == '.') {
+            /*
+             * Internet format:
+             *    a.b.c.d
+             *    a.b.c    (with c treated as 16 bits)
+             *    a.b    (with b treated as 24 bits)
+             */
+            if(pp >= parts + 3)
+                return (0);
+            *pp++ = val;
+            c = *++cp;
+        } else
+            break;
+    }
+    /*
+     * Check for trailing characters.
+     */
+    if(c != '\0' && (!isascii(c) || !isspace(c)))
+        return (0);
+    /*
+     * Concoct the address according to
+     * the number of parts specified.
+     */
+    n = pp - parts + 1;
+    switch(n) {
+
+    case 0:
+        return (0);        /* initial nondigit */
+
+    case 1:                /* a -- 32 bits */
+        break;
+
+    case 2:                /* a.b -- 8.24 bits */
+        if((val > 0xffffff) || (parts[0] > 0xff))
+            return (0);
+        val |= parts[0] << 24;
+        break;
+
+    case 3:                /* a.b.c -- 8.8.16 bits */
+        if((val > 0xffff) || (parts[0] > 0xff) || (parts[1] > 0xff))
+            return (0);
+        val |= (parts[0] << 24) | (parts[1] << 16);
+        break;
+
+    case 4:                /* a.b.c.d -- 8.8.8.8 bits */
+        if((val > 0xff) || (parts[0] > 0xff) ||
+           (parts[1] > 0xff) || (parts[2] > 0xff))
+            return (0);
+        val |= (parts[0] << 24) | (parts[1] << 16) | (parts[2] << 8);
+        break;
+    }
+    if(addr)
+        addr->s_addr = htonl(val);
+    return (1);
+}
+#endif

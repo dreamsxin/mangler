@@ -21,7 +21,6 @@
 
 #define _GNU_SOURCE
 
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -31,6 +30,10 @@
 #include <string.h>
 #include <getopt.h>
 #include <pthread.h>
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
 #include "ventrilo3.h"
 
 void usage(char *argv[]);
@@ -56,7 +59,7 @@ void ctrl_c (int signum) {
 }
 
 void usage(char *argv[]) {
-    fprintf(stderr, "usage: %s -s hostname:port -u username -c channelid\n", argv[0]);
+    fprintf(stderr, "usage: %s -h hostname:port -u username -c channelid\n", argv[0]);
     exit(1);
 }
 
@@ -111,7 +114,11 @@ void *v3_consumer(void *connptr) {
                 fprintf(stderr, "***********************************************************************************\n");
                 fprintf(stderr, "***********************************************************************************\n");
                 fprintf(stderr, "***********************************************************************************\n");
+#ifndef _WIN32
                 sleep(5);
+#else
+				Sleep(5000);
+#endif
                 v3_serverprop_open();
                 break;
         }
@@ -167,7 +174,11 @@ int main(int argc, char *argv[]) {
     rc = pthread_create(&consumer, NULL, v3_consumer, (void *)&conninfo);
     signal (SIGINT, ctrl_c);
     while (! should_exit) {
+#ifndef _WIN32
         sleep(1);
+#else
+		Sleep(1000);
+#endif
     }
     return(0);
 }
