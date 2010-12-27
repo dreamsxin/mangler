@@ -27,7 +27,10 @@
 #ifndef _LIBVENTRILO3_H
 #define _LIBVENTRILO3_H
 
+#ifndef NO_AUTOMAKE
 #include "config.h"
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
