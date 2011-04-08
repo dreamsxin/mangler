@@ -131,6 +131,7 @@ class Mangler
         bool                                muteMic;
         bool                                motdAlways;
         bool                                wantAdminWindow;
+        int                                 espeakRate;
 
         Glib::ustring                       CurrentOpenMouse;
         XDevice                             *dev; // the currently open mouse device pointer

@@ -423,13 +423,8 @@ ManglerAudio::playText(Glib::ustring text) {/*{{{*/
         return;
     }
 #ifdef HAVE_ESPEAK
-    int rate;
-    if ((rate = espeak_Initialize(AUDIO_OUTPUT_RETRIEVAL, 0, NULL, espeakEVENT_LIST_TERMINATED)) < 0) {
-        fprintf(stderr, "espeak: initialize error\n");
-        return;
-    }
     espeak_SetSynthCallback(espeak_synth_cb);
-    ManglerAudio *tts = new ManglerAudio(AUDIO_NOTIFY, rate, 1, 0, 0, false);
+    ManglerAudio *tts = new ManglerAudio(AUDIO_NOTIFY, mangler->espeakRate, 1, 0, 0, false);
     if (espeak_Synth(text.c_str(), text.length() + 1, 0, POS_CHARACTER, 0, espeakCHARS_AUTO, NULL, tts) != EE_OK) {
         tts->finish();
         fprintf(stderr, "espeak: synth error\n");

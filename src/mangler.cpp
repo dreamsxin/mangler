@@ -286,6 +286,14 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
     audioControl = new ManglerAudio(AUDIO_CONTROL);
     audioControl->getDeviceList(config["AudioSubsystem"].toUString());
 
+    // If we have eSpeak, go ahead and initialize it
+#ifdef HAVE_ESPEAK
+    if ((espeakRate = espeak_Initialize(AUDIO_OUTPUT_RETRIEVAL, 0, NULL, espeakEVENT_LIST_TERMINATED)) < 0) {
+        fprintf(stderr, "espeak: initialize error\n");
+        return;
+    }
+#endif
+
     // set saved window size from settings
     unsigned windowWidth( config["WindowWidth"].toUInt() );
     unsigned windowHeight( config["WindowHeight"].toUInt() );
