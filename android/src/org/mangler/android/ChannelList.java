@@ -49,6 +49,9 @@ public class ChannelList {
 			entity.xmitStatus = R.drawable.xmit_clear;
 		}
 		entity.indent = indent;
+		if (entity.type == ChannelListEntity.USER && entity.realUserId != 0) {
+			entity.name = "[P] " + entity.name;
+		}
 		//Log.d("mangler", "adding entity id " + entity.id + " (" + entity.name + ") at location " + getLocation(entity.parentid));
 		if (entity.id == 0) {
 			entity.type = ChannelListEntity.CHANNEL;
