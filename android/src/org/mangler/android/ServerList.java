@@ -51,8 +51,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.AdapterView.AdapterContextMenuInfo;
 
-import com.nullwire.trace.ExceptionHandler;
-
 public class ServerList extends ListActivity {
 
 	private static final int ACTIVITY_CONNECT = 0;
@@ -78,9 +76,6 @@ public class ServerList extends ListActivity {
     	super.onCreate(savedInstanceState);
         setContentView(R.layout.server_list);
 
-        // Send crash reports to server
-        ExceptionHandler.register(this, "http://www.mangler.org/errors/upload.php");
-        
         // Volume controls.
         setVolumeControlStream(AudioManager.STREAM_MUSIC);
 

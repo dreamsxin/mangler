@@ -69,8 +69,6 @@ import android.widget.AdapterView.AdapterContextMenuInfo;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.SeekBar.OnSeekBarChangeListener;
 
-import com.nullwire.trace.ExceptionHandler;
-
 public class ServerView extends TabActivity {
 	
 	static {
@@ -171,9 +169,7 @@ public class ServerView extends TabActivity {
 		// Set up database adapter
         dbHelper = new ManglerDBAdapter(this);
         dbHelper.open();
-        
-        // Send crash reports to server
-        ExceptionHandler.register(this, "http://www.mangler.org/errors/upload.php");
+
         
         // Volume controls.
         setVolumeControlStream(AudioManager.STREAM_MUSIC);
