@@ -301,6 +301,7 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
 
     // set the master volume
     v3_set_volume_master(config["MasterVolumeLevel"].toUInt());
+    v3_set_volume_xmit(config["InputGainLevel"].toUInt());
 
     builder->get_widget("buttonMenuItem", checkmenuitem);
     checkmenuitem->set_active(config["ButtonsHidden"].toBool());

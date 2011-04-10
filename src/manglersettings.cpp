@@ -194,6 +194,7 @@ ManglerSettings::ManglerSettings(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
     audioSubsystemRow[audioSubsystemColumns.name] = "OSS";
 #endif
 
+    // Master Volume
     volumeAdjustment = new Gtk::Adjustment(79, 0, 158, 1, 10, 10);
     volumehscale = new Gtk::HScale(*volumeAdjustment);
     volumehscale->add_mark(148, Gtk::POS_LEFT, "200%");
@@ -204,6 +205,18 @@ ManglerSettings::ManglerSettings(Glib::RefPtr<Gtk::Builder> builder) {/*{{{*/
     builder->get_widget("masterVolumeVbox", vbox);
     vbox->pack_start(*volumehscale);
     volumehscale->show();
+
+    // Input Gain
+    gainAdjustment = new Gtk::Adjustment(79, 0, 158, 1, 10, 10);
+    gainhscale = new Gtk::HScale(*gainAdjustment);
+    gainhscale->add_mark(148, Gtk::POS_LEFT, "200%");
+    gainhscale->add_mark(79, Gtk::POS_LEFT, "100%");
+    gainhscale->add_mark(0, Gtk::POS_LEFT, "0%");
+    gainhscale->set_inverted(false);
+    gainhscale->set_draw_value(false);
+    builder->get_widget("inputGainVbox", vbox);
+    vbox->pack_start(*gainhscale);
+    gainhscale->show();
 }/*}}}*/
 void ManglerSettings::applySettings(void) {/*{{{*/
     Gtk::TreeModel::iterator iter;
@@ -324,6 +337,12 @@ void ManglerSettings::applySettings(void) {/*{{{*/
     // Master Volume
     Mangler::config["MasterVolumeLevel"] = volumeAdjustment->get_value();
     v3_set_volume_master(Mangler::config["MasterVolumeLevel"].toInt());
+    mangler->setTooltip();
+
+    // Input Gain
+    Mangler::config["InputGainLevel"] = gainAdjustment->get_value();
+    fprintf(stderr, "setting gain to %d", Mangler::config["InputGainLevel"].toInt());
+    v3_set_volume_xmit(Mangler::config["InputGainLevel"].toInt());
     mangler->setTooltip();
 
     // Notification Sounds
@@ -504,6 +523,11 @@ void ManglerSettings::initSettings(void) {/*{{{*/
     // Master Volume
     if (Mangler::config["MasterVolumeLevel"].length()) {
         volumeAdjustment->set_value(Mangler::config["MasterVolumeLevel"].toInt());
+    }
+
+    // Input Gain
+    if (Mangler::config["InputGainLevel"].length()) {
+        gainAdjustment->set_value(Mangler::config["InputGainLevel"].toInt());
     }
 
     // Debug Level

@@ -46,6 +46,8 @@ class ManglerSettings
         Gtk::SpinButton     *spinbutton;
         Gtk::HScale         *volumehscale;
         Gtk::Adjustment     *volumeAdjustment;
+        Gtk::Adjustment     *gainAdjustment;
+        Gtk::HScale         *gainhscale;
         sigc::connection    volumeAdjustSignalConnection;
 
         bool                isDetectingKey;
