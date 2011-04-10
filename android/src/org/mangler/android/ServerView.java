@@ -615,6 +615,7 @@ public class ServerView extends TabActivity {
 			}
 
 			if (VentriloInterface.getuserid() == entity.realUserId) {
+				menu.setHeaderTitle(entity.name);
 				int itempos = 1;
 				menu.add(groupId, CM_OPTION_PHANTOM, itempos++, "Remove Phantom");
 			} else if (entity.id != VentriloInterface.getuserid()) {
@@ -660,11 +661,7 @@ public class ServerView extends TabActivity {
 				menu.add(groupId, CM_OPTION_URL, itempos++, "Set URL");
 			}
 		} else if (entity.type == ChannelListEntity.CHANNEL) {
-			if (v.getId() == R.id.userList) {
-				groupId = 1;
-				HashMap<String, Object> user = ChannelList.data.get(cmi.position);
-				clposition = ChannelList.getLocation(Short.parseShort(user.get("id").toString()));
-			}
+			menu.setHeaderTitle(entity.name);
 			int itempos = 1;
 			menu.add(groupId, CM_OPTION_PHANTOM, itempos++, "Add Phantom");
 		}
