@@ -42,6 +42,7 @@ public class ChannelListEntity {
 	public int passwordProtected = 0;
 	public short parentid = 0;
 	public int xmitStatus = R.drawable.xmit_off;
+	public short realUserId = 0;
 	
 	public ChannelListEntity(HashMap<String, Object> entity) {
 		type = Integer.parseInt(entity.get("type").toString());
@@ -51,6 +52,7 @@ public class ChannelListEntity {
 		url = entity.get("url").toString();
 		comment = entity.get("comment").toString();
 		indent = entity.get("indent").toString();
+		realUserId = Short.parseShort(entity.get("realUserId").toString());
 		passwordProtected = Integer.parseInt(entity.get("passwordProtected").toString());
 		parentid = Short.parseShort(entity.get("parentid").toString());
 		xmitStatus = Integer.parseInt(entity.get("xmitStatus").toString());
@@ -69,6 +71,7 @@ public class ChannelListEntity {
 				comment = stringFromBytes(data.text.comment);
 				url = stringFromBytes(data.text.url);
 				parentid = VentriloInterface.getuserchannel(id);
+				realUserId = data.text.real_user_id;
 				break;
 			case CHANNEL:
 				VentriloInterface.getchannel(data, id);
@@ -93,6 +96,7 @@ public class ChannelListEntity {
 		passwordProtected = Integer.parseInt(a.get(7));
 		parentid = Short.parseShort(a.get(8));
 		xmitStatus = Integer.parseInt(a.get(9));
+		realUserId = Short.parseShort(a.get(10));
 	}
 	
 	public ChannelListEntity() {
@@ -119,6 +123,7 @@ public class ChannelListEntity {
 		entity.put("passwordProtected", passwordProtected);
 		entity.put("parentid", parentid);
 		entity.put("xmitStatus", xmitStatus);
+		entity.put("realUserId", realUserId);
 		return entity;
 	}
 	
@@ -134,6 +139,7 @@ public class ChannelListEntity {
 		a.add(String.valueOf(passwordProtected));
 		a.add(String.valueOf(parentid));
 		a.add(String.valueOf(xmitStatus));
+		a.add(String.valueOf(realUserId));
 		return a;
 	}
 	

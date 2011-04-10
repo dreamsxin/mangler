@@ -286,6 +286,7 @@ JNIEXPORT void JNICALL Java_org_mangler_android_VentriloInterface_getuser(JNIEnv
 		set_byte_array(env, text, text_class, "comment", u->comment, 128);
 		set_byte_array(env, text, text_class, "url", u->url, 128);
 		set_byte_array(env, text, text_class, "integration_text", u->integration_text, 128);
+		set_short(env, text, text_class, "real_user_id", u->real_user_id);
 		v3_free_user(u);
 	}
 }

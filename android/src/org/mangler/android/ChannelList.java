@@ -29,6 +29,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.ListIterator;
 
+import android.util.Log;
+
 public class ChannelList {
 
 	public static ArrayList<HashMap<String, Object>> data = new ArrayList<HashMap<String, Object>>();
@@ -63,6 +65,13 @@ public class ChannelList {
 			}
 			data.add(location, entity.toHashMap());
 		}
+	}
+	
+	public static boolean isChannel(int position) {
+		if (Integer.parseInt(data.get(position).get("type").toString()) == ChannelListEntity.USER) {
+			return false;
+		}
+		return true;
 	}
 	
 	private static int getDepth(short channelid) {

@@ -98,7 +98,7 @@ public class ServerView extends TabActivity {
 	private final int OPTION_SETTINGS = 4;
 	private final int OPTION_ADMIN_LOGIN = 5;
 	
-	// Context menu options (does java not have enums?)
+	// User context menu options (does java not have enums?)
 	private final int CM_OPTION_VOLUME = 1;
 	private final int CM_OPTION_COMMENT = 2;
 	private final int CM_OPTION_SEND_PAGE = 3;
@@ -108,6 +108,9 @@ public class ServerView extends TabActivity {
 	private final int CM_OPTION_GLOBAL_MUTE= 8;
 	private final int CM_OPTION_MOVE_USER = 9;
 	private final int CM_OPTION_URL = 10;
+	
+	// Channel context menu options
+	private final int CM_OPTION_PHANTOM = 1;
 	
 	// List adapters.
 	private SimpleAdapter channelAdapter;
@@ -601,16 +604,20 @@ public class ServerView extends TabActivity {
 		int clposition = cmi.position;
 		int groupId = 0;
 		
-		if (v.getId() == R.id.userList) {
-			groupId = 1;
-			HashMap<String, Object> user = UserList.data.get(cmi.position);
-			clposition = UserList.getChannelListLocation(Short.parseShort(user.get("userid").toString()));
-		}
-		
 		ChannelListEntity entity = new ChannelListEntity(ChannelList.data.get(clposition));
+		Log.d("mangler", "isChannel: " + ChannelList.isChannel(clposition));
 		
 		if (entity.type == ChannelListEntity.USER) {
-			if (entity.id != VentriloInterface.getuserid()) {
+			if (v.getId() == R.id.userList) {
+				groupId = 1;
+				HashMap<String, Object> user = UserList.data.get(cmi.position);
+				clposition = UserList.getChannelListLocation(Short.parseShort(user.get("userid").toString()));
+			}
+
+			if (VentriloInterface.getuserid() == entity.realUserId) {
+				int itempos = 1;
+				menu.add(groupId, CM_OPTION_PHANTOM, itempos++, "Remove Phantom");
+			} else if (entity.id != VentriloInterface.getuserid()) {
 				// create the menu for other users
 				int itempos = 1;
 				boolean serveradmin = VentriloInterface.getpermission("serveradmin");
@@ -652,6 +659,14 @@ public class ServerView extends TabActivity {
 				menu.add(groupId, CM_OPTION_COMMENT, itempos++, "Set Comment");
 				menu.add(groupId, CM_OPTION_URL, itempos++, "Set URL");
 			}
+		} else if (entity.type == ChannelListEntity.CHANNEL) {
+			if (v.getId() == R.id.userList) {
+				groupId = 1;
+				HashMap<String, Object> user = ChannelList.data.get(cmi.position);
+				clposition = ChannelList.getLocation(Short.parseShort(user.get("id").toString()));
+			}
+			int itempos = 1;
+			menu.add(groupId, CM_OPTION_PHANTOM, itempos++, "Add Phantom");
 		}
 	}
 	
@@ -659,97 +674,117 @@ public class ServerView extends TabActivity {
 	public boolean onContextItemSelected(MenuItem item) {
 		AdapterContextMenuInfo cmi = (AdapterContextMenuInfo) item.getMenuInfo();
 		int clposition = cmi.position;
-
+		
 		// see if the item was clicked from the user list
 		if (item.getGroupId() == 1) {
 			HashMap<String, Object> user = UserList.data.get(cmi.position);
 			clposition = UserList.getChannelListLocation(Short.parseShort(user.get("userid").toString()));
 		}
+		
 		short id = Short.parseShort(ChannelList.data.get(clposition).get("id").toString());
-		ChannelListEntity entity = new ChannelListEntity(ChannelListEntity.USER, id); 
-		switch (item.getItemId()) {
-			case CM_OPTION_VOLUME:
-				setUserVolume(id);
-				break;
-			case CM_OPTION_MUTE:
-				if ((dbHelper.getVolume(serverid, entity.name)) == 0) {
-					dbHelper.setVolume(serverid, entity.name, 79);
-					VentriloInterface.setuservolume(entity.id, 79);
-				} else {
-					dbHelper.setVolume(serverid, entity.name, 0);
-					VentriloInterface.setuservolume(entity.id, 0);
-				}
-				break;
-			case CM_OPTION_GLOBAL_MUTE:
-				VentriloInterface.globalmute(entity.id);
-				break;
-			case CM_OPTION_SEND_PAGE:
-				VentriloInterface.sendpage(entity.id);
-				break;
-			case CM_OPTION_MOVE_USER:
-				Log.e("mangler", "moving user" + entity.id + " to channel " + VentriloInterface.getuserchannel(VentriloInterface.getuserid()));
-				if (!entity.inMyChannel()) {
-					VentriloInterface.forcechannelmove(entity.id, VentriloInterface.getuserchannel(VentriloInterface.getuserid()));
-				}
-				break;
-			case CM_OPTION_KICK:
-				kickUser(id);
-				break;
-			case CM_OPTION_BAN:
-				banUser(id);
-				break;
-			case CM_OPTION_COMMENT:
-				if (id == VentriloInterface.getuserid()) {
-					final ChannelListEntity fentity = entity;
-					final EditText input = new EditText(this);
-					input.setText(entity.comment);
-					AlertDialog.Builder alert = new AlertDialog.Builder(this)
-					.setTitle("Comment")
-					.setMessage("Enter your comment:")
-					.setView(input)
-					.setPositiveButton("OK", new DialogInterface.OnClickListener() {
-						public void onClick(DialogInterface dialog, int whichButton) {
-							VentriloInterface.settext(input.getText().toString(), fentity.url, "", true);
-						}
-					})
-					.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-						public void onClick(DialogInterface dialog, int whichButton) {
-						}
-					});
-					alert.show();
-				} else {
-					viewComment(id);
-				}
-				break;
-			case CM_OPTION_URL:
-				if (id == VentriloInterface.getuserid()) {
-					final ChannelListEntity fentity = entity;
-					final EditText input = new EditText(this);
-					if (entity.url.length() == 0) {
-						input.setText("http://");
+		ChannelListEntity entity = new ChannelListEntity(ChannelListEntity.USER, id);
+		if (ChannelList.isChannel(clposition) == false) {
+			if (entity.realUserId == VentriloInterface.getuserid()) {
+				removePhantom(VentriloInterface.getuserchannel(entity.id));
+			} else {
+				switch (item.getItemId()) {
+				case CM_OPTION_VOLUME:
+					setUserVolume(id);
+					break;
+				case CM_OPTION_MUTE:
+					if ((dbHelper.getVolume(serverid, entity.name)) == 0) {
+						dbHelper.setVolume(serverid, entity.name, 79);
+						VentriloInterface.setuservolume(entity.id, 79);
 					} else {
-						input.setText(entity.url);
+						dbHelper.setVolume(serverid, entity.name, 0);
+						VentriloInterface.setuservolume(entity.id, 0);
 					}
-					AlertDialog.Builder alert = new AlertDialog.Builder(this)
-					.setTitle("URL")
-					.setMessage("Enter a URL:")
-					.setView(input)
-					.setPositiveButton("OK", new DialogInterface.OnClickListener() {
-						public void onClick(DialogInterface dialog, int whichButton) {
-							VentriloInterface.settext(fentity.comment, input.getText().toString(), "", true);
+					break;
+				case CM_OPTION_GLOBAL_MUTE:
+					VentriloInterface.globalmute(entity.id);
+					break;
+				case CM_OPTION_SEND_PAGE:
+					VentriloInterface.sendpage(entity.id);
+					break;
+				case CM_OPTION_MOVE_USER:
+					Log.e("mangler", "moving user" + entity.id + " to channel " + VentriloInterface.getuserchannel(VentriloInterface.getuserid()));
+					if (!entity.inMyChannel()) {
+						VentriloInterface.forcechannelmove(entity.id, VentriloInterface.getuserchannel(VentriloInterface.getuserid()));
+					}
+					break;
+				case CM_OPTION_KICK:
+					kickUser(id);
+					break;
+				case CM_OPTION_BAN:
+					banUser(id);
+					break;
+				case CM_OPTION_COMMENT:
+					if (id == VentriloInterface.getuserid()) {
+						final ChannelListEntity fentity = entity;
+						final EditText input = new EditText(this);
+						input.setText(entity.comment);
+						AlertDialog.Builder alert = new AlertDialog.Builder(this)
+						.setTitle("Comment")
+						.setMessage("Enter your comment:")
+						.setView(input)
+						.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+							public void onClick(DialogInterface dialog, int whichButton) {
+								VentriloInterface.settext(input.getText().toString(), fentity.url, "", true);
+							}
+						})
+						.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+							public void onClick(DialogInterface dialog, int whichButton) {
+							}
+						});
+						alert.show();
+					} else {
+						viewComment(id);
+					}
+					break;
+				case CM_OPTION_URL:
+					if (id == VentriloInterface.getuserid()) {
+						final ChannelListEntity fentity = entity;
+						final EditText input = new EditText(this);
+						if (entity.url.length() == 0) {
+							input.setText("http://");
+						} else {
+							input.setText(entity.url);
 						}
-					})
-					.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-						public void onClick(DialogInterface dialog, int whichButton) {
-						}
-					});
-					alert.show();
+						AlertDialog.Builder alert = new AlertDialog.Builder(this)
+						.setTitle("URL")
+						.setMessage("Enter a URL:")
+						.setView(input)
+						.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+							public void onClick(DialogInterface dialog, int whichButton) {
+								VentriloInterface.settext(fentity.comment, input.getText().toString(), "", true);
+							}
+						})
+						.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+							public void onClick(DialogInterface dialog, int whichButton) {
+							}
+						});
+						alert.show();
+					}
+					break;
 				}
-				break;
+			}
+		} else {
+			switch (item.getItemId()) {
+			case CM_OPTION_PHANTOM:
+				addPhantom(id);
+				break;		
+			}
 		}
 		return super.onContextItemSelected(item);
 	}
-
+	
+	private void addPhantom(short id) {
+		VentriloInterface.phantomadd(id);
+	}
+	
+	private void removePhantom(short id) {
+		VentriloInterface.phantomremove(id);
+	}
 	private void kickUser(short id) {
 		final EditText input = new EditText(this);
 		final short userid = id;

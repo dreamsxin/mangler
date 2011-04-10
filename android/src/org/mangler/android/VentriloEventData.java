@@ -76,6 +76,7 @@ public class VentriloEventData {
         public byte[] comment 			= new byte[128];
         public byte[] url 				= new byte[128];
         public byte[] integration_text 	= new byte[128];
+        public short real_user_id;
 	}
 	_text text = new _text();
 	
