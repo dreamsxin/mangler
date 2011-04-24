@@ -599,17 +599,15 @@ public class ServerView extends TabActivity {
 		AdapterContextMenuInfo cmi = (AdapterContextMenuInfo) menuInfo;
 		int clposition = cmi.position;
 		int groupId = 0;
-		
+		if (v.getId() == R.id.userList) {
+			groupId = 1;
+			HashMap<String, Object> user = UserList.data.get(cmi.position);
+			clposition = UserList.getChannelListLocation(Short.parseShort(user.get("userid").toString()));
+		}		
 		ChannelListEntity entity = new ChannelListEntity(ChannelList.data.get(clposition));
 		Log.d("mangler", "isChannel: " + ChannelList.isChannel(clposition));
 		
 		if (entity.type == ChannelListEntity.USER) {
-			if (v.getId() == R.id.userList) {
-				groupId = 1;
-				HashMap<String, Object> user = UserList.data.get(cmi.position);
-				clposition = UserList.getChannelListLocation(Short.parseShort(user.get("userid").toString()));
-			}
-
 			if (VentriloInterface.getuserid() == entity.realUserId) {
 				menu.setHeaderTitle(entity.name);
 				int itempos = 1;
