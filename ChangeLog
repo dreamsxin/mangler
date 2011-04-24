@@ -1,3 +1,9 @@
+mangler (1.2.2) stable; urgency=low Sat, 23 Apr 2011 21:52:05 -0600
+  * added an input gain slider on the audio menu
+  * fixed a TTS crash
+  * libventrilo3 should build on windows now (maybe)
+  * should now build cleanly on newer debian/ubuntu systems (gtkmm/dbus include ordering errors)
+
 mangler (1.2.1) stable; urgency=low Sun, 19 Sep 2010 19:26:04 -0700
   * make the config file save atomic to prevent trashing it if we crash
   * fixed a bug that prevented displaying all users in the account editor
