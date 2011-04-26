@@ -40,9 +40,15 @@ class ManglerG15
     public:
         ManglerG15();
         void addevent(Glib::ustring text);
+        void update(Glib::ustring server, Glib::ustring lastXmit,  Glib::ustring serverJoin,  Glib::ustring chanJoin,  Glib::ustring ping);
     private:
         int fd;
         g15canvas canvas;
+        Glib::ustring server;
+        Glib::ustring lastXmit;
+        Glib::ustring serverJoin;
+        Glib::ustring chanJoin;
+        Glib::ustring ping;
         std::vector<Glib::ustring> events;
 };
 

@@ -976,12 +976,18 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                     builder->get_widget("pingLabel", label);
                     builder->get_widget("statusbar", statusbar);
                     if (ev->ping != 65535) {
-                        snprintf(buf, 16, "%d", ev->ping);
+                        snprintf(buf, 16, "%dms", ev->ping);
+#ifdef HAVE_G15
+                        g15->update("", "", "", "", buf);
+#endif
                         label->set_text(c_to_ustring(buf));
                         snprintf(buf, 63, "Ping: %dms - Users: %d/%d", ev->ping, v3_user_count(), v3_get_max_clients());
                         statusbar->pop();
                         statusbar->push(c_to_ustring(buf));
                     } else {
+#ifdef HAVE_G15
+                        g15->update("", "", "", "", "checking...");
+#endif
                         label->set_text("checking...");
                         snprintf(buf, 63, "Ping: checking... - Users: %d/%d", v3_user_count(), v3_get_max_clients());
                         statusbar->pop();
@@ -1016,6 +1022,11 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                 if (!(ev->flags & V3_LOGIN_FLAGS_EXISTING) && (v3_get_user_channel(v3_get_user_id()) == ev->channel.id)) {
                     audioControl->playNotification("channelenter");
                 }
+#ifdef HAVE_G15
+                if (!(ev->flags & V3_LOGIN_FLAGS_EXISTING)) {
+                        g15->update("", "", u->name, "", "");
+                }
+#endif
                 //fprintf(stderr, "adding user id %d: %s to channel %d\n", ev->user.id, u->name, ev->channel.id);
                 if (u->rank_id) {
                     v3_rank *r;
@@ -1196,6 +1207,7 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                     recorder->can_record(true);
 #ifdef HAVE_G15
                     g15->addevent("connected to server");
+                    g15->update(connectedServerName, "", "", "", "");
 #endif
                 }
                 break;/*}}}*/
@@ -1234,6 +1246,7 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                             string event = "joined channel: ";
                             event.append(u->name);
                             g15->addevent(event);
+                            g15->update("", "", "", u->name, "");
 #endif
                         } else if (channelTree->getUserChannelId(ev->user.id) == v3_get_user_channel(v3_get_user_id())) {
                             // they're leaving our channel
@@ -1324,6 +1337,17 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                 if (v3_is_loggedin()) {
                     channelTree->refreshUser(ev->user.id);
                 }
+#ifdef HAVE_G15
+                if (v3_get_user_channel(ev->user.id) == v3_get_user_channel(v3_get_user_id())) {
+                    if ((u = v3_get_user(ev->user.id))) {
+                        string event = "talking: ";
+                        event.append(u->name);
+                        g15->addevent(event);
+                        g15->update("", u->name, "", "", "");
+                        free(u);
+                    }
+                }
+#endif
                 break;/*}}}*/
             case V3_EVENT_USER_TALK_END:
             case V3_EVENT_USER_TALK_MUTE:/*{{{*/
@@ -1347,14 +1371,6 @@ bool Mangler::getNetworkEvent() {/*{{{*/
                     if (!channelTree->isMuted(ev->user.id) && !muteSound) {
                         // Open a stream if we don't have one for this user
                         if (!outputAudio[ev->user.id]) {
-#ifdef HAVE_G15
-                            if ((u = v3_get_user(ev->user.id))) {
-                                string event = "talking: ";
-                                event.append(u->name);
-                                g15->addevent(event);
-                                free(u);
-                            }
-#endif
                             outputAudio[ev->user.id] = new ManglerAudio(AUDIO_OUTPUT, ev->pcm.rate, ev->pcm.channels);
                         }
                         // And queue the audio
