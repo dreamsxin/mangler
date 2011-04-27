@@ -5123,7 +5123,9 @@ _v3_process_message(_v3_net_message *msg) {/*{{{*/
                             _v3_vrf_record_event(V3_VRF_EVENT_AUDIO_STOP, m->user_list[ctr].id, -1, -1, 0, 0, NULL);
                             v3_event *ev = _v3_create_event(V3_EVENT_USER_LOGOUT);
                             ev->user.id = m->user_list[ctr].id;
+                            u = _v3_get_user(ev->user.id);
                             ev->channel.id = m->user_list[ctr].channel;
+                            strncpy(ev->text.name, u->name, 32);
                             _v3_debug(V3_DEBUG_INFO, "queuing event type %d for user %d", ev->type, ev->user.id);
                             _v3_remove_user(m->user_list[ctr].id);
                             v3_queue_event(ev);
