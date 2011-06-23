@@ -46,6 +46,7 @@ public class Recorder {
 			
 			Log.e("recorder", "lv3 says " + VentriloInterface.pcmlengthforrate(rate()) + " for rate " + rate());
 			if (buflen < VentriloInterface.pcmlengthforrate(rate())) {
+				Log.e("debug", "setting buffer length to " + VentriloInterface.pcmlengthforrate(rate()));
 				buflen = VentriloInterface.pcmlengthforrate(rate());
 			}
 			Log.e("recorder", "buflen is " + buflen);
@@ -56,6 +57,7 @@ public class Recorder {
 			// than the amount of data we need to send.  If so,
 			// adjust buflen (set from buffer()) accordingly
 
+			Log.e("mangler", "starting audio record");
 			audiorecord = new AudioRecord(
 					MediaRecorder.AudioSource.MIC,
 					rate,
@@ -63,6 +65,7 @@ public class Recorder {
 					AudioFormat.ENCODING_PCM_16BIT,
 					buflen
 			);
+			Log.e("mangler", "audio record initialized");
 			try {
 				audiorecord.startRecording();
 			}
@@ -97,6 +100,7 @@ public class Recorder {
 
 	private static int buffer() {
 		// all rates used by the protocol
+		Log.e("mangler", "checking available buffer sizes");
 		if (isForce_8khz()) {
 			rate(8000);
 			return(AudioRecord.getMinBufferSize(
@@ -111,14 +115,16 @@ public class Recorder {
 				int buffer = 0;
 				// try current and higher rates
 				for (int ctr = cur; ctr < rates.length; ctr++) {
+					Log.d("mangler", "checking rate: " + rates[ctr]);
 					buffer = AudioRecord.getMinBufferSize(
 							rates[ctr],
 							AudioFormat.CHANNEL_CONFIGURATION_MONO,
 							AudioFormat.ENCODING_PCM_16BIT);
-					if (buffer > 0) {
+					if (buffer > 0  && buffer < VentriloInterface.pcmlengthforrate(rates[ctr])) {
 						// found a supported rate
 						// override if it is not the channel rate and use the resampler
 						if (rates[ctr] != rate()) {
+							Log.e("mangler", "" + rates[ctr] + " -- buffer: " + buffer + " - pcmlen: " + VentriloInterface.pcmlengthforrate(rates[ctr]));
 							rate(rates[ctr]);
 						}
 						return buffer;
@@ -126,12 +132,14 @@ public class Recorder {
 				}
 				// else try lower rates than current
 				for (int ctr = cur - 1; ctr >= 0; ctr--) {
+					Log.d("mangler", "checking rate: " + rates[ctr]);
 					buffer = AudioRecord.getMinBufferSize(
 							rates[ctr],
 							AudioFormat.CHANNEL_CONFIGURATION_MONO,
 							AudioFormat.ENCODING_PCM_16BIT);
-					if (buffer > 0) {
+					if (buffer > 0 && buffer < VentriloInterface.pcmlengthforrate(rates[ctr])) {
 						if (rates[ctr] != rate()) {
+							Log.e("mangler", "" + rates[ctr] + " -- buffer: " + buffer + " - pcmlen: " + VentriloInterface.pcmlengthforrate(rates[ctr]));
 							rate(rates[ctr]);
 						}
 						return buffer;
