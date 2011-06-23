@@ -5464,6 +5464,7 @@ v3_login(char *server, char *username, char *password, char *phonetic) {/*{{{*/
      * Initiate the encryption handshake by handing the server our randomly generated key.
      */
     msg = _v3_put_0x00();
+    _v3_net_message_dump_raw(msg->data, msg->len);
     ventrilo_first_enc((uint8_t *)msg->data, msg->len);
     _v3_send_enc_msg(msg->data, msg->len);
     _v3_destroy_packet(msg);

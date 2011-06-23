@@ -12,6 +12,7 @@ manglerui:
 bin_PROGRAMS = mangler
 icon_DATA = ../icons/mangler_logo.svg 
 desktop_DATA = ../mangler.desktop
+man_MANS = mangler.1
 
 mangler_SOURCES = \
 	manglerui.h \
