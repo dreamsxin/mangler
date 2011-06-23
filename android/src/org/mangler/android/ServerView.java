@@ -280,7 +280,7 @@ public class ServerView extends TabActivity {
 			if (keyCode == pttCode) {
 				if (!Recorder.recording()) {
 					startPtt();
-				} else if (ptt_toggle) {
+				} else if (ptt_toggle || keyCode == KeyEvent.KEYCODE_HEADSETHOOK) {
 					stopPtt();
 				}
 				return true;
@@ -297,7 +297,7 @@ public class ServerView extends TabActivity {
 		boolean ptt_toggle = PreferenceManager.getDefaultSharedPreferences(getBaseContext()).getBoolean("ptt_toggle", false);
 		if (PreferenceManager.getDefaultSharedPreferences(getBaseContext()).getBoolean("custom_ptt", false)) {
 			if (keyCode == PreferenceManager.getDefaultSharedPreferences(getBaseContext()).getInt("ptt_key", KeyEvent.KEYCODE_CAMERA)) {
-				if (!ptt_toggle) {
+				if (!ptt_toggle && keyCode != KeyEvent.KEYCODE_HEADSETHOOK) {
 					stopPtt();
 					return true;
 				}

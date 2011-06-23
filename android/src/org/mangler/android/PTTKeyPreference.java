@@ -1,5 +1,6 @@
 package org.mangler.android;
 
+import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.SharedPreferences;
@@ -68,6 +69,20 @@ public class PTTKeyPreference extends DialogPreference implements OnKeyListener 
     		SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this.getContext());
     		prefs.edit().putInt("ptt_key", currentKeyCode).commit();
     		persistInt(currentKeyCode);
+    		if (currentKeyCode == KeyEvent.KEYCODE_HEADSETHOOK) {
+    			AlertDialog.Builder builder = new AlertDialog.Builder(this.getContext());
+				builder.setMessage("The headset mic button can only be used as a toggle for push-to-talk.  " +
+						"The PTT Toggle feature will be automatically enabled regardless of the setting specified.  " +
+						"Holding down the button will prevent you from transmitting.")
+    			       .setCancelable(false)
+    			       .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+    			           public void onClick(DialogInterface dialog, int id) {
+   			                	
+    			           }
+    			       });
+    			AlertDialog alert = builder.create();
+    			alert.show();
+    		}
     	}
     }
 
