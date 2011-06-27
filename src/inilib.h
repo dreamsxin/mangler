@@ -6,7 +6,7 @@
  * $LastChangedBy$
  * $URL$
  *
- * Copyright 2010 Bob Shaffer II
+ * Copyright 2010-2011 Bob Shaffer II
  *
  * This file is part of Mangler.
  *

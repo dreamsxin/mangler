@@ -6,8 +6,8 @@
  * $LastChangedBy$
  * $URL$
  *
- * Copyright 2009-2010 Eric Connell
- * Copyright 2010 Roman Tetelman
+ * Copyright 2009-2011 Eric Connell
+ * Copyright 2010-2011 Roman Tetelman
  *
  * This file is part of Mangler.
  *
