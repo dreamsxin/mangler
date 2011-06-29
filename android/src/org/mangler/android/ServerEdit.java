@@ -1,5 +1,5 @@
 /*
- * Copyright 2010 Daniel Sloof <daniel@danslo.org>
+ * Copyright 2010-2011 Daniel Sloof <daniel@danslo.org>
  *
  * This file is part of Mangler.
  *
@@ -28,9 +28,11 @@ import android.app.Activity;
 import android.database.Cursor;
 import android.media.AudioManager;
 import android.os.Bundle;
+import android.view.Gravity;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.Toast;
 
 public class ServerEdit extends Activity{
 
@@ -128,7 +130,14 @@ public class ServerEdit extends Activity{
         String hostname = hostText.getText().toString();
         int port = 0;
         if (!portText.getText().toString().equals(""))
-        	port = Integer.parseInt(portText.getText().toString());
+        	try {
+        		port = Integer.parseInt(portText.getText().toString());
+        	} catch (NumberFormatException e) {
+        		Toast t = Toast.makeText(this, "Invalid port specified.  Setting to default", Toast.LENGTH_LONG);
+        		t.setGravity(Gravity.CENTER, 0, 0);
+        		t.show();
+        		port = 3874;
+        	}
 
         if (port > 65535) {
         	port = 3874;

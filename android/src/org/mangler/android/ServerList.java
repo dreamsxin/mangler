@@ -251,7 +251,6 @@ public class ServerList extends ListActivity {
 				}
 			}
 		});
-		t.setPriority(10);
 		t.start();
 	}
 	

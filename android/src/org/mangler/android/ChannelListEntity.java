@@ -1,5 +1,5 @@
 /*
- * Copyright 2010 Daniel Sloof <daniel@danslo.org>
+ * Copyright 2010-2011 Daniel Sloof <daniel@danslo.org>
  *
  * This file is part of Mangler.
  *
@@ -56,7 +56,6 @@ public class ChannelListEntity {
 		passwordProtected = Integer.parseInt(entity.get("passwordProtected").toString());
 		parentid = Short.parseShort(entity.get("parentid").toString());
 		xmitStatus = Integer.parseInt(entity.get("xmitStatus").toString());
-
 	}
 	
 	public ChannelListEntity(int type, short id) {
