@@ -1,5 +1,5 @@
 /*
- * Copyright 2010 Daniel Sloof <daniel@danslo.org>
+ * Copyright 2010-2011 Daniel Sloof <daniel@danslo.org>
  *
  * This file is part of Mangler.
  *
@@ -27,6 +27,7 @@ package org.mangler.android;
 import android.media.AudioManager;
 import android.os.Bundle;
 import android.preference.PreferenceActivity;
+import android.preference.PreferenceManager;
 
 public class Settings extends PreferenceActivity {
 	@Override
@@ -37,5 +38,11 @@ public class Settings extends PreferenceActivity {
         setVolumeControlStream(AudioManager.STREAM_MUSIC);
         
 		addPreferencesFromResource(R.xml.preferences);
+	}
+	
+	@Override
+	public void onResume() {
+		super.onResume();
+		setRequestedOrientation(Integer.parseInt(PreferenceManager.getDefaultSharedPreferences(getBaseContext()).getString("orientation", "0")));
 	}
 }

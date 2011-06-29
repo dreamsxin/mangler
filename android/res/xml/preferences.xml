@@ -17,6 +17,12 @@
 		android:summary="Use if transmit sound quality is poor or normal transmitting does not work."
 		android:title="@string/force_8khz"/>
 	<ListPreference
+		android:key="orientation"
+		android:entries="@array/orientationNames"
+		android:entryValues="@array/orientationValues"
+		android:summary="Set the display orientation (i.e. auto, lansdscape, portrait)" 
+		android:title="@string/orientation"/>
+	<ListPreference
 		android:key="charset"
 		android:entries="@array/charsetNames"
 		android:entryValues="@array/charsetValues"

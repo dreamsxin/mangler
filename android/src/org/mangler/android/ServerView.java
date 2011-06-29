@@ -248,6 +248,7 @@ public class ServerView extends TabActivity {
     protected void onResume() {
 		boolean prevent_sleep = PreferenceManager.getDefaultSharedPreferences(getBaseContext()).getBoolean("prevent_sleep", false);
 		ServerList.characterEncoding = PreferenceManager.getDefaultSharedPreferences(getBaseContext()).getString("charset", "ISO-8859-1");
+		setRequestedOrientation(Integer.parseInt(PreferenceManager.getDefaultSharedPreferences(getBaseContext()).getString("orientation", "0")));
 		super.onResume();
 		if (prevent_sleep) {
 			if (!wl.isHeld()) {

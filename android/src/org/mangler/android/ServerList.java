@@ -49,7 +49,6 @@ import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.ListView;
 import android.widget.SimpleCursorAdapter;
-import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.AdapterView.AdapterContextMenuInfo;
 
@@ -122,6 +121,7 @@ public class ServerList extends ListActivity {
     @Override
     public void onResume() {
     	super.onResume();
+		setRequestedOrientation(Integer.parseInt(PreferenceManager.getDefaultSharedPreferences(getBaseContext()).getString("orientation", "0")));
     }
 
 	@Override
@@ -140,9 +140,6 @@ public class ServerList extends ListActivity {
     private void fillData() {
         Cursor serverCursor = dbHelper.fetchServers();
         startManagingCursor(serverCursor);
-
-        TextView temp = (TextView)findViewById(R.id.emptyServerList);
-        temp.setVisibility((serverCursor.getCount() > 0) ? TextView.GONE : TextView.VISIBLE);
 
         // Display simple cursor adapter
         String[] serverInfo = new String[]{ManglerDBAdapter.KEY_SERVERS_SERVERNAME, ManglerDBAdapter.KEY_SERVERS_USERNAME};
