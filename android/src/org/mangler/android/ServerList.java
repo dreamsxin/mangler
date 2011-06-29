@@ -1,5 +1,5 @@
 /*
- * Copyright 2010 Daniel Sloof <daniel@danslo.org>
+ * Copyright 2010-2011 Daniel Sloof <daniel@danslo.org>
  *
  * This file is part of Mangler.
  *
@@ -91,6 +91,12 @@ public class ServerList extends ListActivity {
         
         notificationManager = (NotificationManager)getSystemService(NOTIFICATION_SERVICE);
     }
+    
+    @Override
+    public void onResume() {
+    	super.onResume();
+    	setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR);
+    }
 
 	@Override
 	protected void onDestroy() {
@@ -166,8 +172,6 @@ public class ServerList extends ListActivity {
 	protected void onListItemClick(ListView l, View v, int position, long id) {
 		super.onListItemClick(l, v, position, id);
 		
-		/* Prevent orientation changes during connection. */
-		setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_NOSENSOR);
 		connectToServer(id);
 	}
 
@@ -185,6 +189,8 @@ public class ServerList extends ListActivity {
     }
     
 	private void connectToServer(long id) {
+		setRequestedOrientation(getResources().getConfiguration().orientation);
+		
 		final ProgressDialog dialog = ProgressDialog.show(this, "", "Connecting. Please wait...", true);
 
 		Cursor server = dbHelper.fetchServer(id);
@@ -224,9 +230,10 @@ public class ServerList extends ListActivity {
 					Intent serverView = new Intent(ServerList.this, ServerView.class)
 					.putExtra("serverid", serverid)
 					.putExtra("servername", servername);
-					
-					startActivityForResult(serverView, ACTIVITY_CONNECT);
 
+					dialog.dismiss();
+					//setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR);
+					startActivityForResult(serverView, ACTIVITY_CONNECT);
 					//Intent notificationIntent = new Intent(ServerList.this, ServerView.class);
 					serverView.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
 					Notification notification = new Notification(R.drawable.notification, "Connected to server", System.currentTimeMillis());
@@ -234,17 +241,14 @@ public class ServerList extends ListActivity {
 					notification.flags = Notification.FLAG_ONGOING_EVENT;
 					notificationManager.notify(ONGOING_NOTIFICATION, notification);
 					
-					dialog.dismiss();
-					
 				} else {
+					setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR);
 					dialog.dismiss();
 					VentriloEventData data = new VentriloEventData();
 					VentriloInterface.error(data);
 					sendBroadcast(new Intent(ServerList.NOTIFY_ACTION)
 						.putExtra("notification", "Connection to server failed:\n" + EventService.StringFromBytes(data.error.message)));
 				}
-				/* Allow changing orientation after connection again. */
-				setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR);
 			}
 		});
 		t.setPriority(10);

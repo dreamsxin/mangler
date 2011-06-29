@@ -14,7 +14,7 @@
 								<category android:name="android.intent.category.LAUNCHER" />
 						</intent-filter>
 				</activity>
-				<activity android:name="ServerList" android:label="@string/server_list"/>
+				<activity android:name="ServerList" android:label="@string/server_list" android:configChanges="orientation|keyboardHidden"/>
 				<activity android:name="ServerEdit" android:label="@string/server_edit"/>
 				<activity android:name="ServerView" android:label="@string/server_view"/>
 				<activity android:name="Settings"/>

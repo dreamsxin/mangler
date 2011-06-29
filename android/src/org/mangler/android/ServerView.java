@@ -1,5 +1,5 @@
 /*
- * Copyright 2010 Daniel Sloof <daniel@danslo.org>
+ * Copyright 2010-2011 Daniel Sloof <daniel@danslo.org>
  *
  * This file is part of Mangler.
  *
@@ -33,6 +33,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.ActivityInfo;
 import android.media.AudioManager;
 import android.os.Build;
 import android.os.Bundle;
@@ -248,7 +249,7 @@ public class ServerView extends TabActivity {
     protected void onResume() {
 		boolean prevent_sleep = PreferenceManager.getDefaultSharedPreferences(getBaseContext()).getBoolean("prevent_sleep", false);
 		Main.characterEncoding = PreferenceManager.getDefaultSharedPreferences(getBaseContext()).getString("charset", "ISO-8859-1");
-    	super.onResume();
+		super.onResume();
 		if (prevent_sleep) {
 			if (!wl.isHeld()) {
 				wl.acquire();
