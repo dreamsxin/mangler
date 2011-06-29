@@ -103,7 +103,7 @@ public class ChannelListEntity {
 	
 	public static String stringFromBytes(byte[] bytes) {
 		try {
-			return new String(bytes, 0, (new String(bytes).indexOf(0)), Main.characterEncoding);
+			return new String(bytes, 0, (new String(bytes).indexOf(0)), ServerList.characterEncoding);
 		} catch (UnsupportedEncodingException e) {
 			e.printStackTrace();
 			return new String(bytes, 0, (new String(bytes).indexOf(0)));

@@ -35,16 +35,18 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
-import android.content.pm.ActivityInfo;
 import android.database.Cursor;
 import android.media.AudioManager;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.preference.PreferenceManager;
 import android.view.ContextMenu;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ContextMenu.ContextMenuInfo;
+import android.view.View.OnClickListener;
+import android.widget.Button;
 import android.widget.ListView;
 import android.widget.SimpleCursorAdapter;
 import android.widget.TextView;
@@ -53,6 +55,13 @@ import android.widget.AdapterView.AdapterContextMenuInfo;
 
 public class ServerList extends ListActivity {
 
+	public static String characterEncoding = "ISO-8859-1";
+
+	static {
+		// Load native library.
+		System.loadLibrary("ventrilo_interface");
+	}
+	
 	private static final int ACTIVITY_CONNECT = 0;
 	private static final int ACTIVITY_CREATE = 1;
 	private static final int ACTIVITY_EDIT = 2;
@@ -61,8 +70,11 @@ public class ServerList extends ListActivity {
 	private static final int EDIT_ID = Menu.FIRST + 1;
 	private static final int CLONE_ID = Menu.FIRST + 2;
     private static final int DELETE_ID = Menu.FIRST + 3;
+    private static final int SETTINGS_ID = Menu.FIRST + 4;
 
     public static final String NOTIFY_ACTION = "org.mangler.android.NotifyAction";
+    
+    private ProgressDialog connectProgress = null;
 
 	private ManglerDBAdapter dbHelper;
 	
@@ -74,13 +86,28 @@ public class ServerList extends ListActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
     	super.onCreate(savedInstanceState);
-        setContentView(R.layout.server_list);
+        
+    	ServerList.characterEncoding = PreferenceManager.getDefaultSharedPreferences(getBaseContext()).getString("charset", "ISO-8859-1");
+        setContentView(R.layout.main);
+
+        // Volume controls.
+        setVolumeControlStream(AudioManager.STREAM_MUSIC);
+    	
+    	// Set debug level.
+    	VentriloInterface.debuglevel(VentriloDebugLevels.V3_DEBUG_INFO);
 
         // Volume controls.
         setVolumeControlStream(AudioManager.STREAM_MUSIC);
 
         // Notification broadcast receiver.
         registerReceiver(notificationReceiver, new IntentFilter(NOTIFY_ACTION));
+        
+		((Button) findViewById(R.id.AddServerButton)).setOnClickListener(new OnClickListener() {
+			public void onClick(View v) {
+	        	Intent i = new Intent(ServerList.this, ServerEdit.class);
+	       	 	startActivityForResult(i, ACTIVITY_CREATE);
+			}
+		});
 
         bindService(new Intent(this, EventService.class), serviceconnection, Context.BIND_AUTO_CREATE);
     	
@@ -95,7 +122,6 @@ public class ServerList extends ListActivity {
     @Override
     public void onResume() {
     	super.onResume();
-    	setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR);
     }
 
 	@Override
@@ -119,12 +145,14 @@ public class ServerList extends ListActivity {
         temp.setVisibility((serverCursor.getCount() > 0) ? TextView.GONE : TextView.VISIBLE);
 
         // Display simple cursor adapter
-        SimpleCursorAdapter servers = new SimpleCursorAdapter(this, R.layout.server_row, serverCursor, new String[]{ManglerDBAdapter.KEY_SERVERS_SERVERNAME}, new int[]{R.id.srowtext});
+        String[] serverInfo = new String[]{ManglerDBAdapter.KEY_SERVERS_SERVERNAME, ManglerDBAdapter.KEY_SERVERS_USERNAME};
+        SimpleCursorAdapter servers = new SimpleCursorAdapter(this, R.layout.server_row, serverCursor, serverInfo, new int[]{R.id.slistservername, R.id.slistusername});
         setListAdapter(servers);
     }
 
     public boolean onCreateOptionsMenu(Menu menu) {
         menu.add(0, ADD_ID, 0, "Add Server").setIcon(R.drawable.menu_add);
+        menu.add(0, SETTINGS_ID, 0, "Settings").setIcon(R.drawable.menu_settings);
         return true;
     }
 
@@ -134,6 +162,10 @@ public class ServerList extends ListActivity {
         	Intent i = new Intent(this, ServerEdit.class);
        	 	startActivityForResult(i, ACTIVITY_CREATE);
             return true;
+    	case SETTINGS_ID:
+			Intent intent = new Intent(ServerList.this, Settings.class);
+			startActivity(intent);
+    		return true;
         }
         return false;
     }
@@ -174,8 +206,7 @@ public class ServerList extends ListActivity {
 		
 		connectToServer(id);
 	}
-
-
+	
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent intent) {
         super.onActivityResult(requestCode, resultCode, intent);
@@ -189,9 +220,8 @@ public class ServerList extends ListActivity {
     }
     
 	private void connectToServer(long id) {
-		setRequestedOrientation(getResources().getConfiguration().orientation);
 		
-		final ProgressDialog dialog = ProgressDialog.show(this, "", "Connecting. Please wait...", true);
+		connectProgress = ProgressDialog.show(this, "", "Connecting. Please wait...", true);
 
 		Cursor server = dbHelper.fetchServer(id);
 		startManagingCursor(server);
@@ -230,9 +260,7 @@ public class ServerList extends ListActivity {
 					Intent serverView = new Intent(ServerList.this, ServerView.class)
 					.putExtra("serverid", serverid)
 					.putExtra("servername", servername);
-
-					dialog.dismiss();
-					//setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR);
+					connectProgress.dismiss();
 					startActivityForResult(serverView, ACTIVITY_CONNECT);
 					//Intent notificationIntent = new Intent(ServerList.this, ServerView.class);
 					serverView.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
@@ -242,8 +270,7 @@ public class ServerList extends ListActivity {
 					notificationManager.notify(ONGOING_NOTIFICATION, notification);
 					
 				} else {
-					setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR);
-					dialog.dismiss();
+					connectProgress.dismiss();
 					VentriloEventData data = new VentriloEventData();
 					VentriloInterface.error(data);
 					sendBroadcast(new Intent(ServerList.NOTIFY_ACTION)

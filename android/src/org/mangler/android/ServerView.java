@@ -138,7 +138,7 @@ public class ServerView extends TabActivity {
     public void onCreate(Bundle savedInstanceState) {
     	super.onCreate(savedInstanceState);
 		boolean fullscreen = PreferenceManager.getDefaultSharedPreferences(getBaseContext()).getBoolean("fullscreen", false);
-		Main.characterEncoding = PreferenceManager.getDefaultSharedPreferences(getBaseContext()).getString("charset", "ISO-8859-1");
+		ServerList.characterEncoding = PreferenceManager.getDefaultSharedPreferences(getBaseContext()).getString("charset", "ISO-8859-1");
 		if (fullscreen) {
 			getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
 			requestWindowFeature(Window.FEATURE_NO_TITLE);
@@ -247,7 +247,7 @@ public class ServerView extends TabActivity {
     @Override
     protected void onResume() {
 		boolean prevent_sleep = PreferenceManager.getDefaultSharedPreferences(getBaseContext()).getBoolean("prevent_sleep", false);
-		Main.characterEncoding = PreferenceManager.getDefaultSharedPreferences(getBaseContext()).getString("charset", "ISO-8859-1");
+		ServerList.characterEncoding = PreferenceManager.getDefaultSharedPreferences(getBaseContext()).getString("charset", "ISO-8859-1");
 		super.onResume();
 		if (prevent_sleep) {
 			if (!wl.isHeld()) {
