@@ -1,5 +1,5 @@
 /*
- * Copyright 2010 Daniel Sloof <daniel@danslo.org>
+ * Copyright 2010-2011 Daniel Sloof <daniel@danslo.org>
  *
  * This file is part of Mangler.
  *
@@ -28,8 +28,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.ListIterator;
-
-import android.util.Log;
 
 public class ChannelList {
 

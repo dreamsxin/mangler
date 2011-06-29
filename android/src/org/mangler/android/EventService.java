@@ -1,5 +1,5 @@
 /*
- * Copyright 2010 Daniel Sloof <daniel@danslo.org>
+ * Copyright 2010-2011 Daniel Sloof <daniel@danslo.org>
  *
  * This file is part of Mangler.
  *
@@ -31,7 +31,6 @@ import android.app.Service;
 import android.content.Intent;
 import android.os.Binder;
 import android.os.IBinder;
-import android.util.Log;
 
 public class EventService extends Service {
 
@@ -139,6 +138,9 @@ public class EventService extends Service {
 	};
 
 	public static VentriloEventData getNext() {
+		if (eventQueue == null) {
+			return null;
+		}
 		return eventQueue.poll();
 	}
 	
