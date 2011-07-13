@@ -43,6 +43,6 @@ public class Settings extends PreferenceActivity {
 	@Override
 	public void onResume() {
 		super.onResume();
-		setRequestedOrientation(Integer.parseInt(PreferenceManager.getDefaultSharedPreferences(getBaseContext()).getString("orientation", "0")));
+		setRequestedOrientation(Integer.parseInt(PreferenceManager.getDefaultSharedPreferences(getBaseContext()).getString("orientation", "4")));
 	}
 }

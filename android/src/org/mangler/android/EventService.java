@@ -133,6 +133,14 @@ public class EventService extends Service {
 						break;
 				}
 				if (forwardToUI) {
+					// In order to conserve memory, let the consumer catch up
+					// before putting too many objects in the event queue
+					while (eventQueue.size() > 25) {
+						try {
+							this.wait(10);
+						} catch (Exception e) {
+						}
+					}
 					eventQueue.add(data);
 					sendBroadcast(new Intent(ServerView.EVENT_ACTION));
 				}

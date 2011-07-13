@@ -121,7 +121,7 @@ public class ServerList extends ListActivity {
     @Override
     public void onResume() {
     	super.onResume();
-		setRequestedOrientation(Integer.parseInt(PreferenceManager.getDefaultSharedPreferences(getBaseContext()).getString("orientation", "0")));
+		setRequestedOrientation(Integer.parseInt(PreferenceManager.getDefaultSharedPreferences(getBaseContext()).getString("orientation", "4")));
     }
 
 	@Override

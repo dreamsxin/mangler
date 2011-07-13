@@ -136,11 +136,14 @@ public class ServerEdit extends Activity{
         		Toast t = Toast.makeText(this, "Invalid port specified.  Setting to default", Toast.LENGTH_LONG);
         		t.setGravity(Gravity.CENTER, 0, 0);
         		t.show();
-        		port = 3874;
+        		port = 3784;
         	}
 
         if (port > 65535) {
-        	port = 3874;
+    		Toast t = Toast.makeText(this, "Invalid port specified.  Setting to default", Toast.LENGTH_LONG);
+    		t.setGravity(Gravity.CENTER, 0, 0);
+    		t.show();
+        	port = 3784;
         }
 
         String password = passText.getText().toString();
