@@ -9,7 +9,7 @@ LOCAL_SRC_FILES		:= add.c			code.c				debug.c				decode.c \
 				       gsm_destroy.c	gsm_decode.c		gsm_encode.c		gsm_explode.c \
 				       gsm_implode.c	gsm_create.c		gsm_print.c			gsm_option.c \
 				       short_term.c		table.c
-LOCAL_CFLAGS		:= -I$(shell cygpath -m $(LOCAL_PATH)/../inc) -DWAV49 -O3
+LOCAL_CFLAGS		:= -I$(LOCAL_PATH)/../inc -DWAV49 -O3
 include $(BUILD_STATIC_LIBRARY)
 
 # Build libspeex
@@ -24,7 +24,7 @@ LOCAL_SRC_FILES		:= cb_search.c		exc_10_32_table.c 	exc_8_128_table.c 	filters.c
 					   lsp_tables_nb.c 	modes.c 			modes_wb.c 			nb_celp.c \
 					   quant_lsp.c		sb_celp.c			speex_callbacks.c 	speex_header.c \
 					   window.c			resample.c
-LOCAL_CFLAGS		:= -I$(shell cygpath -m $(LOCAL_PATH)/../include) -D__EMX__ -DFIXED_POINT -DEXPORT='' -O3
+LOCAL_CFLAGS		:= -I$(LOCAL_PATH)/../include -D__EMX__ -DFIXED_POINT -DEXPORT='' -O3
 include $(BUILD_STATIC_LIBRARY)
 
 # Build libcelt
@@ -36,7 +36,7 @@ LOCAL_SRC_FILES		:= bands.c			celt.c				cwrs.c				dump_modes.c \
 					   kiss_fft.c		laplace.c			mdct.c				modes.c \
 					   pitch.c			quant_bands.c		rangedec.c			rangeenc.c \
 					   rate.c			testcelt.c			vq.c
-LOCAL_CFLAGS		:= -I$(shell cygpath -m $(LOCAL_PATH)/../inc/celt) -Drestrict='' -D__EMX__ -DFIXED_POINT -DHAVE_LRINTF -DHAVE_LRINT -DDOUBLE_PRECISION -O3
+LOCAL_CFLAGS		:= -I$(LOCAL_PATH)/../inc/celt -Drestrict='' -D__EMX__ -DFIXED_POINT -DHAVE_LRINTF -DHAVE_LRINT -DDOUBLE_PRECISION -O3
 include $(BUILD_STATIC_LIBRARY)
 
 # Build libventrilo
@@ -44,7 +44,7 @@ include $(CLEAR_VARS)
 LOCAL_PATH				:= $(LIBPATH)
 LOCAL_MODULE    		:= libventrilo3
 LOCAL_SRC_FILES 		:= libventrilo3.c libventrilo3_message.c ventrilo3_handshake.c
-LOCAL_CFLAGS			:= -DANDROID -D__EMX__ -I$(shell cygpath -m $(ROOT)/gsm/inc) -I$(shell cygpath -m $(ROOT)/speex/include) -I$(shell cygpath -m $(ROOT)/celt/inc) -DHAVE_GSM -DHAVE_GSM_H -DHAVE_SPEEX -DHAVE_SPEEX_DSP=1 -DHAVE_CELT -DNO_AUTOMAKE -O3
+LOCAL_CFLAGS			:= -DANDROID -D__EMX__ -I$(ROOT)/gsm/inc -I$(ROOT)/speex/include -I$(ROOT)/celt/inc -DHAVE_GSM -DHAVE_GSM_H -DHAVE_SPEEX -DHAVE_SPEEX_DSP=1 -DHAVE_CELT -DNO_AUTOMAKE -O3
 include $(BUILD_STATIC_LIBRARY)
 
 # Build library interface
@@ -53,6 +53,6 @@ LOCAL_PATH				:= $(ROOT)/ventrilo
 LOCAL_MODULE    		:= libventrilo_interface
 LOCAL_SRC_FILES 		:= jni_wrappers.c
 LOCAL_LDLIBS			:= -llog
-LOCAL_CFLAGS			:= -I$(shell cygpath -m $(LIBPATH)) -O3
+LOCAL_CFLAGS			:= -I$(LIBPATH) -O3
 LOCAL_STATIC_LIBRARIES	:= libventrilo3 libgsm libspeex libcelt
 include $(BUILD_SHARED_LIBRARY)
