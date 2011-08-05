@@ -246,6 +246,9 @@ typedef struct _v3_net_message_0x52 {/*{{{*/
     uint32_t data_length;       // 16
     uint32_t pcm_length;        // 20
 } __attribute__ ((__packed__)) _v3_msg_0x52;/*}}}*/
+typedef struct _v3_net_message_0x52_header {/*{{{*/
+    _v3_msg_0x52 header;        // 0
+} __attribute__ ((__packed__)) _v3_msg_0x52_header;/*}}}*/
 typedef struct _v3_net_message_0x52_0x00 {/*{{{*/
     _v3_msg_0x52 header;        // 0
 } __attribute__ ((__packed__)) _v3_msg_0x52_0x00;/*}}}*/

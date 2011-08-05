@@ -715,7 +715,11 @@ _v3_recv(int block) {/*{{{*/
                         {
                             _v3_debug(V3_DEBUG_INFO, "got outbound user talk start event");
                             const v3_codec *codec = v3_get_channel_codec(v3_get_user_channel(v3_get_user_id()));
-                            _v3_net_message *msg = _v3_put_0x52(V3_AUDIO_START, codec->codec, codec->format, 0, 0, NULL);
+                            
+                            // TODO: Add support for other/multiple send targets.
+                            uint16_t type   = V3_AUDIO_SENDTYPE_U2C;
+                            uint16_t target = 0;
+                            _v3_net_message *msg = _v3_put_0x52(V3_AUDIO_START, codec->codec, codec->format, 0, 0, NULL, 1, &type, 1, &target);
                             if (_v3_send(msg)) {
                                 _v3_debug(V3_DEBUG_SOCKET, "sent user talk start message to server");
                             } else {
@@ -732,6 +736,10 @@ _v3_recv(int block) {/*{{{*/
                             uint16_t datalen      = 0;
                             uint16_t framecount   = 0;
                             uint8_t celtfragsize  = 0;
+                            // TODO: Add support for other/multiple send targets.
+                            uint16_t type   = V3_AUDIO_SENDTYPE_U2C;
+                            uint16_t target = 0;
+
                             if (_v3_xmit_volume != 79) {
                                 register float tmpsample = 0;
                                 static const int16_t maxsample = 0x7fff;
@@ -772,13 +780,18 @@ _v3_recv(int block) {/*{{{*/
                                             pktframes = framecount;
                                             pktlen = pktframes * celtfragsize;
                                         }
+                                        
                                         msg = _v3_put_0x52(
                                                 V3_AUDIO_DATA,
                                                 codec->codec,
                                                 codec->format,
                                                 2000 + ev.pcm.channels, // max: <= 3000
                                                 pktlen, // max: 0x01: < 200; 0x02: < 110
-                                                celtdataptr);
+                                                celtdataptr,
+                                                1,
+                                                &type,
+                                                1,
+                                                &target);
                                         if (_v3_send(msg)) {
                                             _v3_debug(V3_DEBUG_SOCKET, "sent audio message to server");
                                         } else {
@@ -805,7 +818,11 @@ _v3_recv(int block) {/*{{{*/
                                             codec->format,
                                             ev.pcm.length,
                                             datalen,
-                                            data);
+                                            data,
+                                            1,
+                                            &type,
+                                            1,
+                                            &target);
                                     if (_v3_send(msg)) {
                                         _v3_debug(V3_DEBUG_SOCKET, "sent audio message to server");
                                     } else {
@@ -831,7 +848,7 @@ _v3_recv(int block) {/*{{{*/
                         {
                             _v3_debug(V3_DEBUG_INFO, "got outbound user talk end event");
                             const v3_codec *codec = v3_get_channel_codec(v3_get_user_channel(v3_get_user_id()));
-                            _v3_net_message *msg = _v3_put_0x52(V3_AUDIO_STOP, codec->codec, codec->format, 0, 0, NULL);
+                            _v3_net_message *msg = _v3_put_0x52(V3_AUDIO_STOP, codec->codec, codec->format, 0, 0, NULL, 0, NULL, 0, NULL);
                             if (_v3_send(msg)) {
                                 _v3_debug(V3_DEBUG_SOCKET, "sent user talk end message to server");
                             } else {

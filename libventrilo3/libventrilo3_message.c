@@ -1260,10 +1260,14 @@ _v3_get_0x52(_v3_net_message *msg) {/*{{{*/
                 _v3_msg_0x52_0x00 *msub = (_v3_msg_0x52_0x00 *)m;
                 msub = realloc(m, sizeof(_v3_msg_0x52_0x00));
                 memcpy(msub, msg->data, sizeof(_v3_msg_0x52_0x00));
+
+                // TODO: Add proper parsing of audio targets. 
+                /*
                 _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown 4.....: %d", msub->unknown_4);
                 _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown 5.....: %d", msub->unknown_5);
                 _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown 6.....: %d", msub->unknown_6);
                 _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown 7.....: %d", msub->unknown_7);
+                */
                 _v3_debug(V3_DEBUG_PACKET_PARSE, "user %d started transmitting", msub->header.user_id);
                 msg->contents = msub;
                 _v3_func_leave("_v3_get_0x52");
@@ -1298,8 +1302,12 @@ _v3_get_0x52(_v3_net_message *msg) {/*{{{*/
                 _v3_msg_0x52_0x02 *msub = (_v3_msg_0x52_0x02 *)m;
                 msub = realloc(m, sizeof(_v3_msg_0x52_0x02));
                 memcpy(msub, msg->data, sizeof(_v3_msg_0x52_0x02));
+
+                // TODO: These two trailing shorts must be added to 0x52 base header.
+                /*
                 _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown 4.....: %d", msub->unknown_4);
                 _v3_debug(V3_DEBUG_PACKET_PARSE, "unknown 5.....: %d", msub->unknown_5);
+                */
                 _v3_debug(V3_DEBUG_PACKET_PARSE, "user %d stopped transmitting", msub->header.user_id);
                 msg->contents = msub;
                 _v3_func_leave("_v3_get_0x52");
@@ -1345,39 +1353,40 @@ _v3_get_0x52(_v3_net_message *msg) {/*{{{*/
 _v3_net_message *
 _v3_put_0x52(uint8_t subtype, uint16_t codec, uint16_t codec_format, uint32_t pcmlength, uint32_t length, void *data, uint16_t num_target_types, uint16_t *target_types, uint16_t num_targets, uint16_t *targets) {/*{{{*/
     _v3_net_message *msg;
-    _v3_msg_0x52 *msgdata;
+
+    /*
+     * _v3_msg_0x52_header is just a wrapper around _v3_msg_0x52.
+     * We do this to remove the need for specialized structs for every subtype,
+     * but without having to modify all code that relies on a 'header' in its packet structure.
+     */
+    _v3_msg_0x52_header *msgdata;
 
     _v3_func_enter("_v3_put_0x52");
     msg = malloc(sizeof(_v3_net_message));
     memset(msg, 0, sizeof(_v3_net_message));
 
-    uint32_t target_section_size = sizeof(num_target_types) + sizeof(num_targets) + num_target_types + num_targets;
+    uint32_t target_section_size = sizeof(num_target_types) + sizeof(num_targets) + ((num_target_types + num_targets) * sizeof(uint16_t));
+    _v3_debug(V3_DEBUG_PACKET_PARSE, "types %d targets %d size of target section %d", num_target_types, num_targets, target_section_size);
     /*
      * First we go through and create our main message structure
      */
-    msgdata = malloc(sizeof(_v3_msg_0x52));
-    memset(msgdata, 0, sizeof(_v3_msg_0x52));
-    msg->len = sizeof(_v3_msg_0x52);
+    msgdata = malloc(sizeof(_v3_msg_0x52_header));
+    memset(msgdata, 0, sizeof(_v3_msg_0x52_header));
+    msg->len = sizeof(_v3_msg_0x52_header);
+    msg->len += target_section_size; 
     switch (subtype) {
         case V3_AUDIO_START:
             _v3_debug(V3_DEBUG_PACKET_PARSE, "sending 0x52 subtype 0x00 size %d", sizeof(_v3_msg_0x52_0x00));
-            msg->len += target_section_size; 
             break;
         case V3_AUDIO_DATA:
             _v3_debug(V3_DEBUG_PACKET_PARSE, "sending 0x52 subtype 0x01 header size %d data size %d", sizeof(_v3_msg_0x52_0x01_out), length);
-            msg->len += target_section_size + length; 
+            msg->len += length; 
             _v3_debug(V3_DEBUG_PACKET_PARSE, "setting pcm length to %d", pcmlength);
             msgdata->header.pcm_length = pcmlength;
             msgdata->header.data_length = length;
             break;
         case V3_AUDIO_STOP:
             _v3_debug(V3_DEBUG_PACKET_PARSE, "sending 0x52 subtype 0x02 size %d", sizeof(_v3_msg_0x52_0x02));
-
-            /*
-             * These are empty for this subtype. 
-             * We may consider adding 2 shorts into 0x52 standard header, but we don't know what other packets it might break.
-             */
-            msg->len += sizeof(num_target_types) + sizeof(num_targets);
             break;
         default:
             free(msg);
@@ -1399,7 +1408,7 @@ _v3_put_0x52(uint8_t subtype, uint16_t codec, uint16_t codec_format, uint32_t pc
     /*
      * Copy default header first. 
      */
-    memcpy(msg->data, msgdata, sizeof(_v3_msg_0x52)); 
+    memcpy(msg->data, msgdata, sizeof(_v3_msg_0x52_header)); 
 
     /*
      * Next, copy all of the data into the newly allocated memory
@@ -1413,27 +1422,27 @@ _v3_put_0x52(uint8_t subtype, uint16_t codec, uint16_t codec_format, uint32_t pc
                  * Copy target types.
                  */
                 uint16_t type_num = htons(num_target_types);
-                memcpy(msg->data + sizeof(_v3_msg_0x52_0x00), &type_num, sizeof(type_num));
+                memcpy(msg->data + sizeof(_v3_msg_0x52_header), &type_num, sizeof(type_num));
                 for(i = 0; i < type_num; i++) {
                     uint16_t type = htons(target_types[i]);
-                    memcpy(msg->data + sizeof(_v3_msg_0x52_0x00) + sizeof(type_num) + (i * sizeof(*target_types)), &type, sizeof(type));
+                    memcpy(msg->data + sizeof(_v3_msg_0x52_header) + sizeof(type_num) + (i * sizeof(*target_types)), &type, sizeof(type));
                 }
 
                 /*
                  * Copy targets.
                  */
                 uint16_t target_num = htons(num_targets);
-                memcpy(msg->data + sizeof(_v3_msg_0x52_0x00), &target_num, sizeof(target_num));
+                memcpy(msg->data + sizeof(_v3_msg_0x52_header), &target_num, sizeof(target_num));
                 for(i = 0; i < target_num; i++) {
                     uint16_t target = htons(targets[i]);
-                    memcpy(msg->data + sizeof(_v3_msg_0x52_0x00) + sizeof(target_num) + (i * sizeof(*targets)), &target, sizeof(target));
+                    memcpy(msg->data + sizeof(_v3_msg_0x52_header) + sizeof(target_num) + (i * sizeof(*targets)), &target, sizeof(target));
                 }
 
                 /*
                  * We copy additional audio data for this specific packet.
                  */
                 if(subtype == V3_AUDIO_DATA) {
-                    memcpy(msg->data + sizeof(_v3_msg_0x52) + target_section_size, data, length);
+                    memcpy(msg->data + sizeof(_v3_msg_0x52_header) + target_section_size, data, length);
                 }
             }
             break;
