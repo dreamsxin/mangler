@@ -1423,19 +1423,24 @@ _v3_put_0x52(uint8_t subtype, uint16_t codec, uint16_t codec_format, uint32_t pc
                  */
                 uint16_t type_num = htons(num_target_types);
                 memcpy(msg->data + sizeof(_v3_msg_0x52_header), &type_num, sizeof(type_num));
-                for(i = 0; i < type_num; i++) {
+                for(i = 0; i < num_target_types; i++) {
                     uint16_t type = htons(target_types[i]);
-                    memcpy(msg->data + sizeof(_v3_msg_0x52_header) + sizeof(type_num) + (i * sizeof(*target_types)), &type, sizeof(type));
+                    uint32_t offset = sizeof(type_num) + (i * sizeof(*target_types));
+                    memcpy(msg->data + sizeof(_v3_msg_0x52_header) + offset, &type, sizeof(type));
+                    _v3_debug(V3_DEBUG_PACKET_PARSE, "copying type %.4X to offset: %d", type, offset);
                 }
 
                 /*
                  * Copy targets.
                  */
-                uint16_t target_num = htons(num_targets);
-                memcpy(msg->data + sizeof(_v3_msg_0x52_header), &target_num, sizeof(target_num));
-                for(i = 0; i < target_num; i++) {
+                uint16_t target_num  = htons(num_targets);
+                uint32_t base_offset = sizeof(_v3_msg_0x52_header) + sizeof(type_num) + (num_target_types * sizeof(*target_types));
+                memcpy(msg->data + base_offset, &target_num, sizeof(target_num));
+                for(i = 0; i < num_targets; i++) {
                     uint16_t target = htons(targets[i]);
-                    memcpy(msg->data + sizeof(_v3_msg_0x52_header) + sizeof(target_num) + (i * sizeof(*targets)), &target, sizeof(target));
+                    uint32_t offset = base_offset + sizeof(target_num) + (i * sizeof(*targets));
+                    memcpy(msg->data + sizeof(_v3_msg_0x52_header) + offset, &target, sizeof(target));
+                    _v3_debug(V3_DEBUG_PACKET_PARSE, "copying target %.4X to offset: %d", target, offset);
                 }
 
                 /*

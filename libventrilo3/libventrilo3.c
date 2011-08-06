@@ -717,7 +717,7 @@ _v3_recv(int block) {/*{{{*/
                             const v3_codec *codec = v3_get_channel_codec(v3_get_user_channel(v3_get_user_id()));
                             
                             // TODO: Add support for other/multiple send targets.
-                            uint16_t type   = V3_AUDIO_SENDTYPE_U2C;
+                            uint16_t type   = V3_AUDIO_SENDTYPE_U2CCUR;
                             uint16_t target = 0;
                             _v3_net_message *msg = _v3_put_0x52(V3_AUDIO_START, codec->codec, codec->format, 0, 0, NULL, 1, &type, 1, &target);
                             if (_v3_send(msg)) {
@@ -737,7 +737,7 @@ _v3_recv(int block) {/*{{{*/
                             uint16_t framecount   = 0;
                             uint8_t celtfragsize  = 0;
                             // TODO: Add support for other/multiple send targets.
-                            uint16_t type   = V3_AUDIO_SENDTYPE_U2C;
+                            uint16_t type   = V3_AUDIO_SENDTYPE_U2CCUR;
                             uint16_t target = 0;
 
                             if (_v3_xmit_volume != 79) {
