@@ -113,6 +113,7 @@ class ManglerChannelTree
         Gtk::Adjustment                     *volumeAdjustment;
         sigc::connection                    volumeAdjustSignalConnection;
         Gtk::VBox                           *vbox;
+        Gtk::HBox                           *hbox;
         bool                                sortManual;
         void addChannel(uint8_t protect_mode, uint32_t id, uint32_t parent_id, Glib::ustring name, Glib::ustring comment = "", Glib::ustring phonetic = "");
         void addUser(uint32_t id, uint32_t channel, Glib::ustring name, Glib::ustring comment = "", Glib::ustring phonetic = "", Glib::ustring url = "", Glib::ustring integration_text = "", bool guest = false, bool phantom = false, Glib::ustring rank = "");

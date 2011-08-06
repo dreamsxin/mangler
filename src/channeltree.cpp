@@ -86,7 +86,9 @@ ManglerChannelTree::ManglerChannelTree(Glib::RefPtr<Gtk::Builder> builder) {/*{{
     menuitem->signal_activate().connect(sigc::mem_fun(this, &ManglerChannelTree::kickUserMenuItem_activate_cb));
     builder->get_widget("banUser", menuitem);
     menuitem->signal_activate().connect(sigc::mem_fun(this, &ManglerChannelTree::banUserMenuItem_activate_cb));
-    builder->get_widget("newBinding", menuitem);
+    builder->get_widget("addUserBinding", menuitem);
+    menuitem->signal_activate().connect(sigc::mem_fun(this, &ManglerChannelTree::newBindingMenuItem_activate_cb));
+    builder->get_widget("addChannelBinding", menuitem);
     menuitem->signal_activate().connect(sigc::mem_fun(this, &ManglerChannelTree::newBindingMenuItem_activate_cb));
     builder->get_widget("muteUser", checkmenuitem);
     signalMute = checkmenuitem->signal_activate().connect(sigc::mem_fun(this, &ManglerChannelTree::muteUserMenuItem_activate_cb));
@@ -1076,7 +1078,16 @@ ManglerChannelTree::newBindingMenuItem_activate_cb(void) {/*{{{*/
         bool isUser = row[channelRecord.isUser];
         uint16_t id = row[channelRecord.id];
         Glib::ustring name = row[channelRecord.name];
-        // create a binding and add this user/channel to the binding
+        builder->get_widget("channelBindingHBox", hbox);
+        if (isUser) {
+            hbox->hide();
+        } else {
+            hbox->show();
+        }
+        builder->get_widget("addBindingWindow", window);
+        window->show();
+        window->queue_resize();
+        window->present();
     }
 }/*}}}*/
 
