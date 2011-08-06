@@ -86,6 +86,8 @@ ManglerChannelTree::ManglerChannelTree(Glib::RefPtr<Gtk::Builder> builder) {/*{{
     menuitem->signal_activate().connect(sigc::mem_fun(this, &ManglerChannelTree::kickUserMenuItem_activate_cb));
     builder->get_widget("banUser", menuitem);
     menuitem->signal_activate().connect(sigc::mem_fun(this, &ManglerChannelTree::banUserMenuItem_activate_cb));
+    builder->get_widget("newBinding", menuitem);
+    menuitem->signal_activate().connect(sigc::mem_fun(this, &ManglerChannelTree::newBindingMenuItem_activate_cb));
     builder->get_widget("muteUser", checkmenuitem);
     signalMute = checkmenuitem->signal_activate().connect(sigc::mem_fun(this, &ManglerChannelTree::muteUserMenuItem_activate_cb));
     builder->get_widget("muteUserChannel", checkmenuitem);
@@ -1062,6 +1064,19 @@ ManglerChannelTree::banUserMenuItem_activate_cb(void) {/*{{{*/
         if (isUser && mangler->getReasonEntry("Ban Reason")) {
             v3_admin_boot(V3_BOOT_BAN, id, (char *)ustring_to_c(mangler->reason).c_str());
         }
+    }
+}/*}}}*/
+
+void
+ManglerChannelTree::newBindingMenuItem_activate_cb(void) {/*{{{*/
+    Glib::RefPtr<Gtk::TreeSelection> sel = channelView->get_selection();
+    Gtk::TreeModel::iterator iter = sel->get_selected();
+    if (iter) {
+        Gtk::TreeModel::Row row = *iter;
+        bool isUser = row[channelRecord.isUser];
+        uint16_t id = row[channelRecord.id];
+        Glib::ustring name = row[channelRecord.name];
+        // create a binding and add this user/channel to the binding
     }
 }/*}}}*/
 

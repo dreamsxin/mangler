@@ -156,6 +156,7 @@ class ManglerChannelTree
         void removePhantomMenuItem_activate_cb(void);
         void kickUserMenuItem_activate_cb(void);
         void banUserMenuItem_activate_cb(void);
+        void newBindingMenuItem_activate_cb(void);
         void muteUserMenuItem_activate_cb(void);
         void muteUserChannelMenuItem_activate_cb(void);
         void muteUserGlobalMenuItem_activate_cb(void);
