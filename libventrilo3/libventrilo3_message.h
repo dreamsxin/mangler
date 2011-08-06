@@ -249,24 +249,12 @@ typedef struct _v3_net_message_0x52 {/*{{{*/
 typedef struct _v3_net_message_0x52_header {/*{{{*/
     _v3_msg_0x52 header;        // 0
 } __attribute__ ((__packed__)) _v3_msg_0x52_header;/*}}}*/
-typedef struct _v3_net_message_0x52_0x00 {/*{{{*/
-    _v3_msg_0x52 header;        // 0
-} __attribute__ ((__packed__)) _v3_msg_0x52_0x00;/*}}}*/
 typedef struct _v3_net_message_0x52_0x01_in {/*{{{*/
     _v3_msg_0x52 header;        // 0
     uint16_t unknown_4;         // 24
     uint16_t unknown_5;         // 26
     void *   data;              // 28 - variable length starts here
 } __attribute__ ((__packed__)) _v3_msg_0x52_0x01_in;/*}}}*/
-typedef struct _v3_net_message_0x52_0x01_out {/*{{{*/
-    _v3_msg_0x52 header;        // 0
-} __attribute__ ((__packed__)) _v3_msg_0x52_0x01_out;/*}}}*/
-typedef struct _v3_net_message_0x52_0x02 {/*{{{*/
-    _v3_msg_0x52 header;        // 0
-} __attribute__ ((__packed__)) _v3_msg_0x52_0x02;/*}}}*/
-typedef struct _v3_net_message_0x52_0x03 {/*{{{*/
-    _v3_msg_0x52 header;        // 0
-} __attribute__ ((__packed__)) _v3_msg_0x52_0x03;/*}}}*/
 int _v3_get_0x52(_v3_net_message *msg);
 _v3_net_message *_v3_put_0x52(uint8_t subtype, uint16_t codec, uint16_t codec_format, uint32_t pcmlength, uint32_t length, void *data, uint16_t num_target_types, uint16_t *target_types, uint16_t num_targets, uint16_t *targets);
 int _v3_destroy_0x52(_v3_net_message *msg);
