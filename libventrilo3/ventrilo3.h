@@ -416,6 +416,12 @@ union _v3_event_data {
         uint16_t allow_voice_target;
         uint16_t allow_command_target;
     } channel;
+    struct {
+        uint16_t num_types;
+        uint16_t types[128];
+        uint16_t num_targets;
+        uint16_t targets[128];
+    } targets;
     v3_server_prop srvprop;
     struct {
         uint16_t id;
@@ -764,7 +770,7 @@ const v3_codec *v3_get_channel_codec(uint16_t channel_id);
 uint16_t    v3_get_user_channel(uint16_t id);
 uint16_t    v3_channel_requires_password(uint16_t channel_id);
 void        v3_start_audio(uint16_t send_type);
-uint32_t    v3_send_audio(uint16_t send_type, uint32_t rate, uint8_t *pcm, uint32_t length, uint8_t stereo);
+uint32_t    v3_send_audio(uint16_t send_type, uint32_t rate, uint8_t *pcm, uint32_t length, uint8_t stereo, uint16_t num_target_types, uint16_t *target_types, uint16_t num_targets, uint16_t *targets);
 void        v3_stop_audio(void);
 void        v3_set_server_opts(uint8_t type, uint8_t value);
 const v3_permissions *v3_get_permissions(void);

@@ -1353,7 +1353,12 @@ _v3_put_0x52(uint8_t subtype, uint16_t codec, uint16_t codec_format, uint32_t pc
     msg = malloc(sizeof(_v3_net_message));
     memset(msg, 0, sizeof(_v3_net_message));
 
-    uint32_t target_section_size = sizeof(num_target_types) + sizeof(num_targets) + ((num_target_types + num_targets) * sizeof(uint16_t));
+    uint32_t target_section_size = 
+        sizeof(num_target_types)
+        + sizeof(num_targets) 
+        + ((num_target_types == 0 ? 1 : num_target_types) * sizeof(uint16_t))
+        + ((num_targets == 0 ? 1 : num_targets) * sizeof(uint16_t));
+                                    
     /*
      * First we go through and create our main message structure
      */
@@ -1373,6 +1378,8 @@ _v3_put_0x52(uint8_t subtype, uint16_t codec, uint16_t codec_format, uint32_t pc
             msgdata->header.data_length = length;
             break;
         case V3_AUDIO_STOP:
+            // TODO: Temporary workaround for the fact that we can not yet move targets into 0x52 packet.
+            msg->len -= 2 * sizeof(uint16_t); 
             _v3_debug(V3_DEBUG_PACKET_PARSE, "sending 0x52 subtype 0x02 size %d", msg->len);
             break;
         default:
@@ -1408,8 +1415,15 @@ _v3_put_0x52(uint8_t subtype, uint16_t codec, uint16_t codec_format, uint32_t pc
                  * Copy target and types.
                  */
                 uint8_t *buf = msg->data + sizeof(_v3_msg_0x52_header);
-                buf += _v3_put_msg_uint16_array(buf, num_target_types, target_types); 
-                buf += _v3_put_msg_uint16_array(buf, num_targets, targets);
+                if(num_targets != 0 && num_target_types != 0) {
+                    buf += _v3_put_msg_uint16_array(buf, num_target_types, target_types); 
+                    buf += _v3_put_msg_uint16_array(buf, num_targets, targets);
+                } else {
+                    uint16_t default_type   = V3_AUDIO_SENDTYPE_U2CCUR;
+                    uint16_t default_target = 0; 
+                    buf += _v3_put_msg_uint16_array(buf, 1, &default_type); 
+                    buf += _v3_put_msg_uint16_array(buf, 1, &default_target);
+                }
 
                 /*
                  * We copy additional audio data for this specific packet.

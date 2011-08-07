@@ -333,7 +333,7 @@ ManglerAudio::input(void) {/*{{{*/
                 //fprintf(stderr, "sending %d bytes of audio\n", pcm_framesize * ctr);
                 // TODO: hard coding user to channel for now, need to implement U2U
                 uint32_t ret;
-                if ((ret = v3_send_audio(V3_AUDIO_SENDTYPE_U2CCUR, rate, buf, pcm_framesize * ctr, false)) != rate) {
+                if ((ret = v3_send_audio(V3_AUDIO_SENDTYPE_U2CCUR, rate, buf, pcm_framesize * ctr, false, 0, NULL, 0, NULL)) != rate) {
                     if (!(rate = ret) || !open()) {
                         stop_input = true;
                     }
