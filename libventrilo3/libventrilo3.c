@@ -7502,7 +7502,11 @@ v3_stop_audio(void) {/*{{{*/
                     _v3_out_rate,
                     buf,
                     v3_max_pcm_frames(codec) * codec->pcmframesize * _v3_channels,
-                    (_v3_channels == 2));
+                    (_v3_channels == 2),
+                    0,
+                    NULL,
+                    0,
+                    NULL);
         }
         if (_v3_resampler) {
             speex_resampler_destroy(_v3_resampler);

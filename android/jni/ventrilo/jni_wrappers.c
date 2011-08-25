@@ -264,7 +264,7 @@ JNIEXPORT void JNICALL Java_org_mangler_android_VentriloInterface_settext(JNIEnv
 
 JNIEXPORT void JNICALL Java_org_mangler_android_VentriloInterface_sendaudio(JNIEnv* env, jobject obj, jbyteArray pcm, jint size, jint rate) {
 	jbyte *data = get_byte_array(env, pcm);
-	v3_send_audio(V3_AUDIO_SENDTYPE_U2CCUR, rate, data, size, 0);
+	v3_send_audio(V3_AUDIO_SENDTYPE_U2CCUR, rate, data, size, 0, 0, NULL, 0, NULL);
 	release_byte_array(env, pcm, data);
 }
 
