@@ -16,7 +16,9 @@
 		
 		<EditText android:id="@+id/editServer" 
 			android:layout_height="wrap_content" 
-			android:layout_width="fill_parent" android:inputType="textPersonName"/>
+			android:layout_width="fill_parent"
+			android:hint="Server Name"
+			android:inputType="textPersonName"/>
 		
 		<TextView 
 			android:text="@string/hostname"
@@ -26,6 +28,7 @@
 		<EditText android:id="@+id/editHost" 
 			android:layout_width="fill_parent"
 			android:layout_height="wrap_content"
+			android:hint="Host Name or IP Address"
 			android:inputType="textUri"/>
 		
 		<TextView 
@@ -36,6 +39,7 @@
 		<EditText android:id="@+id/editPort" 
 			android:layout_width="fill_parent"
 			android:layout_height="wrap_content" 
+			android:hint="Port Number"
 			android:inputType="number"/>
 		
 		<TextView 
@@ -46,6 +50,7 @@
 		<EditText android:id="@+id/editPass" 
 			android:layout_width="fill_parent"
 			android:layout_height="wrap_content" 
+			android:hint="Password"
 			android:maxLength="31" android:inputType="textVisiblePassword"/>
 		
 		<TextView 
@@ -56,6 +61,7 @@
 		<EditText android:id="@+id/editUser" 
 			android:layout_width="fill_parent"
 			android:layout_height="wrap_content"
+			android:hint="User Name"
 			android:maxLength="31" android:inputType="textPersonName"/>
 		
 		<TextView 
@@ -67,9 +73,8 @@
 			android:layout_width="fill_parent"
 			android:layout_height="wrap_content"
 			android:maxLength="31"
+			android:hint="Phonetic"
 			android:inputType="textPhonetic"/>
-		
-		
 		
 	
 <LinearLayout android:id="@+id/LinearLayout01" android:layout_width="wrap_content" android:layout_height="wrap_content" android:paddingTop="5dp" android:layout_gravity="right"><Button android:id="@+id/editSave" android:text="@string/save" android:layout_height="wrap_content" android:width="100dp" android:layout_width="wrap_content"/><Button android:layout_height="wrap_content" android:id="@+id/editCancel" android:text="@string/cancel" android:layout_width="wrap_content" android:width="100dp"></Button></LinearLayout>
