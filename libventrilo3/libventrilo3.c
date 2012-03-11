@@ -504,10 +504,12 @@ int
 _v3_login_connect(struct in_addr *srvip, uint16_t srvport) {/*{{{*/
     struct linger ling = { 1, 1 };
     struct sockaddr_in sa;
+    int tmp = 1;
 
     _v3_func_enter("_v3_login_connect");
     _v3_sockd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-    setsockopt(_v3_sockd, SOL_SOCKET, SO_LINGER, (char *)&ling, sizeof(ling));
+    setsockopt(_v3_sockd, SOL_SOCKET, SO_LINGER, (void *)&ling, sizeof(ling));
+    setsockopt(_v3_sockd, SOL_SOCKET, SO_KEEPALIVE, (void *)&tmp, sizeof(tmp));
     sa.sin_family = AF_INET;
     sa.sin_addr.s_addr = srvip->s_addr;
     sa.sin_port = htons(srvport);
