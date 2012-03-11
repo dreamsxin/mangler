@@ -230,7 +230,7 @@ class Mangler
         void adminLoginMenuItem_activate_cb(void);
         void adminWindowMenuItem_activate_cb(void);
 
-        bool getNetworkEvent(void);
+        void getNetworkEvent(void);
         bool updateIntegration(void); // music player integration
         bool checkPushToTalkKeys(void);
         bool checkVoiceActivation(void);

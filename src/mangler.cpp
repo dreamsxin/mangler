@@ -382,7 +382,7 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
 
     Glib::signal_timeout().connect(sigc::mem_fun(this, &Mangler::updateIntegration), 1000);
     Glib::signal_timeout().connect(sigc::mem_fun(*this, &Mangler::updateXferAmounts), 500);
-    Glib::signal_timeout().connect(sigc::mem_fun(*this, &Mangler::getNetworkEvent), 10);
+    Glib::Thread::create(sigc::mem_fun(this, &Mangler::getNetworkEvent), false);
 }/*}}}*/
 
 Mangler::~Mangler() {/*{{{*/
@@ -541,8 +541,10 @@ bool Mangler::reconnectStatusHandler(void) {/*{{{*/
     char buf[64] = "";
     int reconnectTimer = (15 - (time(NULL) - lastAttempt));
 
+    gdk_threads_enter();
     builder->get_widget("connectButton", connectbutton);
     if (connectbutton->get_label() != "gtk-cancel" || wantDisconnect) {
+        gdk_threads_leave();
         return false;
     }
     builder->get_widget("statusbar", statusbar);
@@ -553,8 +555,10 @@ bool Mangler::reconnectStatusHandler(void) {/*{{{*/
         lastAttempt = time(NULL);
         connectbutton->set_label("gtk-connect");
         Mangler::connectButton_clicked_cb();
+        gdk_threads_leave();
         return false;
     }
+    gdk_threads_leave();
 
     return true;
 }/*}}}*/
@@ -958,9 +962,9 @@ void Mangler::motdOkButton_clicked_cb(void) {/*{{{*/
  *
  * Inbound event processing happens here.
  */
-bool Mangler::getNetworkEvent() {/*{{{*/
+void Mangler::getNetworkEvent() {/*{{{*/
     v3_event *ev;
-    while ((ev = v3_get_event(V3_NONBLOCK)) != NULL) {
+    while ((ev = v3_get_event(V3_BLOCK)) != NULL) {
         v3_user *u;
         v3_channel *c;
         Glib::ustring rank = "";
@@ -1739,7 +1743,6 @@ bool Mangler::getNetworkEvent() {/*{{{*/
         v3_free_event(ev);
         gdk_threads_leave();
     }
-    return true;
 }/*}}}*/
 
 bool Mangler::checkPushToTalkKeys(void) {/*{{{*/
@@ -1870,6 +1873,7 @@ bool Mangler::updateXferAmounts(void) {/*{{{*/
     uint32_t packets;
     char buf[1024];
 
+    gdk_threads_enter();
     builder->get_widget("sentLabel", label);
     bytes = v3_get_bytes_sent();
     packets = v3_get_packets_sent();
@@ -1897,8 +1901,9 @@ bool Mangler::updateXferAmounts(void) {/*{{{*/
         snprintf(buf, 1023, "N/A");
     }
     label->set_text(buf);
+    gdk_threads_leave();
 
-    return(true);
+    return true;
 }/*}}}*/
 /* {{{ GdkFilterReturn ptt_filter(GdkXEvent *gdk_xevent, GdkEvent *event, gpointer data) {
     GdkWindow   *rootwin = gdk_get_default_root_window();
