@@ -97,6 +97,7 @@ void ManglerPrivChat::remoteBack() {
 
 void ManglerPrivChat::remoteReopened() {
     addMessage("\n*** remote user has reopened chat window");
+    sendButton->set_sensitive(true);
 }
 
 void ManglerPrivChat::addChatMessage(uint16_t id, Glib::ustring message) {
