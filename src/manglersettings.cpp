@@ -341,9 +341,7 @@ void ManglerSettings::applySettings(void) {/*{{{*/
 
     // Input Gain
     Mangler::config["InputGainLevel"] = gainAdjustment->get_value();
-    fprintf(stderr, "setting gain to %d", Mangler::config["InputGainLevel"].toInt());
     v3_set_volume_xmit(Mangler::config["InputGainLevel"].toInt());
-    mangler->setTooltip();
 
     // Notification Sounds
     builder->get_widget("notificationLoginLogoutCheckButton", checkbutton);
@@ -839,7 +837,7 @@ ManglerSettings::settingsPTTMouseDetect(void) {/*{{{*/
     char mousebutton[8];
     static bool grabbed = false;
     int flag = 0;
-    int x, y;
+    //int x, y;
     XEvent ev;
 
 
@@ -865,8 +863,8 @@ ManglerSettings::settingsPTTMouseDetect(void) {/*{{{*/
                 XUngrabPointer(GDK_WINDOW_XDISPLAY(rootwin), CurrentTime);
                 grabbed = false;
                 isDetectingMouse = false;
-                x = ev.xbutton.x_root;
-                y = ev.xbutton.y_root;
+                //x = ev.xbutton.x_root;
+                //y = ev.xbutton.y_root;
                 break;
             case MotionNotify:
                 break;
