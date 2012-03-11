@@ -991,7 +991,7 @@ int get_pcm_frame(musicfile *musicfile, int channels, int16_t *buf, int *pcmread
         if (pcmd.len < channels**pcmread) {
             pcmd.len = 0;
         } else {
-            memmove(pcmd.buf, (void *)pcmd.buf + channels**pcmread, sizeof(pcmd.buf) - channels**pcmread);
+            memmove(pcmd.buf, (void *)pcmd.buf + channels**pcmread, pcmd.len - channels**pcmread);
             pcmd.len -= channels**pcmread;
         }
         return true;
