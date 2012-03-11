@@ -33,6 +33,7 @@ mangler_SOURCES = \
 	manglerintegration.cpp manglerintegration.h \
 	mangleradmin.cpp mangleradmin.h \
 	manglerrecorder.cpp manglerrecorder.h \
+	manglersoundboard.cpp manglersoundboard.h \
 	manglerosd.cpp manglerosd.h \
 	manglerg15.cpp manglerg15.h \
 	inilib.cpp inilib.h
@@ -48,7 +49,7 @@ dev:
 		manglerbackend.cpp  manglerpulse.cpp  mangleralsa.cpp  mangleross.cpp \
 		manglernetwork.cpp  manglerserverlist.cpp  manglersettings.cpp  manglerconfig.cpp \
 		manglerchat.cpp  manglerprivchat.cpp  manglercharset.cpp  manglerintegration.cpp \
-		mangleradmin.cpp  manglerrecorder.cpp  manglerosd.cpp  manglerg15.cpp \
+		mangleradmin.cpp  manglerrecorder.cpp  manglersoundboard.cpp  manglerosd.cpp  manglerg15.cpp \
 		inilib.cpp ../libventrilo3/libventrilo3.a \
 		$(pulse_LIBS) $(alsa_LIBS) $(speex_LIBS) $(celt_LIBS) $(LIBS) \
 		`pkg-config --cflags --libs dbus-glib-1` \

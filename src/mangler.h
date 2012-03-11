@@ -42,6 +42,7 @@ class ManglerPrivChat;
 class ManglerIntegration;
 class ManglerAdmin;
 class ManglerRecorder;
+class ManglerSoundboard;
 #ifdef HAVE_XOSD
 class ManglerOsd;
 #endif
@@ -111,6 +112,7 @@ class Mangler
         ManglerIntegration                  *integration;
         ManglerAdmin                        *admin;
         ManglerRecorder                     *recorder;
+        ManglerSoundboard                   *soundboard;
         static ManglerConfig                config;
 #ifdef HAVE_XOSD
         ManglerOsd                          *osd;
@@ -226,6 +228,7 @@ class Mangler
         void hideGuestFlagMenuItem_toggled_cb(void);
         void motdMenuItem_activate_cb(void);
         void recorderMenuItem_activate_cb(void);
+        void sbMenuItem_activate_cb(void);
         void quitMenuItem_activate_cb(void);
         void adminLoginMenuItem_activate_cb(void);
         void adminWindowMenuItem_activate_cb(void);

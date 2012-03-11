@@ -44,6 +44,7 @@
 #include "manglerintegration.h"
 #include "mangleradmin.h"
 #include "manglerrecorder.h"
+#include "manglersoundboard.h"
 #ifdef HAVE_XOSD
 # include "manglerosd.h"
 #endif
@@ -213,6 +214,9 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
     builder->get_widget("recorderMenuItem", menuitem);
     menuitem->signal_activate().connect(sigc::mem_fun(this, &Mangler::recorderMenuItem_activate_cb));
 
+    builder->get_widget("sbMenuItem", menuitem);
+    menuitem->signal_activate().connect(sigc::mem_fun(this, &Mangler::sbMenuItem_activate_cb));
+
     builder->get_widget("quitMenuItem", menuitem);
     menuitem->signal_activate().connect(sigc::mem_fun(this, &Mangler::quitMenuItem_activate_cb));
     builder->get_widget("statusIconQuitMenuItem", menuitem);
@@ -322,8 +326,11 @@ Mangler::Mangler(struct _cli_options *options) {/*{{{*/
     admin = new ManglerAdmin(builder);
     wantAdminWindow = false;
 
-    // Create Recording Window
+    // Create Recorder Window
     recorder = new ManglerRecorder(builder);
+
+    // Create Soundboard Window
+    soundboard = new ManglerSoundboard(builder);
 
     // Add our servers to the main window drop down
     builder->get_widget("serverSelectComboBox", combobox);
@@ -394,6 +401,7 @@ Mangler::~Mangler() {/*{{{*/
     delete chat;
     delete admin;
     delete recorder;
+    delete soundboard;
     delete integration;
 #ifdef HAVE_XOSD
     delete osd;
@@ -779,6 +787,10 @@ void Mangler::motdMenuItem_activate_cb(void) {/*{{{*/
 void Mangler::recorderMenuItem_activate_cb(void) {/*{{{*/
     recorder->recWindow->set_icon(icons["tray_icon"]);
     recorder->show();
+}/*}}}*/
+void Mangler::sbMenuItem_activate_cb(void) {/*{{{*/
+    soundboard->window->set_icon(icons["tray_icon"]);
+    soundboard->show();
 }/*}}}*/
 void Mangler::quitMenuItem_activate_cb(void) {/*{{{*/
     Gtk::Main::quit();
