@@ -1,10 +1,10 @@
 /*
  * vim: softtabstop=4 shiftwidth=4 cindent foldmethod=marker expandtab
  *
- * $LastChangedDate: 2010-03-14 16:21:11 -0700 (Sun, 14 Mar 2010) $
- * $Revision: 708 $
- * $LastChangedBy: Haxar $
- * $URL: http://svn.mangler.org/mangler/trunk/sounds/bin2h.c $
+ * $LastChangedDate$
+ * $Revision$
+ * $LastChangedBy$
+ * $URL$
  *
  * Copyright 2009-2010 Eric Connell
  *

@@ -40,11 +40,12 @@
 
 #ifndef _WIN32
 #include <sys/time.h>
+#include <sys/select.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <netinet/tcp.h>
 #include <arpa/inet.h>
 #include <netdb.h>
-#include <sys/select.h>
 #include <errno.h>
 #else
 #include <winsock2.h>
